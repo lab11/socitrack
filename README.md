@@ -1,9 +1,9 @@
-PolyPoint
+SurePoint
 =========
 
 <img src="https://raw.githubusercontent.com/lab11/polypoint/master/media/polypoint_logo_a.png" alt="PolyPoint" width="20%" align="left">
 
-PolyPoint is a system for using ultra-wideband RF time-of-flight ranging to perform indoor localization.
+SurePoint is a system for using ultra-wideband RF time-of-flight ranging to perform indoor localization.
 It incorporates the DecaWave DW1000 for UWB packet transmission and timestamping
 into a solder-on module that provides node-to-node ranges over an I2C interface.
 
@@ -21,7 +21,7 @@ Git Clone
 
 When cloning this repository, be absolutely sure to do
 
-    git clone --recursive https://github.com/lab11/polypoint.git
+    git clone --recursive https://github.com/abiri/surepoint.git
     
 so that you get the submodules as well. All of the supporting
 libraries and build tools are in submodules for the various
@@ -31,7 +31,7 @@ hardware platforms used in this project.
 Hardware
 --------
 
-The PolyPoint system is composed of several hardware pieces. At the core is the
+The SurePoint system is composed of several hardware pieces. At the core is the
 TriPoint module which is a 1.25" on a side triangle that encompasses all of the
 core ranging hardware and software. TriPoint has castellated edges and can be
 soldered on to a carrier board, effectively as a ranging IC. TriTag is one such
@@ -78,7 +78,7 @@ chip for issuing I2C commands over USB.
 Software
 --------
 
-PolyPoint contains many software layers that run at various levels of
+SurePoint contains many software layers that run at various levels of
 the system.
 
 #### TriPoint
