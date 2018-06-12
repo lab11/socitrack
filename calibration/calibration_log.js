@@ -108,7 +108,7 @@ function receive (peripheral, index, filename) {
 										characteristic.on('data', function (dat) {
 
 											if (dat.length == 20) {
-												// console.log('got noitfy: ' + dat.length + ' from ' + peripheral.uuid);
+												// console.log('got notify: ' + dat.length + ' from ' + peripheral.uuid);
 												// console.log(dat);
 												var round = record(dat, fd);
 												console.log('Round ' + round + ' on ' + peripheral.uuid);

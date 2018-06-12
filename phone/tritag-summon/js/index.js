@@ -303,7 +303,7 @@ var app = {
     },
     // App Paused Event Handler
     onAppPause: function () {
-        console.log('DISCONNNNENECCCT');
+        console.log('DISCONNECT');
         ble.disconnect(device_id, app.bleDisconnect, app.bleDisconnectError);
     },
 

@@ -10,5 +10,5 @@ To rebuild everything:
 
 ---
 
-<img src="https://github.com/lab11/polypoint/raw/master/phone/tritag-summon/screenshot.png" width="300px" />
+<img src="https://github.com/abiri/surepoint/raw/master/phone/tritag-summon/screenshot.png" width="300px" />
 
