@@ -22,7 +22,7 @@ APPLICATION_SRCS += tripoint_interface.c
 DEVICE = NRF51
 
 ifndef TARGET
-	TARGET = tritag
+TARGET = tritag
 endif
 
 ifneq ($(PID), )
