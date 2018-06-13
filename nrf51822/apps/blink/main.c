@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <tritag.h>
 #include "led.h"
 #include "boards.h"
 #include "nordic_common.h"
