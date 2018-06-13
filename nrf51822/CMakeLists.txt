@@ -7,6 +7,11 @@ set (nrf51822_VERSION_MINOR 0)
 # Set compiler standard
 set(CMAKE_CXX_STANDARD 11)
 
+# Include directories to search
+include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/nrf5x-base)
+
 # Add source files
 set(SOURCE_FILES
         src/boards.h
