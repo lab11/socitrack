@@ -101,5 +101,7 @@ and provides ranges over a BLE characteristic.
 The tools in the `/phone` directory interact with TriTag and read data
 across the BLE interface.
 
+### Linux Development
 
+This project requires the [GNU ARM Embedded Toolchain]{https://developer.arm.com/open-source/gnu-toolchain/gnu-rm}. Please be aware that the recent Ubuntu 18.04 ('bionic') ships with an old version ([6.3.1]{https://launchpad.net/ubuntu/bionic/+source/gcc-arm-none-eabi}) and will cause compile errors ('conflicting CPU Architecture'). We therefore strongly encourage you to either remain on Ubuntu 17.10 ('artful') or directly install the newest version from the developpers.
 
