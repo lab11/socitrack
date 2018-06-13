@@ -21,7 +21,7 @@
 typedef void (*tripoint_interface_data_cb_f)(uint8_t* data, uint32_t len);
 
 
-ret_code_t tripoint_init ();
+ret_code_t tripoint_init (tripoint_interface_data_cb_f cb);
 ret_code_t tripoint_hw_init ();
 ret_code_t tripoint_get_info (uint16_t* id, uint8_t* version);
 ret_code_t tripoint_start_ranging (bool periodic, uint8_t rate);

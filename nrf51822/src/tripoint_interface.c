@@ -7,6 +7,7 @@
 
 #include "boards.h"
 #include "led.h"
+#include "tritag.h"
 
 #include "tripoint_interface.h"
 
@@ -105,7 +106,7 @@ ret_code_t tripoint_get_info (uint16_t* id, uint8_t* version) {
 	ret = nrf_drv_twi_rx(&twi_instance, TRIPOINT_ADDRESS, buf_resp, 3, false);
 	if (ret != NRF_SUCCESS) return ret;
 
-	*id = (buf_resp[0] << 8) | buf_resp[1];
+	*id = (uint16_t)( (uint16_t)buf_resp[0] << (uint8_t)8) | buf_resp[1];
 	*version = buf_resp[2];
 
 	return NRF_SUCCESS;
@@ -149,7 +150,7 @@ ret_code_t tripoint_start_anchor (bool is_glossy_master) {
 
 	// Make ANCHOR
 	if(is_glossy_master)
-		buf_cmd[1] = 0x01 | 0x20;
+		buf_cmd[1] = (uint8_t)0x01 | (uint8_t)0x20;
 	else
 		buf_cmd[1] = 0x01;
 

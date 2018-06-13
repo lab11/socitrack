@@ -33,6 +33,7 @@
 
 #include "led.h"
 #include "boards.h"
+#include "tritag.h"
 
 #include "ble_config.h"
 #include "tripoint_interface.h"
@@ -129,11 +130,11 @@ void ble_evt_write (ble_evt_t* p_ble_evt) {
  ******************************************************************************/
 
 uint8_t updated = 0;
-uint32_t blobLen;
+uint16_t blobLen;
 uint8_t dataBlob[256];
 
 void updateData (uint8_t * data, uint32_t len) {
-    uint32_t copy_len = MIN(len, 256);
+    uint16_t copy_len = (uint16_t)MIN(len, 256);
 	memcpy(app.app_raw_response_buffer, data, copy_len);
 	blobLen = copy_len;
 
@@ -256,7 +257,7 @@ int main (void) {
     // Get stored address
     memcpy(_ble_address, (uint8_t*) ADDRESS_FLASH_LOCATION, 6);
     // And use it to setup the BLE
-    ble_config.device_id = (_ble_address[1] << 8) | _ble_address[0];
+    ble_config.device_id = (uint16_t)( (uint16_t)_ble_address[1] << (uint8_t)8) | _ble_address[0];
 
     // Setup BLE
     simple_ble_app = simple_ble_init(&ble_config);

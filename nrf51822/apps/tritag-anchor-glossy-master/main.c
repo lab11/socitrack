@@ -36,6 +36,7 @@ UWB Localization Tag used as an Anchor
 
 #include "led.h"
 #include "boards.h"
+#include "tritag.h"
 
 #include "ble_config.h"
 #include "tripoint_interface.h"
@@ -105,7 +106,7 @@ int main(void) {
     // Get stored address
     memcpy(_ble_address, (uint8_t*) ADDRESS_FLASH_LOCATION, 6);
     // And use it to setup the BLE
-    ble_config.device_id = (_ble_address[1] << 8) | _ble_address[0];
+    ble_config.device_id = (uint16_t)( (uint16_t)_ble_address[1] << (uint8_t)8) | _ble_address[0];
 
     // Setup BLE
     simple_ble_init(&ble_config);

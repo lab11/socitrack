@@ -13,25 +13,25 @@ set(SOFTDEVICE_VERSION "s110")
 # https://stackoverflow.com/questions/31004421/does-cmake-support-include-directories-recursively
 # https://stackoverflow.com/questions/39216997/search-a-list-of-path-in-make-for-include-directories-recursively
 set(SEARCH_DIR_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/advertisement")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/devices")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/dfu")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/lib")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/make")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/peripherals")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/ant")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/ble")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/device")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/drivers_ext")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/drivers_nrf")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/libraries")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/properitary_rf")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/serialization")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/softdevice/common")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/softdevice/${SOFTDEVICE_VERSION}")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/toolchain")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/services")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/startup")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/advertisement")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/devices")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/dfu")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/lib")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/make")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/peripherals")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/ant")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/ble")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/device")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/drivers_ext")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/drivers_nrf")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/libraries")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/properitary_rf")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/serialization")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/softdevice/common")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/softdevice/${SOFTDEVICE_VERSION}")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf51_sdk_${SDK_VERSION}/components/toolchain")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/services")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/startup")
 
 FUNCTION(R_SEARCH search_paths return_list)
     #message("Received list: ${search_paths}")
@@ -60,6 +60,7 @@ R_SEARCH("${SEARCH_DIR_PATHS}" recursive_list)
 # Include header directories
 include_directories(${recursive_list})
 
+
 # Add source files
 set(SOURCE_FILES
         boards.h
@@ -69,7 +70,7 @@ set(SOURCE_FILES
         tritag.h)
 
 # Create dummy executable for CLion
-add_executable(project ${SOURCE_FILES})
+add_executable(project_src ${SOURCE_FILES})
 
 # Link to existing make file
 # https://stackoverflow.com/questions/26918459/using-local-makefile-for-clion-instead-of-cmake

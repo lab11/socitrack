@@ -75,7 +75,7 @@ set(SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/../../src/tritag.h)
 
 # Create dummy executable for CLion
-add_executable(project ${PROJ_FILES} ${SOURCE_FILES})
+add_executable(project_tritag_anchor_glossy_master ${PROJ_FILES} ${SOURCE_FILES})
 
 # Link to existing make file
 # https://stackoverflow.com/questions/26918459/using-local-makefile-for-clion-instead-of-cmake
