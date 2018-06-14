@@ -37,10 +37,10 @@ module.exports = [
 module.exports.metadata = 
 // TOP OF METADATA
 {
-    "cordova-plugin-whitelist": "1.0.0",
-    "cordova-plugin-console": "1.0.1",
-    "com.randdusing.bluetoothle": "2.1.0",
-    "cordova-plugin-ble-central": "1.0.1"
+    "cordova-plugin-whitelist": "1.3.3",
+    "cordova-plugin-console": "1.1.0",
+    "com.randdusing.bluetoothle": "2.1.2",
+    "cordova-plugin-ble-central": "1.2.2"
 }
 // BOTTOM OF METADATA
 });

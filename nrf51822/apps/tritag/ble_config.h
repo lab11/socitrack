@@ -3,7 +3,7 @@
 
 #include "app_timer.h"
 
-#define PHYSWEB_URL "goo.gl/Edukt0"
+#define PHYSWEB_URL "n.ethz.ch/~abiri/d"
 
 #define APP_COMPANY_IDENTIFIER 0x11BB
 #define MANUFACTURER_NAME      "Lab11UMich"
