@@ -20,6 +20,9 @@ set(CMAKE_CXX_STANDARD 11)
 # https://stackoverflow.com/questions/31004421/does-cmake-support-include-directories-recursively
 # https://stackoverflow.com/questions/39216997/search-a-list-of-path-in-make-for-include-directories-recursively
 set(SEARCH_DIR_PATHS "dw1000-driver")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "firmware")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "include")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "source")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "stm32f0-base/sdk")
 
 FUNCTION(R_SEARCH search_paths return_list)
@@ -51,19 +54,6 @@ include_directories(${recursive_list})
 
 
 # Add source files
-set(SOURCE_FILES
-        include/board.h
-        include/delay.h
-        include/led.h
-        include/prng.h
-        include/system.h
-        include/timer.h
-        include/tripoint.h
-        source/delay.c
-        source/led.c
-        source/prng.c
-        source/timer.c)
-
 set(PROJ_FILES
         firmware/dw1000.c
         firmware/dw1000.h
@@ -83,6 +73,19 @@ set(PROJ_FILES
         firmware/port.h
         firmware/stm32f0xx_conf.h
         firmware/stm32f0xx_i2c_cpal_conf.h)
+
+set(SOURCE_FILES
+        include/board.h
+        include/delay.h
+        include/led.h
+        include/prng.h
+        include/system.h
+        include/timer.h
+        include/tripoint.h
+        source/delay.c
+        source/led.c
+        source/prng.c
+        source/timer.c)
 
 # Create dummy executable for CLion
 add_executable(project_software ${PROJ_FILES} ${SOURCE_FILES})

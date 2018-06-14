@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stddef.h>
 
 #include "deca_device_api.h"
 #include "deca_regs.h"

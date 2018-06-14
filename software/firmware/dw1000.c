@@ -1,4 +1,5 @@
 #include <string.h>
+#include "stm32f0xx.h"
 #include "stm32f0xx_spi.h"
 #include "stm32f0xx_dma.h"
 #include "stm32f0xx_exti.h"
@@ -13,6 +14,7 @@
 #include "dw1000.h"
 #include "delay.h"
 #include "firmware.h"
+#include "stm32f0xx_conf.h"
 
 
 /******************************************************************************/
