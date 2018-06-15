@@ -4,7 +4,10 @@
 #include "stm32f0xx_dma.h"
 #include "stm32f0xx_exti.h"
 #include "stm32f0xx_syscfg.h"
-#include "led.h"
+#include "stm32f0xx_misc.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx_rcc.h"
+#include "stm32f0xx_usart.h"
 
 #include "deca_device_api.h"
 #include "deca_regs.h"
@@ -14,8 +17,7 @@
 #include "dw1000.h"
 #include "delay.h"
 #include "firmware.h"
-#include "stm32f0xx_conf.h"
-
+#include "led.h"
 
 /******************************************************************************/
 // Constants for the DW1000

@@ -1,10 +1,15 @@
+
+#include <string.h>
+#include <stddef.h>
+#include <math.h>
+
+#include "glossy.h"
+
 #include "dw1000.h"
 #include "deca_regs.h"
-#include "glossy.h"
 #include "oneway_common.h"
 #include "timer.h"
 #include "prng.h"
-#include <string.h>
 
 void send_sync(uint32_t delay_time);
 

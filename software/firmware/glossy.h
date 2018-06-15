@@ -1,6 +1,8 @@
 #ifndef __GLOSSY_H
 #define __GLOSSY_H
 
+#include <stdint.h>
+
 #include "firmware.h"
 #include "deca_device_api.h"
 

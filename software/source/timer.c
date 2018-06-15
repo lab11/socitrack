@@ -1,6 +1,9 @@
 #include <string.h>
 
-#include "stm32f0xx_conf.h"
+#include "stm32f0xx.h"
+#include "stm32f0xx_tim.h"
+#include "stm32f0xx_rcc.h"
+#include "stm32f0xx_misc.h"
 
 #include "timer.h"
 #include "firmware.h"

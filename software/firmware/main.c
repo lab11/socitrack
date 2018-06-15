@@ -3,6 +3,8 @@
 #include "stm32f0xx_tim.h"
 #include "stm32f0xx_pwr.h"
 #include "stm32f0xx_usart.h"
+#include "stm32f0xx_gpio.h"
+#include "stm32f0xx_rcc.h"
 
 #include "tripoint.h"
 #include "led.h"
@@ -235,6 +237,10 @@ void start_dw1000 () {
 			if (err) {
 				uDelay(10000);
 				tries++;
+			}
+			else {
+				// FIXME: shouldn't we break here if no error occurred?
+				//break;
 			}
 		} while (err && tries <= DW1000_NUM_CONTACT_TRIES_BEFORE_RESET);
 

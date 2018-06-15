@@ -1,5 +1,6 @@
 
-#include "stm32f0xx_conf.h"
+#include "stm32f0xx_rcc.h"
+#include "stm32f0xx_gpio.h"
 
 #include "board.h"
 #include "led.h"
