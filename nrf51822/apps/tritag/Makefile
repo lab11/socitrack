@@ -42,5 +42,9 @@ SDK_VERSION = 9
 LIBRARY_PATHS += .  ../../src
 SOURCE_PATHS += ../../src
 
+# Add empty variable to add flags over command line
+CDBG +=
+CFLAGS += $(CDBG)
+
 NRF_BASE_PATH ?= ../../nrf5x-base
 include $(NRF_BASE_PATH)/make/Makefile

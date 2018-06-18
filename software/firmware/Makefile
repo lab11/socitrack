@@ -41,6 +41,10 @@ ifeq ($(DEVICE_FAMILY), STM32F031)
 CFLAGS += -DI2C2_IRQn=24
 endif
 
+# Add empty variable to add flags over command line
+CDBG +=
+CFLAGS += $(CDBG)
+
 CFLAGS += -Wall -Wextra -g
 
 #The install locations of the STM Standard library
