@@ -42,7 +42,6 @@
  *   Configuration and settings
  ******************************************************************************/
 
-
 #define TRITAG_SHORT_UUID                     0x3152
 #define TRITAG_CHAR_LOCATION_SHORT_UUID       0x3153
 #define TRITAG_CHAR_RANGING_ENABLE_SHORT_UUID 0x3154
@@ -54,6 +53,7 @@ simple_ble_service_t service_handle = {
     .uuid128 = {{0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c,
                  0x90, 0xee, 0x3f, 0xa2, 0x31, 0x52, 0x8c, 0xd6}}
 };
+
 simple_ble_char_t char_range_handle             = {.uuid16 = TRITAG_CHAR_LOCATION_SHORT_UUID};
 simple_ble_char_t char_calibration_index_handle = {.uuid16 = TRITAG_CHAR_CALIBRATION_SHORT_UUID};
 simple_ble_char_t char_ranging_enable_handle    = {.uuid16 = TRITAG_CHAR_RANGING_ENABLE_SHORT_UUID};
@@ -76,10 +76,12 @@ static simple_ble_config_t ble_config = {
 // Copy address from flash
 uint8_t _ble_address[6];
 
+
 /*******************************************************************************
  *   State for this application
  ******************************************************************************/
- // Main application state
+
+// Main application state
 simple_ble_app_t* simple_ble_app;
 static ble_app_t app;
 
@@ -91,13 +93,13 @@ static app_timer_id_t  app_timer;
 bool tripoint_inited = false;
 
 
-
 /*******************************************************************************
  *   nRF CALLBACKS - In response to various BLE/hardware events.
  ******************************************************************************/
 
 // Function for handling the WRITE CHARACTERISTIC BLE event.
-void ble_evt_write (ble_evt_t* p_ble_evt) {
+void ble_evt_write (ble_evt_t* p_ble_evt)
+{
     ble_gatts_evt_write_t* p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
     if (simple_ble_is_char_event(p_ble_evt, &char_ranging_enable_handle)) {
@@ -124,7 +126,6 @@ void ble_evt_write (ble_evt_t* p_ble_evt) {
 }
 
 
-
 /*******************************************************************************
  *   PolyPoint Callbacks
  ******************************************************************************/
@@ -133,7 +134,8 @@ uint8_t updated = 0;
 uint16_t blobLen;
 uint8_t dataBlob[256];
 
-void updateData (uint8_t * data, uint32_t len) {
+void updateData (uint8_t * data, uint32_t len)
+{
     uint16_t copy_len = (uint16_t)MIN(len, 256);
 	memcpy(app.app_raw_response_buffer, data, copy_len);
 	blobLen = copy_len;
@@ -142,8 +144,9 @@ void updateData (uint8_t * data, uint32_t len) {
 }
 
 
-void tripointDataUpdate () {
-    //update the data value and notify on the data
+void tripointDataUpdate ()
+{
+    // Update the data value and notify on the data
 	if (blobLen >= 5) {
         led_on(LED_0);
         nrf_delay_us(1000);
@@ -169,7 +172,8 @@ void tripointDataUpdate () {
 	updated = 0;
 }
 
-static void timer_handler (void* p_context) {
+static void timer_handler (void* p_context)
+{
     uint32_t err_code;
 
     if (!tripoint_inited) {
@@ -181,17 +185,32 @@ static void timer_handler (void* p_context) {
     }
 }
 
+// Handle errors thrown by APP_ERROR_CHECK; overwrites default implementation in app_error.c
+// Defined in ble_simple.c
+/*void app_error_handler (uint32_t error_code,
+                       uint32_t line_num,
+                       const uint8_t * p_file_name)
+{
+    // Reset system
+    NVIC_SystemReset();
+}*/
 
 
 /*******************************************************************************
  *   INIT FUNCTIONS
  ******************************************************************************/
 
-void initialize_app_timer (void) {
-    APP_TIMER_INIT(TRITAG_TIMER_PRESCALER, TRITAG_MAX_TIMERS, TRITAG_OP_QUEUE_SIZE, false);
+void initialize_app_timer (void)
+{
+    APP_TIMER_INIT(TRITAG_TIMER_PRESCALER,
+                   TRITAG_MAX_TIMERS,
+                   TRITAG_OP_QUEUE_SIZE,
+                   false);
 }
 
-static void timers_init (void) {
+
+static void timers_init (void)
+{
     uint32_t err_code;
 
     err_code = app_timer_create(&app_timer,
@@ -200,13 +219,14 @@ static void timers_init (void) {
     APP_ERROR_CHECK(err_code);
 
     err_code = app_timer_start(app_timer, UPDATE_RATE, NULL);
+
     APP_ERROR_CHECK(err_code);
 }
 
 
-// Init services
-void services_init (void) {
-
+// Init services, called by simple_ble_init
+void services_init (void)
+{
     // Add main TriTag service
     simple_ble_add_service(&service_handle);
 
@@ -222,9 +242,7 @@ void services_init (void) {
                                   &service_handle,
                                   &char_calibration_index_handle);
 
-    // Add the characteristic that sets the index of a node during
-    // calibration. Writing a 0 to this characteristic will start the
-    // calibration.
+    // Add the characteristic that sets the index of a node during calibration. Writing a 0 to this characteristic will start the calibration.
     simple_ble_add_characteristic(1, 1, 0, 0, // read, write, notify, vlen
                                   1, &app.app_ranging,
                                   &service_handle,
@@ -238,14 +256,11 @@ void services_init (void) {
 }
 
 
-
-int main (void) {
+int main (void)
+{
     uint32_t err_code;
 
-    //
     // Initialization
-    //
-
     led_init(LED_0);
 
     // We default to doing ranging at the start
@@ -282,15 +297,19 @@ int main (void) {
         tripoint_inited = true;
     }
 
-    // Start the ranging!!!
+    // Start the ranging
     if (tripoint_inited) {
         tripoint_start_ranging(true, 10);
     }
 
+    // Signal end if initialization
     led_on(LED_0);
 
+    // Loop: update location and advertise
     while (1) {
+
         power_manage();
+
 		if (updated) {
 			tripointDataUpdate();
 		}

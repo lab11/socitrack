@@ -6,7 +6,7 @@ This apps provides the BLE interface for the TriTag localization tag.
 Programming
 -----------
 
-    SERGGER_SERIAL=xxxxxxxxx make flash ID=c0:98:e5:45:00:01
+    SEGGER_SERIAL=xxxxxxxxx make flash ID=c0:98:e5:45:00:01
 
 Advertisement
 -------------
