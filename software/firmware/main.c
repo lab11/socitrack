@@ -282,7 +282,7 @@ int main () {
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
 
-	//Initialize UART1 on GPIO1 and GPIO4
+	//Initialize UART1 on GPIO0 and GPIO1
 	{
 		USART_InitTypeDef usartConfig;
 		GPIO_InitTypeDef gpioConfig;
