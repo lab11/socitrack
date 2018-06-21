@@ -5,8 +5,9 @@
 
 // CONSTS --------------------------------------------------------------------------------------------------------------
 
-// SUMMON URL
-#define PHYSWEB_URL "n.ethz.ch/~abiri/d"
+// SUMMON URL (must be <= 20 characters to not throw NRF_ERROR_INVALID_LENGTH)
+//#define PHYSWEB_URL "n.ethz.ch/~abiri/d"
+#define PHYSWEB_URL "bit.ly/p1R8"
 
 // Information
 #define APP_COMPANY_IDENTIFIER 0x11BB

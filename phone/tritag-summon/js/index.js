@@ -37,7 +37,8 @@ const UPDATE_ANCHOR_URL = null;
 // Old version
 //const UPDATE_ANCHOR_URL = "http://j2x.us/ppts16";
 // New version
-const UPDATE_ANCHOR_URL = "http://n.ethz.ch/~abiri/d/anchor_configuration.json";
+//const UPDATE_ANCHOR_URL = "http://n.ethz.ch/~abiri/d/anchor_configuration.json";
+const UPDATE_ANCHOR_URL ="http://bit.ly/2taF2";
 var _anchor_locations = null;
 
 var switch_visibility_console_check = "visible";
