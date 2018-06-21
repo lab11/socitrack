@@ -10,6 +10,8 @@ build files.
 Remote debugging
 ----------------
 
+**Attention:** Before debugging, don't forget to run `make debug -B` first to create the debug symbol list (appends compiler flag `-d`).
+
 If you intend to use a remote debugging tool for step-by-step debugging (such as J-Link),
 we suggest extending the `Makefile.posix` file in `nrf5x-base/make` with the following lines:
 

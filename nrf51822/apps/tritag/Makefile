@@ -42,6 +42,14 @@ SDK_VERSION = 9
 LIBRARY_PATHS += .  ../../src
 SOURCE_PATHS += ../../src
 
+# Compiler flags
+# Optimize for debugging (so dont)
+#CFLAGS += -O0
+# Optimize for size
+CFLAGS += -Os
+# Set correct port for GDB server
+GDB_PORT_NUMBER = 2331
+
 # Add empty variable to add flags over command line
 CDBG +=
 CFLAGS += $(CDBG)
