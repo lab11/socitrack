@@ -45,7 +45,10 @@ endif
 CDBG +=
 CFLAGS += $(CDBG)
 
-CFLAGS += -Wall -Wextra -g
+CFLAGS += -Wall -Wextra
+
+# Automatically add debugging symbols
+CFLAGS += -g
 
 #The install locations of the STM Standard library
 #################################################
@@ -80,7 +83,12 @@ endif
 # into the flash of the TriPoint.
 USER_FLASH_COMMANDS = $(shell ./insert_calibration.py $(ID))
 
+# Compiler flags
+# Optimize for debugging (results in too large file size)
+#CFLAGS += -Og
+# Optimize for size
 CFLAGS += -Os
+# Set correct port for GDB server
 GDB_PORT_NUMBER = 2331
 
 include $(TEMPLATE_PATH)Makefile
