@@ -311,6 +311,25 @@ void uart_write(uint32_t length, const uint8_t* tx){
 	USART_DMACmd(USART1, USART_DMAReq_Tx, DISABLE);
 }
 
+void uart_write_message(uint32_t length, const uint8_t* tx){
+
+	if (length == 0)
+		return;
+
+	// Start things off with a packet header
+	const uint8_t header[] = {0x80, 0x01, 0x80, 0x01};
+	uart_write(4, header);
+
+	// TODO: send timestamp using stm32f0xx_rtc.c / RTC_GetTimeStamp
+
+	// Send the message
+	uart_write(length, tx);
+
+	// Finish things off with a packet footer
+	const uint8_t footer[] = {0x80, 0xfe};
+	uart_write(2, footer);
+}
+
 // Only write data to the DW1000, and use DMA to do it.
 static void setup_dma_write (uint32_t length, const uint8_t* tx) {
 	static uint8_t throwAway;

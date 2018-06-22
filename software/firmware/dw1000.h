@@ -174,6 +174,7 @@ uint32_t dw1000_packet_data_time_in_us(uint16_t data_len);
 
 // Helpers
 void uart_write(uint32_t length, const uint8_t* tx);
+void uart_write_message(uint32_t length, const uint8_t* tx);
 
 // Main API
 dw1000_err_e  dw1000_init ();

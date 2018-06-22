@@ -282,7 +282,9 @@ int main () {
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
 
-	//Initialize UART1 on GPIO0 and GPIO1
+	//Initialize UART1 on GPIO1 and GPIO4
+    // Tx: GPIO1 -> Pin 27 -> PB6
+    // Rx: GPIO4 -> Pin 28 -> PB7
 	{
 		USART_InitTypeDef usartConfig;
 		GPIO_InitTypeDef gpioConfig;
@@ -310,6 +312,11 @@ int main () {
 		USART_Init(USART1, &usartConfig);
 
 		USART_Cmd(USART1, ENABLE);
+
+		// Test UART
+		uint8_t msg_length = 18;
+		uint8_t msg[18] = "Initialized UART\n";
+		uart_write_message(msg_length, msg);
 	}
 
 	// In case we need a timer, get one. This is used for things like periodic
