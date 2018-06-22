@@ -302,7 +302,7 @@ int main (void)
         tripoint_start_ranging(true, 10);
     }
 
-    // Signal end if initialization
+    // Signal end of initialization
     led_on(LED_0);
 
     // Loop: update location and advertise
