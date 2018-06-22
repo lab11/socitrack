@@ -5,7 +5,7 @@
 
 // CONSTS --------------------------------------------------------------------------------------------------------------
 
-// SUMMON URL (must be <= 20 characters to not throw NRF_ERROR_INVALID_LENGTH)
+// SUMMON URL (must be <= 17 characters to not throw NRF_ERROR_INVALID_LENGTH, as header overhead is 14 byte and packet has size <= 31)
 //#define PHYSWEB_URL "n.ethz.ch/~abiri/d"
 #define PHYSWEB_URL "bit.ly/p1R8"
 

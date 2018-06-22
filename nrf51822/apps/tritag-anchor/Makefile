@@ -41,8 +41,12 @@ SDK_VERSION = 9
 LIBRARY_PATHS += .  ../../src
 SOURCE_PATHS += ../../src
 
-#Compiler flags
+# Compiler flags
+# Optimize for debugging; as only the last optimization flag is actually use, delete "CFLAGS += 0s" in /nrf5x-base/make/Makefile : l. 237
+#CFLAGS = -Og
+# Optimize for size
 CFLAGS = -Os
+# Set correct port for GDB server
 GDB_PORT_NUMBER = 2331
 
 # Add empty variable to add flags over command line
