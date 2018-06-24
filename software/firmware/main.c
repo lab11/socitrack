@@ -312,11 +312,6 @@ int main () {
 		USART_Init(USART1, &usartConfig);
 
 		USART_Cmd(USART1, ENABLE);
-
-		// Test UART
-		uint8_t msg_length = 18;
-		uint8_t msg[18] = "Initialized UART\n";
-		uart_write_message(msg_length, msg);
 	}
 
 	// In case we need a timer, get one. This is used for things like periodic
@@ -328,6 +323,11 @@ int main () {
 	// of the settings on the DW1000.
 	start_dw1000();
 
+    // Test UART (does not succeed if done before)
+    uint8_t msg_length = 19;
+    uint8_t msg[19] = "Initialized UART\r\n";
+    uart_write_message(msg_length, msg);
+
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
 	// the host controller (that is using TriPoint for ranging/localization)
@@ -338,6 +338,7 @@ int main () {
 	// Need to wait for the host board to tell us what to do.
 	err = host_interface_wait();
 	if (err) error();
+
 #else
 
 	// DEBUG:

@@ -47,8 +47,8 @@ CFLAGS += $(CDBG)
 
 CFLAGS += -Wall -Wextra
 
-# Automatically add debugging symbols
-CFLAGS += -g
+# Automatically add debugging symbols (no effect due to the -s option later on in ../stm32f0-base/stm32f0xx-gcc-setup/template/Makefile)
+#CFLAGS += -g
 
 #The install locations of the STM Standard library
 #################################################
