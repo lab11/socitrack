@@ -54,7 +54,7 @@
 // When the tag is calculating range for each of the anchors given a bunch
 // of measurements, these define which percentile of the measurements to use.
 // They are split up to facilitate non-floating point math.
-// EXAMPLE: N=1, D=10 means take the 90th percentile.
+// EXAMPLE: N=1, D=10 means take the 10th percentile.
 #define RANGE_PERCENTILE_NUMERATOR 1
 #define RANGE_PERCENTILE_DENOMENATOR 10
 

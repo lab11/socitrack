@@ -611,7 +611,7 @@ static void calculate_ranges () {
 		// Then we are going to use the remainder decimal portion to get
 		// a scaled value to add to that base. And we are going to do this
 		// without floating point, so buckle up.
-		// EXAMPLE: if the 90th percentile would be index 3.4, we do:
+		// EXAMPLE: if the 10th percentile would be index 3.4, we do:
 		//                  distances[3] + 0.4*(distances[4]-distances[3])
 		int32_t result = distances_millimeters[bot] +
 			(((distances_millimeters[top]-distances_millimeters[bot]) * ((RANGE_PERCENTILE_NUMERATOR*num_valid_distances)

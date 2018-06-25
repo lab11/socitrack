@@ -238,10 +238,6 @@ void start_dw1000 () {
 				uDelay(10000);
 				tries++;
 			}
-			else {
-				// FIXME: shouldn't we break here if no error occurred?
-				//break;
-			}
 		} while (err && tries <= DW1000_NUM_CONTACT_TRIES_BEFORE_RESET);
 
 		if (err) {
