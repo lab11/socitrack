@@ -17,6 +17,8 @@
 #include "timer.h"
 #include "delay.h"
 #include "firmware.h"
+#include "SEGGER_RTT.h"
+#include "SEGGER_RTT_Conf.h"
 
 /******************************************************************************/
 // OS state
@@ -319,8 +321,16 @@ int main () {
 	// of the settings on the DW1000.
 	start_dw1000();
 
-	// Test UART (does not succeed if done before)
-	//uart_write_message(19, "Initialized UART\r\n");
+	// Test output channels
+    // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
+#ifdef DEBUG_OUTPUT_RTT
+    SEGGER_RTT_Init();
+    debug_msg("Initialized RTT\r\n");
+#endif
+    // 2. Test UART (does not succeed if done before)
+#ifdef DEBUG_OUTPUT_UART
+	uart_write_message(19, "Initialized UART\r\n");
+#endif
 
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
@@ -333,7 +343,7 @@ int main () {
 	err = host_interface_wait();
 	if (err) error();
 
-	//uart_write_debug(22, "Waiting for host...\r\n");
+	//debug_msg("Waiting for host...\r\n");
 
 #else
 
@@ -354,7 +364,7 @@ int main () {
 	// MAIN LOOP
 	while (1) {
 
-#ifndef	DEBUG
+#ifndef	DEBUG_OUTPUT_UART
 		PWR_EnterSleepMode(PWR_SLEEPEntry_WFI);
 		// PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 #endif

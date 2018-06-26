@@ -82,10 +82,14 @@ set(SOURCE_FILES
         include/system.h
         include/timer.h
         include/tripoint.h
+        include/SEGGER_RTT.h
+        include/SEGGER_RTT_Conf.h
         source/delay.c
         source/led.c
         source/prng.c
-        source/timer.c)
+        source/timer.c
+        source/SEGGER_RTT.c
+        source/SEGGER_RTT_printf.c)
 
 # Create dummy executable for CLion
 add_executable(project_software ${PROJ_FILES} ${SOURCE_FILES})

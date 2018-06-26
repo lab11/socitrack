@@ -331,7 +331,7 @@ void uart_write_message(uint32_t length, const char* msg){
 
 void uart_write_debug(uint32_t length, const char* msg) {
 
-#ifdef DEBUG
+#ifdef DEBUG_OUTPUT_UART
 	uart_write_message(length, msg);
 #endif
 

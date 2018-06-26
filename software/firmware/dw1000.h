@@ -44,7 +44,7 @@
 #define DW1000_DEFAULT_CALIBRATION 33000
 
 // Print debug output (can mess with correctness of code due to introduction of delays)
-//#define DEBUG 1
+//#define DEBUG_OUTPUT_UART 1
 
 /******************************************************************************/
 // Timing defines for this particular MCU
