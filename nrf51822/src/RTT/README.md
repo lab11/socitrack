@@ -8,11 +8,17 @@ Usage
 
 1. Start the J-Link Commander:	`$ JLinkExe`
 2. Connect to the device:
-	- `JLink>connect`
+	- `J-Link>connect`
 	- `Device> <press enter>`
 	- `TIF>s`
 	- `Speed> <press enter>`
 3. Connect the RTT viewer:	`$ JLinkRTTClient`
+4. If you have multiple RTT sessions in parallel, do the following:
+
+        $ JLinkExe -Device NRF51822 -if SWD -speed 4000 -SelectEmuBySN <J-Link S/N> -RTTTelnetPort 9300
+        J-Link>connect
+        
+        $ telnet localhost 9300
 
 To print inside the code, import `SEGGER_RTT.h`:
 - `debug_msg(const char* c)`: Prints a string on the terminal

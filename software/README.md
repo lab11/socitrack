@@ -37,7 +37,14 @@ https://www.segger.com/jlink-6-pin-needle-adapter.html.
         
    You can then use the J-Link RTT Viewer to see and log the packets:
    
-        JLinkRTTClient
+        $ JLinkRTTClient
+        
+   To specify the port you want to listen on, do the following:
+   
+        $ JLinkExe -Device STM32F031G6 -if SWD -speed 4000 -SelectEmuBySN <J-Link S/N> -RTTTelnetPort 9200
+        J-Link>connect
+        
+        $ telnet localhost 9200
 
 
 I2C API
