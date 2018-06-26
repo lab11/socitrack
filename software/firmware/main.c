@@ -320,7 +320,7 @@ int main () {
 	start_dw1000();
 
 	// Test UART (does not succeed if done before)
-	uart_write_message(19, "Initialized UART\r\n");
+	//uart_write_message(19, "Initialized UART\r\n");
 
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
@@ -333,7 +333,7 @@ int main () {
 	err = host_interface_wait();
 	if (err) error();
 
-	uart_write_debug(22, "Waiting for host...\r\n");
+	//uart_write_debug(22, "Waiting for host...\r\n");
 
 #else
 
