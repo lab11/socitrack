@@ -37,6 +37,7 @@
 
 #include "ble_config.h"
 #include "tripoint_interface.h"
+#include "SEGGER_RTT.h"
 
 /*******************************************************************************
  *   Configuration and settings
@@ -262,6 +263,8 @@ int main (void)
 
     // Initialization
     led_init(LED_0);
+    debug_msg("\r\n----------------------------------------------\r\n");
+    debug_msg("Initializing nRF...\r\n");
 
     // We default to doing ranging at the start
     app.app_ranging = 1;
@@ -279,6 +282,7 @@ int main (void)
 
     // Setup the advertisement to use the Eddystone format.
     // We include the device name in the scan response
+    debug_msg("Starting advertisement...\r\n");
     ble_advdata_t srdata;
     memset(&srdata, 0, sizeof(srdata));
     srdata.name_type = BLE_ADVDATA_FULL_NAME;
@@ -295,11 +299,16 @@ int main (void)
     err_code = tripoint_init(updateData);
     if (err_code == NRF_SUCCESS) {
         tripoint_inited = true;
+        debug_msg("Finished initialization\r\n");
+    }
+    else {
+        debug_msg("ERROR: Failed initialization!\r\n");
     }
 
     // Start the ranging
     if (tripoint_inited) {
         tripoint_start_ranging(true, 10);
+        debug_msg("Started ranging...\r\n");
     }
 
     // Signal end of initialization
@@ -311,6 +320,7 @@ int main (void)
         power_manage();
 
 		if (updated) {
+		    debug_msg("Updating location...\r\n");
 			tripointDataUpdate();
 		}
     }

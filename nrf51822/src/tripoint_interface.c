@@ -10,6 +10,7 @@
 #include "tritag.h"
 
 #include "tripoint_interface.h"
+#include "SEGGER_RTT.h"
 
 uint8_t response[256];
 
@@ -86,7 +87,12 @@ ret_code_t tripoint_init (tripoint_interface_data_cb_f cb) {
 		uint16_t id;
 		uint8_t version;
 		ret = tripoint_get_info(&id, &version);
-		if (ret != NRF_SUCCESS) return ret;
+		if (ret != NRF_SUCCESS) {
+		    debug_msg("ERROR: Failed to contact STM with error code ");
+		    debug_msg_int(ret);
+		    debug_msg("!\r\n");
+		    return ret;
+		}
 		if (id != TRIPOINT_ID) return NRF_ERROR_INVALID_DATA;
 	}
 

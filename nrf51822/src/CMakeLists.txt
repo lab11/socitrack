@@ -67,7 +67,11 @@ set(SOURCE_FILES
         tripoint_interface.c
         tripoint_interface.h
         tritag.c
-        tritag.h)
+        tritag.h
+        RTT/SEGGER_RTT.c
+        RTT/SEGGER_RTT.h
+        RTT/SEGGER_RTT_Conf.h
+        RTT/SEGGER_RTT_printf.c)
 
 # Create dummy executable for CLion
 add_executable(project_src ${SOURCE_FILES})
