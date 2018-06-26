@@ -55,8 +55,8 @@ uint32_t host_interface_init () {
 	rxStructure.wAddr2 = 0;               /* Not needed */
 
 	// Initialize local Transmission structures
-	txStructure.wNumData = BUFFER_SIZE;   /* Maximum Number of data to be received */
-	txStructure.pbBuffer = txBuffer;      /* Common Rx buffer for all received data */
+	txStructure.wNumData = BUFFER_SIZE;   /* Maximum Number of data to be sent */
+	txStructure.pbBuffer = txBuffer;      /* Common Tx buffer for all received data */
 	txStructure.wAddr1 = (I2C_OWN_ADDRESS << 1); /* The own board address */
 	txStructure.wAddr2 = 0;               /* Not needed */
 
@@ -178,6 +178,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_CONFIG: {
 
+            uart_write_debug(20, "Op code 2: Config\r\n");
 			// Just go back to waiting for a WRITE after a config message
 			host_interface_wait();
 
@@ -239,6 +240,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_DO_RANGE:
 
+            uart_write_debug(22, "Op code 4: Do range\r\n");
 			// Just need to go back to waiting for the host to write more
 			// after getting a sleep command
 			host_interface_wait();
@@ -252,6 +254,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_SLEEP:
 
+            uart_write_debug(19, "Op code 5: Sleep\r\n");
 			// Just need to go back to waiting for the host to write more
 			// after getting a sleep command
 			host_interface_wait();
@@ -264,6 +267,8 @@ void host_interface_rx_fired () {
 		// Resume the application.
 		/**********************************************************************/
 		case HOST_CMD_RESUME:
+
+            uart_write_debug(20, "Op code 6: Resume\r\n");
 			// Keep listening for the next command.
 			host_interface_wait();
 
@@ -333,6 +338,8 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		// Return the INFO array
 		/**********************************************************************/
 		case HOST_CMD_INFO:
+
+            uart_write_debug(18, "Op code 1: Info\r\n");
 			// Check what status the main application is in. If it has contacted
 			// the DW1000, then it will be ready and we return the correct
 			// info string. If it is not ready, we return the null string
@@ -351,6 +358,8 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		// Ask the TriPoint why it asserted the interrupt line.
 		/**********************************************************************/
 		case HOST_CMD_READ_INTERRUPT: {
+
+            uart_write_debug(23, "Op code 3: Interrupt\r\n");
 			// Clear interrupt
 			interrupt_host_clear();
 
@@ -367,6 +376,8 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		// Respond with the stored calibration values
 		/**********************************************************************/
 		case HOST_CMD_READ_CALIBRATION: {
+
+            uart_write_debug(25, "Op code 8: Calibration\r\n");
 			// Copy the raw values from the stored array
 			memcpy(txBuffer, dw1000_get_txrx_delay_raw(), 12);
 			host_interface_respond(12);

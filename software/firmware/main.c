@@ -319,10 +319,8 @@ int main () {
 	// of the settings on the DW1000.
 	start_dw1000();
 
-    // Test UART (does not succeed if done before)
-    uint8_t msg_length = 19;
-    uint8_t msg[19] = "Initialized UART\r\n";
-    uart_write_message(msg_length, msg);
+	// Test UART (does not succeed if done before)
+	uart_write_message(19, "Initialized UART\r\n");
 
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
@@ -334,6 +332,8 @@ int main () {
 	// Need to wait for the host board to tell us what to do.
 	err = host_interface_wait();
 	if (err) error();
+
+	uart_write_debug(22, "Waiting for host...\r\n");
 
 #else
 
@@ -354,8 +354,10 @@ int main () {
 	// MAIN LOOP
 	while (1) {
 
+#ifndef	DEBUG
 		PWR_EnterSleepMode(PWR_SLEEPEntry_WFI);
 		// PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
+#endif
 
 		GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
 		GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
