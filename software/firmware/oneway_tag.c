@@ -10,6 +10,8 @@
 #include "oneway_tag.h"
 #include "firmware.h"
 
+#if (TRIPOINT_ROLE == TRIPOINT_TAG)
+
 // Functions
 static void send_poll ();
 static void ranging_broadcast_subsequence_task ();
@@ -630,3 +632,5 @@ static void calculate_ranges () {
 		}
 	}
 }
+
+#endif
