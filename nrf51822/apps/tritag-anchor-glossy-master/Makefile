@@ -18,6 +18,7 @@ APPLICATION_SRCS += simple_ble.c
 APPLICATION_SRCS += simple_adv.c
 
 APPLICATION_SRCS += tripoint_interface.c
+APPLICATION_SRCS += SEGGER_RTT.c
 
 DEVICE = NRF51
 
@@ -40,6 +41,10 @@ SDK_VERSION = 9
 
 LIBRARY_PATHS += .  ../../src
 SOURCE_PATHS += ../../src
+
+# J-Link RTT
+LIBRARY_PATHS += ../../src/RTT
+SOURCE_PATHS += ../../src/RTT
 
 # Compiler flags
 # Optimize for debugging; as only the last optimization flag is actually use, delete "CFLAGS += 0s" in /nrf5x-base/make/Makefile : l. 237

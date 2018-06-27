@@ -325,7 +325,13 @@ int main () {
     // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
 #ifdef DEBUG_OUTPUT_RTT
     SEGGER_RTT_Init();
-    debug_msg("Initialized RTT\r\n");
+#if (TRIPOINT_ROLE == TRIPOINT_TAG)
+    debug_msg("Initialized RTT as TAG\r\n");
+#elif (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
+	debug_msg("Initialized RTT as ANCHOR\r\n");
+#else
+	debug_msg("Initialized RTT with unknown role\r\n");
+#endif
 #endif
     // 2. Test UART (does not succeed if done before)
 #ifdef DEBUG_OUTPUT_UART
