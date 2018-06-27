@@ -343,7 +343,7 @@ int main () {
 	err = host_interface_wait();
 	if (err) error();
 
-	//debug_msg("Waiting for host...\r\n");
+	debug_msg("Waiting for host...\r\n");
 
 #else
 
@@ -381,36 +381,44 @@ int main () {
 			interrupt_triggered = FALSE;
 
 			if (interrupts_triggered[INTERRUPT_TIMER_17] == TRUE) {
+			    // Glossy Timer
+			    debug_msg("Interrupt: TIMER_17 (Glossy)\r\n");
 				interrupts_triggered[INTERRUPT_TIMER_17] = FALSE;
 				interrupt_triggered = TRUE;
 				timer_17_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_TIMER_16] == TRUE) {
+			    // Tag/Anchor timer for SurePoint ranging
+			    debug_msg("Interrupt: TIMER_16 (Tag/Anchor)\r\n");
 				interrupts_triggered[INTERRUPT_TIMER_16] = FALSE;
 				interrupt_triggered = TRUE;
 				timer_16_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_DW1000] == TRUE) {
+			    debug_msg("Interrupt: DW1000\r\n");
 				interrupts_triggered[INTERRUPT_DW1000] = FALSE;
 				interrupt_triggered = TRUE;
 				dw1000_interrupt_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_RX] == TRUE) {
+			    debug_msg("Interrupt: I2C_RX\r\n");
 				interrupts_triggered[INTERRUPT_I2C_RX] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_rx_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_TX] == TRUE) {
+			    debug_msg("Interrupt: I2C_TX\r\n");
 				interrupts_triggered[INTERRUPT_I2C_TX] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_tx_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_TIMEOUT] == TRUE) {
+			    debug_msg("Interrupt: I2C_TIMEOUT\r\n");
 				interrupts_triggered[INTERRUPT_I2C_TIMEOUT] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_timeout_fired();

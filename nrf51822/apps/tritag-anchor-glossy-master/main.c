@@ -40,6 +40,7 @@ UWB Localization Tag used as an Anchor
 
 #include "ble_config.h"
 #include "tripoint_interface.h"
+#include "SEGGER_RTT.h"
 
 static app_timer_id_t  test_timer;
 
@@ -97,11 +98,10 @@ static void timers_init(void) {
 int main(void) {
     uint32_t err_code;
 
-    //
     // Initialization
-    //
-
     led_init(LED_0);
+    debug_msg("\r\n----------------------------------------------\r\n");
+    debug_msg("Initializing nRF...\r\n");
 
     // Get stored address
     memcpy(_ble_address, (uint8_t*) ADDRESS_FLASH_LOCATION, 6);
@@ -123,13 +123,19 @@ int main(void) {
     err_code = tripoint_init(tripointData);
     if (err_code == NRF_SUCCESS) {
         tripoint_inited = true;
+        debug_msg("Finished initialization\r\n");
+    }
+    else {
+        debug_msg("ERROR: Failed initialization!\r\n");
     }
 
     // Make this node an anchor
     if (tripoint_inited) {
         tripoint_start_anchor(true);
+        debug_msg("Started as a master anchor...\r\n");
     }
 
+    // Signal end of initialization
     led_on(LED_0);
 
     while (1) {

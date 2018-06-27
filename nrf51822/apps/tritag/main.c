@@ -168,6 +168,8 @@ void tripointDataUpdate ()
         // err_code = sd_ble_gatts_hvx(simple_ble_app->conn_handle, &notify_params);
 		sd_ble_gatts_hvx(simple_ble_app->conn_handle, &notify_params);
         // APP_ERROR_CHECK(err_code);
+
+        debug_msg("Sent BLE packet\r\n");
 	}
 
 	updated = 0;

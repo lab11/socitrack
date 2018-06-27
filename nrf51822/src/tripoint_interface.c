@@ -22,19 +22,35 @@ tripoint_interface_data_cb_f _data_callback = NULL;
 
 
 void tripoint_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
+
+	debug_msg("Detected interrupt on pin: ");
+	debug_msg_int(pin);
+	debug_msg("\r\n");
+
 	// verify interrupt is from tripoint
 	if (pin == TRIPOINT_INTERRUPT_PIN) {
+
 		// Ask whats up over I2C
 		uint32_t ret;
 		uint8_t cmd = TRIPOINT_CMD_READ_INTERRUPT;
 		ret = nrf_drv_twi_tx(&twi_instance, TRIPOINT_ADDRESS, &cmd, 1, false);
-		if (ret != NRF_SUCCESS) return;
+		if (ret != NRF_SUCCESS) {
+		    debug_msg("ERROR: ");
+            debug_msg_int(ret);
+            return;
+        }
+
+		debug_msg("Sent CMD_READ_INTERRUPT\r\n");
 
 		// Figure out the length of what we need to receive by
 		// checking the first byte of the response.
 		uint8_t len = 0;
 		ret = nrf_drv_twi_rx(&twi_instance, TRIPOINT_ADDRESS, &len, 1, true);
 		if (ret != NRF_SUCCESS) return;
+
+        debug_msg("Received length: ");
+        debug_msg_int(len);
+        debug_msg("\r\n");
 
 		// Read the rest of the packet
 		if (len == 0) {
@@ -45,6 +61,10 @@ void tripoint_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t
 		}
 
 		// Send back the I2C data
+		debug_msg("Received I2C response of length ");
+		debug_msg_int(len);
+		debug_msg("\r\n");
+
 		_data_callback(response, len);
 	}
 }
