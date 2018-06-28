@@ -57,6 +57,7 @@ void mark_interrupt (interrupt_source_e src) {
 }
 
 static void error () {
+    debug_msg("ERROR\r\n");
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 }
@@ -349,7 +350,7 @@ int main () {
 	err = host_interface_wait();
 	if (err) error();
 
-	debug_msg("Waiting for host...\r\n");
+	//debug_msg("Waiting for host...\r\n");
 
 #else
 
@@ -388,7 +389,7 @@ int main () {
 
 			if (interrupts_triggered[INTERRUPT_TIMER_17] == TRUE) {
 			    // Glossy Timer
-			    debug_msg("Interrupt: TIMER_17 (Glossy)\r\n");
+			    //debug_msg("Interrupt: TIMER_17 (Glossy)\r\n");
 				interrupts_triggered[INTERRUPT_TIMER_17] = FALSE;
 				interrupt_triggered = TRUE;
 				timer_17_fired();
@@ -396,14 +397,14 @@ int main () {
 
 			if (interrupts_triggered[INTERRUPT_TIMER_16] == TRUE) {
 			    // Tag/Anchor timer for SurePoint ranging
-			    debug_msg("Interrupt: TIMER_16 (Tag/Anchor)\r\n");
+			    //debug_msg("Interrupt: TIMER_16 (Tag/Anchor)\r\n");
 				interrupts_triggered[INTERRUPT_TIMER_16] = FALSE;
 				interrupt_triggered = TRUE;
 				timer_16_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_DW1000] == TRUE) {
-			    debug_msg("Interrupt: DW1000\r\n");
+			    //debug_msg("Interrupt: DW1000\r\n");
 				interrupts_triggered[INTERRUPT_DW1000] = FALSE;
 				interrupt_triggered = TRUE;
 				dw1000_interrupt_fired();

@@ -169,7 +169,9 @@ void tripointDataUpdate ()
 		sd_ble_gatts_hvx(simple_ble_app->conn_handle, &notify_params);
         // APP_ERROR_CHECK(err_code);
 
-        debug_msg("Sent BLE packet\r\n");
+        debug_msg("Sent BLE packet of length ");
+        debug_msg_int(len);
+        debug_msg("\r\n");
 	}
 
 	updated = 0;
@@ -302,15 +304,18 @@ int main (void)
     if (err_code == NRF_SUCCESS) {
         tripoint_inited = true;
         debug_msg("Finished initialization\r\n");
-    }
-    else {
+    } else {
         debug_msg("ERROR: Failed initialization!\r\n");
     }
 
     // Start the ranging
     if (tripoint_inited) {
-        tripoint_start_ranging(true, 10);
-        debug_msg("Started ranging...\r\n");
+        err_code = tripoint_start_ranging(true, 10);
+        if (err_code != NRF_SUCCESS) {
+            debug_msg("ERROR: Failed to start ranging!\r\n");
+        } else {
+            debug_msg("Started ranging...\r\n");
+        }
     }
 
     // Signal end of initialization
@@ -322,7 +327,7 @@ int main (void)
         power_manage();
 
 		if (updated) {
-		    debug_msg("Updating location...\r\n");
+		    //debug_msg("Updating location...\r\n");
 			tripointDataUpdate();
 		}
     }

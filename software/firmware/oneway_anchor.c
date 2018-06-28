@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "delay.h"
 #include "firmware.h"
+#include "SEGGER_RTT.h"
 
 #if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 
@@ -236,6 +237,8 @@ static void ranging_listening_window_setup () {
 	// Set the listening window index
 	oa_scratch->ranging_listening_window_num = 0;
 
+	debug_msg("Prepare to respond to TAG...\r\n");
+
 	// Determine which antenna we are going to use for
 	// the response.
 	uint8_t max_packets = 0;
@@ -267,6 +270,8 @@ static void anchor_txcallback (const dwt_callback_data_t *txd) {
 static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 
 	timer_disable_interrupt(oa_scratch->anchor_timer);
+
+	//debug_msg("Received DW1000 packet\r\n");
 
 	if (rxd->event == DWT_SIG_RX_OKAY) {
 
@@ -305,6 +310,12 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 					// We are currently not ranging with any tags.
 
 					if (rx_poll_pkt->subsequence < NUM_RANGING_CHANNELS) {
+
+					    /*debug_msg("Discovered new tag with EUI ");
+					    debug_msg_int(rx_poll_pkt->header.sourceAddr[EUI_LEN-1] >> 4);
+					    debug_msg_int(rx_poll_pkt->header.sourceAddr[EUI_LEN-1] & 0x0F);
+					    debug_msg("\r\n");*/
+
 						// We are idle and this is one of the first packets
 						// that the tag sent. Start listening for this tag's
 						// ranging broadcast packets.

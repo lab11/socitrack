@@ -23,9 +23,9 @@ tripoint_interface_data_cb_f _data_callback = NULL;
 
 void tripoint_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
 
-	debug_msg("Detected interrupt on pin: ");
+	/*debug_msg("Detected interrupt on pin: ");
 	debug_msg_int(pin);
-	debug_msg("\r\n");
+	debug_msg("\r\n");*/
 
 	// verify interrupt is from tripoint
 	if (pin == TRIPOINT_INTERRUPT_PIN) {
@@ -40,17 +40,13 @@ void tripoint_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t
             return;
         }
 
-		debug_msg("Sent CMD_READ_INTERRUPT\r\n");
+		//debug_msg("Sent CMD_READ_INTERRUPT\r\n");
 
 		// Figure out the length of what we need to receive by
 		// checking the first byte of the response.
 		uint8_t len = 0;
 		ret = nrf_drv_twi_rx(&twi_instance, TRIPOINT_ADDRESS, &len, 1, true);
 		if (ret != NRF_SUCCESS) return;
-
-        debug_msg("Received length: ");
-        debug_msg_int(len);
-        debug_msg("\r\n");
 
 		// Read the rest of the packet
 		if (len == 0) {

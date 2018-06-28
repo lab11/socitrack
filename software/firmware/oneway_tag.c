@@ -9,6 +9,7 @@
 #include "dw1000.h"
 #include "oneway_tag.h"
 #include "firmware.h"
+#include "SEGGER_RTT.h"
 
 #if (TRIPOINT_ROLE == TRIPOINT_TAG)
 
@@ -90,6 +91,8 @@ void oneway_tag_init (void *app_scratchspace) {
 // ranging broadcasts.
 dw1000_err_e oneway_tag_start_ranging_event () {
 	dw1000_err_e err;
+
+	//debug_msg("Start ranging event...\r\n");
 
 	if (ot_scratch->state != TSTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
@@ -384,8 +387,9 @@ static void report_range () {
 	// New state
 	ot_scratch->state = TSTATE_CALCULATE_RANGE;
 
-	// Calculate ranges
-	//calculate_ranges();
+	debug_msg("Calculating & reporting ranges to ");
+	debug_msg_int(ot_scratch->anchor_response_count);
+	debug_msg(" anchors\r\n");
 
 	// Push data out over UART if configured to do so
 #ifdef UART_DATA_OFFLOAD
@@ -427,6 +431,9 @@ static void report_range () {
 	const uint8_t footer[] = {0x80, 0xfe};
 	uart_write(2, footer);
 #endif
+
+    // Calculate ranges
+    calculate_ranges();
 
 	// Decide what we should do with these ranges. We can either report
 	// these right back to the host, or we can try to get the anchors

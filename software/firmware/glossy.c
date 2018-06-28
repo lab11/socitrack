@@ -10,6 +10,7 @@
 #include "oneway_common.h"
 #include "timer.h"
 #include "prng.h"
+#include "SEGGER_RTT.h"
 
 void send_sync(uint32_t delay_time);
 
@@ -121,10 +122,12 @@ void glossy_init(glossy_role_e role){
 
 	// If the anchor, let's kick off a task which unconditionally kicks off sync messages with depth = 0
 	if(role == GLOSSY_MASTER){
+#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		_lwb_valid = TRUE;
 		uint8 ldok = OTP_SF_OPS_KICK | OTP_SF_OPS_SEL_TIGHT;
 		dwt_writetodevice(OTP_IF_ID, OTP_SF, 1, &ldok); // set load LDE kick bit
 		_last_time_sent = dwt_readsystimestamphi32() & 0xFFFFFFFE;
+#endif
 	}
 
 	// The glossy timer acts to synchronize everyone to a common timebase
@@ -152,6 +155,7 @@ void glossy_sync_task(){
 	_lwb_counter++;
 
 	if(_role == GLOSSY_MASTER){
+#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		// During the first timeslot, put ourselves back into RX mode
 		if(_lwb_counter == 1){
 			dwt_rxenable(0);
@@ -181,6 +185,7 @@ void glossy_sync_task(){
 			send_sync(_last_time_sent);
 			_sending_sync = TRUE;
 		}
+#endif
 	} else {
 		// Force ourselves into RX mode if we still haven't received any sync floods...
 		// TODO: This is a hack... :(
@@ -189,6 +194,8 @@ void glossy_sync_task(){
 			dw1000_update_channel(1);
 			dw1000_choose_antenna(0);
 			dwt_rxenable(0);
+
+			//debug_msg("Not in sync with Glossy master (yet)\r\n");
 		}
 
 		else {
@@ -198,6 +205,9 @@ void glossy_sync_task(){
 				dw1000_update_channel(1);
 				dw1000_choose_antenna(0);
 				if((!_lwb_scheduled && _lwb_sched_en) || _sched_req_pkt.deschedule_flag){
+
+				    //debug_msg("Sending schedule request...\r\n");
+
 					dwt_forcetrxoff();
 
 					uint16_t frame_len = sizeof(struct pp_sched_req_flood);
@@ -234,6 +244,7 @@ void glossy_sync_task(){
 				   (((_lwb_counter - 2)/LWB_SLOTS_PER_RANGE) % _lwb_num_timeslots == _lwb_mod_timeslot) && 
 				   ((_lwb_counter - 2) % LWB_SLOTS_PER_RANGE == 0)){
 					// Our scheduled timeslot!  Call the timeslot callback which will likely kick off a ranging event
+                    // FIXME: The schedule is repeated internally as often as possible in a round of 12 slots (e.g. a single node ranges 12 times per round)
 					_lwb_schedule_callback();
 				}
 
@@ -260,10 +271,12 @@ void lwb_set_sched_callback(void (*callback)(void)){
 
 void glossy_process_txcallback(){
 	if(_role == GLOSSY_MASTER && _sending_sync){
+#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		// Sync has sent, set the timer to send the next one at a later time
 		timer_reset(_glossy_timer, 0);
 		_lwb_counter = 0;
 		_sending_sync = FALSE;
+#endif
 	} else if(_role == GLOSSY_SLAVE){
 		if(_glossy_currently_flooding){
 			// We're flooding, keep doing it until the max depth!
@@ -320,6 +333,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 	dw_timestamp += _time_overflow;
 
 	if(_role == GLOSSY_MASTER){
+#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		// If this is a schedule request, try to fit the requesting tag into the schedule
 		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ){
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
@@ -366,6 +380,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 		_total_syncs_received++;
 #endif
 		return;
+#endif
 	}
 
 	else if(_role == GLOSSY_SLAVE){
@@ -399,6 +414,11 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			if(_lwb_scheduled && ((in_glossy_sync->tag_ranging_mask & ((uint64_t)(1) << _lwb_timeslot)) == 0))
 				_lwb_scheduled = FALSE;
 			_lwb_num_timeslots = uint64_count_ones(in_glossy_sync->tag_ranging_mask);
+
+			/*debug_msg("Scheduled tags this round: ");
+			debug_msg_int(_lwb_num_timeslots);
+			debug_msg("\r\n");*/
+
 			_lwb_mod_timeslot = uint64_count_ones(in_glossy_sync->tag_ranging_mask & (((uint64_t)(1) << _lwb_timeslot) - 1));
 
 #ifdef GLOSSY_ANCHOR_SYNC_TEST

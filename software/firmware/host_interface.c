@@ -199,6 +199,13 @@ void host_interface_rx_fired () {
 			// Check which application we should run
 			my_app = (config_main & HOST_PKT_CONFIG_MAIN_APP_MASK) >> HOST_PKT_CONFIG_MAIN_APP_SHIFT;
 
+            /*debug_msg("Role: ");
+            debug_msg_int(my_role);
+            debug_msg("; Glossy Role: ");
+            debug_msg_int(my_glossy_role);
+            debug_msg("; App: ");
+            debug_msg_int(my_app);*/
+
 			// Now that we know what this module is going to be, we can
 			// interpret the remainder of the packet.
 			if (my_app == APP_ONEWAY) {
@@ -298,6 +305,8 @@ void host_interface_rx_fired () {
 // to go back to waiting for a WRITE.
 void host_interface_tx_fired () {
 	host_interface_wait();
+
+	//debug_msg("Data sent\r\n");
 }
 
 // Called after timeout
@@ -340,7 +349,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		/**********************************************************************/
 		case HOST_CMD_INFO:
 
-            debug_msg("Op code 1: Info\r\n");
+            //debug_msg("Op code 1: Info\r\n");
 			// Check what status the main application is in. If it has contacted
 			// the DW1000, then it will be ready and we return the correct
 			// info string. If it is not ready, we return the null string
@@ -378,7 +387,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		/**********************************************************************/
 		case HOST_CMD_READ_CALIBRATION: {
 
-            debug_msg("Op code 8: Calibration\r\n");
+            //debug_msg("Op code 8: Calibration\r\n");
 			// Copy the raw values from the stored array
 			memcpy(txBuffer, dw1000_get_txrx_delay_raw(), 12);
 			host_interface_respond(12);
