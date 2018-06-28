@@ -17,6 +17,9 @@
 #define TRIPOINT_CMD_SET_LOCATION     0x07
 #define TRIPOINT_CMD_READ_CALIBRATION 0x08
 
+// Defines for identifying data sent to host
+#define HOST_IFACE_INTERRUPT_RANGES         0x01
+#define HOST_IFACE_INTERRUPT_CALIBRATION    0x02
 
 typedef void (*tripoint_interface_data_cb_f)(uint8_t* data, uint32_t len);
 

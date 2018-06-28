@@ -78,6 +78,7 @@ Purpose : Implementation of SEGGER real-time terminal which allows
 
 void   debug_msg(const char* s);
 void   debug_msg_int(int i);
+void   debug_msg_hex(int i);
 
 /*********************************************************************
 *

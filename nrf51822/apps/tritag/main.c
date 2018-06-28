@@ -141,6 +141,45 @@ void updateData (uint8_t * data, uint32_t len)
 	memcpy(app.app_raw_response_buffer, data, copy_len);
 	blobLen = copy_len;
 
+    /* Print ranging packet
+       0:   Length of the included payload (not including this byte)
+       1:   Interrupt_reason
+
+       Packet:
+       0:   Number of ranges
+       1-9: Ranging response Nr. 1
+
+       Per ranging:
+       8:   EUI
+       4:   Range in mm
+    */
+	debug_msg("Interrupt with reason ");
+	debug_msg_int(data[0]);
+
+	if (data[0] == HOST_IFACE_INTERRUPT_RANGES) {
+        debug_msg(", included number of anchors: ");
+        debug_msg_int(data[1]);
+
+        const uint8_t packet_overhead = 2;
+        const uint8_t ranging_length = 12;
+        uint8_t nr_ranges = ((uint8_t) len - packet_overhead) / ranging_length;
+
+        for (uint8_t i = 0; i < nr_ranges; i++) {
+            uint8_t offset = packet_overhead + i * ranging_length;
+            debug_msg("\r\n Nr ");
+            debug_msg_int(i + 1);
+            debug_msg(": Anchor ");
+            debug_msg_hex(data[offset + 0] >> 4);
+            debug_msg_hex(data[offset + 0] & 0x0F);
+            debug_msg(" with range ");
+
+            int32_t range = (data[offset + 8] << 3*8) + (data[offset + 9] << 2*8) + (data[offset + 10] << 1*8) + data[offset + 11];
+            debug_msg_int(range);
+            debug_msg("\r\n");
+        }
+    }
+
+	// Trigger tripointDataUpdate from main loop
 	updated = 1;
 }
 
