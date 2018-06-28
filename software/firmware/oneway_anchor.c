@@ -312,8 +312,8 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 					if (rx_poll_pkt->subsequence < NUM_RANGING_CHANNELS) {
 
 					    /*debug_msg("Discovered new tag with EUI ");
-					    debug_msg_int(rx_poll_pkt->header.sourceAddr[EUI_LEN-1] >> 4);
-					    debug_msg_int(rx_poll_pkt->header.sourceAddr[EUI_LEN-1] & 0x0F);
+					    debug_msg_int(rx_poll_pkt->header.sourceAddr[0] >> 4);
+					    debug_msg_int(rx_poll_pkt->header.sourceAddr[0] & 0x0F);
 					    debug_msg("\r\n");*/
 
 						// We are idle and this is one of the first packets

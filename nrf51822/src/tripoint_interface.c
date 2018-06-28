@@ -58,7 +58,8 @@ void tripoint_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t
 
 		// Send back the I2C data
 		debug_msg("Received I2C response of length ");
-		debug_msg_int(len);
+		debug_msg_int(len / 10);
+		debug_msg_int(len % 10);
 		debug_msg("\r\n");
 
 		_data_callback(response, len);

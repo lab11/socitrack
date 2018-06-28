@@ -226,6 +226,11 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 			// Only save this response if we haven't already seen this anchor
 			if (!anc_already_found) {
 
+                debug_msg("Received an Anchor response packet from ");
+                debug_msg_int(anc_final->ieee154_header_unicast.sourceAddr[0] >> 4);
+                debug_msg_int(anc_final->ieee154_header_unicast.sourceAddr[0] & 0x0F);
+                debug_msg("\r\n");
+
 				// Save the anchor address
 				memcpy(ot_scratch->anchor_responses[ot_scratch->anchor_response_count].anchor_addr, anc_final->ieee154_header_unicast.sourceAddr, EUI_LEN);
 

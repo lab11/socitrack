@@ -170,7 +170,8 @@ void tripointDataUpdate ()
         // APP_ERROR_CHECK(err_code);
 
         debug_msg("Sent BLE packet of length ");
-        debug_msg_int(len);
+        debug_msg_int(len / 10);
+        debug_msg_int(len % 10);
         debug_msg("\r\n");
 	}
 
