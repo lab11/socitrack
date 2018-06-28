@@ -159,6 +159,7 @@ void updateData (uint8_t * data, uint32_t len)
 	if (data[0] == HOST_IFACE_INTERRUPT_RANGES) {
         debug_msg(", included number of anchors: ");
         debug_msg_int(data[1]);
+        debug_msg("\r\n");
 
         const uint8_t packet_overhead = 2;
         const uint8_t ranging_length = 12;
@@ -166,14 +167,15 @@ void updateData (uint8_t * data, uint32_t len)
 
         for (uint8_t i = 0; i < nr_ranges; i++) {
             uint8_t offset = packet_overhead + i * ranging_length;
-            debug_msg("\r\n Nr ");
+            debug_msg(" Nr ");
             debug_msg_int(i + 1);
             debug_msg(": Anchor ");
             debug_msg_hex(data[offset + 0] >> 4);
             debug_msg_hex(data[offset + 0] & 0x0F);
             debug_msg(" with range ");
 
-            int32_t range = (data[offset + 8] << 3*8) + (data[offset + 9] << 2*8) + (data[offset + 10] << 1*8) + data[offset + 11];
+            // Little-endian notation
+            int32_t range = data[offset + 8] + (data[offset + 9] << 1*8) + (data[offset + 10] << 2*8) + (data[offset + 11] << 3*8);
             debug_msg_int(range);
             debug_msg("\r\n");
         }

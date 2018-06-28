@@ -387,7 +387,7 @@ void debug_msg_int(int i) {
         SEGGER_RTT_WriteString(0, msg_int);
 
         // Convert to positive number
-        i = 128 - (i & 0xEFFFFFFF);
+        i = ~i + 1;
     } else if (i == 0) {
         // Special case: 0
         msg_int[0] = '0';
