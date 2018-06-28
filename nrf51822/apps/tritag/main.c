@@ -176,7 +176,19 @@ void updateData (uint8_t * data, uint32_t len)
 
             // Little-endian notation
             int32_t range = data[offset + 8] + (data[offset + 9] << 1*8) + (data[offset + 10] << 2*8) + (data[offset + 11] << 3*8);
-            debug_msg_int(range);
+            
+            if (range > ONEWAY_TAG_RANGE_MIN) {
+                debug_msg_int(range);
+            } else if (range == ONEWAY_TAG_RANGE_ERROR_NO_OFFSET) {
+                debug_msg("ERROR_NO_OFFSET");
+            } else if (range == ONEWAY_TAG_RANGE_ERROR_TOO_FEW_RANGES) {
+                debug_msg("ERROR_TOO_FEW_RANGES");
+            } else if (range == ONEWAY_TAG_RANGE_ERROR_MISC) {
+                debug_msg("ERROR_MISC");
+            } else {
+                debug_msg("INVALID");
+            }
+
             debug_msg("\r\n");
         }
     }

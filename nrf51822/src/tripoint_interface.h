@@ -21,6 +21,17 @@
 #define HOST_IFACE_INTERRUPT_RANGES         0x01
 #define HOST_IFACE_INTERRUPT_CALIBRATION    0x02
 
+// Ranging errors
+#define ONEWAY_TAG_RANGE_MIN (-1000)
+// The ANCHOR did not receive matching packets from the first three cycle.
+// This prevents us from calculating clock skew, and we have to skip this anchor range.
+#define ONEWAY_TAG_RANGE_ERROR_NO_OFFSET 0x80000001
+// The anchor did not receive enough packets from the tag, so we don't have
+// enough observations (ranges) to actually calculate a range to this anchor.
+#define ONEWAY_TAG_RANGE_ERROR_TOO_FEW_RANGES 0x80000002
+// Something else went wrong that we don't have pinned down.
+#define ONEWAY_TAG_RANGE_ERROR_MISC 0x8000000F
+
 typedef void (*tripoint_interface_data_cb_f)(uint8_t* data, uint32_t len);
 
 
