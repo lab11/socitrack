@@ -144,7 +144,9 @@ void oneway_tag_stop () {
 	//glossy_deschedule();
 
 	// Use the DW1000 library to put the chip to sleep
-	//dw1000_sleep();
+	dw1000_sleep();
+
+	debug_msg("Put DW1000 into sleep...\r\n");
 }
 
 // Called after the TAG has transmitted a packet.

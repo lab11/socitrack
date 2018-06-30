@@ -911,6 +911,15 @@ dw1000_err_e dw1000_wakeup () {
 	return DW1000_WAKEUP_SUCCESS;
 }
 
+dw1000_err_e dw1000_force_wakeup () {
+
+    // Disable check
+    _dw1000_asleep = TRUE;
+
+    // Now wake up
+    return dw1000_wakeup();
+}
+
 // Call to change the DW1000 channel and force set all of the configs
 // that are needed when changing channels.
 void dw1000_update_channel (uint8_t chan) {

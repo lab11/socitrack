@@ -241,12 +241,20 @@ void start_dw1000 () {
 				uDelay(10000);
 				tries++;
 			}
+
+			// Try to wake up, assuming that DW1000 is sleeping
+            if (err && (tries > DW1000_NUM_CONTACT_TRIES_BEFORE_RESET/2)) {
+				debug_msg("Rise and shine, sunny boy...\r\n");
+				dw1000_force_wakeup();
+            }
+
 		} while (err && tries <= DW1000_NUM_CONTACT_TRIES_BEFORE_RESET);
 
 		if (err) {
 			// We never got the DW1000 to respond. This puts us in a really
 			// bad spot. Maybe if we just wait for a while things will get
 			// better?
+            debug_msg("ERROR: DW1000 does not respond!\r\n");
 			mDelay(50000);
 		} else {
 			// Success
@@ -320,6 +328,7 @@ int main () {
 	// Next up do some preliminary setup of the DW1000. This mostly configures
 	// pins and hardware peripherals, as well as straightening out some
 	// of the settings on the DW1000.
+    //debug_msg("Configuring DW1000...\r\n");
 	start_dw1000();
 
 	// Test output channels
