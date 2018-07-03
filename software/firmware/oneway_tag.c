@@ -143,10 +143,10 @@ void oneway_tag_stop () {
 	// Deschedule the tag's LWB slot since we're done
 	//glossy_deschedule();
 
-	// Use the DW1000 library to put the chip to sleep
-	dw1000_sleep();
+	// FIXME: Use the DW1000 library to put the chip to sleep
+	//dw1000_sleep();
 
-	debug_msg("Put DW1000 into sleep...\r\n");
+	//debug_msg("Put DW1000 into sleep...\r\n");
 }
 
 // Called after the TAG has transmitted a packet.

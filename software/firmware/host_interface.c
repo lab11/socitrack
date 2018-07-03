@@ -230,6 +230,11 @@ void host_interface_rx_fired () {
 				polypoint_configure_app(my_app, &oneway_config);
 				polypoint_start();
 
+				// Shut down for Power testing of nRF (also: turn off glossy_init() and disable debug output)
+				/*#include <stm32f0xx_pwr.h>
+				polypoint_stop();
+				PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);*/
+
 			} else if (my_app == APP_CALIBRATION) {
 				//// Run the calibration application to find the TX and RX
 				//// delays in the node.

@@ -378,6 +378,8 @@ int main (void)
     // Loop: update location and advertise
     while (1) {
 
+        // For power measurements: Disable timers (timers_init()) and comment the lines below power_manage(); if bluetooth should be disabled, comment eddystone_adv()
+        //debug_msg("Going back go sleep...\r\n");
         power_manage();
 
 		if (updated) {
