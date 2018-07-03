@@ -4019,8 +4019,8 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 </library>
 </libraries>
 <attributes>
-<attribute name="AUTHOR" value="Brad Campbell"/>
-<attribute name="REV" value="A"/>
+<attribute name="AUTHOR" value="Andreas Biri"/>
+<attribute name="REV" value="C"/>
 <attribute name="TITLE" value="TriTag"/>
 </attributes>
 <variantdefs>
