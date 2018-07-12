@@ -5471,24 +5471,19 @@ Source: http://www.mouser.com/ds/2/392/products_18-2245.pdf</description>
 <library name="crystals">
 <description>&lt;b&gt;LAB11&lt;/b&gt; - Crystals of various frequencies.</description>
 <packages>
-<package name="FA-128">
-<description>FA-128 Crystal footprint</description>
-<smd name="4" x="-0.725" y="0.575" dx="0.95" dy="0.85" layer="1"/>
-<smd name="3" x="0.725" y="0.575" dx="0.95" dy="0.85" layer="1"/>
-<smd name="1" x="-0.725" y="-0.575" dx="0.95" dy="0.85" layer="1"/>
-<smd name="2" x="0.725" y="-0.575" dx="0.95" dy="0.85" layer="1"/>
-<wire x1="-1" y1="0.8" x2="-1" y2="0" width="0.127" layer="21"/>
-<wire x1="-1" y1="0" x2="-1" y2="-0.8" width="0.127" layer="21"/>
-<wire x1="-1" y1="-0.8" x2="0" y2="-0.8" width="0.127" layer="21"/>
-<wire x1="0" y1="-0.8" x2="1" y2="-0.8" width="0.127" layer="21"/>
-<wire x1="1" y1="-0.8" x2="1" y2="0.8" width="0.127" layer="21"/>
-<wire x1="1" y1="0.8" x2="-1" y2="0.8" width="0.127" layer="21"/>
-<wire x1="0" y1="0" x2="0" y2="-0.8" width="0.127" layer="21"/>
-<wire x1="0" y1="-1.2" x2="-1.4" y2="-1.2" width="0.127" layer="21"/>
-<wire x1="-1.4" y1="-1.2" x2="-1.4" y2="0" width="0.127" layer="21"/>
-<text x="0" y="1.1" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-2.3" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
-<wire x1="0" y1="0" x2="-1" y2="0" width="0.127" layer="21"/>
+<package name="FA-20H">
+<description>FA-20H 2.5x2.0mm</description>
+<smd name="2" x="-0.7" y="-0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<smd name="3" x="0.7" y="-0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<smd name="1" x="-0.7" y="0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<smd name="4" x="0.7" y="0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<wire x1="-1" y1="1.25" x2="-1" y2="-1.25" width="0.127" layer="21"/>
+<wire x1="-1" y1="-1.25" x2="1" y2="-1.25" width="0.127" layer="21"/>
+<wire x1="1" y1="-1.25" x2="1" y2="1.25" width="0.127" layer="21"/>
+<wire x1="1" y1="1.25" x2="-1" y2="1.25" width="0.127" layer="21"/>
+<circle x="-1.6" y="1.2" radius="0.14141875" width="0.127" layer="21"/>
+<text x="-1" y="1.6" size="0.5" layer="25">&gt;NAME</text>
+<text x="-1" y="-2.07" size="0.5" layer="27">&gt;VALUE</text>
 </package>
 </packages>
 <symbols>
@@ -5508,22 +5503,23 @@ Source: http://www.mouser.com/ds/2/392/products_18-2245.pdf</description>
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="FA-128" prefix="X">
-<description>Epson MHz RANGE CRYSTAL UNIT&lt;br&gt;
-ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
-&lt;a&gt;http://www.digikey.com/product-search/en?FV=ffec63d1&lt;/a&gt;</description>
+<deviceset name="FA-20H" prefix="X">
+<description>&lt;b&gt;Description:&lt;/b&gt; Oscillator by EPSON from 12MHz to 54 MHz</description>
 <gates>
-<gate name="G$1" symbol="CRYSTAL-GND" x="0" y="0"/>
+<gate name="X1" symbol="CRYSTAL-GND" x="0" y="0"/>
 </gates>
 <devices>
-<device name="" package="FA-128">
+<device name="" package="FA-20H">
 <connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="3"/>
-<connect gate="G$1" pin="GND" pad="2 4"/>
+<connect gate="X1" pin="1" pad="1"/>
+<connect gate="X1" pin="2" pad="3"/>
+<connect gate="X1" pin="GND" pad="2 4"/>
 </connects>
 <technologies>
-<technology name=""/>
+<technology name="">
+<attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" constant="no"/>
+<attribute name="MANUFACTURER" value="EPSON" constant="no"/>
+</technology>
 </technologies>
 </device>
 </devices>
@@ -5603,11 +5599,20 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 <part name="SUPPLY16" library="umich" deviceset="GND" device=""/>
 <part name="SUPPLY17" library="umich" deviceset="GND" device=""/>
 <part name="SUPPLY18" library="umich" deviceset="GND" device=""/>
-<part name="X1" library="crystals" deviceset="FA-128" device=""/>
-<part name="C30" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF"/>
-<part name="C31" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF"/>
+<part name="C30" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="8.5pF"/>
+<part name="C31" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="8.5pF"/>
 <part name="+3V1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="+3V3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
+<part name="C32" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="8pF"/>
+<part name="C33" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="8pF"/>
+<part name="X1" library="crystals" deviceset="FA-20H" device="" value="38.4M">
+<attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead"/>
+<attribute name="DIGIKEY" value="SER3631CT-ND"/>
+</part>
+<part name="X2" library="crystals" deviceset="FA-20H" device="" value="16M">
+<attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead"/>
+<attribute name="DIGIKEY" value="SER3913CT-ND"/>
+</part>
 </parts>
 <sheets>
 <sheet>
@@ -5671,17 +5676,26 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 <instance part="C28" gate="G$1" x="241.3" y="152.4" rot="R90"/>
 <instance part="C29" gate="G$1" x="241.3" y="124.46" rot="R90"/>
 <instance part="SUPPLY12" gate="1" x="152.4" y="132.08" rot="R270"/>
-<instance part="SUPPLY13" gate="1" x="124.46" y="15.24"/>
+<instance part="SUPPLY13" gate="1" x="20.32" y="12.7"/>
 <instance part="SUPPLY14" gate="1" x="124.46" y="7.62"/>
 <instance part="SUPPLY15" gate="1" x="152.4" y="116.84" rot="R270"/>
 <instance part="SUPPLY16" gate="1" x="139.7" y="7.62"/>
 <instance part="SUPPLY17" gate="1" x="154.94" y="81.28"/>
 <instance part="SUPPLY18" gate="1" x="233.68" y="86.36"/>
-<instance part="X1" gate="G$1" x="233.68" y="104.14"/>
-<instance part="C30" gate="G$1" x="226.06" y="96.52"/>
-<instance part="C31" gate="G$1" x="241.3" y="96.52"/>
+<instance part="C30" gate="G$1" x="226.06" y="99.06"/>
+<instance part="C31" gate="G$1" x="241.3" y="99.06"/>
 <instance part="+3V1" gate="G$1" x="27.94" y="99.06"/>
 <instance part="+3V3" gate="G$1" x="139.7" y="15.24"/>
+<instance part="C32" gate="G$1" x="12.7" y="25.4"/>
+<instance part="C33" gate="G$1" x="27.94" y="25.4"/>
+<instance part="X1" gate="X1" x="233.68" y="104.14">
+<attribute name="DIGIKEY" x="233.68" y="104.14" size="1.778" layer="96" display="off"/>
+<attribute name="DESCRIPTION" x="233.68" y="104.14" size="1.778" layer="96" display="off"/>
+</instance>
+<instance part="X2" gate="X1" x="20.32" y="30.48">
+<attribute name="DIGIKEY" x="20.32" y="30.48" size="1.778" layer="96" display="off"/>
+<attribute name="DESCRIPTION" x="20.32" y="30.48" size="1.778" layer="96" display="off"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -5851,17 +5865,6 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 <wire x1="152.4" y1="86.36" x2="154.94" y2="86.36" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="C30" gate="G$1" pin="2"/>
-<pinref part="C31" gate="G$1" pin="2"/>
-<wire x1="226.06" y1="91.44" x2="233.68" y2="91.44" width="0.1524" layer="91"/>
-<wire x1="233.68" y1="91.44" x2="241.3" y2="91.44" width="0.1524" layer="91"/>
-<wire x1="233.68" y1="91.44" x2="233.68" y2="88.9" width="0.1524" layer="91"/>
-<junction x="233.68" y="91.44"/>
-<pinref part="X1" gate="G$1" pin="GND"/>
-<wire x1="233.68" y1="99.06" x2="233.68" y2="91.44" width="0.1524" layer="91"/>
-<pinref part="SUPPLY18" gate="1" pin="GND"/>
-</segment>
-<segment>
 <pinref part="U2" gate="U1" pin="TESTMODE"/>
 <wire x1="157.48" y1="116.84" x2="154.94" y2="116.84" width="0.1524" layer="91"/>
 <pinref part="SUPPLY15" gate="1" pin="GND"/>
@@ -5870,6 +5873,32 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 <pinref part="U2" gate="U1" pin="FORCEON"/>
 <wire x1="157.48" y1="132.08" x2="154.94" y2="132.08" width="0.1524" layer="91"/>
 <pinref part="SUPPLY12" gate="1" pin="GND"/>
+</segment>
+<segment>
+<pinref part="C30" gate="G$1" pin="2"/>
+<wire x1="226.06" y1="93.98" x2="226.06" y2="91.44" width="0.1524" layer="91"/>
+<pinref part="C31" gate="G$1" pin="2"/>
+<wire x1="226.06" y1="91.44" x2="233.68" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="233.68" y1="91.44" x2="241.3" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="241.3" y1="91.44" x2="241.3" y2="93.98" width="0.1524" layer="91"/>
+<pinref part="X1" gate="X1" pin="GND"/>
+<wire x1="233.68" y1="99.06" x2="233.68" y2="91.44" width="0.1524" layer="91"/>
+<junction x="233.68" y="91.44"/>
+<pinref part="SUPPLY18" gate="1" pin="GND"/>
+<wire x1="233.68" y1="91.44" x2="233.68" y2="88.9" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="C32" gate="G$1" pin="2"/>
+<wire x1="12.7" y1="20.32" x2="12.7" y2="17.78" width="0.1524" layer="91"/>
+<pinref part="C33" gate="G$1" pin="2"/>
+<wire x1="12.7" y1="17.78" x2="20.32" y2="17.78" width="0.1524" layer="91"/>
+<wire x1="20.32" y1="17.78" x2="27.94" y2="17.78" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="17.78" x2="27.94" y2="20.32" width="0.1524" layer="91"/>
+<pinref part="X2" gate="X1" pin="GND"/>
+<wire x1="20.32" y1="25.4" x2="20.32" y2="17.78" width="0.1524" layer="91"/>
+<junction x="20.32" y="17.78"/>
+<pinref part="SUPPLY13" gate="1" pin="GND"/>
+<wire x1="20.32" y1="17.78" x2="20.32" y2="15.24" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="ANT_SEL1" class="0">
@@ -6237,13 +6266,13 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 </net>
 <net name="XTAL2" class="0">
 <segment>
-<pinref part="X1" gate="G$1" pin="1"/>
 <wire x1="228.6" y1="104.14" x2="226.06" y2="104.14" width="0.1524" layer="91"/>
 <pinref part="C30" gate="G$1" pin="1"/>
 <wire x1="226.06" y1="104.14" x2="223.52" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="226.06" y1="104.14" x2="226.06" y2="99.06" width="0.1524" layer="91"/>
+<wire x1="226.06" y1="104.14" x2="226.06" y2="101.6" width="0.1524" layer="91"/>
 <junction x="226.06" y="104.14"/>
 <label x="223.52" y="104.14" size="1.016" layer="95" rot="R180" xref="yes"/>
+<pinref part="X1" gate="X1" pin="1"/>
 </segment>
 <segment>
 <pinref part="U2" gate="U1" pin="XTAL2"/>
@@ -6253,13 +6282,13 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 </net>
 <net name="XTAL1" class="0">
 <segment>
-<pinref part="X1" gate="G$1" pin="2"/>
-<wire x1="238.76" y1="104.14" x2="241.3" y2="104.14" width="0.1524" layer="91"/>
 <pinref part="C31" gate="G$1" pin="1"/>
 <wire x1="241.3" y1="104.14" x2="243.84" y2="104.14" width="0.1524" layer="91"/>
-<wire x1="241.3" y1="104.14" x2="241.3" y2="99.06" width="0.1524" layer="91"/>
+<wire x1="241.3" y1="104.14" x2="241.3" y2="101.6" width="0.1524" layer="91"/>
 <junction x="241.3" y="104.14"/>
 <label x="243.84" y="104.14" size="1.016" layer="95" xref="yes"/>
+<wire x1="241.3" y1="104.14" x2="238.76" y2="104.14" width="0.1524" layer="91"/>
+<pinref part="X1" gate="X1" pin="2"/>
 </segment>
 <segment>
 <pinref part="U2" gate="U1" pin="XTAL1"/>
@@ -6321,6 +6350,38 @@ ULTRA MINIATURE SIZE LOW PROFILE SMD&lt;br&gt;&lt;br&gt;
 <pinref part="U2" gate="U1" pin="IRQ/GPIO8"/>
 <wire x1="203.2" y1="157.48" x2="208.28" y2="157.48" width="0.1524" layer="91"/>
 <label x="208.28" y="157.48" size="1.016" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="OSC_IN" class="0">
+<segment>
+<pinref part="C32" gate="G$1" pin="1"/>
+<wire x1="15.24" y1="30.48" x2="12.7" y2="30.48" width="0.1524" layer="91"/>
+<wire x1="12.7" y1="30.48" x2="12.7" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="12.7" y1="30.48" x2="10.16" y2="30.48" width="0.1524" layer="91"/>
+<junction x="12.7" y="30.48"/>
+<label x="10.16" y="30.48" size="1.016" layer="95" rot="R180" xref="yes"/>
+<pinref part="X2" gate="X1" pin="1"/>
+</segment>
+<segment>
+<pinref part="U1" gate="U1" pin="PF0-OSC_IN"/>
+<wire x1="40.64" y1="60.96" x2="35.56" y2="60.96" width="0.1524" layer="91"/>
+<label x="35.56" y="60.96" size="1.016" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="OSC_OUT" class="0">
+<segment>
+<wire x1="25.4" y1="30.48" x2="27.94" y2="30.48" width="0.1524" layer="91"/>
+<pinref part="C33" gate="G$1" pin="1"/>
+<wire x1="27.94" y1="30.48" x2="27.94" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="30.48" x2="30.48" y2="30.48" width="0.1524" layer="91"/>
+<junction x="27.94" y="30.48"/>
+<label x="30.48" y="30.48" size="1.016" layer="95" xref="yes"/>
+<pinref part="X2" gate="X1" pin="2"/>
+</segment>
+<segment>
+<pinref part="U1" gate="U1" pin="PF1-OSC_OUT"/>
+<wire x1="40.64" y1="58.42" x2="35.56" y2="58.42" width="0.1524" layer="91"/>
+<label x="35.56" y="58.42" size="1.016" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
