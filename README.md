@@ -44,7 +44,7 @@ TriTag is able to provide ranges to a mobile phone application.
 TriPoint includes the following components:
 
 - DecaWave DW1000 UWB radio
-- STM32F031G6U6 MCU
+- STM32F091CCU6 MCU
 - RF switch
 
 The MCU contains all the necessary code to run the DW1000 and the ranging
@@ -60,7 +60,7 @@ TriTag includes:
 
 - The TriPoint module
 - 3 UWB antennas
-- nRF51822 BLE radio
+- nRF52840 BLE radio
 - 3.3 V LDO
 - Li-ion battery charger
 
@@ -103,5 +103,5 @@ across the BLE interface.
 
 ### Linux Development
 
-This project requires the [GNU ARM Embedded Toolchain](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm). Please be aware that the recent Ubuntu 18.04 (`bionic`) ships with an old version ([6.3.1](https://launchpad.net/ubuntu/bionic/+source/gcc-arm-none-eabi)) and will cause compile errors ('conflicting CPU Architecture'). We therefore strongly encourage you to either remain on Ubuntu 17.10 (`artful`) or directly install the newest version from the developpers.
+This project requires the [GNU ARM Embedded Toolchain](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm). Please be aware that the recent Ubuntu 18.04 (`bionic`) ships with an old version ([6.3.1](https://launchpad.net/ubuntu/bionic/+source/gcc-arm-none-eabi)) and will cause compile errors ('conflicting CPU Architecture'). We therefore strongly encourage you to either remain on Ubuntu 17.10 (`artful`) or directly install the newest version from the developers.
 
