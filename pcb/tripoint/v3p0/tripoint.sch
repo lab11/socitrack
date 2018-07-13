@@ -1637,6 +1637,10 @@ Basic schematic elements and footprints for 0201, 0402, 0603, 1206, and PTH resi
 <part name="GND1" library="regulators" deviceset="GND" device=""/>
 <part name="C42" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="0.1uF"/>
 <part name="C43" library="passives" deviceset="CAPACITOR" device="0603_CAP" value="4.7uF"/>
+<part name="TP5" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP6" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP7" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP8" library="headers" deviceset="TEST-POINT" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -1767,6 +1771,10 @@ for (DEEP)SLEEP</text>
 <instance part="GND1" gate="G1" x="233.68" y="157.48"/>
 <instance part="C42" gate="G$1" x="223.52" y="35.56"/>
 <instance part="C43" gate="G$1" x="248.92" y="66.04"/>
+<instance part="TP5" gate="G$1" x="109.22" y="83.82" rot="R180"/>
+<instance part="TP6" gate="G$1" x="109.22" y="81.28" rot="R180"/>
+<instance part="TP7" gate="G$1" x="109.22" y="78.74" rot="R180"/>
+<instance part="TP8" gate="G$1" x="81.28" y="43.18" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -1905,6 +1913,9 @@ for (DEEP)SLEEP</text>
 <pinref part="U1" gate="U1" pin="GND"/>
 <wire x1="76.2" y1="45.72" x2="76.2" y2="43.18" width="0.1524" layer="91"/>
 <pinref part="SUPPLY9" gate="G1" pin="GND"/>
+<pinref part="TP8" gate="G$1" pin="TESTPOINT"/>
+<wire x1="76.2" y1="43.18" x2="78.74" y2="43.18" width="0.1524" layer="91"/>
+<junction x="76.2" y="43.18"/>
 </segment>
 <segment>
 <pinref part="C26" gate="G$1" pin="2"/>
@@ -2055,9 +2066,9 @@ for (DEEP)SLEEP</text>
 <label x="88.9" y="175.26" size="1.016" layer="95" rot="MR0" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U1" gate="U1" pin="PB3"/>
-<wire x1="93.98" y1="83.82" x2="96.52" y2="83.82" width="0.1524" layer="91"/>
-<label x="96.52" y="83.82" size="1.016" layer="95" xref="yes"/>
+<label x="96.52" y="55.88" size="1.016" layer="95" xref="yes"/>
+<pinref part="U1" gate="U1" pin="PB14"/>
+<wire x1="96.52" y1="55.88" x2="93.98" y2="55.88" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="ANT_SEL2" class="0">
@@ -2067,9 +2078,9 @@ for (DEEP)SLEEP</text>
 <label x="88.9" y="172.72" size="1.016" layer="95" rot="MR0" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U1" gate="U1" pin="PB4"/>
-<wire x1="93.98" y1="81.28" x2="96.52" y2="81.28" width="0.1524" layer="91"/>
-<label x="96.52" y="81.28" size="1.016" layer="95" xref="yes"/>
+<label x="96.52" y="58.42" size="1.016" layer="95" xref="yes"/>
+<pinref part="U1" gate="U1" pin="PB13"/>
+<wire x1="96.52" y1="58.42" x2="93.98" y2="58.42" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="ANT_SEL3" class="0">
@@ -2079,9 +2090,9 @@ for (DEEP)SLEEP</text>
 <label x="88.9" y="170.18" size="1.016" layer="95" rot="MR0" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U1" gate="U1" pin="PB5"/>
-<wire x1="93.98" y1="78.74" x2="96.52" y2="78.74" width="0.1524" layer="91"/>
-<label x="96.52" y="78.74" size="1.016" layer="95" xref="yes"/>
+<pinref part="U1" gate="U1" pin="PB12"/>
+<wire x1="96.52" y1="60.96" x2="93.98" y2="60.96" width="0.1524" layer="91"/>
+<label x="96.52" y="60.96" size="1.016" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="RF1" class="0">
@@ -2713,51 +2724,12 @@ for (DEEP)SLEEP</text>
 <wire x1="119.38" y1="63.5" x2="121.92" y2="63.5" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="LED_BLUE" class="0">
-<segment>
-<label x="96.52" y="60.96" size="1.016" layer="95" xref="yes"/>
-<wire x1="96.52" y1="60.96" x2="114.3" y2="60.96" width="0.1524" layer="91"/>
-<wire x1="114.3" y1="60.96" x2="114.3" y2="58.42" width="0.1524" layer="91"/>
-<wire x1="114.3" y1="58.42" x2="114.3" y2="53.34" width="0.1524" layer="91"/>
-<wire x1="114.3" y1="53.34" x2="132.08" y2="53.34" width="0.1524" layer="91"/>
-<pinref part="R7" gate="G$1" pin="2"/>
-<wire x1="132.08" y1="53.34" x2="132.08" y2="45.72" width="0.1524" layer="91"/>
-<pinref part="U1" gate="U1" pin="PB12"/>
-<wire x1="96.52" y1="60.96" x2="93.98" y2="60.96" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="LED_GREEN" class="0">
-<segment>
-<label x="96.52" y="58.42" size="1.016" layer="95" xref="yes"/>
-<wire x1="96.52" y1="58.42" x2="111.76" y2="58.42" width="0.1524" layer="91"/>
-<wire x1="111.76" y1="58.42" x2="111.76" y2="50.8" width="0.1524" layer="91"/>
-<wire x1="111.76" y1="50.8" x2="124.46" y2="50.8" width="0.1524" layer="91"/>
-<pinref part="R6" gate="G$1" pin="2"/>
-<wire x1="124.46" y1="48.26" x2="124.46" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="124.46" y1="50.8" x2="124.46" y2="48.26" width="0.1524" layer="91"/>
-<pinref part="U1" gate="U1" pin="PB13"/>
-<wire x1="96.52" y1="58.42" x2="93.98" y2="58.42" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="INTERRUPT" class="0">
 <segment>
 <wire x1="53.34" y1="132.08" x2="93.98" y2="132.08" width="0.1524" layer="91"/>
 <label x="93.98" y="132.08" size="1.016" layer="95" xref="yes"/>
 <pinref part="U1" gate="U1" pin="PA2"/>
 <wire x1="53.34" y1="109.22" x2="53.34" y2="132.08" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="LED_RED" class="0">
-<segment>
-<label x="96.52" y="55.88" size="1.016" layer="95" xref="yes"/>
-<pinref part="R5" gate="G$1" pin="2"/>
-<wire x1="116.84" y1="48.26" x2="116.84" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="116.84" y1="48.26" x2="109.22" y2="48.26" width="0.1524" layer="91"/>
-<wire x1="109.22" y1="48.26" x2="109.22" y2="50.8" width="0.1524" layer="91"/>
-<wire x1="109.22" y1="50.8" x2="109.22" y2="55.88" width="0.1524" layer="91"/>
-<pinref part="U1" gate="U1" pin="PB14"/>
-<wire x1="96.52" y1="55.88" x2="93.98" y2="55.88" width="0.1524" layer="91"/>
-<wire x1="109.22" y1="55.88" x2="96.52" y2="55.88" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$10" class="0">
@@ -2835,6 +2807,52 @@ for (DEEP)SLEEP</text>
 <pinref part="U2" gate="U1" pin="SPIMOSI"/>
 <wire x1="162.56" y1="104.14" x2="157.48" y2="104.14" width="0.1524" layer="91"/>
 <label x="157.48" y="104.14" size="1.016" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="LED_RED" class="0">
+<segment>
+<pinref part="R5" gate="G$1" pin="2"/>
+<wire x1="116.84" y1="45.72" x2="116.84" y2="53.34" width="0.1524" layer="91"/>
+<wire x1="116.84" y1="53.34" x2="132.08" y2="53.34" width="0.1524" layer="91"/>
+<wire x1="132.08" y1="53.34" x2="134.62" y2="53.34" width="0.1524" layer="91"/>
+<label x="134.62" y="53.34" size="1.016" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U1" gate="U1" pin="PB5"/>
+<wire x1="93.98" y1="78.74" x2="96.52" y2="78.74" width="0.1524" layer="91"/>
+<label x="96.52" y="78.74" size="1.016" layer="95" xref="yes"/>
+<pinref part="TP7" gate="G$1" pin="TESTPOINT"/>
+<wire x1="96.52" y1="78.74" x2="106.68" y2="78.74" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="LED_BLUE" class="0">
+<segment>
+<pinref part="R7" gate="G$1" pin="2"/>
+<wire x1="132.08" y1="45.72" x2="132.08" y2="48.26" width="0.1524" layer="91"/>
+<wire x1="132.08" y1="48.26" x2="134.62" y2="48.26" width="0.1524" layer="91"/>
+<label x="134.62" y="48.26" size="1.016" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U1" gate="U1" pin="PB4"/>
+<wire x1="93.98" y1="81.28" x2="96.52" y2="81.28" width="0.1524" layer="91"/>
+<label x="96.52" y="81.28" size="1.016" layer="95" xref="yes"/>
+<pinref part="TP6" gate="G$1" pin="TESTPOINT"/>
+<wire x1="96.52" y1="81.28" x2="106.68" y2="81.28" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="LED_GREEN" class="0">
+<segment>
+<pinref part="R6" gate="G$1" pin="2"/>
+<wire x1="124.46" y1="45.72" x2="124.46" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="50.8" x2="134.62" y2="50.8" width="0.1524" layer="91"/>
+<label x="134.62" y="50.8" size="1.016" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U1" gate="U1" pin="PB3"/>
+<wire x1="93.98" y1="83.82" x2="96.52" y2="83.82" width="0.1524" layer="91"/>
+<label x="96.52" y="83.82" size="1.016" layer="95" xref="yes"/>
+<pinref part="TP5" gate="G$1" pin="TESTPOINT"/>
+<wire x1="96.52" y1="83.82" x2="106.68" y2="83.82" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
