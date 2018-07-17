@@ -166,15 +166,17 @@
 </layers>
 <board>
 <plain>
-<text x="1.8602" y="-13.8892" size="0.5" layer="21" ratio="12" rot="R240" align="center-left">Andreas Biri</text>
-<text x="-1.6144" y="-14.5608" size="0.3" layer="21" ratio="12" rot="R300" align="center-left">13/07/2018</text>
-<wire x1="0" y1="-18.3388" x2="15.875" y2="9.1694" width="0.1524" layer="20" locked="yes"/>
-<wire x1="15.875" y1="9.1694" x2="-15.875" y2="9.1694" width="0.1524" layer="20" locked="yes"/>
-<wire x1="-15.875" y1="9.1694" x2="0" y2="-18.3388" width="0.1524" layer="20" locked="yes"/>
-<circle x="7.9248" y="-4.572" radius="0.127" width="0.1524" layer="51"/>
-<circle x="-7.9248" y="-4.572" radius="0.127" width="0.1524" layer="51"/>
-<circle x="0" y="9.1694" radius="0.127" width="0.1524" layer="51"/>
-<text x="-0.635" y="-15.24" size="0.508" layer="21">v3.1</text>
+<text x="10.9682" y="-3.2198" size="0.508" layer="21" ratio="12" align="center-left">Andreas Biri
+Pat Pannuto</text>
+<text x="2.5766" y="-3.8928" size="0.3" layer="21" ratio="12" align="center-left">13/07/2018</text>
+<wire x1="15.24" y1="-5.08" x2="15.24" y2="10.541" width="0.1524" layer="20"/>
+<wire x1="15.24" y1="10.541" x2="-15.24" y2="10.541" width="0.1524" layer="20"/>
+<wire x1="-15.24" y1="10.541" x2="-15.24" y2="-5.08" width="0.1524" layer="20"/>
+<wire x1="-15.24" y1="-5.08" x2="15.24" y2="-5.08" width="0.1524" layer="20"/>
+<circle x="15.24" y="-4.572" radius="0.127" width="0.1524" layer="51"/>
+<circle x="-15.24" y="-4.572" radius="0.127" width="0.1524" layer="51"/>
+<circle x="0" y="10.541" radius="0.127" width="0.1524" layer="51"/>
+<text x="0.635" y="-4.064" size="0.508" layer="21">v3.1</text>
 </plain>
 <libraries>
 <library name="chips">
@@ -1241,13 +1243,13 @@ Quickturn PCB 4 Layer .DRU</description>
 </pass>
 </autorouter>
 <elements>
-<element name="U1" library="chips" package="UFQFPN-48" value="STM32F091CC" x="5.334" y="0.889" rot="R270">
-<attribute name="DATASHEET" value="https://www.st.com/resource/en/datasheet/stm32f091cc.pdf" x="5.334" y="0.889" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="DESCRIPTION" value="IC MCU 32BIT 256KB FLASH 48QFPN" x="5.334" y="0.889" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="DIGIKEY" value="497-15813-ND" x="5.334" y="0.889" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MANUFACTURER" value="STMicroelectronics" x="5.334" y="0.889" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MOUSER" value="511-STM32F091CCU6" x="5.334" y="0.889" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MPN" value="STM32F091CCU6" x="5.334" y="0.889" size="1.778" layer="27" rot="R270" display="off"/>
+<element name="U1" library="chips" package="UFQFPN-48" value="STM32F091CC" x="6.223" y="1.651" rot="R270">
+<attribute name="DATASHEET" value="https://www.st.com/resource/en/datasheet/stm32f091cc.pdf" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="DESCRIPTION" value="IC MCU 32BIT 256KB FLASH 48QFPN" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="DIGIKEY" value="497-15813-ND" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MANUFACTURER" value="STMicroelectronics" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MOUSER" value="511-STM32F091CCU6" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MPN" value="STM32F091CCU6" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
 </element>
 <element name="U3" library="switches" package="MLPQ-UT-8" value="SKY13317" x="-0.762" y="-3.937">
 <attribute name="DATASHEET" value="http://www.skyworksinc.com/uploads/documents/SKY13317_373LF_200914K.pdf" x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
@@ -1256,115 +1258,115 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="MANUFACTURER" value="Skyworks Solutions Inc." x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="SKY13317-373LF" x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
 </element>
-<element name="U4" library="regulators" package="LXDC2HN" value="LXDC2HN18A" x="-1.397" y="-9.525" rot="R270">
-<attribute name="DATASHEET" value="https://www.murata.com/~/media/webrenewal/campaign/ads/america/udcdc/lxdc_product_brief.ashx" x="-1.397" y="-9.525" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="DESCRIPTION" value="DC/DC CONVERTER SMD" x="-1.397" y="-9.525" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="DIGIKEY" value="490-12092-1-ND" x="-1.397" y="-9.525" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MANUFACTURER" value="Murata Electronics North America" x="-1.397" y="-9.525" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MPN" value="LXDC2HN18A-097" x="-1.397" y="-9.525" size="1.778" layer="27" rot="R270" display="off"/>
+<element name="U4" library="regulators" package="LXDC2HN" value="LXDC2HN18A" x="-11.684" y="-2.032" rot="R270">
+<attribute name="DATASHEET" value="https://www.murata.com/~/media/webrenewal/campaign/ads/america/udcdc/lxdc_product_brief.ashx" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="DESCRIPTION" value="DC/DC CONVERTER SMD" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="DIGIKEY" value="490-12092-1-ND" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MANUFACTURER" value="Murata Electronics North America" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MPN" value="LXDC2HN18A-097" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
 </element>
-<element name="T1" library="rf" package="EIA-0805" value="HHM1595A1" x="-6.5024" y="-1.651" rot="R90">
-<attribute name="DATASHEET" value="https://product.tdk.com/info/en/documents/data_sheet/rf_balun_hhm1595a1_en.pdf" x="-6.5024" y="-1.651" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="DESCRIPTION" value="XFMR BALUN RF 3.0-8.0GHZ UWB SMD" x="-6.5024" y="-1.651" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="DIGIKEY" value="445-3387-1-ND" x="-6.5024" y="-1.651" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="MANUFACTURER" value="TDK Corporation" x="-6.5024" y="-1.651" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="MOUSER" value="810-HHM1595A1" x="-6.5024" y="-1.651" size="1.778" layer="27" rot="R90" display="off"/>
-<attribute name="MPN" value="HHM1595A1" x="-6.5024" y="-1.651" size="1.778" layer="27" rot="R90" display="off"/>
+<element name="T1" library="rf" package="EIA-0805" value="HHM1595A1" x="-7.3914" y="-1.143" rot="R90">
+<attribute name="DATASHEET" value="https://product.tdk.com/info/en/documents/data_sheet/rf_balun_hhm1595a1_en.pdf" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="DESCRIPTION" value="XFMR BALUN RF 3.0-8.0GHZ UWB SMD" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="DIGIKEY" value="445-3387-1-ND" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MANUFACTURER" value="TDK Corporation" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MOUSER" value="810-HHM1595A1" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MPN" value="HHM1595A1" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
 </element>
-<element name="C1" library="passives" package="0201_CAP" value="12pF" x="-6.2738" y="-0.0762"/>
-<element name="C2" library="passives" package="0201_CAP" value="12pF" x="-6.7564" y="-0.0762"/>
-<element name="C3" library="passives" package="0402_CAP" value="4.7uF" x="0.508" y="-9.525" rot="R90"/>
-<element name="C4" library="passives" package="0603_CAP" value="10uF" x="-3.556" y="-9.525" rot="R90"/>
-<element name="C5" library="passives" package="0402_CAP" value="0.1uF" x="-9.8806" y="8.4836" rot="R90"/>
-<element name="C6" library="passives" package="0402_CAP" value="4.7uF" x="-10.795" y="8.4836" rot="R90"/>
-<element name="C7" library="passives" package="0402_CAP" value="0.1uF" x="-5.9436" y="9.2202" rot="R90"/>
-<element name="C8" library="passives" package="0402_CAP" value="0.1uF" x="-1.8034" y="-0.0762" rot="R270"/>
-<element name="C9" library="passives" package="0402_CAP" value="0.1uF" x="-1.1938" y="2.6416"/>
-<element name="C10" library="passives" package="0402_CAP" value="0.1uF" x="-10.3632" y="4.7244" rot="R180"/>
-<element name="C11" library="passives" package="0402_CAP" value="0.1uF" x="-10.3632" y="3.2004" rot="R180"/>
-<element name="C12" library="passives" package="0402_CAP" value="0.1uF" x="-10.3632" y="2.4384" rot="R180"/>
-<element name="C13" library="passives" package="0402_CAP" value="0.1uF" x="-5.0546" y="9.2202" rot="R90"/>
-<element name="C14" library="passives" package="0402_CAP" value="0.1uF" x="-10.3632" y="3.9624" rot="R180"/>
-<element name="C15" library="passives" package="0402_CAP" value="0.1uF" x="-10.3632" y="1.7018" rot="R180"/>
-<element name="C16" library="passives" package="0402_CAP" value="10pF" x="-4.2672" y="-1.6764" rot="R90"/>
-<element name="C17" library="passives" package="0402_CAP" value="10pF" x="-4.2672" y="-0.0762" rot="R270"/>
-<element name="C18" library="passives" package="0402_CAP" value="330pF" x="-3.4544" y="-1.6764" rot="R90"/>
-<element name="C19" library="passives" package="0402_CAP" value="330pF" x="-3.4544" y="-0.0762" rot="R270"/>
-<element name="C20" library="passives" package="0402_CAP" value="0.01uF" x="-8.3312" y="0.1524" rot="R180"/>
-<element name="C21" library="passives" package="0402_CAP" value="0.1uF" x="-2.6416" y="-1.6764" rot="R90"/>
-<element name="C22" library="passives" package="0402_CAP" value="0.1uF" x="-2.6416" y="-0.0762" rot="R270"/>
-<element name="C23" library="passives" package="0402_CAP" value="0.1uF" x="-8.3058" y="8.7884"/>
-<element name="C24" library="passives" package="0402_CAP" value="0.1uF" x="-1.1938" y="3.7846"/>
-<element name="C25" library="passives" package="0402_CAP" value="0.1uF" x="-1.1938" y="1.8034"/>
-<element name="U2" library="chips" package="QFN-48-DW1000" value="DW1000" x="-5.715" y="4.572">
-<attribute name="DATASHEET" value="https://www.decawave.com/sites/default/files/resources/dw1000-datasheet-v2.13.pdf" x="-5.715" y="4.572" size="1.778" layer="27" display="off"/>
-<attribute name="DESCRIPTION" value="IC RF TXRX 802.15.4 48-QFN" x="-5.715" y="4.572" size="1.778" layer="27" display="off"/>
-<attribute name="DIGIKEY" value="1479-1001-1-ND" x="-5.715" y="4.572" size="1.778" layer="27" display="off"/>
-<attribute name="MANUFACTURER" value="Decawave Limited" x="-5.715" y="4.572" size="1.778" layer="27" display="off"/>
-<attribute name="MPN" value="DW1000-I-TR13" x="-5.715" y="4.572" size="1.778" layer="27" display="off"/>
+<element name="C1" library="passives" package="0201_CAP" value="12pF" x="-7.1628" y="0.4318"/>
+<element name="C2" library="passives" package="0201_CAP" value="12pF" x="-7.6454" y="0.4318"/>
+<element name="C3" library="passives" package="0402_CAP" value="4.7uF" x="-9.7282" y="-2.032" rot="R90"/>
+<element name="C4" library="passives" package="0603_CAP" value="10uF" x="-13.843" y="-2.032" rot="R90"/>
+<element name="C5" library="passives" package="0402_CAP" value="0.1uF" x="-10.7188" y="9.779" rot="R90"/>
+<element name="C6" library="passives" package="0402_CAP" value="4.7uF" x="-11.684" y="9.779" rot="R90"/>
+<element name="C7" library="passives" package="0402_CAP" value="0.1uF" x="-6.858" y="9.779" rot="R90"/>
+<element name="C8" library="passives" package="0402_CAP" value="0.1uF" x="-2.3622" y="0.4318" rot="R270"/>
+<element name="C9" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="3.1496"/>
+<element name="C10" library="passives" package="0402_CAP" value="0.1uF" x="-11.2522" y="5.7404" rot="R180"/>
+<element name="C11" library="passives" package="0402_CAP" value="0.1uF" x="-11.2522" y="3.7084" rot="R180"/>
+<element name="C12" library="passives" package="0402_CAP" value="0.1uF" x="-11.2522" y="2.8194" rot="R180"/>
+<element name="C13" library="passives" package="0402_CAP" value="0.1uF" x="-5.8928" y="9.779" rot="R90"/>
+<element name="C14" library="passives" package="0402_CAP" value="0.1uF" x="-11.2522" y="4.8514" rot="R180"/>
+<element name="C15" library="passives" package="0402_CAP" value="0.1uF" x="-11.2522" y="1.9304" rot="R180"/>
+<element name="C16" library="passives" package="0402_CAP" value="10pF" x="-5.1562" y="-1.1684" rot="R90"/>
+<element name="C17" library="passives" package="0402_CAP" value="10pF" x="-5.1816" y="0.4318" rot="R270"/>
+<element name="C18" library="passives" package="0402_CAP" value="330pF" x="-4.2418" y="-1.1684" rot="R90"/>
+<element name="C19" library="passives" package="0402_CAP" value="330pF" x="-4.2418" y="0.4318" rot="R270"/>
+<element name="C20" library="passives" package="0402_CAP" value="0.01uF" x="-9.7282" y="0.5842" rot="R90"/>
+<element name="C21" library="passives" package="0402_CAP" value="0.1uF" x="-3.2766" y="-1.2192" rot="R90"/>
+<element name="C22" library="passives" package="0402_CAP" value="0.1uF" x="-3.302" y="0.4318" rot="R270"/>
+<element name="C23" library="passives" package="0402_CAP" value="0.1uF" x="-9.779" y="9.779" rot="R90"/>
+<element name="C24" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="4.2926"/>
+<element name="C25" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="2.3114"/>
+<element name="U2" library="chips" package="QFN-48-DW1000" value="DW1000" x="-6.604" y="5.08">
+<attribute name="DATASHEET" value="https://www.decawave.com/sites/default/files/resources/dw1000-datasheet-v2.13.pdf" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
+<attribute name="DESCRIPTION" value="IC RF TXRX 802.15.4 48-QFN" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
+<attribute name="DIGIKEY" value="1479-1001-1-ND" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
+<attribute name="MANUFACTURER" value="Decawave Limited" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
+<attribute name="MPN" value="DW1000-I-TR13" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
 </element>
-<element name="R1" library="passives" package="0402_RES" value="270" x="-10.3632" y="0.1524" rot="R180"/>
-<element name="R2" library="passives" package="0402_RES" value="16k" x="-12.1412" y="4.6482" rot="R180"/>
-<element name="R3" library="passives" package="0402_RES" value="11k" x="-10.3632" y="5.4864"/>
-<element name="C26" library="passives" package="0402_CAP" value="820pF" x="-10.3632" y="-0.6096"/>
-<element name="C27" library="passives" package="0402_CAP" value="27pF" x="-12.1412" y="5.4864"/>
-<element name="C28" library="passives" package="0402_CAP" value="1.2pF" x="-12.1412" y="3.8354" rot="R180"/>
-<element name="C29" library="passives" package="0402_CAP" value="18pF" x="-10.3632" y="0.9144" rot="R180"/>
-<element name="C30" library="passives" package="0402_CAP" value="12pF" x="-13.5128" y="5.0546" rot="R270"/>
-<element name="C31" library="passives" package="0402_CAP" value="12pF" x="-10.3632" y="7.2136" rot="R180"/>
-<element name="C32" library="passives" package="0402_CAP" value="12pF" x="6.35" y="5.7912" rot="R90"/>
-<element name="C33" library="passives" package="0402_CAP" value="12pF" x="5.4356" y="5.7912" rot="R90"/>
-<element name="X1" library="crystals" package="FA-20H" value="38.4M" x="-12.9286" y="7.9248">
-<attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="-12.9286" y="7.9248" size="1.778" layer="27" display="off"/>
-<attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead" x="-12.9286" y="7.9248" size="1.778" layer="27" display="off"/>
-<attribute name="DIGIKEY" value="SER3631CT-ND" x="-12.9286" y="7.9248" size="1.778" layer="27" display="off"/>
-<attribute name="MANUFACTURER" value="EPSON" x="-12.9286" y="7.9248" size="1.778" layer="27" display="off"/>
+<element name="R1" library="passives" package="0402_RES" value="270" x="-11.2522" y="0.1524" rot="R180"/>
+<element name="R2" library="passives" package="0402_RES" value="16k" x="-13.1572" y="5.7404" rot="R180"/>
+<element name="R3" library="passives" package="0402_RES" value="11k" x="-11.2522" y="6.6294"/>
+<element name="C26" library="passives" package="0402_CAP" value="820pF" x="-12.5984" y="0.5842" rot="R90"/>
+<element name="C27" library="passives" package="0402_CAP" value="27pF" x="-13.1572" y="6.6294"/>
+<element name="C28" library="passives" package="0402_CAP" value="1.2pF" x="-13.1572" y="4.8514" rot="R180"/>
+<element name="C29" library="passives" package="0402_CAP" value="18pF" x="-11.2522" y="1.0414" rot="R180"/>
+<element name="C30" library="passives" package="0402_CAP" value="12pF" x="-14.6558" y="6.3246" rot="R270"/>
+<element name="C31" library="passives" package="0402_CAP" value="12pF" x="-11.303" y="8.001" rot="R180"/>
+<element name="C32" library="passives" package="0402_CAP" value="12pF" x="7.2644" y="6.5532" rot="R90"/>
+<element name="C33" library="passives" package="0402_CAP" value="12pF" x="6.3246" y="6.5532" rot="R90"/>
+<element name="X1" library="crystals" package="FA-20H" value="38.4M" x="-13.716" y="9.017">
+<attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="-13.716" y="9.017" size="1.778" layer="27" display="off"/>
+<attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead" x="-13.716" y="9.017" size="1.778" layer="27" display="off"/>
+<attribute name="DIGIKEY" value="SER3631CT-ND" x="-13.716" y="9.017" size="1.778" layer="27" display="off"/>
+<attribute name="MANUFACTURER" value="EPSON" x="-13.716" y="9.017" size="1.778" layer="27" display="off"/>
 </element>
-<element name="X2" library="crystals" package="FA-20H" value="16M" x="5.1308" y="8.255" rot="R270">
-<attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="5.1308" y="8.255" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead" x="5.1308" y="8.255" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="DIGIKEY" value="SER3913CT-ND" x="5.1308" y="8.255" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MANUFACTURER" value="EPSON" x="5.1308" y="8.255" size="1.778" layer="27" rot="R270" display="off"/>
+<element name="X2" library="crystals" package="FA-20H" value="16M" x="6.0198" y="9.017" rot="R270">
+<attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="6.0198" y="9.017" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead" x="6.0198" y="9.017" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="DIGIKEY" value="SER3913CT-ND" x="6.0198" y="9.017" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MANUFACTURER" value="EPSON" x="6.0198" y="9.017" size="1.778" layer="27" rot="R270" display="off"/>
 </element>
-<element name="C34" library="passives" package="0402_CAP" value="100nF" x="0.8636" y="-2.3114" rot="R270"/>
-<element name="C35" library="passives" package="0402_CAP" value="100nF" x="0.8636" y="-0.6858" rot="R90"/>
-<element name="C36" library="passives" package="0402_CAP" value="100nF" x="9.779" y="3.9116" rot="R270"/>
-<element name="C37" library="passives" package="0402_CAP" value="4.7uF" x="10.668" y="3.9116" rot="R270"/>
-<element name="C38" library="passives" package="0402_CAP" value="100nF" x="7.5438" y="-3.5814" rot="R180"/>
-<element name="C39" library="passives" package="0402_CAP" value="4.7uF" x="9.3472" y="-3.5814"/>
-<element name="C40" library="passives" package="0402_CAP" value="10nF" x="3.2258" y="6.1976" rot="R180"/>
-<element name="C41" library="passives" package="0402_CAP" value="1uF" x="3.2258" y="5.3848" rot="R180"/>
-<element name="R4" library="passives" package="0402_RES" value="11k" x="9.779" y="2.286" rot="R90"/>
-<element name="J2" library="connector" package="TC2030-IDC-NL" value="TC2030-JLINK-NL" x="10.668" y="7.112" rot="R180"/>
-<element name="R5" library="passives" package="0402_RES" value="1k" x="2.032" y="-10.033" rot="R90"/>
-<element name="R6" library="passives" package="0402_RES" value="1k" x="3.81" y="-10.033" rot="R90"/>
-<element name="D1" library="leds" package="1MM_SQ_4PAD" value="SML-LX0404SIUPGUSB" x="0" y="-12.192" smashed="yes" rot="R180">
-<attribute name="DIGIKEY" value="67-2125-1-ND" x="0" y="-12.192" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="MANUFACTURER" value="Lumex Opto" x="0" y="-12.192" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="MPN" value="SML-LX0404SIUPGUSB" x="0" y="-12.192" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="NAME" x="0.9" y="-12.065" size="1.016" layer="25" font="vector" ratio="12" rot="R270" align="bottom-center"/>
-<attribute name="VALUE" x="0" y="-10.392" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+<element name="C34" library="passives" package="0402_CAP" value="100nF" x="1.8034" y="-1.8542" rot="R270"/>
+<element name="C35" library="passives" package="0402_CAP" value="100nF" x="1.8034" y="-0.0508" rot="R90"/>
+<element name="C36" library="passives" package="0402_CAP" value="100nF" x="10.6934" y="4.6736" rot="R270"/>
+<element name="C37" library="passives" package="0402_CAP" value="4.7uF" x="11.7094" y="4.6736" rot="R270"/>
+<element name="C38" library="passives" package="0402_CAP" value="100nF" x="9.9822" y="-2.7686"/>
+<element name="C39" library="passives" package="0402_CAP" value="4.7uF" x="8.1788" y="-2.7686" rot="R180"/>
+<element name="C40" library="passives" package="0402_CAP" value="10nF" x="4.2418" y="7.0104"/>
+<element name="C41" library="passives" package="0402_CAP" value="1uF" x="4.2418" y="6.1214"/>
+<element name="R4" library="passives" package="0402_RES" value="11k" x="10.6934" y="2.794" rot="R90"/>
+<element name="J2" library="connector" package="TC2030-IDC-NL" value="TC2030-JLINK-NL" x="11.684" y="8.509" rot="R180"/>
+<element name="R5" library="passives" package="0402_RES" value="1k" x="11.176" y="1.143" rot="R180"/>
+<element name="R6" library="passives" package="0402_RES" value="1k" x="11.176" y="-0.6858" rot="R180"/>
+<element name="D1" library="leds" package="1MM_SQ_4PAD" value="SML-LX0404SIUPGUSB" x="13.97" y="0.127" smashed="yes" rot="R180">
+<attribute name="DIGIKEY" value="67-2125-1-ND" x="13.97" y="0.127" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="MANUFACTURER" value="Lumex Opto" x="13.97" y="0.127" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="MPN" value="SML-LX0404SIUPGUSB" x="13.97" y="0.127" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="NAME" x="14.87" y="0.254" size="1.016" layer="25" font="vector" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="VALUE" x="13.97" y="1.927" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
 </element>
-<element name="R7" library="passives" package="0402_RES" value="1k" x="2.921" y="-10.033" rot="R90"/>
-<element name="TP1" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="10.668" y="0.254">
-<attribute name="DIGIKEY" value="5001K-ND" x="10.668" y="0.254" size="1.778" layer="27" display="off"/>
+<element name="R7" library="passives" package="0402_RES" value="1k" x="11.176" y="0.254" rot="R180"/>
+<element name="TP1" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="13.97" y="2.413">
+<attribute name="DIGIKEY" value="5001K-ND" x="13.97" y="2.413" size="1.778" layer="27" display="off"/>
 </element>
-<element name="TP2" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="12.573" y="3.683">
-<attribute name="DIGIKEY" value="5001K-ND" x="12.573" y="3.683" size="1.778" layer="27" display="off"/>
+<element name="TP2" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="13.97" y="5.207">
+<attribute name="DIGIKEY" value="5001K-ND" x="13.97" y="5.207" size="1.778" layer="27" display="off"/>
 </element>
-<element name="TP3" library="headers" package="PAD.03X.03" value="TEST-POINT" x="3.429" y="-6.477"/>
-<element name="TP4" library="headers" package="PAD.03X.03" value="TEST-POINT" x="1.905" y="-6.477"/>
-<element name="U$1" library="logos" package="ETH_100MIL" value="" x="-0.127" y="-14.351"/>
-<element name="R8" library="passives" package="0402_RES" value="100k" x="-6.8326" y="9.2202" rot="R270"/>
-<element name="C42" library="passives" package="0402_CAP" value="0.1uF" x="-1.1938" y="4.6228"/>
-<element name="C43" library="passives" package="0402_CAP" value="4.7uF" x="-1.8034" y="-1.6764" rot="R90"/>
-<element name="TP5" library="headers" package="PAD.03X.03" value="TEST-POINT" x="4.953" y="-8.382"/>
-<element name="TP6" library="headers" package="PAD.03X.03" value="TEST-POINT" x="3.429" y="-8.382"/>
-<element name="TP7" library="headers" package="PAD.03X.03" value="TEST-POINT" x="1.905" y="-8.382"/>
-<element name="TP8" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-3.302" y="-7.747"/>
-<element name="TP9" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-1.778" y="7.366"/>
-<element name="TP10" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-1.778" y="6.35"/>
-<element name="U$2" library="logos" package="UCB_CAL_50MIL" value="" x="-2.667" y="-12.954"/>
+<element name="TP3" library="headers" package="PAD.03X.03" value="TEST-POINT" x="5.715" y="-3.048"/>
+<element name="TP4" library="headers" package="PAD.03X.03" value="TEST-POINT" x="4.699" y="-3.048"/>
+<element name="U$1" library="logos" package="ETH_100MIL" value="" x="-3.429" y="-4.064"/>
+<element name="R8" library="passives" package="0402_RES" value="100k" x="-7.747" y="9.779" rot="R270"/>
+<element name="C42" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="5.1308"/>
+<element name="C43" library="passives" package="0402_CAP" value="4.7uF" x="-2.3622" y="-1.2192" rot="R90"/>
+<element name="TP5" library="headers" package="PAD.03X.03" value="TEST-POINT" x="14.478" y="-1.778"/>
+<element name="TP6" library="headers" package="PAD.03X.03" value="TEST-POINT" x="11.43" y="-1.778"/>
+<element name="TP7" library="headers" package="PAD.03X.03" value="TEST-POINT" x="12.954" y="-1.778"/>
+<element name="TP8" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-13.843" y="-0.254"/>
+<element name="TP9" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-2.667" y="7.874"/>
+<element name="TP10" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-2.667" y="6.858"/>
+<element name="U$2" library="logos" package="UCB_CAL_50MIL" value="" x="-6.604" y="-4.191"/>
 </elements>
 <signals>
 <signal name="GND">
@@ -1427,101 +1429,99 @@ Quickturn PCB 4 Layer .DRU</description>
 <contactref element="U1" pad="23"/>
 <contactref element="U1" pad="35"/>
 <contactref element="J2" pad="5"/>
-<polygon width="0.1524" layer="2">
-<vertex x="-15.875" y="9.1694"/>
-<vertex x="0" y="-18.3388"/>
-<vertex x="15.875" y="9.1694"/>
-</polygon>
-<polygon width="0.1524" layer="1">
-<vertex x="-15.875" y="9.1694"/>
-<vertex x="0" y="-18.3388"/>
-<vertex x="15.875" y="9.1694"/>
-</polygon>
 <contactref element="R8" pad="1"/>
 <contactref element="C42" pad="2"/>
 <contactref element="C13" pad="2"/>
 <contactref element="C43" pad="2"/>
 <contactref element="TP8" pad="P$1"/>
-<wire x1="-10.79626875" y1="1.7018" x2="-10.79626875" y2="0.9144" width="0" layer="19" extent="1-1"/>
-<wire x1="8.709" y1="3.139" x2="9.779" y2="3.47853125" width="0" layer="19" extent="1-1"/>
-<wire x1="7.584" y1="-2.486" x2="7.11073125" y2="-3.5814" width="0" layer="19" extent="1-1"/>
-<wire x1="1.959" y1="-1.361" x2="0.8636" y2="-0.25273125" width="0" layer="19" extent="1-1"/>
-<wire x1="-10.795" y1="8.91666875" x2="-10.79626875" y2="7.2136" width="0" layer="19" extent="1-1"/>
-<wire x1="-9.8806" y1="8.91666875" x2="-10.795" y2="8.91666875" width="0" layer="19" extent="1-1"/>
-<wire x1="-12.2286" y1="8.7748" x2="-10.795" y2="8.91666875" width="0" layer="19" extent="1-1"/>
-<wire x1="-12.57426875" y1="3.8354" x2="-10.79626875" y2="3.9624" width="0" layer="19" extent="1-1"/>
-<wire x1="-13.5128" y1="4.62153125" x2="-12.57426875" y2="3.8354" width="0" layer="19" extent="1-1"/>
-<wire x1="-7.87273125" y1="8.7884" x2="-9.8806" y2="8.91666875" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.8326" y1="9.65326875" x2="-7.87273125" y2="8.7884" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.9436" y1="9.65326875" x2="-6.8326" y2="9.65326875" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.0546" y1="9.65326875" x2="-5.9436" y2="9.65326875" width="0" layer="19" extent="1-1"/>
-<wire x1="-7.115" y1="7.522" x2="-7.87273125" y2="8.7884" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.915" y1="7.522" x2="-7.115" y2="7.522" width="0" layer="19" extent="1-1"/>
-<wire x1="-4.315" y1="1.622" x2="-4.2672" y2="-0.50926875" width="0" layer="19" extent="1-1"/>
-<wire x1="4.2808" y1="8.955" x2="5.9808" y2="7.555" width="0" layer="19" extent="1-1"/>
-<wire x1="9.78026875" y1="-3.5814" x2="7.584" y2="-2.486" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.715" y1="4.572" x2="-5.915" y2="7.522" width="0" layer="19" extent="1-1"/>
-<wire x1="5.334" y1="0.889" x2="4.584" y2="4.264" width="0" layer="19" extent="1-1"/>
+<polygon width="0.1524" layer="1">
+<vertex x="-15.24" y="10.541"/>
+<vertex x="15.24" y="10.541"/>
+<vertex x="15.24" y="-5.08"/>
+<vertex x="-15.24" y="-5.08"/>
+</polygon>
+<polygon width="0.1524" layer="2">
+<vertex x="-15.24" y="10.541"/>
+<vertex x="-15.24" y="-5.08"/>
+<vertex x="15.24" y="-5.08"/>
+<vertex x="15.24" y="10.541"/>
+</polygon>
+<wire x1="10.6934" y1="4.24053125" x2="9.598" y2="3.901" width="0" layer="19" extent="1-1"/>
+<wire x1="8.473" y1="-1.724" x2="7.74573125" y2="-2.7686" width="0" layer="19" extent="1-1"/>
+<wire x1="2.848" y1="-0.599" x2="1.8034" y2="0.38226875" width="0" layer="19" extent="1-1"/>
+<wire x1="-0.762" y1="-3.937" x2="1.8034" y2="-2.28726875" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.204" y1="2.13" x2="-5.1816" y2="-0.00126875" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.858" y1="10.21206875" x2="-6.804" y2="8.03" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.747" y1="10.21206875" x2="-6.858" y2="10.21206875" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.8928" y1="10.21206875" x2="-6.858" y2="10.21206875" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.779" y1="10.21206875" x2="-7.747" y2="10.21206875" width="0" layer="19" extent="1-1"/>
+<wire x1="-10.7188" y1="10.21206875" x2="-9.779" y2="10.21206875" width="0" layer="19" extent="1-1"/>
+<wire x1="-11.684" y1="10.21206875" x2="-10.7188" y2="10.21206875" width="0" layer="19" extent="1-1"/>
+<wire x1="-13.016" y1="9.867" x2="-11.684" y2="10.21206875" width="0" layer="19" extent="1-1"/>
+<wire x1="-14.416" y1="8.167" x2="-13.016" y2="9.867" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.604" y1="5.08" x2="-6.804" y2="8.03" width="0" layer="19" extent="1-1"/>
+<wire x1="6.223" y1="1.651" x2="5.473" y2="5.026" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$1">
 <contactref element="T1" pad="1"/>
 <contactref element="U3" pad="1"/>
-<wire x1="-1.487" y1="-3.337" x2="-5.8524" y2="-2.301" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.7414" y1="-1.793" x2="-5.8674" y2="-2.667" width="0.381" layer="1" curve="90"/>
+<wire x1="-2.157" y1="-2.667" x2="-1.487" y2="-3.337" width="0.381" layer="1" curve="-90"/>
+<wire x1="-5.8674" y1="-2.667" x2="-2.157" y2="-2.667" width="0.381" layer="1"/>
 </signal>
 <signal name="ANT_SEL1">
 <contactref element="U3" pad="3"/>
 <contactref element="U1" pad="27"/>
-<wire x1="3.584" y1="-2.486" x2="-1.487" y2="-4.137" width="0" layer="19" extent="1-1"/>
+<wire x1="4.473" y1="-1.724" x2="-1.487" y2="-4.137" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="ANT_SEL2">
 <contactref element="U3" pad="6"/>
 <contactref element="U1" pad="26"/>
-<wire x1="3.084" y1="-2.486" x2="-0.037" y2="-4.137" width="0" layer="19" extent="1-1"/>
+<wire x1="3.973" y1="-1.724" x2="-0.037" y2="-4.137" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="ANT_SEL3">
 <contactref element="U3" pad="7"/>
 <contactref element="U1" pad="25"/>
-<wire x1="2.584" y1="-2.486" x2="-0.037" y2="-3.737" width="0" layer="19" extent="1-1"/>
+<wire x1="3.473" y1="-1.724" x2="-0.037" y2="-3.737" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="RF1">
 <contactref element="U3" pad="4"/>
-<wire x1="-1.487" y1="-4.537" x2="-7.839" y2="-4.537" width="0.381" layer="1"/>
-<wire x1="-7.839" y1="-4.537" x2="-7.8486" y2="-4.5466" width="0.381" layer="1"/>
+<wire x1="-1.487" y1="-4.537" x2="-15.24" y2="-4.537" width="0.381" layer="1"/>
+<wire x1="-15.24" y1="-4.537" x2="-7.8486" y2="-4.5466" width="0.381" layer="1"/>
 </signal>
 <signal name="RF2">
 <contactref element="U3" pad="5"/>
-<wire x1="-0.037" y1="-4.537" x2="7.839" y2="-4.537" width="0.381" layer="1"/>
-<wire x1="7.839" y1="-4.537" x2="7.8486" y2="-4.5466" width="0.381" layer="1"/>
+<wire x1="-0.037" y1="-4.537" x2="15.24" y2="-4.537" width="0.381" layer="1"/>
 </signal>
 <signal name="RF3">
 <contactref element="U3" pad="8"/>
-<wire x1="-0.037" y1="-3.337" x2="-0.037" y2="9.0308" width="0.381" layer="1"/>
-<wire x1="-0.037" y1="9.0308" x2="-0.0254" y2="9.0424" width="0.381" layer="1"/>
+<wire x1="-0.037" y1="-3.337" x2="-0.037" y2="10.541" width="0.381" layer="1"/>
+<wire x1="-0.037" y1="10.541" x2="-0.0254" y2="9.0424" width="0.381" layer="1"/>
 </signal>
 <signal name="N$2">
 <contactref element="T1" pad="3"/>
 <contactref element="C1" pad="P$2"/>
-<wire x1="-6.2738" y1="-0.2962" x2="-5.8524" y2="-1.001" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.1628" y1="0.2118" x2="-6.7414" y2="-0.493" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$3">
 <contactref element="T1" pad="4"/>
 <contactref element="C2" pad="P$2"/>
-<wire x1="-6.7564" y1="-0.2962" x2="-7.1524" y2="-1.001" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.6454" y1="0.2118" x2="-8.0414" y2="-0.493" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="RF_N">
 <contactref element="C1" pad="P$1"/>
 <contactref element="U2" pad="17"/>
-<wire x1="-6.315" y1="1.622" x2="-6.2738" y2="0.1438" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.204" y1="2.13" x2="-7.1628" y2="0.6518" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="RF_P">
 <contactref element="C2" pad="P$1"/>
 <contactref element="U2" pad="16"/>
-<wire x1="-6.715" y1="1.622" x2="-6.7564" y2="0.1438" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.604" y1="2.13" x2="-7.6454" y2="0.6518" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="REG_EN">
 <contactref element="U4" pad="2"/>
 <contactref element="U2" pad="21"/>
-<wire x1="-4.715" y1="1.622" x2="-2.047" y2="-9" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.604" y1="2.13" x2="-12.334" y2="-1.507" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="+1V8">
 <contactref element="U4" pad="3"/>
@@ -1531,108 +1531,108 @@ Quickturn PCB 4 Layer .DRU</description>
 <contactref element="C5" pad="1"/>
 <contactref element="C6" pad="1"/>
 <contactref element="C9" pad="1"/>
-<wire x1="-2.047" y1="-10.05" x2="-3.556" y2="-10.175" width="0" layer="19" extent="1-1"/>
-<wire x1="-2.765" y1="2.772" x2="-2.047" y2="-10.05" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.62686875" y1="2.6416" x2="-2.765" y2="2.772" width="0" layer="19" extent="1-1"/>
-<wire x1="-7.915" y1="7.522" x2="-2.765" y2="2.772" width="0" layer="19" extent="1-1"/>
-<wire x1="-9.8806" y1="8.05053125" x2="-7.915" y2="7.522" width="0" layer="19" extent="1-1"/>
-<wire x1="-10.795" y1="8.05053125" x2="-9.8806" y2="8.05053125" width="0" layer="19" extent="1-1"/>
+<wire x1="-12.334" y1="-2.557" x2="-13.843" y2="-2.682" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.654" y1="3.28" x2="-12.334" y2="-2.557" width="0" layer="19" extent="1-1"/>
+<wire x1="-2.51586875" y1="3.1496" x2="-3.654" y2="3.28" width="0" layer="19" extent="1-1"/>
+<wire x1="-8.804" y1="8.03" x2="-3.654" y2="3.28" width="0" layer="19" extent="1-1"/>
+<wire x1="-10.7188" y1="9.34593125" x2="-8.804" y2="8.03" width="0" layer="19" extent="1-1"/>
+<wire x1="-11.684" y1="9.34593125" x2="-10.7188" y2="9.34593125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDCLK">
 <contactref element="C11" pad="1"/>
 <contactref element="U2" pad="9"/>
-<wire x1="-8.665" y1="3.572" x2="-9.93013125" y2="3.2004" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="4.08" x2="-10.81913125" y2="3.7084" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDIF">
 <contactref element="C14" pad="1"/>
 <contactref element="U2" pad="7"/>
-<wire x1="-8.665" y1="4.372" x2="-9.93013125" y2="3.9624" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="4.88" x2="-10.81913125" y2="4.8514" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDMS">
 <contactref element="C10" pad="1"/>
 <contactref element="U2" pad="6"/>
-<wire x1="-8.665" y1="4.772" x2="-9.93013125" y2="4.7244" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="5.28" x2="-10.81913125" y2="5.7404" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDSYN">
 <contactref element="C12" pad="1"/>
 <contactref element="U2" pad="10"/>
-<wire x1="-8.665" y1="3.172" x2="-9.93013125" y2="2.4384" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="3.68" x2="-10.81913125" y2="2.8194" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDVCO">
 <contactref element="C15" pad="1"/>
 <contactref element="U2" pad="11"/>
-<wire x1="-8.665" y1="2.772" x2="-9.93013125" y2="1.7018" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="3.28" x2="-10.81913125" y2="1.9304" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDDIG">
 <contactref element="C7" pad="1"/>
 <contactref element="C8" pad="1"/>
 <contactref element="U2" pad="44"/>
 <contactref element="U2" pad="20"/>
-<wire x1="-1.8034" y1="0.35686875" x2="-5.115" y2="1.622" width="0" layer="19" extent="1-1"/>
-<wire x1="-6.315" y1="7.522" x2="-5.115" y2="1.622" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.9436" y1="8.78713125" x2="-6.315" y2="7.522" width="0" layer="19" extent="1-1"/>
+<wire x1="-2.3622" y1="0.86486875" x2="-6.004" y2="2.13" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.204" y1="8.03" x2="-6.004" y2="2.13" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.858" y1="9.34593125" x2="-7.204" y2="8.03" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VDDIO">
 <contactref element="U2" pad="42"/>
 <contactref element="U2" pad="31"/>
 <contactref element="C42" pad="1"/>
 <contactref element="C13" pad="1"/>
-<wire x1="-5.515" y1="7.522" x2="-5.0546" y2="8.78713125" width="0" layer="19" extent="1-1"/>
-<wire x1="-2.765" y1="4.772" x2="-5.515" y2="7.522" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.62686875" y1="4.6228" x2="-2.765" y2="4.772" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.654" y1="5.28" x2="-2.51586875" y2="5.1308" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.404" y1="8.03" x2="-3.654" y2="5.28" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.8928" y1="9.34593125" x2="-6.404" y2="8.03" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$4">
 <contactref element="R1" pad="2"/>
 <contactref element="C26" pad="1"/>
-<wire x1="-10.79626875" y1="-0.6096" x2="-10.79626875" y2="0.1524" width="0" layer="19" extent="1-1"/>
+<wire x1="-12.5984" y1="0.15113125" x2="-11.68526875" y2="0.1524" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$5">
 <contactref element="R2" pad="2"/>
 <contactref element="C27" pad="1"/>
-<wire x1="-12.57426875" y1="5.4864" x2="-12.57426875" y2="4.6482" width="0" layer="19" extent="1-1"/>
+<wire x1="-13.59026875" y1="6.6294" x2="-13.59026875" y2="5.7404" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$6">
 <contactref element="R1" pad="1"/>
 <contactref element="C29" pad="1"/>
 <contactref element="U2" pad="12"/>
-<wire x1="-9.93013125" y1="0.9144" x2="-9.93013125" y2="0.1524" width="0" layer="19" extent="1-1"/>
-<wire x1="-8.665" y1="2.372" x2="-9.93013125" y2="0.9144" width="0" layer="19" extent="1-1"/>
+<wire x1="-10.81913125" y1="1.0414" x2="-10.81913125" y2="0.1524" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="2.88" x2="-10.81913125" y2="1.0414" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$9">
 <contactref element="R2" pad="1"/>
 <contactref element="C28" pad="1"/>
 <contactref element="U2" pad="8"/>
-<wire x1="-11.70813125" y1="3.8354" x2="-11.70813125" y2="4.6482" width="0" layer="19" extent="1-1"/>
-<wire x1="-8.665" y1="3.972" x2="-11.70813125" y2="3.8354" width="0" layer="19" extent="1-1"/>
+<wire x1="-12.72413125" y1="5.7404" x2="-12.72413125" y2="4.8514" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="4.48" x2="-12.72413125" y2="4.8514" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$7">
 <contactref element="U2" pad="5"/>
 <contactref element="R3" pad="2"/>
-<wire x1="-9.93013125" y1="5.4864" x2="-8.665" y2="5.172" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="5.68" x2="-10.81913125" y2="6.6294" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="XTAL2">
 <contactref element="C30" pad="1"/>
 <contactref element="U2" pad="4"/>
 <contactref element="X1" pad="1"/>
-<wire x1="-13.6286" y1="8.7748" x2="-13.5128" y2="5.48766875" width="0" layer="19" extent="1-1"/>
-<wire x1="-8.665" y1="5.572" x2="-13.5128" y2="5.48766875" width="0" layer="19" extent="1-1"/>
+<wire x1="-14.416" y1="9.867" x2="-14.6558" y2="6.75766875" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="6.08" x2="-14.6558" y2="6.75766875" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="XTAL1">
 <contactref element="C31" pad="1"/>
 <contactref element="U2" pad="3"/>
 <contactref element="X1" pad="3"/>
-<wire x1="-9.93013125" y1="7.2136" x2="-12.2286" y2="7.0748" width="0" layer="19" extent="1-1"/>
-<wire x1="-8.665" y1="5.972" x2="-9.93013125" y2="7.2136" width="0" layer="19" extent="1-1"/>
+<wire x1="-10.86993125" y1="8.001" x2="-13.016" y2="8.167" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.554" y1="6.48" x2="-10.86993125" y2="8.001" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="DW_WAKEUP">
 <contactref element="U2" pad="23"/>
 <contactref element="U1" pad="19"/>
-<wire x1="1.959" y1="0.639" x2="-3.915" y2="1.622" width="0" layer="19" extent="1-1"/>
+<wire x1="2.848" y1="1.401" x2="-4.804" y2="2.13" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="!DW_RST">
 <contactref element="U2" pad="27"/>
 <contactref element="U1" pad="18"/>
-<wire x1="1.959" y1="1.139" x2="-2.765" y2="3.172" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.654" y1="3.68" x2="2.848" y2="1.901" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="DW_SYNC">
 <contactref element="U2" pad="29"/>
@@ -1641,22 +1641,22 @@ Quickturn PCB 4 Layer .DRU</description>
 <contactref element="U2" pad="45"/>
 <contactref element="U1" pad="20"/>
 <contactref element="R8" pad="2"/>
-<wire x1="-6.715" y1="7.522" x2="-6.8326" y2="8.78713125" width="0" layer="19" extent="1-1"/>
-<wire x1="1.959" y1="0.139" x2="-6.715" y2="7.522" width="0" layer="19" extent="1-1"/>
+<wire x1="-7.747" y1="9.34593125" x2="-7.604" y2="8.03" width="0" layer="19" extent="1-1"/>
+<wire x1="2.848" y1="0.901" x2="-7.604" y2="8.03" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="OSC_IN">
 <contactref element="C32" pad="1"/>
 <contactref element="U1" pad="5"/>
 <contactref element="X2" pad="1"/>
-<wire x1="6.35" y1="5.35813125" x2="5.9808" y2="8.955" width="0" layer="19" extent="1-1"/>
-<wire x1="6.084" y1="4.264" x2="6.35" y2="5.35813125" width="0" layer="19" extent="1-1"/>
+<wire x1="7.2644" y1="6.12013125" x2="6.8698" y2="9.717" width="0" layer="19" extent="1-1"/>
+<wire x1="6.973" y1="5.026" x2="7.2644" y2="6.12013125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="OSC_OUT">
 <contactref element="C33" pad="1"/>
 <contactref element="U1" pad="6"/>
 <contactref element="X2" pad="3"/>
-<wire x1="5.584" y1="4.264" x2="5.4356" y2="5.35813125" width="0" layer="19" extent="1-1"/>
-<wire x1="4.2808" y1="7.555" x2="5.4356" y2="5.35813125" width="0" layer="19" extent="1-1"/>
+<wire x1="6.3246" y1="6.12013125" x2="5.1698" y2="8.317" width="0" layer="19" extent="1-1"/>
+<wire x1="6.473" y1="5.026" x2="6.3246" y2="6.12013125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="+3V3">
 <contactref element="U1" pad="9"/>
@@ -1693,49 +1693,49 @@ Quickturn PCB 4 Layer .DRU</description>
 <contactref element="C41" pad="1"/>
 <contactref element="C43" pad="1"/>
 <contactref element="J2" pad="1"/>
-<wire x1="10.668" y1="4.34466875" x2="11.938" y2="7.747" width="0" layer="19" extent="1-1"/>
-<wire x1="9.779" y1="4.34466875" x2="10.668" y2="4.34466875" width="0" layer="19" extent="1-1"/>
-<wire x1="8.709" y1="3.639" x2="9.779" y2="4.34466875" width="0" layer="19" extent="1-1"/>
-<wire x1="8.084" y1="4.264" x2="8.709" y2="3.639" width="0" layer="19" extent="1-1"/>
-<wire x1="4.084" y1="4.264" x2="8.084" y2="4.264" width="0" layer="19" extent="1-1"/>
-<wire x1="3.65886875" y1="5.3848" x2="4.084" y2="4.264" width="0" layer="19" extent="1-1"/>
-<wire x1="3.65886875" y1="6.1976" x2="3.65886875" y2="5.3848" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.62686875" y1="3.7846" x2="3.65886875" y2="5.3848" width="0" layer="19" extent="1-1"/>
-<wire x1="-2.765" y1="3.572" x2="-1.62686875" y2="3.7846" width="0" layer="19" extent="1-1"/>
-<wire x1="-2.765" y1="2.372" x2="-2.765" y2="3.572" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.62686875" y1="1.8034" x2="-2.765" y2="2.372" width="0" layer="19" extent="1-1"/>
-<wire x1="-2.6416" y1="0.35686875" x2="-2.765" y2="2.372" width="0" layer="19" extent="1-1"/>
-<wire x1="-3.4544" y1="0.35686875" x2="-2.6416" y2="0.35686875" width="0" layer="19" extent="1-1"/>
-<wire x1="-4.2672" y1="0.35686875" x2="-3.4544" y2="0.35686875" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.515" y1="1.622" x2="-4.2672" y2="0.35686875" width="0" layer="19" extent="1-1"/>
-<wire x1="-5.915" y1="1.622" x2="-5.515" y2="1.622" width="0" layer="19" extent="1-1"/>
-<wire x1="-7.115" y1="1.622" x2="-5.915" y2="1.622" width="0" layer="19" extent="1-1"/>
-<wire x1="-7.89813125" y1="0.1524" x2="-7.115" y2="1.622" width="0" layer="19" extent="1-1"/>
-<wire x1="-4.2672" y1="-2.10946875" x2="-4.2672" y2="0.35686875" width="0" layer="19" extent="1-1"/>
-<wire x1="-3.4544" y1="-2.10946875" x2="-4.2672" y2="-2.10946875" width="0" layer="19" extent="1-1"/>
-<wire x1="-2.6416" y1="-2.10946875" x2="-3.4544" y2="-2.10946875" width="0" layer="19" extent="1-1"/>
-<wire x1="-1.8034" y1="-2.10946875" x2="-2.6416" y2="-2.10946875" width="0" layer="19" extent="1-1"/>
-<wire x1="0.8636" y1="-1.87833125" x2="-1.8034" y2="-2.10946875" width="0" layer="19" extent="1-1"/>
-<wire x1="0.8636" y1="-1.11886875" x2="0.8636" y2="-1.87833125" width="0" layer="19" extent="1-1"/>
-<wire x1="1.959" y1="-1.861" x2="0.8636" y2="-1.87833125" width="0" layer="19" extent="1-1"/>
-<wire x1="-7.515" y1="7.522" x2="-7.115" y2="1.622" width="0" layer="19" extent="1-1"/>
-<wire x1="-8.73886875" y1="8.7884" x2="-7.515" y2="7.522" width="0" layer="19" extent="1-1"/>
-<wire x1="8.084" y1="-2.486" x2="8.709" y2="3.639" width="0" layer="19" extent="1-1"/>
-<wire x1="7.97686875" y1="-3.5814" x2="8.084" y2="-2.486" width="0" layer="19" extent="1-1"/>
-<wire x1="8.91413125" y1="-3.5814" x2="7.97686875" y2="-3.5814" width="0" layer="19" extent="1-1"/>
-<wire x1="-0.747" y1="-9" x2="-1.8034" y2="-2.10946875" width="0" layer="19" extent="1-1"/>
-<wire x1="0.508" y1="-9.09193125" x2="-0.747" y2="-9" width="0" layer="19" extent="1-1"/>
-<wire x1="-0.4318" y1="-12.6238" x2="-0.747" y2="-9" width="0" layer="19" extent="1-1"/>
+<wire x1="11.7094" y1="5.10666875" x2="12.954" y2="9.144" width="0" layer="19" extent="1-1"/>
+<wire x1="10.6934" y1="5.10666875" x2="11.7094" y2="5.10666875" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="4.401" x2="10.6934" y2="5.10666875" width="0" layer="19" extent="1-1"/>
+<wire x1="8.973" y1="5.026" x2="9.598" y2="4.401" width="0" layer="19" extent="1-1"/>
+<wire x1="4.973" y1="5.026" x2="8.973" y2="5.026" width="0" layer="19" extent="1-1"/>
+<wire x1="3.80873125" y1="6.1214" x2="4.973" y2="5.026" width="0" layer="19" extent="1-1"/>
+<wire x1="3.80873125" y1="7.0104" x2="3.80873125" y2="6.1214" width="0" layer="19" extent="1-1"/>
+<wire x1="8.973" y1="-1.724" x2="9.598" y2="4.401" width="0" layer="19" extent="1-1"/>
+<wire x1="8.61186875" y1="-2.7686" x2="8.973" y2="-1.724" width="0" layer="19" extent="1-1"/>
+<wire x1="9.54913125" y1="-2.7686" x2="8.61186875" y2="-2.7686" width="0" layer="19" extent="1-1"/>
+<wire x1="13.5382" y1="-0.3048" x2="9.54913125" y2="-2.7686" width="0" layer="19" extent="1-1"/>
+<wire x1="2.848" y1="-1.099" x2="8.61186875" y2="-2.7686" width="0" layer="19" extent="1-1"/>
+<wire x1="1.8034" y1="-1.42113125" x2="2.848" y2="-1.099" width="0" layer="19" extent="1-1"/>
+<wire x1="1.8034" y1="-0.48386875" x2="1.8034" y2="-1.42113125" width="0" layer="19" extent="1-1"/>
+<wire x1="-2.3622" y1="-1.65226875" x2="1.8034" y2="-1.42113125" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.2766" y1="-1.65226875" x2="-2.3622" y2="-1.65226875" width="0" layer="19" extent="1-1"/>
+<wire x1="-4.2418" y1="-1.60146875" x2="-3.2766" y2="-1.65226875" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.1562" y1="-1.60146875" x2="-4.2418" y2="-1.60146875" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.1816" y1="0.86486875" x2="-5.1562" y2="-1.60146875" width="0" layer="19" extent="1-1"/>
+<wire x1="-4.2418" y1="0.86486875" x2="-5.1816" y2="0.86486875" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.302" y1="0.86486875" x2="-4.2418" y2="0.86486875" width="0" layer="19" extent="1-1"/>
+<wire x1="-2.51586875" y1="2.3114" x2="-3.302" y2="0.86486875" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.654" y1="2.88" x2="-2.51586875" y2="2.3114" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.654" y1="4.08" x2="-3.654" y2="2.88" width="0" layer="19" extent="1-1"/>
+<wire x1="-2.51586875" y1="4.2926" x2="-3.654" y2="4.08" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.404" y1="2.13" x2="-5.1816" y2="0.86486875" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.804" y1="2.13" x2="-6.404" y2="2.13" width="0" layer="19" extent="1-1"/>
+<wire x1="-8.004" y1="2.13" x2="-6.804" y2="2.13" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.7282" y1="0.15113125" x2="-8.004" y2="2.13" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.7282" y1="-1.59893125" x2="-9.7282" y2="0.15113125" width="0" layer="19" extent="1-1"/>
+<wire x1="-11.034" y1="-1.507" x2="-9.7282" y2="-1.59893125" width="0" layer="19" extent="1-1"/>
+<wire x1="-8.404" y1="8.03" x2="-8.004" y2="2.13" width="0" layer="19" extent="1-1"/>
+<wire x1="-9.779" y1="9.34593125" x2="-8.404" y2="8.03" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$8">
 <contactref element="U1" pad="44"/>
 <contactref element="R4" pad="1"/>
-<wire x1="9.779" y1="1.85293125" x2="8.709" y2="1.639" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="2.401" x2="10.6934" y2="2.36093125" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="!STM_RST">
 <contactref element="U1" pad="7"/>
 <contactref element="J2" pad="3"/>
-<wire x1="5.084" y1="4.264" x2="10.668" y2="7.747" width="0" layer="19" extent="1-1"/>
+<wire x1="5.973" y1="5.026" x2="11.684" y2="9.144" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="EXT_I2C_SCL">
 <contactref element="U1" pad="30"/>
@@ -1746,37 +1746,37 @@ Quickturn PCB 4 Layer .DRU</description>
 <signal name="STM_SWDIO">
 <contactref element="U1" pad="34"/>
 <contactref element="J2" pad="2"/>
-<wire x1="7.084" y1="-2.486" x2="11.938" y2="6.477" width="0" layer="19" extent="1-1"/>
+<wire x1="7.973" y1="-1.724" x2="12.954" y2="7.874" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="STM_SWCLK">
 <contactref element="U1" pad="37"/>
 <contactref element="J2" pad="4"/>
-<wire x1="8.709" y1="-1.861" x2="10.668" y2="6.477" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="-1.099" x2="11.684" y2="7.874" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="GPIO0">
 <contactref element="U1" pad="42"/>
 <contactref element="TP1" pad="TESTPOINT"/>
-<wire x1="8.709" y1="0.639" x2="10.668" y2="0.254" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="1.401" x2="13.97" y2="2.413" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="GPIO1">
 <contactref element="U1" pad="43"/>
 <contactref element="TP2" pad="TESTPOINT"/>
-<wire x1="8.709" y1="1.139" x2="12.573" y2="3.683" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="1.901" x2="13.97" y2="5.207" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$10">
 <contactref element="R6" pad="1"/>
 <contactref element="D1" pad="4"/>
-<wire x1="3.81" y1="-10.46606875" x2="0.4318" y2="-12.6238" width="0" layer="19" extent="1-1"/>
+<wire x1="11.60906875" y1="-0.6858" x2="14.4018" y2="-0.3048" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$11">
 <contactref element="R7" pad="1"/>
 <contactref element="D1" pad="3"/>
-<wire x1="2.921" y1="-10.46606875" x2="0.4318" y2="-11.7602" width="0" layer="19" extent="1-1"/>
+<wire x1="11.60906875" y1="0.254" x2="14.4018" y2="0.5588" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$12">
 <contactref element="R5" pad="1"/>
 <contactref element="D1" pad="2"/>
-<wire x1="-0.4318" y1="-11.7602" x2="2.032" y2="-10.46606875" width="0" layer="19" extent="1-1"/>
+<wire x1="11.60906875" y1="1.143" x2="13.5382" y2="0.5588" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="INTERRUPT">
 <contactref element="U1" pad="12"/>
@@ -1784,63 +1784,63 @@ Quickturn PCB 4 Layer .DRU</description>
 <signal name="!DW_SPI_CS">
 <contactref element="U1" pad="14"/>
 <contactref element="U2" pad="24"/>
-<wire x1="-3.515" y1="1.622" x2="1.959" y2="3.139" width="0" layer="19" extent="1-1"/>
+<wire x1="-4.404" y1="2.13" x2="2.848" y2="3.901" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="DW_SPI_CLK">
 <contactref element="U1" pad="15"/>
 <contactref element="U2" pad="41"/>
-<wire x1="-5.115" y1="7.522" x2="1.959" y2="2.639" width="0" layer="19" extent="1-1"/>
+<wire x1="-6.004" y1="8.03" x2="2.848" y2="3.401" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="DW_SPI_MISO">
 <contactref element="U1" pad="16"/>
 <contactref element="U2" pad="40"/>
-<wire x1="1.959" y1="2.139" x2="-4.715" y2="7.522" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.604" y1="8.03" x2="2.848" y2="2.901" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="DW_SPI_MOSI">
 <contactref element="U1" pad="17"/>
 <contactref element="U2" pad="39"/>
-<wire x1="1.959" y1="1.639" x2="-4.315" y2="7.522" width="0" layer="19" extent="1-1"/>
+<wire x1="-5.204" y1="8.03" x2="2.848" y2="2.401" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="LED_RED">
 <contactref element="R5" pad="2"/>
 <contactref element="U1" pad="41"/>
 <contactref element="TP5" pad="P$1"/>
-<wire x1="4.953" y1="-8.382" x2="2.032" y2="-9.59993125" width="0" layer="19" extent="1-1"/>
-<wire x1="8.709" y1="0.139" x2="4.953" y2="-8.382" width="0" layer="19" extent="1-1"/>
+<wire x1="10.74293125" y1="1.143" x2="14.478" y2="-1.778" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="0.901" x2="10.74293125" y2="1.143" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="LED_BLUE">
 <contactref element="R7" pad="2"/>
 <contactref element="U1" pad="40"/>
 <contactref element="TP7" pad="P$1"/>
-<wire x1="1.905" y1="-8.382" x2="8.709" y2="-0.361" width="0" layer="19" extent="1-1"/>
-<wire x1="2.921" y1="-9.59993125" x2="1.905" y2="-8.382" width="0" layer="19" extent="1-1"/>
+<wire x1="10.74293125" y1="0.254" x2="12.954" y2="-1.778" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="0.401" x2="10.74293125" y2="0.254" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="LED_GREEN">
 <contactref element="R6" pad="2"/>
 <contactref element="U1" pad="39"/>
 <contactref element="TP6" pad="P$1"/>
-<wire x1="3.429" y1="-8.382" x2="8.709" y2="-0.861" width="0" layer="19" extent="1-1"/>
-<wire x1="3.81" y1="-9.59993125" x2="3.429" y2="-8.382" width="0" layer="19" extent="1-1"/>
+<wire x1="9.598" y1="-0.099" x2="10.74293125" y2="-0.6858" width="0" layer="19" extent="1-1"/>
+<wire x1="11.43" y1="-1.778" x2="10.74293125" y2="-0.6858" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$13">
 <contactref element="U2" pad="36"/>
 <contactref element="TP9" pad="P$1"/>
-<wire x1="-2.765" y1="6.772" x2="-1.778" y2="7.366" width="0" layer="19" extent="1-1"/>
+<wire x1="-3.654" y1="7.28" x2="-2.667" y2="7.874" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$14">
 <contactref element="U2" pad="35"/>
 <contactref element="TP10" pad="P$1"/>
-<wire x1="-2.765" y1="6.372" x2="-1.778" y2="6.35" width="0" layer="19" extent="1-1"/>
+<wire x1="-2.667" y1="6.858" x2="-3.654" y2="6.88" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="GPIO2">
 <contactref element="U1" pad="29"/>
 <contactref element="TP3" pad="P$1"/>
-<wire x1="3.429" y1="-6.477" x2="4.584" y2="-2.486" width="0" layer="19" extent="1-1"/>
+<wire x1="5.715" y1="-3.048" x2="5.473" y2="-1.724" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="GPIO3">
 <contactref element="U1" pad="28"/>
 <contactref element="TP4" pad="P$1"/>
-<wire x1="4.084" y1="-2.486" x2="1.905" y2="-6.477" width="0" layer="19" extent="1-1"/>
+<wire x1="4.699" y1="-3.048" x2="4.973" y2="-1.724" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 <mfgpreviewcolors>
@@ -1983,9 +1983,9 @@ Quickturn PCB 4 Layer .DRU</description>
 </board>
 </drawing>
 <compatibility>
-<note version="8.5" severity="warning">
-Since Version 8.5, EAGLE supports locking for holes, vias, wires and polygons. 
-The locking property on all objects of these types will not be understood in this version. 
+<note version="6.3" minversion="6.2.2" severity="warning">
+Since Version 6.2.2 text objects can contain more than one line,
+which will not be processed correctly with this version.
 </note>
 </compatibility>
 </eagle>
