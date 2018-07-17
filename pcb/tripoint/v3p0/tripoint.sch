@@ -1612,10 +1612,10 @@ Basic schematic elements and footprints for 0201, 0402, 0603, 1206, and PTH resi
 <part name="C35" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="100nF"/>
 <part name="C36" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="100nF"/>
 <part name="C37" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
-<part name="C38" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="100nF"/>
-<part name="C39" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
-<part name="C40" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10nF"/>
-<part name="C41" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF"/>
+<part name="C38" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
+<part name="C39" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="100nF"/>
+<part name="C40" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF"/>
+<part name="C41" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10nF"/>
 <part name="SUPPLY19" library="regulators" deviceset="GND" device=""/>
 <part name="R4" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k"/>
 <part name="SUPPLY20" library="regulators" deviceset="GND" device=""/>
@@ -1666,7 +1666,7 @@ Basic schematic elements and footprints for 0201, 0402, 0603, 1206, and PTH resi
 resistor required</text>
 <text x="114.3" y="73.66" size="0.762" layer="98">PC
 Test Points</text>
-<text x="114.808" y="56.134" size="0.762" layer="98">Pad
+<text x="101.6" y="47.498" size="0.762" layer="98">Pad
 Test Points</text>
 <text x="129.54" y="30.48" size="2.032" layer="98">LED</text>
 <text x="57.15" y="110.236" size="0.762" layer="98" rot="R90">INTERRUPT: used both for waking up
@@ -1762,10 +1762,10 @@ for (DEEP)SLEEP</text>
 <instance part="J2" gate="G$1" x="129.54" y="96.52" rot="R90"/>
 <instance part="SUPPLY22" gate="G1" x="134.62" y="78.74"/>
 <instance part="+3V4" gate="P1" x="119.38" y="83.82"/>
-<instance part="R5" gate="G$1" x="116.84" y="43.18" rot="R90"/>
-<instance part="R6" gate="G$1" x="124.46" y="43.18" rot="R90"/>
+<instance part="R5" gate="G$1" x="114.3" y="50.8" rot="R90"/>
+<instance part="R6" gate="G$1" x="124.46" y="50.8" rot="R90"/>
 <instance part="D1" gate="G$1" x="124.46" y="22.86" rot="R90"/>
-<instance part="R7" gate="G$1" x="132.08" y="43.18" rot="R90"/>
+<instance part="R7" gate="G$1" x="134.62" y="50.8" rot="R90"/>
 <instance part="TP1" gate="G$1" x="106.68" y="76.2" rot="R180"/>
 <instance part="TP2" gate="G$1" x="106.68" y="73.66" rot="R180"/>
 <instance part="TP3" gate="G$1" x="68.58" y="116.84" smashed="yes" rot="R270">
@@ -1779,14 +1779,14 @@ for (DEEP)SLEEP</text>
 <instance part="GND1" gate="G1" x="233.68" y="157.48"/>
 <instance part="C42" gate="G$1" x="223.52" y="35.56"/>
 <instance part="C43" gate="G$1" x="248.92" y="66.04"/>
-<instance part="TP5" gate="G$1" x="114.3" y="53.34" smashed="yes">
-<attribute name="NAME" x="113.665" y="50.8" size="1.016" layer="95" ratio="12" align="center-right"/>
+<instance part="TP5" gate="G$1" x="129.54" y="40.64" smashed="yes" rot="R180">
+<attribute name="NAME" x="130.175" y="38.1" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
 </instance>
-<instance part="TP6" gate="G$1" x="121.92" y="50.8" smashed="yes">
-<attribute name="NAME" x="121.285" y="48.26" size="1.016" layer="95" ratio="12" align="center-right"/>
+<instance part="TP6" gate="G$1" x="119.38" y="40.64" smashed="yes" rot="R180">
+<attribute name="NAME" x="120.015" y="38.1" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
 </instance>
-<instance part="TP7" gate="G$1" x="129.54" y="48.26" smashed="yes">
-<attribute name="NAME" x="128.905" y="45.72" size="1.016" layer="95" ratio="12" align="center-right"/>
+<instance part="TP7" gate="G$1" x="139.7" y="40.64" smashed="yes" rot="R180">
+<attribute name="NAME" x="140.335" y="38.1" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
 </instance>
 <instance part="TP8" gate="G$1" x="20.32" y="50.8"/>
 <instance part="TP9" gate="G$1" x="213.36" y="172.72" rot="R180"/>
@@ -2731,25 +2731,37 @@ for (DEEP)SLEEP</text>
 <segment>
 <pinref part="R6" gate="G$1" pin="1"/>
 <pinref part="D1" gate="G$1" pin="G"/>
-<wire x1="124.46" y1="38.1" x2="124.46" y2="33.02" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="45.72" x2="124.46" y2="40.64" width="0.1524" layer="91"/>
+<pinref part="TP5" gate="G$1" pin="TESTPOINT"/>
+<wire x1="124.46" y1="40.64" x2="124.46" y2="33.02" width="0.1524" layer="91"/>
+<wire x1="127" y1="40.64" x2="124.46" y2="40.64" width="0.1524" layer="91"/>
+<junction x="124.46" y="40.64"/>
 </segment>
 </net>
 <net name="N$11" class="0">
 <segment>
 <pinref part="R7" gate="G$1" pin="1"/>
-<wire x1="132.08" y1="38.1" x2="132.08" y2="35.56" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="35.56" x2="127" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="45.72" x2="134.62" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="40.64" x2="134.62" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="35.56" x2="127" y2="35.56" width="0.1524" layer="91"/>
 <pinref part="D1" gate="G$1" pin="B"/>
 <wire x1="127" y1="35.56" x2="127" y2="33.02" width="0.1524" layer="91"/>
+<pinref part="TP7" gate="G$1" pin="TESTPOINT"/>
+<wire x1="137.16" y1="40.64" x2="134.62" y2="40.64" width="0.1524" layer="91"/>
+<junction x="134.62" y="40.64"/>
 </segment>
 </net>
 <net name="N$12" class="0">
 <segment>
 <pinref part="R5" gate="G$1" pin="1"/>
-<wire x1="116.84" y1="38.1" x2="116.84" y2="35.56" width="0.1524" layer="91"/>
-<wire x1="116.84" y1="35.56" x2="121.92" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="114.3" y1="45.72" x2="114.3" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="114.3" y1="40.64" x2="114.3" y2="35.56" width="0.1524" layer="91"/>
+<wire x1="114.3" y1="35.56" x2="121.92" y2="35.56" width="0.1524" layer="91"/>
 <pinref part="D1" gate="G$1" pin="R"/>
 <wire x1="121.92" y1="35.56" x2="121.92" y2="33.02" width="0.1524" layer="91"/>
+<pinref part="TP6" gate="G$1" pin="TESTPOINT"/>
+<wire x1="116.84" y1="40.64" x2="114.3" y2="40.64" width="0.1524" layer="91"/>
+<junction x="114.3" y="40.64"/>
 </segment>
 </net>
 <net name="!DW_SPI_CS" class="0">
@@ -2806,48 +2818,41 @@ for (DEEP)SLEEP</text>
 </net>
 <net name="LED_RED" class="0">
 <segment>
+<wire x1="132.08" y1="60.96" x2="134.62" y2="60.96" width="0.1524" layer="91"/>
+<label x="134.62" y="60.96" size="1.016" layer="95" xref="yes"/>
 <pinref part="R5" gate="G$1" pin="2"/>
-<wire x1="116.84" y1="45.72" x2="116.84" y2="53.34" width="0.1524" layer="91"/>
-<wire x1="116.84" y1="53.34" x2="132.08" y2="53.34" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="53.34" x2="134.62" y2="53.34" width="0.1524" layer="91"/>
-<label x="134.62" y="53.34" size="1.016" layer="95" xref="yes"/>
-<pinref part="TP5" gate="G$1" pin="TESTPOINT"/>
-<junction x="116.84" y="53.34"/>
-</segment>
-<segment>
-<pinref part="U1" gate="U1" pin="PB5"/>
-<wire x1="93.98" y1="78.74" x2="96.52" y2="78.74" width="0.1524" layer="91"/>
-<label x="96.52" y="78.74" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
-<net name="LED_BLUE" class="0">
-<segment>
-<pinref part="R7" gate="G$1" pin="2"/>
-<wire x1="132.08" y1="45.72" x2="132.08" y2="48.26" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="48.26" x2="134.62" y2="48.26" width="0.1524" layer="91"/>
-<label x="134.62" y="48.26" size="1.016" layer="95" xref="yes"/>
-<pinref part="TP7" gate="G$1" pin="TESTPOINT"/>
-<junction x="132.08" y="48.26"/>
-</segment>
-<segment>
-<pinref part="U1" gate="U1" pin="PB4"/>
-<wire x1="93.98" y1="81.28" x2="96.52" y2="81.28" width="0.1524" layer="91"/>
-<label x="96.52" y="81.28" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
-<net name="LED_GREEN" class="0">
-<segment>
-<pinref part="R6" gate="G$1" pin="2"/>
-<wire x1="124.46" y1="45.72" x2="124.46" y2="50.8" width="0.1524" layer="91"/>
-<wire x1="124.46" y1="50.8" x2="134.62" y2="50.8" width="0.1524" layer="91"/>
-<label x="134.62" y="50.8" size="1.016" layer="95" xref="yes"/>
-<pinref part="TP6" gate="G$1" pin="TESTPOINT"/>
-<junction x="124.46" y="50.8"/>
+<wire x1="114.3" y1="53.34" x2="114.3" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="114.3" y1="60.96" x2="132.08" y2="60.96" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="PB3"/>
 <wire x1="93.98" y1="83.82" x2="96.52" y2="83.82" width="0.1524" layer="91"/>
 <label x="96.52" y="83.82" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="LED_BLUE" class="0">
+<segment>
+<pinref part="U1" gate="U1" pin="PB4"/>
+<wire x1="93.98" y1="81.28" x2="96.52" y2="81.28" width="0.1524" layer="91"/>
+<label x="96.52" y="81.28" size="1.27" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="R7" gate="G$1" pin="2"/>
+<wire x1="134.62" y1="53.34" x2="134.62" y2="55.88" width="0.1524" layer="91"/>
+<label x="134.62" y="55.88" size="1.016" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="LED_GREEN" class="0">
+<segment>
+<pinref part="U1" gate="U1" pin="PB5"/>
+<wire x1="93.98" y1="78.74" x2="96.52" y2="78.74" width="0.1524" layer="91"/>
+<label x="96.52" y="78.74" size="1.27" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="R6" gate="G$1" pin="2"/>
+<wire x1="124.46" y1="53.34" x2="124.46" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="58.42" x2="134.62" y2="58.42" width="0.1524" layer="91"/>
+<label x="134.62" y="58.42" size="1.016" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="N$13" class="0">
