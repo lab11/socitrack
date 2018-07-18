@@ -1997,34 +1997,40 @@ Quickturn PCB 4 Layer .DRU</description>
 </signal>
 <signal name="RF1">
 <contactref element="U3" pad="4"/>
-<wire x1="-15.1384" y1="-4.6386" x2="-1.5124" y2="-4.6386" width="0.381" layer="1"/>
+<wire x1="-15.1384" y1="-4.6132" x2="-1.4732" y2="-4.6132" width="0.3302" layer="1"/>
 <wire x1="-1.487" y1="-4.537" x2="-1.5124" y2="-4.5624" width="0.1524" layer="1"/>
-<wire x1="-1.5124" y1="-4.6228" x2="-1.5124" y2="-4.5624" width="0.1524" layer="1"/>
+<wire x1="-1.5124" y1="-4.6228" x2="-1.4732" y2="-4.6132" width="0.1524" layer="1"/>
+<wire x1="-1.4732" y1="-4.6132" x2="-1.5124" y2="-4.5624" width="0.1524" layer="1"/>
 <wire x1="-1.487" y1="-4.537" x2="-1.5124" y2="-4.5624" width="0.1524" layer="1"/>
-<wire x1="-1.5124" y1="-4.5624" x2="-1.5124" y2="-4.6228" width="0.1524" layer="1"/>
-<wire x1="-1.5124" y1="-4.6386" x2="-1.5124" y2="-4.6228" width="0.1524" layer="1"/>
+<wire x1="-1.5124" y1="-4.5624" x2="-1.4732" y2="-4.6132" width="0.1524" layer="1"/>
+<wire x1="-1.4732" y1="-4.6132" x2="-1.5124" y2="-4.6228" width="0.1524" layer="1"/>
+<wire x1="-1.4732" y1="-4.6132" x2="-1.5124" y2="-4.6228" width="0.1524" layer="1"/>
 </signal>
 <signal name="RF2">
 <contactref element="U3" pad="5"/>
-<wire x1="15.2146" y1="-4.6386" x2="-0.0116" y2="-4.6386" width="0.381" layer="1"/>
+<wire x1="15.2146" y1="-4.6132" x2="-0.0508" y2="-4.6132" width="0.3302" layer="1"/>
 <wire x1="-0.037" y1="-4.537" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
-<wire x1="-0.0116" y1="-4.6228" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
+<wire x1="-0.0116" y1="-4.6228" x2="-0.0508" y2="-4.6132" width="0.1524" layer="1"/>
+<wire x1="-0.0508" y1="-4.6132" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
 <wire x1="-0.037" y1="-4.537" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
-<wire x1="-0.0116" y1="-4.5624" x2="-0.0116" y2="-4.6228" width="0.1524" layer="1"/>
+<wire x1="-0.0116" y1="-4.5624" x2="-0.0508" y2="-4.6132" width="0.1524" layer="1"/>
+<wire x1="-0.0508" y1="-4.6132" x2="-0.0116" y2="-4.6228" width="0.1524" layer="1"/>
 <wire x1="-0.037" y1="-4.537" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
-<wire x1="-0.0116" y1="-4.5624" x2="-0.0116" y2="-4.6228" width="0.1524" layer="1"/>
+<wire x1="-0.0116" y1="-4.5624" x2="-0.0508" y2="-4.6132" width="0.1524" layer="1"/>
+<wire x1="-0.0508" y1="-4.6132" x2="-0.0116" y2="-4.6228" width="0.1524" layer="1"/>
 <wire x1="-0.037" y1="-4.537" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
-<wire x1="-0.0116" y1="-4.5624" x2="-0.0116" y2="-4.6228" width="0.1524" layer="1"/>
-<wire x1="-0.0116" y1="-4.6386" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
+<wire x1="-0.0116" y1="-4.5624" x2="-0.0508" y2="-4.6132" width="0.1524" layer="1"/>
+<wire x1="-0.0508" y1="-4.6132" x2="-0.0116" y2="-4.6228" width="0.1524" layer="1"/>
+<wire x1="-0.0508" y1="-4.6132" x2="-0.0116" y2="-4.5624" width="0.1524" layer="1"/>
 </signal>
 <signal name="RF3">
 <contactref element="U3" pad="8"/>
-<wire x1="-0.0254" y1="10.541" x2="-0.0254" y2="9.0424" width="0.381" layer="1"/>
-<wire x1="-0.0254" y1="9.0424" x2="-0.0254" y2="-2.8194" width="0.381" layer="1"/>
+<wire x1="-0.0254" y1="10.541" x2="-0.0254" y2="9.0424" width="0.3302" layer="1"/>
+<wire x1="-0.0254" y1="9.0424" x2="-0.0254" y2="-2.8194" width="0.3302" layer="1"/>
 <polygon width="0.0254" layer="1" thermals="no">
 <vertex x="0.127" y="-3.302"/>
-<vertex x="0.1524" y="-2.8448"/>
-<vertex x="-0.2032" y="-2.8448"/>
+<vertex x="0.127" y="-2.8448"/>
+<vertex x="-0.1778" y="-2.8448"/>
 <vertex x="-0.2032" y="-3.2512"/>
 </polygon>
 <wire x1="-0.0254" y1="-2.8194" x2="-0.0254" y2="-3.3254" width="0.1524" layer="1"/>
@@ -2730,14 +2736,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="4.973" y1="-1.724" x2="4.973" y2="-2.8248" width="0.2032" layer="1"/>
 <wire x1="4.973" y1="-2.8248" x2="4.699" y2="-3.0988" width="0.2032" layer="1"/>
 </signal>
-<signal name="N$15">
-<polygon width="0.0254" layer="1" pour="cutout">
-<vertex x="0.2794" y="-3.175"/>
-<vertex x="0.3048" y="-2.9718"/>
-<vertex x="0.254" y="-2.9718"/>
-<vertex x="0.2286" y="-3.175"/>
-</polygon>
-</signal>
 </signals>
 <mfgpreviewcolors>
 <mfgpreviewcolor name="soldermaskcolor" color="0xC8008000"/>
@@ -2790,9 +2788,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <approved hash="5,1,d7ae37bb3c532914"/>
 <approved hash="5,1,ebac3bbb3c531916"/>
 <approved hash="5,1,ffaa2fbb1c533910"/>
-<approved hash="23,1,3ff73bcb3b1f3f23"/>
-<approved hash="23,1,9976074a079e99a2"/>
-<approved hash="23,1,ccc48307831dccde"/>
 <approved hash="19,1,a2fa9cf722811c8c"/>
 <approved hash="19,1,24f11af263045d07"/>
 <approved hash="19,1,aefc90f20684388a"/>
@@ -2830,6 +2825,9 @@ Quickturn PCB 4 Layer .DRU</description>
 <approved hash="19,1,15d61bd50fa301a0"/>
 <approved hash="19,1,a217a2db5c2d5ce1"/>
 <approved hash="23,1,8af05be45b338a27"/>
+<approved hash="23,1,4383074200444485"/>
+<approved hash="23,1,1f8710b9114e1e70"/>
+<approved hash="23,1,dd06523853ccdcf2"/>
 </errors>
 </board>
 </drawing>
