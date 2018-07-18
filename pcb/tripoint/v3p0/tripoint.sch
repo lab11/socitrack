@@ -1585,7 +1585,7 @@ Basic schematic elements and footprints for 0201, 0402, 0603, 1206, and PTH resi
 <part name="U2" library="chips" deviceset="DW1000" device=""/>
 <part name="R1" library="passives" deviceset="RESISTOR" device="0402_RES" value="270"/>
 <part name="R2" library="passives" deviceset="RESISTOR" device="0402_RES" value="16k"/>
-<part name="R3" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k"/>
+<part name="R3" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k 1%"/>
 <part name="C26" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF"/>
 <part name="C27" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="27pF"/>
 <part name="C28" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1.2pF"/>
@@ -2894,6 +2894,17 @@ for (DEEP)SLEEP</text>
 <text x="35.56" y="157.48" size="5.08" layer="98">EXTERNAL SIGNALS</text>
 <text x="35.56" y="149.86" size="2.54" layer="98">The following signals must be integrated into all designs using the design block:</text>
 <text x="86.36" y="134.62" size="2.54" layer="98">Note: Additional I2C pull-up resistors required to +3V3</text>
+<text x="78.74" y="60.96" size="2.54" layer="98">Be aware that the DecaWave is very sensitive regarding its power supply.
+
+We suggest using the "MAX8887EZK33+T" from Maxim Integrated.
+You can find a reference layout at github.com/lab11/polypoint/pcb/tritag.</text>
+<text x="7.62" y="101.6" size="3.556" layer="98">Antennas</text>
+<text x="78.74" y="88.9" size="2.54" layer="98">Guarantee 120° offset in-between antennas to maximize  polarization difference and antenna diversity
+
+RF traces should respect the keepout zones and be surrounded by a via shield. 
+Furthermore, try to keep them as short and straight as possible</text>
+<text x="7.62" y="73.66" size="3.556" layer="98">Power Supply</text>
+<text x="7.62" y="137.16" size="3.556" layer="98">Signals</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0"/>
@@ -2928,32 +2939,26 @@ for (DEEP)SLEEP</text>
 </net>
 <net name="RF1" class="0">
 <segment>
-<wire x1="35.56" y1="109.22" x2="50.8" y2="109.22" width="0.1524" layer="91"/>
-<label x="50.8" y="109.22" size="2.54" layer="95" xref="yes"/>
+<wire x1="35.56" y1="101.6" x2="50.8" y2="101.6" width="0.1524" layer="91"/>
+<label x="50.8" y="101.6" size="2.54" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="RF2" class="0">
 <segment>
-<wire x1="35.56" y1="104.14" x2="50.8" y2="104.14" width="0.1524" layer="91"/>
-<label x="50.8" y="104.14" size="2.54" layer="95" xref="yes"/>
+<wire x1="35.56" y1="96.52" x2="50.8" y2="96.52" width="0.1524" layer="91"/>
+<label x="50.8" y="96.52" size="2.54" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="RF3" class="0">
 <segment>
-<wire x1="35.56" y1="99.06" x2="50.8" y2="99.06" width="0.1524" layer="91"/>
-<label x="50.8" y="99.06" size="2.54" layer="95" xref="yes"/>
+<wire x1="35.56" y1="91.44" x2="50.8" y2="91.44" width="0.1524" layer="91"/>
+<label x="50.8" y="91.44" size="2.54" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="+3V3" class="0">
 <segment>
-<wire x1="35.56" y1="86.36" x2="50.8" y2="86.36" width="0.1524" layer="91"/>
-<label x="50.8" y="86.36" size="2.54" layer="95" xref="yes"/>
-</segment>
-</net>
-<net name="+1V8" class="0">
-<segment>
-<wire x1="35.56" y1="81.28" x2="50.8" y2="81.28" width="0.1524" layer="91"/>
-<label x="50.8" y="81.28" size="2.54" layer="95" xref="yes"/>
+<wire x1="35.56" y1="71.12" x2="50.8" y2="71.12" width="0.1524" layer="91"/>
+<label x="50.8" y="71.12" size="2.54" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
