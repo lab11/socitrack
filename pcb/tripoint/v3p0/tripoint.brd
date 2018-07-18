@@ -9,7 +9,7 @@
 <grid distance="5" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="1" altunitdist="mil" altunit="mil"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
-<layer number="2" name="Route2" color="1" fill="3" visible="yes" active="yes"/>
+<layer number="2" name="Route2" color="1" fill="3" visible="no" active="yes"/>
 <layer number="3" name="Route3" color="4" fill="3" visible="no" active="no"/>
 <layer number="4" name="Route4" color="1" fill="4" visible="no" active="no"/>
 <layer number="5" name="Route5" color="4" fill="4" visible="no" active="no"/>
@@ -22,18 +22,18 @@
 <layer number="12" name="Route12" color="1" fill="5" visible="no" active="no"/>
 <layer number="13" name="Route13" color="4" fill="5" visible="no" active="no"/>
 <layer number="14" name="Route14" color="1" fill="6" visible="no" active="no"/>
-<layer number="15" name="Route15" color="4" fill="6" visible="yes" active="yes"/>
-<layer number="16" name="Bottom" color="1" fill="1" visible="yes" active="yes"/>
+<layer number="15" name="Route15" color="4" fill="6" visible="no" active="yes"/>
+<layer number="16" name="Bottom" color="1" fill="1" visible="no" active="yes"/>
 <layer number="17" name="Pads" color="2" fill="1" visible="yes" active="yes"/>
 <layer number="18" name="Vias" color="2" fill="1" visible="yes" active="yes"/>
-<layer number="19" name="Unrouted" color="59" fill="1" visible="yes" active="yes"/>
+<layer number="19" name="Unrouted" color="59" fill="1" visible="no" active="yes"/>
 <layer number="20" name="Dimension" color="24" fill="1" visible="yes" active="yes"/>
 <layer number="21" name="tPlace" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="no" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="25" name="tNames" color="7" fill="1" visible="no" active="yes"/>
-<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="no" active="yes"/>
+<layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="no" active="yes"/>
 <layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
@@ -48,18 +48,18 @@
 <layer number="38" name="bTest" color="7" fill="1" visible="no" active="yes"/>
 <layer number="39" name="tKeepout" color="4" fill="11" visible="no" active="yes"/>
 <layer number="40" name="bKeepout" color="1" fill="11" visible="no" active="yes"/>
-<layer number="41" name="tRestrict" color="4" fill="10" visible="yes" active="yes"/>
-<layer number="42" name="bRestrict" color="1" fill="10" visible="yes" active="yes"/>
+<layer number="41" name="tRestrict" color="4" fill="10" visible="no" active="yes"/>
+<layer number="42" name="bRestrict" color="1" fill="10" visible="no" active="yes"/>
 <layer number="43" name="vRestrict" color="2" fill="10" visible="no" active="yes"/>
 <layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
-<layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
 <layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
 <layer number="49" name="Reference" color="7" fill="1" visible="no" active="yes"/>
 <layer number="50" name="dxf" color="7" fill="1" visible="no" active="no"/>
-<layer number="51" name="tDocu" color="11" fill="1" visible="yes" active="yes"/>
-<layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="51" name="tDocu" color="11" fill="1" visible="no" active="yes"/>
+<layer number="52" name="bDocu" color="7" fill="1" visible="no" active="yes"/>
 <layer number="53" name="tGND_GNDA" color="7" fill="9" visible="no" active="no"/>
 <layer number="54" name="bGND_GNDA" color="1" fill="9" visible="no" active="no"/>
 <layer number="56" name="wert" color="7" fill="1" visible="no" active="no"/>
@@ -166,8 +166,8 @@
 </layers>
 <board>
 <plain>
-<text x="6.2692" y="-3.6008" size="0.508" layer="21" ratio="12" align="center-left">Andreas Biri, Pat Pannuto</text>
-<text x="-11.1394" y="-3.5118" size="0.3" layer="21" ratio="12" align="center-left">17/07/2018</text>
+<text x="6.2692" y="-3.6008" size="0.508" layer="21" font="vector" ratio="15" align="center-left">Andreas Biri, Pat Pannuto</text>
+<text x="-11.1394" y="-3.5118" size="0.3" layer="21" font="vector" ratio="12" align="center-left">17/07/2018</text>
 <wire x1="15.24" y1="-5.842" x2="15.24" y2="10.541" width="0.1524" layer="20"/>
 <wire x1="15.24" y1="10.541" x2="-15.24" y2="10.541" width="0.1524" layer="20"/>
 <wire x1="-15.24" y1="10.541" x2="-15.24" y2="-5.842" width="0.1524" layer="20"/>
@@ -175,7 +175,7 @@
 <circle x="15.24" y="-4.572" radius="0.127" width="0.1524" layer="51"/>
 <circle x="-15.24" y="-4.572" radius="0.127" width="0.1524" layer="51"/>
 <circle x="0" y="10.541" radius="0.127" width="0.1524" layer="51"/>
-<text x="-8.255" y="-3.683" size="0.508" layer="21">v3.1</text>
+<text x="-8.255" y="-3.683" size="0.508" layer="21" font="vector">v3.1</text>
 <polygon width="0.1524" layer="39">
 <vertex x="-14.732" y="-3.683"/>
 <vertex x="-1.778" y="-3.683"/>
@@ -195,7 +195,7 @@
 <vertex x="-1.016" y="-2.921"/>
 <vertex x="-1.016" y="-2.794"/>
 </polygon>
-<text x="-14.859" y="-3.683" size="0.4064" layer="21" ratio="15">SquarePoint</text>
+<text x="-14.859" y="-3.683" size="0.4064" layer="21" font="vector" ratio="15">SquarePoint</text>
 <polygon width="0.0254" layer="41">
 <vertex x="-7.874" y="1.27"/>
 <vertex x="-8.001" y="1.27"/>
@@ -205,6 +205,14 @@
 <vertex x="-8.128" y="-0.254"/>
 <vertex x="-7.874" y="0"/>
 </polygon>
+<text x="14.6812" y="-3.0988" size="0.508" layer="21" font="vector" ratio="18" rot="R90">R</text>
+<text x="11.938" y="-3.0988" size="0.508" layer="21" font="vector" ratio="18" rot="R90">G</text>
+<text x="13.2842" y="-3.0988" size="0.508" layer="21" font="vector" ratio="18" rot="R90">B</text>
+<text x="3.683" y="-2.159" size="0.508" layer="21" font="vector" ratio="18" rot="R270">IO3</text>
+<text x="6.223" y="-2.159" size="0.508" layer="21" font="vector" ratio="18" rot="R270">IO2</text>
+<text x="-2.667" y="7.3152" size="0.508" layer="21" font="vector" ratio="18">IO3</text>
+<text x="-2.667" y="8.7122" size="0.508" layer="21" font="vector" ratio="18">IO2</text>
+<text x="-14.6812" y="-0.127" size="0.508" layer="21" font="vector" ratio="18" rot="R90">GND</text>
 </plain>
 <libraries>
 <library name="chips">
@@ -1271,130 +1279,261 @@ Quickturn PCB 4 Layer .DRU</description>
 </pass>
 </autorouter>
 <elements>
-<element name="U1" library="chips" package="UFQFPN-48" value="STM32F091CC" x="6.223" y="1.651" rot="R270">
+<element name="U1" library="chips" package="UFQFPN-48" value="STM32F091CC" x="6.223" y="1.651" smashed="yes" rot="R270">
 <attribute name="DATASHEET" value="https://www.st.com/resource/en/datasheet/stm32f091cc.pdf" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DESCRIPTION" value="IC MCU 32BIT 256KB FLASH 48QFPN" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DIGIKEY" value="497-15813-ND" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MANUFACTURER" value="STMicroelectronics" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MOUSER" value="511-STM32F091CCU6" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MPN" value="STM32F091CCU6" x="6.223" y="1.651" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="NAME" x="7.93" y="5.414" size="0.508" layer="25" ratio="18"/>
+<attribute name="VALUE" x="1.333" y="5.151" size="1" layer="27" rot="R270"/>
 </element>
-<element name="U3" library="switches" package="MLPQ-UT-8" value="SKY13317" x="-0.762" y="-3.937">
+<element name="U3" library="switches" package="MLPQ-UT-8" value="SKY13317" x="-0.762" y="-3.937" smashed="yes">
 <attribute name="DATASHEET" value="http://www.skyworksinc.com/uploads/documents/SKY13317_373LF_200914K.pdf" x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
 <attribute name="DESCRIPTION" value="IC SWITCH RF SP3T 8-MLP" x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
 <attribute name="DIGIKEY" value="863-1056-1-ND" x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="Skyworks Solutions Inc." x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="SKY13317-373LF" x="-0.762" y="-3.937" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="-1.208" y="-2.937" size="0.508" layer="25" ratio="18"/>
+<attribute name="VALUE" x="-1.462" y="-5.437" size="0.5" layer="27"/>
 </element>
-<element name="U4" library="regulators" package="LXDC2HN" value="LXDC2HN18A" x="-11.684" y="-2.032" rot="R270">
+<element name="U4" library="regulators" package="LXDC2HN" value="LXDC2HN18A" x="-11.684" y="-2.032" smashed="yes" rot="R270">
 <attribute name="DATASHEET" value="https://www.murata.com/~/media/webrenewal/campaign/ads/america/udcdc/lxdc_product_brief.ashx" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DESCRIPTION" value="DC/DC CONVERTER SMD" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DIGIKEY" value="490-12092-1-ND" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MANUFACTURER" value="Murata Electronics North America" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MPN" value="LXDC2HN18A-097" x="-11.684" y="-2.032" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="NAME" x="-10.6552" y="-0.8574" size="0.508" layer="25" ratio="18"/>
+<attribute name="VALUE" x="-13.638" y="-1.105" size="0.5" layer="27" rot="R270"/>
 </element>
-<element name="T1" library="rf" package="EIA-0805" value="HHM1595A1" x="-7.3914" y="-1.143" rot="R90">
+<element name="T1" library="rf" package="EIA-0805" value="HHM1595A1" x="-7.3914" y="-1.143" smashed="yes" rot="R90">
 <attribute name="DATASHEET" value="https://product.tdk.com/info/en/documents/data_sheet/rf_balun_hhm1595a1_en.pdf" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="DESCRIPTION" value="XFMR BALUN RF 3.0-8.0GHZ UWB SMD" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="DIGIKEY" value="445-3387-1-ND" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MANUFACTURER" value="TDK Corporation" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MOUSER" value="810-HHM1595A1" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MPN" value="HHM1595A1" x="-7.3914" y="-1.143" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="NAME" x="-7.763" y="-2.3684" size="0.508" layer="25" ratio="18" rot="R180"/>
+<attribute name="VALUE" x="-5.6914" y="-2.143" size="0.5" layer="27" rot="R90"/>
 </element>
-<element name="C1" library="passives" package="0201_CAP" value="12pF" x="-7.1628" y="0.4318"/>
-<element name="C2" library="passives" package="0201_CAP" value="12pF" x="-7.6454" y="0.4318"/>
-<element name="C3" library="passives" package="0402_CAP" value="4.7uF" x="-9.7282" y="-2.032" rot="R90"/>
-<element name="C4" library="passives" package="0603_CAP" value="10uF" x="-13.843" y="-2.032" rot="R90"/>
-<element name="C5" library="passives" package="0402_CAP" value="0.1uF" x="-10.8204" y="9.779" rot="R90"/>
-<element name="C6" library="passives" package="0402_CAP" value="4.7uF" x="-12.2682" y="10.3378" rot="R180"/>
-<element name="C7" library="passives" package="0402_CAP" value="0.1uF" x="-7.3406" y="9.8552" rot="R90"/>
-<element name="C8" library="passives" package="0402_CAP" value="0.1uF" x="-1.4986" y="0.4572" rot="R270"/>
-<element name="C9" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="3.0734"/>
-<element name="C10" library="passives" package="0402_CAP" value="0.1uF" x="-12.9794" y="5.2578" rot="R270"/>
-<element name="C11" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="3.7084" rot="R180"/>
-<element name="C12" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="2.8194" rot="R180"/>
-<element name="C13" library="passives" package="0402_CAP" value="0.1uF" x="-6.3754" y="9.8552" rot="R90"/>
-<element name="C14" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="4.8514" rot="R180"/>
-<element name="C15" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="1.9304" rot="R180"/>
-<element name="C16" library="passives" package="0402_CAP" value="10pF" x="-5.1816" y="-1.1938" rot="R90"/>
-<element name="C17" library="passives" package="0402_CAP" value="10pF" x="-4.6736" y="0.0508"/>
-<element name="C18" library="passives" package="0402_CAP" value="330pF" x="-4.2418" y="-1.1938" rot="R90"/>
-<element name="C19" library="passives" package="0402_CAP" value="330pF" x="-3.302" y="0.4572" rot="R270"/>
-<element name="C20" library="passives" package="0402_CAP" value="0.01uF" x="-9.7282" y="0.5842" rot="R90"/>
-<element name="C21" library="passives" package="0402_CAP" value="0.1uF" x="-3.2766" y="-1.1938" rot="R90"/>
-<element name="C22" library="passives" package="0402_CAP" value="0.1uF" x="-2.3876" y="0.4572" rot="R270"/>
-<element name="C23" library="passives" package="0402_CAP" value="0.1uF" x="-9.779" y="9.779" rot="R90"/>
-<element name="C24" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="4.4704"/>
-<element name="C25" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="2.1844"/>
-<element name="U2" library="chips" package="QFN-48-DW1000" value="DW1000" x="-6.604" y="5.08">
+<element name="C1" library="passives" package="0201_CAP" value="12pF" x="-7.1628" y="0.4318" smashed="yes">
+<attribute name="NAME" x="-6.7608" y="0.1968" size="0.508" layer="25" ratio="18"/>
+</element>
+<element name="C2" library="passives" package="0201_CAP" value="12pF" x="-7.6454" y="0.4318" smashed="yes">
+<attribute name="NAME" x="-8.6404" y="0.1968" size="0.508" layer="25" ratio="18"/>
+</element>
+<element name="C3" library="passives" package="0402_CAP" value="4.7uF" x="-9.7282" y="-2.032" smashed="yes" rot="R90">
+<attribute name="NAME" x="-9.398" y="-1.9304" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C4" library="passives" package="0603_CAP" value="10uF" x="-13.843" y="-2.032" smashed="yes" rot="R90">
+<attribute name="NAME" x="-14.478" y="-2.0066" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C5" library="passives" package="0402_CAP" value="0.1uF" x="-10.8204" y="9.779" smashed="yes" rot="R90">
+<attribute name="NAME" x="-10.0584" y="9.652" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C6" library="passives" package="0402_CAP" value="4.7uF" x="-12.2682" y="10.3378" smashed="yes" rot="R180">
+<attribute name="NAME" x="-13.4112" y="10.541" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C7" library="passives" package="0402_CAP" value="0.1uF" x="-7.3406" y="9.8552" smashed="yes" rot="R90">
+<attribute name="NAME" x="-7.366" y="9.0678" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C8" library="passives" package="0402_CAP" value="0.1uF" x="-1.4986" y="0.4572" smashed="yes" rot="R270">
+<attribute name="NAME" x="-1.1176" y="0.4572" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C9" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="3.0734" smashed="yes">
+<attribute name="NAME" x="-0.7874" y="3.1242" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C10" library="passives" package="0402_CAP" value="0.1uF" x="-12.9794" y="5.2578" smashed="yes" rot="R270">
+<attribute name="NAME" x="-12.4968" y="6.0706" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C11" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="3.7084" smashed="yes" rot="R180">
+<attribute name="NAME" x="-11.6078" y="4.5212" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C12" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="2.8194" smashed="yes" rot="R180">
+<attribute name="NAME" x="-10.795" y="3.2258" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C13" library="passives" package="0402_CAP" value="0.1uF" x="-6.3754" y="9.8552" smashed="yes" rot="R90">
+<attribute name="NAME" x="-5.5118" y="9.8044" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C14" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="4.8514" smashed="yes" rot="R180">
+<attribute name="NAME" x="-11.6332" y="5.715" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C15" library="passives" package="0402_CAP" value="0.1uF" x="-11.6332" y="1.9304" smashed="yes" rot="R180">
+<attribute name="NAME" x="-10.795" y="1.9812" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C16" library="passives" package="0402_CAP" value="10pF" x="-5.1816" y="-1.1938" smashed="yes" rot="R90">
+<attribute name="NAME" x="-4.9276" y="-2.5654" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C17" library="passives" package="0402_CAP" value="10pF" x="-4.6736" y="0.0508" smashed="yes">
+<attribute name="NAME" x="-4.6736" y="0.4318" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C18" library="passives" package="0402_CAP" value="330pF" x="-4.2418" y="-1.1938" smashed="yes" rot="R90">
+<attribute name="NAME" x="-3.9624" y="-2.5654" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C19" library="passives" package="0402_CAP" value="330pF" x="-3.302" y="0.4572" smashed="yes" rot="R270">
+<attribute name="NAME" x="-3.5052" y="1.27" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C20" library="passives" package="0402_CAP" value="0.01uF" x="-9.7282" y="0.5842" smashed="yes" rot="R90">
+<attribute name="NAME" x="-8.89" y="-0.3048" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C21" library="passives" package="0402_CAP" value="0.1uF" x="-3.2766" y="-1.1938" smashed="yes" rot="R90">
+<attribute name="NAME" x="-3.5306" y="-2.5654" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C22" library="passives" package="0402_CAP" value="0.1uF" x="-2.3876" y="0.4572" smashed="yes" rot="R270">
+<attribute name="NAME" x="-2.2352" y="1.2954" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C23" library="passives" package="0402_CAP" value="0.1uF" x="-9.779" y="9.779" smashed="yes" rot="R90">
+<attribute name="NAME" x="-8.9662" y="9.8806" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C24" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="4.4704" smashed="yes">
+<attribute name="NAME" x="-0.7874" y="4.2672" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C25" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="2.1844" smashed="yes">
+<attribute name="NAME" x="-0.7874" y="2.1082" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="U2" library="chips" package="QFN-48-DW1000" value="DW1000" x="-6.604" y="5.08" smashed="yes">
 <attribute name="DATASHEET" value="https://www.decawave.com/sites/default/files/resources/dw1000-datasheet-v2.13.pdf" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
 <attribute name="DESCRIPTION" value="IC RF TXRX 802.15.4 48-QFN" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
 <attribute name="DIGIKEY" value="1479-1001-1-ND" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="Decawave Limited" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="DW1000-I-TR13" x="-6.604" y="5.08" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="-4.921" y="8.68" size="0.508" layer="25" ratio="18"/>
+<attribute name="VALUE" x="-8.604" y="0.48" size="1" layer="27"/>
 </element>
-<element name="R1" library="passives" package="0402_RES" value="270" x="-11.6332" y="0.1524" rot="R180"/>
-<element name="R2" library="passives" package="0402_RES" value="16k" x="-13.6652" y="2.8194" rot="R180"/>
-<element name="R3" library="passives" package="0402_RES" value="11k 1%" x="-13.9192" y="5.2578" rot="R90"/>
-<element name="C26" library="passives" package="0402_CAP" value="820pF" x="-13.208" y="0.5842" rot="R90"/>
-<element name="C27" library="passives" package="0402_CAP" value="27pF" x="-13.6652" y="1.905"/>
-<element name="C28" library="passives" package="0402_CAP" value="1.2pF" x="-13.6652" y="3.7084" rot="R180"/>
-<element name="C29" library="passives" package="0402_CAP" value="18pF" x="-11.6332" y="1.0414" rot="R180"/>
-<element name="C30" library="passives" package="0402_CAP" value="12pF" x="-14.859" y="5.2578" rot="R270"/>
-<element name="C31" library="passives" package="0402_CAP" value="12pF" x="-10.8204" y="7.8232" rot="R270"/>
-<element name="C32" library="passives" package="0402_CAP" value="12pF" x="6.8072" y="9.6012" rot="R180"/>
-<element name="C33" library="passives" package="0402_CAP" value="12pF" x="3.2766" y="8.1534" rot="R180"/>
-<element name="X1" library="crystals" package="FA-20H" value="38.4M" x="-13.0302" y="8.382" rot="R90">
+<element name="R1" library="passives" package="0402_RES" value="270" x="-11.6332" y="0.1524" smashed="yes" rot="R180">
+<attribute name="NAME" x="-11.6332" y="-0.254" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+<attribute name="VALUE" x="-11.6332" y="1.5494" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+</element>
+<element name="R2" library="passives" package="0402_RES" value="16k" x="-13.6652" y="2.8194" smashed="yes" rot="R180">
+<attribute name="NAME" x="-14.9352" y="3.048" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+<attribute name="VALUE" x="-13.6652" y="4.2164" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+</element>
+<element name="R3" library="passives" package="0402_RES" value="11k 1%" x="-13.9192" y="5.2578" smashed="yes" rot="R90">
+<attribute name="NAME" x="-15.1638" y="6.5024" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+<attribute name="VALUE" x="-12.5222" y="5.2578" size="1.016" layer="27" font="vector" ratio="12" rot="R90" align="bottom-center"/>
+</element>
+<element name="C26" library="passives" package="0402_CAP" value="820pF" x="-13.208" y="0.5842" smashed="yes" rot="R90">
+<attribute name="NAME" x="-13.1826" y="-0.254" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C27" library="passives" package="0402_CAP" value="27pF" x="-13.6652" y="1.905" smashed="yes">
+<attribute name="NAME" x="-15.0622" y="1.651" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C28" library="passives" package="0402_CAP" value="1.2pF" x="-13.6652" y="3.7084" smashed="yes" rot="R180">
+<attribute name="NAME" x="-15.0622" y="3.937" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C29" library="passives" package="0402_CAP" value="18pF" x="-11.6332" y="1.0414" smashed="yes" rot="R180">
+<attribute name="NAME" x="-10.795" y="0.7366" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C30" library="passives" package="0402_CAP" value="12pF" x="-14.859" y="5.2578" smashed="yes" rot="R270">
+<attribute name="NAME" x="-13.8938" y="6.096" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C31" library="passives" package="0402_CAP" value="12pF" x="-10.8204" y="7.8232" smashed="yes" rot="R270">
+<attribute name="NAME" x="-9.8806" y="8.255" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C32" library="passives" package="0402_CAP" value="12pF" x="6.8072" y="9.6012" smashed="yes" rot="R180">
+<attribute name="NAME" x="6.8072" y="10.4902" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C33" library="passives" package="0402_CAP" value="12pF" x="3.2766" y="8.1534" smashed="yes" rot="R180">
+<attribute name="NAME" x="1.8796" y="8.4074" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="X1" library="crystals" package="FA-20H" value="38.4M" x="-13.0302" y="8.382" smashed="yes" rot="R90">
 <attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="-13.0302" y="8.382" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead" x="-13.0302" y="8.382" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="DIGIKEY" value="SER3631CT-ND" x="-13.0302" y="8.382" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MANUFACTURER" value="EPSON" x="-13.0302" y="8.382" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="NAME" x="-14.6302" y="8.144" size="0.508" layer="25" ratio="18" rot="R90"/>
+<attribute name="VALUE" x="-10.9602" y="7.382" size="0.5" layer="27" rot="R90"/>
 </element>
-<element name="X2" library="crystals" package="FA-20H" value="16M" x="6.0452" y="7.5438" rot="R270">
+<element name="X2" library="crystals" package="FA-20H" value="16M" x="6.0452" y="7.5438" smashed="yes" rot="R270">
 <attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="6.0452" y="7.5438" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead" x="6.0452" y="7.5438" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DIGIKEY" value="SER3913CT-ND" x="6.0452" y="7.5438" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MANUFACTURER" value="EPSON" x="6.0452" y="7.5438" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="NAME" x="7.5436" y="8.7978" size="0.508" layer="25" ratio="18" rot="R270"/>
+<attribute name="VALUE" x="3.9752" y="8.5438" size="0.5" layer="27" rot="R270"/>
 </element>
-<element name="C34" library="passives" package="0402_CAP" value="100nF" x="1.7526" y="-2.4384" rot="R270"/>
-<element name="C35" library="passives" package="0402_CAP" value="100nF" x="1.7526" y="-0.4572" rot="R90"/>
-<element name="C36" library="passives" package="0402_CAP" value="100nF" x="10.6934" y="4.6736" rot="R270"/>
-<element name="C37" library="passives" package="0402_CAP" value="4.7uF" x="11.7094" y="4.6736" rot="R270"/>
-<element name="C38" library="passives" package="0402_CAP" value="4.7uF" x="10.2362" y="-2.8956"/>
-<element name="C39" library="passives" package="0402_CAP" value="100nF" x="8.4328" y="-2.8956" rot="R180"/>
-<element name="C40" library="passives" package="0402_CAP" value="1uF" x="3.2766" y="7.112" rot="R180"/>
-<element name="C41" library="passives" package="0402_CAP" value="10nF" x="3.2766" y="6.0452" rot="R180"/>
-<element name="R4" library="passives" package="0402_RES" value="11k" x="10.6934" y="2.8702" rot="R90"/>
-<element name="J2" library="connector" package="TC2030-IDC-NL" value="TC2030-JLINK-NL" x="11.684" y="8.509" rot="R180"/>
-<element name="R5" library="passives" package="0402_RES" value="1k" x="11.3792" y="-0.9144" rot="R180"/>
-<element name="R6" library="passives" package="0402_RES" value="1k" x="11.3792" y="0.9652" rot="R180"/>
+<element name="C34" library="passives" package="0402_CAP" value="100nF" x="1.7526" y="-2.4384" smashed="yes" rot="R270">
+<attribute name="NAME" x="0.8636" y="-2.4384" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C35" library="passives" package="0402_CAP" value="100nF" x="1.7526" y="-0.4572" smashed="yes" rot="R90">
+<attribute name="NAME" x="1.3716" y="-0.4572" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C36" library="passives" package="0402_CAP" value="100nF" x="10.6934" y="4.6736" smashed="yes" rot="R270">
+<attribute name="NAME" x="11.4808" y="4.6482" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C37" library="passives" package="0402_CAP" value="4.7uF" x="11.7094" y="4.6736" smashed="yes" rot="R270">
+<attribute name="NAME" x="11.9888" y="4.6482" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
+</element>
+<element name="C38" library="passives" package="0402_CAP" value="4.7uF" x="10.2362" y="-2.8956" smashed="yes">
+<attribute name="NAME" x="10.16" y="-2.5908" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+</element>
+<element name="C39" library="passives" package="0402_CAP" value="100nF" x="8.4328" y="-2.8956" smashed="yes" rot="R180">
+<attribute name="NAME" x="8.4582" y="-2.0828" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C40" library="passives" package="0402_CAP" value="1uF" x="3.2766" y="7.112" smashed="yes" rot="R180">
+<attribute name="NAME" x="1.8796" y="7.366" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="C41" library="passives" package="0402_CAP" value="10nF" x="3.2766" y="6.0452" smashed="yes" rot="R180">
+<attribute name="NAME" x="1.8796" y="6.2992" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+</element>
+<element name="R4" library="passives" package="0402_RES" value="11k" x="10.6934" y="2.8702" smashed="yes" rot="R90">
+<attribute name="NAME" x="11.5824" y="2.8702" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="12.0904" y="2.8702" size="1.016" layer="27" font="vector" ratio="12" rot="R90" align="bottom-center"/>
+</element>
+<element name="J2" library="connector" package="TC2030-IDC-NL" value="TC2030-JLINK-NL" x="11.684" y="8.509" smashed="yes" rot="R180">
+<attribute name="NAME" x="14.732" y="7.112" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+<attribute name="VALUE" x="11.684" y="12.0015" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+</element>
+<element name="R5" library="passives" package="0402_RES" value="1k" x="11.3792" y="-0.9144" smashed="yes" rot="R180">
+<attribute name="NAME" x="12.6492" y="-0.6604" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+<attribute name="VALUE" x="11.3792" y="0.4826" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+</element>
+<element name="R6" library="passives" package="0402_RES" value="1k" x="11.3792" y="0.9652" smashed="yes" rot="R180">
+<attribute name="NAME" x="12.6492" y="1.2192" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+<attribute name="VALUE" x="11.3792" y="2.3622" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+</element>
 <element name="D1" library="leds" package="1MM_SQ_4PAD" value="SML-LX0404SIUPGUSB" x="13.97" y="0.127" smashed="yes">
 <attribute name="DIGIKEY" value="67-2125-1-ND" x="13.97" y="0.127" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="Lumex Opto" x="13.97" y="0.127" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="SML-LX0404SIUPGUSB" x="13.97" y="0.127" size="1.778" layer="27" display="off"/>
-<attribute name="NAME" x="13.07" y="0" size="1.016" layer="25" font="vector" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="NAME" x="15.229" y="0.254" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="13.97" y="-1.673" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center"/>
 </element>
-<element name="R7" library="passives" package="0402_RES" value="1k" x="11.3792" y="0.0762" rot="R180"/>
-<element name="TP1" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="13.97" y="2.413">
+<element name="R7" library="passives" package="0402_RES" value="1k" x="11.3792" y="0.0762" smashed="yes" rot="R180">
+<attribute name="NAME" x="12.6492" y="0.3302" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
+<attribute name="VALUE" x="11.3792" y="1.4732" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
+</element>
+<element name="GPIO0" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="13.97" y="2.413" smashed="yes">
 <attribute name="DIGIKEY" value="5001K-ND" x="13.97" y="2.413" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="15.367" y="2.413" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="13.97" y="-0.127" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center"/>
 </element>
-<element name="TP2" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="13.97" y="5.207">
+<element name="GPIO1" library="headers" package="TESTPOINT_0.040IN" value="TEST_POINT_0.040IN" x="13.97" y="5.207" smashed="yes">
 <attribute name="DIGIKEY" value="5001K-ND" x="13.97" y="5.207" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="15.367" y="5.207" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="13.97" y="2.667" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center"/>
 </element>
-<element name="TP3" library="headers" package="PAD.03X.03" value="TEST-POINT" x="5.715" y="-3.0988"/>
-<element name="TP4" library="headers" package="PAD.03X.03" value="TEST-POINT" x="4.699" y="-3.0988"/>
-<element name="U$1" library="logos" package="ETH_100MIL" value="" x="1.651" y="-4.572"/>
-<element name="R8" library="passives" package="0402_RES" value="100k" x="-8.2804" y="9.8552" rot="R270"/>
-<element name="C42" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="5.3594"/>
-<element name="C43" library="passives" package="0402_CAP" value="4.7uF" x="-2.3622" y="-1.1938" rot="R90"/>
-<element name="TP5" library="headers" package="PAD.03X.03" value="TEST-POINT" x="11.684" y="-2.286"/>
-<element name="TP6" library="headers" package="PAD.03X.03" value="TEST-POINT" x="14.478" y="-2.286"/>
-<element name="TP7" library="headers" package="PAD.03X.03" value="TEST-POINT" x="13.081" y="-2.286"/>
-<element name="TP8" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-14.224" y="0.508"/>
-<element name="TP9" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-2.032" y="8.255"/>
-<element name="TP10" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-2.032" y="6.858"/>
-<element name="U$2" library="logos" package="UCB_CAL_50MIL" value="" x="-0.762" y="4.318"/>
+<element name="TP3" library="headers" package="PAD.03X.03" value="TEST-POINT" x="5.715" y="-3.0988" smashed="yes"/>
+<element name="TP4" library="headers" package="PAD.03X.03" value="TEST-POINT" x="4.699" y="-3.0988" smashed="yes"/>
+<element name="U$1" library="logos" package="ETH_100MIL" value="" x="1.651" y="-4.572" smashed="yes"/>
+<element name="R8" library="passives" package="0402_RES" value="100k" x="-8.2804" y="9.8552" smashed="yes" rot="R270">
+<attribute name="NAME" x="-8.1534" y="8.5852" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+<attribute name="VALUE" x="-9.6774" y="9.8552" size="1.016" layer="27" font="vector" ratio="12" rot="R270" align="bottom-center"/>
+</element>
+<element name="C42" library="passives" package="0402_CAP" value="0.1uF" x="-2.0828" y="5.3594" smashed="yes">
+<attribute name="NAME" x="-0.7874" y="5.5372" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="C43" library="passives" package="0402_CAP" value="4.7uF" x="-2.3622" y="-1.1938" smashed="yes" rot="R90">
+<attribute name="NAME" x="-2.1082" y="-2.5654" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
+</element>
+<element name="TP5" library="headers" package="PAD.03X.03" value="TEST-POINT" x="11.684" y="-2.286" smashed="yes"/>
+<element name="TP6" library="headers" package="PAD.03X.03" value="TEST-POINT" x="14.478" y="-2.286" smashed="yes"/>
+<element name="TP7" library="headers" package="PAD.03X.03" value="TEST-POINT" x="13.081" y="-2.286" smashed="yes"/>
+<element name="TP8" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-14.224" y="0.508" smashed="yes"/>
+<element name="TP9" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-2.032" y="8.255" smashed="yes"/>
+<element name="TP10" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-2.032" y="6.858" smashed="yes"/>
+<element name="U$2" library="logos" package="UCB_CAL_50MIL" value="" x="0.254" y="4.064" smashed="yes"/>
 </elements>
 <signals>
 <signal name="GND">
@@ -2426,7 +2565,7 @@ Quickturn PCB 4 Layer .DRU</description>
 </signal>
 <signal name="GPIO0">
 <contactref element="U1" pad="42"/>
-<contactref element="TP1" pad="TESTPOINT"/>
+<contactref element="GPIO0" pad="TESTPOINT"/>
 <wire x1="13.10005" y1="1.54305" x2="13.97" y2="2.413" width="0.2032" layer="1"/>
 <wire x1="10.36975" y1="1.54305" x2="10.2277" y2="1.401" width="0.2032" layer="1"/>
 <wire x1="10.36975" y1="1.54305" x2="13.10005" y2="1.54305" width="0.2032" layer="1"/>
@@ -2434,7 +2573,7 @@ Quickturn PCB 4 Layer .DRU</description>
 </signal>
 <signal name="GPIO1">
 <contactref element="U1" pad="43"/>
-<contactref element="TP2" pad="TESTPOINT"/>
+<contactref element="GPIO1" pad="TESTPOINT"/>
 <wire x1="9.598" y1="1.901" x2="11.1337" y2="1.901" width="0.2032" layer="1"/>
 <wire x1="11.1337" y1="1.901" x2="12.87135" y2="3.63865" width="0.2032" layer="1"/>
 <wire x1="12.87135" y1="3.63865" x2="13.97" y2="4.7373" width="0.2032" layer="1"/>

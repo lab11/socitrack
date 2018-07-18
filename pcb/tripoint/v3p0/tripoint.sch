@@ -1627,8 +1627,8 @@ Basic schematic elements and footprints for 0201, 0402, 0603, 1206, and PTH resi
 <part name="R6" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="D1" library="leds" deviceset="SML-LX0404SIUPGUSB" device=""/>
 <part name="R7" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
-<part name="TP1" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
-<part name="TP2" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
+<part name="GPIO0" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
+<part name="GPIO1" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
 <part name="TP3" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP4" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="+3V3" library="regulators" deviceset="+3V3" device=""/>
@@ -1766,8 +1766,8 @@ for (DEEP)SLEEP</text>
 <instance part="R6" gate="G$1" x="124.46" y="50.8" rot="R90"/>
 <instance part="D1" gate="G$1" x="124.46" y="22.86" rot="R90"/>
 <instance part="R7" gate="G$1" x="134.62" y="50.8" rot="R90"/>
-<instance part="TP1" gate="G$1" x="106.68" y="76.2" rot="R180"/>
-<instance part="TP2" gate="G$1" x="106.68" y="73.66" rot="R180"/>
+<instance part="GPIO0" gate="G$1" x="106.68" y="76.2" rot="R180"/>
+<instance part="GPIO1" gate="G$1" x="106.68" y="73.66" rot="R180"/>
 <instance part="TP3" gate="G$1" x="68.58" y="116.84" smashed="yes" rot="R270">
 <attribute name="NAME" x="67.437" y="120.396" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
 </instance>
@@ -2707,7 +2707,7 @@ for (DEEP)SLEEP</text>
 <wire x1="93.98" y1="76.2" x2="96.52" y2="76.2" width="0.1524" layer="91"/>
 <label x="96.52" y="76.2" size="1.27" layer="95" rot="MR180"/>
 <wire x1="96.52" y1="76.2" x2="104.14" y2="76.2" width="0.1524" layer="91"/>
-<pinref part="TP1" gate="G$1" pin="TESTPOINT"/>
+<pinref part="GPIO0" gate="G$1" pin="TESTPOINT"/>
 </segment>
 </net>
 <net name="GPIO1" class="0">
@@ -2716,7 +2716,7 @@ for (DEEP)SLEEP</text>
 <wire x1="93.98" y1="73.66" x2="96.52" y2="73.66" width="0.1524" layer="91"/>
 <label x="96.52" y="73.66" size="1.27" layer="95" rot="MR180"/>
 <wire x1="96.52" y1="73.66" x2="104.14" y2="73.66" width="0.1524" layer="91"/>
-<pinref part="TP2" gate="G$1" pin="TESTPOINT"/>
+<pinref part="GPIO1" gate="G$1" pin="TESTPOINT"/>
 </segment>
 </net>
 <net name="INTERRUPT" class="0">
