@@ -4538,71 +4538,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 </deviceset>
 </devicesets>
 </library>
-<library name="mote">
-<packages>
-</packages>
-<symbols>
-<symbol name="VCC">
-<wire x1="1.27" y1="-1.905" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="-1.27" y2="-1.905" width="0.254" layer="94"/>
-<text x="-2.54" y="-2.54" size="1.778" layer="96" rot="R90">&gt;VALUE</text>
-<pin name="VBAT" x="0" y="-2.54" visible="off" length="short" direction="sup" rot="R90"/>
-</symbol>
-<symbol name="VSEC">
-<wire x1="1.27" y1="-1.905" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="-1.27" y2="-1.905" width="0.254" layer="94"/>
-<text x="-2.54" y="-2.54" size="1.778" layer="96" rot="R90">&gt;VALUE</text>
-<pin name="VSEC" x="0" y="-2.54" visible="off" length="short" direction="sup" rot="R90"/>
-</symbol>
-<symbol name="VSOL">
-<wire x1="1.27" y1="-1.905" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="-1.27" y2="-1.905" width="0.254" layer="94"/>
-<text x="-2.54" y="-2.54" size="1.778" layer="96" rot="R90">&gt;VALUE</text>
-<pin name="VSOL" x="0" y="-2.54" visible="off" length="short" direction="sup" rot="R90"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="VBAT" prefix="P+">
-<description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
-<gates>
-<gate name="VCC" symbol="VCC" x="0" y="0"/>
-</gates>
-<devices>
-<device name="">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="VSEC" prefix="P+">
-<description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
-<gates>
-<gate name="G$1" symbol="VSEC" x="0" y="0"/>
-</gates>
-<devices>
-<device name="">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="VSOL" prefix="P+">
-<description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
-<gates>
-<gate name="G$1" symbol="VSOL" x="0" y="0"/>
-</gates>
-<devices>
-<device name="">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="umich">
 <packages>
 </packages>
@@ -5087,7 +5022,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="GND4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND7" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="P+5" library="regulators" deviceset="+3V3" device=""/>
-<part name="P+12" library="mote" deviceset="VBAT" device=""/>
 <part name="C80" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="47nF">
 <attribute name="DIGIKEY" value="445-1264-1-ND"/>
 <attribute name="MPN" value="C1005X7R1C473K050BC "/>
@@ -5110,8 +5044,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <attribute name="MPN" value="GRM1555C1H120GA01D "/>
 </part>
 <part name="GND10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="P+13" library="mote" deviceset="VSEC" device=""/>
-<part name="P+15" library="mote" deviceset="VSOL" device=""/>
 <part name="A4" library="chips" deviceset="ANT3216A063R2400A" device=""/>
 <part name="A3" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
 <part name="A2" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
@@ -5313,7 +5245,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <instance part="GND4" gate="1" x="83.82" y="22.86"/>
 <instance part="GND7" gate="1" x="12.7" y="99.06"/>
 <instance part="P+5" gate="P1" x="81.28" y="154.94"/>
-<instance part="P+12" gate="VCC" x="129.54" y="132.08"/>
 <instance part="C80" gate="G$1" x="27.94" y="111.76">
 <attribute name="DIGIKEY" x="27.94" y="111.76" size="1.778" layer="96" display="off"/>
 <attribute name="MPN" x="27.94" y="111.76" size="1.778" layer="96" display="off"/>
@@ -5336,15 +5267,13 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <attribute name="MPN" x="167.64" y="63.5" size="1.778" layer="96" rot="R270" display="off"/>
 </instance>
 <instance part="GND10" gate="1" x="175.26" y="45.72"/>
-<instance part="P+13" gate="G$1" x="144.78" y="132.08"/>
-<instance part="P+15" gate="G$1" x="137.16" y="132.08"/>
 <instance part="A4" gate="G$1" x="185.42" y="48.26"/>
 <instance part="C60" gate="G$1" x="35.56" y="111.76">
 <attribute name="DIGIKEY" x="35.56" y="111.76" size="1.778" layer="96" display="off"/>
 <attribute name="MPN" x="35.56" y="111.76" size="1.778" layer="96" display="off"/>
 </instance>
-<instance part="TP13" gate="G$1" x="12.7" y="66.04"/>
-<instance part="TP14" gate="G$1" x="12.7" y="63.5"/>
+<instance part="TP13" gate="G$1" x="121.92" y="68.58" rot="R180"/>
+<instance part="TP14" gate="G$1" x="121.92" y="66.04" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -5517,9 +5446,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <label x="220.98" y="81.28" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.15"/>
-<wire x1="60.96" y1="68.58" x2="55.88" y2="68.58" width="0.1524" layer="91"/>
-<label x="55.88" y="68.58" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.12"/>
+<wire x1="60.96" y1="76.2" x2="55.88" y2="76.2" width="0.1524" layer="91"/>
+<label x="55.88" y="76.2" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="EXT_I2C_SCL" class="0">
@@ -5538,9 +5467,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <label x="220.98" y="83.82" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
-<label x="55.88" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
-<pinref part="U1" gate="G$1" pin="P0.13"/>
-<wire x1="60.96" y1="73.66" x2="55.88" y2="73.66" width="0.1524" layer="91"/>
+<pinref part="U1" gate="G$1" pin="P1.09"/>
+<wire x1="106.68" y1="86.36" x2="111.76" y2="86.36" width="0.1524" layer="91"/>
+<label x="111.76" y="86.36" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_SWDIO" class="0">
@@ -5578,9 +5507,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <label x="193.04" y="78.74" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.25"/>
-<wire x1="106.68" y1="63.5" x2="111.76" y2="63.5" width="0.1524" layer="91"/>
-<label x="111.76" y="63.5" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.08"/>
+<wire x1="60.96" y1="81.28" x2="55.88" y2="81.28" width="0.1524" layer="91"/>
+<label x="55.88" y="81.28" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="N$59" class="0">
@@ -5615,9 +5544,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <pinref part="R27" gate="G$1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.04/AIN2"/>
-<wire x1="106.68" y1="127" x2="111.76" y2="127" width="0.1524" layer="91"/>
-<label x="111.76" y="127" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.05/AIN3"/>
+<wire x1="106.68" y1="124.46" x2="111.76" y2="124.46" width="0.1524" layer="91"/>
+<label x="111.76" y="124.46" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="LED_NRF_GREEN" class="0">
@@ -5639,9 +5568,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <pinref part="R29" gate="G$1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.05/AIN3"/>
-<wire x1="106.68" y1="124.46" x2="111.76" y2="124.46" width="0.1524" layer="91"/>
-<label x="111.76" y="124.46" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.04/AIN2"/>
+<wire x1="106.68" y1="127" x2="111.76" y2="127" width="0.1524" layer="91"/>
+<label x="111.76" y="127" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="N$6" class="0">
@@ -5730,38 +5659,23 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 </net>
 <net name="NRF_MISO" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P1.09"/>
-<wire x1="106.68" y1="86.36" x2="111.76" y2="86.36" width="0.1524" layer="91"/>
-<label x="111.76" y="86.36" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.15"/>
+<wire x1="60.96" y1="68.58" x2="55.88" y2="68.58" width="0.1524" layer="91"/>
+<label x="55.88" y="68.58" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_MOSI" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.08"/>
-<wire x1="60.96" y1="81.28" x2="55.88" y2="81.28" width="0.1524" layer="91"/>
-<label x="55.88" y="81.28" size="1.27" layer="95" rot="R180" xref="yes"/>
+<label x="55.88" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.13"/>
+<wire x1="60.96" y1="73.66" x2="55.88" y2="73.66" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="!RST" class="0">
+<net name="NRF_SCK" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.18"/>
-<wire x1="60.96" y1="43.18" x2="55.88" y2="43.18" width="0.1524" layer="91"/>
-<label x="55.88" y="43.18" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="SCK" class="0">
-<segment>
-<pinref part="U1" gate="G$1" pin="P0.12"/>
-<wire x1="60.96" y1="76.2" x2="55.88" y2="76.2" width="0.1524" layer="91"/>
-<label x="55.88" y="76.2" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="VBAT" class="0">
-<segment>
-<pinref part="P+12" gate="VCC" pin="VBAT"/>
-<pinref part="U1" gate="G$1" pin="P0.29/AIN5"/>
-<wire x1="106.68" y1="119.38" x2="129.54" y2="119.38" width="0.1524" layer="91"/>
-<wire x1="129.54" y1="119.38" x2="129.54" y2="129.54" width="0.1524" layer="91"/>
+<pinref part="U1" gate="G$1" pin="P0.17"/>
+<wire x1="60.96" y1="63.5" x2="55.88" y2="63.5" width="0.1524" layer="91"/>
+<label x="55.88" y="63.5" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="N$20" class="0">
@@ -5804,83 +5718,53 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <label x="111.76" y="48.26" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="VSEC" class="0">
-<segment>
-<pinref part="P+13" gate="G$1" pin="VSEC"/>
-<wire x1="144.78" y1="114.3" x2="144.78" y2="129.54" width="0.1524" layer="91"/>
-<pinref part="U1" gate="G$1" pin="P0.31/AIN7"/>
-<wire x1="106.68" y1="114.3" x2="144.78" y2="114.3" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="VSOL" class="0">
-<segment>
-<pinref part="P+15" gate="G$1" pin="VSOL"/>
-<wire x1="137.16" y1="116.84" x2="137.16" y2="129.54" width="0.1524" layer="91"/>
-<pinref part="U1" gate="G$1" pin="P0.30/AIN6"/>
-<wire x1="137.16" y1="116.84" x2="106.68" y2="116.84" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="!NRF_CS_IMU" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.21"/>
-<wire x1="60.96" y1="55.88" x2="55.88" y2="55.88" width="0.1524" layer="91"/>
-<label x="55.88" y="55.88" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.16"/>
+<wire x1="60.96" y1="66.04" x2="55.88" y2="66.04" width="0.1524" layer="91"/>
+<label x="55.88" y="66.04" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="DBG_TX" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.27"/>
-<wire x1="106.68" y1="68.58" x2="111.76" y2="68.58" width="0.1524" layer="91"/>
-<label x="111.76" y="68.58" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.11"/>
+<wire x1="60.96" y1="78.74" x2="55.88" y2="78.74" width="0.1524" layer="91"/>
+<label x="55.88" y="78.74" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="DBG_RX" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.26"/>
-<wire x1="106.68" y1="66.04" x2="111.76" y2="66.04" width="0.1524" layer="91"/>
-<label x="111.76" y="66.04" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.07"/>
+<wire x1="60.96" y1="83.82" x2="55.88" y2="83.82" width="0.1524" layer="91"/>
+<label x="55.88" y="83.82" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="!NRF_CS_SD" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.19"/>
-<wire x1="60.96" y1="60.96" x2="55.88" y2="60.96" width="0.1524" layer="91"/>
-<label x="55.88" y="60.96" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.18"/>
+<wire x1="60.96" y1="43.18" x2="55.88" y2="43.18" width="0.1524" layer="91"/>
+<label x="55.88" y="43.18" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_IMU_INT1" class="0">
-<segment>
-<pinref part="U1" gate="G$1" pin="P0.20"/>
-<wire x1="60.96" y1="58.42" x2="55.88" y2="58.42" width="0.1524" layer="91"/>
-<label x="55.88" y="58.42" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="NRF_IMU_INT2" class="0">
 <segment>
 <pinref part="U1" gate="G$1" pin="P0.22"/>
 <wire x1="60.96" y1="53.34" x2="55.88" y2="53.34" width="0.1524" layer="91"/>
 <label x="55.88" y="53.34" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="SD_EN" class="0">
-<segment>
-<pinref part="U1" gate="G$1" pin="P0.23"/>
-<wire x1="60.96" y1="50.8" x2="55.88" y2="50.8" width="0.1524" layer="91"/>
-<label x="55.88" y="50.8" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="!SD_DETECT" class="0">
+<net name="NRF_IMU_INT2" class="0">
 <segment>
 <pinref part="U1" gate="G$1" pin="P0.24"/>
 <wire x1="60.96" y1="48.26" x2="55.88" y2="48.26" width="0.1524" layer="91"/>
 <label x="55.88" y="48.26" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="BATIN" class="0">
+<net name="!SD_DETECT" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P1.07"/>
-<wire x1="106.68" y1="91.44" x2="111.76" y2="91.44" width="0.1524" layer="91"/>
-<label x="111.76" y="91.44" size="1.27" layer="95" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P1.00"/>
+<wire x1="106.68" y1="109.22" x2="111.76" y2="109.22" width="0.1524" layer="91"/>
+<label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="N$2" class="0">
@@ -5890,32 +5774,36 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <wire x1="60.96" y1="114.3" x2="35.56" y2="114.3" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="NRF_GPIO_0" class="0">
+<net name="!FT_RST" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.16"/>
-<pinref part="TP13" gate="G$1" pin="TESTPOINT"/>
-<wire x1="60.96" y1="66.04" x2="15.24" y2="66.04" width="0.1524" layer="91"/>
-<label x="17.78" y="66.04" size="1.778" layer="95"/>
+<pinref part="U1" gate="G$1" pin="P1.08"/>
+<wire x1="106.68" y1="88.9" x2="111.76" y2="88.9" width="0.1524" layer="91"/>
+<label x="111.76" y="88.9" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="SD_EN" class="0">
+<segment>
+<pinref part="U1" gate="G$1" pin="P0.14"/>
+<wire x1="60.96" y1="71.12" x2="55.88" y2="71.12" width="0.1524" layer="91"/>
+<label x="55.88" y="71.12" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_GPIO_1" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P0.17"/>
+<pinref part="U1" gate="G$1" pin="P0.26"/>
+<wire x1="106.68" y1="66.04" x2="111.76" y2="66.04" width="0.1524" layer="91"/>
 <pinref part="TP14" gate="G$1" pin="TESTPOINT"/>
-<wire x1="60.96" y1="63.5" x2="15.24" y2="63.5" width="0.1524" layer="91"/>
-<label x="17.78" y="63.5" size="1.778" layer="95"/>
+<wire x1="111.76" y1="66.04" x2="119.38" y2="66.04" width="0.1524" layer="91"/>
+<label x="109.22" y="66.04" size="1.27" layer="95"/>
 </segment>
 </net>
-<net name="NRF_SWO" class="0">
+<net name="NRF_GPIO_0" class="0">
 <segment>
-<pinref part="U1" gate="G$1" pin="P1.00"/>
-<wire x1="106.68" y1="109.22" x2="111.76" y2="109.22" width="0.1524" layer="91"/>
-<label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
-</segment>
-<segment>
-<pinref part="J1" gate="G$1" pin="SWO"/>
-<wire x1="210.82" y1="137.16" x2="205.74" y2="137.16" width="0.1524" layer="91"/>
-<label x="205.74" y="137.16" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U1" gate="G$1" pin="P0.27"/>
+<wire x1="106.68" y1="68.58" x2="111.76" y2="68.58" width="0.1524" layer="91"/>
+<pinref part="TP13" gate="G$1" pin="TESTPOINT"/>
+<wire x1="111.76" y1="68.58" x2="119.38" y2="68.58" width="0.1524" layer="91"/>
+<label x="109.22" y="68.58" size="1.27" layer="95"/>
 </segment>
 </net>
 </nets>
@@ -6291,13 +6179,6 @@ for the DW1000.</text>
 <wire x1="233.68" y1="154.94" x2="233.68" y2="152.4" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="!RST" class="0">
-<segment>
-<label x="187.96" y="93.98" size="1.27" layer="95" rot="R180" xref="yes"/>
-<pinref part="U3" gate="1" pin="!RESET"/>
-<wire x1="187.96" y1="93.98" x2="193.04" y2="93.98" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="N$1" class="0">
 <segment>
 <pinref part="U3" gate="1" pin="3V3OUT"/>
@@ -6339,8 +6220,6 @@ for the DW1000.</text>
 <label x="226.06" y="101.6" size="1.27" layer="95" xref="yes"/>
 <pinref part="U3" gate="1" pin="TXD"/>
 <wire x1="220.98" y1="101.6" x2="226.06" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="226.06" y1="101.6" x2="223.52" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="226.06" y1="101.6" x2="223.52" y2="101.6" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="NRF_IMU_INT1" class="0">
@@ -6492,6 +6371,13 @@ for the DW1000.</text>
 <pinref part="U3" gate="1" pin="RXD"/>
 <wire x1="220.98" y1="99.06" x2="226.06" y2="99.06" width="0.1524" layer="91"/>
 <label x="226.06" y="99.06" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="!FT_RST" class="0">
+<segment>
+<label x="187.96" y="93.98" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U3" gate="1" pin="!RESET"/>
+<wire x1="187.96" y1="93.98" x2="193.04" y2="93.98" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
