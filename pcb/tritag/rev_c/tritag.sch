@@ -4967,21 +4967,17 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="C10" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
 <part name="C11" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
 <part name="C9" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
-<part name="SUPPLY14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="SUPPLY3" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="SUPPLY4" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="SUPPLY7" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="J1" library="connector" deviceset="TC2030-JLINK" device="-NL"/>
 <part name="P+4" library="regulators" deviceset="+3V3" device=""/>
 <part name="GND5" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="R4" library="passives" deviceset="RESISTOR" device="0402_RES" value="DNP"/>
-<part name="R5" library="passives" deviceset="RESISTOR" device="0402_RES" value="DNP"/>
 <part name="P+2" library="regulators" deviceset="+3V3" device=""/>
 <part name="D1" library="SparkFun-LED" deviceset="LED" device="0603" value="GREEN"/>
 <part name="SUPPLY2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="J3" library="connector" deviceset="MICRO_USB_B_HIROSE_ZX62-B-5PA(11)" device=""/>
 <part name="J5" library="connector" deviceset="BAT_HOLE" device=""/>
-<part name="J4" library="connector" deviceset="BAT_HOLE" device=""/>
 <part name="SUPPLY8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="TP2" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="TP1" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
@@ -5117,9 +5113,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="P+13" library="mote" deviceset="VSEC" device=""/>
 <part name="P+15" library="mote" deviceset="VSOL" device=""/>
 <part name="A4" library="chips" deviceset="ANT3216A063R2400A" device=""/>
+<part name="A3" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
 <part name="A2" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
-<part name="A2.1" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
-<part name="A5" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
+<part name="A1" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
 <part name="C60" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF">
 <attribute name="DIGIKEY" value="445-1264-1-ND"/>
 <attribute name="MPN" value="C1005X7R1C473K050BC "/>
@@ -5236,7 +5232,7 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <description>nRF8240</description>
 <plain>
 <text x="30.48" y="175.26" size="3.81" layer="98" align="bottom-center">nRF52840 BLE</text>
-<text x="210.82" y="93.98" size="1.778" layer="98">Do Not Populate I2C pull-up
+<text x="185.42" y="93.98" size="1.778" layer="98">Do not use I2C pull-up
 (NRF has internal pull-up)</text>
 <wire x1="177.8" y1="190.5" x2="177.8" y2="157.48" width="0.1524" layer="98" style="longdash"/>
 <wire x1="177.8" y1="157.48" x2="254" y2="157.48" width="0.1524" layer="98" style="longdash"/>
@@ -5249,8 +5245,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <instance part="J1" gate="G$1" x="223.52" y="139.7" rot="MR0"/>
 <instance part="P+4" gate="P1" x="243.84" y="152.4"/>
 <instance part="GND5" gate="1" x="243.84" y="127"/>
-<instance part="R4" gate="G$1" x="195.58" y="96.52" rot="R90"/>
-<instance part="R5" gate="G$1" x="203.2" y="96.52" rot="R90"/>
 <instance part="P+2" gate="P1" x="199.39" y="108.712"/>
 <instance part="TP2" gate="G$1" x="210.82" y="68.58" rot="R180"/>
 <instance part="TP1" gate="G$1" x="205.74" y="68.58" rot="R180"/>
@@ -5467,15 +5461,8 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <wire x1="236.22" y1="144.78" x2="243.84" y2="144.78" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="R4" gate="G$1" pin="2"/>
-<wire x1="195.58" y1="99.06" x2="195.58" y2="101.6" width="0.1524" layer="91"/>
-<pinref part="R5" gate="G$1" pin="2"/>
-<wire x1="195.58" y1="101.6" x2="199.39" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="199.39" y1="101.6" x2="203.2" y2="101.6" width="0.1524" layer="91"/>
-<wire x1="203.2" y1="101.6" x2="203.2" y2="99.06" width="0.1524" layer="91"/>
 <pinref part="P+2" gate="P1" pin="+3V3"/>
 <wire x1="199.39" y1="101.6" x2="199.39" y2="106.172" width="0.1524" layer="91"/>
-<junction x="199.39" y="101.6"/>
 </segment>
 <segment>
 <pinref part="D5" gate="G$1" pin="VDD"/>
@@ -5517,15 +5504,12 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <net name="EXT_I2C_SDA" class="0">
 <segment>
 <label x="193.04" y="81.28" size="1.27" layer="95" rot="R180" xref="yes"/>
-<pinref part="R4" gate="G$1" pin="1"/>
-<wire x1="195.58" y1="91.44" x2="195.58" y2="88.9" width="0.1524" layer="91"/>
 <wire x1="195.58" y1="88.9" x2="193.04" y2="88.9" width="0.1524" layer="91"/>
 <label x="193.04" y="88.9" size="1.27" layer="95" rot="R180" xref="yes"/>
 <wire x1="193.04" y1="81.28" x2="195.58" y2="81.28" width="0.1524" layer="91"/>
 <wire x1="195.58" y1="81.28" x2="210.82" y2="81.28" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="81.28" x2="220.98" y2="81.28" width="0.1524" layer="91"/>
 <wire x1="195.58" y1="88.9" x2="195.58" y2="81.28" width="0.1524" layer="91"/>
-<junction x="195.58" y="88.9"/>
 <junction x="195.58" y="81.28"/>
 <pinref part="TP2" gate="G$1" pin="TP"/>
 <wire x1="210.82" y1="71.12" x2="210.82" y2="81.28" width="0.1524" layer="91"/>
@@ -5541,15 +5525,12 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <net name="EXT_I2C_SCL" class="0">
 <segment>
 <label x="193.04" y="83.82" size="1.27" layer="95" rot="R180" xref="yes"/>
-<pinref part="R5" gate="G$1" pin="1"/>
-<wire x1="203.2" y1="91.44" x2="203.2" y2="88.9" width="0.1524" layer="91"/>
 <wire x1="203.2" y1="88.9" x2="205.74" y2="88.9" width="0.1524" layer="91"/>
 <label x="205.74" y="88.9" size="1.27" layer="95" xref="yes"/>
 <wire x1="220.98" y1="83.82" x2="205.74" y2="83.82" width="0.1524" layer="91"/>
 <wire x1="205.74" y1="83.82" x2="203.2" y2="83.82" width="0.1524" layer="91"/>
 <wire x1="203.2" y1="83.82" x2="193.04" y2="83.82" width="0.1524" layer="91"/>
 <wire x1="203.2" y1="88.9" x2="203.2" y2="83.82" width="0.1524" layer="91"/>
-<junction x="203.2" y="88.9"/>
 <junction x="203.2" y="83.82"/>
 <pinref part="TP1" gate="G$1" pin="TP"/>
 <wire x1="205.74" y1="71.12" x2="205.74" y2="83.82" width="0.1524" layer="91"/>
@@ -5976,7 +5957,6 @@ for the DW1000.</text>
 <attribute name="NAME" x="184.912" y="139.573" size="1.778" layer="95" rot="R180"/>
 <attribute name="VALUE" x="186.69" y="136.779" size="1.778" layer="96" rot="R180"/>
 </instance>
-<instance part="SUPPLY14" gate="1" x="162.56" y="165.1"/>
 <instance part="SUPPLY3" gate="1" x="71.12" y="127"/>
 <instance part="SUPPLY4" gate="1" x="170.18" y="127"/>
 <instance part="SUPPLY7" gate="1" x="177.8" y="127"/>
@@ -5984,7 +5964,6 @@ for the DW1000.</text>
 <instance part="SUPPLY2" gate="1" x="157.48" y="127"/>
 <instance part="J3" gate="G$1" x="50.8" y="152.4" rot="MR0"/>
 <instance part="J5" gate="G$1" x="190.5" y="175.26" rot="MR0"/>
-<instance part="J4" gate="G$1" x="147.32" y="175.26"/>
 <instance part="SUPPLY8" gate="1" x="177.8" y="165.1"/>
 <instance part="U4" gate="G$1" x="218.44" y="157.48"/>
 <instance part="SUPPLY9" gate="1" x="243.84" y="127"/>
@@ -6024,9 +6003,9 @@ for the DW1000.</text>
 <instance part="R21" gate="G$1" x="78.74" y="40.64" rot="R90"/>
 <instance part="R22" gate="G$1" x="88.9" y="40.64" rot="R90"/>
 <instance part="R23" gate="G$1" x="101.6" y="40.64" rot="R90"/>
-<instance part="A2" gate="G$1" x="129.54" y="86.36"/>
-<instance part="A2.1" gate="G$1" x="119.38" y="88.9"/>
-<instance part="A5" gate="G$1" x="109.22" y="91.44"/>
+<instance part="A3" gate="G$1" x="129.54" y="86.36"/>
+<instance part="A2" gate="G$1" x="119.38" y="88.9"/>
+<instance part="A1" gate="G$1" x="109.22" y="91.44"/>
 </instances>
 <busses>
 </busses>
@@ -6073,12 +6052,6 @@ for the DW1000.</text>
 <pinref part="R3" gate="G$1" pin="1"/>
 <pinref part="SUPPLY2" gate="1" pin="GND"/>
 <wire x1="157.48" y1="129.54" x2="157.48" y2="139.7" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="SUPPLY14" gate="1" pin="GND"/>
-<wire x1="162.56" y1="172.72" x2="162.56" y2="167.64" width="0.1524" layer="91"/>
-<pinref part="J4" gate="G$1" pin="-"/>
-<wire x1="157.48" y1="172.72" x2="162.56" y2="172.72" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="SUPPLY8" gate="1" pin="GND"/>
@@ -6267,11 +6240,8 @@ for the DW1000.</text>
 <junction x="170.18" y="160.02"/>
 <junction x="200.66" y="160.02"/>
 <wire x1="170.18" y1="177.8" x2="170.18" y2="160.02" width="0.1524" layer="91"/>
-<pinref part="J4" gate="G$1" pin="+"/>
-<wire x1="170.18" y1="177.8" x2="157.48" y2="177.8" width="0.1524" layer="91"/>
 <pinref part="J5" gate="G$1" pin="+"/>
 <wire x1="170.18" y1="177.8" x2="180.34" y2="177.8" width="0.1524" layer="91"/>
-<junction x="170.18" y="177.8"/>
 <pinref part="U4" gate="G$1" pin="IN"/>
 <wire x1="200.66" y1="160.02" x2="205.74" y2="160.02" width="0.1524" layer="91"/>
 <pinref part="U4" gate="G$1" pin="!SHDN"/>
@@ -6284,7 +6254,7 @@ for the DW1000.</text>
 <wire x1="142.24" y1="157.48" x2="144.78" y2="157.48" width="0.1524" layer="91"/>
 <wire x1="144.78" y1="157.48" x2="144.78" y2="160.02" width="0.1524" layer="91"/>
 <junction x="144.78" y="160.02"/>
-<label x="170.18" y="177.8" size="1.778" layer="95"/>
+<label x="170.18" y="177.8" size="1.778" layer="95" rot="MR0"/>
 </segment>
 </net>
 <net name="BATIN" class="0">
@@ -6495,7 +6465,7 @@ for the DW1000.</text>
 </net>
 <net name="RF1" class="0">
 <segment>
-<pinref part="A5" gate="G$1" pin="ANTENNA"/>
+<pinref part="A1" gate="G$1" pin="ANTENNA"/>
 <wire x1="106.68" y1="78.74" x2="109.22" y2="78.74" width="0.1524" layer="91"/>
 <wire x1="109.22" y1="78.74" x2="109.22" y2="86.36" width="0.1524" layer="91"/>
 <label x="106.68" y="78.74" size="1.016" layer="95" rot="R180" xref="yes"/>
@@ -6503,7 +6473,7 @@ for the DW1000.</text>
 </net>
 <net name="RF2" class="0">
 <segment>
-<pinref part="A2.1" gate="G$1" pin="ANTENNA"/>
+<pinref part="A2" gate="G$1" pin="ANTENNA"/>
 <wire x1="106.68" y1="73.66" x2="119.38" y2="73.66" width="0.1524" layer="91"/>
 <wire x1="119.38" y1="73.66" x2="119.38" y2="83.82" width="0.1524" layer="91"/>
 <label x="106.68" y="73.66" size="1.016" layer="95" rot="R180" xref="yes"/>
@@ -6511,7 +6481,7 @@ for the DW1000.</text>
 </net>
 <net name="RF3" class="0">
 <segment>
-<pinref part="A2" gate="G$1" pin="ANTENNA"/>
+<pinref part="A3" gate="G$1" pin="ANTENNA"/>
 <wire x1="106.68" y1="68.58" x2="129.54" y2="68.58" width="0.1524" layer="91"/>
 <wire x1="129.54" y1="68.58" x2="129.54" y2="81.28" width="0.1524" layer="91"/>
 <label x="106.68" y="68.58" size="1.016" layer="95" rot="R180" xref="yes"/>
@@ -7600,7 +7570,7 @@ for (DEEP)SLEEP</text>
 <pinref part="GPIO1" gate="G$1" pin="TESTPOINT"/>
 </segment>
 </net>
-<net name="INTERRUPT" class="0">
+<net name="STM_INTERRUPT" class="0">
 <segment>
 <wire x1="53.34" y1="132.08" x2="93.98" y2="132.08" width="0.1524" layer="91"/>
 <label x="93.98" y="132.08" size="1.27" layer="95" xref="yes"/>
@@ -7812,12 +7782,6 @@ Furthermore, try to keep them as short and straight as possible</text>
 <label x="50.8" y="124.46" size="2.54" layer="95" xref="yes"/>
 </segment>
 </net>
-<net name="INTERRUPT" class="0">
-<segment>
-<wire x1="35.56" y1="116.84" x2="50.8" y2="116.84" width="0.1524" layer="91"/>
-<label x="50.8" y="116.84" size="2.54" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="RF1" class="0">
 <segment>
 <wire x1="35.56" y1="101.6" x2="50.8" y2="101.6" width="0.1524" layer="91"/>
@@ -7840,6 +7804,12 @@ Furthermore, try to keep them as short and straight as possible</text>
 <segment>
 <wire x1="35.56" y1="71.12" x2="50.8" y2="71.12" width="0.1524" layer="91"/>
 <label x="50.8" y="71.12" size="2.54" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="STM_INTERRUPT" class="0">
+<segment>
+<wire x1="35.56" y1="116.84" x2="50.8" y2="116.84" width="0.1524" layer="91"/>
+<label x="50.8" y="116.84" size="2.54" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
