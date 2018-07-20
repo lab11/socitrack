@@ -5158,6 +5158,7 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="TP10" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP11" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP12" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP15" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -5274,6 +5275,7 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 </instance>
 <instance part="TP13" gate="G$1" x="121.92" y="68.58" rot="R180"/>
 <instance part="TP14" gate="G$1" x="121.92" y="66.04" rot="R180"/>
+<instance part="TP15" gate="G$1" x="96.52" y="144.78" rot="R180"/>
 </instances>
 <busses>
 </busses>
@@ -5401,7 +5403,8 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 </segment>
 <segment>
 <pinref part="C1" gate="G$1" pin="1"/>
-<wire x1="83.82" y1="149.86" x2="129.54" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="83.82" y1="149.86" x2="96.52" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="96.52" y1="149.86" x2="129.54" y2="149.86" width="0.1524" layer="91"/>
 <wire x1="129.54" y1="149.86" x2="129.54" y2="147.32" width="0.1524" layer="91"/>
 <wire x1="129.54" y1="149.86" x2="137.16" y2="149.86" width="0.1524" layer="91"/>
 <junction x="129.54" y="149.86"/>
@@ -5428,6 +5431,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <pinref part="P+5" gate="P1" pin="+3V3"/>
 <wire x1="81.28" y1="152.4" x2="81.28" y2="149.86" width="0.1524" layer="91"/>
 <junction x="81.28" y="149.86"/>
+<pinref part="TP15" gate="G$1" pin="TP"/>
+<wire x1="96.52" y1="147.32" x2="96.52" y2="149.86" width="0.1524" layer="91"/>
+<junction x="96.52" y="149.86"/>
 </segment>
 </net>
 <net name="EXT_I2C_SDA" class="0">
