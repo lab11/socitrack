@@ -5134,6 +5134,8 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="TP11" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP12" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP15" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
+<part name="R4" library="passives" deviceset="RESISTOR" device="0402_RES" value="0"/>
+<part name="R5" library="passives" deviceset="RESISTOR" device="0402_RES" value="0"/>
 </parts>
 <sheets>
 <sheet>
@@ -5801,13 +5803,17 @@ for the DW1000.</text>
 <wire x1="147.32" y1="116.84" x2="147.32" y2="55.88" width="0.1524" layer="98" style="longdash"/>
 <wire x1="147.32" y1="55.88" x2="147.32" y2="53.34" width="0.1524" layer="98" style="longdash"/>
 <wire x1="147.32" y1="53.34" x2="147.32" y2="20.32" width="0.1524" layer="98" style="longdash"/>
-<text x="157.48" y="30.48" size="5.08" layer="98">USB-Serial</text>
+<text x="152.4" y="30.48" size="5.08" layer="98">USB-Serial</text>
 <text x="3.556" y="49.784" size="3.81" layer="98">SD Card Adapter</text>
 <wire x1="0" y1="55.88" x2="93.98" y2="55.88" width="0.1524" layer="98" style="longdash"/>
 <text x="49.276" y="108.204" size="3.81" layer="98">Accelerometer</text>
 <text x="116.84" y="109.22" size="3.81" layer="98" align="bottom-center">Antennas</text>
 <wire x1="93.98" y1="55.88" x2="147.32" y2="55.88" width="0.1524" layer="98" style="longdash"/>
 <wire x1="93.98" y1="116.84" x2="93.98" y2="55.88" width="0.1524" layer="98" style="longdash"/>
+<text x="203.2" y="30.48" size="1.778" layer="98">Mount 0-Ohm resistors only
+if you intend to use the FTDI;
+this prevents unintentional
+power draws</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0"/>
@@ -5874,6 +5880,14 @@ for the DW1000.</text>
 <instance part="A3" gate="G$1" x="129.54" y="86.36"/>
 <instance part="A2" gate="G$1" x="119.38" y="88.9"/>
 <instance part="A1" gate="G$1" x="109.22" y="91.44"/>
+<instance part="R4" gate="G$1" x="231.14" y="101.6" smashed="yes">
+<attribute name="NAME" x="227.33" y="103.0986" size="1.778" layer="95"/>
+<attribute name="VALUE" x="232.41" y="103.378" size="1.778" layer="96"/>
+</instance>
+<instance part="R5" gate="G$1" x="231.14" y="99.06" smashed="yes">
+<attribute name="NAME" x="227.33" y="95.4786" size="1.778" layer="95"/>
+<attribute name="VALUE" x="232.41" y="95.758" size="1.778" layer="96"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -6180,13 +6194,6 @@ for the DW1000.</text>
 <label x="63.5" y="152.4" size="1.016" layer="95" xref="yes"/>
 </segment>
 </net>
-<net name="DBG_RX" class="0">
-<segment>
-<label x="226.06" y="101.6" size="1.27" layer="95" xref="yes"/>
-<pinref part="U3" gate="1" pin="TXD"/>
-<wire x1="220.98" y1="101.6" x2="226.06" y2="101.6" width="0.1524" layer="91"/>
-</segment>
-</net>
 <net name="NRF_IMU_INT1" class="0">
 <segment>
 <pinref part="U9" gate="G$1" pin="INT1"/>
@@ -6331,13 +6338,6 @@ for the DW1000.</text>
 <label x="106.68" y="68.58" size="1.016" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="DBG_TX" class="0">
-<segment>
-<pinref part="U3" gate="1" pin="RXD"/>
-<wire x1="220.98" y1="99.06" x2="226.06" y2="99.06" width="0.1524" layer="91"/>
-<label x="226.06" y="99.06" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="!FT_RST" class="0">
 <segment>
 <label x="187.96" y="93.98" size="1.27" layer="95" rot="R180" xref="yes"/>
@@ -6358,6 +6358,34 @@ for the DW1000.</text>
 <wire x1="185.42" y1="73.66" x2="185.42" y2="63.5" width="0.1524" layer="91"/>
 <wire x1="172.72" y1="73.66" x2="185.42" y2="73.66" width="0.1524" layer="91"/>
 <junction x="185.42" y="73.66"/>
+</segment>
+</net>
+<net name="N$33" class="0">
+<segment>
+<pinref part="U3" gate="1" pin="TXD"/>
+<pinref part="R4" gate="G$1" pin="1"/>
+<wire x1="220.98" y1="101.6" x2="226.06" y2="101.6" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$34" class="0">
+<segment>
+<pinref part="U3" gate="1" pin="RXD"/>
+<pinref part="R5" gate="G$1" pin="1"/>
+<wire x1="220.98" y1="99.06" x2="226.06" y2="99.06" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="DBG_RX" class="0">
+<segment>
+<pinref part="R4" gate="G$1" pin="2"/>
+<wire x1="233.68" y1="101.6" x2="238.76" y2="101.6" width="0.1524" layer="91"/>
+<label x="238.76" y="101.6" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="DBG_TX" class="0">
+<segment>
+<pinref part="R5" gate="G$1" pin="2"/>
+<wire x1="233.68" y1="99.06" x2="238.76" y2="99.06" width="0.1524" layer="91"/>
+<label x="238.76" y="99.06" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
