@@ -4570,12 +4570,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <package name="PAD.03X.03">
 <smd name="P$1" x="0" y="0" dx="0.762" dy="0.762" layer="1" roundness="100" cream="no"/>
 </package>
-<package name="TESTPOINT_0.040IN">
-<pad name="TESTPOINT" x="0" y="0" drill="1.016"/>
-<text x="0" y="1.524" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-2.54" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
-<circle x="0" y="0" radius="1.27" width="0.127" layer="21"/>
-</package>
 </packages>
 <symbols>
 <symbol name="TEST_POINT">
@@ -4597,24 +4591,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 </connects>
 <technologies>
 <technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="TEST_POINT_0.040IN" prefix="TP">
-<description>0.040in Test Point</description>
-<gates>
-<gate name="G$1" symbol="TEST_POINT" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="TESTPOINT_0.040IN">
-<connects>
-<connect gate="G$1" pin="TESTPOINT" pad="TESTPOINT"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="5001K-ND"/>
-</technology>
 </technologies>
 </device>
 </devices>
@@ -4931,7 +4907,6 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <attribute name="DIGIKEY" value="490-6328-1-ND"/>
 <attribute name="MPN" value="GRM155R71C104KA88J "/>
 </part>
-<part name="P+21" library="regulators" deviceset="+3V3" device=""/>
 <part name="U9" library="chips" deviceset="LIS2DW12" device=""/>
 <part name="C75" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF">
 <attribute name="DIGIKEY" value="490-6328-1-ND"/>
@@ -5142,8 +5117,8 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="R12" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="D2" library="leds" deviceset="SML-LX0404SIUPGUSB" device=""/>
 <part name="R13" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
-<part name="GPIO0" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
-<part name="GPIO1" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
+<part name="GPIO0" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="GPIO1" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP5" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP6" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="+3V3" library="regulators" deviceset="+3V3" device=""/>
@@ -5872,7 +5847,6 @@ for the DW1000.</text>
 <attribute name="DIGIKEY" x="185.42" y="60.96" size="1.778" layer="96" display="off"/>
 <attribute name="MPN" x="185.42" y="60.96" size="1.778" layer="96" display="off"/>
 </instance>
-<instance part="P+21" gate="P1" x="175.26" y="104.14"/>
 <instance part="U9" gate="G$1" x="30.48" y="66.04"/>
 <instance part="C75" gate="G$1" x="40.64" y="104.14">
 <attribute name="DIGIKEY" x="40.64" y="104.14" size="1.778" layer="96" display="off"/>
@@ -6045,13 +6019,6 @@ for the DW1000.</text>
 <pinref part="U4" gate="G$1" pin="OUT"/>
 </segment>
 <segment>
-<pinref part="P+21" gate="P1" pin="+3V3"/>
-<wire x1="175.26" y1="99.06" x2="175.26" y2="101.6" width="0.1524" layer="91"/>
-<pinref part="U3" gate="1" pin="VCCIO"/>
-<wire x1="193.04" y1="99.06" x2="177.8" y2="99.06" width="0.1524" layer="91"/>
-<wire x1="177.8" y1="99.06" x2="175.26" y2="99.06" width="0.1524" layer="91"/>
-</segment>
-<segment>
 <pinref part="U9" gate="G$1" pin="VCC"/>
 <wire x1="27.94" y1="86.36" x2="25.4" y2="86.36" width="0.1524" layer="91"/>
 <pinref part="U9" gate="G$1" pin="VDD_IO"/>
@@ -6183,14 +6150,6 @@ for the DW1000.</text>
 <pinref part="C15" gate="G$1" pin="1"/>
 <wire x1="231.14" y1="154.94" x2="233.68" y2="154.94" width="0.1524" layer="91"/>
 <wire x1="233.68" y1="154.94" x2="233.68" y2="152.4" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="N$1" class="0">
-<segment>
-<pinref part="U3" gate="1" pin="3V3OUT"/>
-<wire x1="193.04" y1="73.66" x2="185.42" y2="73.66" width="0.1524" layer="91"/>
-<pinref part="C59" gate="G$1" pin="1"/>
-<wire x1="185.42" y1="73.66" x2="185.42" y2="63.5" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="D-" class="0">
@@ -6386,6 +6345,21 @@ for the DW1000.</text>
 <wire x1="187.96" y1="93.98" x2="193.04" y2="93.98" width="0.1524" layer="91"/>
 </segment>
 </net>
+<net name="N$1" class="0">
+<segment>
+<pinref part="U3" gate="1" pin="VCCIO"/>
+<wire x1="193.04" y1="99.06" x2="177.8" y2="99.06" width="0.1524" layer="91"/>
+<wire x1="177.8" y1="99.06" x2="175.26" y2="99.06" width="0.1524" layer="91"/>
+<wire x1="175.26" y1="99.06" x2="172.72" y2="99.06" width="0.1524" layer="91"/>
+<wire x1="172.72" y1="99.06" x2="172.72" y2="73.66" width="0.1524" layer="91"/>
+<pinref part="U3" gate="1" pin="3V3OUT"/>
+<wire x1="193.04" y1="73.66" x2="185.42" y2="73.66" width="0.1524" layer="91"/>
+<pinref part="C59" gate="G$1" pin="1"/>
+<wire x1="185.42" y1="73.66" x2="185.42" y2="63.5" width="0.1524" layer="91"/>
+<wire x1="172.72" y1="73.66" x2="185.42" y2="73.66" width="0.1524" layer="91"/>
+<junction x="185.42" y="73.66"/>
+</segment>
+</net>
 </nets>
 </sheet>
 <sheet>
@@ -6403,19 +6377,15 @@ for the DW1000.</text>
 <wire x1="144.78" y1="20.32" x2="152.4" y2="20.32" width="0.1524" layer="98" style="longdash"/>
 <text x="7.62" y="121.92" size="3.81" layer="98">STM32F091CC</text>
 <text x="228.6" y="180.34" size="3.81" layer="98">DW1000</text>
-<text x="114.3" y="142.24" size="3.81" layer="98">RF + DCDC</text>
+<text x="111.76" y="142.24" size="3.81" layer="98">RF + DCDC</text>
 <wire x1="144.78" y1="134.62" x2="144.78" y2="190.5" width="0.1524" layer="98" style="longdash"/>
-<text x="112.776" y="116.586" size="1.27" layer="98">I2C: Pull-up
+<text x="115.316" y="116.586" size="1.27" layer="98">I2C: Pull-up
 resistor required</text>
-<text x="114.3" y="73.66" size="0.762" layer="98">PC
-Test Points</text>
-<text x="101.6" y="47.498" size="0.762" layer="98">Pad
-Test Points</text>
 <text x="129.54" y="30.48" size="2.032" layer="98">LED</text>
 <text x="57.15" y="110.236" size="0.762" layer="98" rot="R90">INTERRUPT: used both for waking up
 from STOP (USART2_TX)
 and STANDBY (WKUP4)</text>
-<text x="241.3" y="159.258" size="1.016" layer="98" rot="R90">Pull-down
+<text x="241.3" y="157.988" size="1.016" layer="98" rot="R90">Pull-down
 for (DEEP)SLEEP</text>
 <text x="66.04" y="25.4" size="2.032" layer="98" rot="R90">VDD/48</text>
 </plain>
