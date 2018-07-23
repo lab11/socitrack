@@ -4977,16 +4977,18 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <attribute name="MPN" value="GRM1555C1H120GA01D "/>
 </part>
 <part name="C1" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1pF">
-<attribute name="DIGIKEY" value="490-6269-1-ND"/>
-<attribute name="MPN" value="GRM1555C1HR80BA01D "/>
+<attribute name="DIGIKEY" value="490-3083-1-ND"/>
+<attribute name="MPN" value="GJM1555C1H1R0CB01D "/>
 </part>
 <part name="C2" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1pF">
-<attribute name="DIGIKEY" value="490-6264-1-ND"/>
-<attribute name="MPN" value="GRM1555C1HR50WA01D "/>
+<attribute name="DIGIKEY" value="490-3083-1-ND"/>
+<attribute name="MPN" value="GJM1555C1H1R0CB01D"/>
 </part>
 <part name="L1" library="passives" deviceset="INDUCTOR" device="0402" value="3.9nH">
-<attribute name="DIGIKEY" value="535-10426-1-ND"/>
-<attribute name="MPN" value="AISC-0402-3N3J-T "/>
+<attribute name="DIGIKEY" value="AISC-0402-3N9G-TCT-ND
+"/>
+<attribute name="MPN" value="AISC-0402-3N9G-T
+"/>
 </part>
 <part name="X3" library="crystals" deviceset="7V" device="-32.000MAHV-T" value="32MHz"/>
 <part name="C56" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
@@ -5024,8 +5026,8 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="A2" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
 <part name="A1" library="chips" deviceset="TAIYO-YUDEN-AH086M" device=""/>
 <part name="C21" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF">
-<attribute name="DIGIKEY" value="445-1264-1-ND"/>
-<attribute name="MPN" value="C1005X7R1C473K050BC "/>
+<attribute name="DIGIKEY" value="1276-6989-1-ND"/>
+<attribute name="MPN" value="CL05C821JB5NFNC"/>
 </part>
 <part name="TP13" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP14" library="headers" deviceset="TEST-POINT" device=""/>
