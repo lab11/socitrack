@@ -281,74 +281,74 @@ To use, set global attributes TITLE, AUTHOR and REV in your schematic.</descript
 <text x="-3.5" y="-4.89" size="1" layer="27">&gt;Value</text>
 <text x="-3.5" y="3.89" size="1" layer="25">&gt;Name</text>
 <smd name="GND" x="0" y="0" dx="5.6" dy="5.6" layer="1" cream="no"/>
-<rectangle x1="-2.8" y1="1.55" x2="-1.55" y2="2.8" layer="31"/>
-<rectangle x1="1.55" y1="1.55" x2="2.8" y2="2.8" layer="31"/>
-<rectangle x1="-1.35" y1="1.55" x2="-0.1" y2="2.8" layer="31"/>
-<rectangle x1="0.1" y1="1.55" x2="1.35" y2="2.8" layer="31"/>
-<rectangle x1="-2.8" y1="0.1" x2="-1.55" y2="1.35" layer="31"/>
-<rectangle x1="-2.8" y1="-1.35" x2="-1.55" y2="-0.1" layer="31"/>
-<rectangle x1="-2.8" y1="-2.8" x2="-1.55" y2="-1.55" layer="31"/>
-<rectangle x1="1.55" y1="-2.8" x2="2.8" y2="-1.55" layer="31"/>
-<rectangle x1="-1.35" y1="-2.8" x2="-0.1" y2="-1.55" layer="31"/>
-<rectangle x1="0.1" y1="-2.8" x2="1.35" y2="-1.55" layer="31"/>
-<rectangle x1="-1.35" y1="0.1" x2="-0.1" y2="1.35" layer="31"/>
-<rectangle x1="0.1" y1="0.1" x2="1.35" y2="1.35" layer="31"/>
-<rectangle x1="1.55" y1="0.1" x2="2.8" y2="1.35" layer="31"/>
-<rectangle x1="-1.35" y1="-1.35" x2="-0.1" y2="-0.1" layer="31"/>
-<rectangle x1="0.1" y1="-1.35" x2="1.35" y2="-0.1" layer="31"/>
-<rectangle x1="1.55" y1="-1.35" x2="2.8" y2="-0.1" layer="31"/>
+<rectangle x1="-2.5" y1="1.5" x2="-1.5" y2="2.5" layer="31"/>
+<rectangle x1="-1.2" y1="1.5" x2="-0.2" y2="2.5" layer="31"/>
+<rectangle x1="1.5" y1="1.5" x2="2.5" y2="2.5" layer="31"/>
+<rectangle x1="0.2" y1="1.5" x2="1.2" y2="2.5" layer="31"/>
+<rectangle x1="-2.5" y1="0.2" x2="-1.5" y2="1.2" layer="31"/>
+<rectangle x1="-1.2" y1="0.2" x2="-0.2" y2="1.2" layer="31"/>
+<rectangle x1="0.2" y1="0.2" x2="1.2" y2="1.2" layer="31"/>
+<rectangle x1="1.5" y1="0.2" x2="2.5" y2="1.2" layer="31"/>
+<rectangle x1="1.5" y1="-1.2" x2="2.5" y2="-0.2" layer="31"/>
+<rectangle x1="0.2" y1="-1.2" x2="1.2" y2="-0.2" layer="31"/>
+<rectangle x1="-1.2" y1="-1.2" x2="-0.2" y2="-0.2" layer="31"/>
+<rectangle x1="-2.5" y1="-1.2" x2="-1.5" y2="-0.2" layer="31"/>
+<rectangle x1="-2.5" y1="-2.5" x2="-1.5" y2="-1.5" layer="31"/>
+<rectangle x1="-1.2" y1="-2.5" x2="-0.2" y2="-1.5" layer="31"/>
+<rectangle x1="0.2" y1="-2.5" x2="1.2" y2="-1.5" layer="31"/>
+<rectangle x1="1.5" y1="-2.5" x2="2.5" y2="-1.5" layer="31"/>
 </package>
 <package name="QFN-48-DW1000">
 <description>&lt;b&gt;Description:&lt;/b&gt; Footprint for the DW1000, designed based on the previous version of TriPoint available on &lt;a href='https://github.com/lab11/polypoint/tree/master/pcb/tripoint/v2p0'&gt;Github&lt;/a&gt;.</description>
 <smd name="GND" x="0" y="0" dx="4" dy="4" layer="1" cream="no"/>
-<smd name="43" x="-0.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="44" x="-0.6" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="45" x="-1" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="46" x="-1.4" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="47" x="-1.8" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="48" x="-2.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="42" x="0.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="41" x="0.6" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="40" x="1" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="39" x="1.4" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="38" x="1.8" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="37" x="2.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="13" x="-2.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="14" x="-1.8" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="15" x="-1.4" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="16" x="-1" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="17" x="-0.6" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="18" x="-0.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="19" x="0.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="20" x="0.6" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="21" x="1" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="22" x="1.4" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="23" x="1.8" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="24" x="2.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90"/>
-<smd name="1" x="-2.95" y="2.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="2" x="-2.95" y="1.8" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="3" x="-2.95" y="1.4" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="4" x="-2.95" y="1" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="5" x="-2.95" y="0.6" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="6" x="-2.95" y="0.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="7" x="-2.95" y="-0.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="8" x="-2.95" y="-0.6" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="9" x="-2.95" y="-1" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="10" x="-2.95" y="-1.4" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="11" x="-2.95" y="-1.8" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="12" x="-2.95" y="-2.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="36" x="2.95" y="2.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="35" x="2.95" y="1.8" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="34" x="2.95" y="1.4" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="33" x="2.95" y="1" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="32" x="2.95" y="0.6" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="31" x="2.95" y="0.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="30" x="2.95" y="-0.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="29" x="2.95" y="-0.6" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="28" x="2.95" y="-1" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="27" x="2.95" y="-1.4" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="26" x="2.95" y="-1.8" dx="0.9" dy="0.26" layer="1" rot="R180"/>
-<smd name="25" x="2.95" y="-2.2" dx="0.9" dy="0.26" layer="1" rot="R180"/>
+<smd name="43" x="-0.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="44" x="-0.6" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="45" x="-1" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="46" x="-1.4" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="47" x="-1.8" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="48" x="-2.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="42" x="0.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="41" x="0.6" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="40" x="1" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="39" x="1.4" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="38" x="1.8" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="37" x="2.2" y="2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="13" x="-2.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="14" x="-1.8" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="15" x="-1.4" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="16" x="-1" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="17" x="-0.6" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="18" x="-0.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="19" x="0.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="20" x="0.6" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="21" x="1" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="22" x="1.4" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="23" x="1.8" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="24" x="2.2" y="-2.95" dx="0.9" dy="0.26" layer="1" rot="R90" cream="no"/>
+<smd name="1" x="-2.95" y="2.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="2" x="-2.95" y="1.8" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="3" x="-2.95" y="1.4" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="4" x="-2.95" y="1" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="5" x="-2.95" y="0.6" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="6" x="-2.95" y="0.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="7" x="-2.95" y="-0.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="8" x="-2.95" y="-0.6" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="9" x="-2.95" y="-1" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="10" x="-2.95" y="-1.4" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="11" x="-2.95" y="-1.8" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="12" x="-2.95" y="-2.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="36" x="2.95" y="2.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="35" x="2.95" y="1.8" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="34" x="2.95" y="1.4" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="33" x="2.95" y="1" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="32" x="2.95" y="0.6" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="31" x="2.95" y="0.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="30" x="2.95" y="-0.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="29" x="2.95" y="-0.6" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="28" x="2.95" y="-1" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="27" x="2.95" y="-1.4" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="26" x="2.95" y="-1.8" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
+<smd name="25" x="2.95" y="-2.2" dx="0.9" dy="0.26" layer="1" rot="R180" cream="no"/>
 <rectangle x1="-2" y1="0.8" x2="-0.8" y2="2" layer="31"/>
 <rectangle x1="-0.6" y1="0.8" x2="0.6" y2="2" layer="31"/>
 <rectangle x1="0.8" y1="0.8" x2="2" y2="2" layer="31"/>
@@ -365,6 +365,54 @@ To use, set global attributes TITLE, AUTHOR and REV in your schematic.</descript
 <wire x1="3" y1="-3" x2="3" y2="3" width="0.127" layer="25"/>
 <wire x1="3" y1="3" x2="-3" y2="3" width="0.127" layer="21"/>
 <circle x="-3.5" y="2.7" radius="0.2" width="0.127" layer="21"/>
+<rectangle x1="-3.375" y1="2.11" x2="-2.525" y2="2.29" layer="31"/>
+<rectangle x1="-3.375" y1="1.71" x2="-2.525" y2="1.89" layer="31"/>
+<rectangle x1="-3.375" y1="1.31" x2="-2.525" y2="1.49" layer="31"/>
+<rectangle x1="-3.375" y1="0.91" x2="-2.525" y2="1.09" layer="31"/>
+<rectangle x1="-3.375" y1="0.51" x2="-2.525" y2="0.69" layer="31"/>
+<rectangle x1="-3.375" y1="0.11" x2="-2.525" y2="0.29" layer="31"/>
+<rectangle x1="-3.375" y1="-0.29" x2="-2.525" y2="-0.11" layer="31"/>
+<rectangle x1="-3.375" y1="-0.69" x2="-2.525" y2="-0.51" layer="31"/>
+<rectangle x1="-3.375" y1="-1.09" x2="-2.525" y2="-0.91" layer="31"/>
+<rectangle x1="-3.375" y1="-1.49" x2="-2.525" y2="-1.31" layer="31"/>
+<rectangle x1="-3.375" y1="-1.89" x2="-2.525" y2="-1.71" layer="31"/>
+<rectangle x1="-3.375" y1="-2.29" x2="-2.525" y2="-2.11" layer="31"/>
+<rectangle x1="2.525" y1="-2.29" x2="3.375" y2="-2.11" layer="31"/>
+<rectangle x1="2.525" y1="-1.89" x2="3.375" y2="-1.71" layer="31"/>
+<rectangle x1="2.525" y1="-1.49" x2="3.375" y2="-1.31" layer="31"/>
+<rectangle x1="2.525" y1="-1.09" x2="3.375" y2="-0.91" layer="31"/>
+<rectangle x1="2.525" y1="-0.69" x2="3.375" y2="-0.51" layer="31"/>
+<rectangle x1="2.525" y1="-0.29" x2="3.375" y2="-0.11" layer="31"/>
+<rectangle x1="2.525" y1="0.11" x2="3.375" y2="0.29" layer="31"/>
+<rectangle x1="2.525" y1="0.51" x2="3.375" y2="0.69" layer="31"/>
+<rectangle x1="2.525" y1="0.91" x2="3.375" y2="1.09" layer="31"/>
+<rectangle x1="2.525" y1="1.31" x2="3.375" y2="1.49" layer="31"/>
+<rectangle x1="2.525" y1="1.71" x2="3.375" y2="1.89" layer="31"/>
+<rectangle x1="2.525" y1="2.11" x2="3.375" y2="2.29" layer="31"/>
+<rectangle x1="1.775" y1="2.86" x2="2.625" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="1.375" y1="2.86" x2="2.225" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="0.975" y1="2.86" x2="1.825" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="0.575" y1="2.86" x2="1.425" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="0.175" y1="2.86" x2="1.025" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-0.225" y1="2.86" x2="0.625" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-0.625" y1="2.86" x2="0.225" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-1.025" y1="2.86" x2="-0.175" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-1.425" y1="2.86" x2="-0.575" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-1.825" y1="2.86" x2="-0.975" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-2.225" y1="2.86" x2="-1.375" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-2.625" y1="2.86" x2="-1.775" y2="3.04" layer="31" rot="R90"/>
+<rectangle x1="-2.625" y1="-3.04" x2="-1.775" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="-2.225" y1="-3.04" x2="-1.375" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="-1.825" y1="-3.04" x2="-0.975" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="-1.425" y1="-3.04" x2="-0.575" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="-1.025" y1="-3.04" x2="-0.175" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="-0.625" y1="-3.04" x2="0.225" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="-0.225" y1="-3.04" x2="0.625" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="0.175" y1="-3.04" x2="1.025" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="0.575" y1="-3.04" x2="1.425" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="0.975" y1="-3.04" x2="1.825" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="1.375" y1="-3.04" x2="2.225" y2="-2.86" layer="31" rot="R90"/>
+<rectangle x1="1.775" y1="-3.04" x2="2.625" y2="-2.86" layer="31" rot="R90"/>
 </package>
 </packages>
 <symbols>
