@@ -5204,6 +5204,9 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="C67" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
 <part name="C68" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
 <part name="SUPPLY14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="SPI_CLK" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
+<part name="MISO" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
+<part name="MOSI" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -5855,6 +5858,13 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <pinref part="TP13" gate="G$1" pin="TESTPOINT"/>
 <wire x1="111.76" y1="68.58" x2="119.38" y2="68.58" width="0.1524" layer="91"/>
 <label x="109.22" y="68.58" size="1.27" layer="95"/>
+</segment>
+</net>
+<net name="VBAT" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.30/AIN6"/>
+<wire x1="106.68" y1="116.84" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
+<label x="111.76" y="116.84" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
@@ -6619,6 +6629,9 @@ for (DEEP)SLEEP</text>
 <instance part="TP10" gate="G$1" x="20.32" y="50.8"/>
 <instance part="TP11" gate="G$1" x="213.36" y="172.72" rot="R180"/>
 <instance part="TP12" gate="G$1" x="213.36" y="170.18" rot="R180"/>
+<instance part="SPI_CLK" gate="G$1" x="119.38" y="129.54"/>
+<instance part="MISO" gate="G$1" x="124.46" y="127"/>
+<instance part="MOSI" gate="G$1" x="129.54" y="124.46"/>
 </instances>
 <busses>
 </busses>
@@ -7610,7 +7623,9 @@ for (DEEP)SLEEP</text>
 <pinref part="U10" gate="U1" pin="PA5"/>
 <wire x1="60.96" y1="109.22" x2="60.96" y2="127" width="0.1524" layer="91"/>
 <wire x1="60.96" y1="127" x2="93.98" y2="127" width="0.1524" layer="91"/>
-<label x="93.98" y="127" size="1.27" layer="95" xref="yes"/>
+<label x="93.98" y="127" size="1.27" layer="95"/>
+<pinref part="SPI_CLK" gate="G$1" pin="TP"/>
+<wire x1="93.98" y1="127" x2="119.38" y2="127" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="SPICLK"/>
@@ -7623,7 +7638,9 @@ for (DEEP)SLEEP</text>
 <pinref part="U10" gate="U1" pin="PA6"/>
 <wire x1="63.5" y1="109.22" x2="63.5" y2="124.46" width="0.1524" layer="91"/>
 <wire x1="63.5" y1="124.46" x2="93.98" y2="124.46" width="0.1524" layer="91"/>
-<label x="93.98" y="124.46" size="1.27" layer="95" xref="yes"/>
+<label x="93.98" y="124.46" size="1.27" layer="95"/>
+<pinref part="MISO" gate="G$1" pin="TP"/>
+<wire x1="93.98" y1="124.46" x2="124.46" y2="124.46" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="SPIMISO"/>
@@ -7636,7 +7653,9 @@ for (DEEP)SLEEP</text>
 <pinref part="U10" gate="U1" pin="PA7"/>
 <wire x1="66.04" y1="109.22" x2="66.04" y2="121.92" width="0.1524" layer="91"/>
 <wire x1="66.04" y1="121.92" x2="93.98" y2="121.92" width="0.1524" layer="91"/>
-<label x="93.98" y="121.92" size="1.27" layer="95" xref="yes"/>
+<label x="93.98" y="121.92" size="1.27" layer="95"/>
+<pinref part="MOSI" gate="G$1" pin="TP"/>
+<wire x1="93.98" y1="121.92" x2="129.54" y2="121.92" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="SPIMOSI"/>
