@@ -1,13 +1,13 @@
 SurePoint
 =========
 
-<img src="https://raw.githubusercontent.com/abiri/totternary/master/media/tern_comic_1280.png" alt="TotTernary" width="30%" align="left">
+<img src="https://raw.githubusercontent.com/abiri/totternary/master/media/tern_comic_1280.png" alt="TotTernary" width="25%" align="left">
 
 TotTernary is a system for using ultra-wideband RF time-of-flight ranging to perform indoor ranging and localization.
 It incorporates the *SquarePoint* module, containing the DecaWave DW1000 for UWB packet transmission and timestamping.
 The module provides node-to-node ranges over an I2C interface which can then be sent further on using the radio on the mother board.
 
-
+<br>
 
 Name
 ----
