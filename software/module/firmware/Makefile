@@ -32,8 +32,8 @@ LDFLAGS += -lm
 
 #The exact STM part number All CAPS
 ############################################
-DEVICE ?= STM32F031G6
-DEVICE_FAMILY ?= STM32F031
+DEVICE ?= STM32F091CC
+DEVICE_FAMILY ?= STM32F091
 
 ## HACK FOR stm32f031
 ## Need to define this so that CPAL will compile.
