@@ -35,12 +35,12 @@ int led_init (uint8_t led, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t RCC_
 
 void led_on (uint8_t led) {
 	if (led > LEDn) return;
-	leds[led].GPIOx->BSRR = leds[led].GPIO_Pin;
+	leds[led].GPIOx->BRR = leds[led].GPIO_Pin;
 }
 
 void led_off (uint8_t led) {
 	if (led > LEDn) return;
-	leds[led].GPIOx->BRR = leds[led].GPIO_Pin;
+	leds[led].GPIOx->BSRR = leds[led].GPIO_Pin;
 }
 
 void led_toggle (uint8_t led) {

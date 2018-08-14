@@ -97,7 +97,7 @@ static void dw1000_interrupt_enable() {
 static void dw1000_interrupt_disable() {
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-	// Enable and set EXTIx Interrupt
+	// Disable the EXTIx Interrupt
 	NVIC_InitStructure.NVIC_IRQChannel = DW_INTERRUPT_EXTI_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelPriority = 0x00;
 	NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
@@ -263,6 +263,8 @@ static void setup () {
 	DMA_InitStructure.DMA_Mode               = DMA_Mode_Normal;
 	DMA_InitStructure.DMA_M2M                = DMA_M2M_Disable;
 
+	// TODO: for STM32F091CC, this remap of USART1Tx might have to be done using DMA1->CSELR and hardware request 1000 on channel 4
+	// DMA1->CSELR |= DMA1_CSELR_CH4_USART1_TX;
 	SYSCFG->CFGR1 |= SYSCFG_DMARemap_USART1Tx;
 	DMA_UART_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) USART1_DR_ADDRESS;
 	DMA_UART_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
@@ -270,6 +272,7 @@ static void setup () {
 	DMA_UART_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
 	DMA_UART_InitStructure.DMA_Mode               = DMA_Mode_Normal;
 	DMA_UART_InitStructure.DMA_M2M                = DMA_M2M_Disable;
+
 	// Pull from flash the calibration values
 	memcpy(&_prog_values, (uint8_t*) INIT_FLASH_LOCATION, sizeof(dw1000_programmed_values_t));
 	if (_prog_values.magic != PROGRAMMED_MAGIC) {
@@ -416,12 +419,12 @@ void DMA1_Channel2_3_IRQHandler(void) {
 
 // HW interrupt for the interrupt pin from the DW1000
 void EXTI2_3_IRQHandler (void) {
-	if (EXTI_GetITStatus(EXTI_Line2) != RESET) {
+	if (EXTI_GetITStatus(DW_INTERRUPT_EXTI_LINE) != RESET) {
 		// Mark this interrupt as had occurred in the main thread.
 		mark_interrupt(INTERRUPT_DW1000);
 
 		// Clear the EXTI line 2 pending bit
-		EXTI_ClearITPendingBit(EXTI_Line2);
+		EXTI_ClearITPendingBit(DW_INTERRUPT_EXTI_LINE);
 	}
 }
 

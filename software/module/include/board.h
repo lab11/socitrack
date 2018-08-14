@@ -3,6 +3,8 @@
 
 #if BOARD == TRIPOINT
 #include "tripoint.h"
+#elif BOARD == SQUAREPOINT
+#include "squarepoint.h"
 #else
 #error "MUST #define BOARD"
 #endif
