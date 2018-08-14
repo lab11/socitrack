@@ -27,7 +27,7 @@ APPLICATION_SRCS += stm32f0xx_i2c_cpal_hal.c
 APPLICATION_SRCS += deca_device.c
 APPLICATION_SRCS += deca_params_init.c
 
-CFLAGS += -DBOARD=SQUAREPOINT
+CFLAGS += -DBOARD_V=2
 LDFLAGS += -lm
 
 #The exact STM part number All CAPS

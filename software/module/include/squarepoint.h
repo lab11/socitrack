@@ -153,10 +153,12 @@
 #define STM_GPIO0_PIN	GPIO_Pin_6
 #define STM_GPIO0_PORT	GPIOB
 #define STM_GPIO0_CLK	RCC_AHBPeriph_GPIOB
+#define STM_GPIO0_SRC   GPIO_PinSource6
 
 #define STM_GPIO1_PIN	GPIO_Pin_7
 #define STM_GPIO1_PORT	GPIOB
 #define STM_GPIO1_CLK	RCC_AHBPeriph_GPIOB
+#define STM_GPIO1_SRC   GPIO_PinSource7
 
 // GPIO2 provides USART1_CK
 #define STM_GPIO2_PIN	GPIO_Pin_8

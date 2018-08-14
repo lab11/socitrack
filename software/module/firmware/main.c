@@ -6,7 +6,7 @@
 #include "stm32f0xx_gpio.h"
 #include "stm32f0xx_rcc.h"
 
-#include "tripoint.h"
+#include "board.h"
 #include "led.h"
 
 #include "host_interface.h"
@@ -284,42 +284,42 @@ int main () {
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure);
+
+	// Signal init
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
-
-	//Initialize UART1 on GPIO1 and GPIO4
+	//Initialize UART1 on GPIO0 and GPIO1
     // Tx: GPIO1 -> Pin 27 -> PB6
     // Rx: GPIO4 -> Pin 28 -> PB7
-	{
-		USART_InitTypeDef usartConfig;
-		GPIO_InitTypeDef gpioConfig;
+    USART_InitTypeDef usartConfig;
+    GPIO_InitTypeDef gpioConfig;
 
-		RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
-		GPIO_PinAFConfig(GPIOB, GPIO_PinSource6, GPIO_AF_0);
-		GPIO_PinAFConfig(GPIOB, GPIO_PinSource7, GPIO_AF_0);
+    GPIO_PinAFConfig(STM_GPIO0_PORT, STM_GPIO0_SRC, GPIO_AF_0);
+    GPIO_PinAFConfig(STM_GPIO1_PORT, STM_GPIO1_SRC, GPIO_AF_0);
 
-		gpioConfig.GPIO_Pin = GPIO_Pin_6 | GPIO_Pin_7;
-		gpioConfig.GPIO_Speed = GPIO_Speed_50MHz;
-		gpioConfig.GPIO_Mode = GPIO_Mode_AF;
-		gpioConfig.GPIO_OType = GPIO_OType_PP;
-		gpioConfig.GPIO_PuPd = GPIO_PuPd_UP;
-		GPIO_Init(GPIOB, &gpioConfig);
+    gpioConfig.GPIO_Pin = STM_GPIO0_PIN | STM_GPIO1_PIN;
+    gpioConfig.GPIO_Speed = GPIO_Speed_50MHz;
+    gpioConfig.GPIO_Mode = GPIO_Mode_AF;
+    gpioConfig.GPIO_OType = GPIO_OType_PP;
+    gpioConfig.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(STM_GPIO0_PORT, &gpioConfig);
 
-		// STM "baud" defn wrong; this results in 3 MBaud effective
-		usartConfig.USART_BaudRate = 1500000;
-		usartConfig.USART_WordLength = USART_WordLength_8b;
-		usartConfig.USART_StopBits = USART_StopBits_1;
-		usartConfig.USART_Parity = USART_Parity_No;
-		usartConfig.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-		usartConfig.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-		USART_Init(USART1, &usartConfig);
+    // STM "baud" defn wrong; this results in 3 MBaud effective
+    usartConfig.USART_BaudRate = 1500000;
+    usartConfig.USART_WordLength = USART_WordLength_8b;
+    usartConfig.USART_StopBits = USART_StopBits_1;
+    usartConfig.USART_Parity = USART_Parity_No;
+    usartConfig.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    usartConfig.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_Init(USART1, &usartConfig);
 
-		USART_Cmd(USART1, ENABLE);
-	}
+    USART_Cmd(USART1, ENABLE);
+
 
 	// In case we need a timer, get one. This is used for things like periodic
 	// ranging events.
@@ -331,10 +331,12 @@ int main () {
     //debug_msg("Configuring DW1000...\r\n");
 	start_dw1000();
 
-	// Test output channels
-    // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
+
 #ifdef DEBUG_OUTPUT_RTT
+    // Test output channels
+    // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
     SEGGER_RTT_Init();
+
 #if (TRIPOINT_ROLE == TRIPOINT_TAG)
     debug_msg("Initialized RTT as TAG\r\n");
 #elif (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
@@ -342,9 +344,11 @@ int main () {
 #else
 	debug_msg("Initialized RTT with unknown role\r\n");
 #endif
+
 #endif
-    // 2. Test UART (does not succeed if done before)
+
 #ifdef DEBUG_OUTPUT_UART
+	// 2. Test UART (does not succeed if done before)
 	uart_write_message(19, "Initialized UART\r\n");
 #endif
 

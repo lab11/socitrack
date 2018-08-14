@@ -82,6 +82,7 @@ set(SOURCE_FILES
         include/system.h
         include/timer.h
         include/tripoint.h
+        include/squarepoint.h
         include/SEGGER_RTT.h
         include/SEGGER_RTT_Conf.h
         source/delay.c

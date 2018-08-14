@@ -25,7 +25,7 @@ Purpose : Implementation of SEGGER real-time terminal which allows
 */
 
 // Enable debug output
-//#define DEBUG_OUTPUT_RTT 1
+#define DEBUG_OUTPUT_RTT 1
 
 #define SEGGER_RTT_MAX_NUM_UP_BUFFERS             (2)     // Max. number of up-buffers (T->H) available on this target    (Default: 2)
 #define SEGGER_RTT_MAX_NUM_DOWN_BUFFERS           (2)     // Max. number of down-buffers (H->T) available on this target  (Default: 2)
