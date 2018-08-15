@@ -8,7 +8,7 @@ UWB Localization Tag used as an Anchor
 #include <stdio.h>
 #include <string.h>
 
-#define DEVICE_NAME "tritaganc"
+#define DEVICE_NAME "tottaganc"
 
 #include "nordic_common.h"
 #include "nrf.h"
@@ -22,7 +22,6 @@ UWB Localization Tag used as an Anchor
 #include "ble_advdata_parser.h"
 #include "ble_conn_params.h"
 #include "ble_hci.h"
-#include "boards.h"
 #include "nrf_gpio.h"
 #include "pstorage.h"
 // #include "device_manager.h"
@@ -36,15 +35,14 @@ UWB Localization Tag used as an Anchor
 
 #include "led.h"
 #include "boards.h"
-#include "tritag.h"
 
 #include "ble_config.h"
-#include "tripoint_interface.h"
+#include "module_interface.h"
 #include "SEGGER_RTT.h"
 
 static app_timer_id_t  test_timer;
 
-bool tripoint_inited = false;
+bool module_inited = false;
 
 // Copy address from flash
 uint8_t _ble_address[6];
@@ -60,17 +58,17 @@ static simple_ble_config_t ble_config = {
     .max_conn_interval = MSEC_TO_UNITS(1000, UNIT_1_25_MS),
 };
 
-void tripointData(uint8_t* data, uint32_t len) {
+void moduleData(uint8_t* data, uint32_t len) {
 }
 
 static void timer_handler (void* p_context) {
     uint32_t err_code;
 
-    if (!tripoint_inited) {
-        err_code = tripoint_init(tripointData);
+    if (!module_inited) {
+        err_code = module_init(moduleData);
         if (err_code == NRF_SUCCESS) {
-            tripoint_inited = true;
-            tripoint_start_anchor(false);
+            module_inited = true;
+            module_start_anchor(true);
         }
     }
 }
@@ -114,15 +112,15 @@ int main(void) {
     // Advertise because why not
     simple_adv_only_name();
 
-    // Need a timer to make sure we have inited the tripoint
+    // Need a timer to make sure we have inited the module
     timers_init();
 
-    err_code = tripoint_hw_init();
+    err_code = module_hw_init();
     APP_ERROR_CHECK(err_code);
 
-    err_code = tripoint_init(tripointData);
+    err_code = module_init(moduleData);
     if (err_code == NRF_SUCCESS) {
-        tripoint_inited = true;
+        module_inited = true;
         debug_msg("Finished initialization\r\n");
     }
     else {
@@ -130,9 +128,9 @@ int main(void) {
     }
 
     // Make this node an anchor
-    if (tripoint_inited) {
-        tripoint_start_anchor(false);
-        debug_msg("Started as a non-master anchor...\r\n");
+    if (module_inited) {
+        module_start_anchor(true);
+        debug_msg("Started as a master anchor...\r\n");
     }
 
     // Signal end of initialization

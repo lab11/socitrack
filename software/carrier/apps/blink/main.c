@@ -3,13 +3,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <tritag.h>
-#include "led.h"
-#include "boards.h"
 #include "nordic_common.h"
 #include "app_timer.h"
 #include "softdevice_handler.h"
 
+#include "led.h"
+#include "boards.h"
 
 #define LED            LED_0
 

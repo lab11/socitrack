@@ -5,10 +5,10 @@ APPLICATION_SRCS += softdevice_handler.c
 APPLICATION_SRCS += app_timer.c
 APPLICATION_SRCS += led.c
 
-DEVICE = NRF51
+DEVICE = NRF52
 
 ifndef TARGET
-TARGET = tritag
+TARGET = tottag
 endif
 
 ifneq ($(PID), )
@@ -19,9 +19,9 @@ TARGET_UPPER = $(shell echo $(TARGET) | tr a-z A-Z)
 TARGET_LOWER = $(shell echo $(TARGET) | tr A-Z a-z)
 BOARD = BOARD_$(TARGET_UPPER)
 
-SOFTDEVICE_MODEL = s110
+SOFTDEVICE_MODEL = s140
 
-SDK_VERSION = 9
+SDK_VERSION = 15
 
 LIBRARY_PATHS += ../../nrf5x-base/peripherals ../../nrf5x-base/devices ../../nrf5x-base/services ../../src
 SOURCE_PATHS += ../../nrf5x-base/peripherals ../../nrf5x-base/devices ../../nrf5x-base/services

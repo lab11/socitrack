@@ -1,7 +1,7 @@
 PROJECT_NAME = $(shell basename "$(realpath ./)")
 
 APPLICATION_SRCS = $(notdir $(wildcard ./*.c))
-#APPLICATION_SRCS += system_nrf51.c
+#APPLICATION_SRCS += system_nrf52840.c
 APPLICATION_SRCS += softdevice_handler.c
 APPLICATION_SRCS += ble_advdata.c
 APPLICATION_SRCS += ble_conn_params.c
@@ -17,13 +17,13 @@ APPLICATION_SRCS += led.c
 APPLICATION_SRCS += simple_ble.c
 APPLICATION_SRCS += simple_adv.c
 
-APPLICATION_SRCS += tripoint_interface.c
+APPLICATION_SRCS += module_interface.c
 APPLICATION_SRCS += SEGGER_RTT.c
 
-DEVICE = NRF51
+DEVICE = NRF52
 
 ifndef TARGET
-TARGET = tritag
+TARGET = tottag
 endif
 
 ifneq ($(PID), )
@@ -36,15 +36,11 @@ BOARD = BOARD_$(TARGET_UPPER)
 
 APPLICATION_SRCS += $(TARGET_LOWER).c
 
-SOFTDEVICE_MODEL = s110
-SDK_VERSION = 9
+SOFTDEVICE_MODEL = s140
+SDK_VERSION = 15
 
-LIBRARY_PATHS += .  ../../src
+LIBRARY_PATHS += .  ../../include
 SOURCE_PATHS += ../../src
-
-# J-Link RTT
-LIBRARY_PATHS += ../../src/RTT
-SOURCE_PATHS += ../../src/RTT
 
 # Compiler flags
 # Optimize for debugging; as only the last optimization flag is actually use, delete "CFLAGS += 0s" in /nrf5x-base/make/Makefile : l. 237

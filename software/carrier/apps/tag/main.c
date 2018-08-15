@@ -19,7 +19,6 @@
 #include "ble_advdata_parser.h"
 #include "ble_conn_params.h"
 #include "ble_hci.h"
-#include "boards.h"
 #include "nrf_gpio.h"
 #include "pstorage.h"
 #include "app_trace.h"
@@ -33,10 +32,9 @@
 
 #include "led.h"
 #include "boards.h"
-#include "tritag.h"
 
 #include "ble_config.h"
-#include "tripoint_interface.h"
+#include "module_interface.h"
 #include "SEGGER_RTT.h"
 
 /*******************************************************************************
@@ -86,12 +84,12 @@ uint8_t _ble_address[6];
 simple_ble_app_t* simple_ble_app;
 static ble_app_t app;
 
-// GP Timer. Used to retry initializing the TriPoint.
+// GP Timer. Used to retry initializing the module.
 static app_timer_id_t  app_timer;
 
-// Whether or not we successfully got through to the TriPoint module
+// Whether or not we successfully got through to the module
 // and got it configured properly.
-bool tripoint_inited = false;
+bool module_inited = false;
 
 
 /*******************************************************************************
@@ -104,16 +102,15 @@ void ble_evt_write (ble_evt_t* p_ble_evt)
     ble_gatts_evt_write_t* p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
     if (simple_ble_is_char_event(p_ble_evt, &char_ranging_enable_handle)) {
-        // Handle a write to the characteristic that starts and stops
-        // TriPoint ranging.
+        // Handle a write to the characteristic that starts and stops ranging.
 
         app.app_ranging = p_evt_write->data[0];
 
-        // Stop or start the tripoint based on the value we just got
+        // Stop or start the module based on the value we just got
         if (app.app_ranging == 1) {
-            tripoint_resume();
+            module_resume();
         } else {
-            tripoint_sleep();
+            module_sleep();
         }
 
     } else if (simple_ble_is_char_event(p_ble_evt, &char_calibration_index_handle)) {
@@ -122,7 +119,7 @@ void ble_evt_write (ble_evt_t* p_ble_evt)
 
         // Configure this node for calibration and set the calibration node
         // index. If 0, this node will immediately start calibration.
-        tripoint_start_calibration(app.calibration_index);
+        module_start_calibration(app.calibration_index);
     }
 }
 
@@ -193,12 +190,12 @@ void updateData (uint8_t * data, uint32_t len)
         }
     }
 
-	// Trigger tripointDataUpdate from main loop
+	// Trigger moduleDataUpdate from main loop
 	updated = 1;
 }
 
 
-void tripointDataUpdate ()
+void moduleDataUpdate ()
 {
     // Update the data value and notify on the data
 	if (blobLen >= 5) {
@@ -235,11 +232,11 @@ static void timer_handler (void* p_context)
 {
     uint32_t err_code;
 
-    if (!tripoint_inited) {
-        err_code = tripoint_init(updateData);
+    if (!module_inited) {
+        err_code = module_init(updateData);
         if (err_code == NRF_SUCCESS) {
-            tripoint_inited = true;
-            tripoint_start_ranging(true, 10);
+            module_inited = true;
+            module_start_ranging(true, 10);
         }
     }
 }
@@ -309,7 +306,7 @@ void services_init (void)
 
     // Status
     simple_ble_add_characteristic(1, 0, 0, 0, // read, write, notify, vlen
-                                  1,(uint8_t*) &tripoint_inited,
+                                  1,(uint8_t*) &module_inited,
                                   &service_handle,
                                   &char_status_handle);
 }
@@ -346,25 +343,25 @@ int main (void)
     srdata.name_type = BLE_ADVDATA_FULL_NAME;
     eddystone_adv(PHYSWEB_URL, &srdata);
 
-    // Need a timer to make sure we have inited the tripoint
+    // Need a timer to make sure we have inited the module
     timers_init();
 
-    // Init the nRF hardware to work with the tripoint module.
-    err_code = tripoint_hw_init();
+    // Init the nRF hardware to work with the module module.
+    err_code = module_hw_init();
     APP_ERROR_CHECK(err_code);
 
-    // Init the state machine on the tripoint
-    err_code = tripoint_init(updateData);
+    // Init the state machine on the module
+    err_code = module_init(updateData);
     if (err_code == NRF_SUCCESS) {
-        tripoint_inited = true;
+        module_inited = true;
         debug_msg("Finished initialization\r\n");
     } else {
         debug_msg("ERROR: Failed initialization!\r\n");
     }
 
     // Start the ranging
-    if (tripoint_inited) {
-        err_code = tripoint_start_ranging(true, 10);
+    if (module_inited) {
+        err_code = module_start_ranging(true, 10);
         if (err_code != NRF_SUCCESS) {
             debug_msg("ERROR: Failed to start ranging!\r\n");
         } else {
@@ -384,7 +381,7 @@ int main (void)
 
 		if (updated) {
 		    //debug_msg("Updating location...\r\n");
-			tripointDataUpdate();
+			moduleDataUpdate();
 		}
     }
 }

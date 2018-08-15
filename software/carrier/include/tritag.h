@@ -36,4 +36,4 @@
 
 #define SER_CONN_ASSERT_LED_PIN     LED_0
 
-#endif
+#endif /* TRITAG_H */

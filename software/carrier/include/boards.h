@@ -1,8 +1,13 @@
 #ifndef BOARDS_H
 #define BOARDS_H
 
+// FIXME: Uncomment when done with debugging
+#define BOARD_TOTTAG
+
 #if defined(BOARD_TRITAG)
 	#include "tritag.h"
+#elif defined(BOARD_TOTTAG)
+    #include "tottag.h"
 #else
 	#error "Board is not defined in boards.h"
 #endif
@@ -25,4 +30,4 @@
                                       if ( (leds_mask) & (1 << pin) )   \
                                           nrf_gpio_cfg_output(pin); } while (0)
 
-#endif
+#endif /* BOARDS_H */
