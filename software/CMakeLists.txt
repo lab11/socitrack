@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 3.8)
-project (surepoint)
+project (totternary)
 # The version number.
-set (surepoint_VERSION_MAJOR 1)
-set (surepoint_VERSION_MINOR 0)
+set (totternary_VERSION_MAJOR 1)
+set (totternary_VERSION_MINOR 0)
 
 # Set compiler standard
 set(CMAKE_CXX_STANDARD 11)
@@ -12,4 +12,4 @@ add_subdirectory(carrier)
 add_subdirectory(module)
 
 # Create executables
-#add_executable(project_surepoint)
+#add_executable(project_totternary)

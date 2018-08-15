@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 3.8)
-project (software)
+project (module)
 # The version number.
-set (surepoint_software_VERSION_MAJOR 1)
-set (surepoint_software_VERSION_MINOR 0)
+set (module_VERSION_MAJOR 1)
+set (module_VERSION_MINOR 0)
 
 # Set compiler standard
 set(CMAKE_CXX_STANDARD 11)
@@ -93,4 +93,4 @@ set(SOURCE_FILES
         source/SEGGER_RTT_printf.c)
 
 # Create dummy executable for CLion
-add_executable(project_software ${PROJ_FILES} ${SOURCE_FILES})
+add_executable(project_module ${PROJ_FILES} ${SOURCE_FILES})
