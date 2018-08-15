@@ -42,6 +42,13 @@ ifeq ($(DEVICE_FAMILY), STM32F031)
 CFLAGS += -DI2C2_IRQn=24
 endif
 
+# Adjust clock speed of HSE (High-Speed external oscillator)
+ifeq ($(DEVICE_FAMILY), STM32F091)
+# Use 16 MHz external oscillator
+HSE_CLK_FREQ = 16000000
+CFLAGS += -DHSE_VALUE=$(HSE_CLK_FREQ)
+endif
+
 # Add empty variable to add flags over command line
 CDBG +=
 CFLAGS += $(CDBG)
