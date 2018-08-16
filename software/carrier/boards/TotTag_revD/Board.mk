@@ -11,8 +11,12 @@ BOARD_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BOARD_SOURCE_PATHS = $(BOARD_DIR)/.
 BOARD_HEADER_PATHS = $(BOARD_DIR)/.
 BOARD_LINKER_PATHS = $(BOARD_DIR)/.
-BOARD_SOURCES = $(notdir $(wildcard $(BOARD_DIR)/./*.c))
-BOARD_AS = $(notdir $(wildcard $(BOARD_DIR)/./*.s))
+BOARD_SOURCES = $(notdir $(wildcard $(BOARD_DIR)/*.c))
+BOARD_AS = $(notdir $(wildcard $(BOARD_DIR)/*.s))
+
+# Add source and header files
+BOARD_SOURCE_PATHS += $(BOARD_DIR)/../../src
+BOARD_HEADER_PATHS += $(BOARD_DIR)/../../include
 
 # Board-specific configurations
 BOARD = TotTag_revD

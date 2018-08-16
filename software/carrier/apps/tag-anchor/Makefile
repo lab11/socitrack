@@ -7,27 +7,22 @@ NRF_IC = nrf52840
 SDK_VERSION = 15
 SOFTDEVICE_MODEL = s140
 
-
-# Source and header files
-APP_HEADER_PATHS += .
-APP_SOURCE_PATHS += .
-APPLICATION_SOURCES = $(notdir $(wildcard ./*.c))
-
-APPLICATION_SOURCES += module_interface.c
-
+# Configure Board settings
 ifndef TARGET
 TARGET = tottag
 endif
+
+BOARD = BOARD_$(TARGET_UPPER)
 
 ifneq ($(PID), )
 ID = c0:98:e5:44:50:$(PID)
 endif
 
-TARGET_UPPER = $(shell echo $(TARGET) | tr a-z A-Z)
-TARGET_LOWER = $(shell echo $(TARGET) | tr A-Z a-z)
-BOARD = BOARD_$(TARGET_UPPER)
 
-APPLICATION_SOURCES += $(TARGET_LOWER).c
+# Source and header files
+APP_HEADER_PATHS += .
+APP_SOURCE_PATHS += .
+APP_SOURCES = $(notdir $(wildcard ./*.c))
 
 
 # Compiler flags
