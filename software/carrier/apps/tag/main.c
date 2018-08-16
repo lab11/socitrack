@@ -328,7 +328,7 @@ int main (void)
     app.calibration_index = 255;
 
     // Get stored address
-    memcpy(_ble_address, (uint8_t*) ADDRESS_FLASH_LOCATION, 6);
+    memcpy(_ble_address, (uint8_t*) BLE_FLASH_ADDRESS, 6);
     // And use it to setup the BLE
     ble_config.device_id = (uint16_t)( (uint16_t)_ble_address[1] << (uint8_t)8) | _ble_address[0];
 

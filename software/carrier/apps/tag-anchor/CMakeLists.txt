@@ -12,7 +12,8 @@ set(SOFTDEVICE_VERSION "s140")
 # https://cmake.org/pipermail/cmake/2012-June/050674.html
 # https://stackoverflow.com/questions/31004421/does-cmake-support-include-directories-recursively
 # https://stackoverflow.com/questions/39216997/search-a-list-of-path-in-make-for-include-directories-recursively
-set(SEARCH_DIR_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../include")
+set(SEARCH_DIR_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/../../boards")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../include")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../src")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/drivers/device_id")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../../nrf5x-base/drivers/led")

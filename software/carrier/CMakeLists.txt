@@ -12,6 +12,7 @@ add_subdirectory(apps/blink)
 add_subdirectory(apps/tag)
 add_subdirectory(apps/tag-anchor)
 add_subdirectory(apps/tag-anchor-glossy-master)
+add_subdirectory(boards)
 
 # Include directories to search by discovering sub-directories recursively
 # ATTENTION: Current setup compiles for SDK Version 15.0.0 together with Softdevice s140
@@ -21,7 +22,8 @@ set(SOFTDEVICE_VERSION "s140")
 # https://cmake.org/pipermail/cmake/2012-June/050674.html
 # https://stackoverflow.com/questions/31004421/does-cmake-support-include-directories-recursively
 # https://stackoverflow.com/questions/39216997/search-a-list-of-path-in-make-for-include-directories-recursively
-set(SEARCH_DIR_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(SEARCH_DIR_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/boards")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/include")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/src")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/nrf5x-base/drivers/device_id")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/nrf5x-base/drivers/led")
@@ -81,13 +83,9 @@ set(SOURCE_FILES
         include/module_interface.h
         include/SEGGER_RTT.h
         include/SEGGER_RTT_Conf.h
-        include/tottag.h
-        include/tritag.h
         src/module_interface.c
         src/SEGGER_RTT.c
-        src/SEGGER_RTT_printf.c
-        src/tottag.c
-        src/tritag.c)
+        src/SEGGER_RTT_printf.c)
 
 # Create dummy executable for CLion
 add_executable(project_carrier ${SOURCE_FILES})
