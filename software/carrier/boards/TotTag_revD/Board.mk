@@ -67,5 +67,8 @@ BOARD_SOURCES += \
 	SEGGER_RTT_Syscalls_GCC.c\
 	SEGGER_RTT_printf.c\
 	system_nrf52840.c\
+	simple_logger.c\
+	ff.c\
+	mmc_nrf.c\
 
 endif

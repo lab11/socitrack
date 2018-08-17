@@ -9,9 +9,9 @@
 //advertising interval = 1000*0.625ms = 625ms
 #define APP_ADV_INTERVAL                MSEC_TO_UNITS(1000, UNIT_0_625_MS)
 #define APP_COMPANY_IDENTIFIER			0x11BB
-#define MANUFACTURER_NAME 				"Lab11UMich"
+#define MANUFACTURER_NAME 				"Lab11UCB"
 #define MODEL_NUMBER 					DEVICE_NAME
-#define HARDWARE_REVISION 				"A"
+#define HARDWARE_REVISION 				"D"
 #define FIRMWARE_REVISION 				"0.1"
 
 //advertising timeout sec
@@ -19,9 +19,9 @@
 
 #define UPDATE_RATE     APP_TIMER_TICKS(1000, 0)
 
-#define TRITAG_TIMER_PRESCALER  0
-#define TRITAG_MAX_TIMERS       6
-#define TRITAG_OP_QUEUE_SIZE    5
+#define CARRIER_TIMER_PRESCALER  0
+#define CARRIER_MAX_TIMERS       6
+#define CARRIER_OP_QUEUE_SIZE    5
 
 
 //500ms

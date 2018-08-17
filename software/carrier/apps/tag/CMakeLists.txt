@@ -70,7 +70,6 @@ include_directories(${recursive_list})
 # Add source files
 set(PROJ_FILES
         ble_config.h
-        nrf_drv_config.h
         main.c)
 
 # Create dummy executable for CLion

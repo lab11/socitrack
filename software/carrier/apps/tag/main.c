@@ -13,22 +13,15 @@
 #include "nrf_delay.h"
 #include "ble.h"
 #include "ble_db_discovery.h"
-#include "softdevice_handler.h"
 #include "app_util.h"
 #include "app_error.h"
-#include "ble_advdata_parser.h"
 #include "ble_conn_params.h"
 #include "ble_hci.h"
 #include "nrf_gpio.h"
-#include "pstorage.h"
-#include "app_trace.h"
 #include "ble_hrs_c.h"
 #include "ble_bas_c.h"
 #include "app_util.h"
 #include "app_timer.h"
-
-#include "simple_ble.h"
-#include "eddystone.h"
 
 #include "led.h"
 #include "boards.h"
@@ -41,11 +34,11 @@
  *   Configuration and settings
  ******************************************************************************/
 
-#define TRITAG_SHORT_UUID                     0x3152
-#define TRITAG_CHAR_LOCATION_SHORT_UUID       0x3153
-#define TRITAG_CHAR_RANGING_ENABLE_SHORT_UUID 0x3154
-#define TRITAG_CHAR_CALIBRATION_SHORT_UUID    0x3159
-#define TRITAG_CHAR_STATUS_SHORT_UUID         0x3155
+#define CARRIER_SHORT_UUID                     0x3152
+#define CARRIER_CHAR_LOCATION_SHORT_UUID       0x3153
+#define CARRIER_CHAR_RANGING_ENABLE_SHORT_UUID 0x3154
+#define CARRIER_CHAR_CALIBRATION_SHORT_UUID    0x3159
+#define CARRIER_CHAR_STATUS_SHORT_UUID         0x3155
 
 // Randomly generated UUID
 simple_ble_service_t service_handle = {
@@ -53,10 +46,10 @@ simple_ble_service_t service_handle = {
                  0x90, 0xee, 0x3f, 0xa2, 0x31, 0x52, 0x8c, 0xd6}}
 };
 
-simple_ble_char_t char_range_handle             = {.uuid16 = TRITAG_CHAR_LOCATION_SHORT_UUID};
-simple_ble_char_t char_calibration_index_handle = {.uuid16 = TRITAG_CHAR_CALIBRATION_SHORT_UUID};
-simple_ble_char_t char_ranging_enable_handle    = {.uuid16 = TRITAG_CHAR_RANGING_ENABLE_SHORT_UUID};
-simple_ble_char_t char_status_handle            = {.uuid16 = TRITAG_CHAR_STATUS_SHORT_UUID};
+simple_ble_char_t char_range_handle             = {.uuid16 = CARRIER_CHAR_LOCATION_SHORT_UUID};
+simple_ble_char_t char_calibration_index_handle = {.uuid16 = CARRIER_CHAR_CALIBRATION_SHORT_UUID};
+simple_ble_char_t char_ranging_enable_handle    = {.uuid16 = CARRIER_CHAR_RANGING_ENABLE_SHORT_UUID};
+simple_ble_char_t char_status_handle            = {.uuid16 = CARRIER_CHAR_STATUS_SHORT_UUID};
 
 
 // Intervals for advertising and connections
@@ -258,9 +251,9 @@ static void timer_handler (void* p_context)
 
 void initialize_app_timer (void)
 {
-    APP_TIMER_INIT(TRITAG_TIMER_PRESCALER,
-                   TRITAG_MAX_TIMERS,
-                   TRITAG_OP_QUEUE_SIZE,
+    APP_TIMER_INIT(CARRIER_TIMER_PRESCALER,
+                   CARRIER_MAX_TIMERS,
+                   CARRIER_OP_QUEUE_SIZE,
                    false);
 }
 
@@ -283,7 +276,7 @@ static void timers_init (void)
 // Init services, called by simple_ble_init
 void services_init (void)
 {
-    // Add main TriTag service
+    // Add main Carrier service
     simple_ble_add_service(&service_handle);
 
     //add the characteristic that exposes a blob of interrupt response
@@ -317,7 +310,7 @@ int main (void)
     uint32_t err_code;
 
     // Initialization
-    led_init(LED_0);
+    led_init(CARRIER_LED_BLUE);
     debug_msg("\r\n----------------------------------------------\r\n");
     debug_msg("Initializing nRF...\r\n");
 
@@ -370,7 +363,7 @@ int main (void)
     }
 
     // Signal end of initialization
-    led_on(LED_0);
+    led_on(CARRIER_LED_BLUE);
 
     // Loop: update location and advertise
     while (1) {
