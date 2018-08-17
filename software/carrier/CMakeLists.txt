@@ -79,10 +79,12 @@ include_directories(${recursive_list})
 
 # Add source files
 set(SOURCE_FILES
+        include/accelerometer_lis2dw12.h
         include/boards.h
         include/module_interface.h
         include/SEGGER_RTT.h
         include/SEGGER_RTT_Conf.h
+        src/accelerometer_lis2dw12.c
         src/module_interface.c
         src/SEGGER_RTT.c
         src/SEGGER_RTT_printf.c)

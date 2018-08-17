@@ -52,6 +52,12 @@
 #define CARRIER_ACC_INT1    NRF_GPIO_PIN_MAP(0,22)
 #define CARRIER_ACC_INT2    NRF_GPIO_PIN_MAP(0,24)
 
+// To use "accelerometer_lis2dw12", we define some additional macros
+#define SPI_SCLK            CARRIER_SPI_SCLK
+#define SPI_MISO            CARRIER_SPI_MISO
+#define SPI_MOSI            CARRIER_SPI_MOSI
+#define LI2D_CS             CARRIER_CS_ACC
+
 
 // I2C connection to module
 #define CARRIER_I2C_SCL     NRF_GPIO_PIN_MAP(1,9)

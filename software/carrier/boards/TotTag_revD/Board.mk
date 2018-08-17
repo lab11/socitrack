@@ -60,9 +60,11 @@ BOARD_SOURCES += \
 	nrfx_prs.c\
 	nrfx_timer.c\
 	nrfx_twi.c\
-	nrfx_twim.c\
 	nrfx_uart.c\
 	nrfx_uarte.c\
+	nrfx_spim.c\
+	nrf_spi_mngr.c\
+	nrf_drv_spi.c\
 	SEGGER_RTT.c\
 	SEGGER_RTT_Syscalls_GCC.c\
 	SEGGER_RTT_printf.c\
@@ -70,5 +72,6 @@ BOARD_SOURCES += \
 	simple_logger.c\
 	ff.c\
 	mmc_nrf.c\
+	accelerometer_lis2dw12.c\
 
 endif
