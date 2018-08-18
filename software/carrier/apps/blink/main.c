@@ -10,20 +10,21 @@
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
 #include "nrf_gpiote.h"
-#include "nrf_drv_gpiote.h"
+#include "nrfx_gpiote.h"
 #include "nrf_spi_mngr.h"
 #include "nrf_drv_spi.h"
 #include "nrf_sdh.h"
+#include "nrf_soc.h"
 #include "app_uart.h"
 #include "nrf_uart.h"
 #include "SEGGER_RTT.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
 
 #include "boards.h"
 #include "simple_logger.h"
 #include "accelerometer_lis2dw12.h"
-
-// Global defines
-#define DEBUG(x) SEGGER_RTT_WriteString(0,x)
 
 
 /*-----------------------------------------------------------------------*/
@@ -79,7 +80,7 @@ void uart_init(void) {
                        UART_RX_BUF_SIZE,
                        UART_TX_BUF_SIZE,
                        uart_error_handle,
-                       APP_IRQ_PRIORITY_LOW,
+                       APP_IRQ_PRIORITY_MID,
                        err_code);
     APP_ERROR_CHECK(err_code);
 
@@ -116,6 +117,7 @@ lis2dw12_config_t config = {
 };
 
 static void acc_fifo_read_handler(void) {
+
     for(int i = 0; i < 32; i++) {
         printf("x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
     }
@@ -129,18 +131,19 @@ static void acc_fifo_read_handler(void) {
     lis2dw12_fifo_config(fifo_config);
 }
 
-static void acc_wakeup_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
+static void acc_wakeup_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
+
     lis2dw12_read_full_fifo(x, y, z, acc_fifo_read_handler);
 }
 
 static void acc_init(void) {
 
     // Init GPIOTE, accelerometer interrupt
-    nrf_drv_gpiote_init();
-    nrf_drv_gpiote_in_config_t int_gpio_config = GPIOTE_CONFIG_IN_SENSE_LOTOHI(0);
+    nrfx_gpiote_init();
+    nrfx_gpiote_in_config_t int_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(0);
     int_gpio_config.pull = NRF_GPIO_PIN_NOPULL;
-    nrf_drv_gpiote_in_init(CARRIER_ACC_INT2, &int_gpio_config, acc_wakeup_handler);
-    nrf_drv_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
+    nrfx_gpiote_in_init(CARRIER_ACC_INT2, &int_gpio_config, acc_wakeup_handler);
+    nrfx_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
 
     // Turn on accelerometer
     lis2dw12_init(&spi_instance);
@@ -172,8 +175,12 @@ static void acc_init(void) {
 int main(void) {
 
     // Initialize ------------------------------------------------------------------------------------------------------
-    SEGGER_RTT_Init();
-    SEGGER_RTT_WriteString(0,"Initialized SEGGER RTT...\r\n");
+
+    // Initialize RTT library
+    ret_code_t error_code = NRF_LOG_INIT(NULL);
+    APP_ERROR_CHECK(error_code);
+    NRF_LOG_DEFAULT_BACKENDS_INIT();
+    printf("Initialized SEGGER RTT");
 
     // FIXME: BUG FIX -> Enable SD card to pull nRESET high
     nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
@@ -197,6 +204,7 @@ int main(void) {
 
     // Init UART
     uart_init();
+    printf(", UART");
 
     // Init SPI
     spi_init();
@@ -204,32 +212,41 @@ int main(void) {
     nrf_gpio_cfg_output(CARRIER_CS_ACC);
     nrf_gpio_pin_set(CARRIER_CS_SD);
     nrf_gpio_pin_set(CARRIER_CS_ACC);
+    printf(", SPI");
+
+    // Init SoftDevice & DCDC regulator
+    nrf_sdh_enable_request();
+    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
+    printf(" and SoftDevice...\n");
 
 
     // Test SD card ----------------------------------------------------------------------------------------------------
 //#define TEST_SD_CARD
 #ifdef TEST_SD_CARD
-    SEGGER_RTT_WriteString(0,"Testing SD card: ");
+    printf("Testing SD card: ");
 
     const char filename[] = "testfile.log";
     const char permissions[] = "a"; // w = write, a = append
 
     // Start file
     simple_logger_init(filename, permissions);
+    DEBUG("inited\r\n");
 
     // If no header, add it
     simple_logger_log_header("HEADER for %s file, written on %s", "FILENAME", "08/16/18");
+    DEBUG("wrote header\r\n");
 
     // Write
     simple_logger_log("%s: Additional line added\n", "19:06");
+    DEBUG("wrote line\r\n");
 
-    SEGGER_RTT_WriteString(0,"OK\r\n");
+    printf("OK\r\n");
 #endif
 
     // Test Accelerometer ----------------------------------------------------------------------------------------------
 #define TEST_ACC
 #ifdef TEST_ACC
-    SEGGER_RTT_WriteString(0,"Testing Accelerometer: ");
+    printf("Testing Accelerometer: ");
 
     // Initialize
     acc_init();
@@ -242,11 +259,11 @@ int main(void) {
         APP_ERROR_CHECK(err_code);
     }
 
-    SEGGER_RTT_WriteString(0,"OK\r\n");
+    printf("OK\r\n");
 #endif
 
     // Test LED --------------------------------------------------------------------------------------------------------
-    SEGGER_RTT_WriteString(0,"Testing LED: <blinks green>\r\n");
+    printf("Testing LED: <blinks green>\r\n");
 
     while (1)
     {
