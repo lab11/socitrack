@@ -1,6 +1,7 @@
 #include "nrf_spi_mngr.h"
 #include "nrf_drv_spi.h"
 #include "nrf_gpio.h"
+#include "nrfx_gpiote.h"
 #include "app_error.h"
 
 #include "accelerometer_lis2dw12.h"
@@ -9,14 +10,17 @@
 static const nrf_spi_mngr_t* spi_instance;
 static lis2dw12_config_t ctl_config;
 static uint8_t full_scale = 2;
+
 static nrf_drv_spi_config_t spi_config  = {
-  .sck_pin    = SPI_SCLK,
-  .miso_pin   = SPI_MISO,
-  .mosi_pin   = SPI_MOSI,
-  .ss_pin     = LI2D_CS,
-  .frequency  = NRF_DRV_SPI_FREQ_4M,
-  .mode       = NRF_DRV_SPI_MODE_3,
-  .bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST,
+  .sck_pin      = SPI_SCLK,
+  .miso_pin     = SPI_MISO,
+  .mosi_pin     = SPI_MOSI,
+  .ss_pin       = LI2D_CS,
+  .irq_priority = SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
+  .orc          = 0xFF,
+  .frequency    = NRF_DRV_SPI_FREQ_4M,
+  .mode         = NRF_DRV_SPI_MODE_3,
+  .bit_order    = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST,
 };
 
 static lis2dw12_read_full_fifo_callback_t fifo_callback;

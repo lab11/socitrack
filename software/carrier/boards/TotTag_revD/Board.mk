@@ -64,6 +64,7 @@ BOARD_SOURCES += \
 	nrfx_twi.c\
 	nrfx_uart.c\
 	nrfx_uarte.c\
+	nrfx_spi.c\
 	nrfx_spim.c\
 	nrf_spi_mngr.c\
 	nrf_drv_spi.c\

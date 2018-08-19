@@ -38,10 +38,10 @@ NRF_SPI_MNGR_DEF(spi_instance, 5, SPI_INSTANCE_NR);
 void spi_init(void) {
 
     nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
-    spi_config.sck_pin    = SPI_SCLK;
-    spi_config.miso_pin   = SPI_MISO;
-    spi_config.mosi_pin   = SPI_MOSI;
-    spi_config.ss_pin     = LI2D_CS;
+    spi_config.sck_pin    = CARRIER_SPI_SCLK;
+    spi_config.miso_pin   = CARRIER_SPI_MISO;
+    spi_config.mosi_pin   = CARRIER_SPI_MOSI;
+    spi_config.ss_pin     = CARRIER_CS_ACC;
     spi_config.frequency  = NRF_DRV_SPI_FREQ_4M;
     spi_config.mode       = NRF_DRV_SPI_MODE_3;
     spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
@@ -76,11 +76,12 @@ void uart_init(void) {
                     false,
                     NRF_UART_BAUDRATE_115200
             };
+
     APP_UART_FIFO_INIT(&comm_params,
                        UART_RX_BUF_SIZE,
                        UART_TX_BUF_SIZE,
                        uart_error_handle,
-                       APP_IRQ_PRIORITY_MID,
+                       APP_IRQ_PRIORITY_LOW,
                        err_code);
     APP_ERROR_CHECK(err_code);
 
@@ -196,7 +197,7 @@ int main(void) {
     nrf_gpio_pin_clear(CARRIER_LED_RED);
 
     // FIXME: Delay startup (for probing with oscilloscope)
-    nrf_delay_ms(10000);
+    nrf_delay_ms(2000);
 
     nrf_gpio_pin_set(CARRIER_LED_RED);
     nrf_gpio_pin_set(CARRIER_LED_GREEN);
@@ -253,13 +254,14 @@ int main(void) {
 
     // Gather readings
     int nr_readings = 10;
+    printf("<gathering data>\n");
 
     for (int i = 0; i < nr_readings; i++) {
         ret_code_t err_code = sd_app_evt_wait();
         APP_ERROR_CHECK(err_code);
     }
 
-    printf("OK\r\n");
+    printf("Testing Accelerometer: OK\r\n");
 #endif
 
     // Test LED --------------------------------------------------------------------------------------------------------
