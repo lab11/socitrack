@@ -28,7 +28,7 @@
 
 
 /*-----------------------------------------------------------------------*/
-/* SPI & UART functions                                                		 */
+/* SPI & UART functions                                                	 */
 /*-----------------------------------------------------------------------*/
 
 // Use SPI0
@@ -89,32 +89,32 @@ void uart_init(void) {
 
 
 /*-----------------------------------------------------------------------*/
-/* Accelerometer function                                                		 */
+/* Accelerometer functions                                               */
 /*-----------------------------------------------------------------------*/
 
 static int16_t x[32], y[32], z[32];
 
 lis2dw12_wakeup_config_t wake_config = {
-        .sleep_enable = 1,
-        .threshold = 0x05,
-        .wake_duration = 3,
+        .sleep_enable   = 1,
+        .threshold      = 0x05,
+        .wake_duration  = 3,
         .sleep_duration = 2
 };
 
 lis2dw12_config_t config = {
-        .odr = lis2dw12_odr_200,
-        .mode = lis2dw12_low_power,
-        .lp_mode = lis2dw12_lp_1,
-        .cs_nopull = 0,
-        .bdu = 1,
+        .odr        = lis2dw12_odr_200,
+        .mode       = lis2dw12_low_power,
+        .lp_mode    = lis2dw12_lp_1,
+        .cs_nopull  = 0,
+        .bdu        = 1,
         .auto_increment = 1,
-        .i2c_disable = 1,
+        .i2c_disable    = 1,
         .int_active_low = 0,
-        .on_demand = 1,
-        .bandwidth = lis2dw12_bw_odr_2,
-        .fs = lis2dw12_fs_4g,
-        .high_pass = 0,
-        .low_noise = 1,
+        .on_demand  = 1,
+        .bandwidth  = lis2dw12_bw_odr_2,
+        .fs         = lis2dw12_fs_4g,
+        .high_pass  = 0,
+        .low_noise  = 1,
 };
 
 static void acc_fifo_read_handler(void) {
@@ -123,13 +123,8 @@ static void acc_fifo_read_handler(void) {
         printf("x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
     }
 
-    // reset fifo
-    lis2dw12_fifo_config_t fifo_config = {
-            .mode = lis2dw12_fifo_bypass
-    };
-    lis2dw12_fifo_config(fifo_config);
-    fifo_config.mode = lis2dw12_fifo_byp_to_cont;
-    lis2dw12_fifo_config(fifo_config);
+    // Reset FIFO
+    lis2dw12_fifo_reset();
 }
 
 static void acc_wakeup_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
@@ -158,16 +153,17 @@ static void acc_init(void) {
     lis2dw12_interrupt_config(int_config);
     lis2dw12_interrupt_enable(1);
 
-    // Clear FIFO
-    lis2dw12_fifo_config_t fifo_config;
-    fifo_config.mode = lis2dw12_fifo_bypass;
-    lis2dw12_fifo_config(fifo_config);
-    fifo_config.mode = lis2dw12_fifo_byp_to_cont;
-    lis2dw12_fifo_config(fifo_config);
+    // Reset FIFO
+    lis2dw12_fifo_reset();
 
     lis2dw12_wakeup_config(wake_config);
 }
 
+/*-----------------------------------------------------------------------*/
+/* SD card functions                                                     */
+/*-----------------------------------------------------------------------*/
+
+// TODO: change SPI CS to SD card
 
 /*-----------------------------------------------------------------------*/
 /* MAIN test                                                    		 */
@@ -253,7 +249,7 @@ int main(void) {
     acc_init();
 
     // Gather readings
-    int nr_readings = 10;
+    int nr_readings = 1;
     printf("<gathering data>\n");
 
     for (int i = 0; i < nr_readings; i++) {
@@ -266,6 +262,9 @@ int main(void) {
 
     // Test LED --------------------------------------------------------------------------------------------------------
     printf("Testing LED: <blinks green>\r\n");
+
+    // Turn off Blue
+    nrf_gpio_pin_clear(CARRIER_LED_BLUE);
 
     while (1)
     {

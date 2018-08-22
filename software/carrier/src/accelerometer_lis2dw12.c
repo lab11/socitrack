@@ -7,71 +7,33 @@
 #include "accelerometer_lis2dw12.h"
 #include "boards.h"
 
+// Static functions
+static void lis2dw12_read_full_fifo_callback(nrf_drv_spi_evt_t const* p_event, void* p_context);
+static lis2dw12_read_full_fifo_callback_t fifo_callback;
+
+// Configurations
 static const nrf_spi_mngr_t* spi_instance;
 static lis2dw12_config_t ctl_config;
-static uint8_t full_scale = 2;
+static nrf_drv_spi_config_t spi_config  = NRF_DRV_SPI_DEFAULT_CONFIG;
 
-static nrf_drv_spi_config_t spi_config  = {
-  .sck_pin      = SPI_SCLK,
-  .miso_pin     = SPI_MISO,
-  .mosi_pin     = SPI_MOSI,
-  .ss_pin       = LI2D_CS,
-  .irq_priority = SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
-  .orc          = 0xFF,
-  .frequency    = NRF_DRV_SPI_FREQ_4M,
-  .mode         = NRF_DRV_SPI_MODE_3,
-  .bit_order    = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST,
-};
-
-static lis2dw12_read_full_fifo_callback_t fifo_callback;
-static uint8_t xyz_buf[1 + 32*3*2]; // buffer to hold all fifo data
+// Static variables
+#define XYZ_DATA_LENGTH (32*3*2)
+static uint8_t xyz_buf[1 + XYZ_DATA_LENGTH]; // buffer to hold all fifo data
 static int16_t *x_buf, *y_buf, *z_buf;
-
-//static inline float convert_raw_to_g(int16_t raw) {
-//  int32_t divisor = (1 << (8*sizeof(int16_t) - 1));
-//  if (raw >= 0) {
-//    divisor -= 1;
-//  }
-//  return (float) raw / (float) divisor * full_scale;
-//};
-
-static void lis2dw12_read_full_fifo_callback(nrf_drv_spi_evt_t const* p_event, void* p_context) {
-  size_t i, xyz_i = 0;
-  for (i = 1; i < 1 + 32*3*2; i += 6) {
-    x_buf[xyz_i] = /*convert_raw_to_g*/(xyz_buf[i]   | (int16_t) xyz_buf[i+1] << 8);
-    y_buf[xyz_i] = /*convert_raw_to_g*/(xyz_buf[i+2] | (int16_t) xyz_buf[i+3] << 8);
-    z_buf[xyz_i] = /*convert_raw_to_g*/(xyz_buf[i+4] | (int16_t) xyz_buf[i+5] << 8);
-    xyz_i++;
-  }
-  fifo_callback();
-}
-
-void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
-  if (len > 256) return;
-  uint8_t readreg = reg | 0x80;
-  uint8_t buf[257];
-
-  nrf_drv_spi_uninit(&(spi_instance->spi));
-  nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
-  nrf_drv_spi_transfer(&(spi_instance->spi), &readreg, 1, buf, len+1);
-
-  memcpy(read_buf, buf+1, len);
-}
-
-void lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
-  if (len > 256) return;
-  uint8_t buf[257];
-  buf[0] = reg;
-  memcpy(buf+1, write_buf, len);
-
-  nrf_drv_spi_uninit(&(spi_instance->spi));
-  nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
-  nrf_drv_spi_transfer(&(spi_instance->spi), buf, len+1, NULL, 0);
-}
+static uint8_t full_scale = 2;
 
 
 void  lis2dw12_init(const nrf_spi_mngr_t* instance) {
   spi_instance = instance;
+
+  // Set correct SPI configurations
+  spi_config.sck_pin      = SPI_SCLK;
+  spi_config.miso_pin     = SPI_MISO;
+  spi_config.mosi_pin     = SPI_MOSI;
+  spi_config.ss_pin       = LI2D_CS;
+  spi_config.frequency    = NRF_DRV_SPI_FREQ_4M;
+  spi_config.mode         = NRF_DRV_SPI_MODE_3;
+  spi_config.bit_order    = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
 }
 
 void  lis2dw12_config(lis2dw12_config_t config) {
@@ -92,7 +54,8 @@ void  lis2dw12_config(lis2dw12_config_t config) {
       break;
   }
 
-  uint8_t buf[6] = {0};
+  #define CONFIG_BUF_LENGTH 6
+  uint8_t buf[CONFIG_BUF_LENGTH] = {0};
   buf[0] = config.odr << 4 | (config.mode & 0x3) << 2 |
            (config.lp_mode & 0x3);
   buf[1] = config.cs_nopull << 4 | config.bdu << 3 |
@@ -102,12 +65,59 @@ void  lis2dw12_config(lis2dw12_config_t config) {
   buf[5] = config.bandwidth << 6 | config.fs << 4 |
            config.high_pass << 3 | config.low_noise << 2;
 
-  lis2dw12_write_reg(LIS2DW12_CTRL1, buf, 6);
+  // Write configs
+  lis2dw12_write_reg(LIS2DW12_CTRL1, buf, CONFIG_BUF_LENGTH);
+}
+
+void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len) {
+
+    if (len > 256) return;
+    uint8_t readreg = reg | 0x80;
+    uint8_t buf[257];
+
+
+    // Use SPI Manager
+    nrf_spi_mngr_transfer_t const config_transfer[] = {
+            NRF_SPI_MNGR_TRANSFER( &readreg, 1, buf, len+1),
+    };
+
+    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
+    APP_ERROR_CHECK(error);
+
+    // Use SPI directly
+    /*nrf_drv_spi_uninit(&(spi_instance->spi));
+    nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
+    nrf_drv_spi_transfer(&(spi_instance->spi), &readreg, 1, buf, len+1);*/
+
+    memcpy(read_buf, buf+1, len);
+}
+
+void lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len) {
+
+    if (len > 256) return;
+    uint8_t buf[257];
+    buf[0] = reg;
+    memcpy(buf+1, write_buf, len);
+
+
+    // Use SPI Manager
+    nrf_spi_mngr_transfer_t const config_transfer[] = {
+            NRF_SPI_MNGR_TRANSFER(buf, len+1, NULL, 0),
+    };
+
+    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
+    APP_ERROR_CHECK(error);
+
+    // Use SPI directly
+    /*nrf_drv_spi_uninit(&(spi_instance->spi));
+    nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
+    nrf_drv_spi_transfer(&(spi_instance->spi), buf, len+1, NULL, 0);*/
 }
 
 void  lis2dw12_interrupt_config(lis2dw12_int_config_t config){
 
   uint8_t buf[2] = {0};
+
   buf[0]  = config.int1_6d << 7 | config.int1_sngl_tap << 6 |
                 config.int1_wakeup << 5 | config.int1_free_fall << 4 |
                 config.int1_dbl_tap << 3 | config.int1_fifo_full << 2 |
@@ -119,9 +129,20 @@ void  lis2dw12_interrupt_config(lis2dw12_int_config_t config){
 
   lis2dw12_write_reg(LIS2DW12_CTRL4_INT1, buf, 2);
 }
+
 void  lis2dw12_interrupt_enable(bool enable){
   uint8_t int_enable = enable << 5;
+
   lis2dw12_write_reg(LIS2DW12_CTRL7, &int_enable, 1);
+}
+
+void lis2dw12_wakeup_config(lis2dw12_wakeup_config_t wake_config) {
+
+    uint8_t wake_ths_byte = wake_config.sleep_enable << 6 | (wake_config.threshold & 0x3f);
+    uint8_t wake_dur_byte = (wake_config.wake_duration & 0x3) << 5 | (wake_config.sleep_duration & 0xf);
+
+    lis2dw12_write_reg(LIS2DW12_WAKE_UP_THS, &wake_ths_byte, 1);
+    lis2dw12_write_reg(LIS2DW12_WAKE_UP_DUR, &wake_dur_byte, 1);
 }
 
 void lis2dw12_fifo_config(lis2dw12_fifo_config_t config) {
@@ -131,16 +152,51 @@ void lis2dw12_fifo_config(lis2dw12_fifo_config_t config) {
 }
 
 void  lis2dw12_read_full_fifo(int16_t* x, int16_t* y, int16_t* z, lis2dw12_read_full_fifo_callback_t callback) {
-  fifo_callback = callback;
-  x_buf = x;
-  y_buf = y;
-  z_buf = z;
 
-  uint8_t addr = 0x80 | LIS2DW12_OUT_X_L;
+    fifo_callback = callback;
+    x_buf = x;
+    y_buf = y;
+    z_buf = z;
 
-  nrf_drv_spi_uninit(&(spi_instance->spi));
-  nrf_drv_spi_init(&(spi_instance->spi), &spi_config, lis2dw12_read_full_fifo_callback, NULL);
-  nrf_drv_spi_transfer(&(spi_instance->spi), &addr, 1, xyz_buf, sizeof(xyz_buf));
+    uint8_t readreg = LIS2DW12_OUT_X_L | 0x80;
+
+    // Use SPI Manager
+    nrf_spi_mngr_transfer_t const config_transfer[] = {
+        NRF_SPI_MNGR_TRANSFER( &readreg, 1, xyz_buf, sizeof(xyz_buf)),
+    };
+
+    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
+    APP_ERROR_CHECK(error);
+
+    // As "perform" is blocking, we can now call the callback
+    lis2dw12_read_full_fifo_callback(NULL, NULL);
+
+    // Use SPI directly
+    /*nrf_drv_spi_uninit(&(spi_instance->spi));
+    nrf_drv_spi_init(&(spi_instance->spi), &spi_config, lis2dw12_read_full_fifo_callback, NULL);
+    nrf_drv_spi_transfer(&(spi_instance->spi), &addr, 1, xyz_buf, sizeof(xyz_buf));*/
+}
+
+//static inline float convert_raw_to_g(int16_t raw) {
+//  int32_t divisor = (1 << (8*sizeof(int16_t) - 1));
+//  if (raw >= 0) {
+//    divisor -= 1;
+//  }
+//  return (float) raw / (float) divisor * full_scale;
+//};
+
+static void lis2dw12_read_full_fifo_callback(nrf_drv_spi_evt_t const* p_event, void* p_context) {
+
+    size_t i, xyz_i = 0;
+
+    for (i = 1; i < 1 + XYZ_DATA_LENGTH; i += 6) {
+        x_buf[xyz_i] = /*convert_raw_to_g*/(xyz_buf[i]   | (int16_t) xyz_buf[i+1] << 8);
+        y_buf[xyz_i] = /*convert_raw_to_g*/(xyz_buf[i+2] | (int16_t) xyz_buf[i+3] << 8);
+        z_buf[xyz_i] = /*convert_raw_to_g*/(xyz_buf[i+4] | (int16_t) xyz_buf[i+5] << 8);
+        xyz_i++;
+    }
+
+    fifo_callback();
 }
 
 void  lis2dw12_reset() {
@@ -149,9 +205,21 @@ void  lis2dw12_reset() {
   lis2dw12_write_reg(LIS2DW12_CTRL2, &reset_byte, 1);
 
   reset_byte = 0;
+
   while(reset_byte == 0) {
     lis2dw12_read_reg(LIS2DW12_CTRL2, &reset_byte, 1);
   }
+
+}
+
+void lis2dw12_fifo_reset() {
+
+    // To reset FIFO content, Bypass mode should be written and then FIFO mode should be restarted
+    lis2dw12_fifo_config_t fifo_config;
+    fifo_config.mode = lis2dw12_fifo_bypass;
+    lis2dw12_fifo_config(fifo_config);
+    fifo_config.mode = lis2dw12_fifo_byp_to_cont;
+    lis2dw12_fifo_config(fifo_config);
 }
 
 void  lis2dw12_off() {
@@ -167,14 +235,6 @@ void  lis2dw12_on() {
            (ctl_config.lp_mode & 0x3);
 
   lis2dw12_write_reg(LIS2DW12_CTRL1, &on_byte, 1);
-}
-
-void lis2dw12_wakeup_config(lis2dw12_wakeup_config_t wake_config) {
-  uint8_t wake_ths_byte = wake_config.sleep_enable << 6 | (wake_config.threshold & 0x3f);
-  uint8_t wake_dur_byte = (wake_config.wake_duration & 0x3) << 5 | (wake_config.sleep_duration & 0xf);
-
-  lis2dw12_write_reg(LIS2DW12_WAKE_UP_THS, &wake_ths_byte, 1);
-  lis2dw12_write_reg(LIS2DW12_WAKE_UP_DUR, &wake_dur_byte, 1);
 }
 
 lis2dw12_status_t lis2dw12_read_status(void) {
