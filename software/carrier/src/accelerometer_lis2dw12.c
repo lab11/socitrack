@@ -13,7 +13,8 @@ static void lis2dw12_read_full_fifo_callback(nrf_drv_spi_evt_t const* p_event, v
 static lis2dw12_read_full_fifo_callback_t fifo_callback;
 
 // Configurations
-static const nrf_spi_mngr_t* spi_instance;
+//static const nrf_spi_mngr_t* spi_instance;
+static const nrf_drv_spi_t* spi_instance;
 static lis2dw12_config_t ctl_config;
 static nrf_drv_spi_config_t spi_config  = NRF_DRV_SPI_DEFAULT_CONFIG;
 
@@ -24,7 +25,7 @@ static int16_t *x_buf, *y_buf, *z_buf;
 static uint8_t full_scale = 2;
 
 
-void  lis2dw12_init(const nrf_spi_mngr_t* instance) {
+void  lis2dw12_init(const nrf_drv_spi_t* instance) {
   spi_instance = instance;
 
   // Set correct SPI configurations
@@ -81,17 +82,17 @@ void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len) {
 
 
     // Use SPI Manager: we have to read len + 1, as the first (written) byte is also read again
-    nrf_spi_mngr_transfer_t config_transfer[] = {
+    /*nrf_spi_mngr_transfer_t config_transfer[] = {
             NRF_SPI_MNGR_TRANSFER( &readreg, 1, lis2dw12_read_buf, len+1),
     };
 
-    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
-    APP_ERROR_CHECK(error);
+    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);*/
 
     // Use SPI directly
-    /*nrf_drv_spi_uninit(&(spi_instance->spi));
-    nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
-    nrf_drv_spi_transfer(&(spi_instance->spi), &readreg, 1, buf, len+1);*/
+    /*nrf_drv_spi_uninit(spi_instance);
+    nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);*/
+    ret_code_t error = nrf_drv_spi_transfer(spi_instance, &readreg, 1, lis2dw12_read_buf, len+1);
+    APP_ERROR_CHECK(error);
 
     memcpy(read_buf, lis2dw12_read_buf+1, len);
 }
@@ -108,17 +109,19 @@ void lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len) {
 
 
     // Use SPI Manager
-    nrf_spi_mngr_transfer_t config_transfer[] = {
+    /*nrf_spi_mngr_transfer_t config_transfer[] = {
             NRF_SPI_MNGR_TRANSFER(lis2dw12_write_buf, len+1, NULL, 0),
     };
 
-    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
-    APP_ERROR_CHECK(error);
+    ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);*/
+
 
     // Use SPI directly
-    /*nrf_drv_spi_uninit(&(spi_instance->spi));
-    nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
-    nrf_drv_spi_transfer(&(spi_instance->spi), buf, len+1, NULL, 0);*/
+    /*nrf_drv_spi_uninit(spi_instance);
+    nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);*/
+    ret_code_t error = nrf_drv_spi_transfer(spi_instance, lis2dw12_write_buf, len+1, NULL, 0);
+
+    APP_ERROR_CHECK(error);
 }
 
 void  lis2dw12_interrupt_config(lis2dw12_int_config_t config){
@@ -168,7 +171,7 @@ void  lis2dw12_read_full_fifo(int16_t* x, int16_t* y, int16_t* z, lis2dw12_read_
     uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
 
     // Use SPI Manager
-    nrf_spi_mngr_transfer_t const config_transfer[] = {
+    /*nrf_spi_mngr_transfer_t const config_transfer[] = {
         NRF_SPI_MNGR_TRANSFER( &readreg, 1, xyz_buf, sizeof(xyz_buf)),
     };
 
@@ -176,12 +179,13 @@ void  lis2dw12_read_full_fifo(int16_t* x, int16_t* y, int16_t* z, lis2dw12_read_
     APP_ERROR_CHECK(error);
 
     // As "perform" is blocking, we can now call the callback
-    lis2dw12_read_full_fifo_callback(NULL, NULL);
+    lis2dw12_read_full_fifo_callback(NULL, NULL);*/
 
     // Use SPI directly
-    /*nrf_drv_spi_uninit(&(spi_instance->spi));
-    nrf_drv_spi_init(&(spi_instance->spi), &spi_config, lis2dw12_read_full_fifo_callback, NULL);
-    nrf_drv_spi_transfer(&(spi_instance->spi), &addr, 1, xyz_buf, sizeof(xyz_buf));*/
+    nrf_drv_spi_uninit(spi_instance);
+    nrf_drv_spi_init(spi_instance, &spi_config, lis2dw12_read_full_fifo_callback, NULL);
+    ret_code_t error = nrf_drv_spi_transfer(spi_instance, &readreg, 1, xyz_buf, sizeof(xyz_buf));
+    APP_ERROR_CHECK(error);
 }
 
 //static inline float convert_raw_to_g(int16_t raw) {
@@ -230,7 +234,8 @@ void lis2dw12_fifo_reset() {
     lis2dw12_fifo_config_t fifo_config;
     fifo_config.mode = lis2dw12_fifo_bypass;
     lis2dw12_fifo_config(fifo_config);
-    fifo_config.mode = lis2dw12_fifo_byp_to_cont;
+    fifo_config.mode   = lis2dw12_fifo_continuous;
+    fifo_config.thresh = 31;
     lis2dw12_fifo_config(fifo_config);
 }
 

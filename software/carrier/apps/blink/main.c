@@ -33,7 +33,11 @@
 
 // Use SPI0
 #define SPI_INSTANCE_NR 0
-NRF_SPI_MNGR_DEF(spi_instance, 5, SPI_INSTANCE_NR);
+
+// Use SPI manager
+//NRF_SPI_MNGR_DEF(spi_instance, 5, SPI_INSTANCE_NR);
+// Use SPI directly
+static nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE_NR);
 
 void spi_init(void) {
 
@@ -47,7 +51,9 @@ void spi_init(void) {
     spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
 
     // Init SPI manager
-    ret_code_t err_code = nrf_spi_mngr_init(&spi_instance, &spi_config);
+    //ret_code_t err_code = nrf_spi_mngr_init(&spi_instance, &spi_config);
+    // Init SPI directly
+    ret_code_t err_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -124,7 +130,7 @@ static void acc_fifo_read_handler(void) {
     }
 
     // Reset FIFO
-    lis2dw12_fifo_reset();
+    //lis2dw12_fifo_reset();
 }
 
 static void acc_wakeup_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {

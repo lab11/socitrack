@@ -110,7 +110,7 @@ typedef struct {
 
 typedef struct {
   lis2dw12_fifo_mode_t mode;
-  uint8_t thresh; // 0 - 32
+  uint8_t thresh; // 0 - 31
 } lis2dw12_fifo_config_t;
 
 typedef struct {
@@ -133,7 +133,7 @@ typedef struct {
 
 typedef void (*lis2dw12_read_full_fifo_callback_t) (void);
 
-void  lis2dw12_init(const nrf_spi_mngr_t* instance);
+void  lis2dw12_init(const nrf_drv_spi_t* instance);
 void  lis2dw12_config(lis2dw12_config_t config);
 void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len);
 void  lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len);
