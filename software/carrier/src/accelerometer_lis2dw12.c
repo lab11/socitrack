@@ -1,6 +1,7 @@
 #include "nrf_spi_mngr.h"
 #include "nrf_drv_spi.h"
 #include "nrf_gpio.h"
+#include "nrf_delay.h"
 #include "nrfx_gpiote.h"
 #include "app_error.h"
 
@@ -69,16 +70,19 @@ void  lis2dw12_config(lis2dw12_config_t config) {
   lis2dw12_write_reg(LIS2DW12_CTRL1, buf, CONFIG_BUF_LENGTH);
 }
 
+static uint8_t lis2dw12_read_buf[257];
+
 void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len) {
 
+    //printf("Reading from register\n");
+
     if (len > 256) return;
-    uint8_t readreg = reg | 0x80;
-    uint8_t buf[257];
+    uint8_t readreg = reg | LIS2DW12_SPI_READ;
 
 
-    // Use SPI Manager
-    nrf_spi_mngr_transfer_t const config_transfer[] = {
-            NRF_SPI_MNGR_TRANSFER( &readreg, 1, buf, len+1),
+    // Use SPI Manager: we have to read len + 1, as the first (written) byte is also read again
+    nrf_spi_mngr_transfer_t config_transfer[] = {
+            NRF_SPI_MNGR_TRANSFER( &readreg, 1, lis2dw12_read_buf, len+1),
     };
 
     ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
@@ -89,20 +93,23 @@ void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len) {
     nrf_drv_spi_init(&(spi_instance->spi), &spi_config, NULL, NULL);
     nrf_drv_spi_transfer(&(spi_instance->spi), &readreg, 1, buf, len+1);*/
 
-    memcpy(read_buf, buf+1, len);
+    memcpy(read_buf, lis2dw12_read_buf+1, len);
 }
+
+static uint8_t lis2dw12_write_buf[257];
 
 void lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len) {
 
+    //printf("Writing to register\n");
+
     if (len > 256) return;
-    uint8_t buf[257];
-    buf[0] = reg;
-    memcpy(buf+1, write_buf, len);
+    lis2dw12_write_buf[0] = reg & (uint8_t)LIS2DW12_SPI_WRITE;
+    memcpy(lis2dw12_write_buf + 1, write_buf, len);
 
 
     // Use SPI Manager
-    nrf_spi_mngr_transfer_t const config_transfer[] = {
-            NRF_SPI_MNGR_TRANSFER(buf, len+1, NULL, 0),
+    nrf_spi_mngr_transfer_t config_transfer[] = {
+            NRF_SPI_MNGR_TRANSFER(lis2dw12_write_buf, len+1, NULL, 0),
     };
 
     ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);
@@ -158,7 +165,7 @@ void  lis2dw12_read_full_fifo(int16_t* x, int16_t* y, int16_t* z, lis2dw12_read_
     y_buf = y;
     z_buf = z;
 
-    uint8_t readreg = LIS2DW12_OUT_X_L | 0x80;
+    uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
 
     // Use SPI Manager
     nrf_spi_mngr_transfer_t const config_transfer[] = {
@@ -200,13 +207,18 @@ static void lis2dw12_read_full_fifo_callback(nrf_drv_spi_evt_t const* p_event, v
 }
 
 void  lis2dw12_reset() {
+
+  // Reset byte in register CTRL2
   uint8_t reset_byte = 1 << 6;
 
   lis2dw12_write_reg(LIS2DW12_CTRL2, &reset_byte, 1);
 
-  reset_byte = 0;
+  // Check that SoftReset value is reset
+  while ( ((reset_byte >> 6) & 0x01) == 1) {
 
-  while(reset_byte == 0) {
+    // Allow Accelerometer time to reset
+    nrf_delay_ms(10);
+
     lis2dw12_read_reg(LIS2DW12_CTRL2, &reset_byte, 1);
   }
 

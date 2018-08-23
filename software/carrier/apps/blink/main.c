@@ -134,13 +134,6 @@ static void acc_wakeup_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t acti
 
 static void acc_init(void) {
 
-    // Init GPIOTE, accelerometer interrupt
-    nrfx_gpiote_init();
-    nrfx_gpiote_in_config_t int_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(0);
-    int_gpio_config.pull = NRF_GPIO_PIN_NOPULL;
-    nrfx_gpiote_in_init(CARRIER_ACC_INT2, &int_gpio_config, acc_wakeup_handler);
-    nrfx_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
-
     // Turn on accelerometer
     lis2dw12_init(&spi_instance);
 
@@ -153,10 +146,18 @@ static void acc_init(void) {
     lis2dw12_interrupt_config(int_config);
     lis2dw12_interrupt_enable(1);
 
+    // Init GPIOTE, accelerometer interrupt
+    nrfx_gpiote_init();
+    nrfx_gpiote_in_config_t int_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(0);
+    int_gpio_config.pull = NRF_GPIO_PIN_NOPULL;
+    nrfx_gpiote_in_init(CARRIER_ACC_INT2, &int_gpio_config, acc_wakeup_handler);
+    nrfx_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
+
+    // Configure wakeups
+    lis2dw12_wakeup_config(wake_config);
+
     // Reset FIFO
     lis2dw12_fifo_reset();
-
-    lis2dw12_wakeup_config(wake_config);
 }
 
 /*-----------------------------------------------------------------------*/
@@ -179,6 +180,11 @@ int main(void) {
     NRF_LOG_DEFAULT_BACKENDS_INIT();
     printf("Initialized SEGGER RTT");
 
+    // Init SoftDevice & DCDC regulator
+    nrf_sdh_enable_request();
+    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
+    printf(", SoftDevice");
+
     // FIXME: BUG FIX -> Enable SD card to pull nRESET high
     nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
@@ -199,10 +205,6 @@ int main(void) {
     nrf_gpio_pin_set(CARRIER_LED_GREEN);
     nrf_gpio_pin_clear(CARRIER_LED_BLUE);
 
-    // Init UART
-    uart_init();
-    printf(", UART");
-
     // Init SPI
     spi_init();
     nrf_gpio_cfg_output(CARRIER_CS_SD);
@@ -211,10 +213,9 @@ int main(void) {
     nrf_gpio_pin_set(CARRIER_CS_ACC);
     printf(", SPI");
 
-    // Init SoftDevice & DCDC regulator
-    nrf_sdh_enable_request();
-    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
-    printf(" and SoftDevice...\n");
+    // Init UART
+    uart_init();
+    printf(" and UART...\n");
 
 
     // Test SD card ----------------------------------------------------------------------------------------------------
@@ -243,28 +244,40 @@ int main(void) {
     // Test Accelerometer ----------------------------------------------------------------------------------------------
 #define TEST_ACC
 #ifdef TEST_ACC
-    printf("Testing Accelerometer: ");
+    printf("Testing Accelerometer: \n");
 
     // Initialize
     acc_init();
 
     // Gather readings
-    int nr_readings = 1;
+    int nr_readings = 5;
     printf("<gathering data>\n");
 
     for (int i = 0; i < nr_readings; i++) {
+
         ret_code_t err_code = sd_app_evt_wait();
         APP_ERROR_CHECK(err_code);
+
+        printf("Received one set of data\n");
     }
 
     printf("Testing Accelerometer: OK\r\n");
+#endif
+
+    // Test BLE --------------------------------------------------------------------------------------------------------
+#define TEST_BLE
+#ifdef TEST_BLE
+    printf("Testing BLE advertisements:");
+
+
+    printf(" OK\n");
 #endif
 
     // Test LED --------------------------------------------------------------------------------------------------------
     printf("Testing LED: <blinks green>\r\n");
 
     // Turn off Blue
-    nrf_gpio_pin_clear(CARRIER_LED_BLUE);
+    nrf_gpio_pin_set(CARRIER_LED_BLUE);
 
     while (1)
     {

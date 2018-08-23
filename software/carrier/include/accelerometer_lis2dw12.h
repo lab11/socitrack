@@ -4,6 +4,7 @@
 #include "nrf_spi_mngr.h"
 
 #define G                     9.8
+#define LIS2DW12_WHO_AM_I     0x0F
 #define LIS2DW12_CTRL1        0x20
 #define LIS2DW12_CTRL2        0x21
 #define LIS2DW12_CTRL3        0x22
@@ -16,6 +17,9 @@
 #define LIS2DW12_FIFO_CTRL    0x2E
 #define LIS2DW12_WAKE_UP_THS  0x34
 #define LIS2DW12_WAKE_UP_DUR  0x35
+
+#define LIS2DW12_SPI_READ     0x80
+#define LIS2DW12_SPI_WRITE    0x7F
 
 
 typedef enum {

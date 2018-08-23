@@ -24,6 +24,7 @@
 #define NRFX_SPI_ENABLED 1
 #define SPI_ENABLED 1
 #define SPI0_ENABLED 1
+#define SPI0_USE_EASY_DMA 1
 
 #define APP_SDCARD_ENABLED 1
 
