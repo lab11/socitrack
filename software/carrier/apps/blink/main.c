@@ -17,6 +17,8 @@
 #include "nrf_soc.h"
 #include "app_uart.h"
 #include "nrf_uart.h"
+#include "nrfx_rtc.h"
+#include "nrf_drv_clock.h"
 #include "SEGGER_RTT.h"
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
@@ -102,14 +104,14 @@ void uart_init(void) {
 
 static int16_t x[32], y[32], z[32];
 
-lis2dw12_wakeup_config_t wake_config = {
+lis2dw12_wakeup_config_t acc_wake_config = {
         .sleep_enable   = 1,
         .threshold      = 0x05,
         .wake_duration  = 3,
         .sleep_duration = 2
 };
 
-lis2dw12_config_t config = {
+lis2dw12_config_t acc_config = {
         .odr        = lis2dw12_odr_200,
         .mode       = lis2dw12_low_power,
         .lp_mode    = lis2dw12_lp_1,
@@ -145,13 +147,13 @@ static void acc_init(void) {
     // Turn on accelerometer
     lis2dw12_init(&spi_instance);
 
-    lis2dw12_int_config_t int_config = {0};
-    int_config.int1_wakeup = 1;
-    int_config.int2_fifo_full = 1;
+    lis2dw12_int_config_t acc_int_config = {0};
+    acc_int_config.int1_wakeup = 1;
+    acc_int_config.int2_fifo_full = 1;
 
     lis2dw12_reset();
-    lis2dw12_config(config);
-    lis2dw12_interrupt_config(int_config);
+    lis2dw12_config(acc_config);
+    lis2dw12_interrupt_config(acc_int_config);
     lis2dw12_interrupt_enable(1);
 
     // Init GPIOTE, accelerometer interrupt
@@ -162,7 +164,7 @@ static void acc_init(void) {
     nrfx_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
 
     // Configure wakeups
-    lis2dw12_wakeup_config(wake_config);
+    lis2dw12_wakeup_config(acc_wake_config);
 
     // Reset FIFO
     lis2dw12_fifo_reset();
@@ -171,6 +173,33 @@ static void acc_init(void) {
 /*-----------------------------------------------------------------------*/
 /* SD card functions                                                     */
 /*-----------------------------------------------------------------------*/
+
+const nrfx_rtc_t rtc_instance = NRFX_RTC_INSTANCE(0);
+
+// Function starting the internal LFCLK XTAL oscillator
+static void lfclk_config(void)
+{
+    ret_code_t err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_clock_lfclk_request(NULL);
+}
+
+static void rtc_init(void) {
+
+    // Initialize LFCLK if no SoftDevice available
+    //lfclk_config();
+
+    // Initialize RTC instance
+    nrfx_rtc_config_t rtc_config = NRFX_RTC_DEFAULT_CONFIG;
+    rtc_config.prescaler = 32; // Approximately 1000 Hz
+    ret_code_t err_code = nrfx_rtc_init( &rtc_instance, &rtc_config, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    // Power on RTC instance
+    nrfx_rtc_enable(&rtc_instance);
+}
+
 
 static bool sd_card_inserted() {
 
@@ -190,6 +219,9 @@ static void sd_card_init(void) {
 
     nrf_gpio_pin_set(CARRIER_CS_SD);
 
+    // Initialize Real-time counter
+    rtc_init();
+
     // Configs
     const char filename[] = "testfile.log";
     const char permissions[] = "a"; // w = write, a = append
@@ -205,8 +237,7 @@ static void sd_card_init(void) {
     simple_logger_init(filename, permissions);
 
     // If no header, add it
-    simple_logger_log_header("HEADER for %s file, written on %s", "FILENAME", "08/16/18");
-    //printf("Wrote header\r\n");
+    simple_logger_log_header("HEADER for %s file, written on %s", filename, "08/23/18");
 }
 
 /*-----------------------------------------------------------------------*/
@@ -262,16 +293,20 @@ int main(void) {
 
 
     // Test SD card ----------------------------------------------------------------------------------------------------
-//#define TEST_SD_CARD
+#define TEST_SD_CARD
 #ifdef TEST_SD_CARD
     printf("Testing SD card: ");
 
     // Initialize
     sd_card_init();
 
-    // Write sample line
-    simple_logger_log("%s: Additional line added\n", "19:06");
-    printf("SD card: wrote line\r\n");
+    // Write sample lines
+    int nr_lines = 5;
+    for (int i = 0; i < nr_lines; i++) {
+
+        uint32_t current_time_stamp = nrfx_rtc_counter_get(&rtc_instance);
+        simple_logger_log("%i: Line %i - Additional line added\n", current_time_stamp, i+1);
+    }
 
     printf("OK\r\n");
 #endif

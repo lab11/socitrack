@@ -57,6 +57,7 @@
 #define SPI_MISO            CARRIER_SPI_MISO
 #define SPI_MOSI            CARRIER_SPI_MOSI
 #define LI2D_CS             CARRIER_CS_ACC
+#define NRF_SPI             NRF_SPI0
 
 
 // I2C connection to module

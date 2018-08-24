@@ -68,6 +68,9 @@ BOARD_SOURCES += \
 	nrfx_spim.c\
 	nrf_spi_mngr.c\
 	nrf_drv_spi.c\
+	nrfx_rtc.c\
+	nrfx_clock.c\
+	nrf_drv_clock.c\
 	SEGGER_RTT.c\
 	SEGGER_RTT_Syscalls_GCC.c\
 	SEGGER_RTT_printf.c\
