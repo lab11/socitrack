@@ -89,8 +89,8 @@ void  lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len) {
     ret_code_t error = nrf_spi_mngr_perform(spi_instance, &spi_config, config_transfer, 1, NULL);*/
 
     // Use SPI directly
-    /*nrf_drv_spi_uninit(spi_instance);
-    nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);*/
+    nrf_drv_spi_uninit(spi_instance);
+    nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
     ret_code_t error = nrf_drv_spi_transfer(spi_instance, &readreg, 1, lis2dw12_read_buf, len+1);
     APP_ERROR_CHECK(error);
 
@@ -117,8 +117,8 @@ void lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len) {
 
 
     // Use SPI directly
-    /*nrf_drv_spi_uninit(spi_instance);
-    nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);*/
+    nrf_drv_spi_uninit(spi_instance);
+    nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
     ret_code_t error = nrf_drv_spi_transfer(spi_instance, lis2dw12_write_buf, len+1, NULL, 0);
 
     APP_ERROR_CHECK(error);

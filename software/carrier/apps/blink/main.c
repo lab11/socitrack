@@ -72,6 +72,8 @@ void uart_error_handle (app_uart_evt_t * p_event) {
 void uart_init(void) {
     uint32_t err_code;
 
+    // TODO: Configure Pull ups
+
     const app_uart_comm_params_t comm_params =
             {
                     CARRIER_UART_RX,
@@ -170,7 +172,42 @@ static void acc_init(void) {
 /* SD card functions                                                     */
 /*-----------------------------------------------------------------------*/
 
-// TODO: change SPI CS to SD card
+static bool sd_card_inserted() {
+
+    // SD card inserted:    Pin connected to GND
+    // SD card not present: Pin connected to VCC
+    return !nrf_gpio_pin_read(CARRIER_SD_DETECT);
+}
+
+static void sd_card_init(void) {
+
+    // Setup hardware
+    nrf_gpio_cfg_input(CARRIER_SD_DETECT, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_input(CARRIER_SPI_MISO,  NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_output(CARRIER_SPI_MOSI);
+    nrf_gpio_cfg_output(CARRIER_SPI_SCLK);
+    nrf_gpio_cfg_output(CARRIER_CS_SD);
+
+    nrf_gpio_pin_set(CARRIER_CS_SD);
+
+    // Configs
+    const char filename[] = "testfile.log";
+    const char permissions[] = "a"; // w = write, a = append
+
+    printf("Waiting for SD card to be inserted...\n");
+
+    // Wait for SC card
+    while (!sd_card_inserted()) {};
+
+    printf("Detected SD card; trying to connect...\n");
+
+    // Start file
+    simple_logger_init(filename, permissions);
+
+    // If no header, add it
+    simple_logger_log_header("HEADER for %s file, written on %s", "FILENAME", "08/16/18");
+    //printf("Wrote header\r\n");
+}
 
 /*-----------------------------------------------------------------------*/
 /* MAIN test                                                    		 */
@@ -220,7 +257,7 @@ int main(void) {
     printf(", SPI");
 
     // Init UART
-    uart_init();
+    //uart_init();
     printf(" and UART...\n");
 
 
@@ -229,26 +266,18 @@ int main(void) {
 #ifdef TEST_SD_CARD
     printf("Testing SD card: ");
 
-    const char filename[] = "testfile.log";
-    const char permissions[] = "a"; // w = write, a = append
+    // Initialize
+    sd_card_init();
 
-    // Start file
-    simple_logger_init(filename, permissions);
-    DEBUG("inited\r\n");
-
-    // If no header, add it
-    simple_logger_log_header("HEADER for %s file, written on %s", "FILENAME", "08/16/18");
-    DEBUG("wrote header\r\n");
-
-    // Write
+    // Write sample line
     simple_logger_log("%s: Additional line added\n", "19:06");
-    DEBUG("wrote line\r\n");
+    printf("SD card: wrote line\r\n");
 
     printf("OK\r\n");
 #endif
 
     // Test Accelerometer ----------------------------------------------------------------------------------------------
-#define TEST_ACC
+//#define TEST_ACC
 #ifdef TEST_ACC
     printf("Testing Accelerometer: \n");
 
@@ -274,6 +303,15 @@ int main(void) {
 #define TEST_BLE
 #ifdef TEST_BLE
     printf("Testing BLE advertisements:");
+
+
+    printf(" OK\n");
+#endif
+
+    // Test BLE --------------------------------------------------------------------------------------------------------
+//#define TEST_MODULE
+#ifdef TEST_MODULE
+    printf("Testing module: ");
 
 
     printf(" OK\n");
