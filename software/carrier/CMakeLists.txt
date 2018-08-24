@@ -12,6 +12,7 @@ add_subdirectory(apps/blink)
 add_subdirectory(apps/tag)
 add_subdirectory(apps/tag-anchor)
 add_subdirectory(apps/tag-anchor-glossy-master)
+add_subdirectory(apps/testing)
 add_subdirectory(boards)
 
 # Include directories to search by discovering sub-directories recursively
