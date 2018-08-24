@@ -54,6 +54,8 @@ BOARD_SOURCES += \
 	nrf_memobj.c\
 	nrf_section_iter.c\
 	nrf_sdh.c\
+	nrf_sdh_ble.c\
+	ble_advdata.c\
 	nrf_serial.c\
 	nrf_strerror.c\
 	nrf_queue.c\
