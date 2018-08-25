@@ -193,12 +193,12 @@ static void acc_init(void) {
 const nrfx_rtc_t rtc_instance = NRFX_RTC_INSTANCE(2);
 
 // Function starting the internal LFCLK XTAL oscillator
-static void lfclk_config(void) {
+/*static void lfclk_config(void) {
     ret_code_t err_code = nrf_drv_clock_init();
     APP_ERROR_CHECK(err_code);
 
     nrf_drv_clock_lfclk_request(NULL);
-}
+}*/
 
 // Interrupt handler; currently not used
 static void rtc_handler(nrfx_rtc_int_type_t int_type) {}
@@ -233,8 +233,10 @@ static void sd_card_init(void) {
     nrf_gpio_cfg_input(CARRIER_SPI_MISO,  NRF_GPIO_PIN_NOPULL);
     nrf_gpio_cfg_output(CARRIER_SPI_MOSI);
     nrf_gpio_cfg_output(CARRIER_SPI_SCLK);
+    nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
     nrf_gpio_cfg_output(CARRIER_CS_SD);
 
+    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
     nrf_gpio_pin_set(CARRIER_CS_SD);
 
     // Initialize Real-time counter
@@ -255,7 +257,7 @@ static void sd_card_init(void) {
     simple_logger_init(filename, permissions);
 
     // If no header, add it
-    simple_logger_log_header("HEADER for \'%s\' file, written on %s \n", filename, "08/23/18");
+    simple_logger_log_header("HEADER for file \'%s\', written on %s \n", filename, "08/23/18");
 }
 
 /*-----------------------------------------------------------------------*/

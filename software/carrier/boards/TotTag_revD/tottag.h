@@ -39,12 +39,13 @@
 #define CARRIER_SD_DETECT   NRF_GPIO_PIN_MAP(1,0)
 
 // To use "simple_logger", we define some additional macros
-#define SD_ENABLE_PIN       CARRIER_SD_ENABLE
-#define SPI_CS_PIN          CARRIER_CS_SD
-#define SPI_MISO_PIN        CARRIER_SPI_MISO
-#define SPI_MOSI_PIN        CARRIER_SPI_MOSI
-#define SPI_SCK_PIN         CARRIER_SPI_SCLK
-#define CD_PIN              CARRIER_SD_DETECT
+#define SD_CARD_ENABLE          CARRIER_SD_ENABLE
+#define SD_CARD_DETECT          CARRIER_SD_DETECT
+#define SD_CARD_SPI_CS          CARRIER_CS_SD
+#define SD_CARD_SPI_MISO        CARRIER_SPI_MISO
+#define SD_CARD_SPI_MOSI        CARRIER_SPI_MOSI
+#define SD_CARD_SPI_SCLK        CARRIER_SPI_SCLK
+#define SD_CARD_SPI_INSTANCE    NRF_SPI0
 
 
 // Accelerometer

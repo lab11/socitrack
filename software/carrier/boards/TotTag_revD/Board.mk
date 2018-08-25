@@ -4,6 +4,10 @@
 ifndef BOARD_MAKEFILE
 BOARD_MAKEFILE = 1
 
+# Board-specific configurations
+BOARD = TotTag
+USE_BLE = 1
+
 # Get directory of this makefile
 BOARD_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
@@ -18,13 +22,12 @@ BOARD_AS = $(notdir $(wildcard $(BOARD_DIR)/*.s))
 BOARD_SOURCE_PATHS += $(BOARD_DIR)/../../src
 BOARD_HEADER_PATHS += $(BOARD_DIR)/../../include
 
-# Board-specific configurations
-BOARD = TotTag_revD
-USE_BLE = 1
+# Convert board to upper case
+BOARD_UPPER = $(shell echo $(BOARD) | tr a-z A-Z)
 
 # Additional #define's to be added to code by the compiler
 BOARD_VARS = \
-	BOARD_$(BOARD)\
+	BOARD_$(BOARD_UPPER)\
 	USE_APP_CONFIG\
 	DEBUG\
 	DEBUG_NRF\

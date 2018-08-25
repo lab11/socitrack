@@ -7,13 +7,7 @@ NRF_IC = nrf52840
 SDK_VERSION = 15
 SOFTDEVICE_MODEL = s140
 
-# Configure Board settings
-ifndef TARGET
-TARGET = tottag
-endif
-
-BOARD = BOARD_$(TARGET_UPPER)
-
+# Set ID
 ifneq ($(PID), )
 ID = c0:98:e5:44:50:$(PID)
 endif
