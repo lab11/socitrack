@@ -5,7 +5,7 @@
 #include "nrf_gpio.h"
 
 #ifndef DEVICE_NAME
-#define DEVICE_NAME "tottag"
+#define DEVICE_NAME "TotTag"
 #endif
 
 // BLE Address used to advertise

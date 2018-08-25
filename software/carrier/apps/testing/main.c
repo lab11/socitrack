@@ -28,6 +28,10 @@
 // UART
 #include "app_uart.h"
 #include "nrf_uart.h"
+#include "nrf_drv_uart.h"
+
+// TWI
+#include "nrf_drv_twi.h"
 
 // Clocks
 #include "nrfx_rtc.h"
@@ -41,6 +45,7 @@
 
 // Custom libraries
 #include "boards.h"
+#include "module_interface.h"
 #include "simple_logger.h"
 #include "accelerometer_lis2dw12.h"
 
@@ -186,6 +191,7 @@ static void acc_init(void) {
     lis2dw12_fifo_reset();
 }
 
+
 /*-----------------------------------------------------------------------*/
 /* SD card functions                                                     */
 /*-----------------------------------------------------------------------*/
@@ -261,11 +267,14 @@ static void sd_card_init(void) {
     simple_logger_log_header("HEADER for file \'%s\', written on %s \n", filename, "08/23/18");
 }
 
+
 /*-----------------------------------------------------------------------*/
 /* BLE functions                                                         */
 /*-----------------------------------------------------------------------*/
 
+#ifndef DEVICE_NAME
 #define DEVICE_NAME "TotTag"
+#endif
 
 #define APP_BLE_CONN_CFG_TAG            1                                  /**< A tag identifying the SoftDevice BLE configuration. */
 
@@ -427,6 +436,61 @@ static void ble_stack_init(void) {
 
 
 /*-----------------------------------------------------------------------*/
+/* TWI functions                                                         */
+/*-----------------------------------------------------------------------*/
+
+// Use TWI1
+#define TWI_INSTANCE_NR 1
+
+static const nrf_drv_twi_t twi_instance = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_NR);
+
+uint8_t twi_tx_buf[256];
+uint8_t twi_rx_buf[256];
+
+// Initialize device as TWI Master
+static void twi_init(void) {
+    ret_code_t err_code;
+
+    const nrf_drv_twi_config_t config =
+    {
+        .scl                = CARRIER_I2C_SCL,
+        .sda                = CARRIER_I2C_SDA,
+        .frequency          = NRF_DRV_TWI_FREQ_400K,
+        .interrupt_priority = APP_IRQ_PRIORITY_HIGH,
+        .clear_bus_init     = false
+    };
+
+    // Define twi_handler as third parameter
+    err_code = nrf_drv_twi_init(&twi_instance, &config, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_twi_enable(&twi_instance);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void twi_write(uint16_t addr, size_t size) {
+
+    // Copy to buffer
+    memcpy(twi_tx_buf, &addr, size);
+
+    ret_code_t err_code = nrf_drv_twi_tx(&twi_instance, MODULE_ADDRESS, twi_tx_buf, size, false);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void twi_read(uint16_t addr, size_t size) {
+
+    ret_code_t err_code;
+
+    uint16_t addr16 = addr;
+    err_code = nrf_drv_twi_tx(&twi_instance, MODULE_ADDRESS, (uint8_t *) &addr16, 1, true);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrf_drv_twi_rx(&twi_instance, MODULE_ADDRESS, twi_rx_buf, size);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+/*-----------------------------------------------------------------------*/
 /* MAIN test                                                    		 */
 /*-----------------------------------------------------------------------*/
 
@@ -516,14 +580,14 @@ int main(void) {
         ret_code_t err_code = sd_app_evt_wait();
         APP_ERROR_CHECK(err_code);
 
-        printf("Received one set of data\n");
+        //printf("Received one set of data\n");
     }
 
     printf("Testing Accelerometer: OK\r\n");
 #endif
 
     // Test BLE --------------------------------------------------------------------------------------------------------
-#define TEST_BLE
+//#define TEST_BLE
 #ifdef TEST_BLE
     printf("Testing BLE advertisements:");
 
@@ -531,18 +595,40 @@ int main(void) {
     ble_stack_init();
     advertising_init();
 
-    // Start execution.
-    printf("Beacon example started...\n");
+    // Start execution
     advertising_start();
+    //printf("Started advertising...\n");
 
     printf(" OK\n");
 #endif
 
-    // Test BLE --------------------------------------------------------------------------------------------------------
-//#define TEST_MODULE
+    // Test UART -------------------------------------------------------------------------------------------------------
+//#define TEST_UART
+#ifdef TEST_UART
+    printf("Testing UART: ");
+
+
+    printf(" OK\n");
+#endif
+
+    // Test Module connection ------------------------------------------------------------------------------------------
+#define TEST_MODULE
 #ifdef TEST_MODULE
     printf("Testing module: ");
 
+    // Initializing
+    twi_init();
+
+    // Get the CMD_Info string
+    twi_tx_buf[0] = MODULE_CMD_INFO;
+    size_t length_write = 1;
+    size_t length_read  = 3;
+
+    // Writing over TWI
+    twi_write((uint16_t)twi_tx_buf, length_write);
+
+    // Reading over TWI
+    twi_read((uint16_t)twi_rx_buf, length_read);
 
     printf(" OK\n");
 #endif

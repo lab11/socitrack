@@ -2,6 +2,8 @@
 #include "sdk_errors.h"
 #include "app_util_platform.h"
 #include "nrf_drv_config.h"
+#include "nrf_gpiote.h"
+#include "nrfx_gpiote.h"
 #include "nrf_drv_gpiote.h"
 #include "nrf_delay.h"
 
@@ -9,11 +11,14 @@
 #include "led.h"
 
 #include "module_interface.h"
-#include "SEGGER_RTT.h"
 
 uint8_t response[256];
 
-nrf_drv_twi_t twi_instance = NRF_DRV_TWI_INSTANCE(1);
+#ifndef TWI_INSTANCE_NR
+#define TWI_INSTANCE_NR 1
+#endif
+
+nrf_drv_twi_t twi_instance = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_NR);
 
 // Save the callback that we use to signal the main application that we
 // received data over I2C.
@@ -27,7 +32,7 @@ void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t a
 	debug_msg("\r\n");*/
 
 	// verify interrupt is from module
-	if (pin == MODULE_INTERRUPT_PIN) {
+	if (pin == CARRIER_INTERRUPT_MODULE) {
 
 		// Ask whats up over I2C
 		uint32_t ret;
@@ -70,9 +75,9 @@ ret_code_t module_hw_init () {
 	ret_code_t ret;
 
 	// Initialize the I2C module
-	twi_config.sda                = I2C_SDA_PIN;
-	twi_config.scl                = I2C_SCL_PIN;
-	twi_config.frequency          = NRF_TWI_FREQ_400K;
+	twi_config.scl                = CARRIER_I2C_SCL;
+	twi_config.sda                = CARRIER_I2C_SDA;
+	twi_config.frequency          = NRF_DRV_TWI_FREQ_400K;
 	twi_config.interrupt_priority = APP_IRQ_PRIORITY_HIGH;
 
 	ret = nrf_drv_twi_init(&twi_instance, &twi_config, NULL);
@@ -83,11 +88,11 @@ ret_code_t module_hw_init () {
 	ret = nrf_drv_gpiote_init();
 	if (ret != NRF_SUCCESS) return ret;
 
-	nrf_drv_gpiote_in_config_t in_config = GPIOTE_CONFIG_IN_SENSE_LOTOHI(true);
-	ret = nrf_drv_gpiote_in_init(MODULE_INTERRUPT_PIN, &in_config, module_interrupt_handler);
+	nrf_drv_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+	ret = nrf_drv_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &in_config, module_interrupt_handler);
 	if (ret != NRF_SUCCESS) return ret;
 
-	nrf_drv_gpiote_in_event_enable(MODULE_INTERRUPT_PIN, true);
+	nrf_drv_gpiote_in_event_enable(CARRIER_INTERRUPT_MODULE, true);
 	return NRF_SUCCESS;
 }
 

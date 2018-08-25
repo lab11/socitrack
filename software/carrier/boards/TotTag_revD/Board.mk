@@ -67,6 +67,7 @@ BOARD_SOURCES += \
 	nrfx_prs.c\
 	nrfx_timer.c\
 	nrfx_twi.c\
+	nrfx_twim.c\
 	nrfx_uart.c\
 	nrfx_uarte.c\
 	nrfx_spi.c\

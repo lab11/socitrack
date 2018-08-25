@@ -1,6 +1,7 @@
 #ifndef __MODULE_INTERFACE_H
 #define __MODULE_INTERFACE_H
 
+#include "stdbool.h"
 #include "sdk_errors.h"
 
 #define MODULE_ID 0xB01A
