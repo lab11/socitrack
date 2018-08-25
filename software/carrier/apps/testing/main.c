@@ -9,6 +9,7 @@
 #include "nrf.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
+#include "nrfx_power.h"
 #include "nrf_gpiote.h"
 #include "nrfx_gpiote.h"
 
@@ -264,6 +265,8 @@ static void sd_card_init(void) {
 /* BLE functions                                                         */
 /*-----------------------------------------------------------------------*/
 
+#define DEVICE_NAME "TotTag"
+
 #define APP_BLE_CONN_CFG_TAG            1                                  /**< A tag identifying the SoftDevice BLE configuration. */
 
 #define NON_CONNECTABLE_ADV_INTERVAL    MSEC_TO_UNITS(100, UNIT_0_625_MS)  /**< The advertising interval for non-connectable advertisement (100 ms). This value can vary between 100ms to 10.24s). */
@@ -290,6 +293,7 @@ static void sd_card_init(void) {
 static ble_gap_adv_params_t m_adv_params;                                  /**< Parameters to be passed to the stack when starting advertising. */
 static uint8_t              m_adv_handle = BLE_GAP_ADV_SET_HANDLE_NOT_SET; /**< Advertising handle used to identify an advertising set. */
 static uint8_t              m_enc_advdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];  /**< Buffer for storing an encoded advertising set. */
+static uint8_t              m_enc_srdata[BLE_GAP_ADV_SET_DATA_SIZE_MAX];  /**< Buffer for storing an encoded scan response set. */
 
 // Struct that contains pointers to the encoded advertising data
 static ble_gap_adv_data_t m_adv_data = {
@@ -300,8 +304,8 @@ static ble_gap_adv_data_t m_adv_data = {
     },
     .scan_rsp_data =
     {
-        .p_data = NULL,
-        .len    = 0
+        .p_data = m_enc_srdata,
+        .len    = BLE_GAP_ADV_SET_DATA_SIZE_MAX
 
     }
 };
@@ -327,6 +331,13 @@ static void advertising_init(void) {
     ble_advdata_t srdata;
     uint8_t       flags = BLE_GAP_ADV_FLAG_BR_EDR_NOT_SUPPORTED;
 
+    // Set name
+    ble_gap_conn_sec_mode_t sec_mode;
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
+    err_code = sd_ble_gap_device_name_set(&sec_mode, (const uint8_t *)DEVICE_NAME, strlen(DEVICE_NAME));
+    APP_ERROR_CHECK(err_code);
+
+    // Set manufacturer specific data
     ble_advdata_manuf_data_t manuf_specific_data;
 
     manuf_specific_data.company_identifier = APP_COMPANY_IDENTIFIER;
@@ -370,7 +381,7 @@ static void advertising_init(void) {
     // Initialize advertising parameters (used when starting advertising).
     memset(&m_adv_params, 0, sizeof(m_adv_params));
 
-    m_adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+    m_adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
     m_adv_params.p_peer_addr     = NULL;    // Undirected advertisement.
     m_adv_params.filter_policy   = BLE_GAP_ADV_FP_ANY;
     m_adv_params.interval        = NON_CONNECTABLE_ADV_INTERVAL;
@@ -380,9 +391,9 @@ static void advertising_init(void) {
     err_code = ble_advdata_encode(&advdata, m_adv_data.adv_data.p_data, &m_adv_data.adv_data.len);
     APP_ERROR_CHECK(err_code);
 
-    // TODO: Set scan data
-    //err_code = ble_advdata_encode(&srdata);
-    //APP_ERROR_CHECK(err_code);
+    // Set scan response data
+    err_code = ble_advdata_encode(&srdata, m_adv_data.scan_rsp_data.p_data, &m_adv_data.scan_rsp_data.len);
+    APP_ERROR_CHECK(err_code);
 
     err_code = sd_ble_gap_adv_set_configure(&m_adv_handle, &m_adv_data, &m_adv_params);
     APP_ERROR_CHECK(err_code);
@@ -399,8 +410,9 @@ static void advertising_start(void) {
 static void ble_stack_init(void) {
     ret_code_t err_code;
 
-    err_code = nrf_sdh_enable_request();
-    APP_ERROR_CHECK(err_code);
+    // Enable SoftDevice if not done so already
+    //err_code = nrf_sdh_enable_request();
+    //APP_ERROR_CHECK(err_code);
 
     // Configure the BLE stack using the default settings.
     // Fetch the start address of the application RAM.
@@ -429,8 +441,10 @@ int main(void) {
     printf("Initialized SEGGER RTT");
 
     // Init SoftDevice & DCDC regulator
+    // FIXME: DCDC mode not possible without RTT connected
+    //nrf_power_dcdcen_set(1);
     nrf_sdh_enable_request();
-    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
+    //sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
     printf(", SoftDevice");
 
     // FIXME: BUG FIX -> Enable SD card to pull nRESET high
