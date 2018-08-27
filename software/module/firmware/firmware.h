@@ -45,20 +45,6 @@ typedef enum {
 #define INFO_BYTE_1 0x1A
 
 /******************************************************************************/
-//  Application role
-//
-//  0: Anchor
-//  1: Tag
-/******************************************************************************/
-#define TRIPOINT_ANCHOR 0
-#define TRIPOINT_TAG    1
-
-#define TRIPOINT_ROLE TRIPOINT_TAG
-
-// FIXME: This Macro is only used to decrease the binary size of the image to enable RTT
-//        If possible, remove this feature as soon as possible.
-
-/******************************************************************************/
 // Main firmware application functions.
 /******************************************************************************/
 void polypoint_configure_app (polypoint_application_e app, void* app_config);

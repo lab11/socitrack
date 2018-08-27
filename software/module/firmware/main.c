@@ -60,6 +60,17 @@ static void error () {
     debug_msg("ERROR\r\n");
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
+
+    // Turn all LEDs off
+    GPIO_SetBits(STM_LED_RED_PORT, STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN);
+
+	// Start blinking RED
+	while (1) {
+		GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_SET);
+		mDelay(250);
+		GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_RESET);
+		mDelay(250);
+	}
 }
 
 union app_scratchspace {
@@ -256,6 +267,9 @@ void start_dw1000 () {
 			// better?
             debug_msg("ERROR: DW1000 does not respond!\r\n");
 			mDelay(50000);
+
+			// Reset DW
+			dw1000_reset();
 		} else {
 			// Success
 			break;
@@ -278,17 +292,18 @@ int main () {
 
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC_AHBPeriphClockCmd(STM_GPIO3_CLK, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = STM_GPIO3_PIN;
+	GPIO_InitStructure.GPIO_Pin = STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure);
 
-	// Signal init
-	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
-	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
-	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
+	// Initialize LEDs as off
+	GPIO_SetBits(STM_LED_RED_PORT, STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN);
+
+	// Signal init by turning on RED
+	GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_RESET);
 
 	//Initialize UART1 on GPIO0 and GPIO1
     // Tx: GPIO1 -> Pin 27 -> PB6
@@ -325,6 +340,10 @@ int main () {
 	// ranging events.
 	//_app_timer = timer_init();
 
+	// Signal that internal setup is finished by setting BLUE
+	GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_SET);
+	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_RESET);
+
 	// Next up do some preliminary setup of the DW1000. This mostly configures
 	// pins and hardware peripherals, as well as straightening out some
 	// of the settings on the DW1000.
@@ -336,15 +355,7 @@ int main () {
     // Test output channels
     // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
     SEGGER_RTT_Init();
-
-#if (TRIPOINT_ROLE == TRIPOINT_TAG)
-    debug_msg("Initialized RTT as TAG\r\n");
-#elif (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
-	debug_msg("Initialized RTT as ANCHOR\r\n");
-#else
-	debug_msg("Initialized RTT with unknown role\r\n");
-#endif
-
+    debug_msg("Initialized RTT...\r\n");
 #endif
 
 #ifdef DEBUG_OUTPUT_UART
@@ -366,7 +377,6 @@ int main () {
 	//debug_msg("Waiting for host...\r\n");
 
 #else
-
 	// DEBUG:
 	oneway_config_t config;
 	config.my_role = TAG;
@@ -380,6 +390,10 @@ int main () {
 	polypoint_configure_app(APP_ONEWAY, &config);
 	polypoint_start();
 #endif
+
+	// Signal normal operation by turning on GREEN
+	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_SET);
+	GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 
 	// MAIN LOOP
 	while (1) {

@@ -63,13 +63,9 @@ void oneway_configure (oneway_config_t* config, stm_timer_t* app_timer, void *ap
 
 	// Now init based on role
 	if (_config.my_role == TAG) {
-#if (TRIPOINT_ROLE == TRIPOINT_TAG)
 		oneway_tag_init(_scratchspace_ptr);
-#endif
 	} else if (_config.my_role == ANCHOR) {
-#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		oneway_anchor_init(_scratchspace_ptr);
-#endif
 	}
 }
 
@@ -78,16 +74,13 @@ void oneway_start () {
 	dw1000_err_e err;
 
 	if (_config.my_role == ANCHOR) {
-#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		// Start the anchor state machine. The app doesn't have to do anything
 		// for this, it just runs.
 		err = oneway_anchor_start();
 		if (err == DW1000_WAKEUP_ERR) {
 			polypoint_reset();
 		}
-#endif
 	} else if (_config.my_role == TAG) {
-#if (TRIPOINT_ROLE == TRIPOINT_TAG)
 		if (_config.update_mode == ONEWAY_UPDATE_MODE_PERIODIC) {
 			// Host requested periodic updates.
 			// Set the timer to fire at the correct rate. Multiply by 1000000 to
@@ -109,23 +102,18 @@ void oneway_start () {
 		//
 		// TODO: implement selecting between reporting ranges and locations
 		//
-#endif
 	}
 }
 
 // Stop the oneway application
 void oneway_stop () {
 	if (_config.my_role == TAG) {
-#if (TRIPOINT_ROLE == TRIPOINT_TAG)
 		if (_config.update_mode == ONEWAY_UPDATE_MODE_PERIODIC) {
 			//timer_stop(_app_timer);
 		}
 		oneway_tag_stop();
-#endif
 	} else if (_config.my_role == ANCHOR) {
-#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		oneway_anchor_stop();
-#endif
 	}
 }
 
@@ -133,13 +121,9 @@ void oneway_stop () {
 void oneway_reset () {
 	// Start by initing based on role
 	if (_config.my_role == TAG) {
-#if (TRIPOINT_ROLE == TRIPOINT_TAG)
 		oneway_tag_init(_scratchspace_ptr);
-#endif
 	} else if (_config.my_role == ANCHOR) {
-#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
 		oneway_anchor_init(_scratchspace_ptr);
-#endif
 	}
 }
 
@@ -154,13 +138,11 @@ void oneway_do_range () {
 		return;
 	}
 
-#if (TRIPOINT_ROLE == TRIPOINT_TAG)
 	// TODO: this does return an error if we are already ranging.
 	err = oneway_tag_start_ranging_event();
 	if (err == DW1000_WAKEUP_ERR) {
 		polypoint_reset();
 	}
-#endif
 }
 
 // Return a pointer to the application configuration settings

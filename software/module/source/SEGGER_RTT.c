@@ -371,8 +371,114 @@ void debug_msg(const char* s) {
 void debug_msg_int(int i) {
 
 #ifdef DEBUG_OUTPUT_RTT
-    char msg_int[2] = {(char)('0' + i), '\0'};
-    SEGGER_RTT_WriteString(0,msg_int);
+  // Simple one digit implementation
+  //char msg_int[2] = {'0' + i, '\0'};
+  //SEGGER_RTT_WriteString(0,msg_int);
+
+  // Multi-digit implementation
+  // Max length of int32_t is 10 digits (2'147'483'647) plus sign
+  char msg_int[11] = {0};
+
+
+  if (i < 0) {
+    // Print negative sign
+    msg_int[0] = '-';
+    msg_int[1] = '\0';
+    SEGGER_RTT_WriteString(0, msg_int);
+
+    // Convert to positive number
+    i = ~i + 1;
+  } else if (i == 0) {
+    // Special case: 0
+    msg_int[0] = '0';
+    msg_int[1] = '\0';
+    SEGGER_RTT_WriteString(0, msg_int);
+    return;
+  }
+
+  // Figure out number of digits
+  int temp = i;
+  int digits = 0;
+  while (temp > 0) {
+    digits++;
+    temp = temp / 10;
+  }
+
+  // Print digits
+  temp = i;
+  int index = 1;
+
+  for (; index <= digits; index++) {
+    msg_int[digits - index] = (char) ('0' + (temp % 10));
+    temp = temp / 10;
+  }
+
+  // Add string delimiter
+  msg_int[index-1] = '\0';
+
+  // Print string
+  SEGGER_RTT_WriteString(0, msg_int);
+#endif
+
+}
+
+void debug_msg_uint(uint32_t i) {
+
+#ifdef DEBUG_OUTPUT_RTT
+  // Simple one digit implementation
+  //char msg_int[2] = {'0' + i, '\0'};
+  //SEGGER_RTT_WriteString(0,msg_int);
+
+  // Multi-digit implementation
+  // Max length of uint32_t is 10 digits (4'294'967'295) plus sign
+  char msg_int[11] = {0};
+
+
+  if (i == 0) {
+    // Special case: 0
+    msg_int[0] = '0';
+    msg_int[1] = '\0';
+    SEGGER_RTT_WriteString(0, msg_int);
+    return;
+  }
+
+  // Figure out number of digits
+  uint32_t temp = i;
+  uint32_t digits = 0;
+  while (temp > 0) {
+    digits++;
+    temp = temp / 10;
+  }
+
+  // Print digits
+  temp = i;
+  int index = 1;
+
+  for (; index <= digits; index++) {
+    msg_int[digits - index] = (char) ('0' + (temp % 10));
+    temp = temp / 10;
+  }
+
+  // Add string delimiter
+  msg_int[index-1] = '\0';
+
+  // Print string
+  SEGGER_RTT_WriteString(0, msg_int);
+#endif
+
+}
+
+void debug_msg_hex(int i) {
+
+#ifdef DEBUG_OUTPUT_RTT
+  char msg[2] = {0, '\0'};
+    if (i > 9) {
+        msg[0] = (char)('A' + (i - 10));
+
+    } else {
+        msg[0] = (char)('0' + i);
+    }
+    SEGGER_RTT_WriteString(0,msg);
 #endif
 
 }

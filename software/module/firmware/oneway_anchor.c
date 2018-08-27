@@ -12,8 +12,6 @@
 #include "firmware.h"
 #include "SEGGER_RTT.h"
 
-#if (TRIPOINT_ROLE == TRIPOINT_ANCHOR)
-
 static void ranging_listening_window_setup();
 static void anchor_txcallback (const dwt_callback_data_t *txd);
 static void anchor_rxcallback (const dwt_callback_data_t *rxd);
@@ -429,5 +427,3 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 
 	timer_enable_interrupt(oa_scratch->anchor_timer);
 }
-
-#endif
