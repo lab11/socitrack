@@ -31,7 +31,8 @@
 #include "nrf_drv_uart.h"
 
 // TWI
-#include "nrf_drv_twi.h"
+#include "nrfx_twi.h"
+#include "nrfx_twim.h"
 
 // Clocks
 #include "nrfx_rtc.h"
@@ -442,7 +443,7 @@ static void ble_stack_init(void) {
 // Use TWI1
 #define TWI_INSTANCE_NR 1
 
-static const nrf_drv_twi_t twi_instance = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_NR);
+static const nrfx_twim_t twi_instance = NRFX_TWIM_INSTANCE(TWI_INSTANCE_NR);
 
 uint8_t twi_tx_buf[256];
 uint8_t twi_rx_buf[256];
@@ -451,41 +452,39 @@ uint8_t twi_rx_buf[256];
 static void twi_init(void) {
     ret_code_t err_code;
 
-    const nrf_drv_twi_config_t config =
-    {
+    const nrfx_twim_config_t config = {
         .scl                = CARRIER_I2C_SCL,
         .sda                = CARRIER_I2C_SDA,
-        .frequency          = NRF_DRV_TWI_FREQ_400K,
-        .interrupt_priority = APP_IRQ_PRIORITY_HIGH,
-        .clear_bus_init     = false
+        .frequency          = NRF_TWIM_FREQ_400K,
+        .interrupt_priority = NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY,
+        .hold_bus_uninit    = NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
     };
 
     // Define twi_handler as third parameter
-    err_code = nrf_drv_twi_init(&twi_instance, &config, NULL, NULL);
+    err_code = nrfx_twim_init(&twi_instance, &config, NULL, NULL);
     APP_ERROR_CHECK(err_code);
 
-    nrf_drv_twi_enable(&twi_instance);
+    nrfx_twim_enable(&twi_instance);
     APP_ERROR_CHECK(err_code);
 }
 
-static void twi_write(uint16_t addr, size_t size) {
+static void twi_write(uint8_t* addr, size_t size) {
 
     // Copy to buffer
     memcpy(twi_tx_buf, &addr, size);
 
-    ret_code_t err_code = nrf_drv_twi_tx(&twi_instance, MODULE_ADDRESS, twi_tx_buf, size, false);
+    ret_code_t err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, twi_tx_buf, size, false);
     APP_ERROR_CHECK(err_code);
 }
 
-static void twi_read(uint16_t addr, size_t size) {
+static void twi_read(uint8_t* addr, size_t size) {
 
     ret_code_t err_code;
-
-    uint16_t addr16 = addr;
-    err_code = nrf_drv_twi_tx(&twi_instance, MODULE_ADDRESS, (uint8_t *) &addr16, 1, true);
+    
+    err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, addr, 1, true);
     APP_ERROR_CHECK(err_code);
 
-    err_code = nrf_drv_twi_rx(&twi_instance, MODULE_ADDRESS, twi_rx_buf, size);
+    err_code = nrfx_twim_rx(&twi_instance, MODULE_ADDRESS, twi_rx_buf, size);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -499,23 +498,30 @@ int main(void) {
     // Initialize ------------------------------------------------------------------------------------------------------
 
     // Initialize RTT library
-    ret_code_t error_code = NRF_LOG_INIT(NULL);
-    APP_ERROR_CHECK(error_code);
+    ret_code_t err_code = NRF_LOG_INIT(NULL);
+    APP_ERROR_CHECK(err_code);
     NRF_LOG_DEFAULT_BACKENDS_INIT();
     printf("Initialized SEGGER RTT");
 
     // Init SoftDevice & DCDC regulator
     // FIXME: DCDC mode not possible without RTT connected
     //nrf_power_dcdcen_set(1);
-    nrf_sdh_enable_request();
+    err_code = nrf_sdh_enable_request();
+    APP_ERROR_CHECK(err_code);
     //sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
     printf(", SoftDevice");
+
+    // Initialize GPIOs
+    if (!nrfx_gpiote_is_init()) {
+        err_code = nrfx_gpiote_init();
+        APP_ERROR_CHECK(err_code);
+    }
 
     // FIXME: BUG FIX -> Enable SD card to pull nRESET high
     nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
 
-    // Initialize GPIOs
+    // Initialize LEDs
     nrf_gpio_cfg_output(CARRIER_LED_BLUE);
     nrf_gpio_cfg_output(CARRIER_LED_GREEN);
     nrf_gpio_cfg_output(CARRIER_LED_RED);
@@ -625,10 +631,12 @@ int main(void) {
     size_t length_read  = 3;
 
     // Writing over TWI
-    twi_write((uint16_t)twi_tx_buf, length_write);
+    twi_write(twi_tx_buf, length_write);
+    printf("Successfully wrote command over I2C\n");
 
     // Reading over TWI
-    twi_read((uint16_t)twi_rx_buf, length_read);
+    twi_read(twi_rx_buf, length_read);
+    printf("Successfully read response over I2C\n");
 
     printf(" OK\n");
 #endif
