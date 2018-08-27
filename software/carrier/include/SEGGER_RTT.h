@@ -17,6 +17,8 @@ Purpose : Implementation of SEGGER real-time terminal which allows
 ---------------------------END-OF-HEADER------------------------------
 */
 
+#include "stdint.h"
+
 /*********************************************************************
 *
 *       Defines
@@ -78,6 +80,7 @@ Purpose : Implementation of SEGGER real-time terminal which allows
 
 void   debug_msg(const char* s);
 void   debug_msg_int(int i);
+void   debug_msg_uint(uint32_t i);
 void   debug_msg_hex(int i);
 
 /*********************************************************************
