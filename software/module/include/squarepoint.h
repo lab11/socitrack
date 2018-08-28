@@ -6,8 +6,8 @@
 /******************************************************************************/
 // EUI LOCATION IN FLASH
 /******************************************************************************/
-#define EUI_FLASH_LOCATION  0x08007ff8
-#define INIT_FLASH_LOCATION 0x08007F80
+#define EUI_FLASH_LOCATION  0x0803FFF8
+#define INIT_FLASH_LOCATION 0x0803FF80
 
 // TODO: find
 

@@ -80,7 +80,7 @@ void oneway_tag_init (void *app_scratchspace) {
 	// Reset our state because nothing should be in progress if we call init()
 	ot_scratch->state = TSTATE_IDLE;
 
-	// LPM now schedules all of our ranging events!
+	// LWB now schedules all of our ranging events!
 	lwb_set_sched_request(TRUE);
 	lwb_set_sched_callback(oneway_tag_start_ranging_event);
 }
@@ -90,7 +90,7 @@ void oneway_tag_init (void *app_scratchspace) {
 dw1000_err_e oneway_tag_start_ranging_event () {
 	dw1000_err_e err;
 
-	//debug_msg("Start ranging event...\r\n");
+	debug_msg("Start ranging event...\r\n");
 
 	if (ot_scratch->state != TSTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
@@ -149,6 +149,9 @@ void oneway_tag_stop () {
 
 // Called after the TAG has transmitted a packet.
 static void tag_txcallback (const dwt_callback_data_t *data) {
+
+    debug_msg("TAG transmitted a packet\n");
+
 	glossy_process_txcallback();
 
 	if (data->event == DWT_SIG_TX_DONE) {

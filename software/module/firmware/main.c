@@ -289,7 +289,6 @@ int main () {
 	// Not entirely sure why.
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 
-
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC_AHBPeriphClockCmd(STM_GPIO3_CLK, ENABLE);
 	GPIO_InitStructure.GPIO_Pin = STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
@@ -335,9 +334,7 @@ int main () {
 
     USART_Cmd(USART1, ENABLE);
 
-
-	// In case we need a timer, get one. This is used for things like periodic
-	// ranging events.
+    // In case we need a timer, get one. This is used for things like periodic ranging events.
 	//_app_timer = timer_init();
 
 	// Signal that internal setup is finished by setting BLUE
@@ -349,7 +346,6 @@ int main () {
 	// of the settings on the DW1000.
     //debug_msg("Configuring DW1000...\r\n");
 	start_dw1000();
-
 
 #ifdef DEBUG_OUTPUT_RTT
     // Test output channels
@@ -363,6 +359,7 @@ int main () {
 	uart_write_message(19, "Initialized UART\r\n");
 #endif
 
+#define BYPASS_HOST_INTERFACE
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
 	// the host controller (that is using TriPoint for ranging/localization)
@@ -379,14 +376,31 @@ int main () {
 #else
 	// DEBUG:
 	oneway_config_t config;
-	config.my_role = TAG;
-	//config.my_role = ANCHOR;
-	//config.my_glossy_role = GLOSSY_MASTER;
-	config.my_glossy_role = GLOSSY_SLAVE;
+
+	debug_msg("Configured role as: ");
+
+	// Choose role
+	if (0) {
+	    config.my_role = TAG;
+	    debug_msg("TAG, ");
+	} else {
+        config.my_role = ANCHOR;
+        debug_msg("ANCHOR, ");
+    }
+
+	// Choose Glossy role
+    if (0) {
+        config.my_glossy_role = GLOSSY_SLAVE;
+        debug_msg("GLOSSY_SLAVE\n");
+    } else {
+        config.my_glossy_role = GLOSSY_MASTER;
+        debug_msg("GLOSSY_MASTER\n");
+    }
+
 	config.report_mode = ONEWAY_REPORT_MODE_RANGES;
 	config.update_mode = ONEWAY_UPDATE_MODE_PERIODIC;
-	config.update_rate = 10;
-	config.sleep_mode = FALSE;
+	config.update_rate = 10; // in tenths of herz
+	config.sleep_mode  = FALSE; // TRUE: sleep in-between rangings
 	polypoint_configure_app(APP_ONEWAY, &config);
 	polypoint_start();
 #endif
@@ -431,7 +445,7 @@ int main () {
 			}
 
 			if (interrupts_triggered[INTERRUPT_DW1000] == TRUE) {
-			    //debug_msg("Interrupt: DW1000\r\n");
+			    debug_msg("Interrupt: DW1000\r\n");
 				interrupts_triggered[INTERRUPT_DW1000] = FALSE;
 				interrupt_triggered = TRUE;
 				dw1000_interrupt_fired();

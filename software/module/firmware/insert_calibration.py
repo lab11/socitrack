@@ -6,7 +6,7 @@ import sys
 CALIBRATIONS_FNAME = '../../calibration/tripoint_calibration.data'
 OUTPUT_FNAME = '_build/calibration.bin'
 
-FLASH_LOCATION = '0x08007F80'
+FLASH_LOCATION = '0x0803FF80'
 
 MAGIC_VALUE = 0x77AA38F9
 

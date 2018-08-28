@@ -9,6 +9,7 @@
 #include "oneway_common.h"
 #include "oneway_tag.h"
 #include "oneway_anchor.h"
+#include "SEGGER_RTT.h"
 
 // All of the configuration passed to us by the host for how this application
 // should operate.
@@ -64,8 +65,10 @@ void oneway_configure (oneway_config_t* config, stm_timer_t* app_timer, void *ap
 	// Now init based on role
 	if (_config.my_role == TAG) {
 		oneway_tag_init(_scratchspace_ptr);
+		debug_msg("Initialized as TAG\n");
 	} else if (_config.my_role == ANCHOR) {
 		oneway_anchor_init(_scratchspace_ptr);
+		debug_msg("Initialized as ANCHOR\n");
 	}
 }
 
@@ -92,6 +95,8 @@ void oneway_start () {
 			if (_config.sleep_mode && period > DW1000_WAKEUP_DELAY_US) {
 				period -= DW1000_WAKEUP_DELAY_US;
 			}
+
+			// ATTENTION: This code is no longer used, as events are directly triggered by Glossy
 			//timer_start(_app_timer, period, tag_execute_range_callback);
 
 		} else if (_config.update_mode == ONEWAY_UPDATE_MODE_DEMAND) {
