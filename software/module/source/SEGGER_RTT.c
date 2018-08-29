@@ -452,7 +452,7 @@ void debug_msg_uint(uint32_t i) {
 
   // Print digits
   temp = i;
-  int index = 1;
+  uint32_t index = 1;
 
   for (; index <= digits; index++) {
     msg_int[digits - index] = (char) ('0' + (temp % 10));

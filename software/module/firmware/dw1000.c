@@ -118,7 +118,7 @@ static void setup () {
 	RCC_AHBPeriphClockCmd(DMA1_CLK, ENABLE);
 
 	// Enable SCK, MOSI, MISO and NSS GPIO clocks
-	RCC_AHBPeriphClockCmd(SPI1_SCK_GPIO_CLK |
+	RCC_AHBPeriphClockCmd(SPI1_SCK_GPIO_CLK  |
 	                      SPI1_MISO_GPIO_CLK |
 	                      SPI1_MOSI_GPIO_CLK |
 	                      SPI1_NSS_GPIO_CLK , ENABLE);
@@ -170,7 +170,7 @@ static void setup () {
 	SPI_RxFIFOThresholdConfig(SPI1, SPI_RxFIFOThreshold_QF);
 
 	// Setup interrupt from the DW1000
-	// Enable GPIOA clock
+	// Enable GPIOB clock
 	RCC_AHBPeriphClockCmd(DW_INTERRUPT_CLK, ENABLE);
 
 	// Configure PA0 pin as input floating

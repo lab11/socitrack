@@ -158,7 +158,7 @@ void glossy_sync_task(){
 		// During the first timeslot, put ourselves back into RX mode
 		if(_lwb_counter == 1){
 
-		    debug_msg("Listening for requests...\n");
+		    //debug_msg("Listening for requests...\n");
 
 			dwt_rxenable(0);
 #ifdef GLOSSY_ANCHOR_SYNC_TEST

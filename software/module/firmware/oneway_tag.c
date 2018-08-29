@@ -94,6 +94,10 @@ dw1000_err_e oneway_tag_start_ranging_event () {
 
 	if (ot_scratch->state != TSTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
+
+		debug_msg("ERROR: Not in IDLE state, but in state ");
+		debug_msg_int(ot_scratch->state);
+		debug_msg("\n");
 		return DW1000_BUSY;
 	}
 
@@ -113,6 +117,7 @@ dw1000_err_e oneway_tag_start_ranging_event () {
 	} else if (err) {
 		// Chip did not seem to wakeup. This is not good, so we have
 		// to reset the application.
+		debug_msg("ERROR: Couldn't wake up DW!\n");
 		return err;
 	}
 
@@ -125,6 +130,8 @@ dw1000_err_e oneway_tag_start_ranging_event () {
 
 	// Start a timer that will kick off the broadcast ranging events
 	timer_start(ot_scratch->tag_timer, RANGING_BROADCASTS_PERIOD_US, ranging_broadcast_subsequence_task);
+
+	//debug_msg("Started ranging...\n");
 
 	return DW1000_NO_ERR;
 }
@@ -150,7 +157,7 @@ void oneway_tag_stop () {
 // Called after the TAG has transmitted a packet.
 static void tag_txcallback (const dwt_callback_data_t *data) {
 
-    debug_msg("TAG transmitted a packet\n");
+    //debug_msg("TAG transmitted a packet\n");
 
 	glossy_process_txcallback();
 
@@ -170,13 +177,14 @@ static void tag_txcallback (const dwt_callback_data_t *data) {
 			ot_scratch->ranging_listening_window_num = 0;
 			ot_scratch->anchor_response_count = 0;
 
+			//debug_msg("Finished ranging. Waiting for responses from anchors...\n");
+
 			// Start a timer to switch between the windows
 			timer_start(ot_scratch->tag_timer, RANGING_LISTENING_WINDOW_US + RANGING_LISTENING_WINDOW_PADDING_US*2, ranging_listening_window_task);
 
 		} else {
 			// We don't need to do anything on TX done for any other states
 		}
-
 
 	} else {
 		// Some error occurred, don't just keep trying to send packets.
@@ -229,10 +237,10 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 			// Only save this response if we haven't already seen this anchor
 			if (!anc_already_found) {
 
-                debug_msg("Received an Anchor response packet from ");
+                /*debug_msg("Received an Anchor response packet from ");
                 debug_msg_int(anc_final->ieee154_header_unicast.sourceAddr[0] >> 4);
                 debug_msg_int(anc_final->ieee154_header_unicast.sourceAddr[0] & 0x0F);
-                debug_msg("\r\n");
+                debug_msg("\r\n");*/
 
 				// Save the anchor address
 				memcpy(ot_scratch->anchor_responses[ot_scratch->anchor_response_count].anchor_addr, anc_final->ieee154_header_unicast.sourceAddr, EUI_LEN);
@@ -335,8 +343,13 @@ static void send_poll () {
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
 
 	if (err != DWT_SUCCESS) {
-		// This likely means our delay was too short when sending this packet.
-		// TODO: do something here...
+		// This likely means our delay was too short when sending this packet
+		// If this occurs in the last round, it however also mean that the anchor didnt reply with packets correctly
+		if (ot_scratch->ranging_broadcast_ss_num == NUM_RANGING_BROADCASTS-1) {
+			debug_msg("ERROR: Delay too short for the last packet, setup took too long!\n");
+		} else {
+			debug_msg("ERROR: Delay too short, packet could not be sent!\n");
+		}
 	}
 }
 

@@ -291,11 +291,11 @@ int main () {
 
 	GPIO_InitTypeDef GPIO_InitStructure;
 	RCC_AHBPeriphClockCmd(STM_GPIO3_CLK, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_Pin 	= STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
+	GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType 	= GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Speed 	= GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure);
 
 	// Initialize LEDs as off
@@ -316,19 +316,19 @@ int main () {
     GPIO_PinAFConfig(STM_GPIO0_PORT, STM_GPIO0_SRC, GPIO_AF_0);
     GPIO_PinAFConfig(STM_GPIO1_PORT, STM_GPIO1_SRC, GPIO_AF_0);
 
-    gpioConfig.GPIO_Pin = STM_GPIO0_PIN | STM_GPIO1_PIN;
-    gpioConfig.GPIO_Speed = GPIO_Speed_50MHz;
-    gpioConfig.GPIO_Mode = GPIO_Mode_AF;
-    gpioConfig.GPIO_OType = GPIO_OType_PP;
-    gpioConfig.GPIO_PuPd = GPIO_PuPd_UP;
+    gpioConfig.GPIO_Pin 	= STM_GPIO0_PIN | STM_GPIO1_PIN;
+    gpioConfig.GPIO_Speed 	= GPIO_Speed_50MHz;
+    gpioConfig.GPIO_Mode 	= GPIO_Mode_AF;
+    gpioConfig.GPIO_OType 	= GPIO_OType_PP;
+    gpioConfig.GPIO_PuPd 	= GPIO_PuPd_UP;
     GPIO_Init(STM_GPIO0_PORT, &gpioConfig);
 
     // STM "baud" defn wrong; this results in 3 MBaud effective
-    usartConfig.USART_BaudRate = 1500000;
+    usartConfig.USART_BaudRate 	 = 1500000;
     usartConfig.USART_WordLength = USART_WordLength_8b;
-    usartConfig.USART_StopBits = USART_StopBits_1;
-    usartConfig.USART_Parity = USART_Parity_No;
-    usartConfig.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+    usartConfig.USART_StopBits 	 = USART_StopBits_1;
+    usartConfig.USART_Parity 	 = USART_Parity_No;
+    usartConfig.USART_Mode 	 	 = USART_Mode_Rx | USART_Mode_Tx;
     usartConfig.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_Init(USART1, &usartConfig);
 
@@ -445,7 +445,7 @@ int main () {
 			}
 
 			if (interrupts_triggered[INTERRUPT_DW1000] == TRUE) {
-			    debug_msg("Interrupt: DW1000\r\n");
+			    //debug_msg("Interrupt: DW1000\r\n");
 				interrupts_triggered[INTERRUPT_DW1000] = FALSE;
 				interrupt_triggered = TRUE;
 				dw1000_interrupt_fired();

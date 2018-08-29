@@ -172,6 +172,8 @@ static void ranging_listening_window_task () {
 
 		if(!oa_scratch->final_ack_received){
 
+			//debug_msg("Sending response to Tag\n");
+
 			dwt_forcetrxoff();
 	
 			// Setup the channel and antenna settings
@@ -235,7 +237,7 @@ static void ranging_listening_window_setup () {
 	// Set the listening window index
 	oa_scratch->ranging_listening_window_num = 0;
 
-	debug_msg("Prepare to respond to TAG...\r\n");
+	//debug_msg("Prepare to respond to TAG...\r\n");
 
 	// Determine which antenna we are going to use for
 	// the response.
@@ -262,7 +264,7 @@ static void ranging_listening_window_setup () {
 // just empty.
 static void anchor_txcallback (const dwt_callback_data_t *txd) {
 
-    debug_msg("ANCHOR transmitted a packet\n");
+    //debug_msg("ANCHOR transmitted a packet\n");
 
 	glossy_process_txcallback();
 }

@@ -169,6 +169,12 @@ void oneway_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* anchor_
 			memcpy(_anchor_ids_ranges+buffer_index, &ranges_millimeters[i], sizeof(int32_t));
 			buffer_index += sizeof(int32_t);
 			num_anchor_ranges++;
+
+			debug_msg("Range to anchor ");
+			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1]);
+			debug_msg(": ");
+			debug_msg_uint((uint32_t)ranges_millimeters[i]);
+			debug_msg("\n");
 		}
 	}
 
