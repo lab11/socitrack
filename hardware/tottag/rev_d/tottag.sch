@@ -4952,8 +4952,8 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="P+2" library="regulators" deviceset="+3V3" device=""/>
 <part name="D1" library="SparkFun-LED" deviceset="LED" device="0603" value="GREEN"/>
 <part name="SUPPLY2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="J3" library="connector" deviceset="MICRO_USB_B_HIROSE_ZX62-B-5PA(11)" device=""/>
-<part name="J1" library="connector" deviceset="BAT_HOLE" device=""/>
+<part name="J1" library="connector" deviceset="MICRO_USB_B_HIROSE_ZX62-B-5PA(11)" device=""/>
+<part name="J3" library="connector" deviceset="BAT_HOLE" device=""/>
 <part name="SUPPLY8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="TP2" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="TP1" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
@@ -5070,7 +5070,7 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <attribute name="DIGIKEY" value="587-1521-1-ND"/>
 <attribute name="MPN" value="HK100515NJ-T "/>
 </part>
-<part name="L6" library="passives" deviceset="INDUCTOR" device="0603" value="10uH">
+<part name="L3" library="passives" deviceset="INDUCTOR" device="0603" value="10uH">
 <attribute name="DIGIKEY" value="490-4025-1-ND"/>
 <attribute name="MPN" value="LQM18FN100M00D "/>
 </part>
@@ -5207,6 +5207,7 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <part name="SPI_CLK" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="MISO" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="MOSI" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
+<part name="+1V8" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -5302,7 +5303,7 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <attribute name="DIGIKEY" x="30.48" y="129.54" size="1.778" layer="96" rot="R90" display="off"/>
 <attribute name="MPN" x="30.48" y="129.54" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
-<instance part="L6" gate="G$1" x="48.26" y="129.54" rot="R90">
+<instance part="L3" gate="G$1" x="48.26" y="129.54" rot="R90">
 <attribute name="DIGIKEY" x="48.26" y="129.54" size="1.778" layer="96" rot="R90" display="off"/>
 <attribute name="MPN" x="48.26" y="129.54" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
@@ -5736,14 +5737,14 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <segment>
 <pinref part="U7" gate="G$1" pin="DCC"/>
 <wire x1="55.88" y1="129.54" x2="60.96" y2="129.54" width="0.1524" layer="91"/>
-<pinref part="L6" gate="G$1" pin="2"/>
+<pinref part="L3" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="N$37" class="0">
 <segment>
 <pinref part="L2" gate="G$1" pin="2"/>
 <wire x1="40.64" y1="129.54" x2="38.1" y2="129.54" width="0.1524" layer="91"/>
-<pinref part="L6" gate="G$1" pin="1"/>
+<pinref part="L3" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="XL3" class="0">
@@ -5927,8 +5928,8 @@ power draws</text>
 <instance part="SUPPLY7" gate="1" x="177.8" y="127"/>
 <instance part="D1" gate="G$1" x="76.2" y="149.86"/>
 <instance part="SUPPLY2" gate="1" x="142.24" y="127"/>
-<instance part="J3" gate="G$1" x="22.86" y="152.4" rot="MR0"/>
-<instance part="J1" gate="G$1" x="190.5" y="175.26" rot="MR0"/>
+<instance part="J1" gate="G$1" x="22.86" y="152.4" rot="MR0"/>
+<instance part="J3" gate="G$1" x="190.5" y="175.26" rot="MR0"/>
 <instance part="SUPPLY8" gate="1" x="177.8" y="165.1"/>
 <instance part="U5" gate="G$1" x="218.44" y="157.48"/>
 <instance part="SUPPLY9" gate="1" x="243.84" y="127"/>
@@ -6010,7 +6011,7 @@ power draws</text>
 <wire x1="35.56" y1="147.32" x2="35.56" y2="139.7" width="0.1524" layer="91"/>
 <wire x1="35.56" y1="139.7" x2="43.18" y2="139.7" width="0.1524" layer="91"/>
 <junction x="43.18" y="139.7"/>
-<pinref part="J3" gate="G$1" pin="GND"/>
+<pinref part="J1" gate="G$1" pin="GND"/>
 <wire x1="30.48" y1="147.32" x2="35.56" y2="147.32" width="0.1524" layer="91"/>
 </segment>
 <segment>
@@ -6035,7 +6036,7 @@ power draws</text>
 <segment>
 <pinref part="SUPPLY8" gate="1" pin="GND"/>
 <wire x1="177.8" y1="167.64" x2="177.8" y2="172.72" width="0.1524" layer="91"/>
-<pinref part="J1" gate="G$1" pin="-"/>
+<pinref part="J3" gate="G$1" pin="-"/>
 <wire x1="177.8" y1="172.72" x2="180.34" y2="172.72" width="0.1524" layer="91"/>
 </segment>
 <segment>
@@ -6174,7 +6175,7 @@ power draws</text>
 <junction x="76.2" y="167.64"/>
 <wire x1="63.5" y1="167.64" x2="76.2" y2="167.64" width="0.1524" layer="91"/>
 <wire x1="35.56" y1="167.64" x2="35.56" y2="157.48" width="0.1524" layer="91"/>
-<pinref part="J3" gate="G$1" pin="+5V"/>
+<pinref part="J1" gate="G$1" pin="+5V"/>
 <wire x1="35.56" y1="157.48" x2="30.48" y2="157.48" width="0.1524" layer="91"/>
 <pinref part="U6" gate="U1" pin="VDD/2"/>
 <wire x1="91.44" y1="157.48" x2="88.9" y2="157.48" width="0.1524" layer="91"/>
@@ -6222,7 +6223,7 @@ power draws</text>
 <junction x="170.18" y="160.02"/>
 <junction x="200.66" y="160.02"/>
 <wire x1="170.18" y1="177.8" x2="170.18" y2="160.02" width="0.1524" layer="91"/>
-<pinref part="J1" gate="G$1" pin="+"/>
+<pinref part="J3" gate="G$1" pin="+"/>
 <wire x1="170.18" y1="177.8" x2="180.34" y2="177.8" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="IN"/>
 <wire x1="200.66" y1="160.02" x2="205.74" y2="160.02" width="0.1524" layer="91"/>
@@ -6284,7 +6285,7 @@ power draws</text>
 <label x="180.34" y="68.58" size="1.016" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="J3" gate="G$1" pin="D-"/>
+<pinref part="J1" gate="G$1" pin="D-"/>
 <wire x1="30.48" y1="154.94" x2="35.56" y2="154.94" width="0.1524" layer="91"/>
 <label x="35.56" y="154.94" size="1.016" layer="95" xref="yes"/>
 </segment>
@@ -6298,7 +6299,7 @@ power draws</text>
 <label x="180.34" y="66.04" size="1.016" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
-<pinref part="J3" gate="G$1" pin="D+"/>
+<pinref part="J1" gate="G$1" pin="D+"/>
 <wire x1="30.48" y1="152.4" x2="35.56" y2="152.4" width="0.1524" layer="91"/>
 <label x="35.56" y="152.4" size="1.016" layer="95" xref="yes"/>
 </segment>
@@ -6644,6 +6645,7 @@ for (DEEP)SLEEP</text>
 <instance part="SPI_CLK" gate="G$1" x="119.38" y="129.54"/>
 <instance part="MISO" gate="G$1" x="124.46" y="127"/>
 <instance part="MOSI" gate="G$1" x="129.54" y="124.46"/>
+<instance part="+1V8" gate="G$1" x="78.74" y="152.4" rot="R270"/>
 </instances>
 <busses>
 </busses>
@@ -7049,6 +7051,9 @@ for (DEEP)SLEEP</text>
 <pinref part="V1P8" gate="P1" pin="+1V8"/>
 <wire x1="63.5" y1="154.94" x2="63.5" y2="160.02" width="0.1524" layer="91"/>
 <junction x="63.5" y="154.94"/>
+<pinref part="+1V8" gate="G$1" pin="TP"/>
+<wire x1="71.12" y1="152.4" x2="76.2" y2="152.4" width="0.1524" layer="91"/>
+<junction x="71.12" y="152.4"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="VDDLDOD"/>
