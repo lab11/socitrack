@@ -7,74 +7,55 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <ble.h>
+#include <ble_gatts.h>
 #include "nordic_common.h"
 #include "nrf.h"
-#include "nrf_sdm.h"
+#include "nrf_sdh.h"
+#include "nrf_sdh_ble.h"
 #include "nrf_delay.h"
-#include "ble.h"
-#include "ble_db_discovery.h"
-#include "app_util.h"
-#include "app_error.h"
-#include "ble_conn_params.h"
-#include "ble_hci.h"
 #include "nrf_gpio.h"
-#include "ble_hrs_c.h"
-#include "ble_bas_c.h"
+#include "nrf_pwr_mgmt.h"
+#include "app_error.h"
 #include "app_util.h"
 #include "app_timer.h"
+#include "app_scheduler.h"
+
+#include "ble_conn_params.h"
+#include "ble_advertising.h"
+#include "nrf_ble_es.h"
+#include "nrf_ble_gatt.h"
 
 #include "led.h"
 #include "boards.h"
 
 #include "ble_config.h"
 #include "module_interface.h"
-#include "SEGGER_RTT.h"
 
 /*******************************************************************************
  *   Configuration and settings
  ******************************************************************************/
 
-#define CARRIER_SHORT_UUID                     0x3152
-#define CARRIER_CHAR_LOCATION_SHORT_UUID       0x3153
-#define CARRIER_CHAR_RANGING_ENABLE_SHORT_UUID 0x3154
-#define CARRIER_CHAR_CALIBRATION_SHORT_UUID    0x3159
-#define CARRIER_CHAR_STATUS_SHORT_UUID         0x3155
+// BLE events
+#define CARRIER_SHORT_UUID              0x3152
+#define CARRIER_BLE_EVT_LOCATION        0x3153
+#define CARRIER_BLE_EVT_RANGING_ENABLE  0x3154
+#define CARRIER_BLE_EVT_CALIBRATION     0x3159
+#define CARRIER_BLE_EVT_STATUS          0x3155
 
-// Randomly generated UUID
-simple_ble_service_t service_handle = {
-    .uuid128 = {{0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c,
-                 0x90, 0xee, 0x3f, 0xa2, 0x31, 0x52, 0x8c, 0xd6}}
-};
+#define DEAD_BEEF                       0xDEADBEEF            //!< Value used as error code on stack dump, can be used to identify stack location on stack unwind.
+#define NON_CONNECTABLE_ADV_LED_PIN     CARRIER_LED_RED       //!< Toggles when non-connectable advertisement is sent.
+#define CONNECTED_LED_PIN               CARRIER_LED_GREEN     //!< Is on when device has connected.
+#define CONNECTABLE_ADV_LED_PIN         CARRIER_LED_BLUE      //!< Is on when device is advertising connectable advertisements.
 
-simple_ble_char_t char_range_handle             = {.uuid16 = CARRIER_CHAR_LOCATION_SHORT_UUID};
-simple_ble_char_t char_calibration_index_handle = {.uuid16 = CARRIER_CHAR_CALIBRATION_SHORT_UUID};
-simple_ble_char_t char_ranging_enable_handle    = {.uuid16 = CARRIER_CHAR_RANGING_ENABLE_SHORT_UUID};
-simple_ble_char_t char_status_handle            = {.uuid16 = CARRIER_CHAR_STATUS_SHORT_UUID};
-
-
-// Intervals for advertising and connections
-static simple_ble_config_t ble_config = {
-    // c0:98:e5:45:xx:xx
-    .platform_id       = 0x45,              // used as 4th octect in device BLE address
-    .device_id         = DEVICE_ID_DEFAULT,
-    .adv_name          = DEVICE_NAME,       // used in advertisements if there is room
-    .adv_interval      = MSEC_TO_UNITS(1000, UNIT_0_625_MS),
-    // .min_conn_interval = MSEC_TO_UNITS(500, UNIT_1_25_MS),
-    // .max_conn_interval = MSEC_TO_UNITS(1000, UNIT_1_25_MS),
-    .min_conn_interval = MSEC_TO_UNITS(8, UNIT_1_25_MS),
-    .max_conn_interval = MSEC_TO_UNITS(10, UNIT_1_25_MS),
-};
-
-// Copy address from flash
-uint8_t _ble_address[6];
-
+// Priority of the application BLE event handler.
+#define APP_BLE_OBSERVER_PRIO 3
 
 /*******************************************************************************
  *   State for this application
  ******************************************************************************/
 
 // Main application state
-simple_ble_app_t* simple_ble_app;
 static ble_app_t app;
 
 // GP Timer. Used to retry initializing the module.
@@ -85,34 +66,126 @@ static app_timer_id_t  app_timer;
 bool module_inited = false;
 
 
+// Copy address from flash
+uint8_t _ble_address[6];
+uint16_t ble_device_id;
+
+// GATT module instance
+NRF_BLE_GATT_DEF(m_gatt);
+
 /*******************************************************************************
  *   nRF CALLBACKS - In response to various BLE/hardware events.
  ******************************************************************************/
 
-// Function for handling the WRITE CHARACTERISTIC BLE event.
-void ble_evt_write (ble_evt_t* p_ble_evt)
+//Callback function for asserts in the SoftDevice.
+void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 {
-    ble_gatts_evt_write_t* p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
+    // Use better_error_handling.c
+    /*printf("ERROR: assert in SoftDevice failed!\n");
+    
+    while(1) { led_toggle(CARRIER_LED_RED); }*/
+    
+    app_error_handler(DEAD_BEEF, line_num, p_file_name);
+}
 
-    if (simple_ble_is_char_event(p_ble_evt, &char_ranging_enable_handle)) {
-        // Handle a write to the characteristic that starts and stops ranging.
 
-        app.app_ranging = p_evt_write->data[0];
+// Function for handling BLE events
+static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
+{
+    ret_code_t err_code;
 
-        // Stop or start the module based on the value we just got
-        if (app.app_ranging == 1) {
-            module_resume();
-        } else {
-            module_sleep();
+    switch (p_ble_evt->header.evt_id)
+    {
+        case CARRIER_BLE_EVT_LOCATION: {
+
+            break;
         }
+        case CARRIER_BLE_EVT_RANGING_ENABLE: {
+            // Handle a write to the characteristic that starts and stops ranging.
+            app.app_ranging_enabled = p_ble_evt->evt.gatts_evt.params.write.data[0];
 
-    } else if (simple_ble_is_char_event(p_ble_evt, &char_calibration_index_handle)) {
-        // Handle a write to the characteristic that starts calibration
-        app.calibration_index = p_evt_write->data[0];
+            // Stop or start the module based on the value we just got
+            if (app.app_ranging_enabled == 1) {
+                module_resume();
+            } else {
+                module_sleep();
+            }
 
-        // Configure this node for calibration and set the calibration node
-        // index. If 0, this node will immediately start calibration.
-        module_start_calibration(app.calibration_index);
+            break;
+        }
+        case CARRIER_BLE_EVT_CALIBRATION: {
+            // Handle a write to the characteristic that starts calibration
+            app.calibration_index = p_ble_evt->evt.gatts_evt.params.write.data[0];
+
+            // Configure this node for calibration and set the calibration node
+            // index. If 0, this node will immediately start calibration.
+            module_start_calibration(app.calibration_index);
+
+            break;
+        }
+        case CARRIER_BLE_EVT_STATUS: {
+
+            break;
+        }
+        case BLE_GAP_EVT_SEC_PARAMS_REQUEST: {
+            // Pairing not supported
+            err_code = sd_ble_gap_sec_params_reply(p_ble_evt->evt.common_evt.conn_handle,
+                                                   BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP,
+                                                   NULL,
+                                                   NULL);
+            APP_ERROR_CHECK(err_code);
+            break;
+        }
+        case BLE_GATTS_EVT_SYS_ATTR_MISSING: {
+            // No system attributes have been stored.
+            err_code = sd_ble_gatts_sys_attr_set(p_ble_evt->evt.common_evt.conn_handle, NULL, 0, 0);
+            APP_ERROR_CHECK(err_code);
+            break;
+        }
+        case BLE_GAP_EVT_CONNECTED: {
+            led_on(CONNECTED_LED_PIN);
+            led_off(CONNECTABLE_ADV_LED_PIN);
+            break;
+        }
+        case BLE_GAP_EVT_DISCONNECTED: {
+            // LED indication will be changed when advertising starts.
+            break;
+        }
+        case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
+            ble_gap_phys_t const phys =
+            {
+                .rx_phys = BLE_GAP_PHY_AUTO,
+                .tx_phys = BLE_GAP_PHY_AUTO,
+            };
+            err_code = sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys);
+            APP_ERROR_CHECK(err_code);
+            break;
+        }
+        default:
+            // No implementation needed.
+            break;
+    }
+}
+
+// Handle Eddystone event
+static void on_es_evt(nrf_ble_es_evt_t evt)
+{
+    switch (evt)
+    {
+        case NRF_BLE_ES_EVT_ADVERTISEMENT_SENT:
+            led_toggle(NON_CONNECTABLE_ADV_LED_PIN);
+            break;
+
+        case NRF_BLE_ES_EVT_CONNECTABLE_ADV_STARTED:
+            led_on(CONNECTABLE_ADV_LED_PIN);
+            break;
+
+        case NRF_BLE_ES_EVT_CONNECTABLE_ADV_STOPPED:
+            led_off(CONNECTABLE_ADV_LED_PIN);
+            break;
+
+        default:
+            break;
     }
 }
 
@@ -127,7 +200,7 @@ uint8_t dataBlob[256];
 
 void updateData (uint8_t * data, uint32_t len)
 {
-    uint16_t copy_len = (uint16_t)MIN(len, 256);
+    uint16_t copy_len = (uint16_t) MIN(len, 256);
 	memcpy(app.app_raw_response_buffer, data, copy_len);
 	blobLen = copy_len;
 
@@ -143,13 +216,10 @@ void updateData (uint8_t * data, uint32_t len)
        8:   EUI
        4:   Range in mm
     */
-	debug_msg("Interrupt with reason ");
-	debug_msg_int(data[0]);
+	printf("Interrupt with reason %i", data[0]);
 
 	if (data[0] == HOST_IFACE_INTERRUPT_RANGES) {
-        debug_msg(", included number of anchors: ");
-        debug_msg_int(data[1]);
-        debug_msg("\r\n");
+        printf(", included number of anchors: %i\r\n", data[1]);
 
         const uint8_t packet_overhead = 2;
         const uint8_t ranging_length = 12;
@@ -157,29 +227,25 @@ void updateData (uint8_t * data, uint32_t len)
 
         for (uint8_t i = 0; i < nr_ranges; i++) {
             uint8_t offset = packet_overhead + i * ranging_length;
-            debug_msg(" Nr ");
-            debug_msg_int(i + 1);
-            debug_msg(": Anchor ");
-            debug_msg_hex(data[offset + 0] >> 4);
-            debug_msg_hex(data[offset + 0] & 0x0F);
-            debug_msg(" with range ");
+            printf(" Nr %i", i + 1);
+            printf(": Anchor %#04X with range ", data[offset + 0]);
 
             // Little-endian notation
             int32_t range = data[offset + 8] + (data[offset + 9] << 1*8) + (data[offset + 10] << 2*8) + (data[offset + 11] << 3*8);
             
             if (range > ONEWAY_TAG_RANGE_MIN) {
-                debug_msg_int(range);
+                printf("%li", range);
             } else if (range == ONEWAY_TAG_RANGE_ERROR_NO_OFFSET) {
-                debug_msg("ERROR_NO_OFFSET");
+                printf("ERROR_NO_OFFSET");
             } else if (range == ONEWAY_TAG_RANGE_ERROR_TOO_FEW_RANGES) {
-                debug_msg("ERROR_TOO_FEW_RANGES");
+                printf("ERROR_TOO_FEW_RANGES");
             } else if (range == ONEWAY_TAG_RANGE_ERROR_MISC) {
-                debug_msg("ERROR_MISC");
+                printf("ERROR_MISC");
             } else {
-                debug_msg("INVALID");
+                printf("INVALID");
             }
 
-            debug_msg("\r\n");
+            printf("\r\n");
         }
     }
 
@@ -192,30 +258,23 @@ void moduleDataUpdate ()
 {
     // Update the data value and notify on the data
 	if (blobLen >= 5) {
-        led_on(LED_0);
-        nrf_delay_us(1000);
-		led_off(LED_0);
+        printf("Received data from module\n");
 	}
 
 	if(simple_ble_app->conn_handle != BLE_CONN_HANDLE_INVALID) {
 
 		ble_gatts_hvx_params_t notify_params;
 		uint16_t len = blobLen;
-        notify_params.handle = char_range_handle.char_handle.value_handle;
+        notify_params.handle = CARRIER_BLE_EVT_LOCATION; // FIXME
 		notify_params.type   = BLE_GATT_HVX_NOTIFICATION;
 		notify_params.offset = 0;
 		notify_params.p_len  = &len;
 		notify_params.p_data = app.app_raw_response_buffer;
 
-		// volatile uint32_t err_code = 0;
-        // err_code = sd_ble_gatts_hvx(simple_ble_app->conn_handle, &notify_params);
-		sd_ble_gatts_hvx(simple_ble_app->conn_handle, &notify_params);
-        // APP_ERROR_CHECK(err_code);
+		ret_code_t err_code = sd_ble_gatts_hvx(simple_ble_app->conn_handle, &notify_params);
+        APP_ERROR_CHECK(err_code);
 
-        debug_msg("Sent BLE packet of length ");
-        debug_msg_int(len / 10);
-        debug_msg_int(len % 10);
-        debug_msg("\r\n");
+        printf("Sent BLE packet of length %i \r\n", len);
 	}
 
 	updated = 0;
@@ -234,110 +293,166 @@ static void timer_handler (void* p_context)
     }
 }
 
-// Handle errors thrown by APP_ERROR_CHECK; overwrites default implementation in app_error.c
-// Defined in ble_simple.c
-/*void app_error_handler (uint32_t error_code,
-                       uint32_t line_num,
-                       const uint8_t * p_file_name)
-{
-    // Reset system
-    NVIC_SystemReset();
-}*/
-
 
 /*******************************************************************************
  *   INIT FUNCTIONS
  ******************************************************************************/
 
-void initialize_app_timer (void)
+// GAP initialization: set up all the necessary GAP (Generic Access Profile) parameters of the device. It also sets the permissions and appearance
+static void gap_params_init(void)
 {
-    APP_TIMER_INIT(CARRIER_TIMER_PRESCALER,
-                   CARRIER_MAX_TIMERS,
-                   CARRIER_OP_QUEUE_SIZE,
-                   false);
+    ret_code_t              err_code;
+    ble_gap_conn_params_t   gap_conn_params;
+    ble_gap_conn_sec_mode_t sec_mode;
+    uint8_t                 device_name[] = APP_DEVICE_NAME;
+
+    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
+
+    err_code = sd_ble_gap_device_name_set(&sec_mode, device_name, strlen((const char *)device_name));
+    APP_ERROR_CHECK(err_code);
+
+    memset(&gap_conn_params, 0, sizeof(gap_conn_params));
+
+    gap_conn_params.min_conn_interval = MIN_CONN_INTERVAL;
+    gap_conn_params.max_conn_interval = MAX_CONN_INTERVAL;
+    gap_conn_params.slave_latency     = SLAVE_LATENCY;
+    gap_conn_params.conn_sup_timeout  = CONN_SUP_TIMEOUT;
+
+    err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
+
+    APP_ERROR_CHECK(err_code);
 }
 
+
+// Initializing the GATT module.
+static void gatt_init(void)
+{
+    ret_code_t err_code = nrf_ble_gatt_init(&m_gatt, NULL);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+// Initializing the BLE stack, including the SoftDevice and the BLE event interrupt
+static void ble_stack_init(void)
+{
+    ret_code_t err_code;
+
+    err_code = nrf_sdh_enable_request();
+    APP_ERROR_CHECK(err_code);
+
+    uint32_t ram_start = 0;
+    err_code = nrf_sdh_ble_app_ram_start_get(&ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Overwrite some of the default configurations for the BLE stack.
+    ble_cfg_t ble_cfg;
+
+    // Configure the maximum number of connections.
+    memset(&ble_cfg, 0, sizeof(ble_cfg));
+    ble_cfg.gap_cfg.role_count_cfg.periph_role_count  = 1;
+    ble_cfg.gap_cfg.role_count_cfg.central_role_count = 0;
+    ble_cfg.gap_cfg.role_count_cfg.central_sec_count  = 0;
+    err_code = sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &ble_cfg, ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Enable BLE stack.
+    err_code = nrf_sdh_ble_enable(&ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Register a handler for BLE events.
+    NRF_SDH_BLE_OBSERVER(m_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
+}
+
+// Initializing the Connection Parameters module.
+static void conn_params_init(void)
+{
+    ret_code_t             err_code;
+    ble_conn_params_init_t cp_init;
+
+    memset(&cp_init, 0, sizeof(cp_init));
+
+    cp_init.p_conn_params                  = NULL;
+    cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
+    cp_init.next_conn_params_update_delay  = NEXT_CONN_PARAMS_UPDATE_DELAY;
+    cp_init.max_conn_params_update_count   = MAX_CONN_PARAMS_UPDATE_COUNT;
+    cp_init.start_on_notify_cccd_handle    = BLE_GATT_HANDLE_INVALID;
+    cp_init.disconnect_on_fail             = false;
+
+    err_code = ble_conn_params_init(&cp_init);
+    APP_ERROR_CHECK(err_code);
+
+}
 
 static void timers_init (void)
 {
-    uint32_t err_code;
+    uint32_t err_code = app_timer_init();
+    APP_ERROR_CHECK(err_code);
 
-    err_code = app_timer_create(&app_timer,
-                                APP_TIMER_MODE_REPEATED,
-                                timer_handler);
+    err_code = app_timer_create(&app_timer, APP_TIMER_MODE_REPEATED, timer_handler);
     APP_ERROR_CHECK(err_code);
 
     err_code = app_timer_start(app_timer, UPDATE_RATE, NULL);
-
     APP_ERROR_CHECK(err_code);
 }
 
-
-// Init services, called by simple_ble_init
-void services_init (void)
+static void scheduler_init(void)
 {
-    // Add main Carrier service
-    simple_ble_add_service(&service_handle);
+    APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
+}
 
-    //add the characteristic that exposes a blob of interrupt response
-    simple_ble_add_characteristic(1, 0, 1, 0, // read, write, notify, vlen
-                                  128, app.app_raw_response_buffer,
-                                  &service_handle,
-                                  &char_range_handle);
+static void power_management_init(void)
+{
+    ret_code_t err_code = nrf_pwr_mgmt_init();
+    APP_ERROR_CHECK(err_code);
+}
 
-    // Add the characteristic that enables/disables ranging
-    simple_ble_add_characteristic(1, 1, 0, 0, // read, write, notify, vlen
-                                  1, &app.calibration_index,
-                                  &service_handle,
-                                  &char_calibration_index_handle);
+// If no pending operation, sleep until the next event occurs
+static void power_manage(void)
+{
+    nrf_pwr_mgmt_run();
 
-    // Add the characteristic that sets the index of a node during calibration. Writing a 0 to this characteristic will start the calibration.
-    simple_ble_add_characteristic(1, 1, 0, 0, // read, write, notify, vlen
-                                  1, &app.app_ranging,
-                                  &service_handle,
-                                  &char_ranging_enable_handle);
+    // After wake-up, check whether things occured
+    app_sched_execute();
+}
 
-    // Status
-    simple_ble_add_characteristic(1, 0, 0, 0, // read, write, notify, vlen
-                                  1,(uint8_t*) &module_inited,
-                                  &service_handle,
-                                  &char_status_handle);
+void ble_init(void)
+{
+    ble_stack_init();
+    gap_params_init();
+    gatt_init();
+    conn_params_init();
+    nrf_ble_es_init(on_es_evt);
 }
 
 
 int main (void)
 {
-    uint32_t err_code;
+    ret_code_t err_code;
 
     // Initialization
+    led_init(CARRIER_LED_RED);
     led_init(CARRIER_LED_BLUE);
-    debug_msg("\r\n----------------------------------------------\r\n");
-    debug_msg("Initializing nRF...\r\n");
+    led_init(CARRIER_LED_GREEN);
+    printf("\r\n----------------------------------------------\r\n");
+    printf("Initializing nRF...\r\n");
+
+    // Configuration
 
     // We default to doing ranging at the start
-    app.app_ranging = 1;
+    app.app_ranging_enabled = 1;
 
     // Set to effective -1
     app.calibration_index = 255;
 
     // Get stored address
     memcpy(_ble_address, (uint8_t*) BLE_FLASH_ADDRESS, 6);
-    // And use it to setup the BLE
-    ble_config.device_id = (uint16_t)( (uint16_t)_ble_address[1] << (uint8_t)8) | _ble_address[0];
+    ble_device_id = (uint16_t)( (uint16_t)_ble_address[1] << (uint8_t)8) | _ble_address[0];
 
-    // Setup BLE
-    simple_ble_app = simple_ble_init(&ble_config);
-
-    // Setup the advertisement to use the Eddystone format.
-    // We include the device name in the scan response
-    debug_msg("Starting advertisement...\r\n");
-    ble_advdata_t srdata;
-    memset(&srdata, 0, sizeof(srdata));
-    srdata.name_type = BLE_ADVDATA_FULL_NAME;
-    eddystone_adv(PHYSWEB_URL, &srdata);
-
-    // Need a timer to make sure we have inited the module
+    // Initialize
     timers_init();
+    scheduler_init();
+    power_management_init();
+    ble_init();
 
     // Init the nRF hardware to work with the module module.
     err_code = module_hw_init();
@@ -347,33 +462,34 @@ int main (void)
     err_code = module_init(updateData);
     if (err_code == NRF_SUCCESS) {
         module_inited = true;
-        debug_msg("Finished initialization\r\n");
+        printf("Finished initialization\r\n");
     } else {
-        debug_msg("ERROR: Failed initialization!\r\n");
+        printf("ERROR: Failed initialization!\r\n");
     }
 
     // Start the ranging
     if (module_inited) {
         err_code = module_start_ranging(true, 10);
         if (err_code != NRF_SUCCESS) {
-            debug_msg("ERROR: Failed to start ranging!\r\n");
+            printf("ERROR: Failed to start ranging!\r\n");
         } else {
-            debug_msg("Started ranging...\r\n");
+            printf("Started ranging...\r\n");
         }
     }
 
     // Signal end of initialization
+    led_off(CARRIER_LED_RED);
     led_on(CARRIER_LED_BLUE);
 
     // Loop: update location and advertise
     while (1) {
 
         // For power measurements: Disable timers (timers_init()) and comment the lines below power_manage(); if bluetooth should be disabled, comment eddystone_adv()
-        //debug_msg("Going back go sleep...\r\n");
+        //printf("Going back go sleep...\r\n");
         power_manage();
 
 		if (updated) {
-		    //debug_msg("Updating location...\r\n");
+		    //printf("Updating location...\r\n");
 			moduleDataUpdate();
 		}
     }

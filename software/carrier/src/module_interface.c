@@ -1,4 +1,4 @@
-#include "nrf_drv_twi.h"
+#include "nrfx_twim.h"
 #include "sdk_errors.h"
 #include "app_util_platform.h"
 #include "nrf_drv_config.h"
@@ -18,7 +18,7 @@ uint8_t response[256];
 #define TWI_INSTANCE_NR 1
 #endif
 
-nrf_drv_twi_t twi_instance = NRF_DRV_TWI_INSTANCE(TWI_INSTANCE_NR);
+static const nrfx_twim_t twi_instance = NRFX_TWIM_INSTANCE(TWI_INSTANCE_NR);
 
 // Save the callback that we use to signal the main application that we
 // received data over I2C.
@@ -71,14 +71,16 @@ void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t a
 }
 
 ret_code_t module_hw_init () {
-	nrf_drv_twi_config_t twi_config;
 	ret_code_t ret;
 
 	// Initialize the I2C module
-	twi_config.scl                = CARRIER_I2C_SCL;
-	twi_config.sda                = CARRIER_I2C_SDA;
-	twi_config.frequency          = NRF_DRV_TWI_FREQ_400K;
-	twi_config.interrupt_priority = APP_IRQ_PRIORITY_HIGH;
+	const nrfx_twim_config_t twi_config = {
+			.scl                = CARRIER_I2C_SCL,
+			.sda                = CARRIER_I2C_SDA,
+			.frequency          = NRF_TWIM_FREQ_400K,
+			.interrupt_priority = NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY,
+			.hold_bus_uninit    = NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
+	};
 
 	ret = nrf_drv_twi_init(&twi_instance, &twi_config, NULL);
 	if (ret != NRF_SUCCESS) return ret;
