@@ -2,7 +2,9 @@
 #define BOARDS_H
 
 // FIXME: Uncomment when done with debugging
+#ifndef BOARD_TOTTAG
 #define BOARD_TOTTAG
+#endif
 
 #if defined(BOARD_TRITAG)
 	#include "tritag.h"

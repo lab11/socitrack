@@ -40,11 +40,43 @@ BOARD_SOURCES += \
 	app_scheduler.c\
 	app_timer.c\
 	app_util_platform.c\
+	es_adv.c\
+	es_adv_frame.c\
+	es_adv_timing.c\
+	es_adv_timing_resolver.c\
+	es_battery_voltage_saadc.c\
+	es_flash.c\
+	es_gatts.c\
+	es_gatts_read.c\
+	es_gatts_write.c\
+	es_security.c\
+	es_slot.c\
+	es_slot_reg.c\
+	es_stopwatch.c\
+	es_tlm.c\
+	fds.c\
+	mem_manager.c\
+	nrf_atflags.c\
+	nrf_atfifo.c\
 	nrf_assert.c\
 	nrf_atomic.c\
 	nrf_balloc.c\
+	nrf_ble_es.c\
+	nrf_ble_escs.c\
+	nrf_ble_gatt.c\
+	nrf_ble_qwr.c\
+	nrf_crypto_aes.c\
+	nrf_crypto_aead.c\
+	nrf_crypto_ecc.c\
+	nrf_crypto_ecdh.c\
+	nrf_crypto_hkdf.c\
+	nrf_crypto_hmac.c\
+	nrf_crypto_init.c\
+	nrf_crypto_rng.c\
 	nrf_drv_twi.c\
 	nrf_drv_uart.c\
+	nrf_fstorage.c\
+	nrf_fstorage_sd.c\
 	nrf_fprintf.c\
 	nrf_fprintf_format.c\
 	nrf_log_backend_rtt.c\
@@ -59,6 +91,10 @@ BOARD_SOURCES += \
 	nrf_sdh.c\
 	nrf_sdh_ble.c\
 	ble_advdata.c\
+	ble_advertising.c\
+	ble_conn_state.c\
+	ble_conn_params.c\
+	ble_srv_common.c\
 	nrf_serial.c\
 	nrf_strerror.c\
 	nrf_queue.c\
@@ -70,6 +106,7 @@ BOARD_SOURCES += \
 	nrfx_twim.c\
 	nrfx_uart.c\
 	nrfx_uarte.c\
+	nrfx_saadc.c\
 	nrfx_spi.c\
 	nrfx_spim.c\
 	nrf_spi_mngr.c\
@@ -77,6 +114,40 @@ BOARD_SOURCES += \
 	nrfx_rtc.c\
 	nrfx_clock.c\
 	nrf_drv_clock.c\
+	nrf_hw_backend_rng_mbedtls.c\
+	mbedtls_backend_aes.c\
+	mbedtls_backend_ecc.c\
+	mbedtls_backend_ecdh.c\
+	mbedtls_backend_hmac.c\
+	aes.c\
+	arc4.c\
+	bignum.c\
+	blowfish.c\
+	camellia.c\
+	ccm.c\
+	cipher.c\
+	cipher_wrap.c\
+	cmac.c\
+	ctr_drbg.c\
+	des.c\
+	ecp.c\
+	ecp_curves.c\
+	ecdh.c\
+	gcm.c\
+	md.c\
+	md5.c\
+	md_wrap.c\
+	ripemd160.c\
+	sha1.c\
+	sha256.c\
+	sha512.c\
+	cifra_backend_aes_aead.c\
+	cifra_eax_aes.c\
+	cifra_cmac.c\
+	blockwise.c\
+	eax.c\
+	gf128.c\
+	modes.c\
 	SEGGER_RTT.c\
 	SEGGER_RTT_Syscalls_GCC.c\
 	SEGGER_RTT_printf.c\
@@ -86,5 +157,7 @@ BOARD_SOURCES += \
 	mmc_nrf.c\
 	accelerometer_lis2dw12.c\
 	better_error_handling.c\
+	module_interface.c\
+	led.c\
 
 endif

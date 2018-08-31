@@ -31,6 +31,8 @@ GDB_PORT_NUMBER = 2331
 CDBG +=
 CFLAGS += $(CDBG)
 
+# HACK: Enable "cmac.c" for Eddystone libary to compile
+CFLAGS += -DMBEDTLS_CMAC_C
 
 # Include board Makefile (if any)
 include ../../boards/TotTag_revD/Board.mk
