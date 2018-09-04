@@ -11,8 +11,9 @@
 #define PHYSWEB_URL "bit.ly/p1R8"
 
 // Information
-#define APP_COMPANY_IDENTIFIER 0x11BB
-#define MANUFACTURER_NAME      "Lab11UCB"
+#define APP_COMPANY_IDENTIFIER 0x02E0
+#define APP_SERVICE_ID         0x22
+#define MANUFACTURER_NAME      "Lab11"
 #define MODEL_NUMBER           DEVICE_NAME
 #define HARDWARE_REVISION      "D"
 #define FIRMWARE_REVISION      "0.1"
@@ -25,6 +26,7 @@
 typedef struct ble_app_s {
     uint8_t                      current_location[6];    /** Value of num characteristic */
     uint8_t                      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
+    uint16_t                     app_raw_response_length;
     bool                         app_ranging_enabled; // Whether or not the module is running and ranging
     uint8_t                      calibration_index;
 } ble_app_t;
