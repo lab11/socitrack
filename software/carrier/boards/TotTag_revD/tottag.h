@@ -9,7 +9,10 @@
 #endif
 
 // BLE Address used to advertise
-#define BLE_FLASH_ADDRESS 0x0003fff8
+#ifndef BLE_ADDRESS
+#define BLE_ADDRESS c0:98:e5:42:ff:ff
+#warning "Did not specify a BLE address, using default"
+#endif
 
 
 // Battery monitor

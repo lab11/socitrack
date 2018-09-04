@@ -95,7 +95,7 @@ static ble_uuid_t m_sr_uuids[] = {
 };
 
 // Copy address from flash
-uint8_t _ble_address[6];
+uint8_t  ble_address[6];
 uint16_t ble_device_id;
 
 NRF_BLE_GATT_DEF(m_gatt);                                                       /**< GATT module instance. */
@@ -249,7 +249,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     switch (ble_adv_evt)
     {
         case BLE_ADV_EVT_FAST:
-            NRF_LOG_INFO("Fast advertising.");
+            //NRF_LOG_INFO("Fast advertising.");
             break;
 
         case BLE_ADV_EVT_IDLE:
@@ -428,6 +428,35 @@ static void gap_params_init(void)
     err_code = sd_ble_gap_device_name_set(&sec_mode, device_name, strlen((const char *)device_name));
     APP_ERROR_CHECK(err_code);
 
+    // Set BLE address
+
+    // Get address from Flash
+    //#define BLE_FLASH_ADDRESS 0x0003fff8
+    //memcpy(ble_address, (uint8_t*) BLE_FLASH_ADDRESS, 6);
+    //ble_device_id = (uint16_t)( (uint16_t)ble_address[1] << (uint8_t)8) | ble_address[0];
+
+    // Use ID
+#ifdef BLE_ADDRESS
+#define XID_STR(ID) ID_STR(ID)
+#define ID_STR(ID) #ID
+#define BLE_ADDRESS_LENGTH 6
+
+    const char ble_address_string[] = XID_STR(BLE_ADDRESS);
+    for (int i=0; i < BLE_ADDRESS_LENGTH; i++) {
+        // For each 8bits, read the string and convert it from hex to a long; store it in LSB-first order
+        ble_address[(BLE_ADDRESS_LENGTH-1) - i] = (uint8_t)strtoul(&ble_address_string[3*i], NULL, 16);
+    }
+
+    printf("Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", ble_address[5], ble_address[4], ble_address[3], ble_address[2], ble_address[1], ble_address[0]);
+
+    // Set address
+    ble_gap_addr_t gap_addr = {.addr_type = BLE_GAP_ADDR_TYPE_PUBLIC};
+    memcpy(gap_addr.addr, ble_address, BLE_ADDRESS_LENGTH);
+    err_code = sd_ble_gap_addr_set(&gap_addr);
+    APP_ERROR_CHECK(err_code);
+#endif
+
+    // Connection parameters
     memset(&gap_conn_params, 0, sizeof(gap_conn_params));
 
     gap_conn_params.min_conn_interval = MIN_CONN_INTERVAL;
@@ -436,7 +465,6 @@ static void gap_params_init(void)
     gap_conn_params.conn_sup_timeout  = CONN_SUP_TIMEOUT;
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
-
     APP_ERROR_CHECK(err_code);
 }
 
@@ -731,10 +759,6 @@ int main (void)
 
     // Set to effective -1
     app.calibration_index = 255;
-
-    // Get stored address
-    memcpy(_ble_address, (uint8_t*) BLE_FLASH_ADDRESS, 6);
-    ble_device_id = (uint16_t)( (uint16_t)_ble_address[1] << (uint8_t)8) | _ble_address[0];
 
     // Initialize
     timers_init();

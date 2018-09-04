@@ -7,9 +7,12 @@ NRF_IC = nrf52840
 SDK_VERSION = 15
 SOFTDEVICE_MODEL = s140
 
-# Set ID
+# Set BLE_ADDRESS
 ifneq ($(PID), )
-ID = c0:98:e5:44:50:$(PID)
+BLE_ADDRESS = c0:98:e5:42:00:$(PID)
+endif
+ifneq ($(BLE_ADDRESS), )
+CFLAGS += -DBLE_ADDRESS=$(BLE_ADDRESS)
 endif
 
 
@@ -23,7 +26,7 @@ APP_SOURCES = $(notdir $(wildcard ./*.c))
 # Optimize for debugging; as only the last optimization flag is actually use, delete "CFLAGS += 0s" in /nrf5x-base/make/Makefile : l. 237
 #CFLAGS = -Og
 # Optimize for size
-CFLAGS = -Os
+CFLAGS += -Os
 # Set correct port for GDB server
 GDB_PORT_NUMBER = 2331
 
