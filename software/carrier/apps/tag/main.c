@@ -86,9 +86,12 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
 // Universally unique service identifiers (UUID)
 static ble_uuid_t m_adv_uuids[] = {
-        {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE},
-        {APP_SERVICE_ID,                      BLE_UUID_TYPE_VENDOR_BEGIN},
         {PHYSWEB_SERVICE_ID,                  BLE_UUID_TYPE_BLE}
+};
+// Advertise Eddystone beacon; other services are included in the Scan Response
+static ble_uuid_t m_sr_uuids[] = {
+        {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE},
+        {APP_SERVICE_ID,                      BLE_UUID_TYPE_VENDOR_BEGIN}
 };
 
 // Copy address from flash
@@ -467,8 +470,8 @@ static void advertising_init(void)
     // Add device name in advertisements
     // init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     // For shorter names, adjust as follows. The full name will still be displayed in connections
-    //init.advdata.name_type               = BLE_ADVDATA_SHORT_NAME;
-    //init.advdata.short_name_len          = 6; // Advertise the first X letters of the name
+    init.advdata.name_type               = BLE_ADVDATA_SHORT_NAME;
+    init.advdata.short_name_len          = 4; // Advertise the first X letters of the name
 
     // Physical Web data
     const char* url_str = PHYSWEB_URL;
@@ -490,6 +493,8 @@ static void advertising_init(void)
     init.advdata.p_service_data_array    = &service_data;
     init.advdata.service_data_count      = 1;
 
+    //printf("Advertising Eddystone address %s with total length %i\n", url_str, url_frame_length);
+
     init.advdata.include_appearance      = false;
     init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
     init.advdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
@@ -504,11 +509,14 @@ static void advertising_init(void)
     manuf_data_resp.data.size            = sizeof(data_resp);
     init.srdata.p_manuf_specific_data    = &manuf_data_resp;*/
     init.srdata.name_type                = BLE_ADVDATA_FULL_NAME;
+    init.srdata.uuids_complete.uuid_cnt  = sizeof(m_sr_uuids) / sizeof(m_sr_uuids[0]);
+    init.srdata.uuids_complete.p_uuids   = m_sr_uuids;
 
     init.config.ble_adv_fast_enabled  = true;
     init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
     //init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
 
+    // Define Event handler
     init.evt_handler = on_adv_evt;
 
     err_code = ble_advertising_init(&m_advertising, &init);
@@ -535,8 +543,9 @@ void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t
     // Add read/write properties to our characteristic
     ble_gatts_char_md_t char_md;
     memset(&char_md, 0, sizeof(char_md));
-    char_md.char_props.read  = read;
-    char_md.char_props.write = write;
+    char_md.char_props.read   = read;
+    char_md.char_props.write  = write;
+    char_md.char_props.notify = notify;
 
     // Configuring Client Characteristic Configuration Descriptor (CCCD) metadata and add to char_md structure
     ble_gatts_attr_md_t cccd_md;
@@ -545,7 +554,6 @@ void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&cccd_md.write_perm);
     cccd_md.vloc                = BLE_GATTS_VLOC_STACK;
     char_md.p_cccd_md           = &cccd_md;
-    char_md.char_props.notify   = notify;
 
     // Configure the attribute metadata
     ble_gatts_attr_md_t attr_md;
@@ -639,29 +647,29 @@ static void conn_params_init(void)
 
 void ble_init(void)
 {
-    printf("Started initializing BLE...\n");
+    //printf("Started initializing BLE...\n");
 
     ble_stack_init();
-    printf("Stack initialized\n");
+    //printf("Stack initialized\n");
 
     gap_params_init();
-    printf("GAP parameters initialized\n");
+    //printf("GAP parameters initialized\n");
 
     gatt_init();
-    printf("GATT module initialized\n");
-
-    advertising_init();
-    printf("Advertising initialized\n");
+    //printf("GATT module initialized\n");
 
     services_init();
-    printf("BLE services initialized\n");
+    //printf("BLE services initialized\n");
+
+    advertising_init();
+    //printf("Advertising initialized\n");
 
     conn_params_init();
-    printf("Connection parameters initialized\n");
+    //printf("Connection parameters initialized\n");
 
     // Instead of advertising directly, use Eddystone library
     //nrf_ble_es_init(on_es_evt);
-    printf("Eddystone beaconing initialized\n");
+    //printf("Eddystone beaconing initialized\n");
 }
 
 // Non-BLE inits -------------------------------------------------------------------------------------------------------
