@@ -33,6 +33,24 @@ typedef struct ble_app_s {
 
 // BLE -----------------------------------------------------------------------------------------------------------------
 
+// Physical Web
+#define PHYSWEB_SERVICE_ID  0xFEAA
+#define PHYSWEB_URL_TYPE    0x10    // Denotes URLs (vs URIs or TLM data)
+#define PHYSWEB_TX_POWER    0xBA    // Tx Power. Measured at 1 m plus 41 dBm. (who cares)
+
+#define PHYSWEB_URLSCHEME_HTTPWWW   0x00    // http://www.
+#define PHYSWEB_URLSCHEME_HTTPSWWW  0x01    // https://www.
+#define PHYSWEB_URLSCHEME_HTTP      0x02    // http://
+#define PHYSWEB_URLSCHEME_HTTPS     0x03    // https://
+
+#define PHYSWEB_URLEND_COMSLASH 0x00    // .com/
+#define PHYSWEB_URLEND_ORGSLASH 0x01    // .org/
+#define PHYSWEB_URLEND_EDUSLASH 0x02    // .edu/
+#define PHYSWEB_URLEND_COM      0x07    // .com
+#define PHYSWEB_URLEND_ORG      0x08    // .org
+#define PHYSWEB_URLEND_EDU      0x09    // .edu
+
+
 /**
  * Eddystone App configurations, adapted from nRF example
  * "examples\ble_peripheral\ble_app_eddystone\es_app_config.h"
@@ -117,9 +135,9 @@ typedef struct ble_app_s {
 
 // Eddystone URL data
 #define APP_ES_URL_FRAME_TYPE               ES_FRAME_TYPE_URL                           //!< URL Frame type (fixed at 0x10).
-#define APP_ES_URL_SCHEME                   0x03                                        //!< URL prefix scheme according to specification (0x01 = "https://www", 0x03 = "https://).
+#define APP_ES_URL_SCHEME                   PHYSWEB_URLSCHEME_HTTPS                     //!< URL prefix scheme according to specification (0x01 = "https://www", 0x03 = "https://).
 #define APP_ES_URL_URL                      'b', 'i', 't', '.', 'l', 'y', '/', \
-                                            'p', '1', 'R', '8'                             //!< PHYSWEB_URL. Can use last byte suffix 0x00 = ".com" according to specification.
+                                            'p', '1', 'R', '8'                          //!< PHYSWEB_URL. Can use last byte suffix 0x00 = ".com" according to specification.
 
 #define DEFAULT_FRAME_TYPE                  APP_ES_URL_FRAME_TYPE                       //!< Frame type of default frame.
 #define DEFAULT_FRAME_TX_POWER              0x00                                        //!< Default frame TX power.

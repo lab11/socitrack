@@ -87,7 +87,8 @@ static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
 // Universally unique service identifiers (UUID)
 static ble_uuid_t m_adv_uuids[] = {
         {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE},
-        {APP_SERVICE_ID,                      BLE_UUID_TYPE_VENDOR_BEGIN}
+        {APP_SERVICE_ID,                      BLE_UUID_TYPE_VENDOR_BEGIN},
+        {PHYSWEB_SERVICE_ID,                  BLE_UUID_TYPE_BLE}
 };
 
 // Copy address from flash
@@ -452,20 +453,42 @@ static void advertising_init(void)
     memset(&init, 0, sizeof(init));
 
     // Custom advertisement data
-    ble_advdata_manuf_data_t             manuf_data_adv;
+    /*ble_advdata_manuf_data_t             manuf_data_adv;
     #define MANUF_ADV_LENGTH             8
     uint8_t data_adv[MANUF_ADV_LENGTH]   = {0};
     data_adv[0]                          = APP_SERVICE_ID; // TotTag's service identifier, expected to be first byte of advertisement
     manuf_data_adv.company_identifier    = APP_COMPANY_IDENTIFIER; // UMich's Company ID
     manuf_data_adv.data.p_data           = data_adv;
     manuf_data_adv.data.size             = sizeof(data_adv);
-    init.advdata.p_manuf_specific_data   = &manuf_data_adv;
+    init.advdata.p_manuf_specific_data   = &manuf_data_adv;*/
 
     // General Advertisement settings
-    init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
+
+    // Add device name in advertisements
+    // init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     // For shorter names, adjust as follows. The full name will still be displayed in connections
     //init.advdata.name_type               = BLE_ADVDATA_SHORT_NAME;
     //init.advdata.short_name_len          = 6; // Advertise the first X letters of the name
+
+    // Physical Web data
+    const char* url_str = PHYSWEB_URL;
+    const uint8_t header_len = 3;
+    uint8_t url_frame_length = header_len + strlen((char*)url_str); // Change to 4 if URLEND is applied
+    uint8_t m_url_frame[url_frame_length];
+    m_url_frame[0] = PHYSWEB_URL_TYPE;
+    m_url_frame[1] = PHYSWEB_TX_POWER;
+    m_url_frame[2] = PHYSWEB_URLSCHEME_HTTPS;
+    for (uint8_t i=0; i<strlen((char*)url_str); i++) {
+        m_url_frame[i+3] = url_str[i];
+    }
+
+    // Advertise Physical Web service
+    ble_advdata_service_data_t service_data;
+    service_data.service_uuid            = PHYSWEB_SERVICE_ID;
+    service_data.data.p_data             = m_url_frame;
+    service_data.data.size               = url_frame_length;
+    init.advdata.p_service_data_array    = &service_data;
+    init.advdata.service_data_count      = 1;
 
     init.advdata.include_appearance      = false;
     init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
@@ -479,8 +502,8 @@ static void advertising_init(void)
     manuf_data_resp.company_identifier   = APP_COMPANY_IDENTIFIER;
     manuf_data_resp.data.p_data          = data_resp;
     manuf_data_resp.data.size            = sizeof(data_resp);
-    init.srdata.p_manuf_specific_data    = &manuf_data_resp;
-    init.srdata.name_type                = BLE_ADVDATA_NO_NAME;*/
+    init.srdata.p_manuf_specific_data    = &manuf_data_resp;*/
+    init.srdata.name_type                = BLE_ADVDATA_FULL_NAME;
 
     init.config.ble_adv_fast_enabled  = true;
     init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
@@ -636,7 +659,8 @@ void ble_init(void)
     conn_params_init();
     printf("Connection parameters initialized\n");
 
-    nrf_ble_es_init(on_es_evt);
+    // Instead of advertising directly, use Eddystone library
+    //nrf_ble_es_init(on_es_evt);
     printf("Eddystone beaconing initialized\n");
 }
 
