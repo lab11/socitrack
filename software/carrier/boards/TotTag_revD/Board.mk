@@ -40,20 +40,6 @@ BOARD_SOURCES += \
 	app_scheduler.c\
 	app_timer.c\
 	app_util_platform.c\
-	es_adv.c\
-	es_adv_frame.c\
-	es_adv_timing.c\
-	es_adv_timing_resolver.c\
-	es_battery_voltage_saadc.c\
-	es_flash.c\
-	es_gatts.c\
-	es_gatts_read.c\
-	es_gatts_write.c\
-	es_security.c\
-	es_slot.c\
-	es_slot_reg.c\
-	es_stopwatch.c\
-	es_tlm.c\
 	fds.c\
 	mem_manager.c\
 	nrf_atflags.c\
@@ -61,8 +47,6 @@ BOARD_SOURCES += \
 	nrf_assert.c\
 	nrf_atomic.c\
 	nrf_balloc.c\
-	nrf_ble_es.c\
-	nrf_ble_escs.c\
 	nrf_ble_gatt.c\
 	nrf_ble_qwr.c\
 	nrf_crypto_aes.c\
@@ -159,5 +143,23 @@ BOARD_SOURCES += \
 	better_error_handling.c\
 	module_interface.c\
 	led.c\
+
+# Files required for Eddystone
+#es_adv.c\
+#es_adv_frame.c\
+#es_adv_timing.c\
+#es_adv_timing_resolver.c\
+#es_battery_voltage_saadc.c\
+#es_flash.c\
+#es_gatts.c\
+#es_gatts_read.c\
+#es_gatts_write.c\
+#es_security.c\
+#es_slot.c\
+#es_slot_reg.c\
+#es_stopwatch.c\
+#es_tlm.c\
+#nrf_ble_es.c\
+#nrf_ble_escs.c\
 
 endif

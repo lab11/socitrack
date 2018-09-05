@@ -401,11 +401,45 @@ static void ble_stack_init(void)
 
     // Configure the maximum number of connections.
     memset(&ble_cfg, 0, sizeof(ble_cfg));
+    ble_cfg.conn_cfg.conn_cfg_tag                     = APP_BLE_CONN_CFG_TAG;
+    ble_cfg.conn_cfg.params.gap_conn_cfg.conn_count   = NRF_SDH_BLE_TOTAL_LINK_COUNT;
+    ble_cfg.conn_cfg.params.gap_conn_cfg.event_length = NRF_SDH_BLE_GAP_EVENT_LENGTH;
+    err_code = sd_ble_cfg_set(BLE_CONN_CFG_GAP, &ble_cfg, ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Configure the connection roles
+    memset(&ble_cfg, 0, sizeof(ble_cfg));
     ble_cfg.gap_cfg.role_count_cfg.periph_role_count  = 1;
     ble_cfg.gap_cfg.role_count_cfg.central_role_count = 0;
     ble_cfg.gap_cfg.role_count_cfg.central_sec_count  = 0;
     err_code = sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &ble_cfg, ram_start);
     APP_ERROR_CHECK(err_code);
+
+    // Configure max ATT MTU size
+    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
+    ble_cfg.conn_cfg.conn_cfg_tag                 = APP_BLE_CONN_CFG_TAG;
+    ble_cfg.conn_cfg.params.gatt_conn_cfg.att_mtu = NRF_SDH_BLE_GATT_MAX_MTU_SIZE;
+    err_code = sd_ble_cfg_set(BLE_CONN_CFG_GATT, &ble_cfg, ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Configure number of custom UUIDS.
+    memset(&ble_cfg, 0, sizeof(ble_cfg));
+    ble_cfg.common_cfg.vs_uuid_cfg.vs_uuid_count = NRF_SDH_BLE_VS_UUID_COUNT;
+    err_code = sd_ble_cfg_set(BLE_COMMON_CFG_VS_UUID, &ble_cfg, ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Configure the GATTS attribute table.
+    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
+    ble_cfg.gatts_cfg.attr_tab_size.attr_tab_size = NRF_SDH_BLE_GATTS_ATTR_TAB_SIZE;
+    err_code = sd_ble_cfg_set(BLE_GATTS_CFG_ATTR_TAB_SIZE, &ble_cfg, ram_start);
+    APP_ERROR_CHECK(err_code);
+
+    // Configure Service Changed characteristic.
+    memset(&ble_cfg, 0x00, sizeof(ble_cfg));
+    ble_cfg.gatts_cfg.service_changed.service_changed = NRF_SDH_BLE_SERVICE_CHANGED;
+    err_code = sd_ble_cfg_set(BLE_GATTS_CFG_SERVICE_CHANGED, &ble_cfg, ram_start);
+    APP_ERROR_CHECK(err_code);
+
 
     // Enable BLE stack.
     err_code = nrf_sdh_ble_enable(&ram_start);

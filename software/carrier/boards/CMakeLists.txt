@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD 11)
 # ATTENTION: Current setup compiles for SDK Version 15.0.0 together with Softdevice s140
 set(SDK_VERSION "15.0.0")
 set(SOFTDEVICE_VERSION "s140")
+set(CHIP_VERSION "nrf52840")
 #
 # https://cmake.org/pipermail/cmake/2012-June/050674.html
 # https://stackoverflow.com/questions/31004421/does-cmake-support-include-directories-recursively
@@ -17,7 +18,7 @@ set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../include
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../src")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/drivers")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/lib")
-set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/make")
+set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/make/config/${CHIP_VERSION}")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf5_sdk_${SDK_VERSION}/components/802_15_4")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf5_sdk_${SDK_VERSION}/components/ant")
 set(SEARCH_DIR_PATHS ${SEARCH_DIR_PATHS} "${CMAKE_CURRENT_SOURCE_DIR}/../nrf5x-base/sdk/nrf5_sdk_${SDK_VERSION}/components/ble")

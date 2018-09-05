@@ -106,7 +106,7 @@ typedef struct ble_app_s {
 
 // Priority of the application BLE event handler.
 #define APP_BLE_OBSERVER_PRIO               3
-#define APP_BLE_CONN_CFG_TAG                BLE_CONN_CFG_TAG_DEFAULT                    /**< A tag identifying the SoftDevice BLE configuration. */
+#define APP_BLE_CONN_CFG_TAG                1                                           /**< A tag identifying the SoftDevice BLE configuration. */
 
 // ES CONFIGS
 #define APP_MAX_ADV_SLOTS                   5                                           //!< Maximum number of advertisement slots.
