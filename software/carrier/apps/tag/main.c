@@ -146,7 +146,6 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
     }
 }
 
-
 // Function for handling BLE events
 static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 {
@@ -174,8 +173,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             break;
         }
         case BLE_GAP_EVT_CONNECTED: {
-            led_on(CONNECTED_LED_PIN);
-            led_off(CONNECTABLE_ADV_LED_PIN);
+            led_on(CARRIER_LED_GREEN);
+            led_off(CARRIER_LED_BLUE);
             NRF_LOG_INFO("Connected.");
 
             m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
@@ -185,6 +184,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         }
         case BLE_GAP_EVT_DISCONNECTED: {
             // LED indication will be changed when advertising starts.
+            led_on(CARRIER_LED_BLUE);
+            led_off(CARRIER_LED_GREEN);
             NRF_LOG_INFO("Disconnected.");
             m_conn_handle = BLE_CONN_HANDLE_INVALID;
             break;
@@ -597,7 +598,7 @@ void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t
 
     // Add characteristics
     ble_uuid128_t base_uuid = APP_SERVICE_UUID;
-    ble_uuid_t    char_uuid = {.uuid = uuid};
+    ble_uuid_t    char_uuid = {.uuid = uuid, .type = BLE_UUID_TYPE_VENDOR_BEGIN};
 
     err_code = sd_ble_uuid_vs_add(&base_uuid, &char_uuid.type);
     APP_ERROR_CHECK(err_code);
@@ -703,9 +704,7 @@ static void conn_params_init(void)
 
     err_code = ble_conn_params_init(&cp_init);
     APP_ERROR_CHECK(err_code);
-
 }
-
 
 void ble_init(void)
 {
