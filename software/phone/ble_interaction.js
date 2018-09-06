@@ -3,22 +3,23 @@ var loc = require('./localization');
 var buf = require('buffer');
 
 var SUMMON_SERVICE_UUIDS                  = ['feaa','fed8'];
-var TRITAG_DEVICE_NAME                    = 'tritag';
-var TRITAG_SERVICE_UUID                   = 'd68c3152a23fee900c455231395e5d2e';
-var TRITAG_CHAR_LOCATION_SHORT_UUID       = 'd68c3153a23fee900c455231395e5d2e';
-var TRITAG_CHAR_RANGING_ENABLE_SHORT_UUID = 'd68c3154a23fee900c455231395e5d2e';
-var TRITAG_CHAR_CALIBRATION_SHORT_UUID    = 'd68c3159a23fee900c455231395e5d2e';
-var TRITAG_CHAR_STATUS_SHORT_UUID         = 'd68c3155a23fee900c455231395e5d2e';
+var TOTTAG_DEVICE_NAME                    = 'tottag';
+var TOTTAG_SERVICE_UUID                   = 'd68c3152a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_LOCATION_SHORT_UUID       = 'd68c3153a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_RANGING_ENABLE_SHORT_UUID = 'd68c3154a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_STATUS_SHORT_UUID         = 'd68c3155a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_CALIBRATION_SHORT_UUID    = 'd68c3156a23fee900c455231395e5d2e';
 
 
 /*
-var uuid_service_tritag =             'd68c3152a23fee900c455231395e5d2e';
-var uuid_tritag_char_raw =            'd68c3153a23fee900c455231395e5d2e';
-var uuid_tritag_char_startstop =      'd68c3154a23fee900c455231395e5d2e';
-var uuid_tritag_char_calibration =    'd68c3159a23fee900c455231395e5d2e';
+var uuid_service_tottag 		 = 'd68c3152a23fee900c455231395e5d2e';
+var uuid_tottag_char_raw 		 = 'd68c3153a23fee900c455231395e5d2e';
+var uuid_tottag_char_startstop   = 'd68c3154a23fee900c455231395e5d2e';
+var uuid_tottag_char_status 	 = 'd68c3155a23fee900c455231395e5d2e';
+var uuid_tottag_char_calibration = 'd68c3156a23fee900c455231395e5d2e';
 */
 
-var TRIPOINT_READ_INT_RANGES = 1
+var SQUAREPOINT_READ_INT_RANGES = 1;
 
 var anchors = {
 	one: [0,0,0],
@@ -61,7 +62,7 @@ function encoded_mm_to_meters (b, offset) {
 
 noble.on('stateChange', function (state) {
 	if (state === 'poweredOn') {
-		// Note, tritag *does not* advertise it's service uuid, only eddystone/summon
+		// Note, TotTag *does not* advertise it's service uuid, only eddystone/summon
 		noble.startScanning(SUMMON_SERVICE_UUIDS, true);
 
 		console.log('Started scanning.');
@@ -74,15 +75,15 @@ var then = 0;
 noble.on('discover', function (peripheral) {
 	noble.stopScanning();
 
-	if (peripheral.advertisement.localName == 'tritag') {
+	if (peripheral.advertisement.localName == 'tottag') {
 		then = Date.now();
-		console.log('Found TriTag: ' + peripheral.uuid);
+		console.log('Found TotTag: ' + peripheral.uuid);
 		peripheral.connect(function (err) {
-			console.log('Connected to TriTag');
+			console.log('Connected to TotTag');
 
-			peripheral.discoverServices([TRITAG_SERVICE_UUID], function (err, services) {
+			peripheral.discoverServices([TOTTAG_SERVICE_UUID], function (err, services) {
 				if (services.length == 1) {
-					console.log('Found the TriTag service.');
+					console.log('Found the TotTag service.');
 
 					services[0].discoverCharacteristics([], function (err, characteristics) {
 						console.log('Found ' + characteristics.length + ' characteristics');
@@ -90,7 +91,7 @@ noble.on('discover', function (peripheral) {
 						characteristics.forEach(function (el, idx, arr) {
 							var characteristic = el;
 
-							if (characteristic.uuid == TRITAG_CHAR_LOCATION_SHORT_UUID) {
+							if (characteristic.uuid == TOTTAG_CHAR_LOCATION_SHORT_UUID) {
 
 								// function get_range () {
 								characteristic.notify(true, function (err) {
@@ -103,7 +104,7 @@ noble.on('discover', function (peripheral) {
 
 									function process (data) {
 										var reason = data.readUInt8(0);
-										if (reason == TRIPOINT_READ_INT_RANGES) {
+										if (reason == SQUAREPOINT_READ_INT_RANGES) {
 											// Got ranges from the TAG.
 											var num_ranges = data.readUInt8(1);
 											if (num_ranges == 0) {
@@ -152,7 +153,7 @@ noble.on('discover', function (peripheral) {
 
 		});
 	} else {
-		console.log('Discovered non-tritag summon device: ' + peripheral.advertisement.localName);
+		console.log('Discovered different Summon device: ' + peripheral.advertisement.localName);
 	}
 });
 

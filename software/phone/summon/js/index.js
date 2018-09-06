@@ -2,15 +2,16 @@
 var device_id = '';
 var device_name = '';
 
-// Known constants for TriTag
-var uuid_service_tritag = 'd68c3152-a23f-ee90-0c45-5231395e5d2e';
-var uuid_tritag_char_raw = 'd68c3153-a23f-ee90-0c45-5231395e5d2e';
-var uuid_tritag_char_startstop = 'd68c3154-a23f-ee90-0c45-5231395e5d2e';
-var uuid_tritag_char_calibration = 'd68c3159-a23f-ee90-0c45-5231395e5d2e';
+// Known constants for TotTag
+var uuid_service_tottag          = 'd68c3152-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_location    = 'd68c3153-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_ranging     = 'd68c3154-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_status      = 'd68c3155-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_calibration = 'd68c3156-a23f-ee90-0c45-5231395e5d2e';
 
 // Interrupt reasons
-var TRIPOINT_READ_INT_RANGES = 1
-var TRIPOINT_READ_INT_CALIBRATION = 2
+var SQUAREPOINT_READ_INT_RANGES = 1;
+var SQUAREPOINT_READ_INT_CALIBRATION = 2;
 
 // Application state
 /*
@@ -34,53 +35,33 @@ var _anchor_locations = {
 const UPDATE_ANCHOR_URL = null;
 */
 
-// Old version
-//const UPDATE_ANCHOR_URL = "http://j2x.us/ppts16";
-// New version
 //const UPDATE_ANCHOR_URL = "http://n.ethz.ch/~abiri/d/anchor_configuration.json";
 const UPDATE_ANCHOR_URL ="http://bit.ly/2taF2";
 var _anchor_locations = null;
 
-var switch_visibility_console_check = "visible";
+var switch_visibility_console_check    = "visible";
 var switch_visibility_steadyscan_check = "visible";
 var steadyscan_on = true;
 
 /******************************************************************************/
-// GDP INTEGRATION
+// HELPERS
 /******************************************************************************/
-
-var GDP_REST_ENDPOINT = "http://requestb.in/p0k5jup0"
 
 function get_meta (id) {
     return {
         received_time: new Date().toISOString(),
         device_id: id,
-        device_type: "surepoint_tag",
+        device_type: "totternary_tag",
     }
 }
 
-function generate_surepoint_packet (id, x, y, z) {
+function generate_packet (id, x, y, z) {
     return {
         _meta: get_meta(id),
         x: x,
         y: y,
         z: z,
     };
-}
-
-function post_to_gdp (x, y, z) {
-    pkt = generate_surepoint_packet(device_id, x, y, z);
-    $.ajax(GDP_REST_ENDPOINT, {
-        data: JSON.stringify(pkt),
-        contentType: 'application/json',
-        type: 'POST',
-        success: function () {
-            //console.log("GDP POST success");
-        },
-        error: function (ajaxContext) {
-            //console.log("GDP POST fail: " + ajaxContext.responseText);
-        },
-    })
 }
 
 
@@ -209,19 +190,19 @@ function encoded_mm_to_meters (dv, offset) {
 
 
 /******************************************************************************/
-// HANDLE BUFFER FROM TRIPOINT/PHONE
+// HANDLE BUFFER FROM PHONE
 /******************************************************************************/
 
 function process_raw_buffer (buf) {
     var dv = new DataView(buf, 0);
 
-    // The first byte is the reason byte. This tells us what the TriPoint
+    // The first byte is the reason byte. This tells us what the TotTag
     // is sending back to us.
     var reason_byte = dv.getUint8(0);
 
     // Process the buffer correctly
-    if (reason_byte == TRIPOINT_READ_INT_RANGES) {
-        // Got range data from TriPoint
+    if (reason_byte == SQUAREPOINT_READ_INT_RANGES) {
+        // Got range data from SquarePoint
         // How many?
         var num_ranges = dv.getUint8(1);
         if (num_ranges == 0) {
@@ -331,7 +312,7 @@ var app = {
             // Found our device, stop the scan, and try to connect
             ble.stopScan();
 
-            app.log('Trying to connect to the proper TriTag.');
+            app.log('Trying to connect to the proper TotTag.');
             ble.connect(device_id, app.bleDeviceConnected, app.bleDeviceConnectionError);
         }
     },
@@ -341,12 +322,12 @@ var app = {
 
     // Callbacks for CONNECT
     bleDeviceConnected: function (device) {
-        app.log('Successfully connected to TriTag');
-        ble.startNotification(device_id, uuid_service_tritag, uuid_tritag_char_raw,
+        app.log('Successfully connected to TotTag');
+        ble.startNotification(device_id, uuid_service_tottag, uuid_tottag_char_location,
           app.bleRawBufferNotify, app.bleRawBufferNotifyError);
     },
     bleDeviceConnectionError: function (err) {
-        app.log('Error connecting to TriTag: ' + err);
+        app.log('Error connecting to TotTag: ' + err);
 
         // Check the error to determine if we should try to connect again,
         // or we need to re-scan for the device.
@@ -354,7 +335,7 @@ var app = {
             // Cannot just reconnect, must rescan
             app.bleEnabled();
         } else {
-            app.log('TriTag reconnecting try');
+            app.log('TotTag reconnecting try');
             ble.connect(device_id, app.bleDeviceConnected, app.bleDeviceConnectionError);
         }
     },
@@ -362,7 +343,7 @@ var app = {
     // Callbacks for NOTIFY
     bleRawBufferNotify: function (data) {
         // Read to get the rest of the buffer
-        ble.read(device_id, uuid_service_tritag, uuid_tritag_char_raw,
+        ble.read(device_id, uuid_service_tottag, uuid_tottag_char_location,
           app.bleRawBufferRead, app.bleRawBufferReadError);
     },
     bleRawBufferNotifyError: function (err) {
@@ -380,12 +361,12 @@ var app = {
     // Callbacks for DISCONNECT
     bleDisconnect: function () {
         console.log('Successfully disconnected');
-        app.log('Disconnected from TriTag.');
+        app.log('Disconnected from TotTag.');
     },
     bleDisconnectError: function (err) {
         console.log('Error disconnecting.');
         console.log(err);
-        app.log('Error disconnecting from TriTag');
+        app.log('Error disconnecting from TotTag');
     },
 
     update_location: function (str) {

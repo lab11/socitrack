@@ -1,4 +1,4 @@
-TriTag Summon App
+ToTTag Summon App
 =================
 
 Copy everything in this folder to the URL where the TriTag eddystone
@@ -10,5 +10,5 @@ To rebuild everything:
 
 ---
 
-<img src="https://github.com/abiri/surepoint/raw/master/phone/tritag-summon/screenshot.png" width="300px" />
+<img src="https://github.com/abiri/totternary/raw/master/software/phone/summon/screenshot.png" width="300px" />
 

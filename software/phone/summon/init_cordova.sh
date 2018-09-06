@@ -2,7 +2,7 @@
 
 rm -fr _build
 
-cordova create _build edu.umich.eecs.lab11.tritag TriTag
+cordova create _build edu.ucb.eecs.lab11.tottag ToTTag
 pushd _build
 cordova platform add android
 cordova plugin add cordova-plugin-whitelist
