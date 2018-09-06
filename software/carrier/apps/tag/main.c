@@ -46,14 +46,14 @@
  ******************************************************************************/
 
 // BLE characteristics
-#define CARRIER_SHORT_UUID           0x3152
+#define CARRIER_BLE_SERV_SHORT_UUID  0x3152
 #define CARRIER_BLE_CHAR_LOCATION    0x3153
 #define CARRIER_BLE_CHAR_RANGING     0x3154
 #define CARRIER_BLE_CHAR_STATUS      0x3155
 #define CARRIER_BLE_CHAR_CALIBRATION 0x3156
 
 // Service UUID
-const ble_uuid128_t APP_SERVICE_UUID = {
+const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = {
         .uuid128 = {0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c, 0x90, 0xee, 0x3f, 0xa2, 0x52, 0x31, 0x8c, 0xd6}
 };
 
@@ -91,7 +91,7 @@ static ble_uuid_t m_adv_uuids[] = {
 // Advertise Eddystone beacon; other services are included in the Scan Response
 static ble_uuid_t m_sr_uuids[] = {
         {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE},
-        {APP_SERVICE_ID,                      BLE_UUID_TYPE_VENDOR_BEGIN}
+        {CARRIER_BLE_SERV_SHORT_UUID,         BLE_UUID_TYPE_VENDOR_BEGIN}
 };
 
 // Copy address from flash
@@ -126,7 +126,18 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
     if (p_evt_write->handle == carrier_ble_char_ranging_handle.value_handle) {
 
         // Handle a write to the characteristic that starts and stops ranging.
-        app.app_ranging_enabled = p_evt_write->data[0];
+        uint8_t len = p_evt_write->len;
+        printf("Received RANGING evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+
+        const char expected_response[] = "Ranging: ";
+        const uint8_t expected_response_offset = 9;
+
+        char response[3] = {0};
+        for (int i = expected_response_offset; i < (len - expected_response_offset); i++) {
+            response[i-expected_response_offset] = p_evt_write->data[i];
+        }
+
+        app.app_ranging_enabled = (response[0] == 'O') && (response[1] == 'n');
 
         // Stop or start the module based on the value we just got
         if (app.app_ranging_enabled) {
@@ -135,14 +146,71 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
             module_sleep();
         }
 
+    } else if (p_evt_write->handle == carrier_ble_char_status_handle.value_handle) {
+
+        // Handle a write to the characteristic that is used for configuration
+        uint8_t len = p_evt_write->len;
+        printf("Received STATUS evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+
+        const char expected_response_role[] = "Role: ";
+        const uint8_t expected_response_role_offset = 6;
+        const uint8_t role_length = 1;
+
+        uint8_t response_role = p_evt_write->data[expected_response_role_offset] - '0';
+
+        const char expected_response_time[] = "; Time: ";
+        const uint8_t expected_response_time_offset = expected_response_role_offset + role_length + 8;
+        const uint8_t time_length = 10;
+
+        uint32_t response_time = 0; // At compilation time, epoch time is 1536276634
+        for (int i = expected_response_role_offset; i < (expected_response_time_offset + time_length); i++) {
+            response_time = 10*response_time + (p_evt_write->data[i] - 'O'); // Add another cipher
+        }
+
+        // Decide on what to turn on depending on role
+        app.app_role = response_role;
+
+        switch(app.app_role)
+        {
+            case APP_ROLE_INIT_RESP: {
+                printf("Setting node to STANDALONE\n");
+
+                break;
+            }
+            case APP_ROLE_INIT_NORESP: {
+                printf("Setting node to TAG\n");
+
+                break;
+            }
+            case APP_ROLE_NOINIT_RESP: {
+                printf("Setting node to ANCHOR\n");
+
+                break;
+            }
+            case APP_ROLE_NOINIT_NORESP: {
+                printf("Setting node to PASSIVE\n");
+
+                break;
+            }
+            default:
+                printf("Setting node to DEFAULT\n");
+
+        }
+
+        // Setup time
+        app.app_sync_time = response_time;
+
     } else if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle) {
 
         // Handle a write to the characteristic that starts calibration
+        printf("Received CALIBRATION evt: %i, length %i\n", p_evt_write->data[0], p_evt_write->len);
         app.calibration_index = p_evt_write->data[0];
 
         // Configure this node for calibration and set the calibration node
         // index. If 0, this node will immediately start calibration.
         module_start_calibration(app.calibration_index);
+    } else {
+        printf("ERROR: Unknown handle: %i\n", p_evt_write->handle);
     }
 }
 
@@ -597,8 +665,8 @@ void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t
     ret_code_t err_code;
 
     // Add characteristics
-    ble_uuid128_t base_uuid = APP_SERVICE_UUID;
-    ble_uuid_t    char_uuid = {.uuid = uuid, .type = BLE_UUID_TYPE_VENDOR_BEGIN};
+    ble_uuid128_t base_uuid = CARRIER_BLE_SERV_LONG_UUID;
+    ble_uuid_t    char_uuid = {.uuid = uuid};
 
     err_code = sd_ble_uuid_vs_add(&base_uuid, &char_uuid.type);
     APP_ERROR_CHECK(err_code);
@@ -655,9 +723,8 @@ static void services_init(void)
     APP_ERROR_CHECK(err_code);
 
     // Initialize our own BLE service
-    ble_uuid_t        service_uuid;
-    ble_uuid128_t     base_uuid = APP_SERVICE_UUID;
-    service_uuid.uuid = APP_SERVICE_ID;
+    ble_uuid128_t base_uuid = CARRIER_BLE_SERV_LONG_UUID;
+    ble_uuid_t    service_uuid = {.uuid = CARRIER_BLE_SERV_SHORT_UUID};
 
     err_code = sd_ble_uuid_vs_add(&base_uuid, &service_uuid.type);
     APP_ERROR_CHECK(err_code);

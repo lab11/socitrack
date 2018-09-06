@@ -81,6 +81,11 @@ body {
   padding-top: 10px;
 }
 
+#button-config {
+    width: 20%;
+    display: inline-block;
+}
+
 div.frame {
   height: 97vh;
 }

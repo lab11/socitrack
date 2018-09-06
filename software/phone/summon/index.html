@@ -41,6 +41,22 @@
             <p id="console"></p>
        </div>
 
+        <!-- Configurations -->
+        <h1>Configuration</h1>
+
+        <div>
+            <h3>Role configuration:</h3>
+            <button id="button-config" onclick="setAsMobile()">Mobile</button>
+            <button id="button-config" onclick="setAsAnchor()">Anchor</button>
+        </div>
+
+        <div>
+            <h3>Ranging:</h3>
+            <button id="button-config" onclick="rangingStart()">Start</button>
+            <button id="button-config" onclick="rangingStop()">Stop</button>
+        </div>
+
+        <!-- JavaScript function executions -->
        <script type='text/javascript'>
         $(document).on('pageinit',function(){
             $("#main_view").on("swipeleft",function(){

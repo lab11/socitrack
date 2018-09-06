@@ -377,6 +377,75 @@ var app = {
     log: function(string) {
     	document.querySelector("#console").innerHTML += (new Date()).toLocaleTimeString() + " : " + string + "<br />";
         document.querySelector("#console").scrollTop = document.querySelector("#console").scrollHeight;
+    },
+
+    // Device configuration
+    statusWrite: function() {
+        app.log("Sent information to device");
+    },
+
+    statusWriteError: function(err) {
+        console.log("Error sending.");
+        console.log(err);
+        app.log("ERROR: could not send information to device!");
+    }
+
+    setAsMobile: function() {
+        app.log('Telling device to configure as Mobile');
+
+        // Send current time
+        var time_stamp = (new Date()).getTime();
+
+        // Send data:
+        var data_string = "Role: 1";
+
+        // Add additional infos
+        data_string += "; Time: " + time_stamp.toString();
+
+        var data = ble.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.statusWrite, app.statusWriteError);
+
+    },
+
+    setAsAnchor: function() {
+        app.log('Telling device to configure as Anchor');
+
+        // Send current time
+        var time_stamp = (new Date()).getTime();
+
+        // Send data:
+        var data_string = "Role: 2";
+
+        // Add additional infos
+        data_string += "; Time: " + time_stamp.toString();
+
+        var data = ble.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.statusWrite, app.statusWriteError);
+    },
+
+    rangingStart: function() {
+        app.log('Telling device to start ranging');
+
+        // Send data:
+        var data_string = "Ranging: On";
+
+        var data = ble.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.statusWrite, app.statusWriteError);
+    },
+
+    rangingStop: function() {
+        app.log('Telling device to stop ranging');
+
+        // Send data:
+        var data_string = "Ranging: Off";
+
+        var data = ble.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.statusWrite, app.statusWriteError);
+
     }
 };
 

@@ -22,13 +22,21 @@
 #define UPDATE_RATE             APP_TIMER_TICKS(1000)
 
 // Structs -------------------------------------------------------------------------------------------------------------
+typedef enum {
+    APP_ROLE_INIT_RESP = 0,
+    APP_ROLE_INIT_NORESP,
+    APP_ROLE_NOINIT_RESP,
+    APP_ROLE_NOINIT_NORESP
+} app_role_t;
 
 typedef struct ble_app_s {
-    uint8_t                      current_location[6];    /** Value of num characteristic */
-    uint8_t                      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
-    uint16_t                     app_raw_response_length;
-    bool                         app_ranging_enabled; // Whether or not the module is running and ranging
-    uint8_t                      calibration_index;
+    uint8_t    current_location[6];    /** Value of num characteristic */
+    uint8_t    app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
+    uint16_t   app_raw_response_length;
+    bool       app_ranging_enabled; // Whether or not the module is running and ranging
+    app_role_t app_role;
+    uint32_t   app_sync_time;
+    uint8_t    calibration_index;
 } ble_app_t;
 
 // BLE -----------------------------------------------------------------------------------------------------------------
