@@ -80,9 +80,6 @@ static ble_app_t app;
 // GP Timer. Used to retry initializing the module.
 APP_TIMER_DEF(watchdog_timer);
 
-// Whether or not we successfully got through to the module and got it configured properly.
-bool module_inited = false;
-
 // Handle of the current connection
 static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
 
@@ -141,11 +138,11 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         const char expected_response_time[] = "; Time: ";
         const uint8_t expected_response_time_offset = expected_response_role_offset + role_length + 8;
-        const uint8_t time_length = 10;
+        const uint8_t time_length = 10; // At compilation time, epoch time is 1536358069927 (in ms); we only store in s, as else we cannot use uint32!
 
-        uint32_t response_time = 0; // At compilation time, epoch time is 1536276634
+        uint32_t response_time = 0;
         for (int i = expected_response_time_offset; i < (expected_response_time_offset + time_length); i++) {
-            response_time = 10*response_time + (p_evt_write->data[i] - 'O'); // Add another cipher
+            response_time = 10*response_time + (p_evt_write->data[i] - '0'); // Add another cipher
         }
 
         // Apply configurations
@@ -182,6 +179,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // TIME: Setup time
         app.config.app_sync_time = response_time;
+        printf("Set config time: %lu\n", app.config.app_sync_time);
 
     } else if (p_evt_write->handle == carrier_ble_char_enable_handle.value_handle) {
 
@@ -359,8 +357,6 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
  *   Module Callbacks
  ******************************************************************************/
 
-uint8_t buffer_updated = 0;
-
 void updateData (uint8_t * data, uint32_t len)
 {
     uint16_t copy_len = (uint16_t) MIN(len, 256);
@@ -413,7 +409,7 @@ void updateData (uint8_t * data, uint32_t len)
     }
 
 	// Trigger moduleDataUpdate from main loop
-	buffer_updated = 1;
+	app.buffer_updated = true;
 }
 
 
@@ -441,20 +437,23 @@ void moduleDataUpdate ()
         printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
 	}
 
-	buffer_updated = 0;
+	// Clear flag
+	app.buffer_updated = false;
 }
 
 static void watchdog_handler (void* p_context)
 {
     uint32_t err_code;
 
-    if (!module_inited) {
+    /*if (!app.module_inited) {
         err_code = module_init(updateData);
+        APP_ERROR_CHECK(err_code);
+
         if (err_code == NRF_SUCCESS) {
-            module_inited = true;
+            app.module_inited = true;
             module_start_ranging(true, 10);
         }
-    }
+    }*/
 }
 
 // If no pending operation, sleep until the next event occurs
@@ -757,22 +756,22 @@ static void services_init(void)
                            &carrier_ble_char_location_handle);
 
     ble_characteristic_add(1, 1, 0, 0,
-                           1, (uint8_t*) &app.config,
+                           28, (uint8_t*) &app.config,
                            CARRIER_BLE_CHAR_CONFIG,
                            &carrier_ble_char_config_handle);
 
     ble_characteristic_add(1, 1, 0, 0,
-                           1, (uint8_t*) &app.config.app_ranging_enabled,
+                           10, (uint8_t*) &app.config.app_ranging_enabled,
                            CARRIER_BLE_CHAR_ENABLE,
                            &carrier_ble_char_enable_handle);
 
     ble_characteristic_add(1, 0, 0, 0,
-                           1, (uint8_t*) &module_inited,
+                           1, (uint8_t*) &app.module_inited,
                            CARRIER_BLE_CHAR_STATUS,
                            &carrier_ble_char_status_handle);
 
     ble_characteristic_add(1, 1, 0, 0,
-                           1, &app.calibration_index,
+                           14, &app.calibration_index,
                            CARRIER_BLE_CHAR_CALIBRATION,
                            &carrier_ble_char_calibration_handle);
 }
@@ -825,6 +824,27 @@ void ble_init(void)
 
 // Non-BLE inits -------------------------------------------------------------------------------------------------------
 
+void app_init(void) {
+
+    // Configuration
+
+    app.config.app_role      = APP_ROLE_INVALID;
+    app.config.app_sync_time = 0;
+
+    // We default to doing ranging at the start
+    app.config.app_ranging_enabled = 1;
+
+    // Set to effective -1
+    app.calibration_index = 255;
+
+    // Clear buffers
+    app.module_inited  = false;
+    app.buffer_updated = false;
+    memset(app.current_location, 0, 6);
+    app.app_raw_response_length = 128;
+    memset(app.app_raw_response_buffer, 0, app.app_raw_response_length);
+}
+
 static void timers_init (void)
 {
     uint32_t err_code = app_timer_init();
@@ -875,15 +895,8 @@ int main (void)
 
     // -----------------------------------------------------------------------------------------------------------------
 
-    // Configuration
-
-    // We default to doing ranging at the start
-    app.config.app_ranging_enabled = 1;
-
-    // Set to effective -1
-    app.calibration_index = 255;
-
     // Initialize
+    app_init();
     timers_init();
     scheduler_init();
     power_management_init();
@@ -904,23 +917,23 @@ int main (void)
     APP_ERROR_CHECK(err_code);
 
     // Init the state machine on the module
-    err_code = module_init(updateData);
+    /*err_code = module_init(updateData);
     if (err_code == NRF_SUCCESS) {
-        module_inited = true;
+        app.module_inited = true;
         printf("Finished initialization\r\n");
     } else {
         printf("ERROR: Failed initialization!\r\n");
     }
 
     // Start the ranging
-    if (module_inited) {
+    if (app.module_inited) {
         err_code = module_start_ranging(true, 10);
         if (err_code != NRF_SUCCESS) {
             printf("ERROR: Failed to start ranging!\r\n");
         } else {
             printf("Started ranging...\r\n");
         }
-    }
+    }*/
 
     // Signal end of initialization
     led_off(CARRIER_LED_RED);
@@ -935,7 +948,7 @@ int main (void)
         //printf("Going back go sleep...\r\n");
         power_manage();
 
-		if (buffer_updated) {
+		if (app.buffer_updated) {
 		    //printf("Updating location...\r\n");
 			moduleDataUpdate();
 		}

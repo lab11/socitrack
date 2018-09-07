@@ -96,7 +96,7 @@ ret_code_t module_init (module_interface_data_cb_f cb) {
 	ret_code_t ret;
 
 	// Wait for 500 ms to make sure the module module is ready
-	nrf_delay_us(500000);
+	nrf_delay_ms(500);
 
 	// Now try to read the info byte to make sure we have I2C connection
 	{

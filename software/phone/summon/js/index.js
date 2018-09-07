@@ -417,7 +417,7 @@ var app = {
 
         var data = app.stringToBytes(data_string);
 
-        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
     },
 
     setAsAnchor: function() {
@@ -434,7 +434,7 @@ var app = {
 
         var data = app.stringToBytes(data_string);
 
-        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
     },
 
     rangingStart: function() {
@@ -445,7 +445,7 @@ var app = {
 
         var data = app.stringToBytes(data_string);
 
-        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
     },
 
     rangingStop: function() {
@@ -456,7 +456,7 @@ var app = {
 
         var data = app.stringToBytes(data_string);
 
-        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
     },
 
     calibrationStart: function() {

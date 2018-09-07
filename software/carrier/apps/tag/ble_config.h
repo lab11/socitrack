@@ -26,7 +26,8 @@ typedef enum {
     APP_ROLE_INIT_RESP = 0,
     APP_ROLE_INIT_NORESP,
     APP_ROLE_NOINIT_RESP,
-    APP_ROLE_NOINIT_NORESP
+    APP_ROLE_NOINIT_NORESP,
+    APP_ROLE_INVALID
 } app_role_t;
 
 typedef struct {
@@ -37,7 +38,9 @@ typedef struct {
 
 typedef struct ble_app_s {
     app_config_t config;
-    uint8_t      current_location[6];    /** Value of num characteristic */
+    bool         module_inited;      // Whether or not we successfully got through to the module and got it configured properly.
+    bool         buffer_updated;
+    uint8_t      current_location[6]; /** Value of num characteristic */
     uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
     uint16_t     app_raw_response_length;
     uint8_t      calibration_index;
