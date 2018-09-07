@@ -48,9 +48,10 @@
 // BLE characteristics
 #define CARRIER_BLE_SERV_SHORT_UUID  0x3152
 #define CARRIER_BLE_CHAR_LOCATION    0x3153
-#define CARRIER_BLE_CHAR_RANGING     0x3154
-#define CARRIER_BLE_CHAR_STATUS      0x3155
-#define CARRIER_BLE_CHAR_CALIBRATION 0x3156
+#define CARRIER_BLE_CHAR_CONFIG      0x3154
+#define CARRIER_BLE_CHAR_ENABLE      0x3155
+#define CARRIER_BLE_CHAR_STATUS      0x3156
+#define CARRIER_BLE_CHAR_CALIBRATION 0x3157
 
 // Service UUID
 const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = {
@@ -58,7 +59,8 @@ const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = {
 };
 
 ble_gatts_char_handles_t carrier_ble_char_location_handle    = {.value_handle = CARRIER_BLE_CHAR_LOCATION};
-ble_gatts_char_handles_t carrier_ble_char_ranging_handle     = {.value_handle = CARRIER_BLE_CHAR_RANGING};
+ble_gatts_char_handles_t carrier_ble_char_config_handle      = {.value_handle = CARRIER_BLE_CHAR_CONFIG};
+ble_gatts_char_handles_t carrier_ble_char_enable_handle      = {.value_handle = CARRIER_BLE_CHAR_ENABLE};
 ble_gatts_char_handles_t carrier_ble_char_status_handle      = {.value_handle = CARRIER_BLE_CHAR_STATUS};
 ble_gatts_char_handles_t carrier_ble_char_calibration_handle = {.value_handle = CARRIER_BLE_CHAR_CALIBRATION};
 uint16_t carrier_ble_service_handle          = 0;
@@ -123,34 +125,13 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 {
     const ble_gatts_evt_write_t *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
 
-    if (p_evt_write->handle == carrier_ble_char_ranging_handle.value_handle) {
+    if (p_evt_write->handle == carrier_ble_char_config_handle.value_handle) {
 
-        // Handle a write to the characteristic that starts and stops ranging.
+        // Handle a write to the characteristic that configures the device in terms of role and what epoch time we have currently
+
+        // Parse input
         uint8_t len = p_evt_write->len;
-        printf("Received RANGING evt: %s, length %i\n", (const char*)p_evt_write->data, len);
-
-        const char expected_response[] = "Ranging: ";
-        const uint8_t expected_response_offset = 9;
-
-        char response[3] = {0};
-        for (int i = expected_response_offset; i < (len - expected_response_offset); i++) {
-            response[i-expected_response_offset] = p_evt_write->data[i];
-        }
-
-        app.app_ranging_enabled = (response[0] == 'O') && (response[1] == 'n');
-
-        // Stop or start the module based on the value we just got
-        if (app.app_ranging_enabled) {
-            module_resume();
-        } else {
-            module_sleep();
-        }
-
-    } else if (p_evt_write->handle == carrier_ble_char_status_handle.value_handle) {
-
-        // Handle a write to the characteristic that is used for configuration
-        uint8_t len = p_evt_write->len;
-        printf("Received STATUS evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+        printf("Received CONFIG evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
         const char expected_response_role[] = "Role: ";
         const uint8_t expected_response_role_offset = 6;
@@ -163,14 +144,16 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         const uint8_t time_length = 10;
 
         uint32_t response_time = 0; // At compilation time, epoch time is 1536276634
-        for (int i = expected_response_role_offset; i < (expected_response_time_offset + time_length); i++) {
+        for (int i = expected_response_time_offset; i < (expected_response_time_offset + time_length); i++) {
             response_time = 10*response_time + (p_evt_write->data[i] - 'O'); // Add another cipher
         }
 
-        // Decide on what to turn on depending on role
-        app.app_role = response_role;
+        // Apply configurations
 
-        switch(app.app_role)
+        // ROLE: Decide on what to turn on depending on role
+        app.config.app_role = response_role;
+
+        switch(app.config.app_role)
         {
             case APP_ROLE_INIT_RESP: {
                 printf("Setting node to STANDALONE\n");
@@ -197,21 +180,49 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         }
 
-        // Setup time
-        app.app_sync_time = response_time;
+        // TIME: Setup time
+        app.config.app_sync_time = response_time;
+
+    } else if (p_evt_write->handle == carrier_ble_char_enable_handle.value_handle) {
+
+        // Handle a write to the characteristic that is used for enabling and disabling functionality
+        uint8_t len = p_evt_write->len;
+        printf("Received ENABLE evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+
+        const char expected_response_ranging[] = "Ranging: ";
+        const uint8_t expected_response_ranging_offset = 9;
+        const uint8_t ranging_length = 1;
+
+        uint8_t response_ranging = p_evt_write->data[expected_response_ranging_offset] - '0';
+
+        // RANGING
+        app.config.app_ranging_enabled = response_ranging;
+
+        // Stop or start the module based on the value we just got
+        if (app.config.app_ranging_enabled) {
+            module_resume();
+        } else {
+            module_sleep();
+        }
+
+    } else if (p_evt_write->handle == carrier_ble_char_status_handle.value_handle) {
+
+        // Handle a write to the characteristic that is used for setting the status of the device
+        uint8_t len = p_evt_write->len;
+        printf("Received STATUS evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
     } else if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle) {
 
         // Handle a write to the characteristic that starts calibration
         uint8_t len = p_evt_write->len;
-        printf("Received CALIBRATION evt: %i, length %i\n", p_evt_write->data[0], p_evt_write->len);
+        printf("Received CALIBRATION evt: %i, length %i\n", p_evt_write->data[0], len);
 
-        const char expected_response[] = "Calibration: ";
-        const uint8_t expected_response_offset = 13;
+        const char expected_response_calib[] = "Calibration: ";
+        const uint8_t expected_response_calib_offset = 13;
 
-        uint8_t response = p_evt_write->data[expected_response_offset] - 'O';
+        uint8_t response = p_evt_write->data[expected_response_calib_offset] - 'O';
 
-        app.app_ranging_enabled = response;
+        app.calibration_index = response;
 
         // Configure this node for calibration and set the calibration node
         // index. If 0, this node will immediately start calibration.
@@ -746,9 +757,14 @@ static void services_init(void)
                            &carrier_ble_char_location_handle);
 
     ble_characteristic_add(1, 1, 0, 0,
-                           1, (uint8_t*) &app.app_ranging_enabled,
-                           CARRIER_BLE_CHAR_RANGING,
-                           &carrier_ble_char_ranging_handle);
+                           1, (uint8_t*) &app.config,
+                           CARRIER_BLE_CHAR_CONFIG,
+                           &carrier_ble_char_config_handle);
+
+    ble_characteristic_add(1, 1, 0, 0,
+                           1, (uint8_t*) &app.config.app_ranging_enabled,
+                           CARRIER_BLE_CHAR_ENABLE,
+                           &carrier_ble_char_enable_handle);
 
     ble_characteristic_add(1, 0, 0, 0,
                            1, (uint8_t*) &module_inited,
@@ -862,7 +878,7 @@ int main (void)
     // Configuration
 
     // We default to doing ranging at the start
-    app.app_ranging_enabled = 1;
+    app.config.app_ranging_enabled = 1;
 
     // Set to effective -1
     app.calibration_index = 255;

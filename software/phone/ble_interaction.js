@@ -2,21 +2,23 @@ var noble = require('noble');
 var loc = require('./localization');
 var buf = require('buffer');
 
-var SUMMON_SERVICE_UUIDS                  = ['feaa','fed8'];
-var TOTTAG_DEVICE_NAME                    = 'tottag';
-var TOTTAG_SERVICE_UUID                   = 'd68c3152a23fee900c455231395e5d2e';
-var TOTTAG_CHAR_LOCATION_SHORT_UUID       = 'd68c3153a23fee900c455231395e5d2e';
-var TOTTAG_CHAR_RANGING_ENABLE_SHORT_UUID = 'd68c3154a23fee900c455231395e5d2e';
-var TOTTAG_CHAR_STATUS_SHORT_UUID         = 'd68c3155a23fee900c455231395e5d2e';
-var TOTTAG_CHAR_CALIBRATION_SHORT_UUID    = 'd68c3156a23fee900c455231395e5d2e';
+var SUMMON_SERVICE_UUIDS               = ['feaa','fed8'];
+var TOTTAG_DEVICE_NAME                 = 'tottag';
+var TOTTAG_SERVICE_UUID                = 'd68c3152a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_LOCATION_SHORT_UUID    = 'd68c3153a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_CONFIG_SHORT_UUID      = 'd68c3154a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_ENABLE_SHORT_UUID      = 'd68c3155a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_STATUS_SHORT_UUID      = 'd68c3156a23fee900c455231395e5d2e';
+var TOTTAG_CHAR_CALIBRATION_SHORT_UUID = 'd68c3157a23fee900c455231395e5d2e';
 
 
 /*
 var uuid_service_tottag 		 = 'd68c3152a23fee900c455231395e5d2e';
-var uuid_tottag_char_raw 		 = 'd68c3153a23fee900c455231395e5d2e';
-var uuid_tottag_char_startstop   = 'd68c3154a23fee900c455231395e5d2e';
-var uuid_tottag_char_status 	 = 'd68c3155a23fee900c455231395e5d2e';
-var uuid_tottag_char_calibration = 'd68c3156a23fee900c455231395e5d2e';
+var uuid_tottag_char_location    = 'd68c3153a23fee900c455231395e5d2e';
+var uuid_tottag_char_config      = 'd68c3154a23fee900c455231395e5d2e';
+var uuid_tottag_char_enable      = 'd68c3155a23fee900c455231395e5d2e';
+var uuid_tottag_char_status 	 = 'd68c3156a23fee900c455231395e5d2e';
+var uuid_tottag_char_calibration = 'd68c3157a23fee900c455231395e5d2e';
 */
 
 var SQUAREPOINT_READ_INT_RANGES = 1;

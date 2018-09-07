@@ -29,14 +29,18 @@ typedef enum {
     APP_ROLE_NOINIT_NORESP
 } app_role_t;
 
-typedef struct ble_app_s {
-    uint8_t    current_location[6];    /** Value of num characteristic */
-    uint8_t    app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
-    uint16_t   app_raw_response_length;
-    bool       app_ranging_enabled; // Whether or not the module is running and ranging
+typedef struct {
     app_role_t app_role;
-    uint32_t   app_sync_time;
-    uint8_t    calibration_index;
+    uint32_t   app_sync_time;       // Current epoch time at moment of configuration
+    bool       app_ranging_enabled; // Whether or not the module is running and ranging
+} app_config_t;
+
+typedef struct ble_app_s {
+    app_config_t config;
+    uint8_t      current_location[6];    /** Value of num characteristic */
+    uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
+    uint16_t     app_raw_response_length;
+    uint8_t      calibration_index;
 } ble_app_t;
 
 // BLE -----------------------------------------------------------------------------------------------------------------

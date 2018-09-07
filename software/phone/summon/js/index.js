@@ -5,9 +5,10 @@ var device_name = '';
 // Known constants for TotTag
 var uuid_service_tottag          = 'd68c3152-a23f-ee90-0c45-5231395e5d2e';
 var uuid_tottag_char_location    = 'd68c3153-a23f-ee90-0c45-5231395e5d2e';
-var uuid_tottag_char_ranging     = 'd68c3154-a23f-ee90-0c45-5231395e5d2e';
-var uuid_tottag_char_status      = 'd68c3155-a23f-ee90-0c45-5231395e5d2e';
-var uuid_tottag_char_calibration = 'd68c3156-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_config      = 'd68c3154-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_enable      = 'd68c3155-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_status      = 'd68c3156-a23f-ee90-0c45-5231395e5d2e';
+var uuid_tottag_char_calibration = 'd68c3157-a23f-ee90-0c45-5231395e5d2e';
 
 // Interrupt reasons
 var SQUAREPOINT_READ_INT_RANGES = 1;
@@ -35,8 +36,10 @@ var _anchor_locations = {
 const UPDATE_ANCHOR_URL = null;
 */
 
-//const UPDATE_ANCHOR_URL = "http://n.ethz.ch/~abiri/d/anchor_configuration.json";
-const UPDATE_ANCHOR_URL ="http://bit.ly/2taF2";
+// ATTENTION: Don't use a URL shortener, as the Content Securicy Policy will (by default) only allow references to the same page
+// NOTE: If this should be required, add the URL to the CSP in 'index.html'
+const UPDATE_ANCHOR_URL = "https://n.ethz.ch/~abiri/d/anchor_configuration.json";
+//const UPDATE_ANCHOR_URL ="http://bit.ly/2taF2";
 var _anchor_locations = null;
 
 var switch_visibility_console_check    = "visible";
@@ -388,6 +391,16 @@ var app = {
         console.log("Error sending.");
         console.log(err);
         app.log("ERROR: could not send information to device!");
+        app.log(err);
+    },
+
+    // ASCII only
+    stringToBytes: function(string) {
+        var array = new Uint8Array(string.length);
+        for (var i = 0, l = string.length; i < l; i++) {
+            array[i] = string.charCodeAt(i);
+        }
+        return array.buffer;
     },
 
     setAsMobile: function() {
@@ -402,9 +415,9 @@ var app = {
         // Add additional infos
         data_string += "; Time: " + time_stamp.toString();
 
-        var data = ble.stringToBytes(data_string);
+        var data = app.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.deviceWrite, app.deviceWriteError);
+        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
     },
 
     setAsAnchor: function() {
@@ -419,31 +432,31 @@ var app = {
         // Add additional infos
         data_string += "; Time: " + time_stamp.toString();
 
-        var data = ble.stringToBytes(data_string);
+        var data = app.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.deviceWrite, app.deviceWriteError);
+        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
     },
 
     rangingStart: function() {
         app.log('Telling device to start ranging');
 
         // Send data:
-        var data_string = "Ranging: On";
+        var data_string = "Ranging: 1";
 
-        var data = ble.stringToBytes(data_string);
+        var data = app.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.deviceWrite, app.deviceWriteError);
+        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
     },
 
     rangingStop: function() {
         app.log('Telling device to stop ranging');
 
         // Send data:
-        var data_string = "Ranging: Off";
+        var data_string = "Ranging: 0";
 
-        var data = ble.stringToBytes(data_string);
+        var data = app.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.deviceWrite, app.deviceWriteError);
+        ble.writeWithoutResponse(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
     },
 
     calibrationStart: function() {
@@ -452,7 +465,7 @@ var app = {
         // Send data:
         var data_string = "Calibration: 0";
 
-        var data = ble.stringToBytes(data_string);
+        var data = app.stringToBytes(data_string);
 
         ble.write(device_id, uuid_service_tottag, uuid_tottag_char_calibration, data, app.deviceWrite, app.deviceWriteError);
     }
