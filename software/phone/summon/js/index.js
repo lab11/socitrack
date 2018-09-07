@@ -380,15 +380,15 @@ var app = {
     },
 
     // Device configuration
-    statusWrite: function() {
+    deviceWrite: function() {
         app.log("Sent information to device");
     },
 
-    statusWriteError: function(err) {
+    deviceWriteError: function(err) {
         console.log("Error sending.");
         console.log(err);
         app.log("ERROR: could not send information to device!");
-    }
+    },
 
     setAsMobile: function() {
         app.log('Telling device to configure as Mobile');
@@ -404,8 +404,7 @@ var app = {
 
         var data = ble.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.statusWrite, app.statusWriteError);
-
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.deviceWrite, app.deviceWriteError);
     },
 
     setAsAnchor: function() {
@@ -422,7 +421,7 @@ var app = {
 
         var data = ble.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.statusWrite, app.statusWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.deviceWrite, app.deviceWriteError);
     },
 
     rangingStart: function() {
@@ -433,7 +432,7 @@ var app = {
 
         var data = ble.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.statusWrite, app.statusWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.deviceWrite, app.deviceWriteError);
     },
 
     rangingStop: function() {
@@ -444,9 +443,20 @@ var app = {
 
         var data = ble.stringToBytes(data_string);
 
-        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.statusWrite, app.statusWriteError);
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_ranging, data, app.deviceWrite, app.deviceWriteError);
+    },
 
+    calibrationStart: function() {
+        app.log('Telling device to start calibration');
+
+        // Send data:
+        var data_string = "Calibration: 0";
+
+        var data = ble.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_calibration, data, app.deviceWrite, app.deviceWriteError);
     }
+
 };
 
 app.initialize();

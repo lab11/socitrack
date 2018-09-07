@@ -46,14 +46,19 @@
 
         <div>
             <h3>Role configuration:</h3>
-            <button id="button-config" onclick="setAsMobile()">Mobile</button>
-            <button id="button-config" onclick="setAsAnchor()">Anchor</button>
+            <button id="button-config" onclick="app.setAsMobile()">Mobile</button>
+            <button id="button-config" onclick="app.setAsAnchor()">Anchor</button>
         </div>
 
         <div>
             <h3>Ranging:</h3>
-            <button id="button-config" onclick="rangingStart()">Start</button>
-            <button id="button-config" onclick="rangingStop()">Stop</button>
+            <button id="button-config" onclick="app.rangingStart()">Start</button>
+            <button id="button-config" onclick="app.rangingStop()">Stop</button>
+        </div>
+
+        <div>
+            <h3>Calibration:</h3>
+            <button id="button-config" onclick="app.calibrationStart()">Start</button>
         </div>
 
         <!-- JavaScript function executions -->

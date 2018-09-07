@@ -203,8 +203,15 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
     } else if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle) {
 
         // Handle a write to the characteristic that starts calibration
+        uint8_t len = p_evt_write->len;
         printf("Received CALIBRATION evt: %i, length %i\n", p_evt_write->data[0], p_evt_write->len);
-        app.calibration_index = p_evt_write->data[0];
+
+        const char expected_response[] = "Calibration: ";
+        const uint8_t expected_response_offset = 13;
+
+        uint8_t response = p_evt_write->data[expected_response_offset] - 'O';
+
+        app.app_ranging_enabled = response;
 
         // Configure this node for calibration and set the calibration node
         // index. If 0, this node will immediately start calibration.
@@ -225,7 +232,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             // Decide which characteristics is used
             on_ble_write(p_ble_evt);
         }
-        case BLE_GAP_EVT_SEC_PARAMS_REQUEST: {
+        /*case BLE_GAP_EVT_SEC_PARAMS_REQUEST: {
             // Pairing not supported
             err_code = sd_ble_gap_sec_params_reply(p_ble_evt->evt.common_evt.conn_handle,
                                                    BLE_GAP_SEC_STATUS_PAIRING_NOT_SUPP,
@@ -233,7 +240,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                                                    NULL);
             APP_ERROR_CHECK(err_code);
             break;
-        }
+        }*/
         case BLE_GATTS_EVT_SYS_ATTR_MISSING: {
             // No system attributes have been stored.
             err_code = sd_ble_gatts_sys_attr_set(p_ble_evt->evt.common_evt.conn_handle, NULL, 0, 0);
