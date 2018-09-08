@@ -7,12 +7,12 @@
         <meta name="msapplication-tap-highlight" content="no">
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
 
-        <link rel="stylesheet" type="text/css" href="css/index.css">
         <link rel="stylesheet" href="css/jquery.mobile-1.4.5.min.css">
+        <link rel="stylesheet" type="text/css" href="css/index.css">
         <script src="js/jquery-1.11.3.min.js"></script>
         <script src="js/jquery.mobile-1.4.5.min.js"></script>
 
-        <link rel="stylesheet" href="css/font-awesome-4.4.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="css/font-awesome-4.7.0/css/font-awesome.min.css">
 
         <link rel="shortcut icon" type="image/x-icon" href="img/tern.ico" />
 
@@ -36,29 +36,35 @@
             <div id="location">unknown</div>
         </div>
 
-        <div data-display="overlay" data-swipe-close="true" data-dismissible="false" data-position="right" data-role="panel" id="logPanel">
-            <h3>Log</h3>
-            <p id="console"></p>
-       </div>
 
         <!-- Configurations -->
-        <h1>Configuration</h1>
+        <div id="title-config">
+            <h1 id="title-config-header">Configuration</h1>
+            <i class="fa fa-bluetooth" id="ble-icon" style="color: slategrey;"></i>
+        </div>
 
         <div>
             <h3>Role configuration:</h3>
-            <button id="button-config" onclick="app.setAsMobile()">Mobile</button>
-            <button id="button-config" onclick="app.setAsAnchor()">Anchor</button>
+            <button class="config-long" onclick="app.setAsStandalone()" disabled>Standalone</button>
+            <button class="config" onclick="app.setAsMobile()" disabled>Mobile</button>
+            <button class="config" onclick="app.setAsAnchor()" disabled>Anchor</button>
         </div>
 
         <div>
             <h3>Ranging:</h3>
-            <button id="button-config" onclick="app.rangingStart()">Start</button>
-            <button id="button-config" onclick="app.rangingStop()">Stop</button>
+            <button class="config" onclick="app.rangingStart()" disabled>Start</button>
+            <button class="config" onclick="app.rangingStop()" disabled>Stop</button>
         </div>
 
         <div>
             <h3>Calibration:</h3>
-            <button id="button-config" onclick="app.calibrationStart()">Start</button>
+            <button class="config" onclick="app.calibrationStart()" disabled>Start</button>
+        </div>
+
+        <!-- Log -->
+        <div data-display="overlay" data-swipe-close="true" data-dismissible="false" data-position="right" data-role="panel" id="logPanel">
+            <h3>Log</h3>
+            <p id="console"></p>
         </div>
 
         <!-- JavaScript function executions -->

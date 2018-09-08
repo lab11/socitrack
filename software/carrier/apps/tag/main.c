@@ -106,6 +106,16 @@ BLE_ADVERTISING_DEF(m_advertising);                                             
  *   nRF CALLBACKS - In response to various BLE/hardware events.
  ******************************************************************************/
 
+uint8_t ascii_to_i(uint8_t number) {
+
+    if ( (number >= '0') && (number <= '9')) {
+        return (number - (uint8_t)'0');
+    } else {
+        printf("ERROR: Tried  converting non-ciper ASCII: %i\n", number);
+        return 0;
+    }
+}
+
 //Callback function for asserts in the SoftDevice.
 void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 {
@@ -134,7 +144,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         const uint8_t expected_response_role_offset = 6;
         const uint8_t role_length = 1;
 
-        uint8_t response_role = p_evt_write->data[expected_response_role_offset] - '0';
+        uint8_t response_role = ascii_to_i(p_evt_write->data[expected_response_role_offset]);
 
         const char expected_response_time[] = "; Time: ";
         const uint8_t expected_response_time_offset = expected_response_role_offset + role_length + 8;
@@ -142,7 +152,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         uint32_t response_time = 0;
         for (int i = expected_response_time_offset; i < (expected_response_time_offset + time_length); i++) {
-            response_time = 10*response_time + (p_evt_write->data[i] - '0'); // Add another cipher
+            response_time = 10*response_time + ascii_to_i(p_evt_write->data[i]); // Add another cipher
         }
 
         // Apply configurations
@@ -191,7 +201,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         const uint8_t expected_response_ranging_offset = 9;
         const uint8_t ranging_length = 1;
 
-        uint8_t response_ranging = p_evt_write->data[expected_response_ranging_offset] - '0';
+        uint8_t response_ranging = ascii_to_i(p_evt_write->data[expected_response_ranging_offset]);
 
         // RANGING
         app.config.app_ranging_enabled = response_ranging;
@@ -218,7 +228,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         const char expected_response_calib[] = "Calibration: ";
         const uint8_t expected_response_calib_offset = 13;
 
-        uint8_t response = p_evt_write->data[expected_response_calib_offset] - 'O';
+        uint8_t response = ascii_to_i(p_evt_write->data[expected_response_calib_offset]);
 
         app.calibration_index = response;
 

@@ -81,9 +81,29 @@ body {
   padding-top: 10px;
 }
 
-#button-config {
-    width: 40%;
-    display: inline-block;
+button.config {
+  width: 40%;
+  display: inline-block;
+}
+
+button.config-long {
+  width: 80%;
+  display: inline-block;
+}
+
+#ble-icon {
+  font-size: 35px;
+  float:   right;
+  display: inline;
+}
+
+#title-config {
+  width: 70%;
+  display: inline-block;
+}
+
+#title-config-header {
+  display: inline;
 }
 
 div.frame {

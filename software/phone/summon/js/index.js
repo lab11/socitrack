@@ -328,6 +328,16 @@ var app = {
         app.log('Successfully connected to TotTag');
         ble.startNotification(device_id, uuid_service_tottag, uuid_tottag_char_location,
           app.bleRawBufferNotify, app.bleRawBufferNotifyError);
+
+        // Set BLE icon to green
+        var ble_icon = document.getElementById("ble-icon");
+        ble_icon.style.color = "dodgerblue";
+
+        // Enable buttons
+        var buttons = document.getElementsByClassName('config');
+        for (let i = 0; i < buttons.length; i++) { buttons[i].disabled = false; }
+        var buttons_long = document.getElementsByClassName('config-long');
+        for (let i = 0; i < buttons_long.length; i++) { buttons_long[i].disabled = false; }
     },
     bleDeviceConnectionError: function (err) {
         app.log('Error connecting to TotTag: ' + err);
@@ -365,6 +375,16 @@ var app = {
     bleDisconnect: function () {
         console.log('Successfully disconnected');
         app.log('Disconnected from TotTag.');
+
+        // Set BLE icon to red
+        var ble_icon = document.getElementById("ble-icon");
+        ble_icon.style.color = "slategrey";
+
+        // Disable buttons
+        var buttons = document.getElementsByClassName('config');
+        for (let i = 0; i < buttons.length; i++) { buttons[i].disabled = true; }
+        var buttons_long = document.getElementsByClassName('config-long');
+        for (let i = 0; i < buttons_long.length; i++) { buttons_long[i].disabled = true; }
     },
     bleDisconnectError: function (err) {
         console.log('Error disconnecting.');
@@ -392,6 +412,16 @@ var app = {
         console.log(err);
         app.log("ERROR: could not send information to device!");
         app.log(err);
+
+        // Set BLE icon to red
+        var ble_icon = document.getElementById("ble-icon");
+        ble_icon.style.color = "slategrey";
+
+        // Disable buttons
+        var buttons = document.getElementsByClassName('config');
+        for (let i = 0; i < buttons.length; i++) { buttons[i].disabled = true; }
+        var buttons_long = document.getElementsByClassName('config-long');
+        for (let i = 0; i < buttons_long.length; i++) { buttons_long[i].disabled = true; }
     },
 
     // ASCII only
