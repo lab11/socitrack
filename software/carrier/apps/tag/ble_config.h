@@ -10,6 +10,14 @@
 //#define PHYSWEB_URL "n.ethz.ch/~abiri/d"
 #define PHYSWEB_URL "bit.ly/p1R8"
 
+// BLE characteristics
+#define CARRIER_BLE_SERV_SHORT_UUID  0x3152
+#define CARRIER_BLE_CHAR_LOCATION    0x3153
+#define CARRIER_BLE_CHAR_CONFIG      0x3154
+#define CARRIER_BLE_CHAR_ENABLE      0x3155
+#define CARRIER_BLE_CHAR_STATUS      0x3156
+#define CARRIER_BLE_CHAR_CALIBRATION 0x3157
+
 // Information
 #define APP_COMPANY_IDENTIFIER 0x02E0
 #define APP_SERVICE_ID         0x0022
@@ -22,12 +30,13 @@
 #define UPDATE_RATE             APP_TIMER_TICKS(1000)
 
 // Structs -------------------------------------------------------------------------------------------------------------
+
 typedef enum {
-    APP_ROLE_INIT_RESP = 0,
+    APP_ROLE_INVALID = 0,
+    APP_ROLE_INIT_RESP,
     APP_ROLE_INIT_NORESP,
     APP_ROLE_NOINIT_RESP,
-    APP_ROLE_NOINIT_NORESP,
-    APP_ROLE_INVALID
+    APP_ROLE_NOINIT_NORESP
 } app_role_t;
 
 typedef struct {
@@ -38,13 +47,20 @@ typedef struct {
 
 typedef struct ble_app_s {
     app_config_t config;
-    bool         module_inited;      // Whether or not we successfully got through to the module and got it configured properly.
+    bool         module_inited;       // Whether or not we successfully got through to the module and got it configured properly.
+    uint8_t      calibration_index;
+    uint8_t      current_location[6]; // Value of num characteristic
     bool         buffer_updated;
-    uint8_t      current_location[6]; /** Value of num characteristic */
     uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
     uint16_t     app_raw_response_length;
-    uint8_t      calibration_index;
 } ble_app_t;
+
+// Board specifics -----------------------------------------------------------------------------------------------------
+
+#define DEAD_BEEF                       0xDEADBEEF            //!< Value used as error code on stack dump, can be used to identify stack location on stack unwind.
+#define NON_CONNECTABLE_ADV_LED_PIN     CARRIER_LED_RED       //!< Toggles when non-connectable advertisement is sent.
+#define CONNECTED_LED_PIN               CARRIER_LED_GREEN     //!< Is on when device has connected.
+#define CONNECTABLE_ADV_LED_PIN         CARRIER_LED_BLUE      //!< Is on when device is advertising connectable advertisements.
 
 // BLE -----------------------------------------------------------------------------------------------------------------
 
@@ -67,11 +83,10 @@ typedef struct ble_app_s {
 
 
 /**
- * Eddystone App configurations, adapted from nRF example
- * "examples\ble_peripheral\ble_app_eddystone\es_app_config.h"
+ * Eddystone App configurations, adapted from nRF example "examples\ble_peripheral\ble_app_eddystone\es_app_config.h"
  */
 
-//!< Beacon lock code
+// Beacon lock code
 #define APP_CONFIG_LOCK_CODE {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
 
 #define APP_CONFIG_CALIBRATED_RANGING_DATA {-49, -39, -29, -24, -19, -14, -9, -7, -5}   //!< Calibrated TX power at 0 m. See the nRF52 Product Specification for corresponding TX values.

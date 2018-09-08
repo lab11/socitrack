@@ -4,106 +4,123 @@
 
 */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
-#include <ble.h>
-#include <ble_gatts.h>
 #include "nordic_common.h"
 #include "nrf.h"
-#include "nrf_sdh.h"
-#include "nrf_sdh_ble.h"
-#include "nrf_sdh_soc.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
+#include "nrf_gpiote.h"
+#include "nrfx_gpiote.h"
+#include "nrfx_power.h"
 #include "nrf_pwr_mgmt.h"
+
+// Apps
 #include "app_error.h"
 #include "app_util.h"
 #include "app_timer.h"
 #include "app_scheduler.h"
-#include "nrf_log.h"
-#include "nrf_log_ctrl.h"
-#include "nrf_log_default_backends.h"
 
-#include "ble_hci.h"
-#include "ble_srv_common.h"
+// SPI
+#include "nrf_spi_mngr.h"
+#include "nrf_drv_spi.h"
+
+// SoftDevice
+#include "nrf_sdh.h"
+#include "nrf_sdh_ble.h"
+#include "nrf_sdh_soc.h"
+#include "nrf_soc.h"
+
+// BLE
+#include "ble.h"
+#include "ble_advertising.h"
 #include "ble_advdata.h"
 #include "ble_conn_params.h"
 #include "ble_conn_state.h"
-#include "ble_advertising.h"
+#include "ble_gatts.h"
+#include "ble_hci.h"
+#include "ble_srv_common.h"
 #include "nrf_ble_es.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 
-#include "led.h"
-#include "boards.h"
+// UART
+#include "app_uart.h"
+#include "nrf_uart.h"
+#include "nrf_drv_uart.h"
 
+// Clocks
+#include "nrfx_rtc.h"
+#include "nrf_drv_clock.h"
+
+// Debug output
+#include "SEGGER_RTT.h"
+#include "nrf_log.h"
+#include "nrf_log_ctrl.h"
+#include "nrf_log_default_backends.h"
+
+// Custom libraries
+#include "accelerometer_lis2dw12.h"
 #include "ble_config.h"
+#include "boards.h"
+#include "led.h"
 #include "module_interface.h"
+#include "simple_logger.h"
+
 
 /*******************************************************************************
- *   Configuration and settings
+ *   Application state
  ******************************************************************************/
 
-// BLE characteristics
-#define CARRIER_BLE_SERV_SHORT_UUID  0x3152
-#define CARRIER_BLE_CHAR_LOCATION    0x3153
-#define CARRIER_BLE_CHAR_CONFIG      0x3154
-#define CARRIER_BLE_CHAR_ENABLE      0x3155
-#define CARRIER_BLE_CHAR_STATUS      0x3156
-#define CARRIER_BLE_CHAR_CALIBRATION 0x3157
+// Main Application state ----------------------------------------------------------------------------------------------
+static ble_app_t app;
+
+// BLE state -----------------------------------------------------------------------------------------------------------
 
 // Service UUID
 const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = {
         .uuid128 = {0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c, 0x90, 0xee, 0x3f, 0xa2, 0x52, 0x31, 0x8c, 0xd6}
 };
-
-ble_gatts_char_handles_t carrier_ble_char_location_handle    = {.value_handle = CARRIER_BLE_CHAR_LOCATION};
-ble_gatts_char_handles_t carrier_ble_char_config_handle      = {.value_handle = CARRIER_BLE_CHAR_CONFIG};
-ble_gatts_char_handles_t carrier_ble_char_enable_handle      = {.value_handle = CARRIER_BLE_CHAR_ENABLE};
-ble_gatts_char_handles_t carrier_ble_char_status_handle      = {.value_handle = CARRIER_BLE_CHAR_STATUS};
-ble_gatts_char_handles_t carrier_ble_char_calibration_handle = {.value_handle = CARRIER_BLE_CHAR_CALIBRATION};
-uint16_t carrier_ble_service_handle          = 0;
-
-#define DEAD_BEEF                       0xDEADBEEF            //!< Value used as error code on stack dump, can be used to identify stack location on stack unwind.
-#define NON_CONNECTABLE_ADV_LED_PIN     CARRIER_LED_RED       //!< Toggles when non-connectable advertisement is sent.
-#define CONNECTED_LED_PIN               CARRIER_LED_GREEN     //!< Is on when device has connected.
-#define CONNECTABLE_ADV_LED_PIN         CARRIER_LED_BLUE      //!< Is on when device is advertising connectable advertisements.
-
-/*******************************************************************************
- *   State for this application
- ******************************************************************************/
-
-// Main application state
-static ble_app_t app;
-
-// GP Timer. Used to retry initializing the module.
-APP_TIMER_DEF(watchdog_timer);
-
-// Handle of the current connection
-static uint16_t m_conn_handle = BLE_CONN_HANDLE_INVALID;
-
-// Universally unique service identifiers (UUID)
+// Advertisement UUIDs: Eddystone
 static ble_uuid_t m_adv_uuids[] = {
         {PHYSWEB_SERVICE_ID,                  BLE_UUID_TYPE_BLE}
 };
-// Advertise Eddystone beacon; other services are included in the Scan Response
+// Scan Response UUIDs: Information service, Application Interface
 static ble_uuid_t m_sr_uuids[] = {
         {BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE},
         {CARRIER_BLE_SERV_SHORT_UUID,         BLE_UUID_TYPE_VENDOR_BEGIN}
 };
 
-// Copy address from flash
-uint8_t  ble_address[6];
-uint16_t ble_device_id;
+// Service and characteristics handle
+static ble_gatts_char_handles_t carrier_ble_char_location_handle    = {.value_handle = CARRIER_BLE_CHAR_LOCATION};
+static ble_gatts_char_handles_t carrier_ble_char_config_handle      = {.value_handle = CARRIER_BLE_CHAR_CONFIG};
+static ble_gatts_char_handles_t carrier_ble_char_enable_handle      = {.value_handle = CARRIER_BLE_CHAR_ENABLE};
+static ble_gatts_char_handles_t carrier_ble_char_status_handle      = {.value_handle = CARRIER_BLE_CHAR_STATUS};
+static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = {.value_handle = CARRIER_BLE_CHAR_CALIBRATION};
+static uint16_t                 carrier_ble_service_handle          = 0;
+static uint16_t                 carrier_ble_conn_handle             = BLE_CONN_HANDLE_INVALID;
 
-NRF_BLE_GATT_DEF(m_gatt);                                                       /**< GATT module instance. */
-NRF_BLE_QWR_DEF(m_qwr);                                                         /**< Context for the Queued Write module.*/
-BLE_ADVERTISING_DEF(m_advertising);                                             /**< Advertising module instance. */
+static uint8_t  carrier_ble_address[6];
+static uint16_t carrier_ble_device_id;
+
+// State defines -------------------------------------------------------------------------------------------------------
+
+// GP Timer. Used to retry initializing the module.
+APP_TIMER_DEF(watchdog_timer);
+
+// GATT module instance
+NRF_BLE_GATT_DEF(m_gatt);
+
+// Context for the Queued Write module
+NRF_BLE_QWR_DEF(m_qwr);
+
+// Advertising module instance
+BLE_ADVERTISING_DEF(m_advertising);
 
 
 /*******************************************************************************
- *   nRF CALLBACKS - In response to various BLE/hardware events.
+ *   Helper functions
  ******************************************************************************/
 
 uint8_t ascii_to_i(uint8_t number) {
@@ -115,6 +132,181 @@ uint8_t ascii_to_i(uint8_t number) {
         return 0;
     }
 }
+
+// RTC0 is used by SoftDevice, RTC1 is used by app_timer
+const nrfx_rtc_t rtc_instance = NRFX_RTC_INSTANCE(2);
+
+// Function starting the internal LFCLK XTAL oscillator
+/*static void lfclk_config(void) {
+    ret_code_t err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_clock_lfclk_request(NULL);
+}*/
+
+// Interrupt handler; currently not used
+static void rtc_handler(nrfx_rtc_int_type_t int_type) {}
+
+
+/*******************************************************************************
+ *   Buses: SPI & UART
+ ******************************************************************************/
+
+// Use SPI0
+#define SPI_INSTANCE_NR 0
+
+static nrf_drv_spi_t spi_instance = NRF_DRV_SPI_INSTANCE(SPI_INSTANCE_NR);
+
+void spi_init(void) {
+
+    // Configure GPIOs
+    nrf_gpio_cfg_input(CARRIER_SPI_MISO,  NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_output(CARRIER_SPI_MOSI);
+    nrf_gpio_cfg_output(CARRIER_SPI_SCLK);
+
+    // Setup Chip selects (CS)
+    nrf_gpio_cfg_output(CARRIER_CS_SD);
+    nrf_gpio_cfg_output(CARRIER_CS_ACC);
+    nrf_gpio_pin_set(CARRIER_CS_SD);
+    nrf_gpio_pin_set(CARRIER_CS_ACC);
+
+    // Configure SPI lines
+    nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
+    spi_config.sck_pin    = CARRIER_SPI_SCLK;
+    spi_config.miso_pin   = CARRIER_SPI_MISO;
+    spi_config.mosi_pin   = CARRIER_SPI_MOSI;
+    spi_config.ss_pin     = CARRIER_CS_ACC;
+    spi_config.frequency  = NRF_DRV_SPI_FREQ_4M;
+    spi_config.mode       = NRF_DRV_SPI_MODE_3;
+    spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
+
+    // Init SPI manager
+    //ret_code_t err_code = nrf_spi_mngr_init(&spi_instance, &spi_config);
+    // Init SPI directly
+    ret_code_t err_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+/*******************************************************************************
+ *   Accelerometer functions
+ ******************************************************************************/
+
+static int16_t x[32], y[32], z[32];
+
+lis2dw12_wakeup_config_t acc_wake_config = {
+        .sleep_enable   = 1,
+        .threshold      = 0x05,
+        .wake_duration  = 3,
+        .sleep_duration = 2
+};
+
+lis2dw12_config_t acc_config = {
+        .odr        = lis2dw12_odr_200,
+        .mode       = lis2dw12_low_power,
+        .lp_mode    = lis2dw12_lp_1,
+        .cs_nopull  = 0,
+        .bdu        = 1,
+        .auto_increment = 1,
+        .i2c_disable    = 1,
+        .int_active_low = 0,
+        .on_demand  = 1,
+        .bandwidth  = lis2dw12_bw_odr_2,
+        .fs         = lis2dw12_fs_4g,
+        .high_pass  = 0,
+        .low_noise  = 1,
+};
+
+static void acc_fifo_read_handler(void) {
+
+    for(int i = 0; i < 32; i++) {
+        printf("x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
+    }
+
+    // Reset FIFO
+    //lis2dw12_fifo_reset();
+}
+
+static void acc_wakeup_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
+
+    lis2dw12_read_full_fifo(x, y, z, acc_fifo_read_handler);
+}
+
+static void acc_init(void) {
+
+    // Turn on accelerometer
+    lis2dw12_init(&spi_instance);
+
+    lis2dw12_int_config_t acc_int_config = {0};
+    acc_int_config.int1_wakeup = 1;
+    acc_int_config.int2_fifo_full = 1;
+
+    lis2dw12_reset();
+    lis2dw12_config(acc_config);
+    lis2dw12_interrupt_config(acc_int_config);
+    lis2dw12_interrupt_enable(1);
+
+    // Init GPIOTE, accelerometer interrupt
+    if (!nrfx_gpiote_is_init()) {
+        ret_code_t err_code = nrfx_gpiote_init();
+        APP_ERROR_CHECK(err_code);
+    }
+
+    nrfx_gpiote_in_config_t int_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(0);
+    int_gpio_config.pull = NRF_GPIO_PIN_NOPULL;
+    nrfx_gpiote_in_init(CARRIER_ACC_INT2, &int_gpio_config, acc_wakeup_handler);
+    nrfx_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
+
+    // Configure wakeups
+    lis2dw12_wakeup_config(acc_wake_config);
+
+    // Reset FIFO
+    lis2dw12_fifo_reset();
+}
+
+
+/*******************************************************************************
+ *  SD card functions
+ ******************************************************************************/
+
+static bool sd_card_inserted() {
+
+    // SD card inserted:    Pin connected to GND
+    // SD card not present: Pin connected to VCC
+    return !nrf_gpio_pin_read(CARRIER_SD_DETECT);
+}
+
+static void sd_card_init(void) {
+
+    // Setup hardware
+    nrf_gpio_cfg_input(CARRIER_SD_DETECT, NRF_GPIO_PIN_NOPULL);
+    nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
+
+    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
+    nrf_gpio_pin_set(CARRIER_CS_SD);
+
+    // Configs
+    const char filename[] = "testfile.log";
+    const char permissions[] = "a"; // w = write, a = append
+
+    //printf("Waiting for SD card to be inserted...\n");
+
+    // Wait for SC card
+    while (!sd_card_inserted()) {};
+
+    //printf("Detected SD card; trying to connect...\n");
+
+    // Start file
+    simple_logger_init(filename, permissions);
+
+    // If no header, add it
+    simple_logger_log_header("HEADER for file \'%s\', written on %s \n", filename, "08/23/18");
+}
+
+
+/*******************************************************************************
+ *   CALLBACKS - In response to various BLE & hardware events
+ ******************************************************************************/
 
 //Callback function for asserts in the SoftDevice.
 void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
@@ -271,8 +463,8 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             led_off(CARRIER_LED_BLUE);
             NRF_LOG_INFO("Connected.");
 
-            m_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-            err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, m_conn_handle);
+            carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+            err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, carrier_ble_conn_handle);
             APP_ERROR_CHECK(err_code);
             break;
         }
@@ -281,7 +473,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             led_on(CARRIER_LED_BLUE);
             led_off(CARRIER_LED_GREEN);
             NRF_LOG_INFO("Disconnected.");
-            m_conn_handle = BLE_CONN_HANDLE_INVALID;
+            carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
             break;
         }
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
@@ -312,28 +504,6 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         }
         default:
             // No implementation needed.
-            break;
-    }
-}
-
-// Handle Eddystone event
-static void on_es_evt(nrf_ble_es_evt_t evt)
-{
-    switch (evt)
-    {
-        case NRF_BLE_ES_EVT_ADVERTISEMENT_SENT:
-            led_toggle(NON_CONNECTABLE_ADV_LED_PIN);
-            break;
-
-        case NRF_BLE_ES_EVT_CONNECTABLE_ADV_STARTED:
-            led_on(CONNECTABLE_ADV_LED_PIN);
-            break;
-
-        case NRF_BLE_ES_EVT_CONNECTABLE_ADV_STOPPED:
-            led_off(CONNECTABLE_ADV_LED_PIN);
-            break;
-
-        default:
             break;
     }
 }
@@ -430,7 +600,7 @@ void moduleDataUpdate ()
         printf("Received data from module\n");
 	}
 
-	if(m_conn_handle != BLE_CONN_HANDLE_INVALID) {
+	if(carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) {
 
 	    ble_gatts_hvx_params_t notify_params;
 		memset(&notify_params, 0, sizeof(notify_params));
@@ -441,7 +611,7 @@ void moduleDataUpdate ()
 		notify_params.p_len  = &app.app_raw_response_length;
 		notify_params.p_data = app.app_raw_response_buffer;
 
-		ret_code_t err_code = sd_ble_gatts_hvx(m_conn_handle, &notify_params);
+		ret_code_t err_code = sd_ble_gatts_hvx(carrier_ble_conn_handle, &notify_params);
         APP_ERROR_CHECK(err_code);
 
         printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
@@ -555,15 +725,15 @@ static void gap_params_init(void)
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
 
-    err_code = sd_ble_gap_device_name_set(&sec_mode, device_name, strlen((const char *)device_name));
+    err_code = sd_ble_gap_device_name_set(&sec_mode, device_name, (uint16_t)strlen((const char *)device_name));
     APP_ERROR_CHECK(err_code);
 
     // Set BLE address
 
     // Get address from Flash
     //#define BLE_FLASH_ADDRESS 0x0003fff8
-    //memcpy(ble_address, (uint8_t*) BLE_FLASH_ADDRESS, 6);
-    //ble_device_id = (uint16_t)( (uint16_t)ble_address[1] << (uint8_t)8) | ble_address[0];
+    //memcpy(carrier_ble_address, (uint8_t*) BLE_FLASH_ADDRESS, 6);
+    //carrier_ble_device_id = (uint16_t)( (uint16_t)carrier_ble_address[1] << (uint8_t)8) | carrier_ble_address[0];
 
     // Use ID
 #ifdef BLE_ADDRESS
@@ -574,14 +744,19 @@ static void gap_params_init(void)
     const char ble_address_string[] = XID_STR(BLE_ADDRESS);
     for (int i=0; i < BLE_ADDRESS_LENGTH; i++) {
         // For each 8bits, read the string and convert it from hex to a long; store it in LSB-first order
-        ble_address[(BLE_ADDRESS_LENGTH-1) - i] = (uint8_t)strtoul(&ble_address_string[3*i], NULL, 16);
+        carrier_ble_address[(BLE_ADDRESS_LENGTH-1) - i] = (uint8_t)strtoul(&ble_address_string[3*i], NULL, 16);
     }
 
-    printf("Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", ble_address[5], ble_address[4], ble_address[3], ble_address[2], ble_address[1], ble_address[0]);
+    printf("Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", carrier_ble_address[5],
+                                                                 carrier_ble_address[4],
+                                                                 carrier_ble_address[3],
+                                                                 carrier_ble_address[2],
+                                                                 carrier_ble_address[1],
+                                                                 carrier_ble_address[0]);
 
     // Set address
     ble_gap_addr_t gap_addr = {.addr_type = BLE_GAP_ADDR_TYPE_PUBLIC};
-    memcpy(gap_addr.addr, ble_address, BLE_ADDRESS_LENGTH);
+    memcpy(gap_addr.addr, carrier_ble_address, BLE_ADDRESS_LENGTH);
     err_code = sd_ble_gap_addr_set(&gap_addr);
     APP_ERROR_CHECK(err_code);
 #endif
@@ -868,6 +1043,21 @@ static void timers_init (void)
     APP_ERROR_CHECK(err_code);
 }
 
+static void rtc_init(void) {
+
+    // Initialize LFCLK if no SoftDevice available
+    //lfclk_config();
+
+    // Initialize RTC instance
+    nrfx_rtc_config_t rtc_config = NRFX_RTC_DEFAULT_CONFIG;
+    rtc_config.prescaler = 32; // Approximately 1000 Hz
+    ret_code_t err_code = nrfx_rtc_init( &rtc_instance, &rtc_config, rtc_handler);
+    APP_ERROR_CHECK(err_code);
+
+    // Power on RTC instance
+    nrfx_rtc_enable(&rtc_instance);
+}
+
 static void scheduler_init(void)
 {
     APP_SCHED_INIT(SCHED_MAX_EVENT_DATA_SIZE, SCHED_QUEUE_SIZE);
@@ -889,9 +1079,15 @@ int main (void)
     ret_code_t err_code;
 
     // Initialization
+    nrfx_gpiote_init();
     led_init(CARRIER_LED_RED);
     led_init(CARRIER_LED_BLUE);
     led_init(CARRIER_LED_GREEN);
+
+    // Signal initialization
+    led_on(CARRIER_LED_RED);
+    led_off(CARRIER_LED_BLUE);
+    led_off(CARRIER_LED_GREEN);
 
     // Initialize RTT library
     err_code = NRF_LOG_INIT(NULL);
@@ -900,16 +1096,23 @@ int main (void)
     printf("\r\n----------------------------------------------\r\n");
     printf("Initializing nRF...\r\n");
 
-    // Signal initialization
-    led_on(CARRIER_LED_RED);
-
     // -----------------------------------------------------------------------------------------------------------------
 
     // Initialize
     app_init();
     timers_init();
+    rtc_init();
     scheduler_init();
     power_management_init();
+
+    // Buses init
+    spi_init();
+
+    // Hardware services init
+    sd_card_init();
+    acc_init();
+
+    // Connections init
     ble_init();
 
     printf("Initialized all software modules\n");
