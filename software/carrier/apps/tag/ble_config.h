@@ -51,8 +51,8 @@ typedef struct ble_app_s {
     uint8_t      calibration_index;
     uint8_t      current_location[6]; // Value of num characteristic
     bool         buffer_updated;
-    uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
     uint16_t     app_raw_response_length;
+    uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
 } ble_app_t;
 
 // Board specifics -----------------------------------------------------------------------------------------------------

@@ -46,7 +46,7 @@
         <div>
             <h3>Role configuration:</h3>
             <button class="config-long" onclick="app.setAsStandalone()" disabled>Standalone</button>
-            <button class="config" onclick="app.setAsMobile()" disabled>Mobile</button>
+            <button class="config" onclick="app.setAsTag()" disabled>Tag</button>
             <button class="config" onclick="app.setAsAnchor()" disabled>Anchor</button>
         </div>
 
@@ -54,6 +54,11 @@
             <h3>Ranging:</h3>
             <button class="config" onclick="app.rangingStart()" disabled>Start</button>
             <button class="config" onclick="app.rangingStop()" disabled>Stop</button>
+        </div>
+
+        <div>
+            <h3>Status:</h3>
+            <button class="config" onclick="app.statusBackup()" disabled>Backup</button>
         </div>
 
         <div>

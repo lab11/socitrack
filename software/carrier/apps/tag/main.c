@@ -125,10 +125,14 @@ BLE_ADVERTISING_DEF(m_advertising);
 
 uint8_t ascii_to_i(uint8_t number) {
 
-    if ( (number >= '0') && (number <= '9')) {
+    if        ( (number >= '0') && (number <= '9')) {
         return (number - (uint8_t)'0');
+    } else if ( (number >= 'A') && (number <= 'F')) {
+        return (number - (uint8_t)'A' + (uint8_t)10);
+    } else if ( (number >= 'a') && (number <= 'f')) {
+        return (number - (uint8_t)'a' + (uint8_t)10);
     } else {
-        printf("ERROR: Tried  converting non-ciper ASCII: %i\n", number);
+        printf("ERROR: Tried  converting non-hex ASCII: %i\n", number);
         return 0;
     }
 }
@@ -303,6 +307,164 @@ static void sd_card_init(void) {
     simple_logger_log_header("HEADER for file \'%s\', written on %s \n", filename, "08/23/18");
 }
 
+/* Application state size
+ *
+ * Prefix:                8 +  15
+ *
+ * Config:               10 +   3
+ * Module_inited:         1 +   1
+ * Calibration_index:     1 +   1
+ * Current_location:     12 +   6
+ * Buffer_updated:        1 +   1
+ * App_raw_resp_length:   1 +   1
+ * App_raw_resp_buffer: 256 + 128
+ *
+ * Suffix:                8 +  19
+ *
+ * Total:               298 +  175 = 473
+ */
+#define APP_STATE_LENGTH 473
+
+// Write application state to non-volatile memory
+static void backup_app_state() {
+
+    char state_buffer[APP_STATE_LENGTH + 1];
+    memset(state_buffer, 0, sizeof(state_buffer));
+    uint8_t buf_offset = 0;
+
+    uint32_t curr_time = app.config.app_sync_time;
+
+    // Start filling buffer
+
+    // Prefix
+    sprintf(state_buffer + buf_offset, "# APP STATE %08lx #\n", curr_time);
+    buf_offset += 12 + 8 + 3;
+
+    // Write state
+    sprintf(state_buffer + buf_offset, "%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_ranging_enabled); // Config
+    buf_offset += 2 + 5 + 2;
+    sprintf(state_buffer + buf_offset, "%01x\n", app.module_inited);
+    buf_offset += 2;
+    sprintf(state_buffer + buf_offset, "%01x\n", app.calibration_index);
+    buf_offset += 2;
+
+    for (uint8_t i = 0; i < 6; i++) {
+        if (i < 5) {
+            sprintf(state_buffer + buf_offset, "%02x\t", app.current_location[i]);
+            buf_offset += 3;
+        } else {
+            sprintf(state_buffer + buf_offset, "%02x\n", app.current_location[i]);
+            buf_offset += 3;
+        }
+    }
+
+    sprintf(state_buffer + buf_offset, "%01x\n", app.buffer_updated);
+    buf_offset += 2;
+    sprintf(state_buffer + buf_offset, "%04x\n", app.app_raw_response_length);
+    buf_offset += 5;
+
+    for (uint8_t i = 0; i < 128; i++) {
+        if (i < 127) {
+            sprintf(state_buffer + buf_offset, "%02x\t", app.app_raw_response_buffer[i]);
+            buf_offset += 3;
+        } else {
+            sprintf(state_buffer + buf_offset, "%02x\n", app.app_raw_response_buffer[i]);
+            buf_offset += 3;
+        }
+    }
+
+    // Suffix
+    sprintf(state_buffer + buf_offset, "# END APP STATE %08lx #\n", curr_time);
+
+    // Write to SD card
+    state_buffer[APP_STATE_LENGTH] = '\0';
+    printf           ("%s", state_buffer);
+    simple_logger_log("%s", state_buffer);
+
+    printf("Backed up Application state to SD card\n");
+}
+
+// Read application state from non-volatile memory
+static void restore_app_state() {
+
+    uint8_t state_buffer[APP_STATE_LENGTH];
+    memset(state_buffer, 0, sizeof(state_buffer));
+    uint8_t buf_offset = 0;
+
+    // Read state form SD card
+    simple_logger_read(state_buffer, APP_STATE_LENGTH);
+
+    // Parse buffer
+    buf_offset += 12;
+    uint32_t curr_time = ascii_to_i(state_buffer[buf_offset + 0]) << 28;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 1]) << 24;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 2]) << 20;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 3]) << 16;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 4]) << 12;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 5]) <<  8;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 6]) <<  4;
+    curr_time +=         ascii_to_i(state_buffer[buf_offset + 7]);
+    buf_offset += 8;
+    printf("%.12s%08lx%.3s", state_buffer, curr_time, state_buffer + buf_offset);
+    buf_offset += 3;
+
+    app.config.app_role = ascii_to_i(state_buffer[buf_offset]);
+    buf_offset += 2;
+    app.config.app_sync_time =  ascii_to_i(state_buffer[buf_offset + 0]) << 28;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 1]) << 24;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 2]) << 20;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 3]) << 16;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 4]) << 12;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 5]) <<  8;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 6]) <<  4;
+    app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 7]);
+    buf_offset += 9;
+    app.config.app_ranging_enabled = ascii_to_i(state_buffer[buf_offset]);
+    buf_offset += 2;
+    printf("%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_ranging_enabled); // Config
+
+    app.module_inited = ascii_to_i(state_buffer[buf_offset]);
+    buf_offset += 2;
+    printf("%01x\n", app.module_inited);
+
+    app.calibration_index = ascii_to_i(state_buffer[buf_offset]);
+    buf_offset += 2;
+    printf("%01x\n", app.calibration_index);
+
+    for (uint8_t i = 0; i < 6; i++) {
+        if (i < 5) {
+            app.current_location[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+            printf("%02x\t", app.current_location[i]);
+            buf_offset += 3;
+        } else {
+            app.current_location[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+            printf("%02x\n", app.current_location[i]);
+            buf_offset += 3;
+        }
+    }
+
+    app.buffer_updated = ascii_to_i(state_buffer[buf_offset]);
+    buf_offset += 2;
+    printf("%01x\n", app.buffer_updated);
+
+    app.app_raw_response_length = (ascii_to_i(state_buffer[buf_offset]) << 12) + (ascii_to_i(state_buffer[buf_offset + 1]) << 8) + (ascii_to_i(state_buffer[buf_offset + 2]) << 4) + ascii_to_i(state_buffer[buf_offset + 3]);
+    buf_offset += 5;
+    printf("%04x\n", app.app_raw_response_length);
+
+    for (uint8_t i = 0; i < 128; i++) {
+        if (i < 127) {
+            app.app_raw_response_buffer[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+            printf("%02x\t", app.app_raw_response_buffer[i]);
+            buf_offset += 3;
+        } else {
+            app.app_raw_response_buffer[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+            printf("%02x\n", app.app_raw_response_buffer[i]);
+            buf_offset += 3;
+        }
+    }
+
+    printf("Restored Application state from SD card\n");
+}
 
 /*******************************************************************************
  *   CALLBACKS - In response to various BLE & hardware events
@@ -410,6 +572,19 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         // Handle a write to the characteristic that is used for setting the status of the device
         uint8_t len = p_evt_write->len;
         printf("Received STATUS evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+
+        const char expected_response_state[] = "Backup: ";
+        const uint8_t expected_response_state_offset = 8;
+        const uint8_t state_length = 1;
+
+        uint8_t response_state = ascii_to_i(p_evt_write->data[expected_response_state_offset]);
+
+        // Write current application state to SD card
+        if (response_state) {
+            backup_app_state();
+        } else {
+            restore_app_state();
+        }
 
     } else if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle) {
 
@@ -950,8 +1125,8 @@ static void services_init(void)
                            CARRIER_BLE_CHAR_ENABLE,
                            &carrier_ble_char_enable_handle);
 
-    ble_characteristic_add(1, 0, 0, 0,
-                           1, (uint8_t*) &app.module_inited,
+    ble_characteristic_add(1, 1, 0, 0,
+                           9, (uint8_t*) &app.module_inited,
                            CARRIER_BLE_CHAR_STATUS,
                            &carrier_ble_char_status_handle);
 

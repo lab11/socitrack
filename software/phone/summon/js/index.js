@@ -433,8 +433,8 @@ var app = {
         return array.buffer;
     },
 
-    setAsMobile: function() {
-        app.log('Telling device to configure as Mobile');
+    setAsStandalone: function() {
+        app.log('Telling device to configure as STANDALONE');
 
         // Send current time
         var time_stamp = (new Date()).getTime();
@@ -450,14 +450,31 @@ var app = {
         ble.write(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
     },
 
-    setAsAnchor: function() {
-        app.log('Telling device to configure as Anchor');
+    setAsTag: function() {
+        app.log('Telling device to configure as TAG');
 
         // Send current time
         var time_stamp = (new Date()).getTime();
 
         // Send data:
         var data_string = "Role: 2";
+
+        // Add additional infos
+        data_string += "; Time: " + time_stamp.toString();
+
+        var data = app.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_config, data, app.deviceWrite, app.deviceWriteError);
+    },
+
+    setAsAnchor: function() {
+        app.log('Telling device to configure as ANCHOR');
+
+        // Send current time
+        var time_stamp = (new Date()).getTime();
+
+        // Send data:
+        var data_string = "Role: 3";
 
         // Add additional infos
         data_string += "; Time: " + time_stamp.toString();
@@ -487,6 +504,17 @@ var app = {
         var data = app.stringToBytes(data_string);
 
         ble.write(device_id, uuid_service_tottag, uuid_tottag_char_enable, data, app.deviceWrite, app.deviceWriteError);
+    },
+
+    statusBackup: function() {
+        app.log('Telling device to backup its application state');
+
+        // Send data:
+        var data_string = "Backup: 1";
+
+        var data = app.stringToBytes(data_string);
+
+        ble.write(device_id, uuid_service_tottag, uuid_tottag_char_status, data, app.deviceWrite, app.deviceWriteError);
     },
 
     calibrationStart: function() {
