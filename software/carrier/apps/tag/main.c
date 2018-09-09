@@ -224,7 +224,7 @@ lis2dw12_config_t acc_config = {
 static void acc_fifo_read_handler(void) {
 
     for(int i = 0; i < 32; i++) {
-        printf("x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
+        //printf("x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
     }
 
     // Reset FIFO
@@ -291,14 +291,18 @@ static void sd_card_init(void) {
 
     // Configs
     const char filename[] = "testfile.log";
-    const char permissions[] = "a"; // w = write, a = append
+    const char permissions[] = "a,r"; // w = write, a = append, r = read
 
-    //printf("Waiting for SD card to be inserted...\n");
+#ifdef APP_SD_REQUIRED
+    if (!sd_card_inserted()) {
+        printf("ATTENTION: Waiting for SD card to be inserted...\n");
 
-    // Wait for SC card
-    while (!sd_card_inserted()) {};
+        // Wait for SC card
+        while (!sd_card_inserted()) {};
 
-    //printf("Detected SD card; trying to connect...\n");
+        printf("Detected SD card; trying to connect...\n");
+    }
+#endif
 
     // Start file
     simple_logger_init(filename, permissions);
@@ -313,24 +317,23 @@ static void sd_card_init(void) {
  *
  * Config:               10 +   3
  * Module_inited:         1 +   1
- * Calibration_index:     1 +   1
+ * Calibration_index:     2 +   1
  * Current_location:     12 +   6
- * Buffer_updated:        1 +   1
- * App_raw_resp_length:   1 +   1
- * App_raw_resp_buffer: 256 + 128
  *
  * Suffix:                8 +  19
  *
- * Total:               298 +  175 = 473
+ * Total:                41 +  45 = 86
+ *
+ * ATTENTION: Make sure this is <= 255 bytes (max length of SPI transactions); otherwise, consider splitting it into multiple transactions
  */
-#define APP_STATE_LENGTH 473
+#define APP_STATE_LENGTH 86
 
 // Write application state to non-volatile memory
 static void backup_app_state() {
 
     char state_buffer[APP_STATE_LENGTH + 1];
     memset(state_buffer, 0, sizeof(state_buffer));
-    uint8_t buf_offset = 0;
+    uint16_t buf_offset = 0;
 
     uint32_t curr_time = app.config.app_sync_time;
 
@@ -342,23 +345,23 @@ static void backup_app_state() {
 
     // Write state
     sprintf(state_buffer + buf_offset, "%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_ranging_enabled); // Config
-    buf_offset += 2 + 5 + 2;
+    buf_offset += 2 + 9 + 2;
     sprintf(state_buffer + buf_offset, "%01x\n", app.module_inited);
     buf_offset += 2;
-    sprintf(state_buffer + buf_offset, "%01x\n", app.calibration_index);
-    buf_offset += 2;
+    sprintf(state_buffer + buf_offset, "%02x\n", app.calibration_index);
+    buf_offset += 3;
 
     for (uint8_t i = 0; i < 6; i++) {
         if (i < 5) {
             sprintf(state_buffer + buf_offset, "%02x\t", app.current_location[i]);
-            buf_offset += 3;
         } else {
             sprintf(state_buffer + buf_offset, "%02x\n", app.current_location[i]);
-            buf_offset += 3;
         }
+        buf_offset += 3;
     }
 
-    sprintf(state_buffer + buf_offset, "%01x\n", app.buffer_updated);
+    // Temporary data is not maintained
+    /*sprintf(state_buffer + buf_offset, "%01x\n", app.buffer_updated);
     buf_offset += 2;
     sprintf(state_buffer + buf_offset, "%04x\n", app.app_raw_response_length);
     buf_offset += 5;
@@ -366,19 +369,18 @@ static void backup_app_state() {
     for (uint8_t i = 0; i < 128; i++) {
         if (i < 127) {
             sprintf(state_buffer + buf_offset, "%02x\t", app.app_raw_response_buffer[i]);
-            buf_offset += 3;
         } else {
             sprintf(state_buffer + buf_offset, "%02x\n", app.app_raw_response_buffer[i]);
-            buf_offset += 3;
         }
-    }
+        buf_offset += 3;
+    }*/
 
     // Suffix
     sprintf(state_buffer + buf_offset, "# END APP STATE %08lx #\n", curr_time);
 
     // Write to SD card
     state_buffer[APP_STATE_LENGTH] = '\0';
-    printf           ("%s", state_buffer);
+    //printf           ("%s", state_buffer);
     simple_logger_log("%s", state_buffer);
 
     printf("Backed up Application state to SD card\n");
@@ -389,7 +391,7 @@ static void restore_app_state() {
 
     uint8_t state_buffer[APP_STATE_LENGTH];
     memset(state_buffer, 0, sizeof(state_buffer));
-    uint8_t buf_offset = 0;
+    uint16_t buf_offset = 0;
 
     // Read state form SD card
     simple_logger_read(state_buffer, APP_STATE_LENGTH);
@@ -427,23 +429,23 @@ static void restore_app_state() {
     buf_offset += 2;
     printf("%01x\n", app.module_inited);
 
-    app.calibration_index = ascii_to_i(state_buffer[buf_offset]);
-    buf_offset += 2;
-    printf("%01x\n", app.calibration_index);
+    app.calibration_index = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+    buf_offset += 3;
+    printf("%02x\n", app.calibration_index);
 
     for (uint8_t i = 0; i < 6; i++) {
+        app.current_location[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+
         if (i < 5) {
-            app.current_location[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
             printf("%02x\t", app.current_location[i]);
-            buf_offset += 3;
         } else {
-            app.current_location[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
             printf("%02x\n", app.current_location[i]);
-            buf_offset += 3;
         }
+        buf_offset += 3;
     }
 
-    app.buffer_updated = ascii_to_i(state_buffer[buf_offset]);
+    // Temporary data is not maintained
+    /*app.buffer_updated = ascii_to_i(state_buffer[buf_offset]);
     buf_offset += 2;
     printf("%01x\n", app.buffer_updated);
 
@@ -452,15 +454,20 @@ static void restore_app_state() {
     printf("%04x\n", app.app_raw_response_length);
 
     for (uint8_t i = 0; i < 128; i++) {
+        app.app_raw_response_buffer[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
+
         if (i < 127) {
-            app.app_raw_response_buffer[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
             printf("%02x\t", app.app_raw_response_buffer[i]);
-            buf_offset += 3;
         } else {
-            app.app_raw_response_buffer[i] = (ascii_to_i(state_buffer[buf_offset]) << 4) + ascii_to_i(state_buffer[buf_offset + 1]);
             printf("%02x\n", app.app_raw_response_buffer[i]);
-            buf_offset += 3;
         }
+        buf_offset += 3;
+    }*/
+    app.buffer_updated = 0;
+    app.app_raw_response_length = 0;
+
+    for (uint8_t i = 0; i < 128; i++) {
+        app.app_raw_response_buffer[i] = 0;
     }
 
     printf("Restored Application state from SD card\n");
@@ -1276,21 +1283,28 @@ int main (void)
     // Initialize
     app_init();
     timers_init();
-    rtc_init();
     scheduler_init();
     power_management_init();
 
+    printf("Initialized software modules\n");
+
+    // Software services init
+    // ATTENTION: inside ble_init(), we further initialize the SoftDevice (triggering the low-power clock)
+    ble_init();
+    rtc_init();
+
+    printf("Initialized software services\n");
+
     // Buses init
     spi_init();
+
+    printf("Initialized buses\n");
 
     // Hardware services init
     sd_card_init();
     acc_init();
 
-    // Connections init
-    ble_init();
-
-    printf("Initialized all software modules\n");
+    printf("Initialized hardware services\n");
 
     // Start advertisements
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);

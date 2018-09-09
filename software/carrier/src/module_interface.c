@@ -80,8 +80,10 @@ ret_code_t module_hw_init () {
 	nrfx_twim_enable(&twi_instance);
 
 	// Initialize the GPIO interrupt from the device
-	ret = nrfx_gpiote_init();
-	if (ret != NRF_SUCCESS) return ret;
+	if (!nrfx_gpiote_is_init()) {
+		ret = nrfx_gpiote_init();
+		if (ret != NRF_SUCCESS) return ret;
+	}
 
 	nrfx_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
 	ret = nrfx_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &in_config, module_interrupt_handler);
