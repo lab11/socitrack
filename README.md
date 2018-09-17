@@ -52,7 +52,6 @@ protocol.
 ### TotTag
 
   <img src="https://raw.githubusercontent.com/abiri/totternary/master/media/tottag_front.jpg" alt="TotTag Front" width="40%;" align="right">
-  <img src="https://raw.githubusercontent.com/abiri/totternary/master/media/tottag_back.jpg" alt="TotTag Back" width="40%;" align="right">
 
 TotTag includes:
 
