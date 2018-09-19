@@ -7,6 +7,11 @@ Programming
 -----------
 
     SEGGER_SERIAL=xxxxxxxxx make flash BLE_ADDRESS=c0:98:e5:42:00:01
+    
+For easy debugging, you can circumvent the BLE user interface and directly programm a role:
+
+    make flash BYPASS_USER_INTERFACE=1 ROLE=INITIATOR GLOSSY_MASTER=1    
+
 
 Advertisement
 -------------

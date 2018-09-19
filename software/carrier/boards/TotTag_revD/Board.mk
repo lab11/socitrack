@@ -1,4 +1,4 @@
-# Board-specific configurations for the Berkeley Buckler
+# Board-specific configurations for the TotTernary system
 
 # Ensure that this file is only included once
 ifndef BOARD_MAKEFILE

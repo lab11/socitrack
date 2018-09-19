@@ -1400,6 +1400,11 @@ int main (void)
         printf("ERROR: Failed initialization!\r\n");
     }
 
+
+#ifdef BYPASS_USER_INTERFACE
+
+// Test without having to rely on BLE for configuration
+#ifdef ROLE_INITIATOR
     // Start the ranging
     if (app.module_inited) {
         err_code = module_start_ranging(true, 10);
@@ -1409,6 +1414,31 @@ int main (void)
             printf("Started ranging...\r\n");
         }
     }
+#endif
+#ifdef ROLE_RESPONDER
+    // Start responding to polls
+    if (app.module_inited) {
+#ifdef GLOSSY_MASTER
+        err_code = module_start_anchor(true);
+#else
+        err_code = module_start_anchor(false);
+#endif
+        if (err_code != NRF_SUCCESS) {
+            printf("ERROR: Failed to start responding!\r\n");
+        } else {
+#ifdef GLOSSY_MASTER
+            printf("Started responding as Glossy master...\r\n");
+#else
+            printf("Started responding...\r\n");
+#endif
+        }
+    }
+#endif
+
+#else
+    // Wait for BLE to configure us as a specific device
+    // TODO
+#endif
 
     // Signal end of initialization
     led_off(CARRIER_LED_RED);

@@ -15,6 +15,16 @@ ifneq ($(BLE_ADDRESS), )
 CFLAGS += -DBLE_ADDRESS=$(BLE_ADDRESS)
 endif
 
+# Allow to circumvent BLE interface
+ifneq ($(BYPASS_USER_INTERFACE), )
+CFLAGS += -DBYPASS_USER_INTERFACE
+endif
+ifneq ($(ROLE), )
+CFLAGS += -DROLE_$(ROLE)
+endif
+ifneq ($(GLOSSY_MASTER), )
+CFLAGS += -DGLOSSY_MASTER
+endif
 
 # Source and header files
 APP_HEADER_PATHS += .
