@@ -359,7 +359,7 @@ int main () {
 	uart_write_message(19, "Initialized UART\r\n");
 #endif
 
-#define BYPASS_HOST_INTERFACE
+//#define BYPASS_HOST_INTERFACE
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
 	// the host controller (that is using TriPoint for ranging/localization)

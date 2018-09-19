@@ -188,7 +188,7 @@ void glossy_sync_task(){
 			send_sync(_last_time_sent);
 			_sending_sync = TRUE;
 
-			debug_msg("Sent LWB schedule\r\n");
+			//debug_msg("Sent LWB schedule\r\n");
 		}
 	}
 	else {

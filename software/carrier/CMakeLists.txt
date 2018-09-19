@@ -9,9 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 
 # Add sub-directories with their own CMakeLists.txt (this superseeds constant switching in-between different files)
 add_subdirectory(apps/blink)
-add_subdirectory(apps/tag)
-add_subdirectory(apps/tag-anchor)
-add_subdirectory(apps/tag-anchor-glossy-master)
+add_subdirectory(apps/node)
 add_subdirectory(apps/testing)
 add_subdirectory(boards)
 
