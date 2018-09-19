@@ -66,25 +66,13 @@ void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t a
 ret_code_t module_hw_init () {
 	ret_code_t ret;
 
-	// Initialize the I2C module
-	const nrfx_twim_config_t twi_config = {
-			.scl                = CARRIER_I2C_SCL,
-			.sda                = CARRIER_I2C_SDA,
-			.frequency          = NRF_TWIM_FREQ_400K,
-			.interrupt_priority = NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY,
-			.hold_bus_uninit    = NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
-	};
-
-	ret = nrfx_twim_init(&twi_instance, &twi_config, NULL, NULL);
-	if (ret != NRF_SUCCESS) return ret;
-	nrfx_twim_enable(&twi_instance);
-
 	// Initialize the GPIO interrupt from the device
 	if (!nrfx_gpiote_is_init()) {
 		ret = nrfx_gpiote_init();
 		if (ret != NRF_SUCCESS) return ret;
 	}
 
+	// Set Interrupt handler
 	nrfx_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
 	ret = nrfx_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &in_config, module_interrupt_handler);
 	if (ret != NRF_SUCCESS) return ret;

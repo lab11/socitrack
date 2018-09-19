@@ -50,6 +50,10 @@
 #include "nrf_uart.h"
 #include "nrf_drv_uart.h"
 
+// TWI
+#include "nrfx_twi.h"
+#include "nrfx_twim.h"
+
 // Clocks
 #include "nrfx_rtc.h"
 #include "nrf_drv_clock.h"
@@ -153,7 +157,7 @@ static void rtc_handler(nrfx_rtc_int_type_t int_type) {}
 
 
 /*******************************************************************************
- *   Buses: SPI & UART
+ *   Buses: SPI, TWI & UART
  ******************************************************************************/
 
 // Use SPI0
@@ -188,6 +192,66 @@ void spi_init(void) {
     //ret_code_t err_code = nrf_spi_mngr_init(&spi_instance, &spi_config);
     // Init SPI directly
     ret_code_t err_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
+}
+
+
+// Use TWI1
+#define TWI_INSTANCE_NR 1
+
+static const nrfx_twim_t twi_instance = NRFX_TWIM_INSTANCE(TWI_INSTANCE_NR);
+
+uint8_t twi_tx_buf[256];
+uint8_t twi_rx_buf[256];
+
+// Initialize device as TWI Master
+static void twi_init(void) {
+    ret_code_t err_code;
+
+    // Set internal I2C pull ups
+    if (!nrfx_gpiote_is_init()) {
+        err_code = nrfx_gpiote_init();
+        APP_ERROR_CHECK(err_code);
+    }
+
+    // TWI Master automatically enables as Pullups
+    //nrf_gpio_cfg_input(CARRIER_I2C_SCL, NRF_GPIO_PIN_PULLUP);
+    //nrf_gpio_cfg_input(CARRIER_I2C_SDA,  NRF_GPIO_PIN_PULLUP);
+
+    // Configure TWI Master
+    const nrfx_twim_config_t twi_config = {
+            .scl                = CARRIER_I2C_SCL,
+            .sda                = CARRIER_I2C_SDA,
+            .frequency          = NRF_TWIM_FREQ_400K,
+            .interrupt_priority = NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY,
+            .hold_bus_uninit    = NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
+    };
+
+    // Define twi_handler as third parameter
+    err_code = nrfx_twim_init(&twi_instance, &twi_config, NULL, NULL);
+    APP_ERROR_CHECK(err_code);
+
+    nrfx_twim_enable(&twi_instance);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void twi_write(uint8_t* addr, size_t size) {
+
+    // Copy to buffer
+    memcpy(twi_tx_buf, &addr, size);
+
+    ret_code_t err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, twi_tx_buf, size, false);
+    APP_ERROR_CHECK(err_code);
+}
+
+static void twi_read(uint8_t* addr, size_t size) {
+
+    ret_code_t err_code;
+
+    err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, addr, 1, true);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = nrfx_twim_rx(&twi_instance, MODULE_ADDRESS, twi_rx_buf, size);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -807,7 +871,7 @@ static void watchdog_handler (void* p_context)
 {
     uint32_t err_code;
 
-    /*if (!app.module_inited) {
+    if (!app.module_inited) {
         err_code = module_init(updateData);
         APP_ERROR_CHECK(err_code);
 
@@ -815,7 +879,7 @@ static void watchdog_handler (void* p_context)
             app.module_inited = true;
             module_start_ranging(true, 10);
         }
-    }*/
+    }
 }
 
 // If no pending operation, sleep until the next event occurs
@@ -1251,12 +1315,7 @@ static void power_management_init(void)
     APP_ERROR_CHECK(err_code);
 }
 
-
-/*******************************************************************************
- *   MAIN FUNCTION
- ******************************************************************************/
-
-int main (void)
+void carrier_hw_init(void)
 {
     ret_code_t err_code;
 
@@ -1278,9 +1337,8 @@ int main (void)
     printf("\r\n----------------------------------------------\r\n");
     printf("Initializing nRF...\r\n");
 
-    // -----------------------------------------------------------------------------------------------------------------
+    // Initialize ------------------------------------------------------------------------------------------------------
 
-    // Initialize
     app_init();
     timers_init();
     scheduler_init();
@@ -1297,8 +1355,23 @@ int main (void)
 
     // Buses init
     spi_init();
+    twi_init();
 
     printf("Initialized buses\n");
+}
+
+
+/*******************************************************************************
+ *   MAIN FUNCTION
+ ******************************************************************************/
+
+int main (void)
+{
+    ret_code_t err_code;
+
+    carrier_hw_init();
+
+    // Peripherals -----------------------------------------------------------------------------------------------------
 
     // Hardware services init
     sd_card_init();
@@ -1306,20 +1379,20 @@ int main (void)
 
     printf("Initialized hardware services\n");
 
+    // Module connection setup
+    err_code = module_hw_init();
+    APP_ERROR_CHECK(err_code);
+
     // Start advertisements
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
     printf("Started broadcasting BLE advertisements...\n");
 
-    // -----------------------------------------------------------------------------------------------------------------
-
-    // Init the nRF hardware to work with the module module.
-    err_code = module_hw_init();
-    APP_ERROR_CHECK(err_code);
+    // Contact module --------------------------------------------------------------------------------------------------
 
     // Init the state machine on the module
-    /*err_code = module_init(updateData);
+    err_code = module_init(updateData);
     if (err_code == NRF_SUCCESS) {
         app.module_inited = true;
         printf("Finished initialization\r\n");
@@ -1335,7 +1408,7 @@ int main (void)
         } else {
             printf("Started ranging...\r\n");
         }
-    }*/
+    }
 
     // Signal end of initialization
     led_off(CARRIER_LED_RED);

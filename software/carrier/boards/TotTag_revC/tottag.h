@@ -1,4 +1,4 @@
-// Pin definitions for TotTag Revision D
+// Pin definitions for TotTag Revision C
 
 #pragma once
 
@@ -37,7 +37,7 @@
 
 
 // SD Card
-#define CARRIER_CS_SD       NRF_GPIO_PIN_MAP(0,20)
+#define CARRIER_CS_SD       NRF_GPIO_PIN_MAP(0,18)
 #define CARRIER_SD_ENABLE   NRF_GPIO_PIN_MAP(0,14)
 #define CARRIER_SD_DETECT   NRF_GPIO_PIN_MAP(1,0)
 

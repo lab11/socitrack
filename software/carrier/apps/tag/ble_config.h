@@ -28,7 +28,7 @@
 
 // Behaviour
 #define UPDATE_RATE             APP_TIMER_TICKS(1000)
-#define APP_SD_REQUIRED         1
+#define APP_SD_REQUIRED         0
 
 // Structs -------------------------------------------------------------------------------------------------------------
 

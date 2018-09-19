@@ -452,7 +452,18 @@ uint8_t twi_rx_buf[256];
 static void twi_init(void) {
     ret_code_t err_code;
 
-    const nrfx_twim_config_t config = {
+    // Set internal I2C pull ups
+    if (!nrfx_gpiote_is_init()) {
+        err_code = nrfx_gpiote_init();
+        APP_ERROR_CHECK(err_code);
+    }
+
+    // TWI Master automatically enables as Pullups
+    //nrf_gpio_cfg_input(CARRIER_I2C_SCL, NRF_GPIO_PIN_PULLUP);
+    //nrf_gpio_cfg_input(CARRIER_I2C_SDA,  NRF_GPIO_PIN_PULLUP);
+
+    // Configure TWI Master
+    const nrfx_twim_config_t twi_config = {
         .scl                = CARRIER_I2C_SCL,
         .sda                = CARRIER_I2C_SDA,
         .frequency          = NRF_TWIM_FREQ_400K,
@@ -461,7 +472,7 @@ static void twi_init(void) {
     };
 
     // Define twi_handler as third parameter
-    err_code = nrfx_twim_init(&twi_instance, &config, NULL, NULL);
+    err_code = nrfx_twim_init(&twi_instance, &twi_config, NULL, NULL);
     APP_ERROR_CHECK(err_code);
 
     nrfx_twim_enable(&twi_instance);
