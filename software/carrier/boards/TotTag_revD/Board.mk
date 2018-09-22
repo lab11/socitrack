@@ -94,6 +94,7 @@ BOARD_SOURCES += \
 	nrfx_spi.c\
 	nrfx_spim.c\
 	nrf_spi_mngr.c\
+	nrf_twi_mngr.c\
 	nrf_drv_spi.c\
 	nrfx_rtc.c\
 	nrfx_clock.c\

@@ -40,11 +40,11 @@ uint32_t host_interface_init () {
 	GPIO_InitTypeDef  GPIO_InitStructure;
 	RCC_AHBPeriphClockCmd(INTERRUPT_CLK, ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = INTERRUPT_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Pin   = INTERRUPT_PIN;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(INTERRUPT_PORT, &GPIO_InitStructure);
 	INTERRUPT_PORT->BRR = INTERRUPT_PIN; // clear
 
@@ -52,14 +52,14 @@ uint32_t host_interface_init () {
 	// Initialize local Reception structures
 	rxStructure.wNumData = BUFFER_SIZE;   /* Maximum Number of data to be received */
 	rxStructure.pbBuffer = rxBuffer;      /* Common Rx buffer for all received data */
-	rxStructure.wAddr1 = 0;               /* Not needed */
-	rxStructure.wAddr2 = 0;               /* Not needed */
+	rxStructure.wAddr1   = 0;             /* Not needed */
+	rxStructure.wAddr2   = 0;             /* Not needed */
 
 	// Initialize local Transmission structures
 	txStructure.wNumData = BUFFER_SIZE;   /* Maximum Number of data to be sent */
 	txStructure.pbBuffer = txBuffer;      /* Common Tx buffer for all received data */
-	txStructure.wAddr1 = (I2C_OWN_ADDRESS << 1); /* The own board address */
-	txStructure.wAddr2 = 0;               /* Not needed */
+	txStructure.wAddr1   = (I2C_OWN_ADDRESS << 1); /* The own board address */
+	txStructure.wAddr2   = 0;             /* Not needed */
 
 	// Set SYSCLK as I2C clock source
 	// RCC_I2CCLKConfig(RCC_I2C1CLK_SYSCLK);
@@ -67,12 +67,12 @@ uint32_t host_interface_init () {
 
 	// Configure the device structure
 	CPAL_I2C_StructInit(&I2C1_DevStructure);      /* Set all fields to default values */
-	I2C1_DevStructure.CPAL_Dev = 0;
+	I2C1_DevStructure.CPAL_Dev       = 0;
 	I2C1_DevStructure.CPAL_Direction = CPAL_DIRECTION_TXRX;
-	I2C1_DevStructure.CPAL_Mode = CPAL_MODE_SLAVE;
-	I2C1_DevStructure.CPAL_State = CPAL_STATE_READY;
-	I2C1_DevStructure.wCPAL_Timeout = 6;
-	I2C1_DevStructure.wCPAL_Options =  CPAL_OPT_NO_MEM_ADDR | CPAL_OPT_I2C_WAKEUP_STOP;
+	I2C1_DevStructure.CPAL_Mode      = CPAL_MODE_SLAVE;
+	I2C1_DevStructure.CPAL_State     = CPAL_STATE_READY;
+	I2C1_DevStructure.wCPAL_Timeout  = 6;
+	I2C1_DevStructure.wCPAL_Options  =  CPAL_OPT_NO_MEM_ADDR | CPAL_OPT_I2C_WAKEUP_STOP;
 	// I2C1_DevStructure.wCPAL_Options =  0;
 	I2C1_DevStructure.CPAL_ProgModel = CPAL_PROGMODEL_INTERRUPT;
 	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_Timing = I2C_TIMING;
@@ -377,6 +377,12 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
             //debug_msg("Op code 3: Interrupt\r\n");
 			// Clear interrupt
 			interrupt_host_clear();
+
+			/*debug_msg("Interrupt buffer len: ");
+			debug_msg_int(_interrupt_buffer_len);
+			debug_msg("; Interrupt reason: ");
+			debug_msg_int(_interrupt_reason);
+			debug_msg("\n");*/
 
 			// Prepare a packet to send back to the host
 			txBuffer[0] = 1 + _interrupt_buffer_len;

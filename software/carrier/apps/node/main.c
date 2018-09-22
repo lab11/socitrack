@@ -50,10 +50,6 @@
 #include "nrf_uart.h"
 #include "nrf_drv_uart.h"
 
-// TWI
-#include "nrfx_twi.h"
-#include "nrfx_twim.h"
-
 // Clocks
 #include "nrfx_rtc.h"
 #include "nrf_drv_clock.h"
@@ -192,66 +188,6 @@ void spi_init(void) {
     //ret_code_t err_code = nrf_spi_mngr_init(&spi_instance, &spi_config);
     // Init SPI directly
     ret_code_t err_code = nrf_drv_spi_init(&spi_instance, &spi_config, NULL, NULL);
-    APP_ERROR_CHECK(err_code);
-}
-
-
-// Use TWI1
-#define TWI_INSTANCE_NR 1
-
-static const nrfx_twim_t twi_instance = NRFX_TWIM_INSTANCE(TWI_INSTANCE_NR);
-
-uint8_t twi_tx_buf[256];
-uint8_t twi_rx_buf[256];
-
-// Initialize device as TWI Master
-static void twi_init(void) {
-    ret_code_t err_code;
-
-    // Set internal I2C pull ups
-    if (!nrfx_gpiote_is_init()) {
-        err_code = nrfx_gpiote_init();
-        APP_ERROR_CHECK(err_code);
-    }
-
-    // TWI Master automatically enables as Pullups
-    //nrf_gpio_cfg_input(CARRIER_I2C_SCL, NRF_GPIO_PIN_PULLUP);
-    //nrf_gpio_cfg_input(CARRIER_I2C_SDA,  NRF_GPIO_PIN_PULLUP);
-
-    // Configure TWI Master
-    const nrfx_twim_config_t twi_config = {
-            .scl                = CARRIER_I2C_SCL,
-            .sda                = CARRIER_I2C_SDA,
-            .frequency          = NRF_TWIM_FREQ_400K,
-            .interrupt_priority = NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY,
-            .hold_bus_uninit    = NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
-    };
-
-    // Define twi_handler as third parameter
-    err_code = nrfx_twim_init(&twi_instance, &twi_config, NULL, NULL);
-    APP_ERROR_CHECK(err_code);
-
-    nrfx_twim_enable(&twi_instance);
-    APP_ERROR_CHECK(err_code);
-}
-
-static void twi_write(uint8_t* addr, size_t size) {
-
-    // Copy to buffer
-    memcpy(twi_tx_buf, &addr, size);
-
-    ret_code_t err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, twi_tx_buf, size, false);
-    APP_ERROR_CHECK(err_code);
-}
-
-static void twi_read(uint8_t* addr, size_t size) {
-
-    ret_code_t err_code;
-
-    err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, addr, 1, true);
-    APP_ERROR_CHECK(err_code);
-
-    err_code = nrfx_twim_rx(&twi_instance, MODULE_ADDRESS, twi_rx_buf, size);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -1355,7 +1291,7 @@ void carrier_hw_init(void)
 
     // Buses init
     spi_init();
-    twi_init();
+    //twi_init(); // Moved to module_interface.c
 
     printf("Initialized buses\n");
 }

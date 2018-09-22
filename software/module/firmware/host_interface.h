@@ -1,6 +1,8 @@
 #ifndef __HOST_INTERFACE_H
 #define __HOST_INTERFACE_H
 
+#include <stdint.h>
+
 // List of command byte opcodes for messages from the I2C master to us
 #define HOST_CMD_INFO             0x01
 #define HOST_CMD_CONFIG           0x02
