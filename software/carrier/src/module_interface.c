@@ -49,6 +49,8 @@ static void twi_init(void) {
     // Define twi_handler as third parameter
     err_code = nrf_twi_mngr_init(&twi_mngr_instance, &twi_config);
     APP_ERROR_CHECK(err_code);
+
+    //printf("Initialized TWI\n");
 }
 
 void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
@@ -63,20 +65,24 @@ void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t a
         uint8_t len = 0;
 		uint8_t cmd = MODULE_CMD_READ_INTERRUPT;
 
+		printf("Sending CMD_READ_INTERRUPT...\n");
+
 		// Figure out the length of what we need to receive by checking the first byte of the response.
 		nrf_twi_mngr_transfer_t const read_transfer[] = {
-		        NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, &cmd, 1, NRF_TWI_MNGR_NO_STOP),
-		        NRF_TWI_MNGR_READ( MODULE_ADDRESS, &len, 1, NRF_TWI_MNGR_NO_STOP)
+		        NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, &cmd, 1, 0),
+		        NRF_TWI_MNGR_READ( MODULE_ADDRESS, &len, 1, 0)
 		};
 
-		ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, read_transfer, 2, NULL);
+		ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_transfer, 2, NULL);
+		APP_ERROR_CHECK(ret);
 
 		// Now that we know the length, read the rest
+		printf("Reading I2C response of length %i\n", len);
 		nrf_twi_mngr_transfer_t const read_rest_transfer[] = {
 				NRF_TWI_MNGR_READ( MODULE_ADDRESS, twi_rx_buf, len, 0)
 		};
 
-		ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, read_rest_transfer, 1, NULL);
+		ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_rest_transfer, 1, NULL);
 		APP_ERROR_CHECK(ret);
 
 		// Send back the I2C data
@@ -131,18 +137,18 @@ ret_code_t module_init (module_interface_data_cb_f cb) {
 }
 
 ret_code_t module_get_info (uint16_t* id, uint8_t* version) {
-
     ret_code_t ret;
+
     uint8_t buf_cmd[1] = {MODULE_CMD_INFO};
 	uint8_t buf_resp[3];
 
 	// Send outgoing command that indicates we want the device info string
 	nrf_twi_mngr_transfer_t const read_transfer[] = {
-			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd,  1, NRF_TWI_MNGR_NO_STOP),
+			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd,  1, 0),
 			NRF_TWI_MNGR_READ( MODULE_ADDRESS, buf_resp, 3, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, read_transfer, 2, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_transfer, 2, NULL);
     APP_ERROR_CHECK(ret);
 
 	*id = (uint16_t)( (uint16_t)buf_resp[0] << (uint8_t)8) | buf_resp[1];
@@ -178,7 +184,7 @@ ret_code_t module_start_ranging (bool periodic, uint8_t rate) {
 			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 4, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, write_transfer, 1, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
     APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;
@@ -212,7 +218,7 @@ ret_code_t module_start_anchor (bool is_glossy_master) {
 			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 2, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, write_transfer, 1, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
     APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;
@@ -237,7 +243,7 @@ ret_code_t module_start_calibration (uint8_t index) {
 			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 3, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, write_transfer, 1, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
     APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;
@@ -252,11 +258,11 @@ ret_code_t module_get_calibration (uint8_t* calib_buf) {
 
 	// Send outgoing command that indicates we want the device info string
 	nrf_twi_mngr_transfer_t const read_transfer[] = {
-			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd,    1, NRF_TWI_MNGR_NO_STOP),
+			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd,    1, 0),
 			NRF_TWI_MNGR_READ( MODULE_ADDRESS, calib_buf, 18, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, read_transfer, 2, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_transfer, 2, NULL);
     APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;
@@ -272,7 +278,7 @@ ret_code_t module_sleep () {
 			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 1, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, write_transfer, 1, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
     APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;
@@ -290,7 +296,7 @@ ret_code_t module_resume () {
 			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 1, 0)
 	};
 
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, &twi_config, write_transfer, 1, NULL);
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
     APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;

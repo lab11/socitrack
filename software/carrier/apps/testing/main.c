@@ -492,7 +492,7 @@ static void twi_read(uint8_t* addr, size_t size) {
 
     ret_code_t err_code;
     
-    err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, addr, 1, true);
+    err_code = nrfx_twim_tx(&twi_instance, MODULE_ADDRESS, addr, 1, false);
     APP_ERROR_CHECK(err_code);
 
     err_code = nrfx_twim_rx(&twi_instance, MODULE_ADDRESS, twi_rx_buf, size);
@@ -637,17 +637,18 @@ int main(void) {
     twi_init();
 
     // Get the CMD_Info string
-    twi_tx_buf[0] = MODULE_CMD_INFO;
+    twi_rx_buf[0] = MODULE_CMD_INFO;
+    twi_tx_buf[0] = MODULE_CMD_DO_RANGE;
     size_t length_write = 1;
     size_t length_read  = 3;
 
-    // Writing over TWI
-    twi_write(twi_tx_buf, length_write);
-    printf("Successfully wrote command over I2C\n");
-
     // Reading over TWI
     twi_read(twi_rx_buf, length_read);
-    printf("Successfully read response over I2C\n");
+    //printf("Successfully read response over I2C\n");
+
+    // Writing over TWI
+    twi_write(twi_tx_buf, length_write);
+    //printf("Successfully wrote command over I2C\n");
 
     printf(" OK\n");
 #endif

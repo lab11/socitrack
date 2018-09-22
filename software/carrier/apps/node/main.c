@@ -1343,6 +1343,7 @@ int main (void)
 #ifdef ROLE_INITIATOR
     // Start the ranging
     if (app.module_inited) {
+        printf("Role: INITIATOR\n");
         err_code = module_start_ranging(true, 10);
         if (err_code != NRF_SUCCESS) {
             printf("ERROR: Failed to start ranging!\r\n");
@@ -1355,8 +1356,10 @@ int main (void)
     // Start responding to polls
     if (app.module_inited) {
 #ifdef GLOSSY_MASTER
+        printf("Role: Anchor Master\n");
         err_code = module_start_anchor(true);
 #else
+        printf("Role: Anchor\n");
         err_code = module_start_anchor(false);
 #endif
         if (err_code != NRF_SUCCESS) {

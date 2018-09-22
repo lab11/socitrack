@@ -351,6 +351,7 @@ int main () {
     // Test output channels
     // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
     SEGGER_RTT_Init();
+    debug_msg("\r\n----------------------------------------------\r\n");
     debug_msg("Initialized RTT...\r\n");
 #endif
 
