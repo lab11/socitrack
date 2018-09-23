@@ -3,8 +3,11 @@
 #include <stddef.h>
 #include <math.h>
 
+#include "stm32f0xx_gpio.h"
+
 #include "glossy.h"
 
+#include "board.h"
 #include "dw1000.h"
 #include "deca_regs.h"
 #include "oneway_common.h"
@@ -165,6 +168,10 @@ void glossy_sync_task(){
 			dw1000_choose_antenna(1);
 #endif
 
+			// Signal normal round by turning on GREEN
+			GPIO_WriteBit(STM_LED_RED_PORT,  STM_LED_RED_PIN,  Bit_SET);
+			GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_SET);
+
 		// Last timeslot is used by the master to schedule the next glossy sync packet
 		// _lwb_counter should never be larger, but this guarantees regular schedules despite bugs
 		} else if(_lwb_counter >= (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
@@ -189,6 +196,11 @@ void glossy_sync_task(){
 			_sending_sync = TRUE;
 
 			//debug_msg("Sent LWB schedule\r\n");
+
+			// Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
+			GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
+			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 		}
 	}
 	else {
@@ -202,6 +214,12 @@ void glossy_sync_task(){
 			dwt_rxenable(0);
 
 			debug_msg("Not in sync with Glossy master (yet)\r\n");
+
+			// Signal normal operation by turning on BLUE
+			if (GPIO_ReadOutputDataBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN)) {
+				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+			}
 		}
 		else {
 			// Check to see if it's our turn to do a ranging event!
@@ -425,6 +443,12 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
 
 		    debug_msg("Received schedule from Glossy master\n");
+
+			// Signal that in sync with Glossy by turning on GREEN
+			if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
+				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+			}
 
 			// First check to see if this sync packet contains a schedule update for this node
 			if(memcmp(in_glossy_sync->tag_sched_eui, _sched_req_pkt.tag_sched_eui, EUI_LEN) == 0){

@@ -51,6 +51,7 @@ typedef struct ble_app_s {
     bool         module_inited;       // Whether or not we successfully got through to the module and got it configured properly.
     uint8_t      calibration_index;
     uint8_t      current_location[6]; // Value of num characteristic
+    bool         module_interrupt_thrown;
     bool         buffer_updated;
     uint16_t     app_raw_response_length;
     uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE

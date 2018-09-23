@@ -743,16 +743,19 @@ void updateData (uint8_t * data, uint32_t len)
         printf(", included number of anchors: %i\r\n", data[1]);
 
         const uint8_t packet_overhead = 2;
-        const uint8_t ranging_length = 12;
+        const uint8_t packet_euid     = 8;
+        const uint8_t packet_range    = 4;
+        const uint8_t ranging_length  = packet_euid + packet_range;
         uint8_t nr_ranges = ((uint8_t) len - packet_overhead) / ranging_length;
 
         for (uint8_t i = 0; i < nr_ranges; i++) {
             uint8_t offset = packet_overhead + i * ranging_length;
             printf(" Nr %i", i + 1);
-            printf(": Anchor %#04X with range ", data[offset + 0]);
+            printf(": Anchor %02X with range ", data[offset + 0]);
 
             // Little-endian notation
-            int32_t range = data[offset + 8] + (data[offset + 9] << 1*8) + (data[offset + 10] << 2*8) + (data[offset + 11] << 3*8);
+            offset += packet_euid;
+            int32_t range = data[offset] + (data[offset + 1] << 1*8) + (data[offset + 2] << 2*8) + (data[offset + 3] << 3*8);
             
             if (range > ONEWAY_TAG_RANGE_MIN) {
                 printf("%li", range);
@@ -808,7 +811,7 @@ static void watchdog_handler (void* p_context)
     uint32_t err_code;
 
     if (!app.module_inited) {
-        err_code = module_init(updateData);
+        err_code = module_init(&app.module_interrupt_thrown, updateData);
         APP_ERROR_CHECK(err_code);
 
         if (err_code == NRF_SUCCESS) {
@@ -1205,8 +1208,9 @@ void app_init(void) {
     app.calibration_index = 255;
 
     // Clear buffers
-    app.module_inited  = false;
-    app.buffer_updated = false;
+    app.module_inited           = false;
+    app.module_interrupt_thrown = false;
+    app.buffer_updated          = false;
     memset(app.current_location, 0, 6);
     app.app_raw_response_length = 128;
     memset(app.app_raw_response_buffer, 0, app.app_raw_response_length);
@@ -1328,7 +1332,7 @@ int main (void)
     // Contact module --------------------------------------------------------------------------------------------------
 
     // Init the state machine on the module
-    err_code = module_init(updateData);
+    err_code = module_init(&app.module_interrupt_thrown, updateData);
     if (err_code == NRF_SUCCESS) {
         app.module_inited = true;
         printf("Finished initialization\r\n");
@@ -1392,7 +1396,9 @@ int main (void)
         //printf("Going back go sleep...\r\n");
         power_manage();
 
-		if (app.buffer_updated) {
+        if (app.module_interrupt_thrown) {
+            module_interrupt_dispatch();
+        } else if (app.buffer_updated) {
 		    //printf("Updating location...\r\n");
 			moduleDataUpdate();
 		}

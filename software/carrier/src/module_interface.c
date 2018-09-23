@@ -14,7 +14,8 @@
 
 // Save the callback that we use to signal the main application that we
 // received data over I2C.
-module_interface_data_cb_f _data_callback = NULL;
+bool *                     _module_interrupt_thrown = NULL;
+module_interface_data_cb_f _data_callback           = NULL;
 
 // Use TWI1
 #ifndef TWI_INSTANCE_NR
@@ -55,41 +56,57 @@ static void twi_init(void) {
 
 void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
 
-	//printf("Detected interrupt on pin: %i \r\n", pin);
+    //printf("Detected interrupt on pin: %i \r\n", pin);
 
-	// verify interrupt is from module
-	if (pin == CARRIER_INTERRUPT_MODULE) {
+    // As this is triggered by events, we do not have to clear the interrupt
 
-		// Ask whats up over I2C
-		ret_code_t ret;
-        uint8_t len = 0;
-		uint8_t cmd = MODULE_CMD_READ_INTERRUPT;
+    // Verify interrupt is from module
+    if (pin == CARRIER_INTERRUPT_MODULE) {
+        (*_module_interrupt_thrown) = true;
+    }
+}
 
-		printf("Sending CMD_READ_INTERRUPT...\n");
+ret_code_t module_interrupt_dispatch() {
+    ret_code_t ret;
 
-		// Figure out the length of what we need to receive by checking the first byte of the response.
-		nrf_twi_mngr_transfer_t const read_transfer[] = {
-		        NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, &cmd, 1, 0),
-		        NRF_TWI_MNGR_READ( MODULE_ADDRESS, &len, 1, 0)
-		};
+    // Clear flag
+    (*_module_interrupt_thrown) = false;
 
-		ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_transfer, 2, NULL);
-		APP_ERROR_CHECK(ret);
+    // Ask whats up over I2C
+    uint8_t len = 0;
+    uint8_t cmd = MODULE_CMD_READ_INTERRUPT;
 
-		// Now that we know the length, read the rest
-		printf("Reading I2C response of length %i\n", len);
-		nrf_twi_mngr_transfer_t const read_rest_transfer[] = {
-				NRF_TWI_MNGR_READ( MODULE_ADDRESS, twi_rx_buf, len, 0)
-		};
+    //printf("Sending CMD_READ_INTERRUPT...\n");
 
-		ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_rest_transfer, 1, NULL);
-		APP_ERROR_CHECK(ret);
+    // Figure out the length of what we need to receive by checking the first byte of the response.
+    nrf_twi_mngr_transfer_t const read_transfer[] = {
+            NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, &cmd, 1, 0),
+            NRF_TWI_MNGR_READ( MODULE_ADDRESS, &len, 1, 0)
+    };
 
-		// Send back the I2C data
-		printf("Received I2C response of length %i \r\n", len);
+    ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_transfer, 2, NULL);
+    APP_ERROR_CHECK(ret);
 
-		_data_callback(twi_rx_buf, len);
-	}
+    // Now that we know the length, read the rest
+    //printf("Reading I2C response of length %i\n", len);
+    if (len > 0) {
+        nrf_twi_mngr_transfer_t const read_rest_transfer[] = {
+                NRF_TWI_MNGR_READ(MODULE_ADDRESS, twi_rx_buf, len, 0)
+        };
+
+        ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, read_rest_transfer, 1, NULL);
+        APP_ERROR_CHECK(ret);
+
+        // Send back the I2C data
+        printf("Received I2C response of length %i \r\n", len);
+    } else {
+        printf("ERROR: Tried reading I2C packet of length %i\n", len);
+    }
+
+    // Parse received data
+    _data_callback(twi_rx_buf, len);
+
+    return NRF_SUCCESS;
 }
 
 ret_code_t module_hw_init () {
@@ -113,9 +130,12 @@ ret_code_t module_hw_init () {
 	return NRF_SUCCESS;
 }
 
-ret_code_t module_init (module_interface_data_cb_f cb) {
-	_data_callback = cb;
+ret_code_t module_init (bool* module_interrupt_thrown, module_interface_data_cb_f cb) {
 	ret_code_t ret;
+
+	// Setup connections to app
+	_module_interrupt_thrown = module_interrupt_thrown;
+    _data_callback           = cb;
 
 	// Wait for 500 ms to make sure the module module is ready
 	nrf_delay_ms(500);

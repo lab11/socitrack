@@ -2,6 +2,7 @@
 #define __HOST_INTERFACE_H
 
 #include <stdint.h>
+#include <system.h>
 
 // List of command byte opcodes for messages from the I2C master to us
 #define HOST_CMD_INFO             0x01
@@ -38,7 +39,7 @@ typedef enum {
 
 uint32_t host_interface_init();
 uint32_t host_interface_wait ();
-uint32_t host_interface_respond (uint8_t length);
+uint32_t host_interface_respond (uint8_t length, bool fixed_length);
 void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len);
 void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len);
 

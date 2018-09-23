@@ -14,6 +14,7 @@
 #define BUFFER_SIZE 128
 uint8_t rxBuffer[BUFFER_SIZE];
 uint8_t txBuffer[BUFFER_SIZE];
+uint8_t pending_tx = 0;
 
 
 /* CPAL local transfer structures */
@@ -143,7 +144,7 @@ uint32_t host_interface_wait () {
 }
 
 // Wait for a READ from the master. Setup the buffers
-uint32_t host_interface_respond (uint8_t length) {
+uint32_t host_interface_respond (uint8_t length, bool fixed_length) {
 	uint32_t ret;
 
 	if (length > BUFFER_SIZE) {
@@ -151,8 +152,20 @@ uint32_t host_interface_respond (uint8_t length) {
 	}
 
 	// Setup outgoing data
-	txStructure.wNumData = length;
-	txStructure.pbBuffer = txBuffer;
+	if (pending_tx) {
+		// From a previous response, we still have left overs; skip 'length' field and send the rest of the buffer
+		txStructure.pbBuffer = txBuffer + 1;
+	} else {
+		txStructure.pbBuffer = txBuffer;
+	}
+
+	if (fixed_length) {
+        txStructure.wNumData = length;
+        pending_tx = 0;
+	} else {
+	    txStructure.wNumData = 1; // Only send 'length' field, second READ will get rest
+	    pending_tx = length - (uint8_t)1; // Subtract 'length' field
+	}
 
 	// Device is ready, not clear if this is needed
 	I2C1_DevStructure.CPAL_State = CPAL_STATE_READY;
@@ -309,7 +322,13 @@ void host_interface_rx_fired () {
 // We don't need to do anything after the master reads from us, except
 // to go back to waiting for a WRITE.
 void host_interface_tx_fired () {
-	host_interface_wait();
+
+	if (pending_tx) {
+		host_interface_respond(pending_tx, TRUE);
+	} else {
+		// No more pending messages
+		host_interface_wait();
+	}
 
 	//debug_msg("Data sent\r\n");
 }
@@ -366,7 +385,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 			} else {
 				memcpy(txBuffer, NULL_PKT, 3);
 			}
-			host_interface_respond(3);
+			host_interface_respond(3, TRUE);
 			break;
 
 		/**********************************************************************/
@@ -388,7 +407,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 			txBuffer[0] = 1 + _interrupt_buffer_len;
 			txBuffer[1] = _interrupt_reason;
 			memcpy(txBuffer+2, _interrupt_buffer, _interrupt_buffer_len);
-			host_interface_respond(txBuffer[0]+1);
+			host_interface_respond(txBuffer[0]+1, FALSE);
 
 			break;
 		}
@@ -401,7 +420,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
             //debug_msg("Op code 8: Calibration\r\n");
 			// Copy the raw values from the stored array
 			memcpy(txBuffer, dw1000_get_txrx_delay_raw(), 12);
-			host_interface_respond(12);
+			host_interface_respond(12, TRUE);
 			break;
 		}
 
@@ -435,7 +454,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
   */
 void CPAL_I2C_TXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 	mark_interrupt(INTERRUPT_I2C_TX);
-	host_interface_wait();
+	//host_interface_wait(); // handled in host_interface_tx_fired
 }
 
 /**

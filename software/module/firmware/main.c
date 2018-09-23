@@ -298,11 +298,10 @@ int main () {
 	GPIO_InitStructure.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure);
 
-	// Initialize LEDs as off
-	GPIO_SetBits(STM_LED_RED_PORT, STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN);
-
-	// Signal init by turning on RED
-	GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_RESET);
+    // Signal init by turning on WHITE
+	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
+    GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 
 	//Initialize UART1 on GPIO0 and GPIO1
     // Tx: GPIO1 -> Pin 27 -> PB6
@@ -337,9 +336,9 @@ int main () {
     // In case we need a timer, get one. This is used for things like periodic ranging events.
 	//_app_timer = timer_init();
 
-	// Signal that internal setup is finished by setting BLUE
-	GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_SET);
-	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_RESET);
+	// Signal that internal setup is finished by setting RED
+	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 
 	// Next up do some preliminary setup of the DW1000. This mostly configures
 	// pins and hardware peripherals, as well as straightening out some
@@ -406,9 +405,9 @@ int main () {
 	polypoint_start();
 #endif
 
-	// Signal normal operation by turning on GREEN
-	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_SET);
-	GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+	// Signal normal operation by turning on BLUE
+	GPIO_WriteBit(STM_LED_RED_PORT,  STM_LED_RED_PIN,  Bit_SET);
+	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_RESET);
 
 	// MAIN LOOP
 	while (1) {
@@ -453,14 +452,14 @@ int main () {
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_RX] == TRUE) {
-			    debug_msg("Interrupt: I2C_RX\r\n");
+			    //debug_msg("Interrupt: I2C_RX\r\n");
 				interrupts_triggered[INTERRUPT_I2C_RX] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_rx_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_TX] == TRUE) {
-			    debug_msg("Interrupt: I2C_TX\r\n");
+			    //debug_msg("Interrupt: I2C_TX\r\n");
 				interrupts_triggered[INTERRUPT_I2C_TX] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_tx_fired();

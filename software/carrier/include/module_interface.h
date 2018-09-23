@@ -36,13 +36,14 @@
 typedef void (*module_interface_data_cb_f)(uint8_t* data, uint32_t len);
 
 
-ret_code_t module_init (module_interface_data_cb_f cb);
+ret_code_t module_init (bool* module_interrupt_thrown, module_interface_data_cb_f cb);
 ret_code_t module_hw_init ();
 ret_code_t module_get_info (uint16_t* id, uint8_t* version);
 ret_code_t module_start_ranging (bool periodic, uint8_t rate);
 ret_code_t module_start_anchor (bool is_glossy_master);
 ret_code_t module_start_calibration (uint8_t index);
 ret_code_t module_get_calibration (uint8_t* calib_buf);
+ret_code_t module_interrupt_dispatch ();
 ret_code_t module_sleep ();
 ret_code_t module_resume ();
 
