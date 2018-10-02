@@ -90,7 +90,7 @@ void oneway_tag_init (void *app_scratchspace) {
 dw1000_err_e oneway_tag_start_ranging_event () {
 	dw1000_err_e err;
 
-	debug_msg("Start ranging event...\r\n");
+	//debug_msg("Start ranging event...\r\n");
 
 	if (ot_scratch->state != TSTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
@@ -238,8 +238,8 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 			if (!anc_already_found) {
 
                 /*debug_msg("Received an Anchor response packet from ");
-                debug_msg_int(anc_final->ieee154_header_unicast.sourceAddr[0] >> 4);
-                debug_msg_int(anc_final->ieee154_header_unicast.sourceAddr[0] & 0x0F);
+                debug_msg_hex(anc_final->ieee154_header_unicast.sourceAddr[0] >> 4);
+                debug_msg_hex(anc_final->ieee154_header_unicast.sourceAddr[0] & 0x0F);
                 debug_msg("\r\n");*/
 
 				// Save the anchor address
@@ -300,6 +300,10 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 static void send_poll () {
 	int err;
 
+	/*debug_msg("Sending poll ");
+	debug_msg_int(ot_scratch->ranging_broadcast_ss_num);
+	debug_msg("\n");*/
+
 	// Record the packet length to send to DW1000
 	uint16_t tx_len = sizeof(struct pp_tag_poll);
 
@@ -344,13 +348,14 @@ static void send_poll () {
 
 	if (err != DWT_SUCCESS) {
 		// This likely means our delay was too short when sending this packet
-		// If this occurs in the last round, it however also mean that the anchor didnt reply with packets correctly
 		if (ot_scratch->ranging_broadcast_ss_num == NUM_RANGING_BROADCASTS-1) {
+			// If this occurs in the last round, it however also means that the anchor didnt reply with packets correctly
 			debug_msg("ERROR: Delay too short for the last packet, setup took too long!\n");
 		} else {
 			debug_msg("ERROR: Delay too short, packet could not be sent!\n");
 		}
 	}
+
 }
 
 // This is called for each broadcast ranging subsequence interval where
@@ -408,9 +413,9 @@ static void report_range () {
 	// New state
 	ot_scratch->state = TSTATE_CALCULATE_RANGE;
 
-	debug_msg("Calculating & reporting ranges to ");
+	/*debug_msg("Calculating & reporting ranges to ");
 	debug_msg_int(ot_scratch->anchor_response_count);
-	debug_msg(" anchors\r\n");
+	debug_msg(" anchors\r\n");*/
 
 	// Push data out over UART if configured to do so
 #ifdef UART_DATA_OFFLOAD
@@ -495,6 +500,15 @@ static void calculate_ranges () {
 	// to each anchor
 	for (uint8_t anchor_index=0; anchor_index<ot_scratch->anchor_response_count; anchor_index++) {
 		anchor_responses_t* aresp = &(ot_scratch->anchor_responses[anchor_index]);
+
+		debug_msg("Anchor ID: ");
+        debug_msg_hex(aresp->anchor_addr[0] >> 4);
+        debug_msg_hex(aresp->anchor_addr[0] & 0x0F);
+		debug_msg("; First index: ");
+		debug_msg_int(aresp->tag_poll_first_idx);
+		debug_msg("; last index: ");
+		debug_msg_int(aresp->tag_poll_last_idx);
+		debug_msg("\n");
 
 		// Since the rxd TOAs are compressed to 16 bits, we first need to decompress them back to 64-bit quantities
 		uint64_t tag_poll_TOAs[NUM_RANGING_BROADCASTS];

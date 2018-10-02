@@ -159,7 +159,7 @@ static void setup () {
 	SPI_InitStructure.SPI_CPOL              = SPI_CPOL_Low;
 	SPI_InitStructure.SPI_CPHA              = SPI_CPHA_1Edge;
 	SPI_InitStructure.SPI_NSS               = SPI_NSS_Soft;
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
 	SPI_InitStructure.SPI_FirstBit          = SPI_FirstBit_MSB;
 	SPI_InitStructure.SPI_CRCPolynomial     = 7;
 	SPI_InitStructure.SPI_Mode              = SPI_Mode_Master;
@@ -289,12 +289,12 @@ static void setup () {
 
 // Functions to configure the SPI speed
 void dw1000_spi_fast () {
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_8;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
 	SPI_Init(SPI1, &SPI_InitStructure);
 }
 
 void dw1000_spi_slow () {
-	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_64;
+	SPI_InitStructure.SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_32;
 	SPI_Init(SPI1, &SPI_InitStructure);
 }
 
@@ -322,8 +322,6 @@ void uart_write_message(uint32_t length, const char* msg){
 	// Start things off with a packet header
 	//const uint8_t header[] = {0x80, 0x01, 0x80, 0x01};
 	//uart_write(4, header);
-
-	// TODO: send timestamp using stm32f0xx_rtc.c / RTC_GetTimeStamp
 
     uart_write(length, (uint8_t*)msg);
 
@@ -454,17 +452,9 @@ void dw1000_interrupt_fired () {
 
 // Blocking SPI transfer
 static int spi_transfer () {
+
 	uint32_t loop = 0;
 
-	// Enable NSS output for master mode
-	SPI_SSOutputCmd(SPI1, ENABLE);
-
-	// Enable DMA1 Channel1 Transfer Complete interrupt
-	//DMA_ITConfig(SPI1_TX_DMA_CHANNEL, DMA_IT_TC, ENABLE);
-
-	// Enable the DMA channels
-	SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, ENABLE);
-	SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, ENABLE);
 	DMA_Cmd(SPI1_RX_DMA_CHANNEL, ENABLE);
 	DMA_Cmd(SPI1_TX_DMA_CHANNEL, ENABLE);
 
@@ -491,15 +481,32 @@ static int spi_transfer () {
 	DMA_Cmd(SPI1_RX_DMA_CHANNEL, DISABLE);
 	DMA_Cmd(SPI1_TX_DMA_CHANNEL, DISABLE);
 
-	// Disable the SPI Rx and Tx DMA requests
-	SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, DISABLE);
-	SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, DISABLE);
-
 	if (loop >= 100000) {
 		return -1;
 	} else {
 		return 0;
 	}
+}
+
+static void dma_enable() {
+
+    // Enable NSS output for master mode
+    SPI_SSOutputCmd(SPI1, ENABLE);
+
+    // Enable DMA1 Channel1 Transfer Complete interrupt
+    //DMA_ITConfig(SPI1_TX_DMA_CHANNEL, DMA_IT_TC, ENABLE);
+
+    // Enable the DMA channels
+    SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, ENABLE);
+    SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, ENABLE);
+
+}
+
+static void dma_disable() {
+
+    // Disable the SPI Rx and Tx DMA requests
+    SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Rx, DISABLE);
+    SPI_I2S_DMACmd(SPI1, SPI_I2S_DMAReq_Tx, DISABLE);
 }
 
 // Called by the DW1000 library to issue a read command to the DW1000.
@@ -511,6 +518,10 @@ int readfromspi (uint16_t headerLength,
 
 	SPI_Cmd(SPI1, ENABLE);
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_RESET);
+
+    // Enable DMA for both of the two following transactions
+    dma_enable();
+
 	setup_dma_write(headerLength, headerBuffer);
 	ret = spi_transfer();
 	if (ret) goto error;
@@ -519,11 +530,15 @@ int readfromspi (uint16_t headerLength,
 	ret = spi_transfer();
 	if (ret) goto error;
 
+    // Disable DMA again
+	dma_disable();
+
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_SET);
 	SPI_Cmd(SPI1, DISABLE);
 	return 0;
 
 error:
+    dma_disable();
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_SET);
 	SPI_Cmd(SPI1, DISABLE);
 	polypoint_reset();
@@ -539,6 +554,10 @@ int writetospi (uint16_t headerLength,
 
 	SPI_Cmd(SPI1, ENABLE);
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_RESET);
+
+	// Enable DMA for both of the two following transactions
+	dma_enable();
+
 	setup_dma_write(headerLength, headerBuffer);
 	ret = spi_transfer();
 	if (ret) goto error;
@@ -547,11 +566,15 @@ int writetospi (uint16_t headerLength,
 	ret = spi_transfer();
 	if (ret) goto error;
 
+	// Disable DMA again
+	dma_disable();
+
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_SET);
 	SPI_Cmd(SPI1, DISABLE);
 	return 0;
 
 error:
+    dma_disable();
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_SET);
 	SPI_Cmd(SPI1, DISABLE);
 	polypoint_reset();
@@ -782,7 +805,7 @@ dw1000_err_e dw1000_configure_settings () {
 	                 DWT_INT_ARFE, 1);
 
 	// Set the parameters of ranging and channel and whatnot
-	_dw1000_config.chan           = 2;
+	_dw1000_config.chan           = 1;
 	_dw1000_config.prf            = DWT_PRF_64M;
 	_dw1000_config.txPreambLength = DW1000_PREAMBLE_LENGTH;
 	_dw1000_config.rxPAC          = DW1000_PAC_SIZE;
@@ -933,9 +956,13 @@ void dw1000_update_channel (uint8_t chan) {
 // Called when dw1000 tx/rx config settings and constants should be re applied
 void dw1000_reset_configuration () {
 #if DW1000_USE_OTP
-	dwt_configure(&_dw1000_config, (DWT_LOADANTDLY | DWT_LOADXTALTRIM));
+	//dwt_configure(&_dw1000_config, (DWT_LOADANTDLY | DWT_LOADXTALTRIM));
+	dwt_setchannel(&_dw1000_config, (DWT_LOADANTDLY | DWT_LOADXTALTRIM));
 #else
-	dwt_configure(&_dw1000_config, 0);
+	//dwt_configure(&_dw1000_config, 0);
+
+	// Custom function: only reset channel related information
+	dwt_setchannel(&_dw1000_config, 0);
 #endif
 	dwt_setsmarttxpower(_dw1000_config.smartPowerEn);
 	global_tx_config.PGdly = pgDelay[_dw1000_config.chan];

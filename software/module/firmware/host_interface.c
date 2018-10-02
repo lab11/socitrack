@@ -359,6 +359,9 @@ uint32_t CPAL_TIMEOUT_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 	uint8_t opcode;
 
+	// Mark this interrupt for the main thread
+	mark_interrupt(INTERRUPT_I2C_RX);
+
 	// We need to do some of the handling for the I2C here, because if
 	// we wait to handle it on the main thread sometimes there is too much
 	// delay and the I2C stops working.
@@ -442,9 +445,6 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		default:
 			break;
 	}
-
-	// Handle this interrupt on the main thread
-	mark_interrupt(INTERRUPT_I2C_RX);
 }
 
 /**

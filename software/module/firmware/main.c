@@ -289,14 +289,23 @@ int main () {
 	// Not entirely sure why.
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
 
-	GPIO_InitTypeDef GPIO_InitStructure;
+    GPIO_InitTypeDef GPIO_InitStructure_A;
+    RCC_AHBPeriphClockCmd(STM_GPIO2_CLK, ENABLE);
+    GPIO_InitStructure_A.GPIO_Pin 	= STM_GPIO2_PIN;
+    GPIO_InitStructure_A.GPIO_Mode 	= GPIO_Mode_OUT;
+    GPIO_InitStructure_A.GPIO_OType = GPIO_OType_PP;
+    GPIO_InitStructure_A.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_InitStructure_A.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
+    GPIO_Init(STM_GPIO2_PORT, &GPIO_InitStructure_A);
+
+	GPIO_InitTypeDef GPIO_InitStructure_B;
 	RCC_AHBPeriphClockCmd(STM_GPIO3_CLK, ENABLE);
-	GPIO_InitStructure.GPIO_Pin 	= STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
-	GPIO_InitStructure.GPIO_Mode 	= GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType 	= GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_Speed 	= GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
-	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure);
+	GPIO_InitStructure_B.GPIO_Pin 	= STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
+	GPIO_InitStructure_B.GPIO_Mode 	= GPIO_Mode_OUT;
+	GPIO_InitStructure_B.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure_B.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure_B.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
+	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure_B);
 
     // Signal init by turning on WHITE
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
@@ -417,8 +426,12 @@ int main () {
 		// PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 #endif
 
-		GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
-		GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
+		// FIXME: Find reason for delay / code
+		// If this does not occur, the interrupt handler does not have time to set the interrupt bit and it will not be handled, as the test is negative for all cases
+
+        GPIO_WriteBit(STM_GPIO2_PORT, STM_GPIO2_PIN, Bit_SET);
+		GPIO_WriteBit(STM_GPIO2_PORT, STM_GPIO2_PIN, Bit_RESET);
+		//debug_msg("Interrupt triggered\n");
 
 		// When an interrupt fires we end up here.
 		// Check all of the interrupt "queues" and call the appropriate

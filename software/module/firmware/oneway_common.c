@@ -170,11 +170,12 @@ void oneway_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* anchor_
 			buffer_index += sizeof(int32_t);
 			num_anchor_ranges++;
 
-			debug_msg("Range to anchor ");
-			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1]);
+			/*debug_msg("Range to anchor ");
+			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] >> 4);
+			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] & 0x0F);
 			debug_msg(": ");
 			debug_msg_uint((uint32_t)ranges_millimeters[i]);
-			debug_msg("\n");
+			debug_msg("\n");*/
 		}
 	}
 
@@ -251,9 +252,9 @@ static uint8_t listening_window_number_to_channel (uint8_t window_num) {
 void oneway_set_ranging_broadcast_subsequence_settings (dw1000_role_e role,
                                                         uint8_t subseq_num) {
 	// Stop the transceiver on the anchor. Don't know why.
-	if (role == ANCHOR) {
+	/*if (role == ANCHOR) {
 		dwt_forcetrxoff();
-	}
+	}*/
 
 	// Change the channel depending on what subsequence number we're at
 	dw1000_update_channel(subsequence_number_to_channel(subseq_num));

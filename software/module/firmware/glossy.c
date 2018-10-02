@@ -266,10 +266,10 @@ void glossy_sync_task(){
 			} else if(_lwb_counter < (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US - LWB_SLOTS_PER_RANGE)) {
 
 				if(_lwb_schedule_callback && _lwb_scheduled && 
-				   (((_lwb_counter - 2)/LWB_SLOTS_PER_RANGE) % _lwb_num_timeslots == _lwb_mod_timeslot) && 
+				   (((_lwb_counter - 2)/LWB_SLOTS_PER_RANGE) == _lwb_timeslot) &&
 				   ((_lwb_counter - 2) % LWB_SLOTS_PER_RANGE == 0)){
 					// Our scheduled timeslot!  Call the timeslot callback which will likely kick off a ranging event
-                    // FIXME: The schedule is repeated internally as often as possible in a round of 12 slots (e.g. a single node ranges 12 times per round)
+					// Note: If all slots should be used (i.e. we wrap the schedule around), substitute "== _lwb_timeslot" with "% _lwb_num_timeslots == _lwb_mod_timeslot"
 					_lwb_schedule_callback();
 				}
 
@@ -442,7 +442,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 		}
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
 
-		    debug_msg("Received schedule from Glossy master\n");
+		    //debug_msg("Received schedule from Glossy master\n");
 
 			// Signal that in sync with Glossy by turning on GREEN
 			if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {

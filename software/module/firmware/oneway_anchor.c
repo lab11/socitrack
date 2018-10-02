@@ -173,6 +173,13 @@ static void ranging_listening_window_task () {
 		if(!oa_scratch->final_ack_received){
 
 			//debug_msg("Sending response to Tag\n");
+			debug_msg("Number of packets: Antenna 1 - ");
+			debug_msg_int(oa_scratch->anchor_antenna_recv_num[0]);
+			debug_msg("; Antenna 2 - ");
+			debug_msg_int(oa_scratch->anchor_antenna_recv_num[1]);
+			debug_msg("; Antenna 3 - ");
+			debug_msg_int(oa_scratch->anchor_antenna_recv_num[2]);
+			debug_msg("\n");
 
 			dwt_forcetrxoff();
 	
@@ -228,8 +235,7 @@ static void ranging_listening_window_setup () {
 	// Stop iterating through timing channels
 	timer_stop(oa_scratch->anchor_timer);
 
-	// We no longer need to receive and need to instead
-	// start transmitting.
+	// We no longer need to receive and need to instead start transmitting.
 	dwt_forcetrxoff();
 
 	// Update our state to the TX response state
@@ -307,6 +313,14 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 			if (message_type == MSG_TYPE_PP_NOSLOTS_TAG_POLL) {
 				// This is one of the broadcast ranging packets from the tag
 				struct pp_tag_poll* rx_poll_pkt = (struct pp_tag_poll*) buf;
+
+                /*debug_msg("Received Poll message ");
+                debug_msg_int(rx_poll_pkt->subsequence);
+                debug_msg(": ");
+                debug_msg_int((uint32_t)(dw_rx_timestamp >> 32));
+                debug_msg(" ");
+				debug_msg_int((uint32_t)(dw_rx_timestamp & 0xFFFFFFFF));
+				debug_msg("\n");*/
 
 				// Decide what to do with this packet
 				if (oa_scratch->state == ASTATE_IDLE) {
@@ -390,7 +404,7 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 						}
 
 						// Regardless, it's a good idea to immediately call the subsequence task and restart the timer
-						timer_reset(oa_scratch->anchor_timer, RANGING_BROADCASTS_PERIOD_US-120); // Magic number calculated from timing
+						timer_reset(oa_scratch->anchor_timer, RANGING_BROADCASTS_PERIOD_US - 25); // Magic number calculated from timing
 						//ranging_broadcast_subsequence_task();
 						//timer_reset(oa_scratch->anchor_timer, 0);
 

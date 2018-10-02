@@ -648,6 +648,15 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, carrier_ble_conn_handle);
             APP_ERROR_CHECK(err_code);
+
+            // TODO: Continue advertising, but nonconnectably
+            //m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
+            //ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+
+            // Connected to device. Set initial CCCD attributes to NULL
+            err_code = sd_ble_gatts_sys_attr_set(carrier_ble_conn_handle, NULL, 0, 0);
+            APP_ERROR_CHECK(err_code);
+
             break;
         }
         case BLE_GAP_EVT_DISCONNECTED: {
@@ -656,6 +665,11 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             led_off(CARRIER_LED_GREEN);
             NRF_LOG_INFO("Disconnected.");
             carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+
+            // TODO: Go back to advertising connectably
+            //m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+            //ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+
             break;
         }
         case BLE_GAP_EVT_PHY_UPDATE_REQUEST: {
