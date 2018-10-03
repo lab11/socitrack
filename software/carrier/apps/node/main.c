@@ -10,6 +10,7 @@
 #include "nordic_common.h"
 #include "nrf.h"
 #include "nrf_delay.h"
+#include "nrf_error.h"
 #include "nrf_gpio.h"
 #include "nrf_gpiote.h"
 #include "nrfx_gpiote.h"
@@ -811,7 +812,14 @@ void moduleDataUpdate ()
 		notify_params.p_data = app.app_raw_response_buffer;
 
 		ret_code_t err_code = sd_ble_gatts_hvx(carrier_ble_conn_handle, &notify_params);
-        APP_ERROR_CHECK(err_code);
+
+        if (err_code == NRF_ERROR_INVALID_STATE) {
+            // Error means notify is not enabled by the client. IGNORE
+        } else if (err_code == NRF_ERROR_RESOURCES) {
+            // Too many notifications in queue... just ignore and wait for device to read them
+        } else {
+            APP_ERROR_CHECK(err_code);
+        }
 
         printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
 	}

@@ -68,7 +68,13 @@ body {
   color: #0892D0;
 }
 
-#result {
+#result_location {
+  width: 75%;
+  border: 1px solid #ccc;
+  margin: 10px auto;
+}
+
+#result_ranges {
   width: 75%;
   border: 1px solid #ccc;
   margin: 10px auto;
@@ -76,6 +82,13 @@ body {
 
 #location {
   font-size: 140%;
+  font-weight: bold;
+  margin: 10px 0 10px 0;
+  padding-top: 10px;
+}
+
+#ranges {
+  font-size: 100%;
   font-weight: bold;
   margin: 10px 0 10px 0;
   padding-top: 10px;

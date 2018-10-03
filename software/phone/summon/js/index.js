@@ -216,6 +216,7 @@ function process_raw_buffer (buf) {
             var offset_start = 2;
             var instance_length = 12;
             var ranges = {};
+            var ranges_update = '';
             var num_valid_ranges = 0;
             for (var i=0; i<num_ranges; i++) {
                 var start = offset_start + (i*instance_length);
@@ -229,6 +230,9 @@ function process_raw_buffer (buf) {
                 }
 
                 app.log('  ' + eui + ': ' + range);
+
+                // Add to string
+                ranges_update += 'Resp ' + i + ': \t' + range + '\n';
             }
 
             // Got ranges
@@ -243,14 +247,15 @@ function process_raw_buffer (buf) {
             // Calculate a location
             if (num_valid_ranges >= 3) {
                 var loc = calculate_location(ranges, _anchor_locations);
-                var update =  'X: ' + loc[0].toFixed(2) + ';';
-                    update += ' Y: ' + loc[1].toFixed(2) + ';';
-                    update += ' Z: ' + loc[2].toFixed(2);
-                app.update_location(update);
+                var location_update =  'X: ' + loc[0].toFixed(2) + ';';
+                    location_update += ' Y: ' + loc[1].toFixed(2) + ';';
+                    location_update += ' Z: ' + loc[2].toFixed(2);
+                app.update_location(location_update);
             }
 
-            // Post location update to GDP
-            post_to_gdp(loc[0], loc[1], loc[2]);
+            // In any cases, show all the ranges
+            app.update_ranges(ranges_update);
+
         }
     } else {
         app.log('Got different reason byte: ' + reason_byte);
@@ -394,8 +399,11 @@ var app = {
 
     update_location: function (str) {
         document.querySelector("#location").innerHTML = str;
-
     },
+    update_ranges: function (str) {
+        document.querySelector("#ranges").innerHTML = str;
+    },
+
     // Function to Log Text to Screen
     log: function(string) {
     	document.querySelector("#console").innerHTML += (new Date()).toLocaleTimeString() + " : " + string + "<br />";
