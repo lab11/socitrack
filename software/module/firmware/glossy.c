@@ -123,8 +123,10 @@ void glossy_init(glossy_role_e role){
 	// If the anchor, let's kick off a task which unconditionally kicks off sync messages with depth = 0
 	if(role == GLOSSY_MASTER){
 		_lwb_valid = TRUE;
+#ifdef DW1000_USE_OTP
 		uint8 ldok = OTP_SF_OPS_KICK | OTP_SF_OPS_SEL_TIGHT;
 		dwt_writetodevice(OTP_IF_ID, OTP_SF, 1, &ldok); // set load LDE kick bit
+#endif
 		_last_time_sent = dwt_readsystimestamphi32() & 0xFFFFFFFE;
 	}
 
@@ -169,12 +171,13 @@ void glossy_sync_task(){
 #endif
 
 			// Signal normal round by turning on GREEN
-			GPIO_WriteBit(STM_LED_RED_PORT,  STM_LED_RED_PIN,  Bit_SET);
-			GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_SET);
+			GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 
 		// Last timeslot is used by the master to schedule the next glossy sync packet
 		// _lwb_counter should never be larger, but this guarantees regular schedules despite bugs
-		} else if(_lwb_counter >= (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
+		} else if(_lwb_counter == (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
 			dwt_forcetrxoff();
 		
 		#ifdef GLOSSY_PER_TEST
@@ -201,6 +204,10 @@ void glossy_sync_task(){
 			GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
 			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+		} else if (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1) {
+			debug_msg("WARNING: LWB counter overshooting, currently at ");
+			debug_msg_int(_lwb_counter);
+			debug_msg("\n");
 		}
 	}
 	else {

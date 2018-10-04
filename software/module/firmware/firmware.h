@@ -25,6 +25,7 @@ typedef enum {
 typedef enum {
 	APP_ONEWAY = 0,
 	APP_CALIBRATION = 1,
+	APP_RANGETEST = 2
 } polypoint_application_e;
 
 

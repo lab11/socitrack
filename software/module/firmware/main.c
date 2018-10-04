@@ -14,6 +14,9 @@
 #include "oneway_common.h"
 #include "oneway_tag.h"
 #include "oneway_anchor.h"
+#include "rangetest_common.h"
+#include "rangetest_tag.h"
+#include "rangetest_anchor.h"
 #include "timer.h"
 #include "delay.h"
 #include "firmware.h"
@@ -106,6 +109,8 @@ void polypoint_configure_app (polypoint_application_e app, void* app_config) {
 		case APP_ONEWAY:
 			oneway_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
 			break;
+		case APP_RANGETEST:
+			rangetest_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
 
 		default:
 			break;
@@ -132,6 +137,8 @@ void polypoint_start () {
 		case APP_ONEWAY:
 			oneway_start();
 			break;
+		case APP_RANGETEST:
+			rangetest_start();
 
 		default:
 			break;
@@ -410,7 +417,13 @@ int main () {
 	config.update_mode = ONEWAY_UPDATE_MODE_PERIODIC;
 	config.update_rate = 10; // in tenths of herz
 	config.sleep_mode  = FALSE; // TRUE: sleep in-between rangings
+
+//#define RANGE_TEST
+#ifdef RANGE_TEST
+	polypoint_configure_app(APP_RANGETEST, &config);
+#else
 	polypoint_configure_app(APP_ONEWAY, &config);
+#endif
 	polypoint_start();
 #endif
 
