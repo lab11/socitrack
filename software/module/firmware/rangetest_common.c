@@ -53,10 +53,12 @@ void rangetest_configure (oneway_config_t* config, stm_timer_t* app_timer, void 
 void rangetest_start () {
 	dw1000_err_e err;
 
+#if (BOARD_V == SQUAREPOINT)
 	// Turn off all LEDs
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
 	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 	GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 
 	if (_config.my_role == ANCHOR) {
 		// Start the anchor state machine. The app doesn't have to do anything for this, it just runs.

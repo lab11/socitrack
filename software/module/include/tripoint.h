@@ -135,13 +135,15 @@
 /*****************************************************************************/
 // MISC GPIOs
 /*****************************************************************************/
-#define STM_GPIO0_PIN	GPIO_Pin_5
+#define STM_GPIO0_PIN	GPIO_Pin_6
 #define STM_GPIO0_PORT	GPIOB
 #define STM_GPIO0_CLK	RCC_AHBPeriph_GPIOB
+#define STM_GPIO0_SRC   GPIO_PinSource6
 
-#define STM_GPIO1_PIN	GPIO_Pin_6
+#define STM_GPIO1_PIN	GPIO_Pin_7
 #define STM_GPIO1_PORT	GPIOB
 #define STM_GPIO1_CLK	RCC_AHBPeriph_GPIOB
+#define STM_GPIO1_SRC   GPIO_PinSource7
 
 #define STM_GPIO2_PIN	GPIO_Pin_0
 #define STM_GPIO2_PORT	GPIOA
@@ -151,7 +153,7 @@
 #define STM_GPIO3_PORT	GPIOA
 #define STM_GPIO3_CLK	RCC_AHBPeriph_GPIOA
 
-#define STM_GPIO4_PIN	GPIO_Pin_7
+#define STM_GPIO4_PIN	GPIO_Pin_5
 #define STM_GPIO4_PORT	GPIOB
 #define STM_GPIO4_CLK	RCC_AHBPeriph_GPIOB
 

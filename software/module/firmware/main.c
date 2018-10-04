@@ -64,6 +64,7 @@ static void error () {
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
+#if (BOARD_V == SQUAREPOINT)
     // Turn all LEDs off
     GPIO_SetBits(STM_LED_RED_PORT, STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN);
 
@@ -74,6 +75,7 @@ static void error () {
 		GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_RESET);
 		mDelay(250);
 	}
+#endif
 }
 
 union app_scratchspace {
@@ -307,17 +309,23 @@ int main () {
 
 	GPIO_InitTypeDef GPIO_InitStructure_B;
 	RCC_AHBPeriphClockCmd(STM_GPIO3_CLK, ENABLE);
+#if (BOARD_V == SQUAREPOINT)
 	GPIO_InitStructure_B.GPIO_Pin 	= STM_GPIO3_PIN | STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN;
+#elif (BOARD_V == TRIPOINT)
+    GPIO_InitStructure_B.GPIO_Pin 	= STM_GPIO3_PIN;
+#endif
 	GPIO_InitStructure_B.GPIO_Mode 	= GPIO_Mode_OUT;
 	GPIO_InitStructure_B.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure_B.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure_B.GPIO_PuPd 	= GPIO_PuPd_NOPULL;
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure_B);
 
+#if (BOARD_V == SQUAREPOINT)
     // Signal init by turning on WHITE
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
 
 	//Initialize UART1 on GPIO0 and GPIO1
     // Tx: GPIO1 -> Pin 27 -> PB6
@@ -352,9 +360,11 @@ int main () {
     // In case we need a timer, get one. This is used for things like periodic ranging events.
 	//_app_timer = timer_init();
 
+#if (BOARD_V == SQUAREPOINT)
 	// Signal that internal setup is finished by setting RED
 	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 
 	// Next up do some preliminary setup of the DW1000. This mostly configures
 	// pins and hardware peripherals, as well as straightening out some
@@ -427,9 +437,11 @@ int main () {
 	polypoint_start();
 #endif
 
+#if (BOARD_V == SQUAREPOINT)
 	// Signal normal operation by turning on BLUE
 	GPIO_WriteBit(STM_LED_RED_PORT,  STM_LED_RED_PIN,  Bit_SET);
 	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_RESET);
+#endif
 
 	// MAIN LOOP
 	while (1) {

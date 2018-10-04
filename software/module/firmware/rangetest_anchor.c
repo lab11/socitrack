@@ -89,6 +89,7 @@ static void ranging_broadcast_received_task () {
 	// Update the anchor listening settings
 	rangetest_set_ranging_broadcast_settings(ANCHOR, test_oa_scratch->ranging_broadcast_ss_num);
 
+#if (BOARD_V == SQUAREPOINT)
 	// Toggle GREEN, turn off BLUE
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 	if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
@@ -96,6 +97,7 @@ static void ranging_broadcast_received_task () {
 	} else {
 		GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 	}
+#endif
 
 	// And re-enable RX. The set_broadcast_settings function disables tx and rx.
 	dwt_rxenable(0);

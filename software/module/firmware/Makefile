@@ -27,13 +27,21 @@ APPLICATION_SRCS += stm32f0xx_i2c_cpal_hal.c
 APPLICATION_SRCS += deca_device.c
 APPLICATION_SRCS += deca_params_init.c
 
-CFLAGS += -DBOARD_V=2
 LDFLAGS += -lm
 
 #The exact STM part number All CAPS
 ############################################
+#DEVICE ?= STM32F031G6
 DEVICE ?= STM32F091CC
+
+ifeq ($(DEVICE), STM32F031G6)
+DEVICE_FAMILY ?= STM32F031
+CFLAGS += -DBOARD_V=1
+endif
+ifeq ($(DEVICE), STM32F091CC)
 DEVICE_FAMILY ?= STM32F091
+CFLAGS += -DBOARD_V=2
+endif
 
 ## HACK FOR stm32f031
 ## Need to define this so that CPAL will compile.

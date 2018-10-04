@@ -230,6 +230,7 @@ static void send_poll () {
 		}
 	} else {
 
+#if (BOARD_V == SQUAREPOINT)
 		// Toggle GREEN, turn off BLUE
 		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 		if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
@@ -237,6 +238,7 @@ static void send_poll () {
 		} else {
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 		}
+#endif
 	}
 
 }
