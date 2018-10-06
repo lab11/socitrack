@@ -17,7 +17,9 @@
 #include "dw1000.h"
 #include "delay.h"
 #include "firmware.h"
+#include "board.h"
 #include "led.h"
+#include "SEGGER_RTT.h"
 
 /******************************************************************************/
 // Constants for the DW1000
@@ -35,7 +37,19 @@ const uint8_t pgDelay[DW1000_NUM_CHANNELS] = {
 };
 
 //NOTE: THIS IS DEPENDENT ON BAUDRATE
-const uint32_t txPower[DW1000_NUM_CHANNELS] = {
+// Max power: 0x1F1F1F1FUL
+const uint32_t txPower_smartDisabled[DW1000_NUM_CHANNELS] = {
+	0x0,
+	0x67676767UL,
+	0x67676767UL,
+	0x8B8B8B8BUL,
+	0x9A9A9A9AUL,
+	0x85858585UL,
+	0x0,
+	0xD1D1D1D1UL
+};
+
+const uint32_t txPower_smartEnabled[DW1000_NUM_CHANNELS] = {
 	0x0,
 	//0x17375777UL,
 	0x07274767UL,
@@ -599,6 +613,11 @@ void decamutexoff (decaIrqStatus_t s) {
 	}
 }
 
+void deca_sleep(unsigned int time_ms) {
+	// Expected to be blocking
+	mDelay(time_ms);
+}
+
 // Rename this function for the DW1000 library.
 void usleep (uint32_t u) {
 	uDelay(u);
@@ -772,10 +791,7 @@ dw1000_err_e dw1000_configure_settings () {
 
 	// Initialize the dw1000 hardware
 	uint32_t err;
-	err = dwt_initialise(DWT_LOADUCODE |
-	                     DWT_LOADLDO |
-	                     DWT_LOADTXCONFIG |
-	                     DWT_LOADXTALTRIM);
+	err = dwt_initialise(DWT_LOADUCODE);
 
 	if (err != DWT_SUCCESS) {
 		return DW1000_COMM_ERR;
@@ -785,11 +801,10 @@ dw1000_err_e dw1000_configure_settings () {
 	// Configure sleep parameters.
 	// Note: This is taken from the decawave fast2wr_t.c file. I don't have
 	//       a great idea as to whether this is right or not.
-	dwt_configuresleep(DWT_LOADLDO |
-	                   DWT_LOADUCODE |
-	                   DWT_PRESRV_SLEEP |
+	dwt_configuresleep(DWT_PRESRV_SLEEP |
 	                   DWT_LOADOPSET |
-	                   DWT_CONFIG,
+	                   DWT_CONFIG |
+	                   DWT_LOADEUI,
 	                   DWT_WAKE_WK | DWT_SLP_EN);
 
 	// Configure interrupts
@@ -816,16 +831,20 @@ dw1000_err_e dw1000_configure_settings () {
 	_dw1000_config.phrMode        = DWT_PHRMODE_EXT; //Enable extended PHR mode (up to 1024-byte packets)
 	_dw1000_config.smartPowerEn   = DW1000_SMART_PWR_EN;
 	_dw1000_config.sfdTO          = DW1000_SFD_TO;//(1025 + 64 - 32);
-#if DW1000_USE_OTP
-	dwt_configure(&_dw1000_config, (DWT_LOADANTDLY | DWT_LOADXTALTRIM));
-#else
-	dwt_configure(&_dw1000_config, 0);
-#endif
+
+	dwt_configure(&_dw1000_config);
+
 	dwt_setsmarttxpower(_dw1000_config.smartPowerEn);
 
 	// Configure TX power based on the channel used
 	global_tx_config.PGdly = pgDelay[_dw1000_config.chan];
-	global_tx_config.power = txPower[_dw1000_config.chan];
+
+	if (_dw1000_config.smartPowerEn) {
+		global_tx_config.power = txPower_smartEnabled[_dw1000_config.chan];
+	} else {
+		global_tx_config.power = txPower_smartDisabled[_dw1000_config.chan];
+	}
+
 	dwt_configuretxrf(&global_tx_config);
 
 	// Need to set some radio properties. Ideally these would come from the
@@ -833,7 +852,7 @@ dw1000_err_e dw1000_configure_settings () {
 #if DW1000_USE_OTP == 0
 
 	// This defaults to 8. Don't know why.
-	dwt_xtaltrim(DW1000_DEFAULT_XTALTRIM);
+	dwt_setxtaltrim(DW1000_DEFAULT_XTALTRIM);
 
 	// Antenna delay we don't really care about so we just use 0
 	dwt_setrxantennadelay(DW1000_ANTENNA_DELAY_RX);
@@ -955,18 +974,21 @@ void dw1000_update_channel (uint8_t chan) {
 
 // Called when dw1000 tx/rx config settings and constants should be re applied
 void dw1000_reset_configuration () {
-#if DW1000_USE_OTP
-	//dwt_configure(&_dw1000_config, (DWT_LOADANTDLY | DWT_LOADXTALTRIM));
-	dwt_setchannel(&_dw1000_config, (DWT_LOADANTDLY | DWT_LOADXTALTRIM));
-#else
-	//dwt_configure(&_dw1000_config, 0);
+
+	dwt_configure(&_dw1000_config);
 
 	// Custom function: only reset channel related information
-	dwt_setchannel(&_dw1000_config, 0);
-#endif
+	//dwt_setchannel(&_dw1000_config, 0);
+
 	dwt_setsmarttxpower(_dw1000_config.smartPowerEn);
 	global_tx_config.PGdly = pgDelay[_dw1000_config.chan];
-	global_tx_config.power = txPower[_dw1000_config.chan];
+
+	if (_dw1000_config.smartPowerEn) {
+		global_tx_config.power = txPower_smartEnabled[_dw1000_config.chan];
+	} else {
+		global_tx_config.power = txPower_smartDisabled[_dw1000_config.chan];
+	}
+
 	dwt_configuretxrf(&global_tx_config);
 #if DW1000_USE_OTP == 0
 	dwt_setrxantennadelay(DW1000_ANTENNA_DELAY_RX);
@@ -1036,8 +1058,47 @@ uint64_t dw1000_setdelayedtrxtime(uint32_t delay_time){
 	_last_dw_timestamp = cur_dw_timestamp;
 	
 	dwt_setdelayedtrxtime(delay_time);
+
+	return cur_dw_timestamp;
 }
 
 uint64_t dw1000_gettimestampoverflow(){
 	return _dw_timestamp_overflow;
+}
+
+uint64_t dw1000_estimatepathloss(){
+
+    // Estimate Tx and Rx signal strength and calculate loss; see User Manual chapter 4.7
+    //uint32_t A_16MHz = 11377 / 100;
+    //uint32_t A_64MHz = 12174 / 100;
+
+    // Get data
+    dwt_rxdiag_t diagnostics;
+    dwt_readdiagnostics(&diagnostics);
+
+    uint32_t N_squared = (uint32_t)diagnostics.rxPreamCount * (uint32_t)diagnostics.rxPreamCount;
+
+    // Tx signal
+    uint32_t tx_signal  = (uint32_t)diagnostics.firstPathAmp1 * (uint32_t)diagnostics.firstPathAmp1;
+             tx_signal += (uint32_t)diagnostics.firstPathAmp2 * (uint32_t)diagnostics.firstPathAmp2;
+             tx_signal += (uint32_t)diagnostics.firstPathAmp3 * (uint32_t)diagnostics.firstPathAmp3;
+
+    // Rx signal
+    uint32_t rx_signal  = (uint32_t)diagnostics.maxGrowthCIR * (uint32_t)diagnostics.maxGrowthCIR;
+             rx_signal *= (uint32_t)(2 << 17);
+
+    // Calculate dBm
+    //uint64_t tx_signal_dBm = (uint64_t)(10 * log10(tx_signal / N_squared)) - A_64MHz;
+    //uint64_t rx_signal_dBM = (uint64_t)(10 * log10(rx_signal / N_squared)) - A_64MHz;
+
+    debug_msg("Estimated signal strength: Tx - ");
+    debug_msg_int((uint32_t)(tx_signal / N_squared));
+    debug_msg(" ; Rx - ");
+    debug_msg_int((uint32_t)(rx_signal / N_squared));
+    debug_msg("\n");
+
+    // Calculate difference directly
+    uint64_t pathloss = tx_signal / rx_signal;
+
+    return pathloss;
 }

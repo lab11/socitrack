@@ -70,6 +70,10 @@
 #define MSG_TYPE_PP_GLOSSY_SYNC       0x82
 #define MSG_TYPE_PP_GLOSSY_SCHED_REQ  0x83
 
+// Used to show whether message is a ranging packet or not
+#define MSG_TYPE_CONTROL	0
+#define MSG_TYPE_RANGING	1
+
 // Packet the tag broadcasts to all nearby anchors
 struct pp_tag_poll  {
 	struct ieee154_header_broadcast header;

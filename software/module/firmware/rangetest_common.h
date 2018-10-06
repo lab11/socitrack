@@ -27,6 +27,10 @@
 // Active Messages from the TinyOS days.
 #define MSG_TYPE_PP_NOSLOTS_TAG_POLL  0x80
 
+// Used to show whether message is a ranging packet or not
+#define MSG_TYPE_CONTROL	0
+#define MSG_TYPE_RANGING	1
+
 // Packet the tag broadcasts to all nearby anchors
 struct rangetest_packet  {
 	struct ieee154_header_broadcast header;

@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stddef.h>
+#include <stm32f0xx_gpio.h>
 
 #include "deca_device_api.h"
 #include "deca_regs.h"
@@ -15,8 +16,8 @@
 // Functions
 static void send_poll ();
 static void ranging_broadcast_send_task ();
-static void tag_txcallback (const dwt_callback_data_t *txd);
-static void tag_rxcallback (const dwt_callback_data_t *rxd);
+static void tag_txcallback (const dwt_cb_data_t *txd);
+static void tag_rxcallback (const dwt_cb_data_t *rxd);
 
 // Do the TAG-specific init calls.
 // We trust that the DW1000 is not in SLEEP mode when this is called.
@@ -54,13 +55,12 @@ void rangetest_tag_init (void *app_scratchspace) {
 	dw1000_spi_slow();
 
 	// Setup callbacks to this TAG
-	dwt_setcallbacks(tag_txcallback, tag_rxcallback);
+	dwt_setcallbacks(tag_txcallback, tag_rxcallback, tag_rxcallback, tag_rxcallback);
 
 	// Allow data and ack frames
 	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
 
 	// Setup parameters of how the radio should work
-	dwt_setautorxreenable(TRUE);
 	dwt_setdblrxbuffmode(TRUE);//FALSE);
 	dwt_enableautoack(DW1000_ACK_RESPONSE_TIME);
 
@@ -133,11 +133,11 @@ dw1000_err_e rangetest_tag_start_ranging_event () {
 }
 
 // Called after the TAG has transmitted a packet.
-static void tag_txcallback (const dwt_callback_data_t *data) {
+static void tag_txcallback (const dwt_cb_data_t *txd) {
 
     debug_msg("TAG transmitted a packet\n");
 
-	if (data->event == DWT_SIG_TX_DONE) {
+	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
 
 	} else {
@@ -147,12 +147,18 @@ static void tag_txcallback (const dwt_callback_data_t *data) {
 		debug_msg("ERROR: Failed in sending packet!\n");
 	}
 
+	if (txd->status & SYS_STATUS_TXERR) {
+		debug_msg("ERROR: Tx error with status: ");
+		debug_msg_uint((uint32_t)txd->status);
+		debug_msg("\n");
+	}
+
 }
 
 // Called when the tag receives a packet.
-static void tag_rxcallback (const dwt_callback_data_t* rxd) {
+static void tag_rxcallback (const dwt_cb_data_t* rxd) {
 
-	if (rxd->event == DWT_SIG_RX_OKAY) {
+	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
 		// Everything went right when receiving this packet.
 		// We have to process it to ensure that it is a packet we are expecting
 		// to get.
@@ -172,14 +178,18 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 		// Packet was NOT received correctly. Need to do some re-configuring
 		// as things get blown out when this happens. (Because dwt_rxreset
 		// within dwt_isr smashes everything without regard.)
-		if (rxd->event == DWT_SIG_RX_PHR_ERROR ||
-		    rxd->event == DWT_SIG_RX_ERROR ||
-		    rxd->event == DWT_SIG_RX_SYNCLOSS ||
-		    rxd->event == DWT_SIG_RX_SFDTIMEOUT ||
-		    rxd->event == DWT_SIG_RX_PTOTIMEOUT) {
+		if (rxd->status & SYS_STATUS_ALL_RX_ERR ||
+			rxd->status & SYS_STATUS_ALL_RX_TO) {
+		    debug_msg("WARNING: Rx error, status: ");
+		    debug_msg_int((uint32_t)rxd->status);
+		    debug_msg("\n");
+
 			rangetest_set_ranging_broadcast_settings (TAG, test_ot_scratch->ranging_broadcast_ss_num);
 		}
 	}
+
+	// Reenable Rx
+	dwt_rxenable(0);
 
 }
 
@@ -204,7 +214,7 @@ static void send_poll () {
 	dwt_forcetrxoff();
 
 	// Tell the DW1000 about the packet
-	dwt_writetxfctrl(tx_len, 0);
+	dwt_writetxfctrl(tx_len, 0, MSG_TYPE_RANGING);
 
 	// Setup the time the packet will go out at, and save that timestamp
 	uint32_t delay_time = dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(tx_len);

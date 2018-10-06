@@ -201,6 +201,7 @@ void          dw1000_reset_configuration ();
 uint64_t      dw1000_readrxtimestamp();
 uint64_t      dw1000_setdelayedtrxtime(uint32_t delay_time);
 uint64_t      dw1000_gettimestampoverflow();
+uint64_t      dw1000_estimatepathloss();
 
 // for main.c
 void          dw1000_interrupt_fired ();

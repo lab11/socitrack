@@ -13,8 +13,8 @@
 #include "SEGGER_RTT.h"
 
 static void ranging_listening_window_setup();
-static void anchor_txcallback (const dwt_callback_data_t *txd);
-static void anchor_rxcallback (const dwt_callback_data_t *rxd);
+static void anchor_txcallback (const dwt_cb_data_t *txd);
+static void anchor_rxcallback (const dwt_cb_data_t *rxd);
 
 
 void oneway_anchor_init (void *app_scratchspace) {
@@ -46,7 +46,7 @@ void oneway_anchor_init (void *app_scratchspace) {
 	dw1000_spi_slow();
 
 	// Setup callbacks to this ANCHOR
-	dwt_setcallbacks(anchor_txcallback, anchor_rxcallback);
+	dwt_setcallbacks(anchor_txcallback, anchor_rxcallback, anchor_rxcallback, anchor_rxcallback);
 
 	// Make sure the radio starts off
 	dwt_forcetrxoff();
@@ -59,9 +59,6 @@ void oneway_anchor_init (void *app_scratchspace) {
 	dw1000_read_eui(eui_array);
 	// dwt_seteui(eui_array);
 	// dwt_setpanid(POLYPOINT_PANID);
-
-	// Automatically go back to receive
-	dwt_setautorxreenable(TRUE);
 
 	// Don't use these
 	dwt_setdblrxbuffmode(FALSE);
@@ -193,7 +190,7 @@ static void ranging_listening_window_task () {
 			oa_scratch->pp_anc_final_pkt.ieee154_header_unicast.seqNum = ranval(&(oa_scratch->prng_state)) & 0xFF;
 			const uint16_t frame_len = sizeof(struct pp_anc_final);
 			// const uint16_t frame_len = sizeof(struct pp_anc_final) - (sizeof(uint64_t)*NUM_RANGING_BROADCASTS);
-			dwt_writetxfctrl(frame_len, 0);
+			dwt_writetxfctrl(frame_len, 0, MSG_TYPE_RANGING);
 	
 			// Pick a slot to respond in. Generate a random number and mod it
 			// by the number of slots
@@ -268,21 +265,27 @@ static void ranging_listening_window_setup () {
 
 // Called after a packet is transmitted. We don't need this so it is
 // just empty.
-static void anchor_txcallback (const dwt_callback_data_t *txd) {
+static void anchor_txcallback (const dwt_cb_data_t *txd) {
 
     //debug_msg("ANCHOR transmitted a packet\n");
+
+    if (txd->status & SYS_STATUS_TXERR) {
+    	debug_msg("ERROR: TX error, status: ");
+    	debug_msg_uint((uint32_t)txd->status);
+    	debug_msg("\n");
+    }
 
 	glossy_process_txcallback();
 }
 
 // Called when the radio has received a packet.
-static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
+static void anchor_rxcallback (const dwt_cb_data_t *rxd) {
 
 	timer_disable_interrupt(oa_scratch->anchor_timer);
 
 	//debug_msg("Received DW1000 packet\r\n");
 
-	if (rxd->event == DWT_SIG_RX_OKAY) {
+	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
 
 		// First check to see if this is an acknowledgement...
 		// If so, we can stop sending ranging responses
@@ -404,7 +407,7 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 						}
 
 						// Regardless, it's a good idea to immediately call the subsequence task and restart the timer
-						timer_reset(oa_scratch->anchor_timer, RANGING_BROADCASTS_PERIOD_US - 25); // Magic number calculated from timing
+						timer_reset(oa_scratch->anchor_timer, RANGING_BROADCASTS_PERIOD_US - 120); // Magic number calculated from timing
 						//ranging_broadcast_subsequence_task();
 						//timer_reset(oa_scratch->anchor_timer, 0);
 
@@ -416,9 +419,13 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 
 					} else {
 						// Not the same tag, ignore
+						dwt_rxenable(0);
 					}
 				} else {
 					// We are in some other state, not sure what that means
+					debug_msg("WARNING: Wrong state ");
+					debug_msg_int(oa_scratch->state);
+					debug_msg("\n");
 				}
 
 			} else {
@@ -433,14 +440,17 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 	} else {
 		// If an RX error has occurred, we're gonna need to setup the receiver again
 		// (because dwt_rxreset within dwt_isr smashes everything without regard)
-		if (rxd->event == DWT_SIG_RX_PHR_ERROR ||
-			rxd->event == DWT_SIG_RX_ERROR ||
-			rxd->event == DWT_SIG_RX_SYNCLOSS ||
-			rxd->event == DWT_SIG_RX_SFDTIMEOUT ||
-			rxd->event == DWT_SIG_RX_PTOTIMEOUT) {
+		if (rxd->status & SYS_STATUS_ALL_RX_ERR ||
+			rxd->status & SYS_STATUS_ALL_RX_TO) {
+			debug_msg("ERROR: Rx error, status: ");
+			debug_msg_uint((uint32_t)rxd->status);
+			debug_msg("\n");
+
 			oneway_set_ranging_broadcast_subsequence_settings(ANCHOR, oa_scratch->ranging_broadcast_ss_num);
 		} else {
 			// Some other unknown error, not sure what to do
+			debug_msg("ERROR: Unknown Rx issue!\n");
+			dwt_rxenable(0);
 		}
 	}
 

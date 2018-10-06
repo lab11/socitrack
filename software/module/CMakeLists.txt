@@ -69,6 +69,12 @@ set(PROJ_FILES
         firmware/oneway_common.h
         firmware/oneway_tag.c
         firmware/oneway_tag.h
+        firmware/rangetest_anchor.c
+        firmware/rangetest_anchor.h
+        firmware/rangetest_common.c
+        firmware/rangetest_common.h
+        firmware/rangetest_tag.c
+        firmware/rangetest_tag.h
         firmware/polypoint_conf.h
         firmware/port.h
         firmware/stm32f0xx_conf.h

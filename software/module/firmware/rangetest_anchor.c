@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <string.h>
+#include <stm32f0xx_gpio.h>
 
 #include "deca_device_api.h"
 #include "deca_regs.h"
@@ -13,8 +14,8 @@
 #include "board.h"
 #include "SEGGER_RTT.h"
 
-static void anchor_txcallback (const dwt_callback_data_t *txd);
-static void anchor_rxcallback (const dwt_callback_data_t *rxd);
+static void anchor_txcallback (const dwt_cb_data_t *txd);
+static void anchor_rxcallback (const dwt_cb_data_t *rxd);
 
 
 void rangetest_anchor_init(void *app_scratchspace) {
@@ -25,7 +26,7 @@ void rangetest_anchor_init(void *app_scratchspace) {
 	dw1000_spi_slow();
 
 	// Setup callbacks to this ANCHOR
-	dwt_setcallbacks(anchor_txcallback, anchor_rxcallback);
+	dwt_setcallbacks(anchor_txcallback, anchor_rxcallback, anchor_rxcallback, anchor_rxcallback);
 
 	// Make sure the radio starts off
 	dwt_forcetrxoff();
@@ -36,9 +37,6 @@ void rangetest_anchor_init(void *app_scratchspace) {
 	// // Set the ID and PAN ID for this anchor
 	uint8_t eui_array[8];
 	dw1000_read_eui(eui_array);
-
-	// Automatically go back to receive
-	dwt_setautorxreenable(TRUE);
 
 	// Don't use these
 	dwt_setdblrxbuffmode(FALSE);
@@ -105,24 +103,32 @@ static void ranging_broadcast_received_task () {
 
 // Called after a packet is transmitted. We don't need this so it is
 // just empty.
-static void anchor_txcallback (const dwt_callback_data_t *txd) {
+static void anchor_txcallback (const dwt_cb_data_t *txd) {
 
     debug_msg("ANCHOR transmitted a packet\n");
+
+	if (txd->status & SYS_STATUS_TXERR) {
+		debug_msg("ERROR: TX error, status: ");
+		debug_msg_uint((uint32_t)txd->status);
+		debug_msg("\n");
+	}
 
 }
 
 // Called when the radio has received a packet.
-static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
+static void anchor_rxcallback (const dwt_cb_data_t *rxd) {
 
 	debug_msg("Received DW1000 packet\r\n");
 
-	if (rxd->event == DWT_SIG_RX_OKAY) {
+	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
 
 		// First check to see if this is an acknowledgement...
 		// If so, we can stop sending ranging responses
 		if((rxd->fctrl[0] & 0x03) == 0x02){  //This bit says whether this was an ack or not
 			uint8_t cur_seq_num;
 			dwt_readrxdata(&cur_seq_num, 1, 2);
+
+			dwt_rxenable(0);
 
 		} else {
 
@@ -170,14 +176,17 @@ static void anchor_rxcallback (const dwt_callback_data_t *rxd) {
 	} else {
 		// If an RX error has occurred, we're gonna need to setup the receiver again
 		// (because dwt_rxreset within dwt_isr smashes everything without regard)
-		if (rxd->event == DWT_SIG_RX_PHR_ERROR ||
-			rxd->event == DWT_SIG_RX_ERROR ||
-			rxd->event == DWT_SIG_RX_SYNCLOSS ||
-			rxd->event == DWT_SIG_RX_SFDTIMEOUT ||
-			rxd->event == DWT_SIG_RX_PTOTIMEOUT) {
+		if (rxd->status & SYS_STATUS_ALL_RX_ERR ||
+			rxd->status & SYS_STATUS_ALL_RX_TO) {
+		    debug_msg("WARNING: Rx error, status: ");
+		    debug_msg_uint((uint32_t)rxd->status);
+		    debug_msg("\n");
+
 			rangetest_set_ranging_broadcast_settings(ANCHOR, test_oa_scratch->ranging_broadcast_ss_num);
 		} else {
 			// Some other unknown error, not sure what to do
+            debug_msg("ERROR: Unknown Rx issue!\n");
+			dwt_rxenable(0);
 		}
 	}
 

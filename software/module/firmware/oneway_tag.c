@@ -17,8 +17,8 @@ static void ranging_broadcast_subsequence_task ();
 static void ranging_listening_window_task ();
 static void calculate_ranges ();
 static void report_range ();
-static void tag_txcallback (const dwt_callback_data_t *txd);
-static void tag_rxcallback (const dwt_callback_data_t *rxd);
+static void tag_txcallback (const dwt_cb_data_t *txd);
+static void tag_rxcallback (const dwt_cb_data_t *rxd);
 
 // Do the TAG-specific init calls.
 // We trust that the DW1000 is not in SLEEP mode when this is called.
@@ -56,13 +56,12 @@ void oneway_tag_init (void *app_scratchspace) {
 	dw1000_spi_slow();
 
 	// Setup callbacks to this TAG
-	dwt_setcallbacks(tag_txcallback, tag_rxcallback);
+	dwt_setcallbacks(tag_txcallback, tag_rxcallback, tag_rxcallback, tag_rxcallback);
 
 	// Allow data and ack frames
 	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
 
 	// Setup parameters of how the radio should work
-	dwt_setautorxreenable(TRUE);
 	dwt_setdblrxbuffmode(TRUE);//FALSE);
 	dwt_enableautoack(DW1000_ACK_RESPONSE_TIME);
 
@@ -155,13 +154,13 @@ void oneway_tag_stop () {
 }
 
 // Called after the TAG has transmitted a packet.
-static void tag_txcallback (const dwt_callback_data_t *data) {
+static void tag_txcallback (const dwt_cb_data_t *txd) {
 
     //debug_msg("TAG transmitted a packet\n");
 
 	glossy_process_txcallback();
 
-	if (data->event == DWT_SIG_TX_DONE) {
+	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
 
 		// Check which state we are in to decide what to do.
@@ -191,11 +190,18 @@ static void tag_txcallback (const dwt_callback_data_t *data) {
 		timer_stop(ot_scratch->tag_timer);
 	}
 
+	if (txd->status & SYS_STATUS_TXERR) {
+		debug_msg("ERROR: TX error with status: ");
+		debug_msg_uint((uint32_t)txd->status);
+		debug_msg("\n");
+	}
+
 }
 
 // Called when the tag receives a packet.
-static void tag_rxcallback (const dwt_callback_data_t* rxd) {
-	if (rxd->event == DWT_SIG_RX_OKAY) {
+static void tag_rxcallback (const dwt_cb_data_t* rxd) {
+
+	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
 		// Everything went right when receiving this packet.
 		// We have to process it to ensure that it is a packet we are expecting
 		// to get.
@@ -217,6 +223,7 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 
 			if (ot_scratch->anchor_response_count >= MAX_NUM_ANCHOR_RESPONSES) {
 				// Nowhere to store this, so we have to ignore this
+				dwt_rxenable(0);
 				return;
 			}
 
@@ -272,7 +279,13 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 				ot_scratch->anchor_response_count++;
 			}
 
+			// Reenable Rx
+			dwt_rxenable(0);
+
 		} else {
+			// Reenable Rx
+			dwt_rxenable(0);
+
 			// TAGs don't expect to receive any other types of packets.
 			message_type = buf[offsetof(struct pp_tag_poll, message_type)];
 			if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ)
@@ -283,12 +296,16 @@ static void tag_rxcallback (const dwt_callback_data_t* rxd) {
 		// Packet was NOT received correctly. Need to do some re-configuring
 		// as things get blown out when this happens. (Because dwt_rxreset
 		// within dwt_isr smashes everything without regard.)
-		if (rxd->event == DWT_SIG_RX_PHR_ERROR ||
-		    rxd->event == DWT_SIG_RX_ERROR ||
-		    rxd->event == DWT_SIG_RX_SYNCLOSS ||
-		    rxd->event == DWT_SIG_RX_SFDTIMEOUT ||
-		    rxd->event == DWT_SIG_RX_PTOTIMEOUT) {
+		if (rxd->status & SYS_STATUS_ALL_RX_ERR ||
+			rxd->status & SYS_STATUS_ALL_RX_TO) {
+            debug_msg("WARNING: Rx error, status: ");
+            debug_msg_int((uint32_t)rxd->status);
+            debug_msg("\n");
+
 			oneway_set_ranging_listening_window_settings(TAG, ot_scratch->ranging_listening_window_num, 0);
+		} else {
+			debug_msg("ERROR: Unknown error!");
+			dwt_rxenable(0);
 		}
 	}
 
@@ -318,7 +335,7 @@ static void send_poll () {
 	dwt_forcetrxoff();
 
 	// Tell the DW1000 about the packet
-	dwt_writetxfctrl(tx_len, 0);
+	dwt_writetxfctrl(tx_len, 0, MSG_TYPE_RANGING);
 
 	// Setup the time the packet will go out at, and save that timestamp
 	uint32_t delay_time = dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(tx_len);

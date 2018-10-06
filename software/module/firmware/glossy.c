@@ -118,7 +118,7 @@ void glossy_init(glossy_role_e role){
 
 	// Set crystal trim to mid-range
 	_xtal_trim = 15;
-	dwt_xtaltrim(_xtal_trim);
+	dwt_setxtaltrim(_xtal_trim);
 
 	// If the anchor, let's kick off a task which unconditionally kicks off sync messages with depth = 0
 	if(role == GLOSSY_MASTER){
@@ -248,7 +248,7 @@ void glossy_sync_task(){
 					dwt_forcetrxoff();
 
 					uint16_t frame_len = sizeof(struct pp_sched_req_flood);
-					dwt_writetxfctrl(frame_len, 0);
+					dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 
 					// Send out a schedule request during this contention slot
 					// Pick a random time offset to avoid colliding with others
@@ -343,7 +343,7 @@ void glossy_process_txcallback(){
 
 void send_sync(uint32_t delay_time){
 	uint16_t frame_len = sizeof(struct pp_sched_flood);
-	dwt_writetxfctrl(frame_len, 0);
+	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 
 	_last_delay_time = delay_time;
 
@@ -439,7 +439,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			_glossy_currently_flooding = TRUE;
 
 			uint16_t frame_len = sizeof(struct pp_sched_req_flood);
-			dwt_writetxfctrl(frame_len, 0);
+			dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 
 			// Flood out as soon as possible
 			uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
@@ -515,7 +515,8 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 					_xtal_trim += trim_diff;
 					if(_xtal_trim < 1) _xtal_trim = 1;
 					else if(_xtal_trim > 31) _xtal_trim = 31;
-					dwt_xtaltrim(_xtal_trim);
+
+					dwt_setxtaltrim(_xtal_trim);
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
 					_sched_req_pkt.xtal_trim = trim_diff;
 					// Sync is invalidated if the xtal trim has changed (this won't happen often)
