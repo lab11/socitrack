@@ -66,6 +66,20 @@ typedef struct ble_app_s {
 
 // BLE -----------------------------------------------------------------------------------------------------------------
 
+// Structure: c0:98:e5:42:00:XX
+#define APP_BLE_ADDR_MIN        0x00
+#define APP_BLE_ADDR_MAX        0xFF
+#define APP_BLE_ADDR_NR         (APP_BLE_ADDR_MAX - APP_BLE_ADDR_MIN + 1)
+
+// Peripheral
+#define APP_ADV_INTERVAL_MS     500
+
+// Central
+#define APP_SCAN_INTERVAL_MS    5000
+#define APP_SCAN_WINDOW_MS      APP_ADV_INTERVAL_MS
+
+
+
 // Physical Web
 #define PHYSWEB_SERVICE_ID  0xFEAA
 #define PHYSWEB_URL_TYPE    0x10    // Denotes URLs (vs URIs or TLM data)
@@ -126,7 +140,10 @@ typedef struct ble_app_s {
 
 #define APP_CFG_DEFAULT_RADIO_TX_POWER                      0x00                        //!< Default TX power of the radio.
 
-#define APP_ADV_INTERVAL                    MSEC_TO_UNITS(300, UNIT_0_625_MS)
+#define APP_ADV_INTERVAL                    MSEC_TO_UNITS(APP_ADV_INTERVAL_MS, UNIT_0_625_MS)
+
+#define APP_SCAN_INTERVAL                   MSEC_TO_UNITS(APP_SCAN_INTERVAL_MS, UNIT_0_625_MS)
+#define APP_SCAN_WINDOW                     MSEC_TO_UNITS(APP_SCAN_WINDOW_MS, UNIT_0_625_MS)
 
 #define MIN_CONN_INTERVAL                   MSEC_TO_UNITS(50, UNIT_1_25_MS)             //!< Minimum acceptable connection interval (50 ms). The connection interval uses 1.25 ms units.
 #define MAX_CONN_INTERVAL                   MSEC_TO_UNITS(100, UNIT_1_25_MS)            //!< Maximum acceptable connection interval (100 ms). The connection interval uses 1.25 ms units.
