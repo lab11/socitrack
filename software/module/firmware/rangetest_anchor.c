@@ -191,3 +191,88 @@ static void anchor_rxcallback (const dwt_cb_data_t *rxd) {
 	}
 
 }
+
+// SIMPLE TEST ---------------------------------------------------------------------------------------------------------
+
+/* Buffer to store received frame. See NOTE 1 below. */
+#define SIMPLETEST_FRAME_LEN_MAX 127
+static uint8 simpletest_rx_buffer[SIMPLETEST_FRAME_LEN_MAX];
+
+/* Hold copy of status register state here for reference so that it can be examined at a debug breakpoint. */
+static uint32 simpletest_status_reg = 0;
+
+/* Hold copy of frame length of frame received (if good) so that it can be examined at a debug breakpoint. */
+static uint16 simpletest_frame_len = 0;
+
+dw1000_err_e simpletest_anchor_start(void) {
+
+	dw1000_spi_slow();
+	if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR) {
+		debug_msg("ERROR: Simpletest init failed!\n");
+	}
+
+    /* Load specific Operational Parameter Set to deal with 64-symbol preambles. This has to be done with DW1000 set to crystal speed. */
+    // TODO: Verify whether to add to normal operations
+    dwt_loadopsettabfromotp(DWT_OPSET_64LEN);
+	dw1000_spi_fast();
+
+	/* Configure DW1000. */
+	dwt_configure(&simpletest_config);
+
+#if (BOARD_V == SQUAREPOINT)
+	// Turn on GREEN
+	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
+
+	/* Loop forever receiving frames. */
+	while (1)
+	{
+		int i;
+
+		/* TESTING BREAKPOINT LOCATION #1 */
+
+		/* Clear local RX buffer to avoid having leftovers from previous receptions  This is not necessary but is included here to aid reading the RX buffer.
+         * This is a good place to put a breakpoint. Here (after first time through the loop) the local status register will be set for last event
+         * and if a good receive has happened the data buffer will have the data in it, and frame_len will be set to the length of the RX frame. */
+		for (i = 0 ; i < SIMPLETEST_FRAME_LEN_MAX; i++ ) {
+			simpletest_rx_buffer[i] = 0;
+		}
+
+		/* Activate reception immediately. */
+		dwt_rxenable(DWT_START_RX_IMMEDIATE);
+
+		/* Poll until a frame is properly received or an error/timeout occurs.
+         * STATUS register is 5 bytes long but, as the event we are looking at is in the first byte of the register, we can use this simplest API
+         * function to access it. */
+		while (!((simpletest_status_reg = dwt_read32bitreg(SYS_STATUS_ID)) & (SYS_STATUS_RXFCG | SYS_STATUS_ALL_RX_ERR))) { };
+
+		if (simpletest_status_reg & SYS_STATUS_RXFCG) {
+			/* A frame has been received, copy it to our local buffer. */
+			simpletest_frame_len = dwt_read32bitreg(RX_FINFO_ID) & RX_FINFO_RXFL_MASK_1023;
+
+			if (simpletest_frame_len <= SIMPLETEST_FRAME_LEN_MAX) {
+				dwt_readrxdata(simpletest_rx_buffer, simpletest_frame_len, 0);
+
+				debug_msg("Received message\n");
+			}
+
+#if (BOARD_V == SQUAREPOINT)
+			// Toggle GREEN, turn off BLUE
+			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+			if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
+				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+			} else {
+				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+			}
+#endif
+
+			/* Clear good RX frame event in the DW1000 status register. */
+			dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG);
+		}
+		else {
+			/* Clear RX error events in the DW1000 status register. */
+			dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
+		}
+	}
+}

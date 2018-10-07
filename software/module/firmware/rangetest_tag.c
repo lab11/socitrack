@@ -57,6 +57,9 @@ void rangetest_tag_init (void *app_scratchspace) {
 	// Setup callbacks to this TAG
 	dwt_setcallbacks(tag_txcallback, tag_rxcallback, tag_rxcallback, tag_rxcallback);
 
+    // Make sure the radio starts off
+    dwt_forcetrxoff();
+
 	// Allow data and ack frames
 	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
 
@@ -263,4 +266,74 @@ static void ranging_broadcast_send_task () {
 	// Actually send the packet
 	send_poll();
 	test_ot_scratch->ranging_broadcast_ss_num += 1;
+}
+
+// SIMPLE TEST ---------------------------------------------------------------------------------------------------------
+
+/* The frame sent in this example is an 802.15.4e standard blink. It is a 12-byte frame composed of the following fields:
+ *     - byte 0: frame type (0xC5 for a blink).
+ *     - byte 1: sequence number, incremented for each new frame.
+ *     - byte 2 -> 9: device ID, see NOTE 1 below.
+ *     - byte 10/11: frame check-sum, automatically set by DW1000.  */
+static uint8 simpletest_tx_msg[] = {0xC5, 0, 'D', 'E', 'C', 'A', 'W', 'A', 'V', 'E', 0, 0};
+/* Index to access to sequence number of the blink frame in the tx_msg array. */
+#define SIMPLETEST_BLINK_FRAME_SN_IDX 1
+
+/* Inter-frame delay period, in milliseconds. */
+#define SIMPLETEST_TX_DELAY_MS 1000
+
+dw1000_err_e simpletest_tag_start(void) {
+
+	dw1000_spi_slow();
+	if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR) {
+		debug_msg("ERROR: Simpletest init failed!\n");
+	}
+	dw1000_spi_fast();
+
+	/* Configure DW1000 */
+	dwt_configure(&simpletest_config);
+
+#if (BOARD_V == SQUAREPOINT)
+	// Turn off RED
+	GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_SET);
+#endif
+
+	/* Loop forever sending frames periodically. */
+	while(1)
+	{
+		/* Write frame data to DW1000 and prepare transmission.*/
+		dwt_writetxdata(sizeof(simpletest_tx_msg), simpletest_tx_msg, 0); /* Zero offset in TX buffer. */
+		dwt_writetxfctrl(sizeof(simpletest_tx_msg), 0, 0); /* Zero offset in TX buffer, no ranging. */
+
+		/* Start transmission. */
+		dwt_starttx(DWT_START_TX_IMMEDIATE);
+
+		/* Poll DW1000 until TX frame sent event set.
+         * STATUS register is 5 bytes long but, as the event we are looking at is in the first byte of the register, we can use this simplest API
+         * function to access it.*/
+		while (!(dwt_read32bitreg(SYS_STATUS_ID) & SYS_STATUS_TXFRS)) { };
+
+		/* Clear TX frame sent event. */
+		dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_TXFRS);
+
+		debug_msg("Sent message ");
+		debug_msg_uint(simpletest_tx_msg[SIMPLETEST_BLINK_FRAME_SN_IDX]);
+		debug_msg("\n");
+
+#if (BOARD_V == SQUAREPOINT)
+		// Toggle GREEN, turn off BLUE
+		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+		if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
+			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+		} else {
+			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+		}
+#endif
+
+		/* Execute a delay between transmissions. */
+		deca_sleep(SIMPLETEST_TX_DELAY_MS);
+
+		/* Increment the blink frame sequence number (modulo 256). */
+		simpletest_tx_msg[SIMPLETEST_BLINK_FRAME_SN_IDX]++;
+	}
 }

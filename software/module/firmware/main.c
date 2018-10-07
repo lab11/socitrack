@@ -113,6 +113,11 @@ void polypoint_configure_app (polypoint_application_e app, void* app_config) {
 			break;
 		case APP_RANGETEST:
 			rangetest_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+			break;
+	    case APP_SIMPLETEST:
+	        // In contrast to normal applications, this function will never return
+	        simpletest_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+	        break;
 
 		default:
 			break;
@@ -431,6 +436,9 @@ int main () {
 //#define RANGE_TEST
 #ifdef RANGE_TEST
 	polypoint_configure_app(APP_RANGETEST, &config);
+
+	// If using APP_SIMPLETEST, also comment out "dw1000_configure_settings" in dw1000_init()
+    //polypoint_configure_app(APP_SIMPLETEST, &config);
 #else
 	polypoint_configure_app(APP_ONEWAY, &config);
 #endif

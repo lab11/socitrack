@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <string.h>
+#include <stm32f0xx_gpio.h>
 
 #include "timer.h"
 
@@ -89,4 +90,41 @@ void rangetest_set_ranging_broadcast_settings (dw1000_role_e role, uint8_t subse
     //dw1000_choose_antenna(0);
 }
 
+// SIMPLE TEST ---------------------------------------------------------------------------------------------------------
+
+dwt_config_t simpletest_config = {
+	1,                        /* Channel number. */
+	DWT_PRF_64M,              /* Pulse repetition frequency. */
+	DW1000_PREAMBLE_LENGTH,   /* Preamble length. Used in TX only. */
+	DW1000_PAC_SIZE,          /* Preamble acquisition chunk size. Used in RX only. */
+	9,                        /* TX preamble code. Used in TX only. */
+	9,                        /* RX preamble code. Used in RX only. */
+	0,                        /* 0 to use standard SFD, 1 to use non-standard SFD. */
+	DW1000_DATA_RATE,         /* Data rate. */
+	DWT_PHRMODE_STD,          /* PHY header mode. */
+	DW1000_SFD_TO,            /* SFD timeout (preamble length + 1 + SFD length - PAC size). Used in RX only. */
+	DW1000_SMART_PWR_EN
+};
+
+// This function will call the most basic Rx / Tx example, without making use of any other callbacks or initializations
+// This sets the settings for this node and initializes the node.
+void simpletest_configure (oneway_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
+    _scratchspace_ptr = app_scratchspace;
+
+    // Save the settings
+    _config.my_role     = config->my_role;
+    _config.update_rate = config->update_rate;
+
+    // Make sure the DW1000 is awake before trying to do anything.
+    dw1000_wakeup();
+
+    // These functions will never return
+    if (_config.my_role == TAG) {
+        simpletest_tag_start();
+        debug_msg("Initialized as TAG\n");
+    } else if (_config.my_role == ANCHOR) {
+        simpletest_anchor_start();
+        debug_msg("Initialized as ANCHOR\n");
+    }
+}
 

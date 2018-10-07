@@ -38,4 +38,6 @@ rangetest_anchor_scratchspace_struct *test_oa_scratch;
 void 	     rangetest_anchor_init (void *app_scratchspace);
 dw1000_err_e rangetest_anchor_start ();
 
+dw1000_err_e simpletest_anchor_start ();
+
 #endif

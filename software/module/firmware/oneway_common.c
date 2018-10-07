@@ -252,9 +252,10 @@ static uint8_t listening_window_number_to_channel (uint8_t window_num) {
 void oneway_set_ranging_broadcast_subsequence_settings (dw1000_role_e role,
                                                         uint8_t subseq_num) {
 	// Stop the transceiver on the anchor. Don't know why.
-	/*if (role == ANCHOR) {
+	// FIXME: Verify influence
+	if (role == ANCHOR) {
 		dwt_forcetrxoff();
-	}*/
+	}
 
 	// Change the channel depending on what subsequence number we're at
 	dw1000_update_channel(subsequence_number_to_channel(subseq_num));
@@ -271,6 +272,11 @@ void oneway_set_ranging_broadcast_subsequence_settings (dw1000_role_e role,
 void oneway_set_ranging_listening_window_settings (dw1000_role_e role,
                                                    uint8_t window_num,
                                                    uint8_t antenna_num) {
+    // FIXME: Verify influence
+    if (role == TAG) {
+        dwt_forcetrxoff();
+    }
+
 	// Change the channel depending on what window number we're at
 	dw1000_update_channel(listening_window_number_to_channel(window_num));
 

@@ -57,4 +57,7 @@ void rangetest_start ();
 
 void rangetest_set_ranging_broadcast_settings (dw1000_role_e role, uint8_t subseq_num);
 
+extern dwt_config_t simpletest_config;
+void simpletest_configure (oneway_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
+
 #endif

@@ -684,7 +684,7 @@ uint8_t* dw1000_get_txrx_delay_raw () {
 
 // First (generic) init of the DW1000
 dw1000_err_e dw1000_init () {
-	dw1000_err_e err;
+	dw1000_err_e err = 0;
 	uint8_t buffer;
 
 	// Do the STM setup that initializes pin and peripherals and whatnot.
@@ -829,8 +829,8 @@ dw1000_err_e dw1000_configure_settings () {
 	_dw1000_config.nsSFD          = 0;
 	_dw1000_config.dataRate       = DW1000_DATA_RATE;
 	_dw1000_config.phrMode        = DWT_PHRMODE_EXT; //Enable extended PHR mode (up to 1024-byte packets)
+	_dw1000_config.sfdTO          = DW1000_SFD_TO;
 	_dw1000_config.smartPowerEn   = DW1000_SMART_PWR_EN;
-	_dw1000_config.sfdTO          = DW1000_SFD_TO;//(1025 + 64 - 32);
 
 	dwt_configure(&_dw1000_config);
 
