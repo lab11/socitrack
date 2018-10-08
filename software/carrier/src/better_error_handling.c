@@ -41,13 +41,13 @@ void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info) {
     switch (id) {
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
         case NRF_FAULT_ID_SD_ASSERT: {
-      printf("SOFTDEVICE: ASSERTION FAILED");
-      break;
-    }
-    case NRF_FAULT_ID_APP_MEMACC: {
-      printf("SOFTDEVICE: INVALID MEMORY ACCESS");
-      break;
-    }
+            printf("SOFTDEVICE: ASSERTION FAILED at 0x%08lX\n", pc);
+            break;
+        }
+        case NRF_FAULT_ID_APP_MEMACC: {
+            printf("SOFTDEVICE: INVALID MEMORY ACCESS at 0x%08lX\n", pc);
+            break;
+        }
 #endif
         case NRF_FAULT_ID_SDK_ASSERT: {
             assert_info_t * p_info = (assert_info_t *)info;

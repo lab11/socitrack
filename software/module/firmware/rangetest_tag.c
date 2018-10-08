@@ -285,7 +285,7 @@ static uint8 simpletest_tx_msg[] = {0xC5, 0, 'D', 'E', 'C', 'A', 'W', 'A', 'V', 
 dw1000_err_e simpletest_tag_start(void) {
 
 	dw1000_spi_slow();
-	if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR) {
+	if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR) {
 		debug_msg("ERROR: Simpletest init failed!\n");
 	}
 	dw1000_spi_fast();

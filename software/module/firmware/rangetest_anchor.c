@@ -207,7 +207,7 @@ static uint16 simpletest_frame_len = 0;
 dw1000_err_e simpletest_anchor_start(void) {
 
 	dw1000_spi_slow();
-	if (dwt_initialise(DWT_LOADNONE) == DWT_ERROR) {
+	if (dwt_initialise(DWT_LOADUCODE) == DWT_ERROR) {
 		debug_msg("ERROR: Simpletest init failed!\n");
 	}
 
@@ -257,6 +257,9 @@ dw1000_err_e simpletest_anchor_start(void) {
 				debug_msg("Received message\n");
 			}
 
+			// Receive analysis about packet
+			dw1000_calculatediagnostics();
+
 #if (BOARD_V == SQUAREPOINT)
 			// Toggle GREEN, turn off BLUE
 			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
@@ -273,6 +276,9 @@ dw1000_err_e simpletest_anchor_start(void) {
 		else {
 			/* Clear RX error events in the DW1000 status register. */
 			dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_ALL_RX_ERR);
+
+            /* Reset RX to properly reinitialise LDE operation. */
+            dwt_rxreset();
 		}
 	}
 }

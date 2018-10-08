@@ -1066,39 +1066,49 @@ uint64_t dw1000_gettimestampoverflow(){
 	return _dw_timestamp_overflow;
 }
 
-uint64_t dw1000_estimatepathloss(){
+void dw1000_calculatediagnostics(){
 
-    // Estimate Tx and Rx signal strength and calculate loss; see User Manual chapter 4.7
-    //uint32_t A_16MHz = 11377 / 100;
-    //uint32_t A_64MHz = 12174 / 100;
+    // Estimate First path and Rx signal strength; see User Manual chapter 4.7
+    uint32_t A_16MHz = 11377 / 100;
+    uint32_t A_64MHz = 12174 / 100;
 
     // Get data
-    dwt_rxdiag_t diagnostics;
+    dwt_rxdiag_t diagnostics = {0};
     dwt_readdiagnostics(&diagnostics);
+
+    // Print variables
+    /*debug_msg("Printing diagnostics values:\n");
+    debug_msg_uint(diagnostics.firstPathAmp1);
+    debug_msg("\n");
+    debug_msg_uint(diagnostics.firstPathAmp2);
+    debug_msg("\n");
+    debug_msg_uint(diagnostics.firstPathAmp3);
+    debug_msg("\n");
+    debug_msg_uint(diagnostics.rxPreamCount);
+    debug_msg("\n");
+    debug_msg_uint(diagnostics.maxGrowthCIR);
+    debug_msg("\n");*/
 
     uint32_t N_squared = (uint32_t)diagnostics.rxPreamCount * (uint32_t)diagnostics.rxPreamCount;
 
-    // Tx signal
-    uint32_t tx_signal  = (uint32_t)diagnostics.firstPathAmp1 * (uint32_t)diagnostics.firstPathAmp1;
-             tx_signal += (uint32_t)diagnostics.firstPathAmp2 * (uint32_t)diagnostics.firstPathAmp2;
-             tx_signal += (uint32_t)diagnostics.firstPathAmp3 * (uint32_t)diagnostics.firstPathAmp3;
+    // First path signal (leading edge -> LOS path)
+    uint32_t fp_signal  = (uint32_t)diagnostics.firstPathAmp1 * (uint32_t)diagnostics.firstPathAmp1;
+             fp_signal += (uint32_t)diagnostics.firstPathAmp2 * (uint32_t)diagnostics.firstPathAmp2;
+             fp_signal += (uint32_t)diagnostics.firstPathAmp3 * (uint32_t)diagnostics.firstPathAmp3;
 
     // Rx signal
-    uint32_t rx_signal  = (uint32_t)diagnostics.maxGrowthCIR * (uint32_t)diagnostics.maxGrowthCIR;
-             rx_signal *= (uint32_t)(2 << 17);
+    uint32_t rx_signal  = (uint32_t)diagnostics.maxGrowthCIR;
+             rx_signal *= (uint32_t)(0x1 << 17);
 
     // Calculate dBm
-    //uint64_t tx_signal_dBm = (uint64_t)(10 * log10(tx_signal / N_squared)) - A_64MHz;
-    //uint64_t rx_signal_dBM = (uint64_t)(10 * log10(rx_signal / N_squared)) - A_64MHz;
+    //int fp_signal_dBm = (uint32_t)(10 * log10((double)fp_signal / N_squared)) - A_64MHz;
+    //int rx_signal_dBm = (uint32_t)(10 * log10((double)rx_signal / N_squared)) - A_64MHz;
 
-    debug_msg("Estimated signal strength: Tx - ");
-    debug_msg_int((uint32_t)(tx_signal / N_squared));
+    debug_msg("Estimated signal strength: First path - ");
+    debug_msg_uint(fp_signal / N_squared);
+    //debug_msg_int(fp_signal_dBm);
     debug_msg(" ; Rx - ");
-    debug_msg_int((uint32_t)(rx_signal / N_squared));
+    debug_msg_uint(rx_signal / N_squared);
+    //debug_msg_int(rx_signal_dBm);
     debug_msg("\n");
-
-    // Calculate difference directly
-    uint64_t pathloss = tx_signal / rx_signal;
-
-    return pathloss;
 }
