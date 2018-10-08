@@ -46,6 +46,7 @@
 
 // Custom libraries
 #include "boards.h"
+#include "ble_config.h"
 #include "module_interface.h"
 #include "simple_logger.h"
 #include "accelerometer_lis2dw12.h"
@@ -285,7 +286,7 @@ static void sd_card_init(void) {
 #define APP_ADV_DATA_LENGTH             0x15                               /**< Length of manufacturer specific data in the advertisement. */
 #define APP_DEVICE_TYPE                 0x02                               /**< 0x02 refers to Beacon. */
 #define APP_MEASURED_RSSI               0xC3                               /**< The Beacon's measured RSSI at 1 meter distance in dBm. */
-#define APP_COMPANY_IDENTIFIER          0x0059                             /**< Company identifier for Nordic Semiconductor ASA. as per www.bluetooth.org. */
+//#define APP_COMPANY_IDENTIFIER          0x0059                             /**< Company identifier for Nordic Semiconductor ASA. as per www.bluetooth.org. */
 #define APP_MAJOR_VALUE                 0x01, 0x02                         /**< Major value used to identify Beacons. */
 #define APP_MINOR_VALUE                 0x03, 0x04                         /**< Minor value used to identify Beacons. */
 #define APP_BEACON_UUID                 0x01, 0x12, 0x23, 0x34, \
@@ -329,6 +330,36 @@ static uint8_t m_beacon_info[APP_BEACON_INFO_LENGTH] = {
         APP_MINOR_VALUE,     // Minor arbitrary value that can be used to distinguish between Beacons.
         APP_MEASURED_RSSI    // Manufacturer specific information. The Beacon's measured TX power in this implementation.
 };
+
+static ble_gap_scan_params_t const m_scan_params =
+        {
+                .active            = 1,
+                .interval          = APP_SCAN_INTERVAL,
+                .window            = APP_SCAN_WINDOW,
+                .timeout           = BLE_GAP_SCAN_TIMEOUT_UNLIMITED,
+                .scan_phys         = BLE_GAP_PHY_1MBPS,
+                .filter_policy     = BLE_GAP_SCAN_FP_ACCEPT_ALL, //Whitelist implemented in the application BLE handler
+        };
+
+static ble_gap_conn_params_t const m_connection_param =
+        {
+                MIN_CONN_INTERVAL,
+                MAX_CONN_INTERVAL,
+                SLAVE_LATENCY,
+                CONN_SUP_TIMEOUT
+        };
+
+static uint8_t m_scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN]; /**< Buffer where advertising reports will be stored by the SoftDevice. */
+
+/** Pointer to the buffer where advertising reports will be stored by the SoftDevice. */
+static ble_data_t m_scan_buffer =
+        {
+                m_scan_buffer_data,
+                BLE_GAP_SCAN_BUFFER_MIN
+        };
+
+// Whitelisted addresses
+ble_gap_addr_t pp_wl_addrs[APP_BLE_ADDR_NR];
 
 // Handler called in case of an assert in the SoftDevice
 void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name) {
@@ -391,7 +422,7 @@ static void advertising_init(void) {
     // Initialize advertising parameters (used when starting advertising).
     memset(&m_adv_params, 0, sizeof(m_adv_params));
 
-    m_adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
+    m_adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
     m_adv_params.p_peer_addr     = NULL;    // Undirected advertisement.
     m_adv_params.filter_policy   = BLE_GAP_ADV_FP_ANY;
     m_adv_params.interval        = NON_CONNECTABLE_ADV_INTERVAL;
@@ -414,6 +445,21 @@ static void advertising_start(void) {
 
     err_code = sd_ble_gap_adv_start(m_adv_handle, APP_BLE_CONN_CFG_TAG);
     APP_ERROR_CHECK(err_code);
+
+    printf("Started advertising...\n");
+}
+
+static void scan_start(void)
+{
+    ret_code_t err_code;
+
+    //err_code = sd_ble_gap_scan_stop();
+    //APP_ERROR_CHECK(err_code);
+
+    err_code = sd_ble_gap_scan_start(&m_scan_params, &m_scan_buffer);
+    APP_ERROR_CHECK(err_code);
+
+    printf("Started scanning...\n");
 }
 
 // Initialize BLE stack
@@ -604,8 +650,8 @@ int main(void) {
 #endif
 
     // Test BLE --------------------------------------------------------------------------------------------------------
-//#define TEST_BLE
-#ifdef TEST_BLE
+#define TEST_BLE_SCAN
+#ifdef TEST_BLE_ADV
     printf("Testing BLE advertisements:");
 
     // Initialize
@@ -614,6 +660,19 @@ int main(void) {
 
     // Start execution
     advertising_start();
+    //printf("Started advertising...\n");
+
+    printf(" OK\n");
+#endif
+#ifdef TEST_BLE_SCAN
+    printf("Testing BLE scanning:");
+
+    // Initialize
+    ble_stack_init();
+
+    // Start scanning
+    // FIXME: Peer manager required?
+    scan_start();
     //printf("Started advertising...\n");
 
     printf(" OK\n");
@@ -629,7 +688,7 @@ int main(void) {
 #endif
 
     // Test Module connection ------------------------------------------------------------------------------------------
-#define TEST_MODULE
+//#define TEST_MODULE
 #ifdef TEST_MODULE
     printf("Testing module: ");
 

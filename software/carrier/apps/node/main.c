@@ -742,6 +742,20 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             APP_ERROR_CHECK(err_code);
             break;
         }
+        case BLE_GAP_EVT_CONN_PARAM_UPDATE_REQUEST: {
+            // Accept parameters requested by peer.
+            err_code = sd_ble_gap_conn_param_update(p_ble_evt->evt.gap_evt.conn_handle,
+                                                    &p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params);
+            APP_ERROR_CHECK(err_code);
+            break;
+        }
+        case BLE_GAP_EVT_TIMEOUT: {
+            // We have not specified a timeout for scanning, so only connection attemps can timeout.
+            if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN) {
+                printf("Connection attempts timed out\n");
+            }
+            break;
+        }
         case BLE_GATTC_EVT_TIMEOUT: {
             // Disconnect on GATT Client timeout event.
             NRF_LOG_DEBUG("GATT Client Timeout.");
@@ -821,6 +835,10 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     if (addr_in_whitelist(&p_adv_report->peer_addr)) {
         on_device_discovery(&p_adv_report->peer_addr);
     }
+
+    // Re-enable scanning
+    ret_code_t err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+    APP_ERROR_CHECK(err_code);
 }
 
 // Function for handling Queued Write Module errors
@@ -938,7 +956,8 @@ static void watchdog_handler (void* p_context)
 
         if (err_code == NRF_SUCCESS) {
             app.module_inited = true;
-            module_start_ranging(true, 10);
+
+            printf("INFO: Watchdog initialized module\n");
         }
     }
 }
@@ -972,6 +991,10 @@ static void ble_stack_init(void)
     // Overwrite some of the default configurations for the BLE stack.
     ble_cfg_t ble_cfg;
 
+    // Set default parameters
+    //nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start);
+    //APP_ERROR_CHECK(err_code);
+
     // Configure the maximum number of connections.
     memset(&ble_cfg, 0, sizeof(ble_cfg));
     ble_cfg.conn_cfg.conn_cfg_tag                     = APP_BLE_CONN_CFG_TAG;
@@ -982,9 +1005,9 @@ static void ble_stack_init(void)
 
     // Configure the connection roles
     memset(&ble_cfg, 0, sizeof(ble_cfg));
-    ble_cfg.gap_cfg.role_count_cfg.periph_role_count  = 1;
-    ble_cfg.gap_cfg.role_count_cfg.central_role_count = 1;
-    ble_cfg.gap_cfg.role_count_cfg.central_sec_count  = 0;
+    ble_cfg.gap_cfg.role_count_cfg.periph_role_count  = NRF_SDH_BLE_PERIPHERAL_LINK_COUNT;
+    ble_cfg.gap_cfg.role_count_cfg.central_role_count = NRF_SDH_BLE_CENTRAL_LINK_COUNT;
+    ble_cfg.gap_cfg.role_count_cfg.central_sec_count  = BLE_GAP_ROLE_COUNT_CENTRAL_SEC_DEFAULT;
     err_code = sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &ble_cfg, ram_start);
     APP_ERROR_CHECK(err_code);
 
@@ -1382,7 +1405,7 @@ static void timers_init (void)
     err_code = app_timer_create(&watchdog_timer, APP_TIMER_MODE_REPEATED, watchdog_handler);
     APP_ERROR_CHECK(err_code);
 
-    err_code = app_timer_start(watchdog_timer, UPDATE_RATE, NULL);
+    err_code = app_timer_start(watchdog_timer, WATCHDOG_CHECK_RATE, NULL);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -1479,6 +1502,7 @@ void carrier_start_module(uint8_t role) {
             err_code = module_start_ranging(true, 10);
             if (err_code != NRF_SUCCESS) {
                 printf("ERROR: Failed to start ranging!\r\n");
+                return;
             } else {
                 printf("Started ranging...\r\n");
             }
@@ -1494,6 +1518,7 @@ void carrier_start_module(uint8_t role) {
 #endif
             if (err_code != NRF_SUCCESS) {
                 printf("ERROR: Failed to start responding!\r\n");
+                return;
             } else {
 #ifdef GLOSSY_MASTER
                 printf("Started responding as Glossy master...\r\n");

@@ -27,7 +27,7 @@
 #define FIRMWARE_REVISION      "0.1"
 
 // Behaviour
-#define WATCHDOG_CHECK_RATE     APP_TIMER_TICKS(10000)
+#define UPDATE_RATE             APP_TIMER_TICKS(1000)
 #define APP_SD_REQUIRED         0
 
 // Structs -------------------------------------------------------------------------------------------------------------
@@ -97,22 +97,6 @@ typedef struct ble_app_s {
 #define PHYSWEB_URLEND_ORG      0x08    // .org
 #define PHYSWEB_URLEND_EDU      0x09    // .edu
 
-// Security parameters
-#define SEC_PARAMS_BOND                 1                                               /**< Perform bonding. */
-#if LESC_MITM_NC
-#define SEC_PARAMS_MITM                 1                                               /**< Man In The Middle protection required. */
-#define SEC_PARAMS_IO_CAPABILITIES      BLE_GAP_IO_CAPS_DISPLAY_YESNO                   /**< Display Yes/No to force Numeric Comparison. */
-#else
-#define SEC_PARAMS_MITM                 0                                               /**< Man In The Middle protection required. */
-#define SEC_PARAMS_IO_CAPABILITIES      BLE_GAP_IO_CAPS_NONE                            /**< No I/O caps. */
-#endif
-#define SEC_PARAMS_LESC                 1                                               /**< LE Secure Connections pairing required. */
-#define SEC_PARAMS_KEYPRESS             0                                               /**< Keypress notifications not required. */
-#define SEC_PARAMS_OOB                  0                                               /**< Out Of Band data not available. */
-#define SEC_PARAMS_MIN_KEY_SIZE         7                                               /**< Minimum encryption key size in octets. */
-#define SEC_PARAMS_MAX_KEY_SIZE         16                                              /**< Maximum encryption key size in octets. */
-
-#define BLE_GAP_LESC_P256_SK_LEN        32
 
 /**
  * Eddystone App configurations, adapted from nRF example "examples\ble_peripheral\ble_app_eddystone\es_app_config.h"
