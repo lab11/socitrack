@@ -6664,7 +6664,7 @@ power draws</text>
 <wire x1="144.78" y1="20.32" x2="152.4" y2="20.32" width="0.1524" layer="98" style="longdash"/>
 <text x="7.62" y="121.92" size="3.81" layer="98">STM32F091CC</text>
 <text x="228.6" y="180.34" size="3.81" layer="98">DW1000</text>
-<text x="106.68" y="149.86" size="3.81" layer="98">RF + DCDC</text>
+<text x="99.06" y="144.78" size="3.81" layer="98">RF + DCDC</text>
 <wire x1="144.78" y1="134.62" x2="144.78" y2="190.5" width="0.1524" layer="98" style="longdash"/>
 <text x="115.316" y="116.586" size="1.27" layer="98">I2C: Pull-up
 resistor required</text>
