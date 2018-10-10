@@ -43,16 +43,17 @@ typedef enum {
 typedef struct {
     app_role_t app_role;
     uint32_t   app_sync_time;       // Current epoch time at moment of configuration
-    bool       app_ranging_enabled; // Whether or not the module is running and ranging
+    bool       app_module_enabled;
 } app_config_t;
 
 typedef struct ble_app_s {
     app_config_t config;
     bool         module_inited;       // Whether or not we successfully got through to the module and got it configured properly.
+    bool         network_discovered;  // Whether we know there are other devices in our proximity
     uint8_t      calibration_index;
     uint8_t      current_location[6]; // Value of num characteristic
     bool         module_interrupt_thrown;
-    bool         buffer_updated;
+    bool         app_raw_response_buffer_updated;
     uint16_t     app_raw_response_length;
     uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
 } ble_app_t;

@@ -393,7 +393,7 @@ static void backup_app_state() {
     buf_offset += 12 + 8 + 3;
 
     // Write state
-    sprintf(state_buffer + buf_offset, "%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_ranging_enabled); // Config
+    sprintf(state_buffer + buf_offset, "%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_module_enabled); // Config
     buf_offset += 2 + 9 + 2;
     sprintf(state_buffer + buf_offset, "%01x\n", app.module_inited);
     buf_offset += 2;
@@ -410,7 +410,7 @@ static void backup_app_state() {
     }
 
     // Temporary data is not maintained
-    /*sprintf(state_buffer + buf_offset, "%01x\n", app.buffer_updated);
+    /*sprintf(state_buffer + buf_offset, "%01x\n", app.app_raw_response_buffer_updated);
     buf_offset += 2;
     sprintf(state_buffer + buf_offset, "%04x\n", app.app_raw_response_length);
     buf_offset += 5;
@@ -470,9 +470,9 @@ static void restore_app_state() {
     app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 6]) <<  4;
     app.config.app_sync_time += ascii_to_i(state_buffer[buf_offset + 7]);
     buf_offset += 9;
-    app.config.app_ranging_enabled = ascii_to_i(state_buffer[buf_offset]);
+    app.config.app_module_enabled = ascii_to_i(state_buffer[buf_offset]);
     buf_offset += 2;
-    printf("%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_ranging_enabled); // Config
+    printf("%01x\t%08lx\t%01x\n", app.config.app_role, app.config.app_sync_time, app.config.app_module_enabled); // Config
 
     app.module_inited = ascii_to_i(state_buffer[buf_offset]);
     buf_offset += 2;
@@ -494,9 +494,9 @@ static void restore_app_state() {
     }
 
     // Temporary data is not maintained
-    /*app.buffer_updated = ascii_to_i(state_buffer[buf_offset]);
+    /*app.app_raw_response_buffer_updated = ascii_to_i(state_buffer[buf_offset]);
     buf_offset += 2;
-    printf("%01x\n", app.buffer_updated);
+    printf("%01x\n", app.app_raw_response_buffer_updated);
 
     app.app_raw_response_length = (ascii_to_i(state_buffer[buf_offset]) << 12) + (ascii_to_i(state_buffer[buf_offset + 1]) << 8) + (ascii_to_i(state_buffer[buf_offset + 2]) << 4) + ascii_to_i(state_buffer[buf_offset + 3]);
     buf_offset += 5;
@@ -512,7 +512,7 @@ static void restore_app_state() {
         }
         buf_offset += 3;
     }*/
-    app.buffer_updated = 0;
+    app.app_raw_response_buffer_updated = 0;
     app.app_raw_response_length = 0;
 
     for (uint8_t i = 0; i < 128; i++) {
@@ -614,10 +614,10 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         uint8_t response_ranging = ascii_to_i(p_evt_write->data[expected_response_ranging_offset]);
 
         // RANGING
-        app.config.app_ranging_enabled = response_ranging;
+        app.config.app_module_enabled = response_ranging;
 
         // Stop or start the module based on the value we just got
-        if (app.config.app_ranging_enabled) {
+        if (app.config.app_module_enabled) {
             module_resume();
         } else {
             module_sleep();
@@ -698,9 +698,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, carrier_ble_conn_handle);
             APP_ERROR_CHECK(err_code);
 
-            // TODO: Continue advertising, but nonconnectably
-            //m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
-            //ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+            // Continue advertising, but nonconnectably
+            m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
+            ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
 
             // Connected to device. Set initial CCCD attributes to NULL
             err_code = sd_ble_gatts_sys_attr_set(carrier_ble_conn_handle, NULL, 0, 0);
@@ -708,8 +708,14 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
             // Check whether another tag; if yes, start module
             if (addr_in_whitelist(&p_ble_evt->evt.gap_evt.params.connected.peer_addr)) {
-                printf("Discovered other device in proximity\n");
-                carrier_start_module(app.config.app_role);
+                if (!app.network_discovered) {
+                    printf("Discovered other device in proximity\n");
+                    app.network_discovered = true;
+                }
+
+                // Disconnect again; this direct disconnect can cause NRF_ERROR_INVALID_STATE for the sd_ble_gatts_exchange_mtu_reply() function, as it does not exchange in time
+                err_code = sd_ble_gap_disconnect(carrier_ble_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+                APP_ERROR_CHECK(err_code);
             }
 
             break;
@@ -721,13 +727,30 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             NRF_LOG_INFO("Disconnected.");
             carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 
-            // TODO: Go back to advertising connectably
-            //m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
-            //ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+            // Go back to advertising connectably
+            m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+            ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+
+            // Re-start scanning, as connecting automatically stops this
+            //err_code = sd_ble_gap_scan_stop();
+            //APP_ERROR_CHECK(err_code);
+
+            err_code = sd_ble_gap_scan_start(&m_scan_params, &m_scan_buffer);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
 
             break;
         }
         case BLE_GAP_EVT_ADV_REPORT: {
+            /*ble_gap_addr_t const * peer_addr = &p_ble_evt->evt.gap_evt.params.adv_report.peer_addr;
+            printf("Discovered another device with address %02x:%02x:%02x:%02x:%02x:%02x\n", peer_addr->addr[5],
+                                                                                             peer_addr->addr[4],
+                                                                                             peer_addr->addr[3],
+                                                                                             peer_addr->addr[2],
+                                                                                             peer_addr->addr[1],
+                                                                                             peer_addr->addr[0]);*/
+
             on_adv_report(&p_ble_evt->evt.gap_evt.params.adv_report);
 
             break;
@@ -811,34 +834,34 @@ static void on_device_discovery(ble_gap_addr_t const * peer_addr)
                                                                   peer_addr->addr[1],
                                                                   peer_addr->addr[0]);
 
-    if(app.config.app_ranging_enabled) {
-        // We are already running, so nothing to do
+    if(app.network_discovered) {
+        // We already know that we are in the network
         return;
+    } else {
+        // Init module ourselves in the main loop
+        app.network_discovered = true;
     }
 
     // Connect to device
     err_code = sd_ble_gap_connect(peer_addr, &m_scan_params, &m_connection_param, APP_BLE_CONN_CFG_TAG);
     APP_ERROR_CHECK(err_code);
 
-    // Disconnect again, as other device will now start ranging
-    err_code = sd_ble_gap_disconnect(carrier_ble_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-    APP_ERROR_CHECK(err_code);
+    // Disconnect again in event handler
 
-    // Init module ourselves
-    carrier_start_module(app.config.app_role);
 }
 
 // Handles advertising reports
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 {
     // If device is in our whitelist, we just discovered it
-    if (addr_in_whitelist(&p_adv_report->peer_addr)) {
+    if (!app.network_discovered && addr_in_whitelist(&p_adv_report->peer_addr)) {
         on_device_discovery(&p_adv_report->peer_addr);
-    }
+    } else {
 
-    // Re-enable scanning
-    ret_code_t err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
-    APP_ERROR_CHECK(err_code);
+        // Clear scan buffer
+        ret_code_t err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        APP_ERROR_CHECK(err_code);
+    }
 }
 
 // Function for handling Queued Write Module errors
@@ -907,7 +930,7 @@ void updateData (uint8_t * data, uint32_t len)
     }
 
 	// Trigger moduleDataUpdate from main loop
-	app.buffer_updated = true;
+	app.app_raw_response_buffer_updated = true;
 }
 
 
@@ -943,7 +966,7 @@ void moduleDataUpdate ()
 	}
 
 	// Clear flag
-	app.buffer_updated = false;
+	app.app_raw_response_buffer_updated = false;
 }
 
 static void watchdog_handler (void* p_context)
@@ -1276,7 +1299,7 @@ static void services_init(void)
                            &carrier_ble_char_config_handle);
 
     ble_characteristic_add(1, 1, 0, 0,
-                           10, (uint8_t*) &app.config.app_ranging_enabled,
+                           10, (uint8_t*) &app.config.app_module_enabled,
                            CARRIER_BLE_CHAR_ENABLE,
                            &carrier_ble_char_enable_handle);
 
@@ -1297,7 +1320,7 @@ static void central_init(void)
     // Create whitelist for all our devices
     ble_gap_addr_t whitelisted_ble_address = {
             .addr_type = BLE_GAP_ADDR_TYPE_PUBLIC,
-            .addr      = {APP_BLE_ADDR_MIN,0x00,0x42,0xe5,0x98,0xc8}
+            .addr      = {APP_BLE_ADDR_MIN,0x00,0x42,0xe5,0x98,0xc0}
     };
 
     for (uint16_t i = 0; i < (APP_BLE_ADDR_MAX - APP_BLE_ADDR_MIN + 1); i++) {
@@ -1381,8 +1404,8 @@ void app_init(void) {
     app.config.app_role      = APP_ROLE_INVALID;
     app.config.app_sync_time = 0;
 
-    // We default to doing ranging at the start
-    app.config.app_ranging_enabled = 1;
+    // We default to disable the module at the start
+    app.config.app_module_enabled = false;
 
     // Set to effective -1
     app.calibration_index = 255;
@@ -1390,8 +1413,11 @@ void app_init(void) {
     // Clear buffers
     app.module_inited           = false;
     app.module_interrupt_thrown = false;
-    app.buffer_updated          = false;
+    app.network_discovered      = false;
+
     memset(app.current_location, 0, 6);
+
+    app.app_raw_response_buffer_updated = false;
     app.app_raw_response_length = 128;
     memset(app.app_raw_response_buffer, 0, app.app_raw_response_length);
 }
@@ -1483,7 +1509,11 @@ void carrier_hw_init(void)
 void carrier_start_module(uint8_t role) {
     ret_code_t err_code;
 
-    // TODO: Wake up device
+    if (app.config.app_module_enabled) {
+        // Module is already enabled!
+        printf("ERROR: Module already enabled!\n");
+        return;
+    }
 
     if (!app.module_inited) {
         err_code = module_init(&app.module_interrupt_thrown, updateData);
@@ -1530,11 +1560,12 @@ void carrier_start_module(uint8_t role) {
         }
 
         default:
-            printf("ERROR: Unknown role during init!\n");
+            // Role of this tag has not been configured yet
+            //printf("ERROR: Unknown role during init!\n");
             return;
     }
 
-    app.config.app_ranging_enabled = true;
+    app.config.app_module_enabled = true;
 }
 
 
@@ -1561,8 +1592,7 @@ int main (void)
     APP_ERROR_CHECK(err_code);
 
     // Start scanning (Role: Central)
-    // FIXME: Causes unknown App Error
-    //scan_start();
+    scan_start();
 
     // Start advertisements (Role: Peripheral)
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
@@ -1612,11 +1642,18 @@ int main (void)
         //printf("Going back go sleep...\r\n");
         power_manage();
 
-        if (app.module_interrupt_thrown) {
+        if      (app.module_interrupt_thrown) {
+            // Module is trying to communicate over I2C
             module_interrupt_dispatch();
-        } else if (app.buffer_updated) {
-		    //printf("Updating location...\r\n");
-			moduleDataUpdate();
-		}
+        }
+        else if (app.network_discovered && !app.config.app_module_enabled) {
+            // Initialize module with configured role
+            carrier_start_module(app.config.app_role);
+        }
+        else if (app.app_raw_response_buffer_updated) {
+            // Received new data over I2C which we can expose over the BLE characteristics
+            //printf("Updating location...\r\n");
+            moduleDataUpdate();
+        }
     }
 }
