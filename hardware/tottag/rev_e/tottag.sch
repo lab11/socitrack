@@ -6003,13 +6003,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <label x="109.22" y="68.58" size="1.27" layer="95"/>
 </segment>
 </net>
-<net name="VBAT" class="0">
-<segment>
-<pinref part="U7" gate="G$1" pin="P0.30/AIN6"/>
-<wire x1="106.68" y1="116.84" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
-<label x="111.76" y="116.84" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="!NRF_CS_SD" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="P0.20"/>
@@ -6027,6 +6020,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="J4" gate="G$1" pin="!RESET"/>
 <wire x1="210.82" y1="134.62" x2="205.74" y2="134.62" width="0.1524" layer="91"/>
 <label x="205.74" y="134.62" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="BATIN" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.30/AIN6"/>
+<wire x1="106.68" y1="116.84" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
+<label x="111.76" y="116.84" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
