@@ -420,7 +420,7 @@ int main () {
     }
 
 	// Choose Glossy role
-    if (0) {
+    if (0 || (config.my_role == TAG)) {
         config.my_glossy_role = GLOSSY_SLAVE;
         debug_msg("GLOSSY_SLAVE\n");
     } else {

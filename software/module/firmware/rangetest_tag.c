@@ -138,22 +138,15 @@ dw1000_err_e rangetest_tag_start_ranging_event () {
 // Called after the TAG has transmitted a packet.
 static void tag_txcallback (const dwt_cb_data_t *txd) {
 
-    debug_msg("TAG transmitted a packet\n");
-
 	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
+        debug_msg("TAG transmitted a packet\n");
 
 	} else {
 		// Some error occurred, don't just keep trying to send packets.
 		timer_stop(test_ot_scratch->tag_timer);
 
 		debug_msg("ERROR: Failed in sending packet!\n");
-	}
-
-	if (txd->status & SYS_STATUS_TXERR) {
-		debug_msg("ERROR: Tx error with status: ");
-		debug_msg_uint((uint32_t)txd->status);
-		debug_msg("\n");
 	}
 
 }

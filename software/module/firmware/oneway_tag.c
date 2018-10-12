@@ -156,12 +156,11 @@ void oneway_tag_stop () {
 // Called after the TAG has transmitted a packet.
 static void tag_txcallback (const dwt_cb_data_t *txd) {
 
-    //debug_msg("TAG transmitted a packet\n");
-
 	glossy_process_txcallback();
 
 	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
+		//debug_msg("TAG transmitted a packet\n");
 
 		// Check which state we are in to decide what to do.
 		// We use TX_callback because it will get called after we have sent
@@ -187,13 +186,8 @@ static void tag_txcallback (const dwt_cb_data_t *txd) {
 
 	} else {
 		// Some error occurred, don't just keep trying to send packets.
+		debug_msg("ERROR: Failed in sending packet!\n");
 		timer_stop(ot_scratch->tag_timer);
-	}
-
-	if (txd->status & SYS_STATUS_TXERR) {
-		debug_msg("ERROR: TX error with status: ");
-		debug_msg_uint((uint32_t)txd->status);
-		debug_msg("\n");
 	}
 
 }

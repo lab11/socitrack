@@ -101,16 +101,16 @@ static void ranging_broadcast_received_task () {
 	dwt_rxenable(0);
 }
 
-// Called after a packet is transmitted. We don't need this so it is
-// just empty.
+// Called after a packet is transmitted.
 static void anchor_txcallback (const dwt_cb_data_t *txd) {
 
-    debug_msg("ANCHOR transmitted a packet\n");
+	if (txd->status & SYS_STATUS_TXFRS) {
+		// Packet was sent successfully
+		debug_msg("ANCHOR transmitted a packet\n");
 
-	if (txd->status & SYS_STATUS_TXERR) {
-		debug_msg("ERROR: TX error, status: ");
-		debug_msg_uint((uint32_t)txd->status);
-		debug_msg("\n");
+	} else {
+		// Some error occurred, don't just keep trying to send packets.
+		debug_msg("ERROR: Failed in sending packet!\n");
 	}
 
 }

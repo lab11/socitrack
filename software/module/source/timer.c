@@ -68,7 +68,11 @@ stm_timer_t* timer_init () {
 
 // Start a particular timer running
 void timer_start (stm_timer_t* t, uint32_t us_period, timer_callback cb) {
+#if (BOARD_V == 1)
+	uint32_t prescalar = (SystemCoreClock/500000)-1;
+#else
 	uint32_t prescalar = (SystemCoreClock/1000000)-1;
+#endif
 	// Save the callback
 	timer_callbacks[t->index] = cb;
 

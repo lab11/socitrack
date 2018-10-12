@@ -267,13 +267,14 @@ static void ranging_listening_window_setup () {
 // just empty.
 static void anchor_txcallback (const dwt_cb_data_t *txd) {
 
-    //debug_msg("ANCHOR transmitted a packet\n");
+	if (txd->status & SYS_STATUS_TXFRS) {
+		// Packet was sent successfully
+		//debug_msg("ANCHOR transmitted a packet\n");
 
-    if (txd->status & SYS_STATUS_TXERR) {
-    	debug_msg("ERROR: TX error, status: ");
-    	debug_msg_uint((uint32_t)txd->status);
-    	debug_msg("\n");
-    }
+	} else {
+		// Some error occurred, don't just keep trying to send packets.
+		debug_msg("ERROR: Failed in sending packet!\n");
+	}
 
 	glossy_process_txcallback();
 }
@@ -294,8 +295,9 @@ static void anchor_rxcallback (const dwt_cb_data_t *rxd) {
 			dwt_readrxdata(&cur_seq_num, 1, 2);
 
 			// Check to see if the sequence number matches the outgoing packet
-			if(cur_seq_num == oa_scratch->pp_anc_final_pkt.ieee154_header_unicast.seqNum)
-				oa_scratch->final_ack_received = TRUE;
+			if(cur_seq_num == oa_scratch->pp_anc_final_pkt.ieee154_header_unicast.seqNum) {
+                oa_scratch->final_ack_received = TRUE;
+            }
 		} else {
 
 			// Read in parameters of this packet reception
