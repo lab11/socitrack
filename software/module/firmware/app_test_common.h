@@ -1,11 +1,11 @@
 #ifndef __RANGETEST_COMMON_H
 #define __RANGETEST_COMMON_H
 
-#include "polypoint_conf.h"
+#include "module_conf.h"
 #include "system.h"
 #include "dw1000.h"
 #include "timer.h"
-#include "oneway_common.h"
+#include "app_standard_common.h"
 
 /******************************************************************************/
 // Parameters for the localization and ranging protocol

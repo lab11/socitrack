@@ -4,8 +4,8 @@
 #include "deca_device_api.h"
 #include "deca_regs.h"
 
-#include "oneway_common.h"
-#include "oneway_anchor.h"
+#include "app_standard_common.h"
+#include "app_standard_resp.h"
 #include "dw1000.h"
 #include "timer.h"
 #include "delay.h"
@@ -30,8 +30,8 @@ void oneway_anchor_init (void *app_scratchspace) {
 			},
 			.seqNum = 0,
 			.panID = {
-				POLYPOINT_PANID & 0xFF,
-				POLYPOINT_PANID >> 8,
+				MODULE_PANID & 0xFF,
+				MODULE_PANID >> 8,
 			},
 			.destAddr = { 0 },    // (blank for now)
 			.sourceAddr = { 0 },  // (blank for now)
@@ -58,7 +58,7 @@ void oneway_anchor_init (void *app_scratchspace) {
 	uint8_t eui_array[8];
 	dw1000_read_eui(eui_array);
 	// dwt_seteui(eui_array);
-	// dwt_setpanid(POLYPOINT_PANID);
+	// dwt_setpanid(MODULE_PANID);
 
 	// Don't use these
 	dwt_setdblrxbuffmode(FALSE);

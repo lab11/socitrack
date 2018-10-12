@@ -8,9 +8,9 @@
 #include "board.h"
 #include "dw1000.h"
 #include "host_interface.h"
-#include "rangetest_common.h"
-#include "rangetest_tag.h"
-#include "rangetest_anchor.h"
+#include "app_test_common.h"
+#include "app_test_init.h"
+#include "app_test_resp.h"
 #include "SEGGER_RTT.h"
 
 // All of the configuration passed to us by the host for how this application should operate.

@@ -63,20 +63,19 @@ set(PROJ_FILES
         firmware/host_interface.c
         firmware/host_interface.h
         firmware/main.c
-        firmware/oneway_anchor.c
-        firmware/oneway_anchor.h
-        firmware/oneway_common.c
-        firmware/oneway_common.h
-        firmware/oneway_tag.c
-        firmware/oneway_tag.h
-        firmware/rangetest_anchor.c
-        firmware/rangetest_anchor.h
-        firmware/rangetest_common.c
-        firmware/rangetest_common.h
-        firmware/rangetest_tag.c
-        firmware/rangetest_tag.h
-        firmware/polypoint_conf.h
-        firmware/port.h
+        firmware/app_standard_resp.c
+        firmware/app_standard_resp.h
+        firmware/app_standard_common.c
+        firmware/app_standard_common.h
+        firmware/app_standard_init.c
+        firmware/app_standard_init.h
+        firmware/app_test_resp.c
+        firmware/app_test_resp.h
+        firmware/app_test_common.c
+        firmware/app_test_common.h
+        firmware/app_test_init.c
+        firmware/app_test_init.h
+        firmware/module_conf.h
         firmware/stm32f0xx_conf.h
         firmware/stm32f0xx_i2c_cpal_conf.h)
 

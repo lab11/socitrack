@@ -12,11 +12,11 @@
 #include "deca_device_api.h"
 #include "deca_regs.h"
 
-#include "port.h"
 #include "board.h"
 #include "dw1000.h"
 #include "delay.h"
 #include "firmware.h"
+#include "module_conf.h"
 #include "board.h"
 #include "led.h"
 #include "SEGGER_RTT.h"
@@ -455,7 +455,7 @@ void dw1000_interrupt_fired () {
 		// Well this is not good. It looks like the interrupt got stuck high,
 		// so we'd spend the rest of the time just reading this interrupt.
 		// Not much we can do here but reset everything.
-		polypoint_reset();
+		module_reset();
 	}
 }
 
@@ -554,7 +554,7 @@ error:
     dma_disable();
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_SET);
 	SPI_Cmd(SPI1, DISABLE);
-	polypoint_reset();
+	module_reset();
 	return -1;
 }
 
@@ -590,7 +590,7 @@ error:
     dma_disable();
 	GPIO_WriteBit(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, Bit_SET);
 	SPI_Cmd(SPI1, DISABLE);
-	polypoint_reset();
+	module_reset();
 	return -1;
 }
 
@@ -862,7 +862,7 @@ dw1000_err_e dw1000_configure_settings () {
 	uint8_t eui_array[8];
 	dw1000_read_eui(eui_array);
 	dwt_seteui(eui_array);
-	dwt_setpanid(POLYPOINT_PANID);
+	dwt_setpanid(MODULE_PANID);
 
 	// Always good to make sure we don't trap the SPI speed too slow
 	dw1000_spi_fast();
@@ -1068,8 +1068,8 @@ uint64_t dw1000_gettimestampoverflow(){
 void dw1000_calculatediagnostics(){
 
     // Estimate First path and Rx signal strength; see User Manual chapter 4.7
-    uint32_t A_16MHz = 11377 / 100;
-    uint32_t A_64MHz = 12174 / 100;
+    //uint32_t A_16MHz = 11377 / 100;
+    //uint32_t A_64MHz = 12174 / 100;
 
     // Get data
     dwt_rxdiag_t diagnostics = {0};

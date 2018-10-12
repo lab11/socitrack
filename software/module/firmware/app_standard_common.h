@@ -1,7 +1,7 @@
 #ifndef __ONEWAY_COMMON_H
 #define __ONEWAY_COMMON_H
 
-#include "polypoint_conf.h"
+#include "module_conf.h"
 #include "system.h"
 #include "dw1000.h"
 #include "timer.h"

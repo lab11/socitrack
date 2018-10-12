@@ -10,7 +10,7 @@
 #include "board.h"
 #include "dw1000.h"
 #include "deca_regs.h"
-#include "oneway_common.h"
+#include "app_standard_common.h"
 #include "timer.h"
 #include "prng.h"
 #include "SEGGER_RTT.h"
@@ -74,8 +74,8 @@ void glossy_init(glossy_role_e role){
 			},
 			.seqNum = 0,
 			.panID = {
-				POLYPOINT_PANID & 0xFF,
-				POLYPOINT_PANID >> 8
+				MODULE_PANID & 0xFF,
+				MODULE_PANID >> 8
 			},
 			.destAddr = {
 				0xFF,

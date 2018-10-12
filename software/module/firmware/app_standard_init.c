@@ -7,7 +7,7 @@
 #include "timer.h"
 #include "delay.h"
 #include "dw1000.h"
-#include "oneway_tag.h"
+#include "app_standard_init.h"
 #include "firmware.h"
 #include "SEGGER_RTT.h"
 
@@ -35,8 +35,8 @@ void oneway_tag_init (void *app_scratchspace) {
 			},
 			0,        // Sequence number
 			{
-				POLYPOINT_PANID & 0xFF, // PAN ID
-				POLYPOINT_PANID >> 8
+				MODULE_PANID & 0xFF, // PAN ID
+				MODULE_PANID >> 8
 			},
 			{
 				0xFF, // Destination address: broadcast

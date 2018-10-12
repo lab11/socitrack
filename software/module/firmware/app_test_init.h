@@ -1,7 +1,7 @@
 #ifndef __RANGETEST_TAG_H
 #define __RANGETEST_TAG_H
 
-#include "rangetest_common.h"
+#include "app_test_common.h"
 #include "deca_device_api.h"
 #include "deca_regs.h"
 

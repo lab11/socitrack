@@ -1,7 +1,7 @@
 #ifndef __DW1000_H
 #define __DW1000_H
 
-#include "polypoint_conf.h"
+#include <stdint.h>
 #include "system.h"
 
 /******************************************************************************/

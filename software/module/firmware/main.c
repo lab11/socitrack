@@ -11,12 +11,12 @@
 
 #include "host_interface.h"
 #include "dw1000.h"
-#include "oneway_common.h"
-#include "oneway_tag.h"
-#include "oneway_anchor.h"
-#include "rangetest_common.h"
-#include "rangetest_tag.h"
-#include "rangetest_anchor.h"
+#include "app_standard_common.h"
+#include "app_standard_init.h"
+#include "app_standard_resp.h"
+#include "app_test_common.h"
+#include "app_test_init.h"
+#include "app_test_resp.h"
 #include "timer.h"
 #include "delay.h"
 #include "firmware.h"
@@ -40,7 +40,7 @@ bool interrupts_triggered[NUMBER_INTERRUPT_SOURCES]  = {FALSE};
 static app_state_e _state = APPSTATE_NOT_INITED;
 
 // Keep track of what application we are running
-static polypoint_application_e _current_app;
+static module_application_e _current_app;
 
 // Timer for doing periodic operations (like TAG ranging events)
 static stm_timer_t* _app_timer;
@@ -91,7 +91,7 @@ union app_scratchspace {
 // If this is called while the application is stopped, it will not be
 // automatically started.
 // If this is called when the app is running, the app will be restarted.
-void polypoint_configure_app (polypoint_application_e app, void* app_config) {
+void module_configure_app (module_application_e app, void* app_config) {
 	bool resume = FALSE;
 
 	// Check if this application is running.
@@ -99,7 +99,7 @@ void polypoint_configure_app (polypoint_application_e app, void* app_config) {
 		// Resume with new settings.
 		resume = TRUE;
 		// Stop this first
-		polypoint_stop();
+		module_stop();
 	}
 
 	// Set scratchspace to known zeros
@@ -108,7 +108,7 @@ void polypoint_configure_app (polypoint_application_e app, void* app_config) {
 	// Tell the correct application that it should init()
 	_current_app = app;
 	switch (_current_app) {
-		case APP_ONEWAY:
+		case APP_STANDARD:
 			oneway_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
 			break;
 		case APP_RANGETEST:
@@ -126,13 +126,13 @@ void polypoint_configure_app (polypoint_application_e app, void* app_config) {
 	// We were running when this function was called, so we start things back
 	// up here.
 	if (resume) {
-		polypoint_start();
+		module_start();
 	}
 }
 
 
 // Start this node! This will run the anchor and tag algorithms.
-void polypoint_start () {
+void module_start () {
 	// Don't start if we are already started
 	if (_state == APPSTATE_RUNNING) {
 		return;
@@ -141,7 +141,7 @@ void polypoint_start () {
 	_state = APPSTATE_RUNNING;
 
 	switch (_current_app) {
-		case APP_ONEWAY:
+		case APP_STANDARD:
 			oneway_start();
 			break;
 		case APP_RANGETEST:
@@ -153,7 +153,7 @@ void polypoint_start () {
 }
 
 // This is called when the host tells us to sleep
-void polypoint_stop () {
+void module_stop () {
 	// Don't stop if we are already stopped
 	if (_state == APPSTATE_STOPPED) {
 		return;
@@ -162,7 +162,7 @@ void polypoint_stop () {
 	_state = APPSTATE_STOPPED;
 
 	switch (_current_app) {
-		case APP_ONEWAY:
+		case APP_STANDARD:
 			oneway_stop();
 			break;
 
@@ -174,7 +174,7 @@ void polypoint_stop () {
 // Drop the big hammer on the DW1000 and reset the chip (along with the app).
 // All state should be preserved, so after the reset the tripoint should go
 // back to what it was doing, just after a reset and re-init of the dw1000.
-void polypoint_reset () {
+void module_reset () {
 	bool resume = FALSE;
 
 	if (_state == APPSTATE_RUNNING) {
@@ -193,7 +193,7 @@ void polypoint_reset () {
 
 	// Re init the app
 	switch (_current_app) {
-		case APP_ONEWAY:
+		case APP_STANDARD:
 			oneway_reset();
 			break;
 
@@ -202,19 +202,19 @@ void polypoint_reset () {
 	}
 
 	if (resume) {
-		polypoint_start();
+		module_start();
 	}
 }
 
 // Return true if we are good for app_configure
 // to be called, false otherwise.
-bool polypoint_ready () {
+bool module_ready () {
 	return _state != APPSTATE_NOT_INITED;
 }
 
 // Assuming we are a TAG, and we are in on-demand ranging mode, tell
 // the dw1000 algorithm to perform a range.
-void polypoint_tag_do_range () {
+void module_tag_do_range () {
 	// If the application isn't running, we are not a tag, or we are not
 	// in on-demand ranging mode, don't do anything.
 	if (_state != APPSTATE_RUNNING) {
@@ -223,7 +223,7 @@ void polypoint_tag_do_range () {
 
 	// Call the relevant function based on the current application
 	switch (_current_app) {
-		case APP_ONEWAY:
+		case APP_STANDARD:
 			oneway_do_range();
 			break;
 
@@ -435,14 +435,14 @@ int main () {
 
 //#define RANGE_TEST
 #ifdef RANGE_TEST
-	polypoint_configure_app(APP_RANGETEST, &config);
+	module_configure_app(APP_RANGETEST, &config);
 
 	// If using APP_SIMPLETEST, also comment out "dw1000_configure_settings" in dw1000_init()
-    //polypoint_configure_app(APP_SIMPLETEST, &config);
+    //module_configure_app(APP_SIMPLETEST, &config);
 #else
-	polypoint_configure_app(APP_ONEWAY, &config);
+	module_configure_app(APP_STANDARD, &config);
 #endif
-	polypoint_start();
+	module_start();
 #endif
 
 #if (BOARD_V == SQUAREPOINT)

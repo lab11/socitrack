@@ -8,7 +8,7 @@
 #include "firmware.h"
 #include "host_interface.h"
 #include "dw1000.h"
-#include "oneway_common.h"
+#include "app_standard_common.h"
 #include "SEGGER_RTT.h"
 
 #define BUFFER_SIZE 128
@@ -199,7 +199,7 @@ void host_interface_rx_fired () {
 			// This packet configures the TriPoint module and
 			// is what kicks off using it.
 			uint8_t config_main = rxBuffer[1];
-			polypoint_application_e my_app;
+			module_application_e my_app;
 			dw1000_role_e my_role;
 			glossy_role_e my_glossy_role;
 
@@ -221,7 +221,7 @@ void host_interface_rx_fired () {
 
 			// Now that we know what this module is going to be, we can
 			// interpret the remainder of the packet.
-			if (my_app == APP_ONEWAY) {
+			if (my_app == APP_STANDARD) {
 				// Run the base normal ranging application
 
 				oneway_config_t oneway_config;
@@ -240,12 +240,12 @@ void host_interface_rx_fired () {
 
 				// Now that we know how we should operate,
 				// call the main tag function to get things rollin'.
-				polypoint_configure_app(my_app, &oneway_config);
-				polypoint_start();
+				module_configure_app(my_app, &oneway_config);
+				module_start();
 
 				// Shut down for Power testing of nRF (also: turn off glossy_init() and disable debug output)
 				/*#include <stm32f0xx_pwr.h>
-				polypoint_stop();
+				module_stop();
 				PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);*/
 
 			} else if (my_app == APP_CALIBRATION) {
@@ -253,8 +253,8 @@ void host_interface_rx_fired () {
 				//// delays in the node.
 				//calibration_config_t cal_config;
 				//cal_config.index = rxBuffer[2];
-				//polypoint_configure_app(my_app, &cal_config);
-				//polypoint_start();
+				//module_configure_app(my_app, &cal_config);
+				//module_start();
 			}
 
 			break;
@@ -272,7 +272,7 @@ void host_interface_rx_fired () {
 			host_interface_wait();
 
 			// Tell the application to perform a range
-			polypoint_tag_do_range();
+			module_tag_do_range();
 			break;
 
 		/**********************************************************************/
@@ -286,7 +286,7 @@ void host_interface_rx_fired () {
 			host_interface_wait();
 
 			// Tell the application to stop the dw1000 chip
-			polypoint_stop();
+			module_stop();
 			break;
 
 		/**********************************************************************/
@@ -299,7 +299,7 @@ void host_interface_rx_fired () {
 			host_interface_wait();
 
 			// And we just have to start the application.
-			polypoint_start();
+			module_start();
 			break;
 
 		/**********************************************************************/
@@ -382,7 +382,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 			// info string. If it is not ready, we return the null string
 			// that says that I2C is working but that we are not ready for
 			// prime time yet.
-			if (polypoint_ready()) {
+			if (module_ready()) {
 				// Info packet is a good way to check that I2C is working.
 				memcpy(txBuffer, INFO_PKT, 3);
 			} else {

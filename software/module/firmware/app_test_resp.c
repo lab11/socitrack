@@ -5,8 +5,8 @@
 #include "deca_device_api.h"
 #include "deca_regs.h"
 
-#include "rangetest_common.h"
-#include "rangetest_anchor.h"
+#include "app_test_common.h"
+#include "app_test_resp.h"
 #include "dw1000.h"
 #include "timer.h"
 #include "delay.h"

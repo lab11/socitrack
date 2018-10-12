@@ -1,7 +1,7 @@
 #ifndef __ONEWAY_TAG_H
 #define __ONEWAY_TAG_H
 
-#include "oneway_common.h"
+#include "app_standard_common.h"
 #include "deca_device_api.h"
 #include "deca_regs.h"
 

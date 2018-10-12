@@ -6,9 +6,9 @@
 #include "firmware.h"
 #include "dw1000.h"
 #include "host_interface.h"
-#include "oneway_common.h"
-#include "oneway_tag.h"
-#include "oneway_anchor.h"
+#include "app_standard_common.h"
+#include "app_standard_init.h"
+#include "app_standard_resp.h"
 #include "SEGGER_RTT.h"
 
 // All of the configuration passed to us by the host for how this application
@@ -42,7 +42,7 @@ static void tag_execute_range_callback () {
 	} else if (err == DW1000_WAKEUP_ERR) {
 		// DW1000 apparently was in sleep and didn't come back.
 		// Not sure why, but we need to reset at this point.
-		polypoint_reset();
+		module_reset();
 	}
 }
 
@@ -81,7 +81,7 @@ void oneway_start () {
 		// for this, it just runs.
 		err = oneway_anchor_start();
 		if (err == DW1000_WAKEUP_ERR) {
-			polypoint_reset();
+			module_reset();
 		}
 	} else if (_config.my_role == TAG) {
 		if (_config.update_mode == ONEWAY_UPDATE_MODE_PERIODIC) {
@@ -146,7 +146,7 @@ void oneway_do_range () {
 	// TODO: this does return an error if we are already ranging.
 	err = oneway_tag_start_ranging_event();
 	if (err == DW1000_WAKEUP_ERR) {
-		polypoint_reset();
+		module_reset();
 	}
 }
 

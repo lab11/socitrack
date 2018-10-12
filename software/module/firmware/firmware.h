@@ -23,17 +23,17 @@ typedef enum {
 
 // Enum for what ranging application to run on this node
 typedef enum {
-	APP_ONEWAY = 0,
+	APP_STANDARD = 0,
 	APP_CALIBRATION = 1,
 	APP_RANGETEST = 2,
 	APP_SIMPLETEST = 3
-} polypoint_application_e;
+} module_application_e;
 
 
 /******************************************************************************/
 // Define our PANID
 /******************************************************************************/
-#define POLYPOINT_PANID 0x6611
+#define MODULE_PANID 0x6611
 
 /******************************************************************************/
 // I2C for the application
@@ -49,12 +49,12 @@ typedef enum {
 /******************************************************************************/
 // Main firmware application functions.
 /******************************************************************************/
-void polypoint_configure_app (polypoint_application_e app, void* app_config);
-void polypoint_start ();
-void polypoint_stop ();
-void polypoint_reset ();
-bool polypoint_ready ();
-void polypoint_tag_do_range ();
+void module_configure_app (module_application_e app, void* app_config);
+void module_start ();
+void module_stop ();
+void module_reset ();
+bool module_ready ();
+void module_tag_do_range ();
 
 /******************************************************************************/
 // OS functions.
