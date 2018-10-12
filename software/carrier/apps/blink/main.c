@@ -30,9 +30,8 @@ int main(void) {
     NRF_LOG_DEFAULT_BACKENDS_INIT();
     printf("Initialized SEGGER RTT");
 
-    // FIXME: BUG FIX -> Enable SD card to pull nRESET high
     nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
-    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
+    nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
 
     // Initialize GPIOs
     nrf_gpio_cfg_output(CARRIER_LED_BLUE);
@@ -57,8 +56,15 @@ int main(void) {
     // Turn off Blue
     nrf_gpio_pin_set(CARRIER_LED_BLUE);
 
+    // Turn off
+    ret_code_t err_code = nrf_pwr_mgmt_init();
+    APP_ERROR_CHECK(err_code);
+
     while (1)
     {
+        // Turn off nRF for power measurement
+        //nrf_pwr_mgmt_run();
+
         nrf_gpio_pin_toggle(CARRIER_LED_GREEN);
         nrf_delay_ms(500);
     }

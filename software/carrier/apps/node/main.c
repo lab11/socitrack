@@ -853,6 +853,18 @@ static void on_device_discovery(ble_gap_addr_t const * peer_addr)
 // Handles advertising reports
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 {
+
+#ifdef APP_BLE_TEST_ADV
+    // Signal received advertisement and keep on scanning
+    if (addr_in_whitelist(&p_adv_report->peer_addr)) {
+        led_toggle(CARRIER_LED_BLUE);
+    }
+
+    ret_code_t err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+    APP_ERROR_CHECK(err_code);
+    return;
+#endif
+
     // If device is in our whitelist, we just discovered it
     if (!app.network_discovered && addr_in_whitelist(&p_adv_report->peer_addr)) {
         on_device_discovery(&p_adv_report->peer_addr);
@@ -1124,6 +1136,10 @@ static void gap_params_init(void)
 
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     APP_ERROR_CHECK(err_code);
+
+    // Tx Power: default is 0dBm, max is +8dBm (0x8); possible values are in register TXPOWER
+    //err_code = sd_ble_gap_tx_power_set(BLE_GAP_TX_POWER_ROLE_SCAN_INIT, NULL, 0x8);
+    //APP_ERROR_CHECK(err_code);
 }
 
 
@@ -1638,7 +1654,7 @@ int main (void)
     // Loop: update location and advertise
     while (1) {
 
-        // For power measurements: Disable timers (timers_init()) and comment the lines below power_manage(); if bluetooth should be disabled, comment eddystone_adv()
+        // For power measurements: Disable timers (timers_init()) and comment the lines below power_manage()
         //printf("Going back go sleep...\r\n");
         power_manage();
 

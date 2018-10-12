@@ -188,7 +188,7 @@ static void setup () {
 	RCC_AHBPeriphClockCmd(DW_INTERRUPT_CLK, ENABLE);
 
 	// Configure PA0 pin as input floating
-	GPIO_InitStructure.GPIO_Pin = DW_INTERRUPT_PIN;
+	GPIO_InitStructure.GPIO_Pin  = DW_INTERRUPT_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
 	GPIO_Init(DW_INTERRUPT_PORT, &GPIO_InitStructure);
@@ -199,8 +199,8 @@ static void setup () {
 	SYSCFG_EXTILineConfig(DW_INTERRUPT_EXTI_PORT, DW_INTERRUPT_EXTI_PIN);
 
 	// Configure EXTIx line for interrupt
-	EXTI_InitStructure.EXTI_Line = DW_INTERRUPT_EXTI_LINE;
-	EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+	EXTI_InitStructure.EXTI_Line    = DW_INTERRUPT_EXTI_LINE;
+	EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
 	EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
 	EXTI_InitStructure.EXTI_LineCmd = ENABLE;
 	EXTI_Init(&EXTI_InitStructure);
@@ -212,56 +212,55 @@ static void setup () {
 	// Setup reset pin. Make it input unless we need it
 	RCC_AHBPeriphClockCmd(DW_RESET_CLK, ENABLE);
 	// Configure reset pin
-	GPIO_InitStructure.GPIO_Pin = DW_RESET_PIN;
+	/*GPIO_InitStructure.GPIO_Pin = DW_RESET_PIN;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_Init(DW_RESET_PORT, &GPIO_InitStructure);*/
+	// Make the reset pin output
+	GPIO_InitStructure.GPIO_Pin   = DW_RESET_PIN;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(DW_RESET_PORT, &GPIO_InitStructure);
+	GPIO_WriteBit(DW_RESET_PORT, DW_RESET_PIN, Bit_SET);
 
 	// Setup wakeup pin.
 	RCC_AHBPeriphClockCmd(DW_WAKEUP_CLK, ENABLE);
-	GPIO_InitStructure.GPIO_Pin = DW_WAKEUP_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Pin   = DW_WAKEUP_PIN;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(DW_WAKEUP_PORT, &GPIO_InitStructure);
 	GPIO_WriteBit(DW_WAKEUP_PORT, DW_WAKEUP_PIN, Bit_RESET);
-
-	// Make the reset pin output
-	GPIO_InitStructure.GPIO_Pin = DW_RESET_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-	GPIO_Init(DW_RESET_PORT, &GPIO_InitStructure);
-	GPIO_WriteBit(DW_RESET_PORT, DW_RESET_PIN, Bit_SET);
 
 	// Setup antenna pins - select no antennas
 	RCC_AHBPeriphClockCmd(ANT_SEL0_CLK, ENABLE);
 	RCC_AHBPeriphClockCmd(ANT_SEL1_CLK, ENABLE);
 	RCC_AHBPeriphClockCmd(ANT_SEL2_CLK, ENABLE);
 
-	GPIO_InitStructure.GPIO_Pin = ANT_SEL0_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Pin   = ANT_SEL0_PIN;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(ANT_SEL0_PORT, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = ANT_SEL1_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Pin   = ANT_SEL1_PIN;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(ANT_SEL1_PORT, &GPIO_InitStructure);
 
-	GPIO_InitStructure.GPIO_Pin = ANT_SEL2_PIN;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+	GPIO_InitStructure.GPIO_Pin   = ANT_SEL2_PIN;
+	GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+	GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
 	GPIO_Init(ANT_SEL2_PORT, &GPIO_InitStructure);
 
 	// Initialize the RF Switch
@@ -279,13 +278,13 @@ static void setup () {
 
 	// TODO: for STM32F091CC, this remap of USART1Tx might have to be done using DMA1->CSELR and hardware request 1000 on channel 4
 	// DMA1->CSELR |= DMA1_CSELR_CH4_USART1_TX;
-	SYSCFG->CFGR1 |= SYSCFG_DMARemap_USART1Tx;
+	/*SYSCFG->CFGR1 |= SYSCFG_DMARemap_USART1Tx;
 	DMA_UART_InitStructure.DMA_PeripheralBaseAddr = (uint32_t) USART1_DR_ADDRESS;
 	DMA_UART_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;
 	DMA_UART_InitStructure.DMA_MemoryDataSize     = DMA_MemoryDataSize_Byte;
 	DMA_UART_InitStructure.DMA_PeripheralInc      = DMA_PeripheralInc_Disable;
 	DMA_UART_InitStructure.DMA_Mode               = DMA_Mode_Normal;
-	DMA_UART_InitStructure.DMA_M2M                = DMA_M2M_Disable;
+	DMA_UART_InitStructure.DMA_M2M                = DMA_M2M_Disable;*/
 
 	// Pull from flash the calibration values
 	memcpy(&_prog_values, (uint8_t*) INIT_FLASH_LOCATION, sizeof(dw1000_programmed_values_t));

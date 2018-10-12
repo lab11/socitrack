@@ -335,7 +335,7 @@ int main () {
 	//Initialize UART1 on GPIO0 and GPIO1
     // Tx: GPIO1 -> Pin 27 -> PB6
     // Rx: GPIO4 -> Pin 28 -> PB7
-    USART_InitTypeDef usartConfig;
+    /*USART_InitTypeDef usartConfig;
     GPIO_InitTypeDef gpioConfig;
 
     RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOB, ENABLE);
@@ -360,7 +360,7 @@ int main () {
     usartConfig.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
     USART_Init(USART1, &usartConfig);
 
-    USART_Cmd(USART1, ENABLE);
+    USART_Cmd(USART1, ENABLE);*/
 
     // In case we need a timer, get one. This is used for things like periodic ranging events.
 	//_app_timer = timer_init();
