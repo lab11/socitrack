@@ -1,5 +1,5 @@
-#ifndef __RANGETEST_COMMON_H
-#define __RANGETEST_COMMON_H
+#ifndef __APP_TEST_COMMON_H
+#define __APP_TEST_COMMON_H
 
 #include "module_conf.h"
 #include "system.h"
@@ -48,16 +48,16 @@ struct rangetest_packet  {
 
 // Keep config settings for a node
 typedef struct {
-	dw1000_role_e my_role;
+	module_role_e my_role;
 	uint8_t update_rate;
-} rangetest_config_t;
+} test_config_t;
 
-void rangetest_configure (oneway_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
+void rangetest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
 void rangetest_start ();
 
-void rangetest_set_ranging_broadcast_settings (dw1000_role_e role, uint8_t subseq_num);
+void rangetest_set_ranging_broadcast_settings (module_role_e role, uint8_t subseq_num);
 
 extern dwt_config_t simpletest_config;
-void simpletest_configure (oneway_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
+void simpletest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
 
 #endif

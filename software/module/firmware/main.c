@@ -79,8 +79,8 @@ static void error () {
 }
 
 union app_scratchspace {
-	oneway_tag_scratchspace_struct ot_scratch;
-	oneway_anchor_scratchspace_struct oa_scratch;
+	standard_init_scratchspace_struct si_scratch;
+	standard_resp_scratchspace_struct sr_scratch;
 } _app_scratchspace;
 
 /******************************************************************************/
@@ -109,14 +109,14 @@ void module_configure_app (module_application_e app, void* app_config) {
 	_current_app = app;
 	switch (_current_app) {
 		case APP_STANDARD:
-			oneway_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+			standard_configure((module_config_t*) app_config, NULL, (void*)&_app_scratchspace);
 			break;
 		case APP_RANGETEST:
-			rangetest_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+			rangetest_configure((module_config_t*) app_config, NULL, (void*)&_app_scratchspace);
 			break;
 	    case APP_SIMPLETEST:
 	        // In contrast to normal applications, this function will never return
-	        simpletest_configure((oneway_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+	        simpletest_configure((module_config_t*) app_config, NULL, (void*)&_app_scratchspace);
 	        break;
 
 		default:
@@ -142,7 +142,7 @@ void module_start () {
 
 	switch (_current_app) {
 		case APP_STANDARD:
-			oneway_start();
+			standard_start();
 			break;
 		case APP_RANGETEST:
 			rangetest_start();
@@ -163,7 +163,7 @@ void module_stop () {
 
 	switch (_current_app) {
 		case APP_STANDARD:
-			oneway_stop();
+			standard_stop();
 			break;
 
 		default:
@@ -194,7 +194,7 @@ void module_reset () {
 	// Re init the app
 	switch (_current_app) {
 		case APP_STANDARD:
-			oneway_reset();
+			standard_reset();
 			break;
 
 		default:
@@ -224,7 +224,7 @@ void module_tag_do_range () {
 	// Call the relevant function based on the current application
 	switch (_current_app) {
 		case APP_STANDARD:
-			oneway_do_range();
+			standard_do_range();
 			break;
 
 		case APP_CALIBRATION:
@@ -406,21 +406,21 @@ int main () {
 
 #else
 	// DEBUG:
-	oneway_config_t config;
+	module_config_t config;
 
 	debug_msg("Configured role as: ");
 
 	// Choose role
 	if (0) {
-	    config.my_role = TAG;
+	    config.my_role = APP_ROLE_INIT_NORESP;
 	    debug_msg("TAG, ");
 	} else {
-        config.my_role = ANCHOR;
+        config.my_role = APP_ROLE_NOINIT_RESP;
         debug_msg("ANCHOR, ");
     }
 
 	// Choose Glossy role
-    if (0 || (config.my_role == TAG)) {
+    if (0 || (config.my_role == APP_ROLE_INIT_NORESP)) {
         config.my_glossy_role = GLOSSY_SLAVE;
         debug_msg("GLOSSY_SLAVE\n");
     } else {
@@ -428,8 +428,8 @@ int main () {
         debug_msg("GLOSSY_MASTER\n");
     }
 
-	config.report_mode = ONEWAY_REPORT_MODE_RANGES;
-	config.update_mode = ONEWAY_UPDATE_MODE_PERIODIC;
+	config.report_mode = MODULE_REPORT_MODE_RANGES;
+	config.update_mode = MODULE_UPDATE_MODE_PERIODIC;
 	config.update_rate = 10; // in tenths of herz
 	config.sleep_mode  = FALSE; // TRUE: sleep in-between rangings
 

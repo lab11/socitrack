@@ -1,3 +1,6 @@
+#ifndef __MODULE_CONF_H
+#define __MODULE_CONF_H
+
 
 // UART_DATA_OFFLOAD: Option to push data out to PC for further data analysis
 //#define UART_DATA_OFFLOAD
@@ -29,4 +32,6 @@
 	#define RANGING_BROADCASTS_PERIOD_US 1000
 	#define RANGING_LISTENING_WINDOW_US  8000
 	#define RANGING_LISTENING_WINDOW_PADDING_US 1100
+#endif
+
 #endif

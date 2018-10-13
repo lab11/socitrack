@@ -14,7 +14,7 @@
 #include "SEGGER_RTT.h"
 
 // All of the configuration passed to us by the host for how this application should operate.
-static rangetest_config_t _config;
+static test_config_t _config;
 // Our local reference to the timer for all of the high-level applicationcode.
 static stm_timer_t* _app_timer;
 
@@ -30,7 +30,7 @@ static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = 
 static void *_scratchspace_ptr;
 
 // This sets the settings for this node and initializes the node.
-void rangetest_configure (oneway_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
+void rangetest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
 	_scratchspace_ptr = app_scratchspace;
 
 	// Save the settings
@@ -41,10 +41,10 @@ void rangetest_configure (oneway_config_t* config, stm_timer_t* app_timer, void 
 	dw1000_wakeup();
 
 	// Now init based on role
-	if (_config.my_role == TAG) {
+	if (_config.my_role == APP_ROLE_INIT_NORESP) {
 		rangetest_tag_init(_scratchspace_ptr);
 		debug_msg("Initialized as TAG\n");
-	} else if (_config.my_role == ANCHOR) {
+	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
 		rangetest_anchor_init(_scratchspace_ptr);
 		debug_msg("Initialized as ANCHOR\n");
 	}
@@ -61,13 +61,13 @@ void rangetest_start () {
 	GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 #endif
 
-	if (_config.my_role == ANCHOR) {
+	if (_config.my_role == APP_ROLE_NOINIT_RESP) {
 		// Start the anchor state machine. The app doesn't have to do anything for this, it just runs.
 		err = rangetest_anchor_start();
 		if (err == DW1000_WAKEUP_ERR) {
 			debug_msg("ERROR: Could not wake up DecaWave\n");
 		}
-	} else if (_config.my_role == TAG) {
+	} else if (_config.my_role == APP_ROLE_INIT_NORESP) {
 
 	}
 }
@@ -77,7 +77,7 @@ void rangetest_start () {
 //
 // role:       anchor or tag
 // subseq_num: where in the sequence we are
-void rangetest_set_ranging_broadcast_settings (dw1000_role_e role, uint8_t subseq_num) {
+void rangetest_set_ranging_broadcast_settings (module_role_e role, uint8_t subseq_num) {
 	// Stop the transceiver on the anchor. Don't know why.
 	//if (role == ANCHOR) {
 		dwt_forcetrxoff();
@@ -108,7 +108,7 @@ dwt_config_t simpletest_config = {
 
 // This function will call the most basic Rx / Tx example, without making use of any other callbacks or initializations
 // This sets the settings for this node and initializes the node.
-void simpletest_configure (oneway_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
+void simpletest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
     _scratchspace_ptr = app_scratchspace;
 
     // Save the settings
@@ -119,10 +119,10 @@ void simpletest_configure (oneway_config_t* config, stm_timer_t* app_timer, void
     dw1000_wakeup();
 
     // These functions will never return
-    if (_config.my_role == TAG) {
+    if (_config.my_role == APP_ROLE_INIT_NORESP) {
         simpletest_tag_start();
         debug_msg("Initialized as TAG\n");
-    } else if (_config.my_role == ANCHOR) {
+    } else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
         simpletest_anchor_start();
         debug_msg("Initialized as ANCHOR\n");
     }

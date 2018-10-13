@@ -136,13 +136,6 @@ struct ieee154_footer {
 // Structs and what-not for control flow throughout the DW1000 code
 /******************************************************************************/
 
-// Enum for what role this particular module should do
-typedef enum {
-	TAG = 0,
-	ANCHOR = 1,
-	UNDECIDED = 255
-} dw1000_role_e;
-
 // Return values for our DW1000 library errors
 typedef enum {
 	DW1000_NO_ERR = 0,
@@ -191,8 +184,6 @@ void          dw1000_read_eui (uint8_t *eui_buf);
 uint64_t      dw1000_get_tx_delay (uint8_t channel_index);
 uint64_t      dw1000_get_rx_delay (uint8_t channel_index);
 uint8_t*      dw1000_get_txrx_delay_raw ();
-void          dw1000_set_mode (dw1000_role_e role);
-dw1000_role_e dw1000_get_mode ();
 void          dw1000_sleep ();
 dw1000_err_e  dw1000_wakeup ();
 dw1000_err_e  dw1000_force_wakeup ();

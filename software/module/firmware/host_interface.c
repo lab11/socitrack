@@ -200,7 +200,7 @@ void host_interface_rx_fired () {
 			// is what kicks off using it.
 			uint8_t config_main = rxBuffer[1];
 			module_application_e my_app;
-			dw1000_role_e my_role;
+			module_role_e my_role;
 			glossy_role_e my_glossy_role;
 
 			// Check if this module should be an anchor or tag
@@ -224,23 +224,23 @@ void host_interface_rx_fired () {
 			if (my_app == APP_STANDARD) {
 				// Run the base normal ranging application
 
-				oneway_config_t oneway_config;
-				oneway_config.my_role = my_role;
-				oneway_config.my_glossy_role = my_glossy_role;
+				module_config_t module_config;
+				module_config.my_role = my_role;
+				module_config.my_glossy_role = my_glossy_role;
 
-				if (my_role == TAG) {
+				if (my_role == APP_ROLE_INIT_NORESP) {
 					// Save some TAG specific settings
 					uint8_t config_tag = rxBuffer[2];
-					oneway_config.my_role = TAG;
-					oneway_config.report_mode = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_RMODE_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_RMODE_SHIFT;
-					oneway_config.update_mode = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_UMODE_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_UMODE_SHIFT;
-					oneway_config.sleep_mode  = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_SLEEP_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_SLEEP_SHIFT;
-					oneway_config.update_rate = rxBuffer[3];
+					module_config.my_role = APP_ROLE_INIT_NORESP;
+					module_config.report_mode = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_RMODE_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_RMODE_SHIFT;
+					module_config.update_mode = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_UMODE_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_UMODE_SHIFT;
+					module_config.sleep_mode  = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_SLEEP_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_SLEEP_SHIFT;
+					module_config.update_rate = rxBuffer[3];
 				}
 
 				// Now that we know how we should operate,
 				// call the main tag function to get things rollin'.
-				module_configure_app(my_app, &oneway_config);
+				module_configure_app(my_app, &module_config);
 				module_start();
 
 				// Shut down for Power testing of nRF (also: turn off glossy_init() and disable debug output)

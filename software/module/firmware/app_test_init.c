@@ -23,7 +23,7 @@ static void tag_rxcallback (const dwt_cb_data_t *rxd);
 // We trust that the DW1000 is not in SLEEP mode when this is called.
 void rangetest_tag_init (void *app_scratchspace) {
 
-	test_ot_scratch = (rangetest_tag_scratchspace_struct*) app_scratchspace;
+	test_ot_scratch = (test_init_scratchspace_struct*) app_scratchspace;
 
 	// Initialize important variables inside scratchspace
 	test_ot_scratch->pp_tag_poll_pkt = (struct rangetest_packet) {
@@ -79,7 +79,7 @@ void rangetest_tag_init (void *app_scratchspace) {
 	dw1000_spi_fast();
 
 	// Reset our state because nothing should be in progress if we call init()
-	test_ot_scratch->state = TEST_TSTATE_IDLE;
+	test_ot_scratch->state = TEST_ISTATE_IDLE;
 
 	// Start timer
 	rangetest_tag_start_ranging_event();
@@ -92,7 +92,7 @@ dw1000_err_e rangetest_tag_start_ranging_event () {
 
 	//debug_msg("Start ranging event...\r\n");
 
-	if (test_ot_scratch->state != TEST_TSTATE_IDLE) {
+	if (test_ot_scratch->state != TEST_ISTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
 
 		debug_msg("ERROR: Not in IDLE state, but in state ");
@@ -122,7 +122,7 @@ dw1000_err_e rangetest_tag_start_ranging_event () {
 	}
 
 	// Move to the broadcast state
-	test_ot_scratch->state = TEST_TSTATE_BROADCASTS;
+	test_ot_scratch->state = TEST_ISTATE_BROADCASTS;
 
 	// Clear state that we keep for each ranging event
 	test_ot_scratch->ranging_broadcast_ss_num = 0;
@@ -180,7 +180,7 @@ static void tag_rxcallback (const dwt_cb_data_t* rxd) {
 		    debug_msg_int((uint32_t)rxd->status);
 		    debug_msg("\n");
 
-			rangetest_set_ranging_broadcast_settings (TAG, test_ot_scratch->ranging_broadcast_ss_num);
+			rangetest_set_ranging_broadcast_settings (APP_ROLE_INIT_NORESP, test_ot_scratch->ranging_broadcast_ss_num);
 		}
 	}
 
@@ -254,7 +254,7 @@ static void send_poll () {
 static void ranging_broadcast_send_task () {
 
 	// Go ahead and setup and send a ranging broadcast
-	rangetest_set_ranging_broadcast_settings(TAG, test_ot_scratch->ranging_broadcast_ss_num);
+	rangetest_set_ranging_broadcast_settings(APP_ROLE_INIT_NORESP, test_ot_scratch->ranging_broadcast_ss_num);
 
 	// Actually send the packet
 	send_poll();

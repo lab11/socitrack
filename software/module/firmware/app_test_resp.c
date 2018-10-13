@@ -20,7 +20,7 @@ static void anchor_rxcallback (const dwt_cb_data_t *rxd);
 
 void rangetest_anchor_init(void *app_scratchspace) {
 	
-	test_oa_scratch = (rangetest_anchor_scratchspace_struct*) app_scratchspace;
+	test_oa_scratch = (test_resp_scratchspace_struct*) app_scratchspace;
 
 	// Make sure the SPI speed is slow for this function
 	dw1000_spi_slow();
@@ -46,7 +46,7 @@ void rangetest_anchor_init(void *app_scratchspace) {
 	dw1000_spi_fast();
 
 	// Reset our state because nothing should be in progress if we call init()
-	test_oa_scratch->state = TEST_ASTATE_IDLE;
+	test_oa_scratch->state = TEST_RSTATE_IDLE;
 }
 
 // Tell the anchor to start its job of being an anchor
@@ -66,11 +66,11 @@ dw1000_err_e rangetest_anchor_start () {
 	}
 
 	// Also we start over in case the anchor was doing anything before
-	test_oa_scratch->state = TEST_ASTATE_IDLE;
+	test_oa_scratch->state = TEST_RSTATE_IDLE;
 
 	// Choose to wait in the first default position.
 	// This could change to wait in any of the first NUM_CHANNEL-1 positions.
-	rangetest_set_ranging_broadcast_settings(ANCHOR, 0);
+	rangetest_set_ranging_broadcast_settings(APP_ROLE_NOINIT_RESP, 0);
 
 	// Obviously we want to be able to receive packets
 	dwt_rxenable(0);
@@ -85,7 +85,7 @@ static void ranging_broadcast_received_task () {
 	test_oa_scratch->ranging_broadcast_ss_num++;
 
 	// Update the anchor listening settings
-	rangetest_set_ranging_broadcast_settings(ANCHOR, test_oa_scratch->ranging_broadcast_ss_num);
+	rangetest_set_ranging_broadcast_settings(APP_ROLE_NOINIT_RESP, test_oa_scratch->ranging_broadcast_ss_num);
 
 #if (BOARD_V == SQUAREPOINT)
 	// Toggle GREEN, turn off BLUE
@@ -182,7 +182,7 @@ static void anchor_rxcallback (const dwt_cb_data_t *rxd) {
 		    debug_msg_uint((uint32_t)rxd->status);
 		    debug_msg("\n");
 
-			rangetest_set_ranging_broadcast_settings(ANCHOR, test_oa_scratch->ranging_broadcast_ss_num);
+			rangetest_set_ranging_broadcast_settings(APP_ROLE_NOINIT_RESP, test_oa_scratch->ranging_broadcast_ss_num);
 		} else {
 			// Some other unknown error, not sure what to do
             debug_msg("ERROR: Unknown Rx issue!\n");

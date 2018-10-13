@@ -71,7 +71,7 @@ static DMA_InitTypeDef DMA_UART_InitStructure;
 static SPI_InitTypeDef SPI_InitStructure;
 
 // Setup TX/RX settings on the DW1000
-static dwt_config_t _dw1000_config;
+static dwt_config_t   _dw1000_config;
 static dwt_txconfig_t global_tx_config;
 
 // Calibration values and other things programmed in with flash
