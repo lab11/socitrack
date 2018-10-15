@@ -8,6 +8,8 @@
 #include "prng.h"
 #include "app_standard_common.h"
 
+// DATA STRUCTURES -----------------------------------------------------------------------------------------------------
+
 typedef enum {
 	RSTATE_IDLE,
 	RSTATE_RANGING,
@@ -54,7 +56,7 @@ typedef struct {
 	bool final_ack_received;
 } standard_resp_scratchspace_struct;
 
-standard_resp_scratchspace_struct *sr_scratch;
+// PUBLIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 void 		 standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_resp_start ();

@@ -5,6 +5,8 @@
 #include "deca_device_api.h"
 #include "deca_regs.h"
 
+// DATA STRUCTURES -----------------------------------------------------------------------------------------------------
+
 typedef enum {
 	ISTATE_IDLE,
 	ISTATE_BROADCASTS,
@@ -56,12 +58,16 @@ typedef struct {
 	// They use the same index as the _anchor_responses array.
 	// Invalid ranges are marked with INT32_MAX.
 	int32_t ranges_millimeters[MAX_NUM_ANCHOR_RESPONSES];
+
+	// Buffer of anchor IDs and ranges to the anchor.
+	// Long enough to hold an anchor id followed by the range, plus the number of ranges
+	uint8_t anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(EUI_LEN+sizeof(int32_t)))+1];
 	
 	// Prepopulated struct of the outgoing broadcast poll packet.
 	struct pp_tag_poll pp_tag_poll_pkt;
 } standard_init_scratchspace_struct;
 
-standard_init_scratchspace_struct *si_scratch;
+// PUBLIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 void         standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_init_start_ranging_event ();

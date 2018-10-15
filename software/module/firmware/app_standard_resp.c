@@ -14,6 +14,10 @@
 #include "app_standard_common.h"
 #include "app_standard_resp.h"
 
+// APPLICATION STATE ---------------------------------------------------------------------------------------------------
+
+standard_resp_scratchspace_struct *sr_scratch;
+
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 static void ranging_listening_window_setup();
@@ -21,7 +25,8 @@ static void ranging_listening_window_setup();
 // ---------------------------------------------------------------------------------------------------------------------
 
 void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
-	
+
+	// Save scratchspace
 	sr_scratch = app_scratchspace;
 	
 	// Initialize this app's scratchspace

@@ -31,6 +31,8 @@ int led_init (uint8_t led, GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, uint32_t RCC_
 	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
 	GPIO_Init(leds[led].GPIOx, &GPIO_InitStructure);
 	leds[led].GPIOx->BSRR = leds[led].GPIO_Pin;
+
+	return 0;
 }
 
 void led_on (uint8_t led) {

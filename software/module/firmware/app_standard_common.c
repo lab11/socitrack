@@ -364,7 +364,10 @@ uint64_t standard_get_rxdelay_from_ranging_listening_window (uint8_t window_num)
 static void common_txcallback(const dwt_cb_data_t *txd) {
 
 	// Handle GLOSSY
-	glossy_process_txcallback();
+	if (glossy_process_txcallback()) {
+		// We already handled the packet
+		return;
+	}
 
 	// Switch for active role to call correct callback
 	if ( (_config.init_active && !_config.resp_active) || (!_config.init_active && _config.resp_active)) {
@@ -380,7 +383,7 @@ static void common_txcallback(const dwt_cb_data_t *txd) {
 		}
 
 	} else {
-		debug_msg("ERROR: Invalid active state: INIT ");
+		debug_msg("ERROR: Invalid active state during Tx: INIT ");
 		debug_msg_int(_config.init_active);
 		debug_msg(" , RESP ");
 		debug_msg_int(_config.resp_active);
@@ -422,7 +425,7 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 			}
 
 		} else {
-			debug_msg("ERROR: Invalid active state: INIT ");
+			debug_msg("ERROR: Invalid active state during Rx: INIT ");
 			debug_msg_int(_config.init_active);
 			debug_msg(" , RESP ");
 			debug_msg_int(_config.resp_active);

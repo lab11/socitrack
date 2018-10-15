@@ -406,10 +406,13 @@ int main () {
 	if (0) {
 	    config.my_role = APP_ROLE_INIT_NORESP;
 	    debug_msg("TAG, ");
-	} else {
+	} else if (0) {
         config.my_role = APP_ROLE_NOINIT_RESP;
         debug_msg("ANCHOR, ");
-    }
+    } else {
+	    config.my_role = APP_ROLE_INIT_RESP;
+	    debug_msg("HYBRID, ");
+	}
 
 	// Choose Glossy role
     if (0 || (config.my_role == APP_ROLE_INIT_NORESP)) {

@@ -16,10 +16,7 @@
 
 // APPLICATION STATE ---------------------------------------------------------------------------------------------------
 
-// Buffer of anchor IDs and ranges to the anchor.
-// Long enough to hold an anchor id followed by the range, plus the number
-// of ranges
-uint8_t _anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(EUI_LEN+sizeof(int32_t)))+1];
+standard_init_scratchspace_struct *si_scratch;
 
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
@@ -35,10 +32,8 @@ static void report_range ();
 // We trust that the DW1000 is not in SLEEP mode when this is called.
 void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace) {
 
+    // Save scratchspace
 	si_scratch = app_scratchspace;
-
-	// Reset buffers
-	memset(_anchor_ids_ranges, 0, sizeof(_anchor_ids_ranges));
 
 	// Initialize important variables inside scratchspace
 	si_scratch->pp_tag_poll_pkt = (struct pp_tag_poll) {
@@ -92,14 +87,9 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 	lwb_set_sched_callback(standard_init_start_ranging_event);
 }
 
-// This starts a ranging event by causing the tag to send a series of
-// ranging broadcasts.
+// This starts a ranging event by causing the tag to send a series of ranging broadcasts.
 dw1000_err_e standard_init_start_ranging_event () {
 	dw1000_err_e err;
-
-	//debug_msg("Start ranging event...\r\n");
-    standard_set_resp_active(FALSE);
-    standard_set_init_active(TRUE);
 
 	if (si_scratch->state != ISTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
@@ -109,6 +99,10 @@ dw1000_err_e standard_init_start_ranging_event () {
 		debug_msg("\n");
 		return DW1000_BUSY;
 	}
+
+    //debug_msg("Start ranging event...\r\n");
+    standard_set_resp_active(FALSE);
+    standard_set_init_active(TRUE);
 
 	// Make sure the DW1000 is awake. If it is, this will just return.
 	// If the chip had to awoken, it will return with DW1000_WAKEUP_SUCCESS.
@@ -427,9 +421,9 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
 		if (ranges_millimeters[i] != INT32_MAX) {
 			// This is a valid range
-			memcpy(_anchor_ids_ranges+buffer_index, anchor_responses[i].anchor_addr, EUI_LEN);
+			memcpy(si_scratch->anchor_ids_ranges + buffer_index, anchor_responses[i].anchor_addr, EUI_LEN);
 			buffer_index += EUI_LEN;
-			memcpy(_anchor_ids_ranges+buffer_index, &ranges_millimeters[i], sizeof(int32_t));
+			memcpy(si_scratch->anchor_ids_ranges + buffer_index, &ranges_millimeters[i], sizeof(int32_t));
 			buffer_index += sizeof(int32_t);
 			num_anchor_ranges++;
 
@@ -443,10 +437,10 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	}
 
 	// Set the first byte as the number of ranges
-	_anchor_ids_ranges[0] = num_anchor_ranges;
+	si_scratch->anchor_ids_ranges[0] = num_anchor_ranges;
 
 	// Now let the host know so it can do something with the ranges.
-	host_interface_notify_ranges(_anchor_ids_ranges, (num_anchor_ranges*(EUI_LEN+sizeof(int32_t)))+1);
+	host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges*(EUI_LEN+sizeof(int32_t)))+1);
 }
 
 // Once we have heard from all of the anchors, calculate range.

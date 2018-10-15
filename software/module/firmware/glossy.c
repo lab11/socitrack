@@ -289,6 +289,8 @@ void glossy_sync_task(){
 				if((!_lwb_scheduled && _lwb_sched_en) || _sched_req_pkt.deschedule_flag) {
 
 				    debug_msg("Sending schedule request...\r\n");
+				    standard_set_init_active(TRUE);
+				    standard_set_resp_active(FALSE);
 
 					dwt_forcetrxoff();
 
@@ -350,7 +352,10 @@ void lwb_set_sched_callback(void (*callback)(void)){
 	_lwb_schedule_callback = callback;
 }
 
-void glossy_process_txcallback(){
+bool glossy_process_txcallback(){
+
+	// Signal whether the current Tx packet was actually a Glossy one
+	bool is_glossy_callback = FALSE;
 
 	if(_role == GLOSSY_MASTER && _sending_sync) {
 
@@ -358,29 +363,34 @@ void glossy_process_txcallback(){
 		timer_reset(_glossy_timer, 0);
 		_lwb_counter = 0;
 		_sending_sync = FALSE;
+
+		is_glossy_callback = TRUE;
 	}
-	else if(_role == GLOSSY_SLAVE) {
+	else if(_role == GLOSSY_SLAVE && _glossy_currently_flooding) {
 
-		if(_glossy_currently_flooding){
-			// We're flooding, keep doing it until the max depth!
-			uint32_t delay_time = _last_delay_time + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
-			delay_time &= 0xFFFFFFFE;
-			_last_delay_time = delay_time;
+		// We're flooding, keep doing it until the max depth!
+		uint32_t delay_time = _last_delay_time + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
+		delay_time &= 0xFFFFFFFE;
+		_last_delay_time = delay_time;
 
-			_cur_glossy_depth++;
-			if (_cur_glossy_depth < GLOSSY_MAX_DEPTH){
-				dwt_forcetrxoff();
-				dwt_setrxaftertxdelay(LWB_SLOT_US);
-				dwt_setdelayedtrxtime(delay_time);
-				dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
-				dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-    				dwt_writetodevice( TX_BUFFER_ID, offsetof(struct ieee154_header_broadcast, seqNum), 1, &_cur_glossy_depth) ;
-			} else {
-				dwt_rxenable(0);
-				_glossy_currently_flooding = FALSE;
-			}
+		_cur_glossy_depth++;
+		if (_cur_glossy_depth < GLOSSY_MAX_DEPTH){
+			dwt_forcetrxoff();
+			dwt_setrxaftertxdelay(LWB_SLOT_US);
+			dwt_setdelayedtrxtime(delay_time);
+			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
+			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
+				dwt_writetodevice( TX_BUFFER_ID, offsetof(struct ieee154_header_broadcast, seqNum), 1, &_cur_glossy_depth) ;
+		} else {
+			dwt_rxenable(0);
+			_glossy_currently_flooding = FALSE;
 		}
+
+		is_glossy_callback = TRUE;
+
 	}
+
+	return is_glossy_callback;
 }
 
 void send_sync(uint32_t delay_time){

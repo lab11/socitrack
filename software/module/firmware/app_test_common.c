@@ -15,14 +15,15 @@
 
 // All of the configuration passed to us by the host for how this application should operate.
 static test_config_t _config;
+
 // Our local reference to the timer for all of the high-level applicationcode.
-static stm_timer_t* _app_timer;
+//static stm_timer_t* _app_timer;
 
 // Configure the RF channels to use. This is just a mapping from 0..2 to
 // the actual RF channel numbers the DW1000 uses.
-static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = {
+/*static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = {
 	1, 2, 3
-};
+};*/
 
 // Buffer of anchor IDs and ranges to the anchor.
 // Long enough to hold an anchor id followed by the range, plus the number of ranges
