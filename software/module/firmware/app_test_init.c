@@ -21,9 +21,9 @@ static void tag_rxcallback (const dwt_cb_data_t *rxd);
 
 // Do the TAG-specific init calls.
 // We trust that the DW1000 is not in SLEEP mode when this is called.
-void rangetest_tag_init (void *app_scratchspace) {
+void rangetest_tag_init (test_init_scratchspace_struct *app_scratchspace) {
 
-	test_ot_scratch = (test_init_scratchspace_struct*) app_scratchspace;
+	test_ot_scratch = app_scratchspace;
 
 	// Initialize important variables inside scratchspace
 	test_ot_scratch->pp_tag_poll_pkt = (struct rangetest_packet) {
@@ -48,7 +48,8 @@ void rangetest_tag_init (void *app_scratchspace) {
 		0,                             // Sub Sequence number
 		NUM_RANGING_BROADCASTS-1,
 		RANGING_LISTENING_WINDOW_US,
-		RANGING_LISTENING_SLOT_US
+		RANGING_LISTENING_SLOT_US,
+		{ { 0 } }
 	};
 
 	// Make sure the SPI speed is slow for this function

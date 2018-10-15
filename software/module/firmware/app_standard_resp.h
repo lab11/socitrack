@@ -8,10 +8,6 @@
 #include "prng.h"
 #include "app_standard_common.h"
 
-// Set at some arbitrary length for what the longest packet we will receive
-// is.
-#define STANDARD_RESP_MAX_RX_PKT_LEN 64
-
 typedef enum {
 	RSTATE_IDLE,
 	RSTATE_RANGING,
@@ -60,7 +56,7 @@ typedef struct {
 
 standard_resp_scratchspace_struct *sr_scratch;
 
-void 		 standard_resp_init (void *app_scratchspace);
+void 		 standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_resp_start ();
 void 		 standard_resp_stop ();
 

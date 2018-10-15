@@ -6,6 +6,9 @@
 #include "firmware.h"
 #include "deca_device_api.h"
 
+#define LWB_CHANNEL               1
+#define LWB_ANTENNA               0
+
 #define LWB_SLOT_US               1e4
 
 #define LWB_SLOTS_PER_RANGE       8

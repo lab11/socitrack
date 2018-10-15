@@ -36,7 +36,7 @@ typedef struct {
 
 test_resp_scratchspace_struct *test_oa_scratch;
 
-void 	     rangetest_anchor_init (void *app_scratchspace);
+void 	     rangetest_anchor_init (test_resp_scratchspace_struct *app_scratchspace);
 dw1000_err_e rangetest_anchor_start ();
 
 dw1000_err_e simpletest_anchor_start ();

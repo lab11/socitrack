@@ -78,11 +78,6 @@ static void error () {
 #endif
 }
 
-union app_scratchspace {
-	standard_init_scratchspace_struct si_scratch;
-	standard_resp_scratchspace_struct sr_scratch;
-} _app_scratchspace;
-
 /******************************************************************************/
 // Main operation functions called by the host interface
 /******************************************************************************/
@@ -102,21 +97,18 @@ void module_configure_app (module_application_e app, void* app_config) {
 		module_stop();
 	}
 
-	// Set scratchspace to known zeros
-	memset(&_app_scratchspace, 0, sizeof(_app_scratchspace));
-
 	// Tell the correct application that it should init()
 	_current_app = app;
 	switch (_current_app) {
 		case APP_STANDARD:
-			standard_configure((module_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+			standard_configure((module_config_t*) app_config, NULL);
 			break;
 		case APP_RANGETEST:
-			rangetest_configure((module_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+			rangetest_configure((module_config_t*) app_config, NULL);
 			break;
 	    case APP_SIMPLETEST:
 	        // In contrast to normal applications, this function will never return
-	        simpletest_configure((module_config_t*) app_config, NULL, (void*)&_app_scratchspace);
+	        simpletest_configure((module_config_t*) app_config, NULL);
 	        break;
 
 		default:

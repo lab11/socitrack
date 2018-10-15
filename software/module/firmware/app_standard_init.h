@@ -30,10 +30,6 @@ typedef enum {
 // Something else went wrong that we don't have pinned down.
 #define STANDARD_INIT_RANGE_ERROR_MISC 0x8000000F
 
-
-// Size buffers for reading in packets
-#define STANDARD_INIT_MAX_RX_PKT_LEN 296
-
 typedef struct {
 	// Our timer object that we use for timing packet transmissions
 	stm_timer_t* tag_timer;
@@ -67,7 +63,7 @@ typedef struct {
 
 standard_init_scratchspace_struct *si_scratch;
 
-void         standard_initiator_init (void *app_scratchspace);
+void         standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_init_start_ranging_event ();
 void         standard_init_stop ();
 

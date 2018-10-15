@@ -2,14 +2,16 @@
 #include <string.h>
 
 #include "timer.h"
+#include "SEGGER_RTT.h"
 
 #include "firmware.h"
 #include "dw1000.h"
-#include "host_interface.h"
+
 #include "app_standard_common.h"
 #include "app_standard_init.h"
 #include "app_standard_resp.h"
-#include "SEGGER_RTT.h"
+
+// APPLICATION STATE ---------------------------------------------------------------------------------------------------
 
 // All of the configuration passed to us by the host for how this application should operate.
 static module_config_t _config;
@@ -22,37 +24,29 @@ static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = 
 	1, 4, 3
 };
 
-// Buffer of anchor IDs and ranges to the anchor.
-// Long enough to hold an anchor id followed by the range, plus the number
-// of ranges
-uint8_t _anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(EUI_LEN+sizeof(int32_t)))+1];
+union app_scratchspace {
+	standard_init_scratchspace_struct si_scratch;
+	standard_resp_scratchspace_struct sr_scratch;
+} _app_scratchspace;
 
-static void *_scratchspace_ptr;
+// STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
-// Called by periodic timer
-static void init_execute_range_callback () {
-	dw1000_err_e err;
+static void common_txcallback(const dwt_cb_data_t *txd);
+static void common_rxcallback(const dwt_cb_data_t *rxd);
 
-	err = standard_init_start_ranging_event();
-	if (err == DW1000_BUSY) {
-		// TODO: get return value from this function and slow the timer if
-		// we starting ranging events too quickly.
-	} else if (err == DW1000_WAKEUP_ERR) {
-		// DW1000 apparently was in sleep and didn't come back.
-		// Not sure why, but we need to reset at this point.
-		module_reset();
-	}
-}
+// ---------------------------------------------------------------------------------------------------------------------
 
 // This sets the settings for this node and initializes the node.
-void standard_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
-	_scratchspace_ptr = app_scratchspace;
+void standard_configure (module_config_t* config, stm_timer_t* app_timer) {
 
 	// Save the settings
 	memcpy(&_config, config, sizeof(module_config_t));
 
 	// Save the application timer for use by this application
 	//_app_timer = app_timer;
+
+	// Set scratchspace to known zeros
+	memset(&_app_scratchspace, 0, sizeof(_app_scratchspace));
 
 	// Make sure the DW1000 is awake before trying to do anything.
 	dw1000_wakeup();
@@ -61,12 +55,51 @@ void standard_configure (module_config_t* config, stm_timer_t* app_timer, void *
 	glossy_init(_config.my_glossy_role);
 
 	// Now init based on role
-	if (_config.my_role == APP_ROLE_INIT_NORESP) {
-		standard_initiator_init(_scratchspace_ptr);
-		debug_msg("Initialized as TAG\n");
-	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
-		standard_resp_init(_scratchspace_ptr);
-		debug_msg("Initialized as ANCHOR\n");
+	_config.init_active = FALSE;
+	_config.resp_active = FALSE;
+
+	switch (_config.my_role) {
+		case APP_ROLE_INIT_NORESP: {
+			_config.init_enabled = TRUE;
+			_config.resp_enabled = FALSE;
+
+			debug_msg("Initialized as TAG\n");
+			break;
+		}
+		case APP_ROLE_INIT_RESP: {
+			_config.init_enabled = TRUE;
+			_config.resp_enabled = TRUE;
+
+			debug_msg("Initialized as HYBRID\n");
+			break;
+		}
+		case APP_ROLE_NOINIT_RESP: {
+			_config.init_enabled = FALSE;
+			_config.resp_enabled = TRUE;
+
+			debug_msg("Initialized as ANCHOR\n");
+			break;
+		}
+		case APP_ROLE_NOINIT_NORESP: {
+			_config.init_enabled = FALSE;
+			_config.resp_enabled = FALSE;
+
+			debug_msg("Initialized as SUPPORT\n");
+			break;
+		}
+		default: {
+			debug_msg("ERROR: Unknown role!\n");
+			return;
+		}
+	}
+
+	// Initialize code for INIT
+	if (_config.init_enabled) {
+		standard_initiator_init(&_app_scratchspace.si_scratch);
+	}
+	// Initialize code for RESP
+	if (_config.resp_enabled) {
+		standard_resp_init(&_app_scratchspace.sr_scratch);
 	}
 }
 
@@ -74,48 +107,49 @@ void standard_configure (module_config_t* config, stm_timer_t* app_timer, void *
 void standard_start () {
 	dw1000_err_e err;
 
-	if (_config.my_role == APP_ROLE_NOINIT_RESP) {
-		// Start the anchor state machine. The app doesn't have to do anything
-		// for this, it just runs.
+	// Set correct DW settings for both roles
+	// Make sure the SPI speed is slow for this function
+	dw1000_spi_slow();
+
+	// Setup callbacks to this ANCHOR
+	dwt_setcallbacks(common_txcallback, common_rxcallback, common_rxcallback, common_rxcallback);
+
+	// Make sure the radio starts off
+	dwt_forcetrxoff();
+
+	// Set the anchor so it only receives data and ack packets
+	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
+
+	// Don't use these
+	dwt_setrxtimeout(FALSE);
+
+	// Set EUI
+    dw1000_read_eui(_config.my_EUI);
+
+	// Make SPI fast now that everything has been setup
+	dw1000_spi_fast();
+
+
+	// Initiators will be enabled directly through Glossy
+
+	if (_config.resp_enabled) {
+		// Start the state machine for responders. The app doesn't have to do anything for this, it just runs.
+
 		err = standard_resp_start();
 		if (err == DW1000_WAKEUP_ERR) {
+			debug_msg("ERROR: Did not wakeup!\n");
 			module_reset();
 		}
-	} else if (_config.my_role == APP_ROLE_INIT_NORESP) {
-		if (_config.update_mode == MODULE_UPDATE_MODE_PERIODIC) {
-			// Host requested periodic updates.
-			// Set the timer to fire at the correct rate. Multiply by 1000000 to
-			// get microseconds, then divide by 10 because update_rate is in
-			// tenths of hertz.
-			uint32_t period = (((uint32_t) _config.update_rate) * 1000000) / 10;
-			// Check if we are configured to sleep between ranges. If so,
-			// we need to take wakeup time into account.
-			if (_config.sleep_mode && period > DW1000_WAKEUP_DELAY_US) {
-				period -= DW1000_WAKEUP_DELAY_US;
-			}
-
-			// ATTENTION: This code is no longer used, as events are directly triggered by Glossy
-			//timer_start(_app_timer, period, init_execute_range_callback);
-
-		} else if (_config.update_mode == MODULE_UPDATE_MODE_DEMAND) {
-			// Just wait for the host to request a ranging event
-			// over the host interface.
-		}
-
-		//
-		// TODO: implement selecting between reporting ranges and locations
-		//
 	}
 }
 
 // Stop the standard application
 void standard_stop () {
-	if (_config.my_role == APP_ROLE_INIT_NORESP) {
-		if (_config.update_mode == MODULE_UPDATE_MODE_PERIODIC) {
-			//timer_stop(_app_timer);
-		}
+	if (_config.init_enabled) {
 		standard_init_stop();
-	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
+	}
+
+	if (_config.resp_enabled) {
 		standard_resp_stop();
 	}
 }
@@ -123,10 +157,12 @@ void standard_stop () {
 // The whole DW1000 reset, so we need to get this app running again
 void standard_reset () {
 	// Start by initing based on role
-	if (_config.my_role == APP_ROLE_INIT_NORESP) {
-		standard_initiator_init(_scratchspace_ptr);
-	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
-		standard_resp_init(_scratchspace_ptr);
+	if (_config.init_enabled) {
+		standard_initiator_init(&_app_scratchspace.si_scratch);
+	}
+
+	if (_config.resp_enabled) {
+		standard_resp_init(&_app_scratchspace.sr_scratch);
 	}
 }
 
@@ -153,37 +189,6 @@ module_config_t* standard_get_config () {
 	return &_config;
 }
 
-// Record ranges that the tag found.
-void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* anchor_responses) {
-	uint8_t buffer_index = 1;
-	uint8_t num_anchor_ranges = 0;
-
-	// Iterate through all ranges and copy the correct data into the ranges buffer.
-	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
-		if (ranges_millimeters[i] != INT32_MAX) {
-			// This is a valid range
-			memcpy(_anchor_ids_ranges+buffer_index, anchor_responses[i].anchor_addr, EUI_LEN);
-			buffer_index += EUI_LEN;
-			memcpy(_anchor_ids_ranges+buffer_index, &ranges_millimeters[i], sizeof(int32_t));
-			buffer_index += sizeof(int32_t);
-			num_anchor_ranges++;
-
-			/*debug_msg("Range to anchor ");
-			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] >> 4);
-			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] & 0x0F);
-			debug_msg(": ");
-			debug_msg_uint((uint32_t)ranges_millimeters[i]);
-			debug_msg("\n");*/
-		}
-	}
-
-	// Set the first byte as the number of ranges
-	_anchor_ids_ranges[0] = num_anchor_ranges;
-
-	// Now let the host know so it can do something with the ranges.
-	host_interface_notify_ranges(_anchor_ids_ranges, (num_anchor_ranges*(EUI_LEN+sizeof(int32_t)))+1);
-}
-
 module_role_e standard_get_role() {
 	return _config.my_role;
 }
@@ -192,6 +197,33 @@ void standard_set_role(module_role_e role) {
 	_config.my_role = role;
 }
 
+bool standard_is_init_enabled() {
+	return _config.init_enabled;
+}
+
+bool standard_is_init_active() {
+	return _config.init_active;
+}
+
+void standard_set_init_active(bool init_active) {
+	_config.init_active = init_active;
+}
+
+bool standard_is_resp_enabled() {
+	return _config.resp_enabled;
+}
+
+bool standard_is_resp_active() {
+	return _config.resp_active;
+}
+
+void standard_set_resp_active(bool resp_active) {
+	_config.resp_active = resp_active;
+}
+
+uint8_t * standard_get_EUI() {
+	return _config.my_EUI;
+}
 
 /******************************************************************************/
 // Ranging Protocol Algorithm Functions
@@ -216,18 +248,17 @@ static uint8_t subsequence_number_to_channel (uint8_t subseq_num) {
 }
 
 // Return the Antenna index to use for a given subsequence number
-uint8_t standard_subsequence_number_to_antenna (module_role_e role, uint8_t subseq_num) {
+uint8_t standard_subsequence_number_to_antenna (bool resp_active, uint8_t subseq_num) {
+
 	// ALGORITHM
 	// We must rotate the anchor and tag antennas differently so the same
 	// ones don't always overlap. This should also be different from the
 	// channel sequence. This math is a little weird but somehow works out,
 	// even if NUM_RANGING_CHANNELS != NUM_ANTENNAS.
-	if (role == APP_ROLE_INIT_NORESP) {
-		return 	((subseq_num / NUM_RANGING_CHANNELS) / NUM_RANGING_CHANNELS) % NUM_ANTENNAS;
-	} else if (role == APP_ROLE_NOINIT_RESP) {
+	if (resp_active) {
 		return (subseq_num / NUM_RANGING_CHANNELS) % NUM_ANTENNAS;
 	} else {
-		return 0;
+		return 	((subseq_num / NUM_RANGING_CHANNELS) / NUM_RANGING_CHANNELS) % NUM_ANTENNAS;
 	}
 }
 
@@ -255,10 +286,10 @@ static uint8_t listening_window_number_to_channel (uint8_t window_num) {
 //
 // role:       anchor or tag
 // subseq_num: where in the sequence we are
-void standard_set_ranging_broadcast_subsequence_settings (module_role_e role,
+void standard_set_ranging_broadcast_subsequence_settings (bool resp_active,
                                                         uint8_t subseq_num) {
 	// Stop the transceiver on the anchor.
-	if (role == APP_ROLE_NOINIT_RESP) {
+	if (resp_active) {
 		dwt_forcetrxoff();
 	}
 
@@ -266,7 +297,7 @@ void standard_set_ranging_broadcast_subsequence_settings (module_role_e role,
 	dw1000_update_channel(subsequence_number_to_channel(subseq_num));
 
 	// Change what antenna we're listening/sending on
-	dw1000_choose_antenna(standard_subsequence_number_to_antenna(role, subseq_num));
+	dw1000_choose_antenna(standard_subsequence_number_to_antenna(resp_active, subseq_num));
 }
 
 // Update the Antenna and Channel settings to correspond with the settings
@@ -274,11 +305,11 @@ void standard_set_ranging_broadcast_subsequence_settings (module_role_e role,
 //
 // role:       anchor or tag
 // window_num: where in the listening window we are
-void standard_set_ranging_listening_window_settings (module_role_e role,
+void standard_set_ranging_listening_window_settings (bool init_active,
                                                    uint8_t window_num,
                                                    uint8_t antenna_num) {
 
-    if (role == APP_ROLE_INIT_NORESP) {
+    if (init_active) {
         dwt_forcetrxoff();
     }
 
@@ -305,16 +336,14 @@ uint8_t standard_get_ss_index_from_settings (uint8_t anchor_antenna_index,
 }
 
 // Get the TX delay for this node, given the channel value
-uint64_t standard_get_txdelay_from_subsequence (module_role_e role,
-                                                uint8_t subseq_num) {
+uint64_t standard_get_txdelay_from_subsequence (uint8_t subseq_num) {
 	// Need to get channel and antenna to call the dw1000 function
 	uint8_t channel_index = subsequence_number_to_channel_index(subseq_num);
 	return dw1000_get_tx_delay(channel_index);
 }
 
 // Get the RX delay for this node, given the channel value
-uint64_t standard_get_rxdelay_from_subsequence (module_role_e role,
-                                                uint8_t subseq_num) {
+uint64_t standard_get_rxdelay_from_subsequence (uint8_t subseq_num) {
 	// Need to get channel and antenna to call the dw1000 function
 	uint8_t channel_index = subsequence_number_to_channel_index(subseq_num);
 	return dw1000_get_rx_delay(channel_index);
@@ -326,4 +355,79 @@ uint64_t standard_get_txdelay_from_ranging_listening_window (uint8_t window_num)
 
 uint64_t standard_get_rxdelay_from_ranging_listening_window (uint8_t window_num){
 	return dw1000_get_rx_delay(window_num % NUM_RANGING_CHANNELS);
+}
+
+/******************************************************************************/
+// TX / RX functions
+/******************************************************************************/
+
+static void common_txcallback(const dwt_cb_data_t *txd) {
+
+	// Handle GLOSSY
+	glossy_process_txcallback();
+
+	// Switch for active role to call correct callback
+	if ( (_config.init_active && !_config.resp_active) || (!_config.init_active && _config.resp_active)) {
+
+		// INIT active
+		if (_config.init_active) {
+			init_txcallback(txd);
+		}
+
+		// RESP active
+		if (_config.resp_active) {
+			resp_txcallback(txd);
+		}
+
+	} else {
+		debug_msg("ERROR: Invalid active state: INIT ");
+		debug_msg_int(_config.init_active);
+		debug_msg(" , RESP ");
+		debug_msg_int(_config.resp_active);
+		debug_msg("\n");
+	}
+}
+
+static void common_rxcallback(const dwt_cb_data_t *rxd) {
+
+	// Handle GLOSSY
+	uint64_t dw_rx_timestamp;
+	uint8_t  buf[MSG_MAX_PACK_LEN];
+
+	// Get the received time of this packet first
+	dw_rx_timestamp = dw1000_readrxtimestamp();
+
+	// Get the actual packet bytes
+	dwt_readrxdata(buf, MIN(MSG_MAX_PACK_LEN, rxd->datalength), 0);
+
+	uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
+	if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ)
+	{
+		// Handle Glossy packet; same for all roles - neither INIT nor RESP should be active currently
+		glossy_sync_process(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(0), buf);
+	}
+	else {
+
+		// Switch for active role to call correct callback
+		if ((_config.init_active && !_config.resp_active) || (!_config.init_active && _config.resp_active)) {
+
+			// INIT active
+			if (_config.init_active) {
+				init_rxcallback(rxd, buf, dw_rx_timestamp);
+			}
+
+			// RESP active
+			if (_config.resp_active) {
+				resp_rxcallback(rxd, buf, dw_rx_timestamp);
+			}
+
+		} else {
+			debug_msg("ERROR: Invalid active state: INIT ");
+			debug_msg_int(_config.init_active);
+			debug_msg(" , RESP ");
+			debug_msg_int(_config.resp_active);
+			debug_msg("\n");
+		}
+
+	}
 }

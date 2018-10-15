@@ -17,36 +17,36 @@
 
 void send_sync(uint32_t delay_time);
 
-static stm_timer_t* _glossy_timer;
-static struct pp_sched_flood _sync_pkt;
+static stm_timer_t* 			 _glossy_timer;
+static struct pp_sched_flood 	 _sync_pkt;
 static struct pp_sched_req_flood _sched_req_pkt;
-static glossy_role_e _role;
+static glossy_role_e 			 _role;
 
-static uint8_t _last_sync_depth;
+static uint8_t  _last_sync_depth;
 static uint64_t _last_sync_timestamp;
 static uint64_t _last_overall_timestamp;
 static uint64_t _time_overflow;
 static uint64_t _last_time_sent;
 static uint64_t _glossy_flood_timeslot_corrected_us;
 static uint32_t _last_delay_time;
-static uint8_t _currently_syncd;
-static uint8_t _xtal_trim;
-static uint8_t _last_xtal_trim;
-static bool _sending_sync;
+static bool  	_lwb_in_sync;
+static uint8_t  _xtal_trim;
+static uint8_t  _last_xtal_trim;
+static bool     _sending_sync;
 static uint32_t _lwb_counter;
-static bool _lwb_valid;
-static uint8_t _cur_glossy_depth;
-static bool _glossy_currently_flooding;
+static bool     _lwb_valid;
+static uint8_t  _cur_glossy_depth;
+static bool     _glossy_currently_flooding;
 
-static bool _lwb_sched_en;
-static bool _lwb_scheduled;
+static bool     _lwb_sched_en;
+static bool     _lwb_scheduled;
 static uint32_t _lwb_num_timeslots;
 static uint32_t _lwb_timeslot;
 static uint32_t _lwb_mod_timeslot;
 static void (*_lwb_schedule_callback)(void);
 static double _clock_offset;
 
-static uint8_t _sched_euis[MAX_SCHED_TAGS][EUI_LEN];
+static uint8_t _sched_euis [MAX_SCHED_TAGS][EUI_LEN];
 static uint8_t _tag_timeout[MAX_SCHED_TAGS];
 
 static ranctx _prng_state;
@@ -66,6 +66,8 @@ uint8_t uint64_count_ones(uint64_t number){
 }
 
 void glossy_init(glossy_role_e role){
+
+	// Initialize Glossy packet
 	_sync_pkt = (struct pp_sched_flood) {
 		.header = {
 			.frameCtrl = {
@@ -83,51 +85,78 @@ void glossy_init(glossy_role_e role){
 			},
 			.sourceAddr = { 0 },
 		},
-		.message_type = MSG_TYPE_PP_GLOSSY_SYNC,
+		.message_type     = MSG_TYPE_PP_GLOSSY_SYNC,
 		.tag_ranging_mask = 0,
-		.tag_sched_idx = 0,
-		.tag_sched_eui = { 0 }
+		.tag_sched_idx    = 0,
+		.tag_sched_eui    = { 0 }
 	};
 
-	_sched_req_pkt.header = _sync_pkt.header;
-	_sched_req_pkt.message_type = MSG_TYPE_PP_GLOSSY_SCHED_REQ;
+	_sched_req_pkt.header 		   = _sync_pkt.header;
+	_sched_req_pkt.message_type    = MSG_TYPE_PP_GLOSSY_SCHED_REQ;
 	_sched_req_pkt.deschedule_flag = 0;
-	dw1000_read_eui(_sched_req_pkt.tag_sched_eui);
+
+	uint8_t * my_eui = standard_get_EUI();
+	dw1000_read_eui(my_eui);
 
 	// Seed our random number generator with our EUI
-	raninit(&_prng_state, _sched_req_pkt.tag_sched_eui[0]<<8|_sched_req_pkt.tag_sched_eui[1]);
+	raninit(&_prng_state, my_eui[0] << 8 | my_eui[1]);
 
-	_currently_syncd = 0;
+	// Save our role
+	_role 					= role;
+
+	// Init to zero
+	_last_sync_depth		= 0;
+	_last_sync_timestamp    = 0;
 	_last_overall_timestamp = 0;
-	_last_delay_time = 0;
-	_role = role;
-	_sending_sync = FALSE;
-	_lwb_counter = 0;
+	_time_overflow			= 0;
+	_last_time_sent			= 0;
+	_last_delay_time 		= 0;
+	_lwb_in_sync 			= FALSE;
+	_sending_sync 			= FALSE;
+	_lwb_counter 			= 0;
+	_lwb_valid 				= FALSE;
+	_cur_glossy_depth		= 0;
+	_glossy_currently_flooding = FALSE;
+	_lwb_sched_en 			   = FALSE;
+	_lwb_scheduled 			   = FALSE;
+	_lwb_num_timeslots		   = 0;
+	_lwb_timeslot			   = 0;
+	_lwb_mod_timeslot		   = 0;
+	_lwb_schedule_callback 	   = NULL;
+	_clock_offset			   = 0;
+
+	memset(_sched_euis,  0, sizeof(_sched_euis));
 	memset(_tag_timeout, 0, sizeof(_tag_timeout));
 	_glossy_flood_timeslot_corrected_us = (uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8;
-
-	_lwb_valid = FALSE;
-	_lwb_sched_en = FALSE;
-	_lwb_scheduled = FALSE;
-	_lwb_schedule_callback = NULL;
-	_glossy_currently_flooding = FALSE;
 
 #ifdef GLOSSY_PER_TEST
 	_total_syncs_sent = 0;
 #endif
 
 	// Set crystal trim to mid-range
-	_xtal_trim = 15;
+	_last_xtal_trim = 0;
+	_xtal_trim 		= 15;
 	dwt_setxtaltrim(_xtal_trim);
 
 	// If the anchor, let's kick off a task which unconditionally kicks off sync messages with depth = 0
 	if(role == GLOSSY_MASTER){
 		_lwb_valid = TRUE;
+
 #ifdef DW1000_USE_OTP
 		uint8 ldok = OTP_SF_OPS_KICK | OTP_SF_OPS_SEL_TIGHT;
 		dwt_writetodevice(OTP_IF_ID, OTP_SF, 1, &ldok); // set load LDE kick bit
 #endif
+
 		_last_time_sent = dwt_readsystimestamphi32() & 0xFFFFFFFE;
+
+		// If Master itself is also ranging, add it as the first initiator in the schedule
+		if (standard_is_init_enabled()) {
+		    memcpy(_sched_euis[0], standard_get_EUI(), EUI_LEN);
+		    _lwb_sched_en  = TRUE;
+		    _lwb_scheduled = TRUE;
+		    _lwb_timeslot  = 0;
+			_sync_pkt.tag_ranging_mask |= (uint64_t)(1) << 0;
+		}
 	}
 
 	// The glossy timer acts to synchronize everyone to a common timebase
@@ -145,10 +174,28 @@ void increment_sched_timeout(){
 			_tag_timeout[ii] = 0;
 		}
 	}
+
+	// Glossy master verifies that he doesnt kick himself out of the network
+	if (standard_is_init_enabled()) {
+        if (memcmp(_sched_euis[0], standard_get_EUI(), EUI_LEN) == 0) {
+            _tag_timeout[0] = 0;
+        } else {
+            debug_msg("ERROR: Glossy Master did not schedule itself!\n");
+        }
+	}
 }
 
 void glossy_deschedule(){
 	_sched_req_pkt.deschedule_flag = 1;
+}
+
+void glossy_enable_reception() {
+
+	// Start receiving
+	dwt_forcetrxoff();
+	dw1000_update_channel(LWB_CHANNEL);
+	dw1000_choose_antenna(LWB_ANTENNA);
+	dwt_rxenable(0);
 }
 
 void glossy_sync_task(){
@@ -167,7 +214,7 @@ void glossy_sync_task(){
 
 			dwt_rxenable(0);
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
-			dw1000_choose_antenna(1);
+			dw1000_choose_antenna(LWB_ANTENNA);
 #endif
 
 #if (BOARD_V == SQUAREPOINT)
@@ -191,8 +238,8 @@ void glossy_sync_task(){
 			}
 		#endif
 		
-			dw1000_update_channel(1);
-			dw1000_choose_antenna(0);
+			dw1000_update_channel(LWB_CHANNEL);
+			dw1000_choose_antenna(LWB_ANTENNA);
 
 			increment_sched_timeout();
 		
@@ -219,10 +266,8 @@ void glossy_sync_task(){
 		// Force ourselves into RX mode if we still haven't received any sync floods...
 		// TODO: This is a hack... :(
 		if((!_lwb_valid || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US))) && ((_lwb_counter % 5) == 0)) {
-			dwt_forcetrxoff();
-			dw1000_update_channel(1);
-			dw1000_choose_antenna(0);
-			dwt_rxenable(0);
+
+			glossy_enable_reception();
 
 			debug_msg("Not in sync with Glossy master (yet)\r\n");
 
@@ -238,8 +283,8 @@ void glossy_sync_task(){
 			// Check to see if it's our turn to do a ranging event!
 			// LWB Slot 1: Contention slot
 			if(_lwb_counter == 1) {
-				dw1000_update_channel(1);
-				dw1000_choose_antenna(0);
+				dw1000_update_channel(LWB_CHANNEL);
+				dw1000_choose_antenna(LWB_ANTENNA);
 
 				if((!_lwb_scheduled && _lwb_sched_en) || _sched_req_pkt.deschedule_flag) {
 
@@ -258,7 +303,7 @@ void glossy_sync_task(){
 					double turnaround_time = (double)((((uint64_t)(delay_time) << 8) - _last_sync_timestamp) & 0xFFFFFFFFFFUL);// + DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US)*_last_sync_depth;
 					turnaround_time /= _clock_offset;
 					_sched_req_pkt.turnaround_time = (uint64_t)(turnaround_time);
-					dw1000_choose_antenna(1);
+					dw1000_choose_antenna(LWB_ANTENNA);
 #else
 					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(LWB_SLOT_US-2*GLOSSY_FLOOD_TIMESLOT_US)) + GLOSSY_FLOOD_TIMESLOT_US;
 					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_sched_req_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
@@ -291,10 +336,7 @@ void glossy_sync_task(){
 
 				// Make sure we're in RX mode, ready for next glossy sync flood!
 				//dwt_setdblrxbuffmode(FALSE);
-				dwt_forcetrxoff();
-				dw1000_update_channel(1);
-				dw1000_choose_antenna(0);
-				dwt_rxenable(0);
+				glossy_enable_reception();
 			}
 		}
 	}
@@ -394,8 +436,8 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			uart_write(sizeof(double), &(in_glossy_sched_req->clock_offset_ppm));
 
 			dwt_forcetrxoff();
-			dw1000_update_channel(1);
-			dw1000_choose_antenna(1);
+			dw1000_update_channel(LWB_CHANNEL);
+			dw1000_choose_antenna(LWB_ANTENNA);
 			dwt_rxenable(0);
 #else
 			int i, candidate_slot = 0;
@@ -502,7 +544,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 
 					// Great, we're still sync'd!
 					_last_sync_depth = in_glossy_sync->header.seqNum;
-					_currently_syncd = 1;
+					_lwb_in_sync = TRUE;
 
 					// Since we're sync'd, we should make sure to reset our LWB window timer
 					_lwb_counter = 0;
@@ -536,7 +578,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 					_glossy_currently_flooding = TRUE;
 				} else {
 					// We lost sync :(
-					_currently_syncd = 0;
+					_lwb_in_sync = FALSE;
 				}
 			} else {
 				// We've just received a following packet in the flood
@@ -544,6 +586,11 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			}
 
 			_last_sync_timestamp = dw_timestamp - (_glossy_flood_timeslot_corrected_us * in_glossy_sync->header.seqNum);
+
+			// Enable responders
+			if (standard_is_resp_enabled()) {
+				standard_set_resp_active(TRUE);
+			}
 
 		} else {
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy slave!\n");

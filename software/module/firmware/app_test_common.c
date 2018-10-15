@@ -27,25 +27,32 @@ static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = 
 // Buffer of anchor IDs and ranges to the anchor.
 // Long enough to hold an anchor id followed by the range, plus the number of ranges
 
-static void *_scratchspace_ptr;
+union app_scratchspace {
+	test_init_scratchspace_struct ti_scratch;
+	test_resp_scratchspace_struct tr_scratch;
+} _app_scratchspace;
+
+// ---------------------------------------------------------------------------------------------------------------------
 
 // This sets the settings for this node and initializes the node.
-void rangetest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
-	_scratchspace_ptr = app_scratchspace;
+void rangetest_configure (module_config_t* config, stm_timer_t* app_timer) {
 
 	// Save the settings
 	_config.my_role     = config->my_role;
 	_config.update_rate = config->update_rate;
+
+	// Set scratchspace to known zeros
+	memset(&_app_scratchspace, 0, sizeof(_app_scratchspace));
 
 	// Make sure the DW1000 is awake before trying to do anything.
 	dw1000_wakeup();
 
 	// Now init based on role
 	if (_config.my_role == APP_ROLE_INIT_NORESP) {
-		rangetest_tag_init(_scratchspace_ptr);
+		rangetest_tag_init(&_app_scratchspace.ti_scratch);
 		debug_msg("Initialized as TAG\n");
 	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
-		rangetest_anchor_init(_scratchspace_ptr);
+		rangetest_anchor_init(&_app_scratchspace.tr_scratch);
 		debug_msg("Initialized as ANCHOR\n");
 	}
 }
@@ -108,8 +115,7 @@ dwt_config_t simpletest_config = {
 
 // This function will call the most basic Rx / Tx example, without making use of any other callbacks or initializations
 // This sets the settings for this node and initializes the node.
-void simpletest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace) {
-    _scratchspace_ptr = app_scratchspace;
+void simpletest_configure (module_config_t* config, stm_timer_t* app_timer) {
 
     // Save the settings
     _config.my_role     = config->my_role;

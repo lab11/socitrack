@@ -18,9 +18,9 @@ static void anchor_txcallback (const dwt_cb_data_t *txd);
 static void anchor_rxcallback (const dwt_cb_data_t *rxd);
 
 
-void rangetest_anchor_init(void *app_scratchspace) {
+void rangetest_anchor_init(test_resp_scratchspace_struct *app_scratchspace) {
 	
-	test_oa_scratch = (test_resp_scratchspace_struct*) app_scratchspace;
+	test_oa_scratch = app_scratchspace;
 
 	// Make sure the SPI speed is slow for this function
 	dw1000_spi_slow();

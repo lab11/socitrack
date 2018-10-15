@@ -3,28 +3,42 @@
 
 #include "deca_device_api.h"
 #include "deca_regs.h"
+#include "dw1000.h"
 
 #include "timer.h"
 #include "delay.h"
-#include "dw1000.h"
-#include "app_standard_init.h"
-#include "firmware.h"
 #include "SEGGER_RTT.h"
 
-// Functions
+#include "host_interface.h"
+#include "firmware.h"
+
+#include "app_standard_init.h"
+
+// APPLICATION STATE ---------------------------------------------------------------------------------------------------
+
+// Buffer of anchor IDs and ranges to the anchor.
+// Long enough to hold an anchor id followed by the range, plus the number
+// of ranges
+uint8_t _anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(EUI_LEN+sizeof(int32_t)))+1];
+
+// STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
+
 static void send_poll ();
 static void ranging_broadcast_subsequence_task ();
 static void ranging_listening_window_task ();
 static void calculate_ranges ();
 static void report_range ();
-static void init_txcallback (const dwt_cb_data_t *txd);
-static void init_rxcallback (const dwt_cb_data_t *rxd);
+
+//----------------------------------------------------------------------------------------------------------------------
 
 // Do the TAG-specific init calls.
 // We trust that the DW1000 is not in SLEEP mode when this is called.
-void standard_initiator_init (void *app_scratchspace) {
+void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace) {
 
-	si_scratch = (standard_init_scratchspace_struct*) app_scratchspace;
+	si_scratch = app_scratchspace;
+
+	// Reset buffers
+	memset(_anchor_ids_ranges, 0, sizeof(_anchor_ids_ranges));
 
 	// Initialize important variables inside scratchspace
 	si_scratch->pp_tag_poll_pkt = (struct pp_tag_poll) {
@@ -49,32 +63,26 @@ void standard_initiator_init (void *app_scratchspace) {
 		0,                             // Sub Sequence number
 		NUM_RANGING_BROADCASTS-1,
 		RANGING_LISTENING_WINDOW_US,
-		RANGING_LISTENING_SLOT_US
+		RANGING_LISTENING_SLOT_US,
+		{ { 0 } }
 	};
 
 	// Make sure the SPI speed is slow for this function
 	dw1000_spi_slow();
 
-	// Setup callbacks to this TAG
-	dwt_setcallbacks(init_txcallback, init_rxcallback, init_rxcallback, init_rxcallback);
-
-	// Allow data and ack frames
-	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
-
-	// Setup parameters of how the radio should work
 	dwt_setdblrxbuffmode(TRUE);//FALSE);
 	dwt_enableautoack(DW1000_ACK_RESPONSE_TIME);
 
-	// Put source EUI in the pp_tag_poll packet
-	dw1000_read_eui(si_scratch->pp_tag_poll_pkt.header.sourceAddr);
+	// Make SPI fast now that everything has been setup
+	dw1000_spi_fast();
+
+    // Put source EUI in the pp_tag_poll packet
+    memcpy(si_scratch->pp_tag_poll_pkt.header.sourceAddr, standard_get_EUI(), EUI_LEN);
 
 	// Create a timer for use when sending ranging broadcast packets
 	if (si_scratch->tag_timer == NULL) {
 		si_scratch->tag_timer = timer_init();
 	}
-
-	// Make SPI fast now that everything has been setup
-	dw1000_spi_fast();
 
 	// Reset our state because nothing should be in progress if we call init()
 	si_scratch->state = ISTATE_IDLE;
@@ -90,6 +98,8 @@ dw1000_err_e standard_init_start_ranging_event () {
 	dw1000_err_e err;
 
 	//debug_msg("Start ranging event...\r\n");
+    standard_set_resp_active(FALSE);
+    standard_set_init_active(TRUE);
 
 	if (si_scratch->state != ISTATE_IDLE) {
 		// Cannot start a ranging event if we are currently busy with one.
@@ -141,6 +151,8 @@ void standard_init_stop () {
 	// but we just need to know it's idle
 	si_scratch->state = ISTATE_IDLE;
 
+	standard_set_init_active(FALSE);
+
 	// Stop the timer in case it was in use
 	timer_stop(si_scratch->tag_timer);
 
@@ -154,9 +166,7 @@ void standard_init_stop () {
 }
 
 // Called after the TAG has transmitted a packet.
-static void init_txcallback (const dwt_cb_data_t *txd) {
-
-	glossy_process_txcallback();
+void init_txcallback (const dwt_cb_data_t *txd) {
 
 	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
@@ -193,23 +203,14 @@ static void init_txcallback (const dwt_cb_data_t *txd) {
 }
 
 // Called when the tag receives a packet.
-static void init_rxcallback (const dwt_cb_data_t* rxd) {
+void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_timestamp) {
 
 	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
 		// Everything went right when receiving this packet.
-		// We have to process it to ensure that it is a packet we are expecting
-		// to get.
+		// We have to process it to ensure that it is a packet we are expecting to get.
 
-		uint64_t dw_rx_timestamp;
-		uint8_t  buf[STANDARD_INIT_MAX_RX_PKT_LEN];
-		uint8_t  message_type;
-
-		// Get the received time of this packet first
-		dw_rx_timestamp = dw1000_readrxtimestamp();
-
-		// Get the actual packet bytes
-		dwt_readrxdata(buf, MIN(STANDARD_INIT_MAX_RX_PKT_LEN, rxd->datalength), 0);
-		message_type = buf[offsetof(struct pp_anc_final, message_type)];
+		// Get the message_type
+		uint8_t message_type = buf[offsetof(struct pp_anc_final, message_type)];
 
 		if (message_type == MSG_TYPE_PP_NOSLOTS_ANC_FINAL) {
 			// This is what we were looking for, an ANC_FINAL packet
@@ -279,11 +280,6 @@ static void init_rxcallback (const dwt_cb_data_t* rxd) {
 		} else {
 			// Reenable Rx
 			dwt_rxenable(0);
-
-			// TAGs don't expect to receive any other types of packets.
-			message_type = buf[offsetof(struct pp_tag_poll, message_type)];
-			if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ)
-				glossy_sync_process(dw_rx_timestamp-standard_get_rxdelay_from_subsequence(APP_ROLE_INIT_NORESP, 0), buf);
 		}
 
 	} else {
@@ -296,7 +292,7 @@ static void init_rxcallback (const dwt_cb_data_t* rxd) {
             debug_msg_int((uint32_t)rxd->status);
             debug_msg("\n");
 
-			standard_set_ranging_listening_window_settings(APP_ROLE_INIT_NORESP, si_scratch->ranging_listening_window_num, 0);
+			standard_set_ranging_listening_window_settings(TRUE, si_scratch->ranging_listening_window_num, 0);
 		} else {
 			debug_msg("ERROR: Unknown error!");
 			dwt_rxenable(0);
@@ -339,7 +335,7 @@ static void send_poll () {
 	// Take the TX+RX delay into account here by adding it to the time stamp
 	// of each outgoing packet.
 	si_scratch->ranging_broadcast_ss_send_times[si_scratch->ranging_broadcast_ss_num] =
-		(((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_subsequence(APP_ROLE_INIT_NORESP, si_scratch->ranging_broadcast_ss_num);
+		(((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_subsequence(si_scratch->ranging_broadcast_ss_num);
 
 	// Write the data
 	dwt_writetxdata(tx_len, (uint8_t*) &(si_scratch->pp_tag_poll_pkt), 0);
@@ -384,7 +380,7 @@ static void ranging_broadcast_subsequence_task () {
 	}
 
 	// Go ahead and setup and send a ranging broadcast
-	standard_set_ranging_broadcast_subsequence_settings(APP_ROLE_INIT_NORESP, si_scratch->ranging_broadcast_ss_num);
+	standard_set_ranging_broadcast_subsequence_settings(FALSE, si_scratch->ranging_broadcast_ss_num);
 
 	// Actually send the packet
 	send_poll();
@@ -402,13 +398,16 @@ static void ranging_listening_window_task () {
 		// Stop the radio
 		dwt_forcetrxoff();
 
+		// End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
+		standard_set_init_active(FALSE);
+
 		// This function finishes up this ranging event.
 		report_range();
 
 	} else {
 
 		// Set the correct listening settings
-		standard_set_ranging_listening_window_settings(APP_ROLE_INIT_NORESP, si_scratch->ranging_listening_window_num, 0);
+		standard_set_ranging_listening_window_settings(TRUE, si_scratch->ranging_listening_window_num, 0);
 
 		// Make SURE we're in RX mode!
 		dwt_rxenable(0);
@@ -417,6 +416,37 @@ static void ranging_listening_window_task () {
 		si_scratch->ranging_listening_window_num++;
 
 	}
+}
+
+// Record ranges that the tag found.
+void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* anchor_responses) {
+	uint8_t buffer_index = 1;
+	uint8_t num_anchor_ranges = 0;
+
+	// Iterate through all ranges and copy the correct data into the ranges buffer.
+	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
+		if (ranges_millimeters[i] != INT32_MAX) {
+			// This is a valid range
+			memcpy(_anchor_ids_ranges+buffer_index, anchor_responses[i].anchor_addr, EUI_LEN);
+			buffer_index += EUI_LEN;
+			memcpy(_anchor_ids_ranges+buffer_index, &ranges_millimeters[i], sizeof(int32_t));
+			buffer_index += sizeof(int32_t);
+			num_anchor_ranges++;
+
+			/*debug_msg("Range to anchor ");
+			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] >> 4);
+			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] & 0x0F);
+			debug_msg(": ");
+			debug_msg_uint((uint32_t)ranges_millimeters[i]);
+			debug_msg("\n");*/
+		}
+	}
+
+	// Set the first byte as the number of ranges
+	_anchor_ids_ranges[0] = num_anchor_ranges;
+
+	// Now let the host know so it can do something with the ranges.
+	host_interface_notify_ranges(_anchor_ids_ranges, (num_anchor_ranges*(EUI_LEN+sizeof(int32_t)))+1);
 }
 
 // Once we have heard from all of the anchors, calculate range.
@@ -476,26 +506,23 @@ static void report_range () {
 	// these right back to the host, or we can try to get the anchors
 	// to calculate location.
 	module_report_mode_e report_mode = standard_get_config()->report_mode;
-	if (report_mode == MODULE_REPORT_MODE_RANGES) {
-		// We're done, so go to idle.
-		si_scratch->state = ISTATE_IDLE;
 
-		// Just need to send the ranges back to the host. Send the array
-		// of ranges to the main application and let it deal with it.
-		// This also returns control to the main application and signals
-		// the end of the ranging event.
-		standard_set_ranges(si_scratch->ranges_millimeters, si_scratch->anchor_responses);
+	// We're done, so go to idle.
+	si_scratch->state = ISTATE_IDLE;
 
-		// Check if we should try to sleep after the ranging event.
-		if (standard_get_config()->sleep_mode) {
-			// Call stop() to sleep, it will be woken up automatically on
-			// the next call to start_ranging_event().
-			standard_init_stop();
-		}
+	// Just need to send the ranges back to the host. Send the array
+	// of ranges to the main application and let it deal with it.
+	// This also returns control to the main application and signals
+	// the end of the ranging event.
+	standard_set_ranges(si_scratch->ranges_millimeters, si_scratch->anchor_responses);
 
-	} else if (report_mode == MODULE_REPORT_MODE_LOCATION) {
-		// TODO: implement this
+	// Check if we should try to sleep after the ranging event.
+	if (standard_get_config()->sleep_mode) {
+		// Call stop() to sleep, it will be woken up automatically on
+		// the next call to start_ranging_event().
+		standard_init_stop();
 	}
+
 }
 
 

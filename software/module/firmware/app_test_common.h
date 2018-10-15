@@ -52,12 +52,12 @@ typedef struct {
 	uint8_t update_rate;
 } test_config_t;
 
-void rangetest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
+void rangetest_configure (module_config_t* config, stm_timer_t* app_timer);
 void rangetest_start ();
 
 void rangetest_set_ranging_broadcast_settings (module_role_e role, uint8_t subseq_num);
 
 extern dwt_config_t simpletest_config;
-void simpletest_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
+void simpletest_configure (module_config_t* config, stm_timer_t* app_timer);
 
 #endif

@@ -3,23 +3,26 @@
 
 #include "deca_device_api.h"
 #include "deca_regs.h"
+#include "dw1000.h"
+
+#include "timer.h"
+#include "delay.h"
+#include "SEGGER_RTT.h"
+
+#include "firmware.h"
 
 #include "app_standard_common.h"
 #include "app_standard_resp.h"
-#include "dw1000.h"
-#include "timer.h"
-#include "delay.h"
-#include "firmware.h"
-#include "SEGGER_RTT.h"
+
+// STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 static void ranging_listening_window_setup();
-static void resp_txcallback (const dwt_cb_data_t *txd);
-static void resp_rxcallback (const dwt_cb_data_t *rxd);
 
+// ---------------------------------------------------------------------------------------------------------------------
 
-void standard_resp_init (void *app_scratchspace) {
+void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
 	
-	sr_scratch = (standard_resp_scratchspace_struct*) app_scratchspace;
+	sr_scratch = app_scratchspace;
 	
 	// Initialize this app's scratchspace
 	sr_scratch->pp_anc_final_pkt = (struct pp_anc_final) {
@@ -42,30 +45,9 @@ void standard_resp_init (void *app_scratchspace) {
 		.TOAs          = { 0 },
 	};
 
-	// Make sure the SPI speed is slow for this function
-	dw1000_spi_slow();
-
-	// Setup callbacks to this ANCHOR
-	dwt_setcallbacks(resp_txcallback, resp_rxcallback, resp_rxcallback, resp_rxcallback);
-
-	// Make sure the radio starts off
-	dwt_forcetrxoff();
-
-	// Set the anchor so it only receives data and ack packets
-	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
-
-	// // Set the ID and PAN ID for this anchor
-	uint8_t eui_array[8];
-	dw1000_read_eui(eui_array);
-	// dwt_seteui(eui_array);
-	// dwt_setpanid(MODULE_PANID);
-
-	// Don't use these
-	dwt_setdblrxbuffmode(FALSE);
-	dwt_setrxtimeout(FALSE);
-
 	// Load our EUI into the outgoing packet
-	dw1000_read_eui(sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.sourceAddr);
+	uint8_t * eui_array = standard_get_EUI();
+	memcpy(sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.sourceAddr, eui_array, EUI_LEN);
 
 	// Need a timer
 	if (sr_scratch->resp_timer == NULL) {
@@ -73,10 +55,7 @@ void standard_resp_init (void *app_scratchspace) {
 	}
 
 	// Init the PRNG for determining when to respond to the tag
-	raninit(&(sr_scratch->prng_state), eui_array[0]<<8|eui_array[1]);
-
-	// Make SPI fast now that everything has been setup
-	dw1000_spi_fast();
+	raninit(&(sr_scratch->prng_state), eui_array[0] << 8 | eui_array[1]);
 
 	// Reset our state because nothing should be in progress if we call init()
 	sr_scratch->state = RSTATE_IDLE;
@@ -101,9 +80,11 @@ dw1000_err_e standard_resp_start () {
 	// Also we start over in case the anchor was doing anything before
 	sr_scratch->state = RSTATE_IDLE;
 
+	standard_set_resp_active(TRUE);
+
 	// Choose to wait in the first default position.
 	// This could change to wait in any of the first NUM_CHANNEL-1 positions.
-	standard_set_ranging_broadcast_subsequence_settings(APP_ROLE_NOINIT_RESP, 0);
+	standard_set_ranging_broadcast_subsequence_settings(TRUE, 0);
 
 	// Obviously we want to be able to receive packets
 	dwt_rxenable(0);
@@ -119,6 +100,8 @@ void standard_resp_stop () {
 	// Put the anchor in SLEEP state. This is useful in case we need to
 	// re-init some stuff after the anchor comes back alive.
 	sr_scratch->state = RSTATE_IDLE;
+
+	standard_set_resp_active(FALSE);
 
 	// Stop the timer in case it was in use
 	timer_stop(sr_scratch->resp_timer);
@@ -143,7 +126,7 @@ static void ranging_broadcast_subsequence_task () {
 
 	} else {
 		// Update the anchor listening settings
-		standard_set_ranging_broadcast_subsequence_settings(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num);
+		standard_set_ranging_broadcast_subsequence_settings(TRUE, sr_scratch->ranging_broadcast_ss_num);
 
 		// And re-enable RX. The set_broadcast_settings function disables tx and rx.
 		dwt_rxenable(0);
@@ -181,7 +164,7 @@ static void ranging_listening_window_task () {
 			dwt_forcetrxoff();
 	
 			// Setup the channel and antenna settings
-			standard_set_ranging_listening_window_settings(APP_ROLE_NOINIT_RESP,
+			standard_set_ranging_listening_window_settings(FALSE,
 			                                             sr_scratch->ranging_listening_window_num,
 			                                             sr_scratch->pp_anc_final_pkt.final_antenna);
 	
@@ -265,7 +248,7 @@ static void ranging_listening_window_setup () {
 
 // Called after a packet is transmitted. We don't need this so it is
 // just empty.
-static void resp_txcallback (const dwt_cb_data_t *txd) {
+void resp_txcallback (const dwt_cb_data_t *txd) {
 
 	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
@@ -276,11 +259,10 @@ static void resp_txcallback (const dwt_cb_data_t *txd) {
 		debug_msg("ERROR: Failed in sending packet!\n");
 	}
 
-	glossy_process_txcallback();
 }
 
 // Called when the radio has received a packet.
-static void resp_rxcallback (const dwt_cb_data_t *rxd) {
+void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp) {
 
 	timer_disable_interrupt(sr_scratch->resp_timer);
 
@@ -300,20 +282,8 @@ static void resp_rxcallback (const dwt_cb_data_t *rxd) {
             }
 		} else {
 
-			// Read in parameters of this packet reception
-			uint8_t  buf[STANDARD_RESP_MAX_RX_PKT_LEN];
-			uint64_t dw_rx_timestamp;
-			uint8_t  message_type;
-
-			// Get the received time of this packet first
-			dw_rx_timestamp = dw1000_readrxtimestamp();
-
-			// Get the actual packet bytes
-			dwt_readrxdata(buf, MIN(STANDARD_RESP_MAX_RX_PKT_LEN, rxd->datalength), 0);
-
-			// We process based on the first byte in the packet. How very active
-			// message like...
-			message_type = buf[offsetof(struct pp_tag_poll, message_type)];
+			// We process based on the first byte in the packet
+			uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
 
 			if (message_type == MSG_TYPE_PP_NOSLOTS_TAG_POLL) {
 				// This is one of the broadcast ranging packets from the tag
@@ -353,10 +323,10 @@ static void resp_rxcallback (const dwt_cb_data_t *rxd) {
 						sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
 						// Record the timestamp. Need to subtract off the TX+RX delay from each recorded
 						// timestamp.
-						sr_scratch->pp_anc_final_pkt.first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num);
+						sr_scratch->pp_anc_final_pkt.first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
 						sr_scratch->pp_anc_final_pkt.first_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
 						sr_scratch->pp_anc_final_pkt.TOAs[sr_scratch->ranging_broadcast_ss_num] =
-							(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+							(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
 						// Also record parameters the tag has sent us about how to respond
 						// (or other operational parameters).
 						sr_scratch->ranging_operation_config.reply_after_subsequence = rx_poll_pkt->reply_after_subsequence;
@@ -365,7 +335,7 @@ static void resp_rxcallback (const dwt_cb_data_t *rxd) {
 
 						// Update the statistics we keep about which antenna
 						// receives the most packets from the tag
-						uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(APP_ROLE_NOINIT_RESP, rx_poll_pkt->subsequence);
+						uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, rx_poll_pkt->subsequence);
 						sr_scratch->resp_antenna_recv_num[recv_antenna_index]++;
 
 						// Now we need to start our own state machine to iterate
@@ -393,13 +363,13 @@ static void resp_rxcallback (const dwt_cb_data_t *rxd) {
 							// This is the packet we were expecting from the tag.
 							// Record the TOA, and adjust it with the calibration value.
 							sr_scratch->pp_anc_final_pkt.TOAs[sr_scratch->ranging_broadcast_ss_num] =
-								(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
-							sr_scratch->pp_anc_final_pkt.last_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num);
+								(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+							sr_scratch->pp_anc_final_pkt.last_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
 							sr_scratch->pp_anc_final_pkt.last_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
 
 							// Update the statistics we keep about which antenna
 							// receives the most packets from the tag
-							uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num);
+							uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, sr_scratch->ranging_broadcast_ss_num);
 							sr_scratch->resp_antenna_recv_num[recv_antenna_index]++;
 
 						} else {
@@ -433,9 +403,6 @@ static void resp_rxcallback (const dwt_cb_data_t *rxd) {
 			} else {
 				// We do want to enter RX mode again, however
 				dwt_rxenable(0);
-				// Other message types go here, if they get added
-				if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ)
-					glossy_sync_process(dw_rx_timestamp-standard_get_rxdelay_from_subsequence(APP_ROLE_NOINIT_RESP, 0), buf);
 			}
 		}
 
@@ -448,7 +415,7 @@ static void resp_rxcallback (const dwt_cb_data_t *rxd) {
 			debug_msg_uint((uint32_t)rxd->status);
 			debug_msg("\n");
 
-			standard_set_ranging_broadcast_subsequence_settings(APP_ROLE_NOINIT_RESP, sr_scratch->ranging_broadcast_ss_num);
+			standard_set_ranging_broadcast_subsequence_settings(TRUE, sr_scratch->ranging_broadcast_ss_num);
 		} else {
 			// Some other unknown error, not sure what to do
 			debug_msg("ERROR: Unknown Rx issue!\n");

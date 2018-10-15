@@ -63,6 +63,8 @@
 // Data Structs for packet messages between tags and anchors
 /******************************************************************************/
 
+#define MSG_MAX_PACK_LEN	296
+
 // Message types that identify the UWB packets. Very reminiscent of
 // Active Messages from the TinyOS days.
 #define MSG_TYPE_PP_NOSLOTS_TAG_POLL  0x80
@@ -128,7 +130,12 @@ typedef enum {
 // Keep config settings for a oneway node
 typedef struct {
 	module_role_e my_role;
+	bool		  init_enabled;	// Depending on the role, init and resp are enabled
+	bool		  resp_enabled;
+	bool		  init_active; // In case they are enabled, the can be in an active state (i.e. currently executing init code)
+	bool		  resp_active;
 	glossy_role_e my_glossy_role;
+	uint8_t       my_EUI[EUI_LEN];
 	module_report_mode_e report_mode;
 	module_update_mode_e update_mode;
 	uint8_t update_rate;
@@ -149,24 +156,36 @@ typedef struct {
 } __attribute__ ((__packed__)) anchor_responses_t;
 
 
-void             standard_configure (module_config_t* config, stm_timer_t* app_timer, void *app_scratchspace);
+void             standard_configure (module_config_t* config, stm_timer_t* app_timer);
 void             standard_start ();
 void             standard_stop ();
 void             standard_reset ();
 void             standard_do_range ();
 module_config_t* standard_get_config ();
-void             standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* anchor_responses);
 module_role_e    standard_get_role();
 void             standard_set_role(module_role_e role);
+bool			 standard_is_init_enabled();
+bool			 standard_is_init_active();
+void 			 standard_set_init_active(bool init_active);
+bool			 standard_is_resp_enabled();
+bool			 standard_is_resp_active();
+void 			 standard_set_resp_active(bool resp_active);
+uint8_t *        standard_get_EUI();
 
 
-uint8_t  standard_subsequence_number_to_antenna (module_role_e role, uint8_t subseq_num);
-void     standard_set_ranging_broadcast_subsequence_settings (module_role_e role, uint8_t subseq_num);
-void     standard_set_ranging_listening_window_settings (module_role_e role, uint8_t slot_num, uint8_t antenna_num);
+uint8_t  standard_subsequence_number_to_antenna (bool resp_active, uint8_t subseq_num);
+void     standard_set_ranging_broadcast_subsequence_settings (bool resp_active, uint8_t subseq_num);
+void     standard_set_ranging_listening_window_settings (bool init_active, uint8_t slot_num, uint8_t antenna_num);
 uint8_t  standard_get_ss_index_from_settings (uint8_t anchor_antenna_index, uint8_t window_num);
-uint64_t standard_get_txdelay_from_subsequence (module_role_e role, uint8_t subseq_num);
-uint64_t standard_get_rxdelay_from_subsequence (module_role_e role, uint8_t subseq_num);
+uint64_t standard_get_txdelay_from_subsequence (uint8_t subseq_num);
+uint64_t standard_get_rxdelay_from_subsequence (uint8_t subseq_num);
 uint64_t standard_get_txdelay_from_ranging_listening_window (uint8_t window_num);
 uint64_t standard_get_rxdelay_from_ranging_listening_window (uint8_t window_num);
+
+// TX/RX
+void init_txcallback  (const dwt_cb_data_t *txd);
+void init_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp);
+void resp_txcallback  (const dwt_cb_data_t *txd);
+void resp_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp);
 
 #endif

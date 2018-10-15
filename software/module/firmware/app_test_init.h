@@ -34,7 +34,7 @@ typedef struct {
 
 test_init_scratchspace_struct *test_ot_scratch;
 
-void 	     rangetest_tag_init (void *app_scratchspace);
+void 	     rangetest_tag_init (test_init_scratchspace_struct *app_scratchspace);
 dw1000_err_e rangetest_tag_start_ranging_event ();
 
 dw1000_err_e simpletest_tag_start ();
