@@ -56,6 +56,7 @@ struct pp_sched_req_flood {
 } __attribute__ ((__packed__));
 
 void glossy_init(glossy_role_e role);
+void glossy_start();
 void glossy_deschedule();
 void glossy_sync_task();
 void lwb_set_sched_request(bool sched_en);

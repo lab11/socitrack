@@ -179,4 +179,7 @@ void init_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_t
 void resp_txcallback  (const dwt_cb_data_t *txd);
 void resp_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp);
 
+// Helper functions
+void helper_print_EUI(uint8_t * address);
+
 #endif

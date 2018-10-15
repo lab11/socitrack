@@ -23,8 +23,8 @@ static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = 
 };
 
 typedef struct  {
-    standard_init_scratchspace_struct si_scratch;
-    standard_resp_scratchspace_struct sr_scratch;
+    standard_init_scratchspace_struct si_scratch;	// Storage for INIT
+    standard_resp_scratchspace_struct sr_scratch;	// Storage for RESP
 } standard_scratchspace_struct;
 
 // Scratchspace for both INIT and RESP
@@ -49,8 +49,10 @@ void standard_configure (module_config_t* config) {
 	// Make sure the DW1000 is awake before trying to do anything.
 	dw1000_wakeup();
 
-	// Oneway ranging requires glossy synchronization, so let's enable that now
-	glossy_init(_config.my_glossy_role);
+    // Set EUI
+    dw1000_read_eui(_config.my_EUI);
+    // FIXME: Load actual EUI to FLASH
+    _config.my_EUI[0] = 0x01;
 
 	// Now init based on role
 	_config.init_active = FALSE;
@@ -91,6 +93,15 @@ void standard_configure (module_config_t* config) {
 		}
 	}
 
+    // Ranging requires glossy synchronization, so let's enable that now
+    // This uses TIM17 as a timer
+    glossy_init(_config.my_glossy_role);
+
+	// Get a second timer (TIM16) for both INIT and RESP; they will never be using it simultaneously
+	stm_timer_t * ranging_timer = timer_init();
+	_app_scratchspace.si_scratch.init_timer = ranging_timer;
+	_app_scratchspace.sr_scratch.resp_timer = ranging_timer;
+
 	// Initialize code for INIT
 	if (_config.init_enabled) {
 		standard_initiator_init(&_app_scratchspace.si_scratch);
@@ -99,6 +110,7 @@ void standard_configure (module_config_t* config) {
 	if (_config.resp_enabled) {
 		standard_resp_init(&_app_scratchspace.sr_scratch);
 	}
+
 }
 
 // Kick off the application
@@ -121,9 +133,6 @@ void standard_start () {
 	// Don't use these
 	dwt_setrxtimeout(FALSE);
 
-	// Set EUI
-    dw1000_read_eui(_config.my_EUI);
-
 	// Make SPI fast now that everything has been setup
 	dw1000_spi_fast();
 
@@ -139,6 +148,9 @@ void standard_start () {
 			module_reset();
 		}
 	}
+
+	// Start Glossy
+	glossy_start();
 }
 
 // Stop the standard application
@@ -431,4 +443,19 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 		}
 
 	}
+}
+
+
+/******************************************************************************/
+// Helper functions
+/******************************************************************************/
+
+void helper_print_EUI(uint8_t * address) {
+
+    for (uint8_t i = 0; i < EUI_LEN; i++) {
+        debug_msg_hex(address[i]);
+
+        if (i < (EUI_LEN - 1))
+        	debug_msg(":");
+    }
 }

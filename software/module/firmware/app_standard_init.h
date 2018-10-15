@@ -47,7 +47,7 @@ typedef struct {
 
 typedef struct {
 	// Our timer object that we use for timing packet transmissions
-	stm_timer_t* tag_timer;
+	stm_timer_t* init_timer;
 	
 	init_state_e state;
 	

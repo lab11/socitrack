@@ -34,7 +34,6 @@ static uint8_t  _xtal_trim;
 static uint8_t  _last_xtal_trim;
 static bool     _sending_sync;
 static uint32_t _lwb_counter;
-static bool     _lwb_valid;
 static uint8_t  _cur_glossy_depth;
 static bool     _glossy_currently_flooding;
 
@@ -67,7 +66,10 @@ uint8_t uint64_count_ones(uint64_t number){
 
 void glossy_init(glossy_role_e role){
 
-	// Initialize Glossy packet
+    // Load EUI from application
+	uint8_t * my_eui = standard_get_EUI();
+
+	// Init Glossy packet: Schedule
 	_sync_pkt = (struct pp_sched_flood) {
 		.header = {
 			.frameCtrl = {
@@ -91,12 +93,13 @@ void glossy_init(glossy_role_e role){
 		.tag_sched_eui    = { 0 }
 	};
 
+	memcpy(_sync_pkt.tag_sched_eui, my_eui, EUI_LEN);
+
+	// Init Glossy packet: Schedule request
 	_sched_req_pkt.header 		   = _sync_pkt.header;
 	_sched_req_pkt.message_type    = MSG_TYPE_PP_GLOSSY_SCHED_REQ;
 	_sched_req_pkt.deschedule_flag = 0;
-
-	uint8_t * my_eui = standard_get_EUI();
-	dw1000_read_eui(my_eui);
+	memcpy(_sched_req_pkt.tag_sched_eui, my_eui, EUI_LEN);
 
 	// Seed our random number generator with our EUI
 	raninit(&_prng_state, my_eui[0] << 8 | my_eui[1]);
@@ -114,7 +117,6 @@ void glossy_init(glossy_role_e role){
 	_lwb_in_sync 			= FALSE;
 	_sending_sync 			= FALSE;
 	_lwb_counter 			= 0;
-	_lwb_valid 				= FALSE;
 	_cur_glossy_depth		= 0;
 	_glossy_currently_flooding = FALSE;
 	_lwb_sched_en 			   = FALSE;
@@ -140,7 +142,7 @@ void glossy_init(glossy_role_e role){
 
 	// If the anchor, let's kick off a task which unconditionally kicks off sync messages with depth = 0
 	if(role == GLOSSY_MASTER){
-		_lwb_valid = TRUE;
+		_lwb_in_sync = TRUE;
 
 #ifdef DW1000_USE_OTP
 		uint8 ldok = OTP_SF_OPS_KICK | OTP_SF_OPS_SEL_TIGHT;
@@ -161,7 +163,12 @@ void glossy_init(glossy_role_e role){
 
 	// The glossy timer acts to synchronize everyone to a common timebase
 	_glossy_timer = timer_init();
-	timer_start(_glossy_timer, LWB_SLOT_US, glossy_sync_task);
+}
+
+void glossy_start() {
+
+    // Kick-off the Glossy timer
+    timer_start(_glossy_timer, LWB_SLOT_US, glossy_sync_task);
 }
 
 void increment_sched_timeout(){
@@ -207,7 +214,7 @@ void glossy_sync_task(){
 
 	if(_role == GLOSSY_MASTER) {
 
-		// During the first timeslot, put ourselves back into RX mode
+		// LWB Slot 1: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
 		if(_lwb_counter == 1){
 
 		    //debug_msg("Listening for requests...\n");
@@ -224,8 +231,7 @@ void glossy_sync_task(){
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 #endif
 
-		// Last timeslot is used by the master to schedule the next glossy sync packet
-		// _lwb_counter should never be larger, but this guarantees regular schedules despite bugs
+		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
 		} else if(_lwb_counter == (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
 			dwt_forcetrxoff();
 		
@@ -255,17 +261,17 @@ void glossy_sync_task(){
 			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 #endif
+		// LWB Slot > N: Invalid counter value
 		} else if (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1) {
 			debug_msg("WARNING: LWB counter overshooting, currently at ");
 			debug_msg_int(_lwb_counter);
 			debug_msg("\n");
 		}
-	}
-	else {
 
-		// Force ourselves into RX mode if we still haven't received any sync floods...
-		// TODO: This is a hack... :(
-		if((!_lwb_valid || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US))) && ((_lwb_counter % 5) == 0)) {
+	} else if (_role == GLOSSY_SLAVE) {
+
+		// OUT OF SYNC: Force ourselves into RX mode if we still haven't received any sync floods
+		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 5) == 0)) {
 
 			glossy_enable_reception();
 
@@ -278,9 +284,10 @@ void glossy_sync_task(){
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			}
 #endif
-		}
-		else {
-			// Check to see if it's our turn to do a ranging event!
+		} else if (_lwb_in_sync) {
+
+			// IN SYNC: See what round we are in
+
 			// LWB Slot 1: Contention slot
 			if(_lwb_counter == 1) {
 				dw1000_update_channel(LWB_CHANNEL);
@@ -322,23 +329,38 @@ void glossy_sync_task(){
 					dwt_rxenable(0);
 				}
 
-			// LWB Slots 2-N-2: Ranging slots
-			} else if(_lwb_counter < (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US - LWB_SLOTS_PER_RANGE)) {
-
-				if(_lwb_schedule_callback && _lwb_scheduled && 
-				   (((_lwb_counter - 2)/LWB_SLOTS_PER_RANGE) == _lwb_timeslot) &&
-				   ((_lwb_counter - 2) % LWB_SLOTS_PER_RANGE == 0)){
-					// Our scheduled timeslot!  Call the timeslot callback which will likely kick off a ranging event
-					// Note: If all slots should be used (i.e. we wrap the schedule around), substitute "== _lwb_timeslot" with "% _lwb_num_timeslots == _lwb_mod_timeslot"
-					_lwb_schedule_callback();
-				}
-
 			// LWB Slot N-1: Get ready for next glossy flood
-			} else if(_lwb_counter == (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-2){
+			}  else if(_lwb_counter == (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
 
 				// Make sure we're in RX mode, ready for next glossy sync flood!
 				//dwt_setdblrxbuffmode(FALSE);
 				glossy_enable_reception();
+
+			// LWB Slot > N: Invalid counter value
+			} else if (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1) {
+				debug_msg("WARNING: LWB counter overshooting, currently at ");
+				debug_msg_int(_lwb_counter);
+				debug_msg("\n");
+			}
+		}
+
+	} else {
+		debug_msg("ERROR: Unknown Glossy role!\n");
+	}
+
+	// LWB Slots 2-N-2: Ranging slots
+	if(1 < _lwb_counter &&
+	       _lwb_counter < (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US - LWB_SLOTS_PER_RANGE)) {
+
+		if( _lwb_scheduled &&
+		   ( ((_lwb_counter - 2) / LWB_SLOTS_PER_RANGE) == _lwb_timeslot) &&
+		   ( ((_lwb_counter - 2) % LWB_SLOTS_PER_RANGE) == 0            ) ) {
+			// Our scheduled timeslot!  Call the timeslot callback which will likely kick off a ranging event
+			// Note: If all slots should be used (i.e. we wrap the schedule around), substitute "== _lwb_timeslot" with "% _lwb_num_timeslots == _lwb_mod_timeslot"
+			if (_lwb_schedule_callback) {
+				_lwb_schedule_callback();
+			} else {
+				debug_msg("ERROR: Invalid LWB callback function!\n");
 			}
 		}
 	}
@@ -432,6 +454,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ){
 
 		    debug_msg("Received schedule request\n");
+
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
 			uint64_t actual_turnaround = (dw_timestamp - ((uint64_t)(_last_delay_time) << 8)) & 0xFFFFFFFFFFUL;//in_glossy_sched_req->turnaround_time;
 			const uint8_t header[] = {0x80, 0x01, 0x80, 0x01};
@@ -450,7 +473,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			dw1000_choose_antenna(LWB_ANTENNA);
 			dwt_rxenable(0);
 #else
-			int i, candidate_slot = 0;
+			int i, candidate_slot = -1;
 			for(i = 0; i < MAX_SCHED_TAGS; i++){
 				if(memcmp(_sched_euis[i], in_glossy_sched_req->tag_sched_eui, EUI_LEN) == 0){
 					_sync_pkt.tag_sched_idx = i;
@@ -461,14 +484,27 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 				}
 			}
 
-			memcpy(_sched_euis[candidate_slot], in_glossy_sched_req->tag_sched_eui, EUI_LEN);
-			memcpy(_sync_pkt.tag_sched_eui, _sched_euis[candidate_slot], EUI_LEN);
-			if(in_glossy_sched_req->deschedule_flag)
-				_sync_pkt.tag_ranging_mask &= ~((uint64_t)(1) << candidate_slot);
-			else
-				_sync_pkt.tag_ranging_mask |= (uint64_t)(1) << candidate_slot;
-			_sync_pkt.tag_sched_idx = candidate_slot;
-			_tag_timeout[candidate_slot] = 0;
+			if (candidate_slot == -1) {
+			    debug_msg("WARNING: No more ranging slots available!\n");
+			} else {
+
+			    /*debug_msg("Found candidate slot for EUI ");
+			    helper_print_EUI(in_glossy_sched_req->tag_sched_eui);
+			    debug_msg(": ");
+			    debug_msg_int(candidate_slot);*/
+
+                memcpy(_sched_euis[candidate_slot], in_glossy_sched_req->tag_sched_eui, EUI_LEN);
+                memcpy(_sync_pkt.tag_sched_eui,     in_glossy_sched_req->tag_sched_eui, EUI_LEN);
+
+                if (in_glossy_sched_req->deschedule_flag) {
+                    _sync_pkt.tag_ranging_mask &= ~((uint64_t) (1) << candidate_slot);
+                } else {
+                    _sync_pkt.tag_ranging_mask |= (uint64_t) (1) << candidate_slot;
+                }
+
+                _sync_pkt.tag_sched_idx = (uint8_t)candidate_slot;
+                _tag_timeout[candidate_slot] = 0;
+            }
 #endif
 		}
 		else {
@@ -517,17 +553,26 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			}
 #endif
 
+            /*debug_msg("Scheduled node with EUI ");
+            helper_print_EUI(in_glossy_sync->tag_sched_eui);
+            debug_msg(" in slot ");
+            debug_msg_int(_lwb_timeslot);
+            debug_msg("\n");*/
+
 			// First check to see if this sync packet contains a schedule update for this node
-			if(memcmp(in_glossy_sync->tag_sched_eui, _sched_req_pkt.tag_sched_eui, EUI_LEN) == 0){
+			if(memcmp(in_glossy_sync->tag_sched_eui, standard_get_EUI(), EUI_LEN) == 0) {
 				_lwb_timeslot = in_glossy_sync->tag_sched_idx;
 				_lwb_scheduled = TRUE;
 			}
+
 			// Next, make sure the tag is still scheduled
-			if(_lwb_scheduled && ((in_glossy_sync->tag_ranging_mask & ((uint64_t)(1) << _lwb_timeslot)) == 0))
-				_lwb_scheduled = FALSE;
+			if(_lwb_scheduled && ((in_glossy_sync->tag_ranging_mask & ((uint64_t)(1) << _lwb_timeslot)) == 0)) {
+                _lwb_scheduled = FALSE;
+            }
+
 			_lwb_num_timeslots = uint64_count_ones(in_glossy_sync->tag_ranging_mask);
 
-			debug_msg("Scheduled tags this round: ");
+			debug_msg("Scheduled nodes this round: ");
 			debug_msg_int(_lwb_num_timeslots);
 			debug_msg("\r\n");
 
@@ -558,7 +603,6 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 
 					// Since we're sync'd, we should make sure to reset our LWB window timer
 					_lwb_counter = 0;
-					_lwb_valid = TRUE;
 					timer_reset(_glossy_timer, ((uint32_t)(in_glossy_sync->header.seqNum))*GLOSSY_FLOOD_TIMESLOT_US);
 
 					// Update DW1000's crystal trim to account for observed PPM offset

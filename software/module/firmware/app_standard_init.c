@@ -75,8 +75,8 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
     memcpy(si_scratch->pp_tag_poll_pkt.header.sourceAddr, standard_get_EUI(), EUI_LEN);
 
 	// Create a timer for use when sending ranging broadcast packets
-	if (si_scratch->tag_timer == NULL) {
-		si_scratch->tag_timer = timer_init();
+	if (si_scratch->init_timer == NULL) {
+		si_scratch->init_timer = timer_init();
 	}
 
 	// Reset our state because nothing should be in progress if we call init()
@@ -132,7 +132,7 @@ dw1000_err_e standard_init_start_ranging_event () {
 	si_scratch->ranging_broadcast_ss_num = 0;
 
 	// Start a timer that will kick off the broadcast ranging events
-	timer_start(si_scratch->tag_timer, RANGING_BROADCASTS_PERIOD_US, ranging_broadcast_subsequence_task);
+	timer_start(si_scratch->init_timer, RANGING_BROADCASTS_PERIOD_US, ranging_broadcast_subsequence_task);
 
 	//debug_msg("Started ranging...\n");
 
@@ -148,7 +148,7 @@ void standard_init_stop () {
 	standard_set_init_active(FALSE);
 
 	// Stop the timer in case it was in use
-	timer_stop(si_scratch->tag_timer);
+	timer_stop(si_scratch->init_timer);
 
 	// Deschedule the tag's LWB slot since we're done
 	//glossy_deschedule();
@@ -182,7 +182,7 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 			//debug_msg("Finished ranging. Waiting for responses from anchors...\n");
 
 			// Start a timer to switch between the windows
-			timer_start(si_scratch->tag_timer, RANGING_LISTENING_WINDOW_US + RANGING_LISTENING_WINDOW_PADDING_US*2, ranging_listening_window_task);
+			timer_start(si_scratch->init_timer, RANGING_LISTENING_WINDOW_US + RANGING_LISTENING_WINDOW_PADDING_US*2, ranging_listening_window_task);
 
 		} else {
 			// We don't need to do anything on TX done for any other states
@@ -191,7 +191,7 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 	} else {
 		// Some error occurred, don't just keep trying to send packets.
 		debug_msg("ERROR: Failed in sending packet!\n");
-		timer_stop(si_scratch->tag_timer);
+		timer_stop(si_scratch->init_timer);
 	}
 
 }
@@ -366,7 +366,7 @@ static void ranging_broadcast_subsequence_task () {
 	if (si_scratch->ranging_broadcast_ss_num == NUM_RANGING_BROADCASTS-1) {
 		// This is our last packet to send. Stop the timer so we don't generate
 		// more packets.
-		timer_stop(si_scratch->tag_timer);
+		timer_stop(si_scratch->init_timer);
 
 		// Also update the state to say that we are moving to RX mode
 		// to listen for responses from the anchor
@@ -387,7 +387,7 @@ static void ranging_listening_window_task () {
 
 	// Stop after the last of the receive windows
 	if (si_scratch->ranging_listening_window_num == NUM_RANGING_LISTENING_WINDOWS) {
-		timer_stop(si_scratch->tag_timer);
+		timer_stop(si_scratch->init_timer);
 
 		// Stop the radio
 		dwt_forcetrxoff();
@@ -428,8 +428,8 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 			num_anchor_ranges++;
 
 			/*debug_msg("Range to anchor ");
-			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] >> 4);
-			debug_msg_hex(anchor_responses[i].anchor_addr[EUI_LEN-1] & 0x0F);
+			debug_msg_hex(anchor_responses[i].anchor_addr[0] >> 4);
+			debug_msg_hex(anchor_responses[i].anchor_addr[0] & 0x0F);
 			debug_msg(": ");
 			debug_msg_uint((uint32_t)ranges_millimeters[i]);
 			debug_msg("\n");*/
