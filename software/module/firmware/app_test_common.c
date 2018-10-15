@@ -36,7 +36,7 @@ union app_scratchspace {
 // ---------------------------------------------------------------------------------------------------------------------
 
 // This sets the settings for this node and initializes the node.
-void rangetest_configure (module_config_t* config, stm_timer_t* app_timer) {
+void rangetest_configure (module_config_t* config) {
 
 	// Save the settings
 	_config.my_role     = config->my_role;
@@ -87,9 +87,9 @@ void rangetest_start () {
 // subseq_num: where in the sequence we are
 void rangetest_set_ranging_broadcast_settings (module_role_e role, uint8_t subseq_num) {
 	// Stop the transceiver on the anchor. Don't know why.
-	//if (role == ANCHOR) {
+	/*if (role == ANCHOR) {
 		dwt_forcetrxoff();
-	//}
+	}*/
 
 	// Change the channel depending on what subsequence number we're at
     dw1000_update_channel(1);
@@ -116,7 +116,7 @@ dwt_config_t simpletest_config = {
 
 // This function will call the most basic Rx / Tx example, without making use of any other callbacks or initializations
 // This sets the settings for this node and initializes the node.
-void simpletest_configure (module_config_t* config, stm_timer_t* app_timer) {
+void simpletest_configure (module_config_t* config) {
 
     // Save the settings
     _config.my_role     = config->my_role;

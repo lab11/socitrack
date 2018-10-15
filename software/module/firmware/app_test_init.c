@@ -160,7 +160,7 @@ static void tag_rxcallback (const dwt_cb_data_t* rxd) {
 		// We have to process it to ensure that it is a packet we are expecting
 		// to get.
 
-		uint64_t dw_rx_timestamp;
+		/*uint64_t dw_rx_timestamp;
 		uint8_t  buf[RANGETEST_TAG_MAX_RX_PKT_LEN];
 		uint8_t  message_type;
 
@@ -169,7 +169,7 @@ static void tag_rxcallback (const dwt_cb_data_t* rxd) {
 
 		// Get the actual packet bytes
 		dwt_readrxdata(buf, MIN(RANGETEST_TAG_MAX_RX_PKT_LEN, rxd->datalength), 0);
-		message_type = buf[offsetof(struct pp_anc_final, message_type)];
+		message_type = buf[offsetof(struct pp_anc_final, message_type)];*/
 
 	} else {
 		// Packet was NOT received correctly. Need to do some re-configuring

@@ -142,21 +142,12 @@ typedef struct {
 	bool    sleep_mode;
 } module_config_t;
 
-typedef struct {
-	uint8_t  anchor_addr[EUI_LEN];
-	uint8_t  anchor_final_antenna_index; // The antenna the anchor used when it responded.
-	uint8_t  window_packet_recv;         // The window the tag was in when it received the packet from the anchor.
-	uint64_t anc_final_tx_timestamp; // When the anchor node sent the ANC_FINAL
-	uint64_t anc_final_rx_timestamp; // When the tag received the ANC_FINAL
-	uint8_t  tag_poll_first_idx;
-	uint64_t tag_poll_first_TOA;
-	uint8_t  tag_poll_last_idx;
-	uint64_t tag_poll_last_TOA;
-	uint16_t tag_poll_TOAs[NUM_RANGING_BROADCASTS];
-} __attribute__ ((__packed__)) anchor_responses_t;
 
+/******************************************************************************/
+// Public functions
+/******************************************************************************/
 
-void             standard_configure (module_config_t* config, stm_timer_t* app_timer);
+void             standard_configure (module_config_t* config);
 void             standard_start ();
 void             standard_stop ();
 void             standard_reset ();
@@ -182,7 +173,7 @@ uint64_t standard_get_rxdelay_from_subsequence (uint8_t subseq_num);
 uint64_t standard_get_txdelay_from_ranging_listening_window (uint8_t window_num);
 uint64_t standard_get_rxdelay_from_ranging_listening_window (uint8_t window_num);
 
-// TX/RX
+// TX/RX - defined inside app_standard_init and app_standard_resp
 void init_txcallback  (const dwt_cb_data_t *txd);
 void init_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp);
 void resp_txcallback  (const dwt_cb_data_t *txd);

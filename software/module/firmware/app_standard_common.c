@@ -15,8 +15,6 @@
 
 // All of the configuration passed to us by the host for how this application should operate.
 static module_config_t _config;
-// Our local reference to the timer for all of the high-level application code.
-static stm_timer_t* _app_timer;
 
 // Configure the RF channels to use. This is just a mapping from 0..2 to
 // the actual RF channel numbers the DW1000 uses.
@@ -24,10 +22,13 @@ static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = 
 	1, 4, 3
 };
 
-union app_scratchspace {
-	standard_init_scratchspace_struct si_scratch;
-	standard_resp_scratchspace_struct sr_scratch;
-} _app_scratchspace;
+typedef struct  {
+    standard_init_scratchspace_struct si_scratch;
+    standard_resp_scratchspace_struct sr_scratch;
+} standard_scratchspace_struct;
+
+// Scratchspace for both INIT and RESP
+static standard_scratchspace_struct _app_scratchspace;
 
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
@@ -37,13 +38,10 @@ static void common_rxcallback(const dwt_cb_data_t *rxd);
 // ---------------------------------------------------------------------------------------------------------------------
 
 // This sets the settings for this node and initializes the node.
-void standard_configure (module_config_t* config, stm_timer_t* app_timer) {
+void standard_configure (module_config_t* config) {
 
 	// Save the settings
 	memcpy(&_config, config, sizeof(module_config_t));
-
-	// Save the application timer for use by this application
-	//_app_timer = app_timer;
 
 	// Set scratchspace to known zeros
 	memset(&_app_scratchspace, 0, sizeof(_app_scratchspace));

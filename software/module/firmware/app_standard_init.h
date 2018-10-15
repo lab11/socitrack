@@ -15,6 +15,19 @@ typedef enum {
 	ISTATE_CALCULATE_RANGE
 } init_state_e;
 
+typedef struct {
+    uint8_t  anchor_addr[EUI_LEN];
+    uint8_t  anchor_final_antenna_index; // The antenna the anchor used when it responded.
+    uint8_t  window_packet_recv;         // The window the tag was in when it received the packet from the anchor.
+    uint64_t anc_final_tx_timestamp; // When the anchor node sent the ANC_FINAL
+    uint64_t anc_final_rx_timestamp; // When the tag received the ANC_FINAL
+    uint8_t  tag_poll_first_idx;
+    uint64_t tag_poll_first_TOA;
+    uint8_t  tag_poll_last_idx;
+    uint64_t tag_poll_last_TOA;
+    uint16_t tag_poll_TOAs[NUM_RANGING_BROADCASTS];
+} __attribute__ ((__packed__)) anchor_responses_t;
+
 // ERRORS for reporting to the TAG host what happened with ranges from different
 // anchors. If an anchor didn't respond or the packet didn't go through then
 // it will not be included. If the anchor did respond, then it will be included,

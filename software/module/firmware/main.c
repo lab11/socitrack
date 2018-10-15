@@ -42,9 +42,6 @@ static app_state_e _state = APPSTATE_NOT_INITED;
 // Keep track of what application we are running
 static module_application_e _current_app;
 
-// Timer for doing periodic operations (like TAG ranging events)
-static stm_timer_t* _app_timer;
-
 
 void start_dw1000 ();
 
@@ -101,14 +98,14 @@ void module_configure_app (module_application_e app, void* app_config) {
 	_current_app = app;
 	switch (_current_app) {
 		case APP_STANDARD:
-			standard_configure((module_config_t*) app_config, NULL);
+			standard_configure((module_config_t*) app_config);
 			break;
 		case APP_RANGETEST:
-			rangetest_configure((module_config_t*) app_config, NULL);
+			rangetest_configure((module_config_t*) app_config);
 			break;
 	    case APP_SIMPLETEST:
 	        // In contrast to normal applications, this function will never return
-	        simpletest_configure((module_config_t*) app_config, NULL);
+	        simpletest_configure((module_config_t*) app_config);
 	        break;
 
 		default:
@@ -175,9 +172,6 @@ void module_reset () {
 
 	// Put the app back in the not inited state
 	_state = APPSTATE_NOT_INITED;
-
-	// Stop the timer in case it was in use.
-	//timer_stop(_app_timer);
 
 	// Init the dw1000, and loop until it works.
 	// start does a reset.
@@ -353,9 +347,6 @@ int main () {
     USART_Init(USART1, &usartConfig);
 
     USART_Cmd(USART1, ENABLE);*/
-
-    // In case we need a timer, get one. This is used for things like periodic ranging events.
-	//_app_timer = timer_init();
 
 #if (BOARD_V == SQUAREPOINT)
 	// Signal that internal setup is finished by setting RED
