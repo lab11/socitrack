@@ -453,7 +453,8 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 void helper_print_EUI(uint8_t * address) {
 
     for (uint8_t i = 0; i < EUI_LEN; i++) {
-        debug_msg_hex(address[i]);
+    	debug_msg_hex(address[i] >> 0x04);
+        debug_msg_hex(address[i] &  0x0F);
 
         if (i < (EUI_LEN - 1))
         	debug_msg(":");
