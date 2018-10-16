@@ -234,9 +234,16 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 			if (!anc_already_found) {
 
                 /*debug_msg("Received an Anchor response packet from ");
-                debug_msg_hex(anc_final->ieee154_header_unicast.sourceAddr[0] >> 4);
-                debug_msg_hex(anc_final->ieee154_header_unicast.sourceAddr[0] & 0x0F);
-                debug_msg("\r\n");*/
+                helper_print_EUI(anc_final->ieee154_header_unicast.sourceAddr);
+                debug_msg("\r\n");
+
+                debug_msg("First index: ");
+                debug_msg_int(anc_final->first_rxd_idx);
+                debug_msg("; last index: ");
+                debug_msg_int(anc_final->last_rxd_idx);
+                debug_msg("; length of packet: ");
+                debug_msg_uint(rxd->datalength);
+                debug_msg("\n");*/
 
 				// Save the anchor address
 				memcpy(si_scratch->anchor_responses[si_scratch->anchor_response_count].anchor_addr, anc_final->ieee154_header_unicast.sourceAddr, EUI_LEN);
@@ -534,8 +541,7 @@ static void calculate_ranges () {
 		anchor_responses_t* aresp = &(si_scratch->anchor_responses[anchor_index]);
 
 		debug_msg("Anchor ID: ");
-        debug_msg_hex(aresp->anchor_addr[0] >> 4);
-        debug_msg_hex(aresp->anchor_addr[0] & 0x0F);
+		helper_print_EUI(aresp->anchor_addr);
 		debug_msg("; First index: ");
 		debug_msg_int(aresp->tag_poll_first_idx);
 		debug_msg("; last index: ");

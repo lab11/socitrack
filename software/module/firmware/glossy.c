@@ -284,9 +284,13 @@ void glossy_sync_task(){
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			}
 #endif
+
+            // There is nothing else to do in this round; as we are not in sync, we do not want to use the slot for ranging
+            return;
+
 		} else if (_lwb_in_sync) {
 
-			// IN SYNC: See what round we are in
+			// IN SYNC: Figure out what to do for the given slot
 
 			// LWB Slot 1: Contention slot
 			if(_lwb_counter == 1) {
@@ -348,9 +352,10 @@ void glossy_sync_task(){
 		debug_msg("ERROR: Unknown Glossy role!\n");
 	}
 
+	// Both Master and Slave can do ranging if they are scheduled
 	// LWB Slots 2-N-2: Ranging slots
-	if(1 < _lwb_counter &&
-	       _lwb_counter < (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US - LWB_SLOTS_PER_RANGE)) {
+	if( (1 < _lwb_counter) &&
+        (    _lwb_counter < (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US - LWB_SLOTS_PER_RANGE)) ) {
 
 		if( _lwb_scheduled &&
 		   ( ((_lwb_counter - 2) / LWB_SLOTS_PER_RANGE) == _lwb_timeslot) &&

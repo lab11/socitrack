@@ -166,6 +166,12 @@ static void ranging_listening_window_task () {
 			debug_msg_int(sr_scratch->resp_antenna_recv_num[2]);
 			debug_msg("\n");
 
+            /*debug_msg("; First index: ");
+            debug_msg_int(sr_scratch->pp_anc_final_pkt.first_rxd_idx);
+            debug_msg("; last index: ");
+            debug_msg_int(sr_scratch->pp_anc_final_pkt.last_rxd_idx);
+            debug_msg("\n");*/
+
 			dwt_forcetrxoff();
 	
 			// Setup the channel and antenna settings
@@ -177,7 +183,7 @@ static void ranging_listening_window_task () {
 			// tag with our TOAs.
 			sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.seqNum = ranval(&(sr_scratch->prng_state)) & 0xFF;
 			const uint16_t frame_len = sizeof(struct pp_anc_final);
-			// const uint16_t frame_len = sizeof(struct pp_anc_final) - (sizeof(uint64_t)*NUM_RANGING_BROADCASTS);
+
 			dwt_writetxfctrl(frame_len, 0, MSG_TYPE_RANGING);
 	
 			// Pick a slot to respond in. Generate a random number and mod it
@@ -203,8 +209,7 @@ static void ranging_listening_window_task () {
 			sr_scratch->pp_anc_final_pkt.dw_time_sent = (((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_ranging_listening_window(sr_scratch->ranging_listening_window_num);
 	
 			// Send the response packet
-			// TODO: handle if starttx errors. I'm not sure what to do about it,
-			//       other than just wait for the next slot.
+			// TODO: handle if starttx errors. I'm not sure what to do about it, other than just wait for the next slot.
 			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
 			dwt_writetxdata(frame_len, (uint8_t*) &(sr_scratch->pp_anc_final_pkt), 0);
@@ -385,14 +390,6 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 						// Regardless, it's a good idea to immediately call the subsequence task and restart the timer
 						timer_reset(sr_scratch->resp_timer, RANGING_BROADCASTS_PERIOD_US - 120); // Magic number calculated from timing
-						//ranging_broadcast_subsequence_task();
-						//timer_reset(sr_scratch->resp_timer, 0);
-
-						//// Check to see if we got the last of the ranging broadcasts
-						//if (sr_scratch->ranging_broadcast_ss_num == sr_scratch->ranging_operation_config.reply_after_subsequence) {
-						//	// We did!
-						//	ranging_listening_window_setup();
-						//}
 
 					} else {
 						// Not the same tag, ignore
