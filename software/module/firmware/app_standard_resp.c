@@ -1,8 +1,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "deca_device_api.h"
-#include "deca_regs.h"
 #include "dw1000.h"
 
 #include "timer.h"
@@ -10,6 +8,7 @@
 #include "SEGGER_RTT.h"
 
 #include "firmware.h"
+#include "module_conf.h"
 
 #include "app_standard_common.h"
 #include "app_standard_resp.h"

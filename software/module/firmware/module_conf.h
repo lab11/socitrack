@@ -34,4 +34,11 @@
 	#define RANGING_LISTENING_WINDOW_PADDING_US 2000 // This must be large enough so that setup can always occur, even for small EUIs (which influence the random state of the app)
 #endif
 
-#endif
+// Protocol adaptation -------------------------------------------------------------------------------------------------
+
+// Allow hybrids to continue responding after they finished their own rangings
+#define PROTOCOL_REENABLE_HYBRIDS
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+#endif /*__MODULE_CONF_H*/

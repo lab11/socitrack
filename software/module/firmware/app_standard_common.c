@@ -1,11 +1,13 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "dw1000.h"
+
 #include "timer.h"
 #include "SEGGER_RTT.h"
 
 #include "firmware.h"
-#include "dw1000.h"
+#include "module_conf.h"
 
 #include "app_standard_common.h"
 #include "app_standard_init.h"
@@ -52,7 +54,7 @@ void standard_configure (module_config_t* config) {
     // Set EUI
     dw1000_read_eui(_config.my_EUI);
     // FIXME: Load actual EUI to FLASH
-    _config.my_EUI[0] = 0x01;
+    _config.my_EUI[0] = 0xF0;
 
 	// Now init based on role
 	_config.init_active = FALSE;

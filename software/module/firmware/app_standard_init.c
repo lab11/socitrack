@@ -1,8 +1,6 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "deca_device_api.h"
-#include "deca_regs.h"
 #include "dw1000.h"
 
 #include "timer.h"
@@ -11,8 +9,10 @@
 
 #include "host_interface.h"
 #include "firmware.h"
+#include "module_conf.h"
 
 #include "app_standard_init.h"
+#include "app_standard_resp.h"
 
 // APPLICATION STATE ---------------------------------------------------------------------------------------------------
 
@@ -401,6 +401,13 @@ static void ranging_listening_window_task () {
 
 		// End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
 		standard_set_init_active(FALSE);
+
+#ifdef PROTOCOL_REENABLE_HYBRIDS
+        // Reenable hybrid nodes after their ranging slot, so that they can respond to others
+        if (standard_is_resp_enabled() && standard_is_init_enabled()) {
+            standard_resp_start();
+        }
+#endif
 
 		// This function finishes up this ranging event.
 		report_range();

@@ -367,6 +367,20 @@ void glossy_sync_task(){
 			} else {
 				debug_msg("ERROR: Invalid LWB callback function!\n");
 			}
+		} else {
+
+		    // Turn off reception after the start of the round if one is not a RESP; INIT start transmit in their slot
+		    if (_lwb_counter == 2) {
+
+		        if (standard_is_resp_enabled()) {
+                    // Enable responders
+                    standard_set_resp_active(TRUE);
+		        } else {
+		            // Turn transceiver off (save energy)
+		            dwt_forcetrxoff();
+		        }
+
+		    }
 		}
 	}
 }
@@ -480,12 +494,15 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 #else
 			int i, candidate_slot = -1;
 			for(i = 0; i < MAX_SCHED_TAGS; i++){
-				if(memcmp(_sched_euis[i], in_glossy_sched_req->tag_sched_eui, EUI_LEN) == 0){
-					_sync_pkt.tag_sched_idx = i;
+
+				if(memcmp(_sched_euis[i], in_glossy_sched_req->tag_sched_eui, EUI_LEN) == 0) {
+                    // Already scheduled
 					candidate_slot = i;
 					break;
-				} else if((_sync_pkt.tag_ranging_mask & ((uint64_t)(1) << i)) == 0){
+				} else if((_sync_pkt.tag_ranging_mask & ((uint64_t)(1) << i)) == 0) {
+				    // Open slot
 					candidate_slot = i;
+					break;
 				}
 			}
 
@@ -645,11 +662,6 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			}
 
 			_last_sync_timestamp = dw_timestamp - (_glossy_flood_timeslot_corrected_us * in_glossy_sync->header.seqNum);
-
-			// Enable responders
-			if (standard_is_resp_enabled()) {
-				standard_set_resp_active(TRUE);
-			}
 
 		} else {
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy slave!\n");
