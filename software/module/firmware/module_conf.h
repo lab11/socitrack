@@ -29,7 +29,7 @@
 	#define DW1000_DATA_RATE             DWT_BR_6M8
 	#define DW1000_SMART_PWR_EN          1
 	#define DW1000_SFD_TO                (64 + 1 + 8 - 8) /* (Preamble length + 1 + SFD length - PAC size) */
-	#define RANGING_BROADCASTS_PERIOD_US 1000
+	#define RANGING_BROADCASTS_PERIOD_US 2000
 	#define RANGING_LISTENING_WINDOW_US  8000
 	#define RANGING_LISTENING_WINDOW_PADDING_US 1100
 #endif
