@@ -37,7 +37,7 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 
 	// Initialize important variables inside scratchspace
 	si_scratch->pp_tag_poll_pkt = (struct pp_tag_poll) {
-		{ // 802.15.4 HEADER
+		.header = { // 802.15.4 HEADER
 			{
 				0x41, // FCF[0]: data frame, panid compression
 				0xC8  // FCF[1]: ext source address, compressed destination
@@ -54,18 +54,21 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 			{ 0 }     // Source (blank for now)
 		},
 		// PACKET BODY
-		MSG_TYPE_PP_NOSLOTS_TAG_POLL,  // Message type
-		0,                             // Sub Sequence number
-		NUM_RANGING_BROADCASTS-1,
-		RANGING_LISTENING_WINDOW_US,
-		RANGING_LISTENING_SLOT_US,
-		{ { 0 } }
+		.message_type = MSG_TYPE_PP_NOSLOTS_TAG_POLL,  // Message type
+		.subsequence  = 0,                             // Sub Sequence number
+		.reply_after_subsequence      = NUM_RANGING_BROADCASTS-1,
+		.anchor_reply_window_in_us    = RANGING_LISTENING_WINDOW_US,
+		.anchor_reply_slot_time_in_us = RANGING_LISTENING_SLOT_US,
+		.footer = {
+            { 0 }
+		}
 	};
 
 	// Make sure the SPI speed is slow for this function
 	dw1000_spi_slow();
 
-	dwt_setdblrxbuffmode(TRUE);//FALSE);
+	// FIXME: Is the double receiver buffer necessary / useful?
+	//dwt_setdblrxbuffmode(TRUE);//FALSE);
 	dwt_enableautoack(DW1000_ACK_RESPONSE_TIME);
 
 	// Make SPI fast now that everything has been setup

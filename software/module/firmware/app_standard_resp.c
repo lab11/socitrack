@@ -328,19 +328,20 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 						// Record the EUI of the tag so that we don't get mixed up
 						memcpy(sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.destAddr, rx_poll_pkt->header.sourceAddr, 8);
+
 						// Record which ranging subsequence the tag is on
 						sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
-						// Record the timestamp. Need to subtract off the TX+RX delay from each recorded
-						// timestamp.
+
+						// Record the timestamp. Need to subtract off the TX+RX delay from each recorded timestamp.
 						sr_scratch->pp_anc_final_pkt.first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
 						sr_scratch->pp_anc_final_pkt.first_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
-						sr_scratch->pp_anc_final_pkt.TOAs[sr_scratch->ranging_broadcast_ss_num] =
-							(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
-						// Also record parameters the tag has sent us about how to respond
-						// (or other operational parameters).
-						sr_scratch->ranging_operation_config.reply_after_subsequence = rx_poll_pkt->reply_after_subsequence;
-						sr_scratch->ranging_operation_config.resp_reply_window_in_us = rx_poll_pkt->anchor_reply_window_in_us;
-						sr_scratch->ranging_operation_config.resp_reply_slot_time_in_us = rx_poll_pkt->anchor_reply_slot_time_in_us;
+
+						sr_scratch->pp_anc_final_pkt.TOAs[sr_scratch->ranging_broadcast_ss_num] = (dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+
+						// Also record parameters the tag has sent us about how to respond (or other operational parameters).
+						sr_scratch->ranging_operation_config.reply_after_subsequence    = NUM_RANGING_BROADCASTS - 1;  //rx_poll_pkt->reply_after_subsequence;
+						sr_scratch->ranging_operation_config.resp_reply_window_in_us    = RANGING_LISTENING_WINDOW_US; //rx_poll_pkt->anchor_reply_window_in_us;
+						sr_scratch->ranging_operation_config.resp_reply_slot_time_in_us = RANGING_LISTENING_SLOT_US;   //rx_poll_pkt->anchor_reply_slot_time_in_us;
 
 						// Update the statistics we keep about which antenna
 						// receives the most packets from the tag

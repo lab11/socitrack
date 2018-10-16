@@ -54,7 +54,7 @@ void standard_configure (module_config_t* config) {
     // Set EUI
     dw1000_read_eui(_config.my_EUI);
     // FIXME: Load actual EUI to FLASH
-    _config.my_EUI[0] = 0xF0;
+    _config.my_EUI[0] = APP_EUI_FIRST_BYTE;
 
 	// Now init based on role
 	_config.init_active = FALSE;
@@ -123,7 +123,7 @@ void standard_start () {
 	// Make sure the SPI speed is slow for this function
 	dw1000_spi_slow();
 
-	// Setup callbacks to this ANCHOR
+	// Setup general callbacks
 	dwt_setcallbacks(common_txcallback, common_rxcallback, common_rxcallback, common_rxcallback);
 
 	// Make sure the radio starts off
@@ -133,6 +133,7 @@ void standard_start () {
 	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
 
 	// Don't use these
+	dwt_setdblrxbuffmode(FALSE);
 	dwt_setrxtimeout(FALSE);
 
 	// Make SPI fast now that everything has been setup
