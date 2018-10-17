@@ -65,12 +65,11 @@
 
 #define MSG_MAX_PACK_LEN	296
 
-// Message types that identify the UWB packets. Very reminiscent of
-// Active Messages from the TinyOS days.
+// Message types that identify the UWB packets.
 #define MSG_TYPE_PP_NOSLOTS_TAG_POLL  0x80
 #define MSG_TYPE_PP_NOSLOTS_ANC_FINAL 0x81
 #define MSG_TYPE_PP_GLOSSY_SYNC       0x82
-#define MSG_TYPE_PP_GLOSSY_SCHED_REQ  0x83
+#define MSG_TYPE_PP_GLOSSY_SIGNAL  	  0x83
 
 // Used to show whether message is a ranging packet or not
 #define MSG_TYPE_CONTROL	0

@@ -86,8 +86,7 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 	si_scratch->state = ISTATE_IDLE;
 
 	// LWB now schedules all of our ranging events!
-	lwb_set_sched_request(TRUE);
-	lwb_set_sched_callback(standard_init_start_ranging_event);
+	lwb_set_init_callback(standard_init_start_ranging_event);
 }
 
 // This starts a ranging event by causing the tag to send a series of ranging broadcasts.
@@ -516,7 +515,7 @@ static void report_range () {
 	// Decide what we should do with these ranges. We can either report
 	// these right back to the host, or we can try to get the anchors
 	// to calculate location.
-	module_report_mode_e report_mode = standard_get_config()->report_mode;
+	//module_report_mode_e report_mode = standard_get_config()->report_mode;
 
 	// We're done, so go to idle.
 	si_scratch->state = ISTATE_IDLE;

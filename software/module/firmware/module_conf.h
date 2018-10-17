@@ -39,6 +39,14 @@
 // Allow hybrids to continue responding after they finished their own rangings
 #define PROTOCOL_REENABLE_HYBRIDS
 
+#define PROTOCOL_INIT_SCHED_MAX     10
+#define PROTOCOL_RESP_SCHED_MAX     10
+
+#define PROTOCOL_EUI_LEN            1  // Only use the first byte of the EUI to distinguish between nodes
+
+#define PROTOCOL_INIT_SCHED_OFFSET  0
+#define PROTOCOL_RESP_SCHED_OFFSET  (PROTOCOL_INIT_SCHED_OFFSET + PROTOCOL_INIT_SCHED_MAX)
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 #endif /*__MODULE_CONF_H*/

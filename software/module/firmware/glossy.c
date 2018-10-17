@@ -15,12 +15,13 @@
 #include "prng.h"
 #include "SEGGER_RTT.h"
 
-void send_sync(uint32_t delay_time);
+// APPLICATION STATE ---------------------------------------------------------------------------------------------------
 
-static stm_timer_t* 			 _glossy_timer;
-static struct pp_sched_flood 	 _sync_pkt;
-static struct pp_sched_req_flood _sched_req_pkt;
-static glossy_role_e 			 _role;
+static glossy_role_e _role;
+
+static stm_timer_t*  _glossy_timer;
+
+static ranctx        _prng_state;
 
 static uint8_t  _last_sync_depth;
 static uint64_t _last_sync_timestamp;
@@ -29,7 +30,6 @@ static uint64_t _time_overflow;
 static uint64_t _last_time_sent;
 static uint64_t _glossy_flood_timeslot_corrected_us;
 static uint32_t _last_delay_time;
-static bool  	_lwb_in_sync;
 static uint8_t  _xtal_trim;
 static uint8_t  _last_xtal_trim;
 static bool     _sending_sync;
@@ -37,32 +37,52 @@ static uint32_t _lwb_counter;
 static uint8_t  _cur_glossy_depth;
 static bool     _glossy_currently_flooding;
 
+static bool  	_lwb_in_sync;
 static bool     _lwb_sched_en;
-static bool     _lwb_scheduled;
-static uint32_t _lwb_num_timeslots;
-static uint32_t _lwb_timeslot;
-static uint32_t _lwb_mod_timeslot;
-static void (*_lwb_schedule_callback)(void);
+static bool     _lwb_scheduled_init;
+static bool     _lwb_scheduled_resp;
+static uint32_t _lwb_num_timeslots_total;
+static uint32_t _lwb_num_timeslots_init;
+static uint32_t _lwb_num_timeslots_resp;
+static uint32_t _lwb_num_timeslots_cont;
+static uint32_t _lwb_timeslot_init;
+static uint32_t _lwb_timeslot_resp;
+static void (*_lwb_init_callback)(void);
+static void (*_lwb_resp_callback)(void);
 static double _clock_offset;
 
-static uint8_t _sched_euis [MAX_SCHED_TAGS][EUI_LEN];
-static uint8_t _tag_timeout[MAX_SCHED_TAGS];
+static struct pp_sched_flood  _sync_pkt;
+static        uint8_t         _sync_pkt_buffer[sizeof(struct pp_sched_flood)]; // We will copy the bytes into this buffer before sending the packet
 
-static ranctx _prng_state;
+static struct pp_signal_flood _signal_pkt;
+
+static uint8_t _init_sched_euis [PROTOCOL_INIT_SCHED_MAX][PROTOCOL_EUI_LEN];
+static uint8_t _resp_sched_euis [PROTOCOL_RESP_SCHED_MAX][PROTOCOL_EUI_LEN];
+static uint8_t _sched_timeouts  [PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX];
 
 #ifdef GLOSSY_PER_TEST
 static uint32_t _total_syncs_sent;
 static uint32_t _total_syncs_received;
 #endif
 
-uint8_t uint64_count_ones(uint64_t number){
-	int ii;
-	uint8_t ret = 0;
-	for(ii = 0; ii < 64; ii++){
-		if(number & (1 << ii)) ret++;
-	}
-	return ret;
-}
+// STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
+
+static void    prepare_schedule_signal();
+static uint8_t   schedule_init(uint8_t * eui);
+static uint8_t   schedule_resp(uint8_t * eui);
+static uint8_t deschedule_init(uint8_t * eui);
+static uint8_t deschedule_resp(uint8_t * eui);
+static int 	   check_if_scheduled(uint8_t * array, uint8_t array_length);
+
+static void    increment_sched_timeout();
+
+static void    write_data_to_sync();
+static void	   write_sync_to_packet_buffer();
+static uint8_t get_sync_packet_length(struct pp_sched_flood * packet);
+static void    lwb_send_sync(uint32_t delay_time);
+
+// ---------------------------------------------------------------------------------------------------------------------
+
 
 void glossy_init(glossy_role_e role){
 
@@ -87,19 +107,31 @@ void glossy_init(glossy_role_e role){
 			},
 			.sourceAddr = { 0 },
 		},
-		.message_type     = MSG_TYPE_PP_GLOSSY_SYNC,
-		.tag_ranging_mask = 0,
-		.tag_sched_idx    = 0,
-		.tag_sched_eui    = { 0 }
+		.message_type = MSG_TYPE_PP_GLOSSY_SYNC,
+		.round_length = 0,
+        .init_schedule_length = 0,
+        .resp_schedule_length = 0,
+        //.eui_array            = { 0 },
+        .footer = {
+                { 0 }
+		}
 	};
 
-	memcpy(_sync_pkt.tag_sched_eui, my_eui, EUI_LEN);
+	memset(_sync_pkt.eui_array, 0, sizeof(_sync_pkt.eui_array));
+
+	// Clear its buffer
+	memset(_sync_pkt_buffer, 0, sizeof(_sync_pkt_buffer));
 
 	// Init Glossy packet: Schedule request
-	_sched_req_pkt.header 		   = _sync_pkt.header;
-	_sched_req_pkt.message_type    = MSG_TYPE_PP_GLOSSY_SCHED_REQ;
-	_sched_req_pkt.deschedule_flag = 0;
-	memcpy(_sched_req_pkt.tag_sched_eui, my_eui, EUI_LEN);
+	_signal_pkt = (struct pp_signal_flood) {
+		.header 	  = _sync_pkt.header,
+		.message_type = MSG_TYPE_PP_GLOSSY_SIGNAL,
+		.info_type    = SIGNAL_UNDEFINED,
+		.device_eui   = { 0 },
+		.footer = {
+				{ 0 }
+		}
+	};
 
 	// Seed our random number generator with our EUI
 	raninit(&_prng_state, my_eui[0] << 8 | my_eui[1]);
@@ -120,15 +152,22 @@ void glossy_init(glossy_role_e role){
 	_cur_glossy_depth		= 0;
 	_glossy_currently_flooding = FALSE;
 	_lwb_sched_en 			   = FALSE;
-	_lwb_scheduled 			   = FALSE;
-	_lwb_num_timeslots		   = 0;
-	_lwb_timeslot			   = 0;
-	_lwb_mod_timeslot		   = 0;
-	_lwb_schedule_callback 	   = NULL;
+	_lwb_scheduled_init        = FALSE;
+	_lwb_scheduled_resp        = FALSE;
+	_lwb_num_timeslots_total   = 0;
+	_lwb_num_timeslots_init    = 0;
+	_lwb_num_timeslots_resp	   = 0;
+	_lwb_num_timeslots_cont    = 1;
+	_lwb_timeslot_init		   = 0;
+	_lwb_timeslot_resp		   = 0;
+	_lwb_init_callback 		   = NULL;
+	_lwb_resp_callback		   = NULL;
 	_clock_offset			   = 0;
 
-	memset(_sched_euis,  0, sizeof(_sched_euis));
-	memset(_tag_timeout, 0, sizeof(_tag_timeout));
+	memset(_init_sched_euis,    0, sizeof(_init_sched_euis));
+    memset(_resp_sched_euis,    0, sizeof(_resp_sched_euis));
+    memset(_sched_timeouts,     0, sizeof(_sched_timeouts));
+
 	_glossy_flood_timeslot_corrected_us = (uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8;
 
 #ifdef GLOSSY_PER_TEST
@@ -153,11 +192,28 @@ void glossy_init(glossy_role_e role){
 
 		// If Master itself is also ranging, add it as the first initiator in the schedule
 		if (standard_is_init_enabled()) {
-		    memcpy(_sched_euis[0], standard_get_EUI(), EUI_LEN);
-		    _lwb_sched_en  = TRUE;
-		    _lwb_scheduled = TRUE;
-		    _lwb_timeslot  = 0;
-			_sync_pkt.tag_ranging_mask |= (uint64_t)(1) << 0;
+
+            // Add to schedule
+            memcpy(_init_sched_euis[0], standard_get_EUI(), PROTOCOL_EUI_LEN);
+            _lwb_num_timeslots_init += 1;
+
+            // Local bookkeeping
+		    _lwb_sched_en  		= TRUE;
+		    _lwb_scheduled_init = TRUE;
+		    _lwb_timeslot_init  = 0;
+		}
+
+        // If Master itself is also ranging, add it as the first responder in the schedule
+		if (standard_is_resp_enabled()) {
+
+            // Add to schedule
+            memcpy(_resp_sched_euis[0], standard_get_EUI(), PROTOCOL_EUI_LEN);
+            _lwb_num_timeslots_resp += 1;
+
+            // Local bookkeeping
+            _lwb_sched_en  		= TRUE;
+            _lwb_scheduled_resp = TRUE;
+            _lwb_timeslot_resp  = 0;
 		}
 	}
 
@@ -167,33 +223,30 @@ void glossy_init(glossy_role_e role){
 
 void glossy_start() {
 
+    // Enable the schedule request
+    lwb_set_sched_request(TRUE);
+
     // Kick-off the Glossy timer
     timer_start(_glossy_timer, LWB_SLOT_US, glossy_sync_task);
 }
 
-void increment_sched_timeout(){
-	for(int ii=0; ii < MAX_SCHED_TAGS; ii++){
-		if(_sync_pkt.tag_ranging_mask & ((uint64_t)(1) << ii)){
-			_tag_timeout[ii]++;
-			if(_tag_timeout[ii] == TAG_SCHED_TIMEOUT)
-				_sync_pkt.tag_ranging_mask &= ~((uint64_t)(1) << ii);
-		} else {
-			_tag_timeout[ii] = 0;
-		}
-	}
-
-	// Glossy master verifies that he doesnt kick himself out of the network
-	if (standard_is_init_enabled()) {
-        if (memcmp(_sched_euis[0], standard_get_EUI(), EUI_LEN) == 0) {
-            _tag_timeout[0] = 0;
-        } else {
-            debug_msg("ERROR: Glossy Master did not schedule itself!\n");
-        }
-	}
-}
-
 void glossy_deschedule(){
-	_sched_req_pkt.deschedule_flag = 1;
+
+	// Prevent re-scheduling
+	_lwb_sched_en = FALSE;
+
+	if (standard_is_init_enabled() && standard_is_resp_enabled()) {
+		_signal_pkt.info_type = DESCHED_REQUEST_HYBRID;
+		memcpy(_signal_pkt.device_eui, standard_get_EUI(), PROTOCOL_EUI_LEN);
+	} else if (standard_is_init_enabled()) {
+		_signal_pkt.info_type = DESCHED_REQUEST_INIT;
+		memcpy(_signal_pkt.device_eui, standard_get_EUI(), PROTOCOL_EUI_LEN);
+	} else if (standard_is_resp_enabled()) {
+		_signal_pkt.info_type = DESCHED_REQUEST_RESP;
+		memcpy(_signal_pkt.device_eui, standard_get_EUI(), PROTOCOL_EUI_LEN);
+	} else {
+		debug_msg("WARNING: Configuration does not allow descheduling!\n");
+	}
 }
 
 void glossy_enable_reception() {
@@ -212,10 +265,21 @@ void glossy_sync_task(){
     debug_msg_int(_lwb_counter);
     debug_msg("\n");*/
 
+    // The different round stages:
+	uint8_t lwb_slot_sync 	    = 0;
+	uint8_t lwb_slot_init_start = 1;
+	uint8_t lwb_slot_resp_start = (uint8_t)( lwb_slot_init_start + _lwb_num_timeslots_init );
+	uint8_t lwb_slot_contention = (uint8_t)( lwb_slot_resp_start + _lwb_num_timeslots_resp );
+	uint8_t lwb_slot_last		= (uint8_t)( _lwb_num_timeslots_total - 1 );
+
+	// NOTE: lwb_slot_last != "(GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1"
+	// lwb_slot_last is the last used slot and will be relevant for contention
+	// "(GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1" is the slot directly before the distribution of the next sync and will be used for setup
+
 	if(_role == GLOSSY_MASTER) {
 
-		// LWB Slot 1: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
-		if(_lwb_counter == 1){
+		// LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
+		if(_lwb_counter == lwb_slot_contention){
 
 		    //debug_msg("Listening for requests...\n");
 
@@ -232,7 +296,7 @@ void glossy_sync_task(){
 #endif
 
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
-		} else if(_lwb_counter == (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
+		} else if(_lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ){
 			dwt_forcetrxoff();
 		
 		#ifdef GLOSSY_PER_TEST
@@ -248,9 +312,15 @@ void glossy_sync_task(){
 			dw1000_choose_antenna(LWB_ANTENNA);
 
 			increment_sched_timeout();
+
+			// Copy information to sync packet
+			write_data_to_sync();
+
+			// Copy information into buffer
+			write_sync_to_packet_buffer();
 		
 			_last_time_sent += GLOSSY_UPDATE_INTERVAL_DW;
-			send_sync(_last_time_sent);
+			lwb_send_sync(_last_time_sent);
 			_sending_sync = TRUE;
 
 			debug_msg("Sent LWB schedule\r\n");
@@ -262,7 +332,7 @@ void glossy_sync_task(){
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 #endif
 		// LWB Slot > N: Invalid counter value
-		} else if (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1) {
+		} else if (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ) {
 			debug_msg("WARNING: LWB counter overshooting, currently at ");
 			debug_msg_int(_lwb_counter);
 			debug_msg("\n");
@@ -271,7 +341,7 @@ void glossy_sync_task(){
 	} else if (_role == GLOSSY_SLAVE) {
 
 		// OUT OF SYNC: Force ourselves into RX mode if we still haven't received any sync floods
-		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 5) == 0)) {
+		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 5) == 0) ) {
 
 			glossy_enable_reception();
 
@@ -292,56 +362,66 @@ void glossy_sync_task(){
 
 			// IN SYNC: Figure out what to do for the given slot
 
-			// LWB Slot 1: Contention slot
-			if(_lwb_counter == 1) {
+			// LWB Slot N-C: Contention slot
+			if( (lwb_slot_contention <= _lwb_counter                 ) &&
+				(                       _lwb_counter <= lwb_slot_last)   ) {
 				dw1000_update_channel(LWB_CHANNEL);
 				dw1000_choose_antenna(LWB_ANTENNA);
 
-				if((!_lwb_scheduled && _lwb_sched_en) || _sched_req_pkt.deschedule_flag) {
+				if( (_lwb_sched_en && ( (!_lwb_scheduled_init && standard_is_init_enabled()) ||
+									    (!_lwb_scheduled_resp && standard_is_resp_enabled())   ) ) ||
+					(_signal_pkt.info_type != SIGNAL_UNDEFINED)                                      ) {
 
-				    debug_msg("Sending schedule request...\r\n");
+					// Verify that there is no other signal we might overwrite when sending our schedule request
+					if (_lwb_sched_en && (_signal_pkt.info_type == SIGNAL_UNDEFINED) ) {
+						debug_msg("Sending schedule request...\n");
+
+						prepare_schedule_signal();
+					}
+
+				    debug_msg("Sending signalling packet...\r\n");
 				    standard_set_init_active(TRUE);
 				    standard_set_resp_active(FALSE);
 
 					dwt_forcetrxoff();
 
-					uint16_t frame_len = sizeof(struct pp_sched_req_flood);
+					uint16_t frame_len = sizeof(struct pp_signal_flood);
 					dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 
-					// Send out a schedule request during this contention slot
+					// Send out a signalling packet during this contention slot
 					// Pick a random time offset to avoid colliding with others
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
 					uint32_t sched_req_time = (uint32_t)(_sched_req_pkt.tag_sched_eui[0] - 0x31) * GLOSSY_FLOOD_TIMESLOT_US;
-					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_sched_req_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
+					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
 					double turnaround_time = (double)((((uint64_t)(delay_time) << 8) - _last_sync_timestamp) & 0xFFFFFFFFFFUL);// + DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US)*_last_sync_depth;
 					turnaround_time /= _clock_offset;
 					_sched_req_pkt.turnaround_time = (uint64_t)(turnaround_time);
 					dw1000_choose_antenna(LWB_ANTENNA);
 #else
 					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(LWB_SLOT_US-2*GLOSSY_FLOOD_TIMESLOT_US)) + GLOSSY_FLOOD_TIMESLOT_US;
-					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_sched_req_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
+					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
 #endif
 
 					dwt_setdelayedtrxtime(delay_time);
 					dwt_setrxaftertxdelay(LWB_SLOT_US);
 					dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 					dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-					dwt_writetxdata(sizeof(struct pp_sched_req_flood), (uint8_t*) &_sched_req_pkt, 0);
+					dwt_writetxdata(sizeof(struct pp_signal_flood), (uint8_t*) &_signal_pkt, 0);
 
-					_sched_req_pkt.deschedule_flag = 0;
+					_signal_pkt.info_type = SIGNAL_UNDEFINED;
 				} else {
 					dwt_rxenable(0);
 				}
 
 			// LWB Slot N-1: Get ready for next glossy flood
-			}  else if(_lwb_counter == (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1){
+			}  else if(_lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ){
 
 				// Make sure we're in RX mode, ready for next glossy sync flood!
 				//dwt_setdblrxbuffmode(FALSE);
 				glossy_enable_reception();
 
 			// LWB Slot > N: Invalid counter value
-			} else if (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1) {
+			} else if (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ) {
 				debug_msg("WARNING: LWB counter overshooting, currently at ");
 				debug_msg_int(_lwb_counter);
 				debug_msg("\n");
@@ -353,34 +433,59 @@ void glossy_sync_task(){
 	}
 
 	// Both Master and Slave can do ranging if they are scheduled
-	// LWB Slots 2-N-2: Ranging slots
-	if( (1 < _lwb_counter) &&
-        (    _lwb_counter < (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US - LWB_SLOTS_PER_RANGE)) ) {
 
-		if( _lwb_scheduled &&
-		   ( ((_lwb_counter - 2) / LWB_SLOTS_PER_RANGE) == _lwb_timeslot) &&
-		   ( ((_lwb_counter - 2) % LWB_SLOTS_PER_RANGE) == 0            ) ) {
+	// LWB Slots 1 - I: Initiator slots
+	if( (lwb_slot_init_start <= _lwb_counter					  ) &&
+        (                       _lwb_counter < lwb_slot_resp_start)   ) {
+
+		if( _lwb_scheduled_init 															     &&
+		   ( ((_lwb_counter - lwb_slot_init_start) / LWB_SLOTS_PER_RANGE) == _lwb_timeslot_init) &&
+		   ( ((_lwb_counter - lwb_slot_init_start) % LWB_SLOTS_PER_RANGE) == 0                 )   ) {
 			// Our scheduled timeslot!  Call the timeslot callback which will likely kick off a ranging event
-			// Note: If all slots should be used (i.e. we wrap the schedule around), substitute "== _lwb_timeslot" with "% _lwb_num_timeslots == _lwb_mod_timeslot"
-			if (_lwb_schedule_callback) {
-				_lwb_schedule_callback();
+			if (_lwb_init_callback) {
+				_lwb_init_callback();
 			} else {
-				debug_msg("ERROR: Invalid LWB callback function!\n");
+				debug_msg("ERROR: Invalid LWB INIT callback function!\n");
 			}
 		} else {
 
 		    // Turn off reception after the start of the round if one is not a RESP; INIT start transmit in their slot
-		    if (_lwb_counter == 2) {
+		    if (_lwb_counter == lwb_slot_init_start) {
 
-		        if (standard_is_resp_enabled()) {
+		        if (_lwb_scheduled_resp) {
                     // Enable responders
                     standard_set_resp_active(TRUE);
 		        } else {
-		            // Turn transceiver off (save energy)
+		            // Turn transceiver off (save energy) - initiators will wake up in their own slot
 		            dwt_forcetrxoff();
 		        }
 
 		    }
+		}
+	}
+
+	// LWB Slots (I+1) - (I + R): Responder slots
+	if( (lwb_slot_resp_start <= _lwb_counter                      ) &&
+		(                       _lwb_counter < lwb_slot_contention)   ) {
+
+		if( _lwb_scheduled_resp 										  &&
+			( (_lwb_counter - lwb_slot_resp_start) == _lwb_timeslot_resp)   ) {
+			// Our scheduled timeslot!  Call the timeslot callback which will send the responses
+			if (_lwb_resp_callback) {
+				_lwb_resp_callback();
+			} else {
+				debug_msg("ERROR: Invalid LWB RESP callback function!\n");
+			}
+		} else {
+
+			// Turn on reception if you are interested in timestamps
+			if (_lwb_counter == lwb_slot_resp_start) {
+
+				if (_lwb_scheduled_init) {
+					// Enable initiators
+					standard_set_init_active(TRUE);
+				}
+			}
 		}
 	}
 }
@@ -389,8 +494,12 @@ void lwb_set_sched_request(bool sched_en){
 	_lwb_sched_en = sched_en;
 }
 
-void lwb_set_sched_callback(void (*callback)(void)){
-	_lwb_schedule_callback = callback;
+void lwb_set_init_callback(void (*callback)(void)){
+	_lwb_init_callback = callback;
+}
+
+void lwb_set_resp_callback(void (*callback)(void)){
+	_lwb_resp_callback = callback;
 }
 
 bool glossy_process_txcallback(){
@@ -421,7 +530,7 @@ bool glossy_process_txcallback(){
 			dwt_setdelayedtrxtime(delay_time);
 			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-				dwt_writetodevice( TX_BUFFER_ID, offsetof(struct ieee154_header_broadcast, seqNum), 1, &_cur_glossy_depth) ;
+			dwt_writetodevice( TX_BUFFER_ID, offsetof(struct ieee154_header_broadcast, seqNum), 1, &_cur_glossy_depth) ;
 		} else {
 			dwt_rxenable(0);
 			_glossy_currently_flooding = FALSE;
@@ -434,8 +543,8 @@ bool glossy_process_txcallback(){
 	return is_glossy_callback;
 }
 
-void send_sync(uint32_t delay_time){
-	uint16_t frame_len = sizeof(struct pp_sched_flood);
+void lwb_send_sync(uint32_t delay_time){
+	uint16_t frame_len = get_sync_packet_length(&_sync_pkt);
 	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 
 	_last_delay_time = delay_time;
@@ -445,7 +554,7 @@ void send_sync(uint32_t delay_time){
 
 	dwt_starttx(DWT_START_TX_DELAYED);
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-	dwt_writetxdata(sizeof(_sync_pkt), (uint8_t*) &_sync_pkt, 0);
+	dwt_writetxdata(frame_len, _sync_pkt_buffer, 0);
 }
 
 #define CW_CAL_12PF ((3.494350-3.494173)/3.4944*1e6/30)
@@ -457,8 +566,8 @@ int8_t clock_offset_to_trim_diff(double ppm_offset){
 
 void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 
-	struct pp_sched_flood *in_glossy_sync = (struct pp_sched_flood *) buf;
-	struct pp_sched_req_flood *in_glossy_sched_req = (struct pp_sched_req_flood *) buf;
+	struct pp_sched_flood  *in_glossy_sync   = (struct pp_sched_flood  *) buf;
+	struct pp_signal_flood *in_glossy_signal = (struct pp_signal_flood *) buf;
 
 	// Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
 	if(dw_timestamp < _last_overall_timestamp) {
@@ -470,9 +579,9 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 	if(_role == GLOSSY_MASTER) {
 
 		// If this is a schedule request, try to fit the requesting tag into the schedule
-		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ){
+		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL){
 
-		    debug_msg("Received schedule request\n");
+		    debug_msg("Received signalling packet: ");
 
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
 			uint64_t actual_turnaround = (dw_timestamp - ((uint64_t)(_last_delay_time) << 8)) & 0xFFFFFFFFFFUL;//in_glossy_sched_req->turnaround_time;
@@ -492,42 +601,48 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			dw1000_choose_antenna(LWB_ANTENNA);
 			dwt_rxenable(0);
 #else
-			int i, candidate_slot = -1;
-			for(i = 0; i < MAX_SCHED_TAGS; i++){
-
-				if(memcmp(_sched_euis[i], in_glossy_sched_req->tag_sched_eui, EUI_LEN) == 0) {
-                    // Already scheduled
-					candidate_slot = i;
-					break;
-				} else if((_sync_pkt.tag_ranging_mask & ((uint64_t)(1) << i)) == 0) {
-				    // Open slot
-					candidate_slot = i;
+			switch (in_glossy_signal->info_type) {
+				case SIGNAL_UNDEFINED: {
+					debug_msg("ERROR: Undefined signal!\n");
 					break;
 				}
-			}
-
-			if (candidate_slot == -1) {
-			    debug_msg("WARNING: No more ranging slots available!\n");
-			} else {
-
-			    /*debug_msg("Found candidate slot for EUI ");
-			    helper_print_EUI(in_glossy_sched_req->tag_sched_eui);
-			    debug_msg(": ");
-			    debug_msg_int(candidate_slot);*/
-
-                memcpy(_sched_euis[candidate_slot], in_glossy_sched_req->tag_sched_eui, EUI_LEN);
-                memcpy(_sync_pkt.tag_sched_eui,     in_glossy_sched_req->tag_sched_eui, EUI_LEN);
-
-                if (in_glossy_sched_req->deschedule_flag) {
-                    _sync_pkt.tag_ranging_mask &= ~((uint64_t) (1) << candidate_slot);
-                } else {
-                    _sync_pkt.tag_ranging_mask |= (uint64_t) (1) << candidate_slot;
-                }
-
-                _sync_pkt.tag_sched_idx = (uint8_t)candidate_slot;
-                _tag_timeout[candidate_slot] = 0;
+				case SCHED_REQUEST_INIT: {
+					schedule_init(in_glossy_signal->device_eui);
+					break;
+				}
+				case SCHED_REQUEST_RESP: {
+					schedule_resp(in_glossy_signal->device_eui);
+					break;
+				}
+				case SCHED_REQUEST_HYBRID: {
+					schedule_init(in_glossy_signal->device_eui);
+					schedule_resp(in_glossy_signal->device_eui);
+					break;
+				}
+				case DESCHED_REQUEST_INIT: {
+					deschedule_init(in_glossy_signal->device_eui);
+					break;
+				}
+				case DESCHED_REQUEST_RESP: {
+					deschedule_resp(in_glossy_signal->device_eui);
+					break;
+				}
+				case DESCHED_REQUEST_HYBRID: {
+					deschedule_init(in_glossy_signal->device_eui);
+					deschedule_resp(in_glossy_signal->device_eui);
+					break;
+				}
+				default: {
+					debug_msg("UNKNOWN reason ");
+					debug_msg_uint(in_glossy_signal->info_type);
+					debug_msg("\n");
+					break;
+				}
             }
 #endif
+
+			// Re-enable rx for other signalling packets
+			dwt_rxenable(0);
 		}
 		else {
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy master!\n");
@@ -540,15 +655,16 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 	}
 	else if(_role == GLOSSY_SLAVE) {
 
-		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SCHED_REQ) {
+		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL) {
 
-		    debug_msg("Received schedule request from another node\n");
+		    debug_msg("Received signalling packet from another node\n");
+
 #ifndef GLOSSY_ANCHOR_SYNC_TEST
 			// Increment depth counter
-			_cur_glossy_depth = ++in_glossy_sched_req->header.seqNum;
+			_cur_glossy_depth = ++in_glossy_signal->header.seqNum;
 			_glossy_currently_flooding = TRUE;
 
-			uint16_t frame_len = sizeof(struct pp_sched_req_flood);
+			uint16_t frame_len = sizeof(struct pp_signal_flood);
 			dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 
 			// Flood out as soon as possible
@@ -560,7 +676,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			dwt_setdelayedtrxtime(delay_time);
 			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
 			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-			dwt_writetxdata(sizeof(struct pp_sched_req_flood), (uint8_t*) in_glossy_sched_req, 0);
+			dwt_writetxdata(sizeof(struct pp_signal_flood), (uint8_t*) in_glossy_signal, 0);
 #endif
 		}
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
@@ -575,30 +691,33 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			}
 #endif
 
-            /*debug_msg("Scheduled node with EUI ");
-            helper_print_EUI(in_glossy_sync->tag_sched_eui);
-            debug_msg(" in slot ");
-            debug_msg_int(_lwb_timeslot);
-            debug_msg("\n");*/
+			// Check out whether the node has been scheduled
+			int init_slot = check_if_scheduled((uint8_t*) in_glossy_sync->eui_array                                                          , in_glossy_sync->init_schedule_length * (uint8_t)PROTOCOL_EUI_LEN);
+			int resp_slot = check_if_scheduled((uint8_t*) in_glossy_sync->eui_array + in_glossy_sync->init_schedule_length * PROTOCOL_EUI_LEN, in_glossy_sync->resp_schedule_length * (uint8_t)PROTOCOL_EUI_LEN);
 
-			// First check to see if this sync packet contains a schedule update for this node
-			if(memcmp(in_glossy_sync->tag_sched_eui, standard_get_EUI(), EUI_LEN) == 0) {
-				_lwb_timeslot = in_glossy_sync->tag_sched_idx;
-				_lwb_scheduled = TRUE;
+			if(init_slot > 0) {
+				_lwb_scheduled_init = TRUE;
+				_lwb_timeslot_init = (uint8_t)init_slot;
+			} else {
+				_lwb_scheduled_init = FALSE;
 			}
 
-			// Next, make sure the tag is still scheduled
-			if(_lwb_scheduled && ((in_glossy_sync->tag_ranging_mask & ((uint64_t)(1) << _lwb_timeslot)) == 0)) {
-                _lwb_scheduled = FALSE;
-            }
+			if(resp_slot > 0) {
+				_lwb_scheduled_resp = TRUE;
+				_lwb_timeslot_resp  = (uint8_t)resp_slot;
+			} else {
+				_lwb_scheduled_resp = FALSE;
+			}
 
-			_lwb_num_timeslots = uint64_count_ones(in_glossy_sync->tag_ranging_mask);
+			_lwb_num_timeslots_total = in_glossy_sync->round_length;
+			_lwb_num_timeslots_init  = in_glossy_sync->init_schedule_length;
+			_lwb_num_timeslots_resp  = in_glossy_sync->resp_schedule_length;
 
-			debug_msg("Scheduled nodes this round: ");
-			debug_msg_int(_lwb_num_timeslots);
+			debug_msg("Scheduled nodes this round: I ");
+			debug_msg_uint(_lwb_num_timeslots_init);
+			debug_msg(", R ");
+			debug_msg_uint(_lwb_num_timeslots_resp);
 			debug_msg("\r\n");
-
-			_lwb_mod_timeslot = uint64_count_ones(in_glossy_sync->tag_ranging_mask & (((uint64_t)(1) << _lwb_timeslot) - 1));
 
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
 			_sched_req_pkt.sync_depth = in_glossy_sync->header.seqNum;
@@ -643,13 +762,14 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 #endif
 
 					// Perpetuate the flood!
-					memcpy(&_sync_pkt, in_glossy_sync, sizeof(struct pp_sched_flood));
-					_cur_glossy_depth = ++_sync_pkt.header.seqNum;
+                    _cur_glossy_depth = ++in_glossy_sync->header.seqNum;
+                    memcpy(&_sync_pkt,        in_glossy_sync, get_sync_packet_length(in_glossy_sync) - sizeof(struct ieee154_footer)); // Write valid part of the packet (up to the valid part of the array) to the local _sync_pkt
+					memcpy(&_sync_pkt_buffer, in_glossy_sync, get_sync_packet_length(in_glossy_sync));
 
 					uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
 					delay_time &= 0xFFFFFFFE;
 					dwt_forcetrxoff();
-					send_sync(delay_time);
+					lwb_send_sync(delay_time);
 
 					_glossy_currently_flooding = TRUE;
 				} else {
@@ -667,4 +787,257 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy slave!\n");
 		}
 	}
+}
+
+// Helper functions ----------------------------------------------------------------------------------------------------
+
+void prepare_schedule_signal() {
+
+	if (standard_is_init_enabled() && standard_is_resp_enabled()) {
+		_signal_pkt.info_type = SCHED_REQUEST_HYBRID;
+		memcpy(_signal_pkt.device_eui, standard_get_EUI(), PROTOCOL_EUI_LEN);
+	} else if (standard_is_init_enabled()) {
+		_signal_pkt.info_type = SCHED_REQUEST_INIT;
+		memcpy(_signal_pkt.device_eui, standard_get_EUI(), PROTOCOL_EUI_LEN);
+	} else if (standard_is_resp_enabled()) {
+		_signal_pkt.info_type = SCHED_REQUEST_RESP;
+		memcpy(_signal_pkt.device_eui, standard_get_EUI(), PROTOCOL_EUI_LEN);
+	} else {
+		debug_msg("WARNING: Configuration does not allow scheduling!\n");
+	}
+}
+
+static uint8_t schedule_device(uint8_t * array, uint8_t array_length, uint8_t * eui) {
+
+	uint8_t zero_array[PROTOCOL_EUI_LEN] = { 0 };
+
+	for (uint8_t i = 0; i < (array_length / PROTOCOL_EUI_LEN); i++) {
+
+		if (memcmp( (array + i * PROTOCOL_EUI_LEN), zero_array, PROTOCOL_EUI_LEN) == 0) {
+			memcpy( (array + i * PROTOCOL_EUI_LEN),        eui, PROTOCOL_EUI_LEN);
+
+			/*debug_msg("Scheduled EUI ");
+			helper_print_EUI(eui);
+			debug_msg("in slot ");
+			debug_msg_uint(i);*/
+
+			return i;
+		}
+	}
+
+	// No more space in array
+	debug_msg("WARNING: No more slots available!\n");
+	return 0xFF;
+}
+
+static uint8_t schedule_init(uint8_t * eui) {
+
+    uint8_t slot = schedule_device( (uint8_t*)_init_sched_euis, PROTOCOL_INIT_SCHED_MAX * PROTOCOL_EUI_LEN, eui);
+
+    if (slot < 0xFF) {
+        _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + slot] = 0;
+        _lwb_num_timeslots_init++;
+    }
+
+    return slot;
+}
+
+static uint8_t schedule_resp(uint8_t * eui) {
+
+    uint8_t slot = schedule_device( (uint8_t*)_resp_sched_euis, PROTOCOL_RESP_SCHED_MAX * PROTOCOL_EUI_LEN, eui);
+
+    if (slot < 0xFF) {
+        _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + slot] = 0;
+        _lwb_num_timeslots_resp++;
+    }
+
+    return slot;
+}
+
+static uint8_t deschedule_device(uint8_t * array, uint8_t array_length, uint8_t * eui) {
+
+	for (uint8_t i = 0; i < (array_length / PROTOCOL_EUI_LEN); i++) {
+
+		if (memcmp( (array + i * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN) == 0) {
+			memset( (array + i * PROTOCOL_EUI_LEN),   0, PROTOCOL_EUI_LEN);
+
+			/*debug_msg("Descheduled EUI ");
+			helper_print_EUI(eui);
+			debug_msg("from slot ");
+			debug_msg_uint(i);*/
+
+			return i;
+		}
+	}
+
+	// No more space in array
+	debug_msg("WARNING: Could not find EUI in schedule!\n");
+	return 0xFF;
+}
+
+static uint8_t deschedule_init(uint8_t * eui) {
+
+    uint8_t slot = deschedule_device( (uint8_t*)_init_sched_euis, PROTOCOL_INIT_SCHED_MAX * PROTOCOL_EUI_LEN, eui);
+
+    if (slot < 0xFF) {
+        _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + slot] = 0;
+        _lwb_num_timeslots_init--;
+    }
+
+    return slot;
+}
+
+static uint8_t deschedule_resp(uint8_t * eui) {
+
+    uint8_t slot = deschedule_device( (uint8_t*)_resp_sched_euis, PROTOCOL_RESP_SCHED_MAX * PROTOCOL_EUI_LEN, eui);
+
+    if (slot < 0xFF) {
+        _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + slot] = 0;
+        _lwb_num_timeslots_resp--;
+    }
+
+    return slot;
+}
+
+static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
+
+	for (uint8_t i = 0; i < (array_length / PROTOCOL_EUI_LEN); i++) {
+
+		if (memcmp( (array + i * PROTOCOL_EUI_LEN), standard_get_EUI(), PROTOCOL_EUI_LEN) == 0) {
+			debug_msg("Device is scheduled in slot ");
+			debug_msg_uint(i);
+			debug_msg("\n");
+			return i;
+		}
+	}
+
+	debug_msg("Device is not scheduled\n");
+	return -1;
+}
+
+static void increment_sched_timeout(){
+
+    for(int ii=0; ii < (PROTOCOL_INIT_SCHED_MAX); ii++){
+
+        // Check if slot is actually used
+        if(_init_sched_euis[ii][0] > 0){
+            _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii]++;
+            if(_sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT)
+                memset(_init_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
+        } else {
+            _sched_timeouts[ii] = 0;
+        }
+    }
+
+    // Glossy master verifies that he doesnt kick himself out of the network
+    if (standard_is_init_enabled()) {
+        if (memcmp(_init_sched_euis[0], standard_get_EUI(), EUI_LEN) == 0) {
+            _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET] = 0;
+        } else {
+            debug_msg("ERROR: Glossy Master did not schedule itself for INIT!\n");
+        }
+    }
+
+    if (standard_is_resp_enabled()) {
+        if (memcmp(_resp_sched_euis[0], standard_get_EUI(), EUI_LEN) == 0) {
+            _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET] = 0;
+        } else {
+            debug_msg("ERROR: Glossy Master did not schedule itself for RESP!\n");
+        }
+    }
+}
+
+static uint8_t get_sync_packet_length(struct pp_sched_flood * packet) {
+	uint8_t packet_size  = sizeof(struct ieee154_header_broadcast) + 4 + sizeof(struct ieee154_footer);
+			packet_size += (packet->init_schedule_length + packet->resp_schedule_length) * PROTOCOL_EUI_LEN;
+
+	/*debug_msg("Schedule packet size: ");
+	debug_msg_uint(packet_size);
+	debug_msg("\n");*/
+
+	return packet_size;
+}
+
+#define MAX_ELEMENT_LENGTH	sizeof(uint64_t)
+void compress_array(uint8_t * array, uint8_t array_length, uint8_t element_length) {
+
+	// Compare element of insufficient size
+	if (element_length > MAX_ELEMENT_LENGTH) {
+		debug_msg("ERROR: Element too long for this function!\n");
+		return;
+	}
+
+	uint8_t zero_array[MAX_ELEMENT_LENGTH] = { 0 };
+
+	uint8_t i_full  = 0;
+	uint8_t i_empty = (array_length / element_length) - (uint8_t)1;
+	for (i_full = 0; i_full < i_empty; i_full++) {
+
+		// Find first non-full element from the back
+		for (; i_full < i_empty; i_empty--) {
+
+			if (memcmp( (array + i_empty * element_length), zero_array, element_length) != 0) {
+				// Found non-zero element
+				break;
+			}
+		}
+
+		if (i_empty == i_full) {
+			// Nothing to do anymore
+			return;
+		}
+
+		if (memcmp( (array + i_full  * element_length), zero_array, element_length) == 0) {
+			// Element is not used
+			memcpy( (array + i_full  * element_length), (array + i_empty * element_length), element_length);
+			memset( (array + i_empty * element_length), 0, element_length);
+		}
+	}
+}
+
+static void write_data_to_sync() {
+
+    /// INFO: We use _sync_pkt primarily as a tool to shape the packet itself and read data from it; the sent operation is done over the _sync_pkt_buffer to eliminate unused space
+
+    // Clean-up array in case deletions occurred
+    compress_array( (uint8_t*)_init_sched_euis, sizeof(_init_sched_euis), PROTOCOL_EUI_LEN);
+    compress_array( (uint8_t*)_resp_sched_euis, sizeof(_init_sched_euis), PROTOCOL_EUI_LEN);
+
+    // Set correct values
+    _sync_pkt.init_schedule_length = (uint8_t)_lwb_num_timeslots_init;
+    _sync_pkt.resp_schedule_length = (uint8_t)_lwb_num_timeslots_resp;
+    _sync_pkt.round_length         = (uint8_t)( 1 /*Sync itself*/ + _sync_pkt.init_schedule_length + _sync_pkt.resp_schedule_length + _lwb_num_timeslots_cont);
+
+    // Set array; as this array is sparse, we use the sync_pkt_buffer to send the data afterwards
+    memset(_sync_pkt.eui_array, 0, sizeof(_sync_pkt.eui_array));
+
+    memcpy(_sync_pkt.eui_array + PROTOCOL_INIT_SCHED_OFFSET * PROTOCOL_EUI_LEN, _init_sched_euis, _lwb_num_timeslots_init * PROTOCOL_EUI_LEN);
+    memcpy(_sync_pkt.eui_array + PROTOCOL_RESP_SCHED_OFFSET * PROTOCOL_EUI_LEN, _resp_sched_euis, _lwb_num_timeslots_resp * PROTOCOL_EUI_LEN);
+}
+
+static void write_sync_to_packet_buffer() {
+
+	// Clear buffer
+	memset(_sync_pkt_buffer, 0, sizeof(_sync_pkt_buffer));
+
+	// Fill buffer:
+	uint8_t offset = 0;
+
+	// Header + Constant part
+	uint8_t header_length = sizeof(struct ieee154_header_broadcast) + 4;
+
+	memcpy(_sync_pkt_buffer + offset, &_sync_pkt, header_length);
+	offset += header_length;
+
+	// Schedules
+	uint8_t init_length = _sync_pkt.init_schedule_length * (uint8_t)PROTOCOL_EUI_LEN;
+	uint8_t resp_length = _sync_pkt.resp_schedule_length * (uint8_t)PROTOCOL_EUI_LEN;
+
+	memcpy(_sync_pkt_buffer + offset, &_sync_pkt.eui_array + PROTOCOL_INIT_SCHED_OFFSET * PROTOCOL_EUI_LEN, init_length);
+	offset += init_length;
+	memcpy(_sync_pkt_buffer + offset, &_sync_pkt.eui_array + PROTOCOL_RESP_SCHED_OFFSET * PROTOCOL_EUI_LEN, resp_length);
+	offset += resp_length;
+
+	// Footer
+	memcpy(_sync_pkt_buffer + offset, &_sync_pkt.footer, sizeof(struct ieee154_footer));
 }
