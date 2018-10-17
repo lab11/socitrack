@@ -82,8 +82,6 @@ void glossy_start();
 void glossy_deschedule();
 void glossy_sync_task();
 void lwb_set_sched_request(bool sched_en);
-void lwb_set_init_callback(void (*callback)(void));
-void lwb_set_resp_callback(void (*callback)(void));
 void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf);
 bool glossy_process_txcallback();
 

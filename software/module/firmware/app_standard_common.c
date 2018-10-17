@@ -281,18 +281,11 @@ static uint8_t antenna_and_channel_to_subsequence_number (uint8_t tag_antenna_in
                                                           uint8_t anchor_antenna_index,
                                                           uint8_t channel_index) {
 	uint8_t anc_offset = anchor_antenna_index * NUM_RANGING_CHANNELS;
-	uint8_t tag_offset = tag_antenna_index * NUM_RANGING_CHANNELS * NUM_RANGING_CHANNELS;
+	uint8_t tag_offset = tag_antenna_index    * NUM_RANGING_CHANNELS * NUM_RANGING_CHANNELS;
 	uint8_t base_offset = anc_offset + tag_offset + channel_index;
 
 	return base_offset;
 }
-
-// Return the RF channel to use when the anchors respond to the tag
-static uint8_t listening_window_number_to_channel (uint8_t window_num) {
-	return channel_index_to_channel_rf_number[window_num % NUM_RANGING_CHANNELS];
-}
-
-
 
 // Update the Antenna and Channel settings to correspond with the settings
 // for the given subsequence number.
@@ -317,17 +310,15 @@ void standard_set_ranging_broadcast_subsequence_settings (bool resp_active,
 // for the given listening window.
 //
 // role:       anchor or tag
-// window_num: where in the listening window we are
-void standard_set_ranging_listening_window_settings (bool init_active,
-                                                   uint8_t window_num,
-                                                   uint8_t antenna_num) {
+void standard_set_ranging_response_settings (bool init_active,
+                                             uint8_t antenna_num) {
 
     if (init_active) {
         dwt_forcetrxoff();
     }
 
-	// Change the channel depending on what window number we're at
-	dw1000_update_channel(listening_window_number_to_channel(window_num));
+	// Choose channel
+	dw1000_update_channel(channel_index_to_channel_rf_number[RANGING_RESPONSE_CHANNEL_INDEX]);
 
 	// Change what antenna we're listening/sending on
 	dw1000_choose_antenna(antenna_num);
@@ -338,14 +329,13 @@ void standard_set_ranging_listening_window_settings (bool init_active,
 // a broadcast poll message. The tag antenna index and channel are derived
 // from the settings used in the listening window.
 uint8_t standard_get_ss_index_from_settings (uint8_t anchor_antenna_index,
-                                           uint8_t window_num) {
-	// NOTE: need something more rigorous than setting 0 here
+                                             uint8_t channel_index) {
+	// FIXME: need something more rigorous than setting 0 here; we can also try whether we have obtained the other two packets with the same receiver antenna
 	uint8_t tag_antenna_index = 0;
-	uint8_t channel_index = window_num % NUM_RANGING_CHANNELS;
 
 	return antenna_and_channel_to_subsequence_number(tag_antenna_index,
 	                                                 anchor_antenna_index,
-	                                                 channel_index);
+	                                                 channel_index % NUM_RANGING_CHANNELS);
 }
 
 // Get the TX delay for this node, given the channel value
@@ -362,12 +352,12 @@ uint64_t standard_get_rxdelay_from_subsequence (uint8_t subseq_num) {
 	return dw1000_get_rx_delay(channel_index);
 }
 
-uint64_t standard_get_txdelay_from_ranging_listening_window (uint8_t window_num){
-	return dw1000_get_tx_delay(window_num % NUM_RANGING_CHANNELS);
+uint64_t standard_get_txdelay_from_ranging_response_channel (uint8_t channel_index){
+	return dw1000_get_tx_delay(channel_index % NUM_RANGING_CHANNELS);
 }
 
-uint64_t standard_get_rxdelay_from_ranging_listening_window (uint8_t window_num){
-	return dw1000_get_rx_delay(window_num % NUM_RANGING_CHANNELS);
+uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_index){
+	return dw1000_get_rx_delay(channel_index % NUM_RANGING_CHANNELS);
 }
 
 /******************************************************************************/

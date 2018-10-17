@@ -19,7 +19,9 @@ standard_resp_scratchspace_struct *sr_scratch;
 
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
-static void ranging_listening_window_setup();
+// Helper functions
+static void 	write_anc_final_to_buffer();
+static uint16_t get_anc_final_packet_length(struct pp_anc_final * packet);
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -30,7 +32,7 @@ void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
 	
 	// Initialize this app's scratchspace
 	sr_scratch->pp_anc_final_pkt = (struct pp_anc_final) {
-		.ieee154_header_unicast = {
+		.header = {
 			.frameCtrl = {
 				0x61, // FCF[0]: data frame, ack request, panid compression
 				0xCC  // FCF[1]: ext source, ext destination
@@ -40,23 +42,34 @@ void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
 				MODULE_PANID & 0xFF,
 				MODULE_PANID >> 8,
 			},
-			.destAddr = { 0 },    // (blank for now)
+			.destAddr = {
+					0xFF, // Destination address: broadcast
+					0xFF
+			},
 			.sourceAddr = { 0 },  // (blank for now)
 		},
-		.message_type  = MSG_TYPE_PP_NOSLOTS_ANC_FINAL,
-		.final_antenna = 0,
-		.dw_time_sent  = 0,
-		.TOAs          = { 0 },
+		.message_type  		  = MSG_TYPE_PP_NOSLOTS_ANC_FINAL,
+		.final_antenna 		  = 0,
+		.dw_time_sent  		  = 0,
+		.init_response_length = 0
 	};
+
+	memset(sr_scratch->pp_anc_final_pkt.init_responses, 0, sizeof(sr_scratch->pp_anc_final_pkt.init_responses));
 
 	// Load our EUI into the outgoing packet
 	uint8_t * eui_array = standard_get_EUI();
-	memcpy(sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.sourceAddr, eui_array, EUI_LEN);
+	memcpy(sr_scratch->pp_anc_final_pkt.header.sourceAddr, eui_array, EUI_LEN);
+
+	// Clear our buffer
+	memset(sr_scratch->pp_anc_final_pkt_buffer, 0, sizeof(sr_scratch->pp_anc_final_pkt_buffer));
+
+	// Clear state
+	memset(sr_scratch->resp_antenna_recv_num,   0, sizeof(sr_scratch->resp_antenna_recv_num));
 
 	// Need a timer
-	if (sr_scratch->resp_timer == NULL) {
+	/*if (sr_scratch->resp_timer == NULL) {
 		sr_scratch->resp_timer = timer_init();
-	}
+	}*/
 
 	// Init the PRNG for determining when to respond to the tag
 	raninit(&(sr_scratch->prng_state), eui_array[0] << 8 | eui_array[1]);
@@ -93,8 +106,6 @@ dw1000_err_e standard_resp_start () {
 	// Obviously we want to be able to receive packets
 	dwt_rxenable(0);
 
-	sr_scratch->final_ack_received = FALSE;
-
 	return DW1000_NO_ERR;
 }
 
@@ -125,8 +136,16 @@ static void ranging_broadcast_subsequence_task () {
 	// Check if we are done listening for packets from the TAG. If we get
 	// a packet on the last subsequence we won't get here, but if we
 	// don't get that packet we need this check.
-	if (sr_scratch->ranging_broadcast_ss_num > sr_scratch->ranging_operation_config.reply_after_subsequence) {
-		ranging_listening_window_setup();
+	if (sr_scratch->ranging_broadcast_ss_num > (NUM_RANGING_BROADCASTS - 1) ) {
+
+		// The current initiator is done with ranging
+		sr_scratch->state = RSTATE_PENDING;
+
+		// Stop iterating through timing channels
+		timer_stop(sr_scratch->resp_timer);
+
+		// Now, we either wait for the next initiator or will start responding with our packet when its our turn
+		standard_resp_start();
 
 	} else {
 		// Update the anchor listening settings
@@ -137,107 +156,20 @@ static void ranging_broadcast_subsequence_task () {
 	}
 }
 
-// Called at the beginning of each listening window for transmitting to
-// the tag.
-static void ranging_listening_window_task () {
-	// Check if we are done transmitting to the tag.
-	// Ideally we never get here, as an ack from the tag will cause us to stop
-	// cycling through listening windows and put us back into a ready state.
-	if (sr_scratch->ranging_listening_window_num == NUM_RANGING_CHANNELS) {
-		// Go back to IDLE
-		sr_scratch->state = RSTATE_IDLE;
-		// Stop the timer for the window
-		timer_stop(sr_scratch->resp_timer);
-
-		// Restart being an anchor
-		standard_resp_start();
-
-	} else {
-
-		if(!sr_scratch->final_ack_received){
-
-			//debug_msg("Sending response to Tag\n");
-			debug_msg("Number of packets: Antenna 1 - ");
-			debug_msg_int(sr_scratch->resp_antenna_recv_num[0]);
-			debug_msg("; Antenna 2 - ");
-			debug_msg_int(sr_scratch->resp_antenna_recv_num[1]);
-			debug_msg("; Antenna 3 - ");
-			debug_msg_int(sr_scratch->resp_antenna_recv_num[2]);
-			debug_msg("\n");
-
-            /*debug_msg("; First index: ");
-            debug_msg_int(sr_scratch->pp_anc_final_pkt.first_rxd_idx);
-            debug_msg("; last index: ");
-            debug_msg_int(sr_scratch->pp_anc_final_pkt.last_rxd_idx);
-            debug_msg("\n");*/
-
-			dwt_forcetrxoff();
-	
-			// Setup the channel and antenna settings
-			standard_set_ranging_listening_window_settings(FALSE,
-			                                             sr_scratch->ranging_listening_window_num,
-			                                             sr_scratch->pp_anc_final_pkt.final_antenna);
-	
-			// Prepare the outgoing packet to send back to the
-			// tag with our TOAs.
-			sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.seqNum = ranval(&(sr_scratch->prng_state)) & 0xFF;
-			const uint16_t frame_len = sizeof(struct pp_anc_final);
-
-			dwt_writetxfctrl(frame_len, 0, MSG_TYPE_RANGING);
-	
-			// Pick a slot to respond in. Generate a random number and mod it
-			// by the number of slots
-			uint32_t slot_time = ranval(&(sr_scratch->prng_state)) % (sr_scratch->ranging_operation_config.resp_reply_window_in_us -
-			                                                           dw1000_packet_data_time_in_us(frame_len) -
-			                                                           dw1000_preamble_time_in_us());
-	
-			dwt_setrxaftertxdelay(1);
-	
-			// Come up with the time to send this packet back to the
-			// tag based on the slot we picked.
-			uint32_t delay_time = dwt_readsystimestamphi32() +
-				DW_DELAY_FROM_US(RANGING_LISTENING_WINDOW_PADDING_US + dw1000_preamble_time_in_us() + slot_time);
-	
-			delay_time &= 0xFFFFFFFE;
-	
-			// Set the packet to be transmitted later.
-			dw1000_setdelayedtrxtime(delay_time);
-	
-			// Record the outgoing time in the packet. Do not take calibration into
-			// account here, as that is done on all of the RX timestamps.
-			sr_scratch->pp_anc_final_pkt.dw_time_sent = (((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_ranging_listening_window(sr_scratch->ranging_listening_window_num);
-	
-			// Send the response packet
-			// TODO: handle if starttx errors. I'm not sure what to do about it, other than just wait for the next slot.
-			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
-			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-			dwt_writetxdata(frame_len, (uint8_t*) &(sr_scratch->pp_anc_final_pkt), 0);
-		}
-
-		sr_scratch->ranging_listening_window_num++;
-	}
-}
-
-// Prepare to transmit a response to the TAG.
-// TODO: check to see if we should even bother. Did we get enough packets?
-static void ranging_listening_window_setup () {
-	// Stop iterating through timing channels
-	timer_stop(sr_scratch->resp_timer);
-
-	// We no longer need to receive and need to instead start transmitting.
-	dwt_forcetrxoff();
+// Called for transmitting responses to the tag.
+void standard_resp_send_response () {
 
 	// Update our state to the TX response state
 	sr_scratch->state = RSTATE_RESPONDING;
-	// Set the listening window index
-	sr_scratch->ranging_listening_window_num = 0;
+
+	standard_set_init_active(FALSE);
+	standard_set_resp_active(TRUE);
 
 	//debug_msg("Prepare to respond to TAG...\r\n");
 
-	// Determine which antenna we are going to use for
-	// the response.
+	// Determine which antenna we are going to use for the response.
 	uint8_t max_packets = 0;
-	uint8_t max_index = 0;
+	uint8_t max_index   = 0;
 	for (uint8_t i=0; i<NUM_ANTENNAS; i++) {
 		if (sr_scratch->resp_antenna_recv_num[i] > max_packets) {
 			max_packets = sr_scratch->resp_antenna_recv_num[i];
@@ -246,12 +178,63 @@ static void ranging_listening_window_setup () {
 	}
 	sr_scratch->pp_anc_final_pkt.final_antenna = max_index;
 
-	// Now we need to setup a timer to iterate through
-	// the response windows so we can send a packet
-	// back to the tag
-	timer_start(sr_scratch->resp_timer,
-	            sr_scratch->ranging_operation_config.resp_reply_window_in_us + RANGING_LISTENING_WINDOW_PADDING_US*2,
-	            ranging_listening_window_task);
+
+	//debug_msg("Sending response to Tag\n");
+	debug_msg("Number of packets: Antenna 1 - ");
+	debug_msg_int(sr_scratch->resp_antenna_recv_num[0]);
+	debug_msg("; Antenna 2 - ");
+	debug_msg_int(sr_scratch->resp_antenna_recv_num[1]);
+	debug_msg("; Antenna 3 - ");
+	debug_msg_int(sr_scratch->resp_antenna_recv_num[2]);
+	debug_msg("\n");
+
+	/*debug_msg("; First index: ");
+	debug_msg_int(sr_scratch->pp_anc_final_pkt.first_rxd_idx);
+	debug_msg("; last index: ");
+	debug_msg_int(sr_scratch->pp_anc_final_pkt.last_rxd_idx);
+	debug_msg("\n");*/
+
+	// Turn of Rx and switch to Tx
+	dwt_forcetrxoff();
+
+	// Setup the channel and antenna settings
+	standard_set_ranging_response_settings( FALSE,
+											sr_scratch->pp_anc_final_pkt.final_antenna);
+
+	// Prepare the outgoing packet to send back to the tags with our TOAs.
+	sr_scratch->pp_anc_final_pkt.header.seqNum = ranval(&(sr_scratch->prng_state)) & 0xFF;
+
+	// Write our packet to the buffer
+	write_anc_final_to_buffer();
+
+	const uint16_t frame_len = get_anc_final_packet_length(&sr_scratch->pp_anc_final_pkt);
+
+	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_RANGING);
+
+	dwt_setrxaftertxdelay(1);
+
+	// Leave enough time to copy packet
+	// TODO: Verify that frames are not too long and have sufficient time to be transmitted and copied
+	uint32_t delay_time = dwt_readsystimestamphi32() + DW_DELAY_FROM_US(RANGING_RESPONSE_PADDING_US + dw1000_preamble_time_in_us());
+
+	delay_time &= 0xFFFFFFFE;
+
+	// Set the packet to be transmitted later.
+	dw1000_setdelayedtrxtime(delay_time);
+
+	// Record the outgoing time in the packet. Do not take calibration into
+	// account here, as that is done on all of the RX timestamps.
+	sr_scratch->pp_anc_final_pkt.dw_time_sent = (((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX);
+
+	// Send the response packet
+	// TODO: handle if starttx errors. I'm not sure what to do about it, other than just wait for the next slot.
+	dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
+	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
+	dwt_writetxdata(frame_len, sr_scratch->pp_anc_final_pkt_buffer, 0);
+
+	// Done with our response; Go back to IDLE
+	sr_scratch->state = RSTATE_IDLE;
+
 }
 
 
@@ -279,133 +262,116 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
 
-		// First check to see if this is an acknowledgement...
-		// If so, we can stop sending ranging responses
-		if((rxd->fctrl[0] & 0x03) == 0x02){  //This bit says whether this was an ack or not
-			uint8_t cur_seq_num;
-			dwt_readrxdata(&cur_seq_num, 1, 2);
+		// We process based on the first byte in the packet
+		uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
 
-			// Check to see if the sequence number matches the outgoing packet
-			if(cur_seq_num == sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.seqNum) {
-                sr_scratch->final_ack_received = TRUE;
-            }
-		} else {
+		if (message_type == MSG_TYPE_PP_NOSLOTS_TAG_POLL) {
+			// This is one of the broadcast ranging packets from the tag
+			struct pp_tag_poll* rx_poll_pkt = (struct pp_tag_poll*) buf;
 
-			// We process based on the first byte in the packet
-			uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
+			/*debug_msg("Received Poll message ");
+			debug_msg_int(rx_poll_pkt->subsequence);
+			debug_msg(": ");
+			debug_msg_int((uint32_t)(dw_rx_timestamp >> 32));
+			debug_msg(" ");
+			debug_msg_int((uint32_t)(dw_rx_timestamp & 0xFFFFFFFF));
+			debug_msg("\n");*/
 
-			if (message_type == MSG_TYPE_PP_NOSLOTS_TAG_POLL) {
-				// This is one of the broadcast ranging packets from the tag
-				struct pp_tag_poll* rx_poll_pkt = (struct pp_tag_poll*) buf;
+			// Decide what to do with this packet
+			if ( (sr_scratch->state == RSTATE_IDLE) || (sr_scratch->state == RSTATE_PENDING) ) {
+				// We are currently not ranging with any tags.
 
-                /*debug_msg("Received Poll message ");
-                debug_msg_int(rx_poll_pkt->subsequence);
-                debug_msg(": ");
-                debug_msg_int((uint32_t)(dw_rx_timestamp >> 32));
-                debug_msg(" ");
-				debug_msg_int((uint32_t)(dw_rx_timestamp & 0xFFFFFFFF));
-				debug_msg("\n");*/
+				if (rx_poll_pkt->subsequence < NUM_RANGING_CHANNELS) {
 
-				// Decide what to do with this packet
-				if (sr_scratch->state == RSTATE_IDLE) {
-					// We are currently not ranging with any tags.
+					/*debug_msg("Discovered new tag with EUI ");
+					debug_msg_int(rx_poll_pkt->header.sourceAddr[0] >> 4);
+					debug_msg_int(rx_poll_pkt->header.sourceAddr[0] & 0x0F);
+					debug_msg("\r\n");*/
 
-					if (rx_poll_pkt->subsequence < NUM_RANGING_CHANNELS) {
+					// We are idle and this is one of the first packets
+					// that the tag sent. Start listening for this tag's
+					// ranging broadcast packets.
+					sr_scratch->state = RSTATE_RANGING;
+					uint8_t idx = sr_scratch->pp_anc_final_pkt.init_response_length;
 
-					    /*debug_msg("Discovered new tag with EUI ");
-					    debug_msg_int(rx_poll_pkt->header.sourceAddr[0] >> 4);
-					    debug_msg_int(rx_poll_pkt->header.sourceAddr[0] & 0x0F);
-					    debug_msg("\r\n");*/
+					// Clear memory for this new tag ranging event
+					memset(sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs, 0, sizeof(sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs));
 
-						// We are idle and this is one of the first packets
-						// that the tag sent. Start listening for this tag's
-						// ranging broadcast packets.
-						sr_scratch->state = RSTATE_RANGING;
+					// Record the EUI of the tag so that we don't get mixed up
+					memcpy(sr_scratch->pp_anc_final_pkt.init_responses->init_eui, rx_poll_pkt->header.sourceAddr, PROTOCOL_EUI_LEN);
 
-						// Clear memory for this new tag ranging event
-						memset(sr_scratch->pp_anc_final_pkt.TOAs, 0, sizeof(sr_scratch->pp_anc_final_pkt.TOAs));
-						memset(sr_scratch->resp_antenna_recv_num, 0, sizeof(sr_scratch->resp_antenna_recv_num));
+					// Record which ranging subsequence the tag is on
+					sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
 
-						// Record the EUI of the tag so that we don't get mixed up
-						memcpy(sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.destAddr, rx_poll_pkt->header.sourceAddr, 8);
+					// Record the timestamp. Need to subtract off the TX+RX delay from each recorded timestamp.
+					sr_scratch->pp_anc_final_pkt.init_responses[idx].first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
+					sr_scratch->pp_anc_final_pkt.init_responses[idx].first_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
 
-						// Record which ranging subsequence the tag is on
-						sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
+					sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs[sr_scratch->ranging_broadcast_ss_num] = (dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
 
-						// Record the timestamp. Need to subtract off the TX+RX delay from each recorded timestamp.
-						sr_scratch->pp_anc_final_pkt.first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
-						sr_scratch->pp_anc_final_pkt.first_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
+					// Update the statistics we keep about which antenna receives the most packets from the tag
+					uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, rx_poll_pkt->subsequence);
+					sr_scratch->resp_antenna_recv_num[recv_antenna_index]++;
 
-						sr_scratch->pp_anc_final_pkt.TOAs[sr_scratch->ranging_broadcast_ss_num] = (dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+					// Now we need to start our own state machine to iterate
+					// through the antenna / channel combinations while listening
+					// for packets from the same tag.
+					timer_start(sr_scratch->resp_timer, RANGING_BROADCASTS_PERIOD_US, ranging_broadcast_subsequence_task);
 
-						// Also record parameters the tag has sent us about how to respond (or other operational parameters).
-						sr_scratch->ranging_operation_config.reply_after_subsequence    = NUM_RANGING_BROADCASTS - 1;  //rx_poll_pkt->reply_after_subsequence;
-						sr_scratch->ranging_operation_config.resp_reply_window_in_us    = RANGING_LISTENING_WINDOW_US; //rx_poll_pkt->anchor_reply_window_in_us;
-						sr_scratch->ranging_operation_config.resp_reply_slot_time_in_us = RANGING_LISTENING_SLOT_US;   //rx_poll_pkt->anchor_reply_slot_time_in_us;
+				} else {
+					// We found this tag ranging sequence late. We don't want
+					// to use this because we won't get enough range estimates.
+					// Just stay idle, but we do need to re-enable RX to
+					// keep receiving packets.
+					dwt_rxenable(0);
+				}
+
+			} else if (sr_scratch->state == RSTATE_RANGING) {
+				// We are currently ranging with a tag, waiting for the various
+				// ranging broadcast packets.
+
+				uint8_t idx = sr_scratch->pp_anc_final_pkt.init_response_length;
+
+				// First check if this is from the same tag
+				if (memcmp(sr_scratch->pp_anc_final_pkt.init_responses[idx].init_eui, rx_poll_pkt->header.sourceAddr, PROTOCOL_EUI_LEN) == 0) {
+					// Same tag
+
+					if (rx_poll_pkt->subsequence == sr_scratch->ranging_broadcast_ss_num) {
+						// This is the packet we were expecting from the tag.
+						// Record the TOA, and adjust it with the calibration value.
+						sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs[sr_scratch->ranging_broadcast_ss_num] =
+							(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+						sr_scratch->pp_anc_final_pkt.init_responses[idx].last_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
+						sr_scratch->pp_anc_final_pkt.init_responses[idx].last_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
 
 						// Update the statistics we keep about which antenna
 						// receives the most packets from the tag
-						uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, rx_poll_pkt->subsequence);
+						uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, sr_scratch->ranging_broadcast_ss_num);
 						sr_scratch->resp_antenna_recv_num[recv_antenna_index]++;
 
-						// Now we need to start our own state machine to iterate
-						// through the antenna / channel combinations while listening
-						// for packets from the same tag.
-						timer_start(sr_scratch->resp_timer, RANGING_BROADCASTS_PERIOD_US, ranging_broadcast_subsequence_task);
-
 					} else {
-						// We found this tag ranging sequence late. We don't want
-						// to use this because we won't get enough range estimates.
-						// Just stay idle, but we do need to re-enable RX to
-						// keep receiving packets.
-						dwt_rxenable(0);
+						// Some how we got out of sync with the tag. Ignore the
+						// range and catch up.
+						sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
 					}
 
-				} else if (sr_scratch->state == RSTATE_RANGING) {
-					// We are currently ranging with a tag, waiting for the various
-					// ranging broadcast packets.
+					// Regardless, it's a good idea to immediately call the subsequence task and restart the timer
+					timer_reset(sr_scratch->resp_timer, RANGING_BROADCASTS_PERIOD_US - 120); // Magic number calculated from timing
 
-					// First check if this is from the same tag
-					if (memcmp(sr_scratch->pp_anc_final_pkt.ieee154_header_unicast.destAddr, rx_poll_pkt->header.sourceAddr, 8) == 0) {
-						// Same tag
-
-						if (rx_poll_pkt->subsequence == sr_scratch->ranging_broadcast_ss_num) {
-							// This is the packet we were expecting from the tag.
-							// Record the TOA, and adjust it with the calibration value.
-							sr_scratch->pp_anc_final_pkt.TOAs[sr_scratch->ranging_broadcast_ss_num] =
-								(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
-							sr_scratch->pp_anc_final_pkt.last_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
-							sr_scratch->pp_anc_final_pkt.last_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
-
-							// Update the statistics we keep about which antenna
-							// receives the most packets from the tag
-							uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, sr_scratch->ranging_broadcast_ss_num);
-							sr_scratch->resp_antenna_recv_num[recv_antenna_index]++;
-
-						} else {
-							// Some how we got out of sync with the tag. Ignore the
-							// range and catch up.
-							sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
-						}
-
-						// Regardless, it's a good idea to immediately call the subsequence task and restart the timer
-						timer_reset(sr_scratch->resp_timer, RANGING_BROADCASTS_PERIOD_US - 120); // Magic number calculated from timing
-
-					} else {
-						// Not the same tag, ignore
-						dwt_rxenable(0);
-					}
 				} else {
-					// We are in some other state, not sure what that means
-					debug_msg("WARNING: Wrong state ");
-					debug_msg_int(sr_scratch->state);
-					debug_msg("\n");
+					// Not the same tag, ignore
+					dwt_rxenable(0);
 				}
-
 			} else {
-				// We do want to enter RX mode again, however
-				dwt_rxenable(0);
+				// We are in some other state, not sure what that means
+				debug_msg("WARNING: Wrong state ");
+				debug_msg_int(sr_scratch->state);
+				debug_msg("\n");
 			}
+
+		} else {
+			// We do want to enter RX mode again, however
+			dwt_rxenable(0);
 		}
 
 	} else {
@@ -426,4 +392,46 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 	}
 
 	timer_enable_interrupt(sr_scratch->resp_timer);
+}
+
+
+// Helper functions ----------------------------------------------------------------------------------------------------
+
+
+static void 	write_anc_final_to_buffer() {
+
+	uint8_t * dest = sr_scratch->pp_anc_final_pkt_buffer;
+
+	// Clear buffer
+	memset(dest, 0, sizeof(sr_scratch->pp_anc_final_pkt_buffer));
+
+	// Fill buffer:
+	uint8_t offset = 0;
+
+	// Header + Constant part
+	uint8_t header_length = sizeof(struct ieee154_header_broadcast) + 4;
+
+	memcpy(dest + offset, &sr_scratch->pp_anc_final_pkt, header_length);
+	offset += header_length;
+
+	// Responses
+	uint8_t responses_length = sr_scratch->pp_anc_final_pkt.init_response_length * sizeof(struct pp_anc_final_init_response);
+
+	memcpy(dest + offset, &sr_scratch->pp_anc_final_pkt.init_responses, responses_length);
+	offset += responses_length;
+
+	// Footer
+	memcpy(dest + offset, &sr_scratch->pp_anc_final_pkt.footer, sizeof(struct ieee154_footer));
+}
+
+static uint16_t get_anc_final_packet_length(struct pp_anc_final * packet) {
+
+	uint16_t packet_length  = sizeof(struct ieee154_header_broadcast) + 4 + sizeof(struct ieee154_footer);
+			packet_length += packet->init_response_length * sizeof(struct pp_anc_final_init_response);
+
+	/*debug_msg("Anchor response packet size: ");
+	debug_msg_uint(packet_length);
+	debug_msg("\n");*/
+
+	return packet_length;
 }

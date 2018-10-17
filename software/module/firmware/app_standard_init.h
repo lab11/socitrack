@@ -16,9 +16,8 @@ typedef enum {
 } init_state_e;
 
 typedef struct {
-    uint8_t  anchor_addr[EUI_LEN];
+    uint8_t  anchor_addr[PROTOCOL_EUI_LEN];
     uint8_t  anchor_final_antenna_index; // The antenna the anchor used when it responded.
-    uint8_t  window_packet_recv;         // The window the tag was in when it received the packet from the anchor.
     uint64_t anc_final_tx_timestamp; // When the anchor node sent the ANC_FINAL
     uint64_t anc_final_rx_timestamp; // When the tag received the ANC_FINAL
     uint8_t  tag_poll_first_idx;
@@ -55,9 +54,6 @@ typedef struct {
 	// for ranging.
 	uint8_t ranging_broadcast_ss_num;
 	
-	// Which slot we are in when receiving packets from the anchor.
-	uint8_t ranging_listening_window_num;
-	
 	// Array of when we sent each of the broadcast ranging packets
 	uint64_t ranging_broadcast_ss_send_times[NUM_RANGING_BROADCASTS];
 	
@@ -84,6 +80,9 @@ typedef struct {
 
 void         standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_init_start_ranging_event ();
+
+void         standard_init_start_response_listening();
+void         standard_init_stop_response_listening();
 void         standard_init_stop ();
 
 #endif

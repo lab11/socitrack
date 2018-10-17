@@ -22,7 +22,6 @@ standard_init_scratchspace_struct *si_scratch;
 
 static void send_poll ();
 static void ranging_broadcast_subsequence_task ();
-static void ranging_listening_window_task ();
 static void calculate_ranges ();
 static void report_range ();
 
@@ -56,9 +55,6 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 		// PACKET BODY
 		.message_type = MSG_TYPE_PP_NOSLOTS_TAG_POLL,  // Message type
 		.subsequence  = 0,                             // Sub Sequence number
-		.reply_after_subsequence      = NUM_RANGING_BROADCASTS-1,
-		.anchor_reply_window_in_us    = RANGING_LISTENING_WINDOW_US,
-		.anchor_reply_slot_time_in_us = RANGING_LISTENING_SLOT_US,
 		.footer = {
             { 0 }
 		}
@@ -84,9 +80,6 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 
 	// Reset our state because nothing should be in progress if we call init()
 	si_scratch->state = ISTATE_IDLE;
-
-	// LWB now schedules all of our ranging events!
-	lwb_set_init_callback(standard_init_start_ranging_event);
 }
 
 // This starts a ranging event by causing the tag to send a series of ranging broadcasts.
@@ -178,13 +171,10 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 			si_scratch->state = ISTATE_LISTENING;
 
 			// Init some state
-			si_scratch->ranging_listening_window_num = 0;
 			si_scratch->anchor_response_count = 0;
 
 			//debug_msg("Finished ranging. Waiting for responses from anchors...\n");
-
-			// Start a timer to switch between the windows
-			timer_start(si_scratch->init_timer, RANGING_LISTENING_WINDOW_US + RANGING_LISTENING_WINDOW_PADDING_US*2, ranging_listening_window_task);
+            timer_stop(si_scratch->init_timer);
 
 		} else {
 			// We don't need to do anything on TX done for any other states
@@ -226,36 +216,45 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 			// could still fail.
 			bool anc_already_found = FALSE;
 			for (uint8_t i=0; i<si_scratch->anchor_response_count; i++) {
-				if (memcmp(si_scratch->anchor_responses[i].anchor_addr, anc_final->ieee154_header_unicast.sourceAddr, EUI_LEN) == 0) {
+				if (memcmp(si_scratch->anchor_responses[i].anchor_addr, anc_final->header.sourceAddr, PROTOCOL_EUI_LEN) == 0) {
 					anc_already_found = TRUE;
 					break;
 				}
 			}
 
+			// Check that anchor actually has responses for us
+			int resp_idx = -1;
+			for (uint8_t i=0; i<anc_final->init_response_length; i++) {
+			    if (memcmp(standard_get_EUI(), anc_final->init_responses[i].init_eui, PROTOCOL_EUI_LEN) == 0) {
+			        resp_idx = i;
+			        break;
+			    }
+			}
+
 			// Only save this response if we haven't already seen this anchor
-			if (!anc_already_found) {
+			if (!anc_already_found && (resp_idx >= 0)) {
 
                 /*debug_msg("Received an Anchor response packet from ");
-                helper_print_EUI(anc_final->ieee154_header_unicast.sourceAddr);
+                helper_print_EUI(anc_final->header.sourceAddr);
                 debug_msg("\r\n");
 
                 debug_msg("First index: ");
-                debug_msg_int(anc_final->first_rxd_idx);
+                debug_msg_int(anc_final->init_responses[resp_idx].first_rxd_idx);
                 debug_msg("; last index: ");
-                debug_msg_int(anc_final->last_rxd_idx);
+                debug_msg_int(anc_final->init_responses[resp_idx].last_rxd_idx);
                 debug_msg("; length of packet: ");
                 debug_msg_uint(rxd->datalength);
                 debug_msg("\n");*/
 
 				// Save the anchor address
-				memcpy(si_scratch->anchor_responses[si_scratch->anchor_response_count].anchor_addr, anc_final->ieee154_header_unicast.sourceAddr, EUI_LEN);
+				memcpy(si_scratch->anchor_responses[si_scratch->anchor_response_count].anchor_addr, anc_final->header.sourceAddr, PROTOCOL_EUI_LEN);
 
 				// Save the anchor's list of when it received the tag broadcasts
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_first_TOA = anc_final->first_rxd_toa;
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_first_idx = anc_final->first_rxd_idx;
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_last_TOA = anc_final->last_rxd_toa;
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_last_idx = anc_final->last_rxd_idx;
-				memcpy(si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_TOAs, anc_final->TOAs, sizeof(anc_final->TOAs));
+				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_first_TOA = anc_final->init_responses[resp_idx].first_rxd_toa;
+				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_first_idx = anc_final->init_responses[resp_idx].first_rxd_idx;
+				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_last_TOA = anc_final->init_responses[resp_idx].last_rxd_toa;
+				si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_last_idx = anc_final->init_responses[resp_idx].last_rxd_idx;
+				memcpy(si_scratch->anchor_responses[si_scratch->anchor_response_count].tag_poll_TOAs, anc_final->init_responses[resp_idx].TOAs, sizeof(anc_final->init_responses[resp_idx].TOAs));
 
 				// Save the antenna the anchor chose to use when responding to us
 				si_scratch->anchor_responses[si_scratch->anchor_response_count].anchor_final_antenna_index = anc_final->final_antenna;
@@ -264,14 +263,8 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 				si_scratch->anchor_responses[si_scratch->anchor_response_count].anc_final_tx_timestamp = anc_final->dw_time_sent;
 
 				// Save when we received the packet.
-				// We have already handled the calibration values so
-				// we don't need to here.
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].anc_final_rx_timestamp = dw_rx_timestamp - standard_get_rxdelay_from_ranging_listening_window(si_scratch->ranging_listening_window_num - 1);
-
-				// Also need to save what window we are in when we received
-				// this packet. This is used so we know all of the settings
-				// that were used when this packet was sent to us.
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].window_packet_recv = si_scratch->ranging_listening_window_num - 1;
+				// We have already handled the calibration values so we don't need to here.
+				si_scratch->anchor_responses[si_scratch->anchor_response_count].anc_final_rx_timestamp = dw_rx_timestamp - standard_get_rxdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX);
 
 				// Increment the number of anchors heard from
 				si_scratch->anchor_response_count++;
@@ -295,7 +288,7 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
             debug_msg_int((uint32_t)rxd->status);
             debug_msg("\n");
 
-			standard_set_ranging_listening_window_settings(TRUE, si_scratch->ranging_listening_window_num, 0);
+			standard_set_ranging_response_settings(TRUE, 0);
 		} else {
 			debug_msg("ERROR: Unknown error!");
 			dwt_rxenable(0);
@@ -380,6 +373,14 @@ static void ranging_broadcast_subsequence_task () {
 		// Also update the state to say that we are moving to RX mode
 		// to listen for responses from the anchor
 		si_scratch->state = ISTATE_TRANSITION_TO_ANC_FINAL;
+
+#ifdef PROTOCOL_REENABLE_HYBRIDS
+        // Reenable hybrid nodes after their ranging slot, so that they can respond to others
+        if (standard_is_resp_enabled() && standard_is_init_enabled()) {
+            standard_resp_start();
+        }
+#endif
+
 	}
 
 	// Go ahead and setup and send a ranging broadcast
@@ -390,42 +391,32 @@ static void ranging_broadcast_subsequence_task () {
 	si_scratch->ranging_broadcast_ss_num += 1;
 }
 
+void standard_init_start_response_listening() {
+
+	standard_set_resp_active(FALSE);
+	standard_set_init_active(TRUE);
+
+	// Set the correct listening settings
+	standard_set_ranging_response_settings(TRUE, 0);
+
+	// Make SURE we're in RX mode!
+	dwt_rxenable(0);
+
+}
+
 // This is called after the broadcasts have been sent in order to receive
 // the responses from the anchors.
-static void ranging_listening_window_task () {
+void standard_init_stop_response_listening () {
 
-	// Stop after the last of the receive windows
-	if (si_scratch->ranging_listening_window_num == NUM_RANGING_LISTENING_WINDOWS) {
-		timer_stop(si_scratch->init_timer);
+    // Stop the radio
+    dwt_forcetrxoff();
 
-		// Stop the radio
-		dwt_forcetrxoff();
+    // End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
+    standard_set_init_active(FALSE);
 
-		// End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
-		standard_set_init_active(FALSE);
+    // This function finishes up this ranging event.
+    report_range();
 
-#ifdef PROTOCOL_REENABLE_HYBRIDS
-        // Reenable hybrid nodes after their ranging slot, so that they can respond to others
-        if (standard_is_resp_enabled() && standard_is_init_enabled()) {
-            standard_resp_start();
-        }
-#endif
-
-		// This function finishes up this ranging event.
-		report_range();
-
-	} else {
-
-		// Set the correct listening settings
-		standard_set_ranging_listening_window_settings(TRUE, si_scratch->ranging_listening_window_num, 0);
-
-		// Make SURE we're in RX mode!
-		dwt_rxenable(0);
-
-		// Increment and wait
-		si_scratch->ranging_listening_window_num++;
-
-	}
 }
 
 // Record ranges that the tag found.
@@ -636,8 +627,7 @@ static void calculate_ranges () {
 		// to calculate ranges from all of the other polls the tag sent.
 		// To do this, we need to match the anchor_antenna, tag_antenna, and
 		// channel between the anchor response and the correct tag poll.
-		uint8_t ss_index_matching = standard_get_ss_index_from_settings(aresp->anchor_final_antenna_index,
-		                                                              aresp->window_packet_recv);
+		uint8_t ss_index_matching = standard_get_ss_index_from_settings(aresp->anchor_final_antenna_index, RANGING_RESPONSE_CHANNEL_INDEX);
 
 		// Exit early if the corresponding broadcast wasn't received
 		if(tag_poll_TOAs[ss_index_matching] == 0){

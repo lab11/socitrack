@@ -5,15 +5,19 @@
 
 #include "stm32f0xx_gpio.h"
 
-#include "glossy.h"
-
-#include "board.h"
 #include "dw1000.h"
 #include "deca_regs.h"
-#include "app_standard_common.h"
+
+#include "board.h"
 #include "timer.h"
 #include "prng.h"
 #include "SEGGER_RTT.h"
+
+#include "app_standard_common.h"
+#include "app_standard_init.h"
+#include "app_standard_resp.h"
+
+#include "glossy.h"
 
 // APPLICATION STATE ---------------------------------------------------------------------------------------------------
 
@@ -47,8 +51,6 @@ static uint32_t _lwb_num_timeslots_resp;
 static uint32_t _lwb_num_timeslots_cont;
 static uint32_t _lwb_timeslot_init;
 static uint32_t _lwb_timeslot_resp;
-static void (*_lwb_init_callback)(void);
-static void (*_lwb_resp_callback)(void);
 static double _clock_offset;
 
 static struct pp_sched_flood  _sync_pkt;
@@ -160,8 +162,6 @@ void glossy_init(glossy_role_e role){
 	_lwb_num_timeslots_cont    = 1;
 	_lwb_timeslot_init		   = 0;
 	_lwb_timeslot_resp		   = 0;
-	_lwb_init_callback 		   = NULL;
-	_lwb_resp_callback		   = NULL;
 	_clock_offset			   = 0;
 
 	memset(_init_sched_euis,    0, sizeof(_init_sched_euis));
@@ -281,6 +281,11 @@ void glossy_sync_task(){
 		// LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
 		if(_lwb_counter == lwb_slot_contention){
 
+            if (standard_is_init_active()) {
+                // Stop if still listening for responses
+                standard_init_stop_response_listening();
+            }
+
 		    //debug_msg("Listening for requests...\n");
 
 			dwt_rxenable(0);
@@ -297,8 +302,9 @@ void glossy_sync_task(){
 
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
 		} else if(_lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ){
+
 			dwt_forcetrxoff();
-		
+
 		#ifdef GLOSSY_PER_TEST
 			_total_syncs_sent++;
 			if(_total_syncs_sent >= 10000){
@@ -307,7 +313,7 @@ void glossy_sync_task(){
 				}
 			}
 		#endif
-		
+
 			dw1000_update_channel(LWB_CHANNEL);
 			dw1000_choose_antenna(LWB_ANTENNA);
 
@@ -318,7 +324,7 @@ void glossy_sync_task(){
 
 			// Copy information into buffer
 			write_sync_to_packet_buffer();
-		
+
 			_last_time_sent += GLOSSY_UPDATE_INTERVAL_DW;
 			lwb_send_sync(_last_time_sent);
 			_sending_sync = TRUE;
@@ -365,6 +371,13 @@ void glossy_sync_task(){
 			// LWB Slot N-C: Contention slot
 			if( (lwb_slot_contention <= _lwb_counter                 ) &&
 				(                       _lwb_counter <= lwb_slot_last)   ) {
+
+                if ( (_lwb_counter == lwb_slot_contention) && standard_is_init_active()) {
+                    // Stop if still listening for responses
+                    standard_init_stop_response_listening();
+                }
+
+                // Setup for contention
 				dw1000_update_channel(LWB_CHANNEL);
 				dw1000_choose_antenna(LWB_ANTENNA);
 
@@ -441,12 +454,9 @@ void glossy_sync_task(){
 		if( _lwb_scheduled_init 															     &&
 		   ( ((_lwb_counter - lwb_slot_init_start) / LWB_SLOTS_PER_RANGE) == _lwb_timeslot_init) &&
 		   ( ((_lwb_counter - lwb_slot_init_start) % LWB_SLOTS_PER_RANGE) == 0                 )   ) {
-			// Our scheduled timeslot!  Call the timeslot callback which will likely kick off a ranging event
-			if (_lwb_init_callback) {
-				_lwb_init_callback();
-			} else {
-				debug_msg("ERROR: Invalid LWB INIT callback function!\n");
-			}
+			// Our scheduled timeslot!
+			standard_init_start_ranging_event();
+
 		} else {
 
 		    // Turn off reception after the start of the round if one is not a RESP; INIT start transmit in their slot
@@ -462,20 +472,21 @@ void glossy_sync_task(){
 
 		    }
 		}
-	}
 
-	// LWB Slots (I+1) - (I + R): Responder slots
-	if( (lwb_slot_resp_start <= _lwb_counter                      ) &&
+    // LWB Slots (I+1) - (I + R): Responder slots
+	} else if( (lwb_slot_resp_start <= _lwb_counter                      ) &&
 		(                       _lwb_counter < lwb_slot_contention)   ) {
 
 		if( _lwb_scheduled_resp 										  &&
 			( (_lwb_counter - lwb_slot_resp_start) == _lwb_timeslot_resp)   ) {
-			// Our scheduled timeslot!  Call the timeslot callback which will send the responses
-			if (_lwb_resp_callback) {
-				_lwb_resp_callback();
-			} else {
-				debug_msg("ERROR: Invalid LWB RESP callback function!\n");
-			}
+			// Our scheduled timeslot!
+			standard_resp_send_response();
+
+            if (_lwb_scheduled_init) {
+                // Re-enable initiators to receive the rest of the responses
+                standard_init_start_response_listening();
+            }
+
 		} else {
 
 			// Turn on reception if you are interested in timestamps
@@ -483,7 +494,7 @@ void glossy_sync_task(){
 
 				if (_lwb_scheduled_init) {
 					// Enable initiators
-					standard_set_init_active(TRUE);
+					standard_init_start_response_listening();
 				}
 			}
 		}
@@ -492,14 +503,6 @@ void glossy_sync_task(){
 
 void lwb_set_sched_request(bool sched_en){
 	_lwb_sched_en = sched_en;
-}
-
-void lwb_set_init_callback(void (*callback)(void)){
-	_lwb_init_callback = callback;
-}
-
-void lwb_set_resp_callback(void (*callback)(void)){
-	_lwb_resp_callback = callback;
 }
 
 bool glossy_process_txcallback(){
@@ -695,14 +698,14 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 			int init_slot = check_if_scheduled((uint8_t*) in_glossy_sync->eui_array                                                          , in_glossy_sync->init_schedule_length * (uint8_t)PROTOCOL_EUI_LEN);
 			int resp_slot = check_if_scheduled((uint8_t*) in_glossy_sync->eui_array + in_glossy_sync->init_schedule_length * PROTOCOL_EUI_LEN, in_glossy_sync->resp_schedule_length * (uint8_t)PROTOCOL_EUI_LEN);
 
-			if(init_slot > 0) {
+			if(init_slot >= 0) {
 				_lwb_scheduled_init = TRUE;
 				_lwb_timeslot_init = (uint8_t)init_slot;
 			} else {
 				_lwb_scheduled_init = FALSE;
 			}
 
-			if(resp_slot > 0) {
+			if(resp_slot >= 0) {
 				_lwb_scheduled_resp = TRUE;
 				_lwb_timeslot_resp  = (uint8_t)resp_slot;
 			} else {

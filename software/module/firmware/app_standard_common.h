@@ -30,6 +30,10 @@
 // on the third channel.
 #define NUM_RANGING_BROADCASTS ((NUM_RANGING_CHANNELS*NUM_ANTENNAS*NUM_ANTENNAS) + NUM_RANGING_CHANNELS)
 
+// Which channel we use to respond; Index 0 is used in "app_standard_common" and mapped to the first channel (should be == LWB_CHANNEL == 1)
+#define RANGING_RESPONSE_CHANNEL_INDEX	0
+//#define RANGING_RESPONSE_CHANNEL		LWB_CHANNEL
+
 // Listen for responses from the anchors on different channels
 #define NUM_RANGING_LISTENING_WINDOWS 3
 
@@ -38,6 +42,7 @@
 #define NUM_RANGING_LISTENING_SLOTS 20
 
 // How long the slots inside each window should be for the anchors to choose from
+#define RANGING_LISTENING_WINDOW_US 10000
 #define RANGING_LISTENING_SLOT_US (RANGING_LISTENING_WINDOW_US/NUM_RANGING_LISTENING_SLOTS)
 
 // Maximum number of anchors a tag is willing to hear from
@@ -80,23 +85,26 @@ struct pp_tag_poll  {
 	struct ieee154_header_broadcast header;
 	uint8_t message_type;                   // Packet type identifier so the anchor knows what it is receiving.
 	uint8_t subsequence;                    // Index of which broadcast sequence number this packet is.
-	uint8_t reply_after_subsequence;        // Tells anchor which broadcast subsequence number to respond after.
-	uint32_t anchor_reply_window_in_us;     // How long each anchor response window is. Each window allows multiple anchor responses.
-	uint16_t anchor_reply_slot_time_in_us;  // How long that slots that break up each window are.
 	struct ieee154_footer footer;
 } __attribute__ ((__packed__));
 
+
+struct pp_anc_final_init_response {
+    uint8_t  init_eui[PROTOCOL_EUI_LEN];
+    uint8_t  first_rxd_idx;
+    uint64_t first_rxd_toa;
+    uint8_t  last_rxd_idx;
+    uint64_t last_rxd_toa;
+    uint16_t TOAs[NUM_RANGING_BROADCASTS]; // The anchor timestamps of when it received the tag poll messages.
+};
 // Packet the anchor sends back to the tag.
 struct pp_anc_final {
-	struct ieee154_header_unicast ieee154_header_unicast;
+	struct ieee154_header_broadcast header;
 	uint8_t  message_type;
-	uint8_t  final_antenna;                // The antenna the anchor used when sending this packet.
-	uint64_t dw_time_sent;                 // The anchor timestamp of when it sent this packet
-	uint8_t  first_rxd_idx;
-	uint64_t first_rxd_toa;
-	uint8_t  last_rxd_idx;
-	uint64_t last_rxd_toa;
-	uint16_t TOAs[NUM_RANGING_BROADCASTS]; // The anchor timestamps of when it received the tag poll messages.
+    uint8_t  final_antenna;                // The antenna the responder used when sending this packet.
+    uint64_t dw_time_sent;                 // The anchor timestamp of when it sent this packet
+    uint8_t  init_response_length;
+	struct   pp_anc_final_init_response init_responses[PROTOCOL_INIT_SCHED_MAX];
 	struct ieee154_footer footer;
 } __attribute__ ((__packed__));
 
@@ -162,15 +170,14 @@ bool			 standard_is_resp_active();
 void 			 standard_set_resp_active(bool resp_active);
 uint8_t *        standard_get_EUI();
 
-
 uint8_t  standard_subsequence_number_to_antenna (bool resp_active, uint8_t subseq_num);
 void     standard_set_ranging_broadcast_subsequence_settings (bool resp_active, uint8_t subseq_num);
-void     standard_set_ranging_listening_window_settings (bool init_active, uint8_t slot_num, uint8_t antenna_num);
-uint8_t  standard_get_ss_index_from_settings (uint8_t anchor_antenna_index, uint8_t window_num);
+void     standard_set_ranging_response_settings (bool init_active, uint8_t antenna_num);
+uint8_t  standard_get_ss_index_from_settings (uint8_t anchor_antenna_index, uint8_t channel_index);
 uint64_t standard_get_txdelay_from_subsequence (uint8_t subseq_num);
 uint64_t standard_get_rxdelay_from_subsequence (uint8_t subseq_num);
-uint64_t standard_get_txdelay_from_ranging_listening_window (uint8_t window_num);
-uint64_t standard_get_rxdelay_from_ranging_listening_window (uint8_t window_num);
+uint64_t standard_get_txdelay_from_ranging_response_channel (uint8_t channel_index);
+uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_index);
 
 // TX/RX - defined inside app_standard_init and app_standard_resp
 void init_txcallback  (const dwt_cb_data_t *txd);
