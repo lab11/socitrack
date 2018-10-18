@@ -67,9 +67,9 @@ void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
 	memset(sr_scratch->resp_antenna_recv_num,   0, sizeof(sr_scratch->resp_antenna_recv_num));
 
 	// Need a timer
-	/*if (sr_scratch->resp_timer == NULL) {
+	if (sr_scratch->resp_timer == NULL) {
 		sr_scratch->resp_timer = timer_init();
-	}*/
+	}
 
 	// Init the PRNG for determining when to respond to the tag
 	raninit(&(sr_scratch->prng_state), eui_array[0] << 8 | eui_array[1]);
@@ -92,7 +92,12 @@ dw1000_err_e standard_resp_start () {
 		// Chip did not seem to wakeup. This is not good, so we have
 		// to reset the application.
 		return err;
-	}
+	} else {
+	    // Did not go to sleep
+
+	    // Clear state
+        memset(sr_scratch->resp_antenna_recv_num, 0, sizeof(sr_scratch->resp_antenna_recv_num));
+    }
 
 	// Also we start over in case the anchor was doing anything before
 	sr_scratch->state = RSTATE_IDLE;
@@ -194,7 +199,7 @@ void standard_resp_send_response () {
 	debug_msg_int(sr_scratch->pp_anc_final_pkt.last_rxd_idx);
 	debug_msg("\n");*/
 
-	// Turn of Rx and switch to Tx
+	// Turn off Rx and switch to Tx
 	dwt_forcetrxoff();
 
 	// Setup the channel and antenna settings

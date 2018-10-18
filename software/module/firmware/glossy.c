@@ -416,8 +416,8 @@ void glossy_sync_task(){
 #endif
 					_last_delay_time = delay_time;
 					dwt_setdelayedtrxtime(delay_time);
-					dwt_setrxaftertxdelay(LWB_SLOT_US);
-					dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
+					//dwt_setrxaftertxdelay(LWB_SLOT_US);
+					dwt_starttx(DWT_START_TX_DELAYED);
 					dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
 					dwt_writetxdata(sizeof(struct pp_signal_flood), (uint8_t*) &_signal_pkt, 0);
 
@@ -549,21 +549,25 @@ bool glossy_process_txcallback(){
 
 	} else if(_role == GLOSSY_SLAVE && _glossy_currently_flooding) {
 
-	    //debug_msg("Sending flooding message...\n");
+        _cur_glossy_depth++;
 
-		// We're flooding, keep doing it until the max depth!
-		uint32_t delay_time = _last_delay_time + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
-		delay_time &= 0xFFFFFFFE;
-		_last_delay_time = delay_time;
+        if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-		_cur_glossy_depth++;
-		if (_cur_glossy_depth < GLOSSY_MAX_DEPTH){
-			dwt_forcetrxoff();
-			dwt_setrxaftertxdelay(LWB_SLOT_US);
-			dwt_setdelayedtrxtime(delay_time);
-			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
-			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-			dwt_writetodevice( TX_BUFFER_ID, offsetof(struct ieee154_header_broadcast, seqNum), 1, &_cur_glossy_depth) ;
+            debug_msg("Sending flooding message with depth ");
+            debug_msg_uint(_cur_glossy_depth);
+            debug_msg("\n");
+
+            // We're flooding, keep doing it until the max depth!
+            uint32_t delay_time = _last_delay_time + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
+            delay_time &= 0xFFFFFFFE;
+            _last_delay_time = delay_time;
+
+            dwt_forcetrxoff();
+            dwt_setdelayedtrxtime(delay_time);
+            //dwt_setrxaftertxdelay(LWB_SLOT_US);
+            dwt_starttx(DWT_START_TX_DELAYED);
+            dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
+            dwt_writetodevice( TX_BUFFER_ID, offsetof(struct ieee154_header_broadcast, seqNum), 1, &_cur_glossy_depth);
 		} else {
 			dwt_rxenable(0);
 			_glossy_currently_flooding = FALSE;
@@ -612,7 +616,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 	if(_role == GLOSSY_MASTER) {
 
 		// If this is a schedule request, try to fit the requesting tag into the schedule
-		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL){
+		if (in_glossy_signal->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL) {
 
 		    debug_msg("Received signalling packet: ");
 
@@ -694,28 +698,40 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 	}
 	else if(_role == GLOSSY_SLAVE) {
 
-		if(in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL) {
+		if(in_glossy_signal->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL) {
 
 		    debug_msg("Received signalling packet from another node\n");
 
 #ifndef GLOSSY_ANCHOR_SYNC_TEST
 			// Increment depth counter
 			_cur_glossy_depth = ++in_glossy_signal->header.seqNum;
-			_glossy_currently_flooding = TRUE;
 
-			uint16_t frame_len = sizeof(struct pp_signal_flood);
-			dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
+			if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-			// Flood out as soon as possible
-			uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
-			delay_time &= 0xFFFFFFFE;
-			_last_delay_time = delay_time;
-			dwt_forcetrxoff();
-			dwt_setrxaftertxdelay(LWB_SLOT_US);
-			dwt_setdelayedtrxtime(delay_time);
-			dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
-			dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-			dwt_writetxdata(sizeof(struct pp_signal_flood), (uint8_t*) in_glossy_signal, 0);
+                debug_msg("Sending flooding message with depth ");
+                debug_msg_uint(_cur_glossy_depth);
+                debug_msg("\n");
+
+                _glossy_currently_flooding = TRUE;
+
+                uint16_t frame_len = sizeof(struct pp_signal_flood);
+                dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
+
+                // Flood out as soon as possible
+                uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
+                delay_time &= 0xFFFFFFFE;
+                _last_delay_time = delay_time;
+                dwt_forcetrxoff();
+                //dwt_setrxaftertxdelay(LWB_SLOT_US);
+                dwt_setdelayedtrxtime(delay_time);
+                dwt_starttx(DWT_START_TX_DELAYED);
+                dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
+                dwt_writetxdata(sizeof(struct pp_signal_flood), (uint8_t *) in_glossy_signal, 0);
+
+            } else {
+                // We are on the very edge of the network - just listen
+                dwt_rxenable(0);
+			}
 #endif
 		}
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
@@ -804,15 +820,28 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 
 					// Perpetuate the flood!
                     _cur_glossy_depth = ++in_glossy_sync->header.seqNum;
-                    memcpy(&_sync_pkt,        in_glossy_sync, get_sync_packet_length(in_glossy_sync) - sizeof(struct ieee154_footer)); // Write valid part of the packet (up to the valid part of the array) to the local _sync_pkt
-					memcpy(&_sync_pkt_buffer, in_glossy_sync, get_sync_packet_length(in_glossy_sync));
 
-					uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
-					delay_time &= 0xFFFFFFFE;
-					dwt_forcetrxoff();
-					lwb_send_sync(delay_time);
+                    if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-					_glossy_currently_flooding = TRUE;
+                        debug_msg("Sending flooding message with depth ");
+                        debug_msg_uint(_cur_glossy_depth);
+                        debug_msg("\n");
+
+                        _glossy_currently_flooding = TRUE;
+
+                        memcpy(&_sync_pkt       , in_glossy_sync, get_sync_packet_length(in_glossy_sync) - sizeof(struct ieee154_footer)); // Write valid part of the packet (up to the valid part of the array) to the local _sync_pkt
+                        memcpy(&_sync_pkt_buffer, in_glossy_sync, get_sync_packet_length(in_glossy_sync));
+
+                        uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
+                        delay_time &= 0xFFFFFFFE;
+                        dwt_forcetrxoff();
+                        lwb_send_sync(delay_time);
+
+                    } else {
+                        // We are on the very edge of the network - just listen
+                        dwt_rxenable(0);
+                    }
+
 				} else {
 					// We lost sync :(
 					_lwb_in_sync = FALSE;
@@ -984,7 +1013,7 @@ static void increment_sched_timeout(){
 
             if(_sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
                 memset(_init_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
-                _lwb_timeslot_init--;
+                _lwb_num_timeslots_init--;
 
                 // Reset
                 _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] = 0;
@@ -1003,7 +1032,7 @@ static void increment_sched_timeout(){
 
             if(_sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
                 memset(_resp_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
-                _lwb_timeslot_resp--;
+                _lwb_num_timeslots_resp--;
 
                 // Reset
                 _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] = 0;

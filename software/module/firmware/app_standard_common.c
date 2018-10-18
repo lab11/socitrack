@@ -407,6 +407,11 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 	dwt_readrxdata(buf, MIN(MSG_MAX_PACK_LEN, rxd->datalength), 0);
 
 	uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
+
+	/*debug_msg("Received message of type ");
+	debug_msg_uint(message_type);
+	debug_msg("\n");*/
+
 	if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SIGNAL)
 	{
 		// Handle Glossy packet; same for all roles - neither INIT nor RESP should be active currently
