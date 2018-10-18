@@ -87,12 +87,17 @@ dw1000_err_e standard_init_start_ranging_event () {
 	dw1000_err_e err;
 
 	if (si_scratch->state != ISTATE_IDLE) {
-		// Cannot start a ranging event if we are currently busy with one.
 
-		debug_msg("ERROR: Not in IDLE state, but in state ");
-		debug_msg_int(si_scratch->state);
-		debug_msg("\n");
-		return DW1000_BUSY;
+	    if (si_scratch->state == ISTATE_TRANSITION_TO_ANC_FINAL) {
+	        debug_msg("WARNING: State ISTATE_TRANSITION_TO_ANC_FINAL suggests no anchor replied...\n");
+	        si_scratch->state = ISTATE_IDLE;
+	    } else {
+            // Cannot start a ranging event if we are currently busy with one.
+            debug_msg("ERROR: Not in IDLE state, but in state ");
+            debug_msg_int(si_scratch->state);
+            debug_msg("\n");
+            return DW1000_BUSY;
+        }
 	}
 
     //debug_msg("Start ranging event...\r\n");
@@ -168,13 +173,11 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 		if (si_scratch->state == ISTATE_TRANSITION_TO_ANC_FINAL) {
 			// At this point we have sent all of our ranging broadcasts.
 			// Now we move to listening for responses from anchors.
-			si_scratch->state = ISTATE_LISTENING;
 
 			// Init some state
 			si_scratch->anchor_response_count = 0;
 
 			//debug_msg("Finished ranging. Waiting for responses from anchors...\n");
-            timer_stop(si_scratch->init_timer);
 
 		} else {
 			// We don't need to do anything on TX done for any other states
@@ -374,13 +377,6 @@ static void ranging_broadcast_subsequence_task () {
 		// to listen for responses from the anchor
 		si_scratch->state = ISTATE_TRANSITION_TO_ANC_FINAL;
 
-#ifdef PROTOCOL_REENABLE_HYBRIDS
-        // Reenable hybrid nodes after their ranging slot, so that they can respond to others
-        if (standard_is_resp_enabled() && standard_is_init_enabled()) {
-            standard_resp_start();
-        }
-#endif
-
 	}
 
 	// Go ahead and setup and send a ranging broadcast
@@ -395,6 +391,9 @@ void standard_init_start_response_listening() {
 
 	standard_set_resp_active(FALSE);
 	standard_set_init_active(TRUE);
+
+	// Change state
+	si_scratch->state = ISTATE_LISTENING;
 
 	// Set the correct listening settings
 	standard_set_ranging_response_settings(TRUE, 0);
@@ -428,8 +427,8 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
 		if (ranges_millimeters[i] != INT32_MAX) {
 			// This is a valid range
-			memcpy(si_scratch->anchor_ids_ranges + buffer_index, anchor_responses[i].anchor_addr, EUI_LEN);
-			buffer_index += EUI_LEN;
+			memcpy(si_scratch->anchor_ids_ranges + buffer_index, anchor_responses[i].anchor_addr, PROTOCOL_EUI_LEN);
+			buffer_index += PROTOCOL_EUI_LEN;
 			memcpy(si_scratch->anchor_ids_ranges + buffer_index, &ranges_millimeters[i], sizeof(int32_t));
 			buffer_index += sizeof(int32_t);
 			num_anchor_ranges++;

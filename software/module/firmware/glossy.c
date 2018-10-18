@@ -121,6 +121,9 @@ void glossy_init(glossy_role_e role){
 
 	memset(_sync_pkt.eui_array, 0, sizeof(_sync_pkt.eui_array));
 
+	// Add source address
+    memcpy(_sync_pkt.header.sourceAddr, standard_get_EUI(), EUI_LEN);
+
 	// Clear its buffer
 	memset(_sync_pkt_buffer, 0, sizeof(_sync_pkt_buffer));
 
@@ -194,8 +197,7 @@ void glossy_init(glossy_role_e role){
 		if (standard_is_init_enabled()) {
 
             // Add to schedule
-            memcpy(_init_sched_euis[0], standard_get_EUI(), PROTOCOL_EUI_LEN);
-            _lwb_num_timeslots_init += 1;
+            schedule_init(standard_get_EUI());
 
             // Local bookkeeping
 		    _lwb_sched_en  		= TRUE;
@@ -207,8 +209,7 @@ void glossy_init(glossy_role_e role){
 		if (standard_is_resp_enabled()) {
 
             // Add to schedule
-            memcpy(_resp_sched_euis[0], standard_get_EUI(), PROTOCOL_EUI_LEN);
-            _lwb_num_timeslots_resp += 1;
+            schedule_resp(standard_get_EUI());
 
             // Local bookkeeping
             _lwb_sched_en  		= TRUE;
@@ -268,8 +269,8 @@ void glossy_sync_task(){
     // The different round stages:
 	uint8_t lwb_slot_sync 	    = 0;
 	uint8_t lwb_slot_init_start = 1;
-	uint8_t lwb_slot_resp_start = (uint8_t)( lwb_slot_init_start + _lwb_num_timeslots_init );
-	uint8_t lwb_slot_contention = (uint8_t)( lwb_slot_resp_start + _lwb_num_timeslots_resp );
+	uint8_t lwb_slot_resp_start = (uint8_t)( lwb_slot_init_start + _lwb_num_timeslots_init * LWB_SLOTS_PER_RANGE);
+	uint8_t lwb_slot_cont_start = (uint8_t)( lwb_slot_resp_start + _lwb_num_timeslots_resp );
 	uint8_t lwb_slot_last		= (uint8_t)( _lwb_num_timeslots_total - 1 );
 
 	// NOTE: lwb_slot_last != "(GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1"
@@ -279,7 +280,7 @@ void glossy_sync_task(){
 	if(_role == GLOSSY_MASTER) {
 
 		// LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
-		if(_lwb_counter == lwb_slot_contention){
+		if(_lwb_counter == lwb_slot_cont_start){
 
             if (standard_is_init_active()) {
                 // Stop if still listening for responses
@@ -369,10 +370,10 @@ void glossy_sync_task(){
 			// IN SYNC: Figure out what to do for the given slot
 
 			// LWB Slot N-C: Contention slot
-			if( (lwb_slot_contention <= _lwb_counter                 ) &&
+			if( (lwb_slot_cont_start <= _lwb_counter                 ) &&
 				(                       _lwb_counter <= lwb_slot_last)   ) {
 
-                if ( (_lwb_counter == lwb_slot_contention) && standard_is_init_active()) {
+                if ( (_lwb_counter == lwb_slot_cont_start) && standard_is_init_active()) {
                     // Stop if still listening for responses
                     standard_init_stop_response_listening();
                 }
@@ -470,31 +471,47 @@ void glossy_sync_task(){
 		            dwt_forcetrxoff();
 		        }
 
+            // Restart hybrids after their initiator slot if necessary
+		    } else if (_lwb_scheduled_init 															             &&
+                       ( ((_lwb_counter - lwb_slot_init_start) / LWB_SLOTS_PER_RANGE) == _lwb_timeslot_init + 1) &&
+                       ( ((_lwb_counter - lwb_slot_init_start) % LWB_SLOTS_PER_RANGE) == 0                     )   ) {
+
+		        // Turn off init role
+		        standard_set_init_active(FALSE);
+
+#ifdef PROTOCOL_REENABLE_HYBRIDS
+                // Reenable hybrid nodes after their ranging slot, so that they can respond to others
+                if (standard_is_resp_enabled() && standard_is_init_enabled()) {
+                    standard_resp_start();
+                }
+#endif
 		    }
 		}
 
     // LWB Slots (I+1) - (I + R): Responder slots
 	} else if( (lwb_slot_resp_start <= _lwb_counter                      ) &&
-		(                       _lwb_counter < lwb_slot_contention)   ) {
+		       (                       _lwb_counter < lwb_slot_cont_start)   ) {
 
 		if( _lwb_scheduled_resp 										  &&
 			( (_lwb_counter - lwb_slot_resp_start) == _lwb_timeslot_resp)   ) {
 			// Our scheduled timeslot!
 			standard_resp_send_response();
 
-            if (_lwb_scheduled_init) {
-                // Re-enable initiators to receive the rest of the responses
-                standard_init_start_response_listening();
-            }
-
 		} else {
 
-			// Turn on reception if you are interested in timestamps
-			if (_lwb_counter == lwb_slot_resp_start) {
+			// Turn on reception if you are interested in timestamps; either at the beginning (as an initiator) or again after your slot (as a hybrid)
+			if ( (_lwb_counter == lwb_slot_resp_start)                                                        ||
+                 (_lwb_scheduled_resp && ( (_lwb_counter - lwb_slot_resp_start) == (_lwb_timeslot_resp + 1) ))  ){
+
+			    // Turn off RESP
+                standard_set_resp_active(FALSE);
 
 				if (_lwb_scheduled_init) {
-					// Enable initiators
+					// (Re-)Enable initiators to receive the rest of the responses
 					standard_init_start_response_listening();
+				} else {
+                    // Turn transceiver off (save energy)
+                    dwt_forcetrxoff();
 				}
 			}
 		}
@@ -934,7 +951,7 @@ static void increment_sched_timeout(){
 
     // Glossy master verifies that he doesnt kick himself out of the network
     if (standard_is_init_enabled()) {
-        if (memcmp(_init_sched_euis[0], standard_get_EUI(), EUI_LEN) == 0) {
+        if (memcmp(_init_sched_euis[0], standard_get_EUI(), PROTOCOL_EUI_LEN) == 0) {
             _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET] = 0;
         } else {
             debug_msg("ERROR: Glossy Master did not schedule itself for INIT!\n");
@@ -942,7 +959,7 @@ static void increment_sched_timeout(){
     }
 
     if (standard_is_resp_enabled()) {
-        if (memcmp(_resp_sched_euis[0], standard_get_EUI(), EUI_LEN) == 0) {
+        if (memcmp(_resp_sched_euis[0], standard_get_EUI(), PROTOCOL_EUI_LEN) == 0) {
             _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET] = 0;
         } else {
             debug_msg("ERROR: Glossy Master did not schedule itself for RESP!\n");
