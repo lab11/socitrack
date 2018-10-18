@@ -162,7 +162,7 @@ void glossy_init(glossy_role_e role){
 	_lwb_num_timeslots_total   = 0;
 	_lwb_num_timeslots_init    = 0;
 	_lwb_num_timeslots_resp	   = 0;
-	_lwb_num_timeslots_cont    = 1;
+	_lwb_num_timeslots_cont    = PROTOCOL_STANDARD_CONT_LENGTH;
 	_lwb_timeslot_init		   = 0;
 	_lwb_timeslot_resp		   = 0;
 	_clock_offset			   = 0;
@@ -294,13 +294,6 @@ void glossy_sync_task(){
 			dw1000_choose_antenna(LWB_ANTENNA);
 #endif
 
-#if (BOARD_V == SQUAREPOINT)
-			// Signal normal round by turning on GREEN
-			GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
-			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
-			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
-#endif
-
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
 		} else if(_lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ){
 
@@ -369,11 +362,10 @@ void glossy_sync_task(){
 
 			// IN SYNC: Figure out what to do for the given slot
 
-			// LWB Slot N-C: Contention slot
-			if( (lwb_slot_cont_start <= _lwb_counter                 ) &&
-				(                       _lwb_counter <= lwb_slot_last)   ) {
+			// LWB Slot N-C: Contention slots - We decide when to send in the first
+			if (_lwb_counter == lwb_slot_cont_start) {
 
-                if ( (_lwb_counter == lwb_slot_cont_start) && standard_is_init_active()) {
+                if (standard_is_init_active()) {
                     // Stop if still listening for responses
                     standard_init_stop_response_listening();
                 }
@@ -391,9 +383,14 @@ void glossy_sync_task(){
 						debug_msg("Sending schedule request...\n");
 
 						prepare_schedule_signal();
-					}
+					} else {
+                        debug_msg("Sending signalling packet...\r\n");
+                    }
 
-				    debug_msg("Sending signalling packet...\r\n");
+                    // Enable flooding already at the source
+                    _cur_glossy_depth          = 0; // seqNum in packet
+                    _glossy_currently_flooding = TRUE;
+
 				    standard_set_init_active(TRUE);
 				    standard_set_resp_active(FALSE);
 
@@ -412,10 +409,12 @@ void glossy_sync_task(){
 					_sched_req_pkt.turnaround_time = (uint64_t)(turnaround_time);
 					dw1000_choose_antenna(LWB_ANTENNA);
 #else
-					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(LWB_SLOT_US-2*GLOSSY_FLOOD_TIMESLOT_US)) + GLOSSY_FLOOD_TIMESLOT_US;
-					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
+					// FIXME: Reduce padding for contention slots
+					uint8_t  cont_length    = lwb_slot_last - lwb_slot_cont_start + 1;
+					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(cont_length * LWB_SLOT_US - 2*GLOSSY_FLOOD_TIMESLOT_US)) + 2*GLOSSY_FLOOD_TIMESLOT_US;
+					uint32_t delay_time     = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
 #endif
-
+					_last_delay_time = delay_time;
 					dwt_setdelayedtrxtime(delay_time);
 					dwt_setrxaftertxdelay(LWB_SLOT_US);
 					dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
@@ -515,7 +514,12 @@ void glossy_sync_task(){
 				}
 			}
 		}
-	}
+    // After the official round is over, we can turn off listening for signals
+    } else if(_lwb_counter == (lwb_slot_last + 1)) {
+        // Turn off all reception
+        dwt_forcetrxoff();
+    }
+
 }
 
 void lwb_set_sched_request(bool sched_en){
@@ -534,9 +538,18 @@ bool glossy_process_txcallback(){
 		_lwb_counter = 0;
 		_sending_sync = FALSE;
 
+#if (BOARD_V == SQUAREPOINT)
+		// Signal normal round by turning on GREEN
+		GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+		GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
+
 		is_glossy_callback = TRUE;
-	}
-	else if(_role == GLOSSY_SLAVE && _glossy_currently_flooding) {
+
+	} else if(_role == GLOSSY_SLAVE && _glossy_currently_flooding) {
+
+	    //debug_msg("Sending flooding message...\n");
 
 		// We're flooding, keep doing it until the max depth!
 		uint32_t delay_time = _last_delay_time + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
@@ -623,31 +636,37 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 #else
 			switch (in_glossy_signal->info_type) {
 				case SIGNAL_UNDEFINED: {
-					debug_msg("ERROR: Undefined signal!\n");
+					debug_msg("UNDEFINED!\n");
 					break;
 				}
 				case SCHED_REQUEST_INIT: {
+                    debug_msg("Schedule request for INIT\n");
 					schedule_init(in_glossy_signal->device_eui);
 					break;
 				}
 				case SCHED_REQUEST_RESP: {
+                    debug_msg("Schedule request for RESP\n");
 					schedule_resp(in_glossy_signal->device_eui);
 					break;
 				}
 				case SCHED_REQUEST_HYBRID: {
+                    debug_msg("Schedule request for HYBRID\n");
 					schedule_init(in_glossy_signal->device_eui);
 					schedule_resp(in_glossy_signal->device_eui);
 					break;
 				}
 				case DESCHED_REQUEST_INIT: {
+                    debug_msg("Deschedule request for INIT\n");
 					deschedule_init(in_glossy_signal->device_eui);
 					break;
 				}
 				case DESCHED_REQUEST_RESP: {
+                    debug_msg("Deschedule request for RESP\n");
 					deschedule_resp(in_glossy_signal->device_eui);
 					break;
 				}
 				case DESCHED_REQUEST_HYBRID: {
+                    debug_msg("Deschedule request for HYBRID\n");
 					deschedule_init(in_glossy_signal->device_eui);
 					deschedule_resp(in_glossy_signal->device_eui);
 					break;
@@ -719,6 +738,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 				_lwb_scheduled_init = TRUE;
 				_lwb_timeslot_init = (uint8_t)init_slot;
 			} else {
+                debug_msg("Device is not scheduled as INIT\n");
 				_lwb_scheduled_init = FALSE;
 			}
 
@@ -726,6 +746,7 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 				_lwb_scheduled_resp = TRUE;
 				_lwb_timeslot_resp  = (uint8_t)resp_slot;
 			} else {
+                debug_msg("Device is not scheduled as RESP\n");
 				_lwb_scheduled_resp = FALSE;
 			}
 
@@ -830,24 +851,41 @@ void prepare_schedule_signal() {
 static uint8_t schedule_device(uint8_t * array, uint8_t array_length, uint8_t * eui) {
 
 	uint8_t zero_array[PROTOCOL_EUI_LEN] = { 0 };
+	uint8_t candidate_slot = 0xFF;
 
 	for (uint8_t i = 0; i < (array_length / PROTOCOL_EUI_LEN); i++) {
 
-		if (memcmp( (array + i * PROTOCOL_EUI_LEN), zero_array, PROTOCOL_EUI_LEN) == 0) {
-			memcpy( (array + i * PROTOCOL_EUI_LEN),        eui, PROTOCOL_EUI_LEN);
+		// Check if already inside
+		if (memcmp( (array + i * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN) == 0) {
+			debug_msg("INFO: Node has already been scheduled\n");
+			return 0xFF;
+		}
 
-			/*debug_msg("Scheduled EUI ");
-			helper_print_EUI(eui);
-			debug_msg("in slot ");
-			debug_msg_uint(i);*/
-
-			return i;
+		// Search empty space - once we have found one, we still need to continue looking whether the node has been scheduled somewhere else (holes might exist due to deschedules)
+		if (candidate_slot < 0xFF) {
+			// We already have found a candidate slot, but verify that the node is not scheduled otherwise
+			continue;
+		} else if (memcmp( (array + i * PROTOCOL_EUI_LEN), zero_array, PROTOCOL_EUI_LEN) == 0) {
+			candidate_slot = i;
 		}
 	}
 
-	// No more space in array
-	debug_msg("WARNING: No more slots available!\n");
-	return 0xFF;
+	if (candidate_slot < 0xFF) {
+		// Found empty space, and node is not already scheduled
+		memcpy( (array + candidate_slot * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN);
+
+		/*debug_msg("Scheduled EUI ");
+        helper_print_EUI(eui);
+        debug_msg("in slot ");
+        debug_msg_uint(candidate_slot);*/
+
+		return candidate_slot;
+
+	} else {
+		// No more space in array
+		debug_msg("WARNING: No more slots available!\n");
+		return 0xFF;
+	}
 }
 
 static uint8_t schedule_init(uint8_t * eui) {
@@ -931,21 +969,47 @@ static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
 		}
 	}
 
-	debug_msg("Device is not scheduled\n");
+	//debug_msg("Device is not scheduled\n");
 	return -1;
 }
 
 static void increment_sched_timeout(){
 
+    // Timeout initiators
     for(int ii=0; ii < (PROTOCOL_INIT_SCHED_MAX); ii++){
 
         // Check if slot is actually used
         if(_init_sched_euis[ii][0] > 0){
             _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii]++;
-            if(_sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT)
+
+            if(_sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
                 memset(_init_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
+                _lwb_timeslot_init--;
+
+                // Reset
+                _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] = 0;
+            }
         } else {
-            _sched_timeouts[ii] = 0;
+            _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] = 0;
+        }
+    }
+
+    // Timeout responders
+    for(int ii=0; ii < (PROTOCOL_RESP_SCHED_MAX); ii++){
+
+        // Check if slot is actually used
+        if(_resp_sched_euis[ii][0] > 0){
+            _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii]++;
+
+            if(_sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
+                memset(_resp_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
+                _lwb_timeslot_resp--;
+
+                // Reset
+                _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] = 0;
+            }
+        } else {
+            _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] = 0;
         }
     }
 
@@ -1026,7 +1090,7 @@ static void write_data_to_sync() {
     // Set correct values
     _sync_pkt.init_schedule_length = (uint8_t)_lwb_num_timeslots_init;
     _sync_pkt.resp_schedule_length = (uint8_t)_lwb_num_timeslots_resp;
-    _sync_pkt.round_length         = (uint8_t)( 1 /*Sync itself*/ + _sync_pkt.init_schedule_length + _sync_pkt.resp_schedule_length + _lwb_num_timeslots_cont);
+    _sync_pkt.round_length         = (uint8_t)( 1 /*Sync itself*/ + _sync_pkt.init_schedule_length * LWB_SLOTS_PER_RANGE + _sync_pkt.resp_schedule_length + _lwb_num_timeslots_cont);
 
     // Set array; as this array is sparse, we use the sync_pkt_buffer to send the data afterwards
     memset(_sync_pkt.eui_array, 0, sizeof(_sync_pkt.eui_array));
@@ -1053,9 +1117,9 @@ static void write_sync_to_packet_buffer() {
 	uint8_t init_length = _sync_pkt.init_schedule_length * (uint8_t)PROTOCOL_EUI_LEN;
 	uint8_t resp_length = _sync_pkt.resp_schedule_length * (uint8_t)PROTOCOL_EUI_LEN;
 
-	memcpy(_sync_pkt_buffer + offset, &_sync_pkt.eui_array + PROTOCOL_INIT_SCHED_OFFSET * PROTOCOL_EUI_LEN, init_length);
+	memcpy(_sync_pkt_buffer + offset, _sync_pkt.eui_array + PROTOCOL_INIT_SCHED_OFFSET * PROTOCOL_EUI_LEN, init_length);
 	offset += init_length;
-	memcpy(_sync_pkt_buffer + offset, &_sync_pkt.eui_array + PROTOCOL_RESP_SCHED_OFFSET * PROTOCOL_EUI_LEN, resp_length);
+	memcpy(_sync_pkt_buffer + offset, _sync_pkt.eui_array + PROTOCOL_RESP_SCHED_OFFSET * PROTOCOL_EUI_LEN, resp_length);
 	offset += resp_length;
 
 	// Footer

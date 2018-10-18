@@ -417,7 +417,7 @@ static void 	write_anc_final_to_buffer() {
 	// Responses
 	uint8_t responses_length = sr_scratch->pp_anc_final_pkt.init_response_length * sizeof(struct pp_anc_final_init_response);
 
-	memcpy(dest + offset, &sr_scratch->pp_anc_final_pkt.init_responses, responses_length);
+	memcpy(dest + offset, sr_scratch->pp_anc_final_pkt.init_responses, responses_length);
 	offset += responses_length;
 
 	// Footer

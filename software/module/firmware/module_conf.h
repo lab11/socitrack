@@ -38,6 +38,8 @@
 // Allow hybrids to continue responding after they finished their own rangings
 #define PROTOCOL_REENABLE_HYBRIDS
 
+#define PROTOCOL_STANDARD_CONT_LENGTH	10
+
 #define PROTOCOL_INIT_SCHED_MAX     10
 #define PROTOCOL_RESP_SCHED_MAX     10
 
