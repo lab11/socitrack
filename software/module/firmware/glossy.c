@@ -411,9 +411,6 @@ static void glossy_lwb_round_task() {
                     _cur_glossy_depth          = 0; // seqNum in packet
                     _glossy_currently_flooding = TRUE;
 
-				    standard_set_init_active(TRUE);
-				    standard_set_resp_active(FALSE);
-
 					dwt_forcetrxoff();
 
 					uint16_t frame_len = sizeof(struct pp_signal_flood);
@@ -582,9 +579,9 @@ bool glossy_process_txcallback(){
 
         if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-            debug_msg("Sending flooding message with depth ");
+            /*debug_msg("Sending flooding message with depth ");
             debug_msg_uint(_cur_glossy_depth);
-            debug_msg("\n");
+            debug_msg("\n");*/
 
             // We're flooding, keep doing it until the max depth!
             uint32_t delay_time = _last_delay_time + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
@@ -746,9 +743,9 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 			if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-                debug_msg("Sending flooding message with depth ");
+                /*debug_msg("Sending flooding message with depth ");
                 debug_msg_uint(_cur_glossy_depth);
-                debug_msg("\n");
+                debug_msg("\n");*/
 
                 _glossy_currently_flooding = TRUE;
 
@@ -862,9 +859,9 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
                     if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-                        debug_msg("Sending flooding message with depth ");
+                        /*debug_msg("Sending flooding message with depth ");
                         debug_msg_uint(_cur_glossy_depth);
-                        debug_msg("\n");
+                        debug_msg("\n");*/
 
                         _glossy_currently_flooding = TRUE;
 

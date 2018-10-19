@@ -251,6 +251,12 @@ void resp_txcallback (const dwt_cb_data_t *txd) {
 		// Packet was sent successfully
 		//debug_msg("ANCHOR transmitted a packet\n");
 
+		// As we sent our single packet, we switch back to INIT mode to catch the rest of the packets
+		if (standard_is_init_enabled()) {
+		    standard_set_resp_active(FALSE);
+		    standard_set_init_active(TRUE);
+		}
+
 	} else {
 		// Some error occurred, don't just keep trying to send packets.
 		debug_msg("ERROR: Failed in sending packet!\n");
