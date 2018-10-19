@@ -325,6 +325,7 @@ static void send_poll () {
 
 	// Tell the DW1000 about the packet
 	dwt_writetxfctrl(tx_len, 0, MSG_TYPE_RANGING);
+	debug_print_tx(tx_len);
 
 	// Setup the time the packet will go out at, and save that timestamp
 	uint32_t delay_time = dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(tx_len);

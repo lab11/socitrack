@@ -108,6 +108,7 @@ struct pp_anc_final {
 	struct ieee154_footer footer;
 } __attribute__ ((__packed__));
 
+#define MSG_PP_ANC_FINAL_PAYLOAD_DEFAULT_LENGTH     11  // 3 * uint8_t + 1 * uint64_t
 
 /******************************************************************************/
 // State objects for the standard application
@@ -186,6 +187,7 @@ void resp_txcallback  (const dwt_cb_data_t *txd);
 void resp_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp);
 
 // Helper functions
+void debug_print_tx(uint32_t length);
 void helper_print_EUI(uint8_t * address);
 
 #endif

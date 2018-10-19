@@ -418,6 +418,7 @@ static void glossy_lwb_round_task() {
 
 					uint16_t frame_len = sizeof(struct pp_signal_flood);
 					dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
+                    debug_print_tx(frame_len);
 
 					// Send out a signalling packet during this contention slot
 					// Pick a random time offset to avoid colliding with others
@@ -485,7 +486,7 @@ static void glossy_lwb_round_task() {
 
 		        if (_lwb_scheduled_resp) {
                     // Enable responders
-                    standard_set_resp_active(TRUE);
+                    standard_resp_start();
 		        } else {
 		            // Turn transceiver off (save energy) - initiators will wake up in their own slot
 		            dwt_forcetrxoff();
@@ -611,6 +612,7 @@ bool glossy_process_txcallback(){
 void lwb_send_sync(uint32_t delay_time){
 	uint16_t frame_len = get_sync_packet_length(&_sync_pkt);
 	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
+	debug_print_tx(frame_len);
 
 	_last_delay_time = delay_time;
 
@@ -752,6 +754,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
                 uint16_t frame_len = sizeof(struct pp_signal_flood);
                 dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
+				debug_print_tx(frame_len);
 
                 // Flood out as soon as possible
                 uint32_t delay_time = (dw_timestamp >> 8) + (DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE);
@@ -1097,7 +1100,7 @@ static void increment_sched_timeout(){
 }
 
 static uint8_t get_sync_packet_length(struct pp_sched_flood * packet) {
-	uint8_t packet_size  = sizeof(struct ieee154_header_broadcast) + 4 + sizeof(struct ieee154_footer);
+	uint8_t packet_size  = sizeof(struct ieee154_header_broadcast) + MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH + sizeof(struct ieee154_footer);
 			packet_size += (packet->init_schedule_length + packet->resp_schedule_length) * PROTOCOL_EUI_LEN;
 
 	/*debug_msg("Schedule packet size: ");
@@ -1183,7 +1186,7 @@ static void write_sync_to_packet_buffer() {
 	uint8_t offset = 0;
 
 	// Header + Constant part
-	uint8_t header_length = sizeof(struct ieee154_header_broadcast) + 4;
+	uint8_t header_length = sizeof(struct ieee154_header_broadcast) + MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH;
 
 	memcpy(_sync_pkt_buffer + offset, &_sync_pkt, header_length);
 	offset += header_length;

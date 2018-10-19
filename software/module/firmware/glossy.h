@@ -61,6 +61,8 @@ struct pp_sched_flood {
 	struct ieee154_footer footer;
 } __attribute__ ((__packed__));
 
+#define MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH   4 // 4 * uint8_t
+
 struct pp_signal_flood {
 	struct ieee154_header_broadcast header;
 	uint8_t message_type;

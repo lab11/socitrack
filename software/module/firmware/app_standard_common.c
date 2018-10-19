@@ -364,11 +364,15 @@ uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_ind
 // TX / RX functions
 /******************************************************************************/
 
+void debug_print_tx(uint32_t length) {
+    /*debug_msg("Tx -> length ");
+    debug_msg_uint(length);
+    debug_msg("\n");*/
+}
+
 static void common_txcallback(const dwt_cb_data_t *txd) {
 
-	/*debug_msg("Tx -> length: ");
-	debug_msg_uint(txd->datalength);
-	debug_msg("\n");*/
+	//debug_msg("Tx -> done\n"); // datalength is NOT valid for Tx callbacks
 
 	// Handle GLOSSY
 	if (glossy_process_txcallback()) {

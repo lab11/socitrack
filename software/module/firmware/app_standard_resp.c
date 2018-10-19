@@ -92,12 +92,7 @@ dw1000_err_e standard_resp_start () {
 		// Chip did not seem to wakeup. This is not good, so we have
 		// to reset the application.
 		return err;
-	} else {
-	    // Did not go to sleep
-
-	    // Clear state
-        memset(sr_scratch->resp_antenna_recv_num, 0, sizeof(sr_scratch->resp_antenna_recv_num));
-    }
+	}
 
 	// Also we start over in case the anchor was doing anything before
 	sr_scratch->state = RSTATE_IDLE;
@@ -148,6 +143,9 @@ static void ranging_broadcast_subsequence_task () {
 
 		// Stop iterating through timing channels
 		timer_stop(sr_scratch->resp_timer);
+
+		// Prepare for next initiators
+		sr_scratch->pp_anc_final_pkt.init_response_length++;
 
 		// Now, we either wait for the next initiator or will start responding with our packet when its our turn
 		standard_resp_start();
@@ -211,6 +209,7 @@ void standard_resp_send_response () {
 
 	const uint16_t frame_len = get_anc_final_packet_length(&sr_scratch->pp_anc_final_pkt);
 	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_RANGING);
+    debug_print_tx(frame_len);
 
 	// Leave enough time to copy packet
 	// TODO: Verify that frames are not too long and have sufficient time to be transmitted and copied
@@ -236,6 +235,10 @@ void standard_resp_send_response () {
 
 	// Done with our response; Go back to IDLE
 	sr_scratch->state = RSTATE_IDLE;
+
+    // Clear state for next round
+    sr_scratch->pp_anc_final_pkt.init_response_length = 0;
+    memset(sr_scratch->resp_antenna_recv_num, 0, sizeof(sr_scratch->resp_antenna_recv_num));
 
 }
 
@@ -274,9 +277,9 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 			/*debug_msg("Received Poll message ");
 			debug_msg_int(rx_poll_pkt->subsequence);
 			debug_msg(": ");
-			debug_msg_int((uint32_t)(dw_rx_timestamp >> 32));
+			debug_msg_uint((uint32_t)(dw_rx_timestamp >> 32));
 			debug_msg(" ");
-			debug_msg_int((uint32_t)(dw_rx_timestamp & 0xFFFFFFFF));
+			debug_msg_uint((uint32_t)(dw_rx_timestamp & 0xFFFFFFFF));
 			debug_msg("\n");*/
 
 			// Decide what to do with this packet
@@ -400,7 +403,7 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 // Helper functions ----------------------------------------------------------------------------------------------------
 
 
-static void 	write_anc_final_to_buffer() {
+static void write_anc_final_to_buffer() {
 
 	uint8_t * dest = sr_scratch->pp_anc_final_pkt_buffer;
 
@@ -408,16 +411,16 @@ static void 	write_anc_final_to_buffer() {
 	memset(dest, 0, sizeof(sr_scratch->pp_anc_final_pkt_buffer));
 
 	// Fill buffer:
-	uint8_t offset = 0;
+	uint16_t offset = 0;
 
 	// Header + Constant part
-	uint8_t header_length = sizeof(struct ieee154_header_broadcast) + 4;
+	uint16_t header_length = sizeof(struct ieee154_header_broadcast) + MSG_PP_ANC_FINAL_PAYLOAD_DEFAULT_LENGTH;
 
 	memcpy(dest + offset, &sr_scratch->pp_anc_final_pkt, header_length);
 	offset += header_length;
 
 	// Responses
-	uint8_t responses_length = sr_scratch->pp_anc_final_pkt.init_response_length * sizeof(struct pp_anc_final_init_response);
+	uint16_t responses_length = sr_scratch->pp_anc_final_pkt.init_response_length * sizeof(struct pp_anc_final_init_response);
 
 	memcpy(dest + offset, sr_scratch->pp_anc_final_pkt.init_responses, responses_length);
 	offset += responses_length;
@@ -428,8 +431,8 @@ static void 	write_anc_final_to_buffer() {
 
 static uint16_t get_anc_final_packet_length(struct pp_anc_final * packet) {
 
-	uint16_t packet_length  = sizeof(struct ieee154_header_broadcast) + 4 + sizeof(struct ieee154_footer);
-			packet_length += packet->init_response_length * sizeof(struct pp_anc_final_init_response);
+	uint16_t packet_length  = sizeof(struct ieee154_header_broadcast) + MSG_PP_ANC_FINAL_PAYLOAD_DEFAULT_LENGTH + sizeof(struct ieee154_footer);
+			 packet_length += packet->init_response_length * sizeof(struct pp_anc_final_init_response);
 
 	/*debug_msg("Anchor response packet size: ");
 	debug_msg_uint(packet_length);
