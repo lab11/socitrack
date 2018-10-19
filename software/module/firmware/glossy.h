@@ -19,7 +19,7 @@
 
 #define MAX_SCHED_TAGS            10
 #define GLOSSY_MAX_DEPTH          5
-#define TAG_SCHED_TIMEOUT         60
+#define TAG_SCHED_TIMEOUT         10
 
 #ifdef GLOSSY_PER_TEST
 #define GLOSSY_UPDATE_INTERVAL_US 1e4
@@ -80,9 +80,8 @@ struct pp_signal_flood {
 void glossy_init(glossy_role_e role);
 void glossy_start();
 void glossy_deschedule();
-void glossy_sync_task();
 void lwb_set_sched_request(bool sched_en);
-void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf);
+void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf);
 bool glossy_process_txcallback();
 
 #endif

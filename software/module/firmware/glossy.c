@@ -45,10 +45,13 @@ static bool  	_lwb_in_sync;
 static bool     _lwb_sched_en;
 static bool     _lwb_scheduled_init;
 static bool     _lwb_scheduled_resp;
+static uint32_t _lwb_num_scheduled_init;
+static uint32_t _lwb_num_scheduled_resp;
 static uint32_t _lwb_num_timeslots_total;
 static uint32_t _lwb_num_timeslots_init;
 static uint32_t _lwb_num_timeslots_resp;
 static uint32_t _lwb_num_timeslots_cont;
+static uint32_t _lwb_num_signalling_used;
 static uint32_t _lwb_timeslot_init;
 static uint32_t _lwb_timeslot_resp;
 static double _clock_offset;
@@ -76,6 +79,7 @@ static uint8_t deschedule_init(uint8_t * eui);
 static uint8_t deschedule_resp(uint8_t * eui);
 static int 	   check_if_scheduled(uint8_t * array, uint8_t array_length);
 
+static void    glossy_lwb_round_task();
 static void    increment_sched_timeout();
 
 static void    write_data_to_sync();
@@ -159,10 +163,13 @@ void glossy_init(glossy_role_e role){
 	_lwb_sched_en 			   = FALSE;
 	_lwb_scheduled_init        = FALSE;
 	_lwb_scheduled_resp        = FALSE;
+	_lwb_num_scheduled_init    = 0;
+	_lwb_num_scheduled_resp    = 0;
 	_lwb_num_timeslots_total   = 0;
 	_lwb_num_timeslots_init    = 0;
 	_lwb_num_timeslots_resp	   = 0;
 	_lwb_num_timeslots_cont    = PROTOCOL_STANDARD_CONT_LENGTH;
+	_lwb_num_signalling_used   = 0;
 	_lwb_timeslot_init		   = 0;
 	_lwb_timeslot_resp		   = 0;
 	_clock_offset			   = 0;
@@ -228,7 +235,7 @@ void glossy_start() {
     lwb_set_sched_request(TRUE);
 
     // Kick-off the Glossy timer
-    timer_start(_glossy_timer, LWB_SLOT_US, glossy_sync_task);
+    timer_start(_glossy_timer, LWB_SLOT_US, glossy_lwb_round_task);
 }
 
 void glossy_deschedule(){
@@ -259,10 +266,10 @@ void glossy_enable_reception() {
 	dwt_rxenable(0);
 }
 
-void glossy_sync_task(){
+static void glossy_lwb_round_task() {
 	_lwb_counter++;
 
-    /*debug_msg("GLOSSY is in LWB slot ");
+    /*debug_msg("LWB slot: ");
     debug_msg_int(_lwb_counter);
     debug_msg("\n");*/
 
@@ -272,6 +279,19 @@ void glossy_sync_task(){
 	uint8_t lwb_slot_resp_start = (uint8_t)( lwb_slot_init_start + _lwb_num_timeslots_init * LWB_SLOTS_PER_RANGE);
 	uint8_t lwb_slot_cont_start = (uint8_t)( lwb_slot_resp_start + _lwb_num_timeslots_resp );
 	uint8_t lwb_slot_last		= (uint8_t)( _lwb_num_timeslots_total - 1 );
+
+	// Debugging information
+	/*if (_lwb_counter == 1) {
+        debug_msg("Round info: init_start ");
+        debug_msg_uint(lwb_slot_init_start);
+        debug_msg("; resp_start ");
+        debug_msg_uint(lwb_slot_resp_start);
+        debug_msg("; cont_start ");
+        debug_msg_uint(lwb_slot_cont_start);
+        debug_msg("; last ");
+        debug_msg_uint(lwb_slot_last);
+        debug_msg("\n");
+    }*/
 
 	// NOTE: lwb_slot_last != "(GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)-1"
 	// lwb_slot_last is the last used slot and will be relevant for contention
@@ -423,6 +443,7 @@ void glossy_sync_task(){
 
 					_signal_pkt.info_type = SIGNAL_UNDEFINED;
 				} else {
+				    // Listen for signalling messages from others
 					dwt_rxenable(0);
 				}
 
@@ -517,6 +538,10 @@ void glossy_sync_task(){
     // After the official round is over, we can turn off listening for signals
     } else if(_lwb_counter == (lwb_slot_last + 1)) {
         // Turn off all reception
+        /*debug_msg(" - End of round; total length ");
+        debug_msg_uint(_lwb_num_timeslots_total);
+        debug_msg("\n");*/
+
         dwt_forcetrxoff();
     }
 
@@ -537,6 +562,9 @@ bool glossy_process_txcallback(){
 		timer_reset(_glossy_timer, 0);
 		_lwb_counter = 0;
 		_sending_sync = FALSE;
+
+		// Reset statistics about previous round
+		_lwb_num_signalling_used = 0;
 
 #if (BOARD_V == SQUAREPOINT)
 		// Signal normal round by turning on GREEN
@@ -601,7 +629,7 @@ int8_t clock_offset_to_trim_diff(double ppm_offset){
        return (int8_t) (floor(ppm_offset/CW_CAL_12PF + 0.5));
 }
 
-void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
+void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 	struct pp_sched_flood  *in_glossy_sync   = (struct pp_sched_flood  *) buf;
 	struct pp_signal_flood *in_glossy_signal = (struct pp_signal_flood *) buf;
@@ -613,11 +641,19 @@ void glossy_sync_process(uint64_t dw_timestamp, uint8_t *buf){
 	_last_overall_timestamp = dw_timestamp;
 	dw_timestamp += _time_overflow;
 
+	// Debugging information
+    /*debug_msg("Rx -> depth: ");
+    debug_msg_uint(in_glossy_sync->header.seqNum);
+    debug_msg("; sender: ");
+    debug_msg_uint(in_glossy_sync->header.sourceAddr[0]);
+    debug_msg("\n");*/
+
 	if(_role == GLOSSY_MASTER) {
 
 		// If this is a schedule request, try to fit the requesting tag into the schedule
 		if (in_glossy_signal->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL) {
 
+		    _lwb_num_signalling_used++; // TODO: Detect if unique (as flooding multiplies)
 		    debug_msg("Received signalling packet: ");
 
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
@@ -923,7 +959,7 @@ static uint8_t schedule_init(uint8_t * eui) {
 
     if (slot < 0xFF) {
         _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + slot] = 0;
-        _lwb_num_timeslots_init++;
+        _lwb_num_scheduled_init++;
     }
 
     return slot;
@@ -935,7 +971,7 @@ static uint8_t schedule_resp(uint8_t * eui) {
 
     if (slot < 0xFF) {
         _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + slot] = 0;
-        _lwb_num_timeslots_resp++;
+        _lwb_num_scheduled_resp++;
     }
 
     return slot;
@@ -968,7 +1004,7 @@ static uint8_t deschedule_init(uint8_t * eui) {
 
     if (slot < 0xFF) {
         _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + slot] = 0;
-        _lwb_num_timeslots_init--;
+        _lwb_num_scheduled_init--;
     }
 
     return slot;
@@ -980,7 +1016,7 @@ static uint8_t deschedule_resp(uint8_t * eui) {
 
     if (slot < 0xFF) {
         _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + slot] = 0;
-        _lwb_num_timeslots_resp--;
+        _lwb_num_scheduled_resp--;
     }
 
     return slot;
@@ -1013,7 +1049,7 @@ static void increment_sched_timeout(){
 
             if(_sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
                 memset(_init_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
-                _lwb_num_timeslots_init--;
+                _lwb_num_scheduled_init--;
 
                 // Reset
                 _sched_timeouts[PROTOCOL_INIT_SCHED_OFFSET + ii] = 0;
@@ -1032,7 +1068,7 @@ static void increment_sched_timeout(){
 
             if(_sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
                 memset(_resp_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
-                _lwb_num_timeslots_resp--;
+                _lwb_num_scheduled_resp--;
 
                 // Reset
                 _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] = 0;
@@ -1116,10 +1152,20 @@ static void write_data_to_sync() {
     compress_array( (uint8_t*)_init_sched_euis, sizeof(_init_sched_euis), PROTOCOL_EUI_LEN);
     compress_array( (uint8_t*)_resp_sched_euis, sizeof(_init_sched_euis), PROTOCOL_EUI_LEN);
 
+    // TODO: Adjust contention according to usage
+    if (_lwb_num_signalling_used == _lwb_num_timeslots_cont) {
+        // Adjust
+    }
+
     // Set correct values
-    _sync_pkt.init_schedule_length = (uint8_t)_lwb_num_timeslots_init;
-    _sync_pkt.resp_schedule_length = (uint8_t)_lwb_num_timeslots_resp;
+    _sync_pkt.init_schedule_length = (uint8_t)_lwb_num_scheduled_init;
+    _sync_pkt.resp_schedule_length = (uint8_t)_lwb_num_scheduled_resp;
     _sync_pkt.round_length         = (uint8_t)( 1 /*Sync itself*/ + _sync_pkt.init_schedule_length * LWB_SLOTS_PER_RANGE + _sync_pkt.resp_schedule_length + _lwb_num_timeslots_cont);
+
+    // For Glossy Master, as it does not read the schedule - note that due to signalling, _lwb_num_scheduled_X and _lwb_num_timeslots_X might NOT be identital during the course of a round
+    _lwb_num_timeslots_init  = _sync_pkt.init_schedule_length;
+    _lwb_num_timeslots_resp  = _sync_pkt.resp_schedule_length;
+    _lwb_num_timeslots_total = _sync_pkt.round_length;
 
     // Set array; as this array is sparse, we use the sync_pkt_buffer to send the data afterwards
     memset(_sync_pkt.eui_array, 0, sizeof(_sync_pkt.eui_array));

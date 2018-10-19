@@ -227,7 +227,7 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 			// Check that anchor actually has responses for us
 			int resp_idx = -1;
-			for (uint8_t i=0; i<anc_final->init_response_length; i++) {
+			for (uint8_t i=0; i < anc_final->init_response_length; i++) {
 			    if (memcmp(standard_get_EUI(), anc_final->init_responses[i].init_eui, PROTOCOL_EUI_LEN) == 0) {
 			        resp_idx = i;
 			        break;

@@ -34,8 +34,8 @@ void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
 	sr_scratch->pp_anc_final_pkt = (struct pp_anc_final) {
 		.header = {
 			.frameCtrl = {
-				0x61, // FCF[0]: data frame, ack request, panid compression
-				0xCC  // FCF[1]: ext source, ext destination
+				0x41, // FCF[0]: data frame, ack request, panid compression
+				0xC8  // FCF[1]: ext source, ext destination
 			},
 			.seqNum = 0,
 			.panID = {
@@ -209,19 +209,12 @@ void standard_resp_send_response () {
 	// Prepare the outgoing packet to send back to the tags with our TOAs.
 	sr_scratch->pp_anc_final_pkt.header.seqNum = ranval(&(sr_scratch->prng_state)) & 0xFF;
 
-	// Write our packet to the buffer
-	write_anc_final_to_buffer();
-
 	const uint16_t frame_len = get_anc_final_packet_length(&sr_scratch->pp_anc_final_pkt);
-
 	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_RANGING);
-
-	dwt_setrxaftertxdelay(1);
 
 	// Leave enough time to copy packet
 	// TODO: Verify that frames are not too long and have sufficient time to be transmitted and copied
 	uint32_t delay_time = dwt_readsystimestamphi32() + DW_DELAY_FROM_US(RANGING_RESPONSE_PADDING_US + dw1000_preamble_time_in_us());
-
 	delay_time &= 0xFFFFFFFE;
 
 	// Set the packet to be transmitted later.
@@ -231,9 +224,13 @@ void standard_resp_send_response () {
 	// account here, as that is done on all of the RX timestamps.
 	sr_scratch->pp_anc_final_pkt.dw_time_sent = (((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX);
 
+    // Write our packet to the buffer
+    write_anc_final_to_buffer();
+
 	// Send the response packet
-	// TODO: handle if starttx errors. I'm not sure what to do about it, other than just wait for the next slot.
-	dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
+    //dwt_setrxaftertxdelay(1);
+    // TODO: handle if starttx errors. I'm not sure what to do about it, other than just wait for the next slot.
+	dwt_starttx(DWT_START_TX_DELAYED);
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
 	dwt_writetxdata(frame_len, sr_scratch->pp_anc_final_pkt_buffer, 0);
 

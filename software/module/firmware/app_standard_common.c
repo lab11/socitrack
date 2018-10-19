@@ -366,6 +366,10 @@ uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_ind
 
 static void common_txcallback(const dwt_cb_data_t *txd) {
 
+	/*debug_msg("Tx -> length: ");
+	debug_msg_uint(txd->datalength);
+	debug_msg("\n");*/
+
 	// Handle GLOSSY
 	if (glossy_process_txcallback()) {
 		// We already handled the packet
@@ -408,14 +412,16 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 
 	uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
 
-	/*debug_msg("Received message of type ");
+	/*debug_msg("Rx -> length: ");
+	debug_msg_uint(rxd->datalength);
+	debug_msg("; type: ");
 	debug_msg_uint(message_type);
 	debug_msg("\n");*/
 
 	if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SIGNAL)
 	{
 		// Handle Glossy packet; same for all roles - neither INIT nor RESP should be active currently
-		glossy_sync_process(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(0), buf);
+		glossy_process_rxcallback(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(0), buf);
 	}
 	else {
 
