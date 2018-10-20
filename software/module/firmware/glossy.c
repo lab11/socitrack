@@ -521,10 +521,10 @@ static void glossy_lwb_round_task() {
 	} else if( (lwb_slot_resp_start <= _lwb_counter                      ) &&
 		       (                       _lwb_counter < lwb_slot_cont_start)   ) {
 
-		if( _lwb_scheduled_resp 										  &&
-			( (_lwb_counter - lwb_slot_resp_start) == _lwb_timeslot_resp)   ) {
-			// Our scheduled timeslot!
-			standard_resp_send_response();
+		if( _lwb_scheduled_resp                                                                      &&
+			( (_lwb_counter - lwb_slot_resp_start) == (_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) )  ) {
+			// Our scheduled timeslot! The timer will trigger the correct message slot inside the LWB slot
+			standard_resp_trigger_response(_lwb_timeslot_resp % LWB_RESPONSES_PER_SLOT);
 
 		} else {
 
@@ -545,7 +545,7 @@ static void glossy_lwb_round_task() {
 			}
 		}
     // After the official round is over, we can turn off listening for signals
-    } else if(_lwb_counter == (lwb_slot_last + 1)) {
+    } else if(_lwb_counter == (lwb_slot_last + (uint32_t)1)) {
         // Turn off all reception
         /*debug_msg(" - End of round; total length ");
         debug_msg_uint(_lwb_num_timeslots_total);

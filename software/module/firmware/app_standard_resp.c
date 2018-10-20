@@ -11,6 +11,7 @@
 #include "module_conf.h"
 
 #include "app_standard_common.h"
+#include "app_standard_init.h"
 #include "app_standard_resp.h"
 
 // APPLICATION STATE ---------------------------------------------------------------------------------------------------
@@ -18,6 +19,9 @@
 standard_resp_scratchspace_struct *sr_scratch;
 
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
+
+static void standard_resp_task();
+static void standard_resp_send_response();
 
 // Helper functions
 static void 	write_anc_final_to_buffer();
@@ -159,8 +163,49 @@ static void ranging_broadcast_subsequence_task () {
 	}
 }
 
+void standard_resp_trigger_response (uint8_t slot_nr) {
+
+    sr_scratch->resp_window_timeslot = slot_nr;
+    sr_scratch->resp_window_nr       = 0;
+
+    /*debug_msg("Triggered response window, responding in slot ");
+    debug_msg_uint(slot_nr);
+    debug_msg("\n");*/
+
+    // We wait for our message slot inside the LWB slot
+    timer_start(sr_scratch->resp_timer, LWB_SLOT_US / LWB_RESPONSES_PER_SLOT, standard_resp_task);
+}
+
+static void standard_resp_task () {
+
+    if (sr_scratch->resp_window_nr == sr_scratch->resp_window_timeslot) {
+        // Our slot
+        standard_resp_send_response();
+    } else if ( (sr_scratch->resp_window_nr == 0)                                     ||
+                (sr_scratch->resp_window_nr == (sr_scratch->resp_window_timeslot + 1))  ) {
+
+        // Turn off RESP
+        standard_set_resp_active(FALSE);
+
+        // Turn on listening for other responders either before or after our own timeslot
+        if (standard_is_init_enabled()) {
+            // Reenable initiators to receive the rest of the responses
+            standard_init_start_response_listening();
+        } else {
+            // Turn transceiver off (save energy)
+            dwt_forcetrxoff();
+        }
+    }
+
+    if (sr_scratch->resp_window_nr == (LWB_RESPONSES_PER_SLOT - 1) ) {
+        timer_stop(sr_scratch->resp_timer);
+    }
+
+    sr_scratch->resp_window_nr++;
+}
+
 // Called for transmitting responses to the tag.
-void standard_resp_send_response () {
+static void standard_resp_send_response () {
 
 	// Update our state to the TX response state
 	sr_scratch->state = RSTATE_RESPONDING;

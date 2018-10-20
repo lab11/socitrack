@@ -390,6 +390,8 @@ static void ranging_broadcast_subsequence_task () {
 
 void standard_init_start_response_listening() {
 
+    //debug_msg("Listening for responses\n");
+
 	standard_set_resp_active(FALSE);
 	standard_set_init_active(TRUE);
 
@@ -398,6 +400,8 @@ void standard_init_start_response_listening() {
 
 	// Set the correct listening settings
 	standard_set_ranging_response_settings(TRUE, 0);
+
+	// TODO: Turn off Rx mode inside an only partly used LWB response slot (e.g. when we use a new one with only a single responder, turn of Rx after that last one)
 
 	// Make SURE we're in RX mode!
 	dwt_rxenable(0);

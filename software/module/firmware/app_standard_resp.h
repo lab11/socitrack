@@ -31,6 +31,11 @@ typedef struct {
 	standard_resp_state_e state;
 	// Which spot in the ranging broadcast sequence we are currently at
 	uint8_t ranging_broadcast_ss_num;
+
+	// Which spot in the response slot we are scheduled in
+	uint8_t resp_window_timeslot;
+	// Which spot in the response slot we are currently at
+	uint8_t resp_window_nr;
 	
 	// Keep track of, in each ranging session with a tag, how many packets we
 	// receive on each antenna. This lets us pick the best antenna to use
@@ -50,6 +55,6 @@ void 		 standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace)
 dw1000_err_e standard_resp_start ();
 void 		 standard_resp_stop ();
 
-void		 standard_resp_send_response();
+void		 standard_resp_trigger_response (uint8_t slot_nr);
 
 #endif
