@@ -388,7 +388,7 @@ static void ranging_broadcast_subsequence_task () {
 	si_scratch->ranging_broadcast_ss_num += 1;
 }
 
-void standard_init_start_response_listening() {
+void standard_init_start_response_listening(uint8_t nr_slots) {
 
     //debug_msg("Listening for responses\n");
 
@@ -401,10 +401,15 @@ void standard_init_start_response_listening() {
 	// Set the correct listening settings
 	standard_set_ranging_response_settings(TRUE, 0);
 
-	// TODO: Turn off Rx mode inside an only partly used LWB response slot (e.g. when we use a new one with only a single responder, turn of Rx after that last one)
-
 	// Make SURE we're in RX mode!
 	dwt_rxenable(0);
+
+    // Turn off Rx mode inside an only partly used LWB response slot (e.g. when we use a new one with only a single responder, turn of Rx after that last one)
+    // Note: nr_slots == 0 -> we do not set the timer, as it is not required to stop reception (no partly used slot)
+    if ( (nr_slots > 0) && (si_scratch->init_timer != NULL) ) {
+    	si_scratch->response_listening_timer_active = TRUE;
+        timer_start(si_scratch->init_timer, LWB_SLOT_US / LWB_RESPONSES_PER_SLOT * nr_slots, standard_init_stop_response_listening);
+    }
 
 }
 
@@ -412,11 +417,23 @@ void standard_init_start_response_listening() {
 // the responses from the anchors.
 void standard_init_stop_response_listening () {
 
+	if (si_scratch->response_listening_timer_active) {
+		// First time the timer is triggerd (directly after it is set, i.e. when counter == 0), we do NOT yet stop
+		// Setting timer to false will result in successful stopping listening when the timer is triggered after the configured number of slots
+		si_scratch->response_listening_timer_active = FALSE;
+		return;
+	}
+
     // Stop the radio
     dwt_forcetrxoff();
 
     // End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
     standard_set_init_active(FALSE);
+
+    // Turn off timer in case we used it to stop reception earlier and safe energy
+    if (si_scratch->init_timer != NULL) {
+        timer_stop(si_scratch->init_timer);
+    }
 
     // This function finishes up this ranging event.
     report_range();

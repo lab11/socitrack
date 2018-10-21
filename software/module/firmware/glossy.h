@@ -87,5 +87,10 @@ void lwb_set_sched_request(bool sched_en);
 void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf);
 bool glossy_process_txcallback();
 
+// Helpers
+
+//	 	glossy_get_resp_listening_slots_a -> static
+uint8_t glossy_get_resp_listening_slots_b();
+
 #endif
 

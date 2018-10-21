@@ -9,6 +9,7 @@
 #include "deca_regs.h"
 
 #include "board.h"
+#include "host_interface.h"
 #include "timer.h"
 #include "prng.h"
 #include "SEGGER_RTT.h"
@@ -42,19 +43,20 @@ static uint8_t  _cur_glossy_depth;
 static bool     _glossy_currently_flooding;
 
 static bool  	_lwb_in_sync;
+static uint8_t  _lwb_master_eui[EUI_LEN];
 static bool     _lwb_sched_en;
-static bool     _lwb_scheduled_init;
+static bool     _lwb_scheduled_init;        // _lwb_scheduled_X is a boolean variable determining whether the node has been scheduled as X in the current round
 static bool     _lwb_scheduled_resp;
 static uint32_t _lwb_num_scheduled_init;
-static uint32_t _lwb_num_scheduled_resp;
+static uint32_t _lwb_num_scheduled_resp;    // _lwb_num_scheduled_X is the number of X scheduled for the next round (only relevant for the Glossy master)
 static uint32_t _lwb_num_timeslots_total;
-static uint32_t _lwb_num_init;
+static uint32_t _lwb_num_init;              // _lwb_num_X           is the number of X in the current round
 static uint32_t _lwb_num_resp;
 static uint32_t _lwb_num_timeslots_cont;
 static uint32_t _lwb_num_signalling_used;
 static uint8_t  _lwb_prev_signalling_type;
 static uint8_t  _lwb_prev_signalling_eui[EUI_LEN];
-static uint32_t _lwb_timeslot_init;
+static uint32_t _lwb_timeslot_init;         // _lwb_timeslot_X is the assigned timeslot of the present node in the current schedule
 static uint32_t _lwb_timeslot_resp;
 static double _clock_offset;
 
@@ -80,6 +82,9 @@ static uint8_t   schedule_resp(uint8_t * eui);
 static uint8_t deschedule_init(uint8_t * eui);
 static uint8_t deschedule_resp(uint8_t * eui);
 static int 	   check_if_scheduled(uint8_t * array, uint8_t array_length);
+
+static uint8_t glossy_get_resp_listening_slots_a();
+//             glossy_get_resp_listening_slots_b -> public
 
 static void    glossy_lwb_round_task();
 static void    lwb_increment_sched_timeout();
@@ -181,6 +186,7 @@ void glossy_init(glossy_role_e role){
 	_lwb_timeslot_resp		   = 0;
 	_clock_offset			   = 0;
 
+	memset(_lwb_master_eui,          0, EUI_LEN);
 	memset(_lwb_prev_signalling_eui, 0, EUI_LEN);
 
 	memset(_init_sched_euis,    0, sizeof(_init_sched_euis));
@@ -201,6 +207,8 @@ void glossy_init(glossy_role_e role){
 	// If the anchor, let's kick off a task which unconditionally kicks off sync messages with depth = 0
 	if(role == GLOSSY_MASTER){
 		_lwb_in_sync = TRUE;
+		memcpy(_lwb_master_eui, standard_get_EUI(), EUI_LEN);
+		host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
 
 #ifdef DW1000_USE_OTP
 		uint8 ldok = OTP_SF_OPS_KICK | OTP_SF_OPS_SEL_TIGHT;
@@ -536,8 +544,12 @@ static void glossy_lwb_round_task() {
                 standard_set_resp_active(FALSE);
 
 				if (_lwb_scheduled_init) {
-					// (Re-)Enable initiators to receive the rest of the responses
-					standard_init_start_response_listening();
+
+				    // Calculate number of slots we need to listen
+				    uint8_t nr_slots = glossy_get_resp_listening_slots_a();
+
+                    // (Re-)Enable initiators to receive the rest of the responses
+					standard_init_start_response_listening(nr_slots);
 				} else {
                     // Turn transceiver off (save energy)
                     dwt_forcetrxoff();
@@ -795,6 +807,17 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
 
 		    //debug_msg("Received schedule from Glossy master\n");
+
+		    if (memcmp(_lwb_master_eui, in_glossy_sync->header.sourceAddr, EUI_LEN) != 0) {
+
+		        // Found new Glossy master
+		        memcpy(_lwb_master_eui, in_glossy_sync->header.sourceAddr, EUI_LEN);
+                host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
+
+		        debug_msg("Found new Glossy master: ");
+		        helper_print_EUI(_lwb_master_eui);
+		        debug_msg("\n");
+		    }
 
 #if (BOARD_V == SQUAREPOINT)
 			// Signal that in sync with Glossy by turning on GREEN
@@ -1059,6 +1082,38 @@ static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
 
 	//debug_msg("Device is not scheduled\n");
 	return -1;
+}
+
+static uint8_t glossy_get_resp_listening_slots_a() {
+
+    // We set the timer if:
+    // i)  We are either a) solely an initiator or if b) we already finished our responder responsibilities and only act as an initiator
+    // ii) We are only partly using a responder slot, i.e. there are less than LWB_RESPONSES_PER_SLOT in the last slot
+
+    // Here, we only test for case a)
+    if ( (!_lwb_scheduled_resp) && ( (_lwb_num_resp % LWB_RESPONSES_PER_SLOT) != 0 ) ) {
+        // Set timer to expire nr_slots timeslots from now as soon as the last responder sent its message
+        uint32_t lwb_slot_resp_start = 1 + _lwb_num_init * LWB_SLOTS_PER_RANGE;
+
+        return (uint8_t)(_lwb_num_resp - (_lwb_counter - lwb_slot_resp_start) * LWB_RESPONSES_PER_SLOT);
+    } else {
+        return 0;
+    }
+}
+
+uint8_t glossy_get_resp_listening_slots_b() {
+
+    // We set the timer if:
+    // i)  We are either a) solely an initiator or if b) we already finished our responder responsibilities and only act as an initiator
+    // ii) We are only partly using a responder slot, i.e. there are less than LWB_RESPONSES_PER_SLOT in the last slot
+
+    // Here, we only handle case b)
+    if ( (_lwb_num_resp % LWB_RESPONSES_PER_SLOT) != 0) {
+        // Set timer to expire nr_slots timeslots from now as soon as the last responder sent its message
+        return (uint8_t)(_lwb_num_resp - (_lwb_timeslot_resp + 1));
+    } else {
+        return 0;
+    }
 }
 
 static void lwb_increment_sched_timeout(){

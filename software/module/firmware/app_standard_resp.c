@@ -189,8 +189,12 @@ static void standard_resp_task () {
 
         // Turn on listening for other responders either before or after our own timeslot
         if (standard_is_init_enabled()) {
-            // Reenable initiators to receive the rest of the responses
-            standard_init_start_response_listening();
+
+            // Calculate number of slots we need to listen
+            uint8_t nr_slots = glossy_get_resp_listening_slots_b();
+
+            // (Re-)Enable initiators to receive the rest of the responses
+            standard_init_start_response_listening(nr_slots);
         } else {
             // Turn transceiver off (save energy)
             dwt_forcetrxoff();

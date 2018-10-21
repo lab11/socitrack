@@ -59,6 +59,9 @@ typedef struct {
 	
 	// How many anchor responses we have gotten
 	uint8_t anchor_response_count;
+
+	// Boolean to prevent stopping the listening period too early when timers are used
+	bool response_listening_timer_active;
 	
 	// Array of when we received ANC_FINAL packets and from whom
 	anchor_responses_t anchor_responses[MAX_NUM_ANCHOR_RESPONSES];
@@ -81,7 +84,7 @@ typedef struct {
 void         standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_init_start_ranging_event ();
 
-void         standard_init_start_response_listening();
+void         standard_init_start_response_listening(uint8_t nr_slots);
 void         standard_init_stop_response_listening();
 void         standard_init_stop ();
 

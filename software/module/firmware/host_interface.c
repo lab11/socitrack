@@ -114,6 +114,7 @@ void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len) {
 }
 
 void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len) {
+
 	// TODO: this should be in an atomic block
 
 	// Save the relevant state for when the host asks for it
@@ -123,6 +124,18 @@ void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len) 
 
 	// Let the host know it should ask
 	interrupt_host_set();
+}
+
+void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len) {
+
+	// Save the relevant state for when the host asks for it
+	_interrupt_reason = HOST_IFACE_INTERRUPT_MASTER_EUI;
+	_interrupt_buffer = master_eui;
+	_interrupt_buffer_len = len;
+
+	// Let the host know it should ask
+	interrupt_host_set();
+
 }
 
 // Doesn't block, but waits for an I2C master to initiate a WRITE.
