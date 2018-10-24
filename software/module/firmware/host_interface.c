@@ -217,13 +217,13 @@ void host_interface_rx_fired () {
 			glossy_role_e my_glossy_role;
 
 			// Check if this module should be an anchor or tag
-			my_role = (config_main & HOST_PKT_CONFIG_MAIN_ANCTAG_MASK) >> HOST_PKT_CONFIG_MAIN_ANCTAG_SHIFT;
+			my_role =        (config_main & HOST_PKT_CONFIG_MAIN_ROLE_MASK)   >> HOST_PKT_CONFIG_MAIN_ROLE_SHIFT;
 
 			// Check if this module should act as a glossy master of slave
 			my_glossy_role = (config_main & HOST_PKT_CONFIG_MAIN_GLOSSY_MASK) >> HOST_PKT_CONFIG_MAIN_GLOSSY_SHIFT;
 
 			// Check which application we should run
-			my_app = (config_main & HOST_PKT_CONFIG_MAIN_APP_MASK) >> HOST_PKT_CONFIG_MAIN_APP_SHIFT;
+			my_app =         (config_main & HOST_PKT_CONFIG_MAIN_APP_MASK)    >> HOST_PKT_CONFIG_MAIN_APP_SHIFT;
 
             /*debug_msg("Role: ");
             debug_msg_int(my_role);
@@ -240,16 +240,6 @@ void host_interface_rx_fired () {
 				module_config_t module_config;
 				module_config.my_role = my_role;
 				module_config.my_glossy_role = my_glossy_role;
-
-				if (my_role == APP_ROLE_INIT_NORESP) {
-					// Save some TAG specific settings
-					uint8_t config_tag = rxBuffer[2];
-					module_config.my_role = APP_ROLE_INIT_NORESP;
-					module_config.report_mode = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_RMODE_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_RMODE_SHIFT;
-					module_config.update_mode = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_UMODE_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_UMODE_SHIFT;
-					module_config.sleep_mode  = (config_tag & HOST_PKT_CONFIG_ONEWAY_TAG_SLEEP_MASK) >> HOST_PKT_CONFIG_ONEWAY_TAG_SLEEP_SHIFT;
-					module_config.update_rate = rxBuffer[3];
-				}
 
 				// Now that we know how we should operate,
 				// call the main tag function to get things rollin'.

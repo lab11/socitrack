@@ -70,7 +70,13 @@
 #include "module_interface.h"
 #include "simple_logger.h"
 
-// Declaration of functions
+/*******************************************************************************
+ *   Static function delcarations
+ ******************************************************************************/
+
+static void flush_sd_buffer();
+static void write_to_sd(uint8_t* data, uint16_t length);
+
 static void carrier_start_module(uint8_t role);
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report);
 
@@ -386,6 +392,11 @@ static void backup_app_state() {
 
     uint32_t curr_time = app.config.app_sync_time;
 
+    // TODO: Add new state variables to function
+
+    // Flush SD card buffer first
+    flush_sd_buffer();
+
     // Start filling buffer
 
     // Prefix
@@ -433,6 +444,49 @@ static void backup_app_state() {
     simple_logger_log("%s", state_buffer);
 
     printf("Backed up Application state to SD card\n");
+}
+
+static void flush_sd_buffer() {
+
+    // Enable and select SD card
+    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
+
+    if ( (app.app_sdcard_buffer_length + 1) <= APP_SDCARD_BUFFER_LENGTH) {
+        app.app_sdcard_buffer[app.app_sdcard_buffer_length] = '\0';
+    } else {
+        app.app_sdcard_buffer[APP_SDCARD_BUFFER_LENGTH - 1] = '\0';
+        printf("WARNING: Overwriting buffer data!\n");
+    }
+
+    // Write data
+    simple_logger_log("%s", app.app_sdcard_buffer);
+
+    // Reset buffer
+    memset( app.app_sdcard_buffer, 0, sizeof(app.app_sdcard_buffer));
+    app.app_sdcard_buffer_length = 0;
+
+    printf("Successfully flushed buffer to SD card\n");
+
+    // Turn off power to SD card again
+    nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
+}
+
+// Write to SD card by buffering locally and then writing larger chunks of data
+static void write_to_sd(uint8_t * data, uint16_t length) {
+
+    if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < length) {
+        prinf("ERROR: Insufficient buffer space left!\n");
+        return;
+    }
+
+    // Append to buffer
+    memcpy(app.app_sdcard_buffer + app.app_sdcard_buffer_length, data, length);
+    app.app_sdcard_buffer_length += length;
+
+    // If the buffer has less than the specified number of free space left, flush it
+    if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < APP_SDCARD_MIN_BUFFER_SPACE) {
+        flush_sd_buffer();
+    }
 }
 
 // Read application state from non-volatile memory
@@ -939,10 +993,22 @@ void updateData (uint8_t * data, uint32_t len)
 
             printf("\r\n");
         }
-    }
 
-	// Trigger moduleDataUpdate from main loop
-	app.app_raw_response_buffer_updated = true;
+        // Trigger moduleDataUpdate from main loop
+        app.app_raw_response_buffer_updated = true;
+
+    } else if (data[0] == HOST_IFACE_INTERRUPT_CALIBRATION) {
+	    printf(", set to calibration\n");
+	} else if (data[0] == HOST_IFACE_INTERRUPT_MASTER_EUI) {
+	    printf(", switched Master EUI from %02X to %02X\n", app.master_eui[0], data[1]);
+
+	    for (uint8_t i = 0; i < EUI_LEN; i++) {
+	        app.master_eui[i] = data[1 + i];
+	    }
+
+	    // Change advertisement data
+	    app.app_ble_advdata[APP_ADVDATA_OFFSET_MASTER_EUI] = app.master_eui[0];
+	}
 }
 
 
@@ -1157,23 +1223,20 @@ static void advertising_init(void)
 
     memset(&init, 0, sizeof(init));
 
-    // Custom advertisement data
-    /*ble_advdata_manuf_data_t             manuf_data_adv;
-    #define MANUF_ADV_LENGTH             8
-    uint8_t data_adv[MANUF_ADV_LENGTH]   = {0};
-    data_adv[0]                          = APP_SERVICE_ID; // TotTag's service identifier, expected to be first byte of advertisement
-    manuf_data_adv.company_identifier    = APP_COMPANY_IDENTIFIER; // UMich's Company ID
-    manuf_data_adv.data.p_data           = data_adv;
-    manuf_data_adv.data.size             = sizeof(data_adv);
-    init.advdata.p_manuf_specific_data   = &manuf_data_adv;*/
+    // Advertisement
 
-    // General Advertisement settings
+    // Custom advertisement data
+    ble_advdata_manuf_data_t             manuf_data_adv;
+    manuf_data_adv.company_identifier    = APP_COMPANY_IDENTIFIER; // UMich's Company ID
+    manuf_data_adv.data.p_data           = app.app_ble_advdata;
+    manuf_data_adv.data.size             = sizeof(app.app_ble_advdata);
+    init.advdata.p_manuf_specific_data   = &manuf_data_adv;
 
     // Add device name in advertisements
     // init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     // For shorter names, adjust as follows. The full name will still be displayed in connections
-    init.advdata.name_type               = BLE_ADVDATA_SHORT_NAME;
-    init.advdata.short_name_len          = 4; // Advertise the first X letters of the name
+    init.advdata.name_type               = BLE_ADVDATA_NO_NAME;
+    //init.advdata.short_name_len          = 4; // Advertise the first X letters of the name
 
     // Physical Web data
     const char* url_str = PHYSWEB_URL;
@@ -1203,13 +1266,16 @@ static void advertising_init(void)
     init.advdata.uuids_complete.p_uuids  = m_adv_uuids;
 
     // Scan response
+
+    // Custom advertisement data
     /*ble_advdata_manuf_data_t             manuf_data_resp;
-    #define MANUF_RESP_LENGTH            20
-    uint8_t data_resp[MANUF_RESP_LENGTH] = {0};
+    //#define MANUF_RESP_LENGTH            20
+    //uint8_t data_resp[MANUF_RESP_LENGTH] = {0};
     manuf_data_resp.company_identifier   = APP_COMPANY_IDENTIFIER;
-    manuf_data_resp.data.p_data          = data_resp;
-    manuf_data_resp.data.size            = sizeof(data_resp);
+    manuf_data_resp.data.p_data          = app.app_ble_advdata;
+    manuf_data_resp.data.size            = APP_BLE_ADVDATA_LENGTH;
     init.srdata.p_manuf_specific_data    = &manuf_data_resp;*/
+
     init.srdata.name_type                = BLE_ADVDATA_FULL_NAME;
     init.srdata.uuids_complete.uuid_cnt  = sizeof(m_sr_uuids) / sizeof(m_sr_uuids[0]);
     init.srdata.uuids_complete.p_uuids   = m_sr_uuids;
@@ -1434,8 +1500,18 @@ void app_init(void) {
     memset(app.current_location, 0, 6);
 
     app.app_raw_response_buffer_updated = false;
-    app.app_raw_response_length = 128;
-    memset(app.app_raw_response_buffer, 0, app.app_raw_response_length);
+    app.app_raw_response_length = APP_BLE_BUFFER_LENGTH;
+    memset(app.app_raw_response_buffer, 0, sizeof(app.app_raw_response_buffer));
+
+    app.app_sdcard_buffer_length = 0;
+    memset(app.app_sdcard_buffer, 0, sizeof(app.app_sdcard_buffer));
+
+    memset(app.app_ble_advdata, 0, sizeof(app.app_ble_advdata));
+
+    // Set the beginning of the manufacturer-specific advertisement data
+
+    // TotTag's service identifier, expected to be first byte of advertisement
+    app.app_ble_advdata[APP_ADVDATA_OFFSET_SERVICE_ID] = APP_SERVICE_IDENTIFIER;
 }
 
 static void timers_init (void)
@@ -1545,7 +1621,7 @@ void carrier_start_module(uint8_t role) {
     switch(role) {
         case APP_ROLE_INIT_NORESP: {
             printf("Role: INITIATOR\n");
-            err_code = module_start_ranging(true, 10);
+            err_code = module_start_ranging();
             if (err_code != NRF_SUCCESS) {
                 printf("ERROR: Failed to start ranging!\r\n");
                 return;
@@ -1554,12 +1630,28 @@ void carrier_start_module(uint8_t role) {
             }
             break;
         }
+        case APP_ROLE_INIT_RESP: {
+#ifdef GLOSSY_MASTER
+            printf("Role: HYBRID Master\n");
+            err_code = module_start_role(APP_ROLE_INIT_RESP, true);
+#else
+            printf("Role: HYBRID\n");
+            err_code = module_start_role(APP_ROLE_INIT_RESP, false);
+#endif
+            if (err_code != NRF_SUCCESS) {
+                printf("ERROR: Failed to start the module!\r\n");
+                return;
+            } else {
+                printf("Started the module...\r\n");
+            }
+            break;
+        }
         case APP_ROLE_NOINIT_RESP: {
 #ifdef GLOSSY_MASTER
-            printf("Role: Anchor Master\n");
+            printf("Role: RESPONDER Master\n");
             err_code = module_start_anchor(true);
 #else
-            printf("Role: Anchor\n");
+            printf("Role: RESPONDER\n");
             err_code = module_start_anchor(false);
 #endif
             if (err_code != NRF_SUCCESS) {

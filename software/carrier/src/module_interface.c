@@ -11,6 +11,7 @@
 #include "led.h"
 
 #include "module_interface.h"
+#include "../apps/node/ble_config.h"
 
 // Save the callback that we use to signal the main application that we
 // received data over I2C.
@@ -177,71 +178,43 @@ ret_code_t module_get_info (uint16_t* id, uint8_t* version) {
 	return NRF_SUCCESS;
 }
 
-ret_code_t module_start_ranging (bool periodic, uint8_t rate) {
-    ret_code_t ret;
+ret_code_t module_start_role (uint8_t role, bool is_glossy_master) {
+	ret_code_t ret;
 
-    uint8_t buf_cmd[4];
+	uint8_t buf_cmd[2];
 	buf_cmd[0] = MODULE_CMD_CONFIG;
 
-	// TAG for now
-	buf_cmd[1] = 0;
+	// Role configuration
+	buf_cmd[1] = role;
 
-	// TAG options
-	buf_cmd[2] = 0;
-	if (periodic) {
-		// leave 0
-	} else {
-		buf_cmd[2] |= 0x2;
-	}
+	// Master configuration
+	buf_cmd[1] |= (is_glossy_master << 3);
 
-	// Use sleep mode on the TAG
-	buf_cmd[2] |= 0x08;
+	// App configuration
+    #define APP_STANDARD    0x00
+    #define APP_CALIBRATION 0x01
 
-	// And rate
-	buf_cmd[3] = rate;
-
-	nrf_twi_mngr_transfer_t const write_transfer[] = {
-			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 4, 0)
-	};
-
-	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
-    APP_ERROR_CHECK(ret);
-
-	return NRF_SUCCESS;
-}
-
-// Tell the attached module to become an anchor.
-ret_code_t module_start_anchor (bool is_glossy_master) {
-    ret_code_t ret;
-
-    uint8_t buf_cmd[4];
-	buf_cmd[0] = MODULE_CMD_CONFIG;
-
-	// Make ANCHOR
-	if(is_glossy_master)
-		buf_cmd[1] = (uint8_t)0x01 | (uint8_t)0x20;
-	else
-		buf_cmd[1] = 0x01;
-
-	// // TAG options
-	// buf_cmd[2] = 0;
-	// if (periodic) {
-	// 	// leave 0
-	// } else {
-	// 	buf_cmd[2] |= 0x2;
-	// }
-
-	// // And rate
-	// buf_cmd[3] = rate;
+	buf_cmd[1] |= (APP_STANDARD << 4);
 
 	nrf_twi_mngr_transfer_t const write_transfer[] = {
 			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 2, 0)
 	};
 
 	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
-    APP_ERROR_CHECK(ret);
+	APP_ERROR_CHECK(ret);
 
 	return NRF_SUCCESS;
+}
+
+ret_code_t module_start_ranging () {
+
+	return module_start_role(APP_ROLE_INIT_NORESP, false);
+}
+
+// Tell the attached module to become an anchor.
+ret_code_t module_start_anchor (bool is_glossy_master) {
+
+	return module_start_role(APP_ROLE_NOINIT_RESP, is_glossy_master);
 }
 
 // Tell the attached module that it should enter the calibration

@@ -128,6 +128,7 @@ typedef enum {
 
 // Enum for what role this particular module should do
 typedef enum {
+	APP_ROLE_INVALID = 0,
     APP_ROLE_INIT_RESP,
     APP_ROLE_INIT_NORESP,
     APP_ROLE_NOINIT_RESP,

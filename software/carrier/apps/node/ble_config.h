@@ -20,15 +20,27 @@
 
 // Information
 #define APP_COMPANY_IDENTIFIER 0x02E0
-#define APP_SERVICE_ID         0x0022
+#define APP_SERVICE_IDENTIFIER 0x0022
 #define MANUFACTURER_NAME      "Lab11"
 #define MODEL_NUMBER           DEVICE_NAME
-#define HARDWARE_REVISION      "D"
+#define HARDWARE_REVISION      "E"
 #define FIRMWARE_REVISION      "0.1"
+
+#define EUI_LEN                8
 
 // Behaviour
 #define WATCHDOG_CHECK_RATE     APP_TIMER_TICKS(10000)
-#define APP_SD_REQUIRED         0
+//#define APP_SD_REQUIRED         0
+
+// Storage / Buffers
+#define APP_BLE_BUFFER_LENGTH       128
+
+#define APP_SDCARD_BUFFER_LENGTH    (64 * 1024)
+#define APP_SDCARD_MIN_BUFFER_SPACE (5 * (APP_SDCARD_BUFFER_LENGTH / 100))
+
+#define APP_BLE_ADVDATA_LENGTH          2
+#define APP_ADVDATA_OFFSET_SERVICE_ID   0
+#define APP_ADVDATA_OFFSET_MASTER_EUI   1
 
 // Structs -------------------------------------------------------------------------------------------------------------
 
@@ -50,12 +62,16 @@ typedef struct ble_app_s {
     app_config_t config;
     bool         module_inited;       // Whether or not we successfully got through to the module and got it configured properly.
     bool         network_discovered;  // Whether we know there are other devices in our proximity
+    uint8_t      master_eui[EUI_LEN];
     uint8_t      calibration_index;
     uint8_t      current_location[6]; // Value of num characteristic
     bool         module_interrupt_thrown;
     bool         app_raw_response_buffer_updated;
     uint16_t     app_raw_response_length;
-    uint8_t      app_raw_response_buffer[128]; // Buffer to store raw responses from module so that it can be sent over BLE
+    uint8_t      app_raw_response_buffer[APP_BLE_BUFFER_LENGTH]; // Buffer to store raw responses from module so that it can be sent over BLE
+    uint16_t     app_sdcard_buffer_length;
+    uint8_t      app_sdcard_buffer[APP_SDCARD_BUFFER_LENGTH];
+    uint8_t      app_ble_advdata[APP_BLE_ADVDATA_LENGTH];
 } ble_app_t;
 
 // Board specifics -----------------------------------------------------------------------------------------------------
