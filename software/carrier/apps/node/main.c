@@ -78,6 +78,7 @@ static void flush_sd_buffer();
 static void write_to_sd(uint8_t* data, uint16_t length);
 
 static void carrier_start_module(uint8_t role);
+static void advertising_init();
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report);
 
 /*******************************************************************************
@@ -475,7 +476,7 @@ static void flush_sd_buffer() {
 static void write_to_sd(uint8_t * data, uint16_t length) {
 
     if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < length) {
-        prinf("ERROR: Insufficient buffer space left!\n");
+        printf("ERROR: Insufficient buffer space left!\n");
         return;
     }
 
@@ -1008,6 +1009,17 @@ void updateData (uint8_t * data, uint32_t len)
 
 	    // Change advertisement data
 	    app.app_ble_advdata[APP_ADVDATA_OFFSET_MASTER_EUI] = app.master_eui[0];
+
+	    // Stop advertisements
+	    ret_code_t err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
+	    APP_ERROR_CHECK(err_code);
+
+        // Reinitialize advertising
+	    advertising_init();
+
+        // Restart advertisements
+        err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+        APP_ERROR_CHECK(err_code);
 	}
 }
 

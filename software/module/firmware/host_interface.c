@@ -326,13 +326,6 @@ void host_interface_rx_fired () {
 // to go back to waiting for a WRITE.
 void host_interface_tx_fired () {
 
-	if (pending_tx) {
-		host_interface_respond(pending_tx, TRUE);
-	} else {
-		// No more pending messages
-		host_interface_wait();
-	}
-
 	//debug_msg("Data sent\r\n");
 }
 
@@ -457,7 +450,18 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
   */
 void CPAL_I2C_TXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 	mark_interrupt(INTERRUPT_I2C_TX);
-	//host_interface_wait(); // handled in host_interface_tx_fired
+
+    // We need to do some of the handling for the I2C here, because if
+    // we wait to handle it on the main thread sometimes there is too much
+    // delay and the I2C stops working.
+
+    if (pending_tx) {
+        // If we sent a first message containing only the length, we now prepare to transmit the rest in an immediate second transmission
+        host_interface_respond(pending_tx, TRUE);
+    } else {
+        // No more pending messages
+        host_interface_wait();
+    }
 }
 
 /**
