@@ -52,6 +52,9 @@
 // Allow nodes to connect to new masters if they discover their schedule
 // #define PROTOCOL_FLEXIBLE_MASTER
 
+// Automatically deschedule after not having received a schedule for a given time
+#define PROTOCOL_ENABLE_TIMEOUT
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 #endif /*__MODULE_CONF_H*/

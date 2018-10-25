@@ -126,7 +126,7 @@ void standard_resp_stop () {
 	timer_stop(sr_scratch->resp_timer);
 
 	// Put the DW1000 in SLEEP mode.
-	dw1000_sleep();
+	//dw1000_sleep();
 }
 
 // This is called by the periodic timer that tracks the tag's periodic

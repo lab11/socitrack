@@ -158,6 +158,10 @@ void standard_start () {
 
 // Stop the standard application
 void standard_stop () {
+
+	// Turn off the DecaWave from reception
+	dwt_forcetrxoff();
+
 	if (_config.init_enabled) {
 		standard_init_stop();
 	}

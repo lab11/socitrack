@@ -141,6 +141,19 @@ void timer_stop (stm_timer_t* t) {
 	timer_callbacks[t->index] = NULL;
 }
 
+// Test whether stored timer pointer is valid
+bool timer_is_valid(stm_timer_t* t) {
+
+	for (int i = 0; i < TIMER_NUMBER; i++) {
+
+		if (t == &timers[i]) {
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
 /******************************************************************************/
 // Interrupt handling
 /******************************************************************************/

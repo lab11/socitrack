@@ -246,7 +246,10 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	}
 
 	// The glossy timer acts to synchronize everyone to a common timebase
-	_glossy_timer = timer_init();
+	// NOTE: Do NOT set to NULL, but only init if its not already set to a valid number; otherwise, the app will not be correctly reinitialized, as it cannot receive a new timer
+	if (!timer_is_valid(_glossy_timer)) {
+        _glossy_timer = timer_init();
+    }
 }
 
 void glossy_start() {
@@ -256,6 +259,15 @@ void glossy_start() {
 
     // Kick-off the Glossy timer
     timer_start(_glossy_timer, LWB_SLOT_US, glossy_lwb_round_task);
+}
+
+void glossy_stop() {
+
+	// Disable schedule request
+	lwb_set_sched_request(FALSE);
+
+	// Stop the Glossy timer
+	timer_stop(_glossy_timer);
 }
 
 void glossy_deschedule(){
@@ -396,6 +408,21 @@ static void glossy_lwb_round_task() {
 			if (GPIO_ReadOutputDataBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN)) {
 				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+			}
+#endif
+
+#ifdef PROTOCOL_ENABLE_TIMEOUT
+			// Timeout: if have not heard from Master for more than Timeout, leave network and wait for neighbour discovery
+			if (_lwb_counter > GLOSSY_SCHEDULE_TIMEOUT) {
+
+				// Stop reception
+				glossy_stop();
+
+				standard_stop();
+
+				// Deschedule from network
+				memset(_lwb_master_eui, 0, sizeof(_lwb_master_eui));
+				host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
 			}
 #endif
 

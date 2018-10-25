@@ -941,12 +941,36 @@ static void on_device_discovery(ble_gap_addr_t const * peer_addr)
 
 }
 
+static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
+
+    printf(", switched Master EUI from %02X to %02X\n", app.master_eui[0], discovered_master_eui[0]);
+
+    for (uint8_t i = 0; i < EUI_LEN; i++) {
+        app.master_eui[i] = discovered_master_eui[i];
+    }
+
+    // Change advertisement data
+    app.app_ble_advdata[APP_ADVDATA_OFFSET_MASTER_EUI] = app.master_eui[0];
+
+    // Stop advertisements
+    ret_code_t err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
+    APP_ERROR_CHECK(err_code);
+
+    // Reinitialize advertising
+    advertising_init();
+
+    // Restart advertisements
+    err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+    APP_ERROR_CHECK(err_code);
+}
+
 // Resets the Master EUI and restarts the module
 static void standard_reconfigure_module(uint8_t discovered_master_eui) {
 
-    // Update Master EUI
-    app.master_eui[0] = discovered_master_eui;
-    printf("INFO: Discovered new Master %i, switching networks...\n",discovered_master_eui);
+    printf("INFO: Discovered new Master");
+
+    // Change Master EUI
+    standard_reconfigure_master_eui(&discovered_master_eui);
 
     // Re-configure module in main loop
     app.config.app_module_enabled = false;
@@ -1098,25 +1122,13 @@ void updateData (uint8_t * data, uint32_t len)
     } else if (data[0] == HOST_IFACE_INTERRUPT_CALIBRATION) {
 	    printf(", set to calibration\n");
 	} else if (data[0] == HOST_IFACE_INTERRUPT_MASTER_EUI) {
-	    printf(", switched Master EUI from %02X to %02X\n", app.master_eui[0], data[1]);
+	    standard_reconfigure_master_eui(data + 1);
 
-	    for (uint8_t i = 0; i < EUI_LEN; i++) {
-	        app.master_eui[i] = data[1 + i];
+	    // If Master EUI is set to 0, we descheduled from existing networks
+	    if (data[1] == 0x00) {
+	        app.network_discovered = false;
+	        app.module_inited      = false;
 	    }
-
-	    // Change advertisement data
-	    app.app_ble_advdata[APP_ADVDATA_OFFSET_MASTER_EUI] = app.master_eui[0];
-
-	    // Stop advertisements
-	    ret_code_t err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
-	    APP_ERROR_CHECK(err_code);
-
-        // Reinitialize advertising
-	    advertising_init();
-
-        // Restart advertisements
-        err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-        APP_ERROR_CHECK(err_code);
 	}
 }
 

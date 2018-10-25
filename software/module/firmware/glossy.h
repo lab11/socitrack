@@ -32,6 +32,8 @@
 
 #define GLOSSY_UPDATE_INTERVAL_DW (DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US) & 0xFFFFFFFE)
 
+#define GLOSSY_SCHEDULE_TIMEOUT	  (5 * (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US))
+
 // DATA STRUCTURES -----------------------------------------------------------------------------------------------------
 
 typedef enum {

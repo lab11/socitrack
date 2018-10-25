@@ -2,6 +2,7 @@
 #define __TIMER_H
 
 #include "stm32f0xx.h"
+#include "system.h"
 
 // Number of supported timers
 #define TIMER_NUMBER 2
@@ -26,6 +27,7 @@ void timer_enable_interrupt (stm_timer_t* t);
 void timer_start (stm_timer_t* t, uint32_t us_period, timer_callback);
 void timer_reset (stm_timer_t* t, uint32_t val_us);
 void timer_stop (stm_timer_t* t);
+bool timer_is_valid (stm_timer_t* t);
 
 
 // Only used for interrupt handling
