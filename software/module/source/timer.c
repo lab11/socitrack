@@ -10,6 +10,7 @@
 
 
 static uint8_t used_timers = 0;
+static uint8_t timer_in_use[TIMER_NUMBER] = { 0 };
 
 static timer_callback timer_callbacks[TIMER_NUMBER];
 
@@ -62,8 +63,18 @@ stm_timer_t* timer_init () {
 	if (used_timers >= TIMER_NUMBER) {
 		return NULL;
 	}
-	used_timers++;
-	return &timers[used_timers-1];
+
+	for (int i = 0; i < TIMER_NUMBER; i++) {
+
+	    if (timer_in_use[i] == 0) {
+	        timer_in_use[i] = 1;
+            used_timers++;
+	        return &timers[i];
+	    }
+	}
+
+	// ERROR Did not find any free timers
+	return NULL;
 }
 
 // Start a particular timer running
@@ -139,6 +150,26 @@ void timer_stop (stm_timer_t* t) {
 
 	// Remove the callback
 	timer_callbacks[t->index] = NULL;
+}
+
+// Make timer available again for call to timer_init
+void timer_free(stm_timer_t* t) {
+
+    bool matched = FALSE;
+
+    for (int i = 0; i < TIMER_NUMBER; i++) {
+
+        if (t == &timers[i]) {
+
+            if (timer_in_use[i] == 1) {
+                timer_in_use[i] = 0;
+				used_timers--;
+                matched = TRUE;
+            } else {
+                // This timer might have already been freed by another function (e.g. INIT and RESP both using the same one)
+            }
+        }
+    }
 }
 
 // Test whether stored timer pointer is valid

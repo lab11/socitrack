@@ -1802,7 +1802,20 @@ void carrier_start_module(uint8_t role) {
             }
             break;
         }
+        case APP_ROLE_NOINIT_NORESP: {
 
+            printf("Role: SUPPORT\n");
+
+            err_code = module_start_role(APP_ROLE_NOINIT_NORESP, is_glossy_master, app.master_eui[0]);
+
+            if (err_code != NRF_SUCCESS) {
+                printf("ERROR: Failed to start the module!\r\n");
+                return;
+            } else {
+                printf("Started the module...\r\n");
+            }
+            break;
+        }
         default:
             // Role of this tag has not been configured yet
             //printf("ERROR: Unknown role during init!\n");

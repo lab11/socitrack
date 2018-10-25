@@ -160,6 +160,7 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	_role 					= role;
 
 	// Init to zero
+	_glossy_timer           = NULL;
 	_last_sync_depth		= 0;
 	_last_sync_timestamp    = 0;
 	_last_overall_timestamp = 0;
@@ -246,10 +247,7 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	}
 
 	// The glossy timer acts to synchronize everyone to a common timebase
-	// NOTE: Do NOT set to NULL, but only init if its not already set to a valid number; otherwise, the app will not be correctly reinitialized, as it cannot receive a new timer
-	if (!timer_is_valid(_glossy_timer)) {
-        _glossy_timer = timer_init();
-    }
+    _glossy_timer = timer_init();
 }
 
 void glossy_start() {
@@ -268,6 +266,7 @@ void glossy_stop() {
 
 	// Stop the Glossy timer
 	timer_stop(_glossy_timer);
+	timer_free(_glossy_timer);
 }
 
 void glossy_deschedule(){
@@ -397,7 +396,7 @@ static void glossy_lwb_round_task() {
 	} else if (_role == GLOSSY_SLAVE) {
 
 		// OUT OF SYNC: Force ourselves into RX mode if we still haven't received any sync floods
-		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 5) == 0) ) {
+		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 10) == 0) ) {
 
 			glossy_enable_reception();
 
@@ -414,6 +413,8 @@ static void glossy_lwb_round_task() {
 #ifdef PROTOCOL_ENABLE_TIMEOUT
 			// Timeout: if have not heard from Master for more than Timeout, leave network and wait for neighbour discovery
 			if (_lwb_counter > GLOSSY_SCHEDULE_TIMEOUT) {
+
+			    debug_msg("WARNING: Timing out, leaving this network...\n");
 
 				// Stop reception
 				glossy_stop();

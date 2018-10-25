@@ -149,6 +149,7 @@ void standard_init_stop () {
 
 	// Stop the timer in case it was in use
 	timer_stop(si_scratch->init_timer);
+	timer_free(si_scratch->init_timer);
 
 	// Deschedule the tag's LWB slot since we're done
 	//glossy_deschedule();

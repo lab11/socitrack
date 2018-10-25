@@ -124,6 +124,7 @@ void standard_resp_stop () {
 
 	// Stop the timer in case it was in use
 	timer_stop(sr_scratch->resp_timer);
+	timer_free(sr_scratch->resp_timer);
 
 	// Put the DW1000 in SLEEP mode.
 	//dw1000_sleep();
@@ -429,9 +430,21 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 				debug_msg("\n");
 			}
 
-		} else {
-			// We do want to enter RX mode again, however
-			dwt_rxenable(0);
+		} else if (message_type == MSG_TYPE_PP_NOSLOTS_ANC_FINAL) {
+
+            debug_msg("WARNING: Received FINAL message as responder!\n");
+
+            // We do want to enter RX mode again, however
+            dwt_rxenable(0);
+
+        } else {
+
+	        debug_msg("WARNING: Received unknown message of type: ");
+	        debug_msg_uint(message_type);
+	        debug_msg("\n");
+
+            // We do want to enter RX mode again, however
+            dwt_rxenable(0);
 		}
 
 	} else {

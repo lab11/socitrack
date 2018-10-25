@@ -418,21 +418,25 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 	// Get the actual packet bytes
 	dwt_readrxdata(buf, MIN(MSG_MAX_PACK_LEN, rxd->datalength), 0);
 
-	uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
+	// Get the message type for the different package types; with the current implementation, they should all have the same offset
+	uint8_t message_type_sync   = buf[offsetof(struct pp_sched_flood,  message_type)];
+    uint8_t message_type_signal = buf[offsetof(struct pp_signal_flood, message_type)];
+    uint8_t message_type_poll   = buf[offsetof(struct pp_tag_poll,     message_type)];
+    uint8_t message_type_final  = buf[offsetof(struct pp_anc_final,    message_type)];
 
 	/*debug_msg("Rx -> length: ");
 	debug_msg_uint(rxd->datalength);
 	debug_msg("; type: ");
-	debug_msg_uint(message_type);
+	debug_msg_uint(message_type_sync);
 	debug_msg("\n");*/
 
-	if(message_type == MSG_TYPE_PP_GLOSSY_SYNC || message_type == MSG_TYPE_PP_GLOSSY_SIGNAL)
+	if(message_type_sync == MSG_TYPE_PP_GLOSSY_SYNC || message_type_signal == MSG_TYPE_PP_GLOSSY_SIGNAL)
 	{
 		// Handle Glossy packet; same for all roles - neither INIT nor RESP should be active currently
 		glossy_process_rxcallback(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(0), buf);
 	}
-	else {
-
+	else if (message_type_poll == MSG_TYPE_PP_NOSLOTS_TAG_POLL || message_type_final == MSG_TYPE_PP_NOSLOTS_ANC_FINAL)
+	{
 		// Switch for active role to call correct callback
 		if ((_config.init_active && !_config.resp_active) || (!_config.init_active && _config.resp_active)) {
 
@@ -455,6 +459,15 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 		}
 
 	}
+	else
+    {
+	    debug_msg("WARNING: Received invalid packet of type ");
+	    debug_msg_uint(message_type_sync);
+	    debug_msg("\n");
+
+	    // Reenable Rx though
+	    dwt_rxenable(0);
+    }
 }
 
 
