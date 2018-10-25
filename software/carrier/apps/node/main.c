@@ -449,6 +449,11 @@ static void backup_app_state() {
 
 static void flush_sd_buffer() {
 
+    if(!sd_card_inserted()) {
+        printf("ERROR: SD card not inserted!\n");
+        return;
+    }
+
     // Enable and select SD card
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
 
@@ -878,6 +883,30 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
     }
 }
 
+static uint32_t adv_report_parse(uint8_t type, const ble_data_t * p_advdata, ble_data_t * p_typedata)
+{
+    uint32_t index = 0;
+    uint8_t * p_data;
+
+    p_data = p_advdata->p_data;
+
+    while (index < p_advdata->len)
+    {
+        uint8_t field_length = p_data[index];
+        uint8_t field_type   = p_data[index + 1];
+
+        if (field_type == type)
+        {
+            p_typedata->p_data   = &p_data[index + 2];
+            p_typedata->len      = field_length;
+            return NRF_SUCCESS;
+        } else {
+            index += field_length + 2;
+        }
+    }
+    return NRF_ERROR_NOT_FOUND;
+}
+
 static void on_device_discovery(ble_gap_addr_t const * peer_addr)
 {
     ret_code_t err_code;
@@ -898,11 +927,29 @@ static void on_device_discovery(ble_gap_addr_t const * peer_addr)
     }
 
     // Connect to device
+    // TODO: Enable this again and communicate the Master EUI to the other device; until this is possible, we only enable networking upon advertisement discovery
+#ifdef PROTOCOL_JOIN_ON_CONNECT
     err_code = sd_ble_gap_connect(peer_addr, &m_scan_params, &m_connection_param, APP_BLE_CONN_CFG_TAG);
     APP_ERROR_CHECK(err_code);
+#else
+    // Re-enable scanning
+    err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+    APP_ERROR_CHECK(err_code);
+#endif
 
     // Disconnect again in event handler
 
+}
+
+// Resets the Master EUI and restarts the module
+static void standard_reconfigure_module(uint8_t discovered_master_eui) {
+
+    // Update Master EUI
+    app.master_eui[0] = discovered_master_eui;
+    printf("INFO: Discovered new Master %i, switching networks...\n",discovered_master_eui);
+
+    // Re-configure module in main loop
+    app.config.app_module_enabled = false;
 }
 
 // Handles advertising reports
@@ -921,8 +968,58 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 #endif
 
     // If device is in our whitelist, we just discovered it
-    if (!app.network_discovered && addr_in_whitelist(&p_adv_report->peer_addr)) {
-        on_device_discovery(&p_adv_report->peer_addr);
+    if (addr_in_whitelist(&p_adv_report->peer_addr)) {
+
+        // Find Master EUI
+        uint8_t discovered_master_eui = 0;
+        ble_data_t advdata;
+        ret_code_t err_code = adv_report_parse(BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA, &p_adv_report->data, &advdata);
+
+        if (err_code == NRF_SUCCESS) {
+            // Parse manufacturer-specific data
+            uint16_t company_identifier = (advdata.p_data[0] << 8) + advdata.p_data[1];
+            if ( company_identifier != APP_COMPANY_IDENTIFIER) {
+                printf("ERROR: Incorrect company identifier received!\n");
+            }
+
+            discovered_master_eui = advdata.p_data[2];
+
+        } else {
+            //printf("WARNING: Found no Master EUI in advertisement!\n");
+        }
+
+        if (!app.network_discovered) {
+            // Not connected to a network yet
+            on_device_discovery(&p_adv_report->peer_addr);
+
+            uint8_t discovered_adv_eui = p_adv_report->peer_addr.addr[0];
+
+            // Decide who is going to be a Master
+            if (discovered_master_eui > 0x00) {
+                // Advertising node is already part of an existing network, so join
+                standard_reconfigure_module(discovered_master_eui);
+            } else {
+                // Start a new network
+                if (app.config.my_eui[0] > discovered_adv_eui) {
+                    // Become the Glossy Master of the new network ourselves
+                    standard_reconfigure_module(app.config.my_eui[0]);
+                } else {
+                    // Join the network which will be started by the other node
+                    standard_reconfigure_module(discovered_adv_eui);
+                }
+            }
+
+        } else {
+            // Switch if new Master of an existing network found with a higher EUI than the current one
+            if (app.master_eui[0] < discovered_master_eui) {
+                standard_reconfigure_module(discovered_master_eui);
+            }
+
+            // Restart scanning
+            // Clear scan buffer
+            err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+            APP_ERROR_CHECK(err_code);
+        }
     } else {
 
         // Clear scan buffer
@@ -1028,7 +1125,7 @@ void moduleDataUpdate ()
 {
     // Update the data value and notify on the data
 	if (app.app_raw_response_length >= 5) {
-        printf("Received data from module\n");
+        //printf("Received data from module\n");
 	}
 
 	if(carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) {
@@ -1202,6 +1299,9 @@ static void gap_params_init(void)
     memcpy(gap_addr.addr, carrier_ble_address, BLE_ADDRESS_LENGTH);
     err_code = sd_ble_gap_addr_set(&gap_addr);
     APP_ERROR_CHECK(err_code);
+
+    // Use first bit of the BLE address as our EUI
+    app.config.my_eui[0] = carrier_ble_address[0];
 #endif
 
     // Connection parameters: should be the same ones as in m_connection_param
@@ -1495,8 +1595,9 @@ void app_init(void) {
 
     // Configuration
 
-    app.config.app_role      = APP_ROLE_INVALID;
+    app.config.app_role      = APP_ROLE_INIT_RESP; // Default to HYBRID
     app.config.app_sync_time = 0;
+    memset(app.config.my_eui, 0, sizeof(app.config.my_eui));
 
     // We default to disable the module at the start
     app.config.app_module_enabled = false;
@@ -1508,6 +1609,8 @@ void app_init(void) {
     app.module_inited           = false;
     app.module_interrupt_thrown = false;
     app.network_discovered      = false;
+
+    memset(app.master_eui, 0, sizeof(app.master_eui));
 
     memset(app.current_location, 0, 6);
 
@@ -1630,10 +1733,15 @@ void carrier_start_module(uint8_t role) {
         }
     }
 
+    // Configure whether we are the Glossy Master
+    bool is_glossy_master = (app.master_eui[0] == app.config.my_eui[0]);
+
     switch(role) {
         case APP_ROLE_INIT_NORESP: {
             printf("Role: INITIATOR\n");
-            err_code = module_start_ranging();
+
+            err_code = module_start_role(APP_ROLE_INIT_NORESP, is_glossy_master, app.master_eui[0]);
+
             if (err_code != NRF_SUCCESS) {
                 printf("ERROR: Failed to start ranging!\r\n");
                 return;
@@ -1643,13 +1751,15 @@ void carrier_start_module(uint8_t role) {
             break;
         }
         case APP_ROLE_INIT_RESP: {
-#ifdef GLOSSY_MASTER
-            printf("Role: HYBRID Master\n");
-            err_code = module_start_role(APP_ROLE_INIT_RESP, true);
-#else
-            printf("Role: HYBRID\n");
-            err_code = module_start_role(APP_ROLE_INIT_RESP, false);
-#endif
+
+            if (is_glossy_master) {
+                printf("Role: HYBRID Master\n");
+            } else {
+                printf("Role: HYBRID\n");
+            }
+
+            err_code = module_start_role(APP_ROLE_INIT_RESP, is_glossy_master, app.master_eui[0]);
+
             if (err_code != NRF_SUCCESS) {
                 printf("ERROR: Failed to start the module!\r\n");
                 return;
@@ -1659,13 +1769,15 @@ void carrier_start_module(uint8_t role) {
             break;
         }
         case APP_ROLE_NOINIT_RESP: {
-#ifdef GLOSSY_MASTER
-            printf("Role: RESPONDER Master\n");
-            err_code = module_start_anchor(true);
-#else
-            printf("Role: RESPONDER\n");
-            err_code = module_start_anchor(false);
-#endif
+
+            if (is_glossy_master) {
+                printf("Role: RESPONDER Master\n");
+            } else {
+                printf("Role: RESPONDER\n");
+            }
+
+            err_code = module_start_role(APP_ROLE_NOINIT_RESP, is_glossy_master, app.master_eui[0]);
+
             if (err_code != NRF_SUCCESS) {
                 printf("ERROR: Failed to start responding!\r\n");
                 return;
@@ -1731,7 +1843,14 @@ int main (void)
         printf("ERROR: Failed initialization!\r\n");
     }
 
+//#define BYPASS_USER_INTERFACE
 #ifdef BYPASS_USER_INTERFACE
+
+//#define GLOSSY_MASTER
+#ifdef GLOSSY_MASTER
+    app.config.my_eui[0] = 0x01;
+    app.master_eui[0]    = 0x01;
+#endif
 
 // Test without having to rely on BLE for configuration
 #ifdef ROLE_INITIATOR

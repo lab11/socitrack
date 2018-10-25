@@ -49,6 +49,9 @@
 #define PROTOCOL_INIT_SCHED_OFFSET  0
 #define PROTOCOL_RESP_SCHED_OFFSET  (PROTOCOL_INIT_SCHED_OFFSET + PROTOCOL_INIT_SCHED_MAX)
 
+// Allow nodes to connect to new masters if they discover their schedule
+// #define PROTOCOL_FLEXIBLE_MASTER
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 #endif /*__MODULE_CONF_H*/

@@ -42,6 +42,10 @@
 #define APP_ADVDATA_OFFSET_SERVICE_ID   0
 #define APP_ADVDATA_OFFSET_MASTER_EUI   1
 
+// Protocol configuration ----------------------------------------------------------------------------------------------
+
+//#define PROTOCOL_JOIN_ON_CONNECT
+
 // Structs -------------------------------------------------------------------------------------------------------------
 
 typedef enum {
@@ -53,6 +57,7 @@ typedef enum {
 } app_role_t;
 
 typedef struct {
+    uint8_t    my_eui[EUI_LEN];
     app_role_t app_role;
     uint32_t   app_sync_time;       // Current epoch time at moment of configuration
     bool       app_module_enabled;

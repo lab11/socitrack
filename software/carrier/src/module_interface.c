@@ -178,10 +178,10 @@ ret_code_t module_get_info (uint16_t* id, uint8_t* version) {
 	return NRF_SUCCESS;
 }
 
-ret_code_t module_start_role (uint8_t role, bool is_glossy_master) {
+ret_code_t module_start_role (uint8_t role, bool is_glossy_master, uint8_t master_eui) {
 	ret_code_t ret;
 
-	uint8_t buf_cmd[2];
+	uint8_t buf_cmd[3];
 	buf_cmd[0] = MODULE_CMD_CONFIG;
 
 	// Role configuration
@@ -196,8 +196,11 @@ ret_code_t module_start_role (uint8_t role, bool is_glossy_master) {
 
 	buf_cmd[1] |= (APP_STANDARD << 4);
 
+	// Glossy Master EUI
+	buf_cmd[2] = master_eui;
+
 	nrf_twi_mngr_transfer_t const write_transfer[] = {
-			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 2, 0)
+			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 3, 0)
 	};
 
 	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
@@ -206,15 +209,15 @@ ret_code_t module_start_role (uint8_t role, bool is_glossy_master) {
 	return NRF_SUCCESS;
 }
 
-ret_code_t module_start_ranging () {
+ret_code_t module_start_ranging (uint8_t master_eui) {
 
-	return module_start_role(APP_ROLE_INIT_NORESP, false);
+	return module_start_role(APP_ROLE_INIT_NORESP, false, master_eui);
 }
 
 // Tell the attached module to become an anchor.
-ret_code_t module_start_anchor (bool is_glossy_master) {
+ret_code_t module_start_anchor (bool is_glossy_master, uint8_t master_eui) {
 
-	return module_start_role(APP_ROLE_NOINIT_RESP, is_glossy_master);
+	return module_start_role(APP_ROLE_NOINIT_RESP, is_glossy_master, master_eui);
 }
 
 // Tell the attached module that it should enter the calibration

@@ -80,7 +80,7 @@ struct pp_signal_flood {
 
 // PUBLIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
-void glossy_init(glossy_role_e role);
+void glossy_init(glossy_role_e role, uint8_t config_master_eui);
 void glossy_start();
 void glossy_deschedule();
 void lwb_set_sched_request(bool sched_en);

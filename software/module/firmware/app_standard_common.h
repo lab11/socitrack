@@ -144,6 +144,7 @@ typedef struct {
 	bool		  init_active; // In case they are enabled, the can be in an active state (i.e. currently executing init code)
 	bool		  resp_active;
 	glossy_role_e my_glossy_role;
+	uint8_t 	  my_glossy_master_EUI[EUI_LEN];
 	uint8_t       my_EUI[EUI_LEN];
 	module_report_mode_e report_mode;
 	module_update_mode_e update_mode;

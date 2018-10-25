@@ -101,7 +101,7 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator);
 // ---------------------------------------------------------------------------------------------------------------------
 
 
-void glossy_init(glossy_role_e role){
+void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 
     // Load EUI from application
 	uint8_t * my_eui = standard_get_EUI();
@@ -240,6 +240,9 @@ void glossy_init(glossy_role_e role){
             _lwb_scheduled_resp = TRUE;
             _lwb_timeslot_resp  = 0;
 		}
+	} else {
+		// Store Master EUI
+		_lwb_master_eui[0] = config_master_eui;
 	}
 
 	// The glossy timer acts to synchronize everyone to a common timebase
@@ -808,15 +811,29 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 		    //debug_msg("Received schedule from Glossy master\n");
 
-		    if (memcmp(_lwb_master_eui, in_glossy_sync->header.sourceAddr, EUI_LEN) != 0) {
+		    if (memcmp(_lwb_master_eui, in_glossy_sync->header.sourceAddr, 1) != 0) {
 
-		        // Found new Glossy master
-		        memcpy(_lwb_master_eui, in_glossy_sync->header.sourceAddr, EUI_LEN);
-                host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
+#ifndef PROTOCOL_FLEXIBLE_MASTER
+		    	if (_lwb_master_eui[0] == 0x00) // Uninitialized -> no specific Master set
+				{
+#endif
+					// Found new Glossy master
+					memcpy(_lwb_master_eui, in_glossy_sync->header.sourceAddr, EUI_LEN);
+					host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
 
-		        debug_msg("Found new Glossy master: ");
-		        helper_print_EUI(_lwb_master_eui);
-		        debug_msg("\n");
+					debug_msg("Found new Glossy master: ");
+					helper_print_EUI(_lwb_master_eui);
+					debug_msg("\n");
+#ifndef PROTOCOL_FLEXIBLE_MASTER
+				} else {
+					debug_msg("WARNING: Received schedule from incorrect Glossy Master: expected ");
+					debug_msg_uint(_lwb_master_eui[0]);
+					debug_msg(", but received from ");
+					debug_msg_uint(in_glossy_sync->header.sourceAddr[0]);
+					debug_msg("!\n");
+					return;
+				}
+#endif
 		    }
 
 #if (BOARD_V == SQUAREPOINT)

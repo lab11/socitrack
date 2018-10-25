@@ -407,7 +407,8 @@ int main () {
 
 	// Choose Glossy role
     if (0 || (config.my_role == APP_ROLE_INIT_NORESP)) {
-        config.my_glossy_role = GLOSSY_SLAVE;
+        config.my_glossy_role 		   = GLOSSY_SLAVE;
+        config.my_glossy_master_EUI[0] = 0x01; // Master is configured as having EUI 0x01
         debug_msg("GLOSSY_SLAVE\n");
     } else {
         config.my_glossy_role = GLOSSY_MASTER;

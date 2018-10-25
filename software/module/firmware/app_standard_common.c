@@ -97,7 +97,7 @@ void standard_configure (module_config_t* config) {
 
     // Ranging requires glossy synchronization, so let's enable that now
     // This uses TIM17 as a timer
-    glossy_init(_config.my_glossy_role);
+    glossy_init(_config.my_glossy_role, _config.my_glossy_master_EUI[0]);
 
 	// Get a second timer (TIM16) for both INIT and RESP; they will never be using it simultaneously
 	stm_timer_t * ranging_timer = timer_init();

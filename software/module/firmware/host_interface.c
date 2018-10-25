@@ -211,10 +211,12 @@ void host_interface_rx_fired () {
 
 			// This packet configures the TriPoint module and
 			// is what kicks off using it.
-			uint8_t config_main = rxBuffer[1];
+			uint8_t config_main   = rxBuffer[1];
+			uint8_t config_master = rxBuffer[2];
 			module_application_e my_app;
-			module_role_e my_role;
-			glossy_role_e my_glossy_role;
+			module_role_e 		 my_role;
+			glossy_role_e		 my_glossy_role;
+			uint8_t				 my_master_eui;
 
 			// Check if this module should be an anchor or tag
 			my_role =        (config_main & HOST_PKT_CONFIG_MAIN_ROLE_MASK)   >> HOST_PKT_CONFIG_MAIN_ROLE_SHIFT;
@@ -224,6 +226,9 @@ void host_interface_rx_fired () {
 
 			// Check which application we should run
 			my_app =         (config_main & HOST_PKT_CONFIG_MAIN_APP_MASK)    >> HOST_PKT_CONFIG_MAIN_APP_SHIFT;
+
+			// Receive Master EUI
+			my_master_eui =	  config_master;
 
             /*debug_msg("Role: ");
             debug_msg_int(my_role);
@@ -238,8 +243,9 @@ void host_interface_rx_fired () {
 				// Run the base normal ranging application
 
 				module_config_t module_config;
-				module_config.my_role = my_role;
-				module_config.my_glossy_role = my_glossy_role;
+				module_config.my_role				  = my_role;
+				module_config.my_glossy_role		  = my_glossy_role;
+				module_config.my_glossy_master_EUI[0] = my_master_eui;
 
 				// Now that we know how we should operate,
 				// call the main tag function to get things rollin'.
