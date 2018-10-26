@@ -191,6 +191,6 @@ void resp_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_t
 
 // Helper functions
 void debug_print_tx(uint32_t length);
-void helper_print_EUI(uint8_t * address);
+void helper_print_EUI(uint8_t * address, uint8_t len);
 
 #endif

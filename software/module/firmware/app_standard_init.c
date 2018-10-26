@@ -291,9 +291,9 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 		// within dwt_isr smashes everything without regard.)
 		if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
 		     (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
-            debug_msg("WARNING: Rx error, status: ");
+            /*debug_msg("WARNING: Rx error for INIT, status: ");
             debug_msg_int((uint32_t)rxd->status);
-            debug_msg("\n");
+            debug_msg("\n");*/
 
 			standard_set_ranging_response_settings(TRUE, 0);
 			dwt_rxenable(0);
@@ -567,7 +567,7 @@ static void calculate_ranges () {
 		anchor_responses_t* aresp = &(si_scratch->anchor_responses[anchor_index]);
 
 		debug_msg("Anchor ID: ");
-		helper_print_EUI(aresp->anchor_addr);
+		helper_print_EUI(aresp->anchor_addr, PROTOCOL_EUI_LEN);
 		debug_msg("; First index: ");
 		debug_msg_int(aresp->tag_poll_first_idx);
 		debug_msg("; last index: ");

@@ -455,9 +455,9 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 		// (because dwt_rxreset within dwt_isr smashes everything without regard)
 		if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
 		     (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
-			debug_msg("ERROR: Rx error, status: ");
+			/*debug_msg("WARNING: Rx error for RESP, status: ");
 			debug_msg_uint((uint32_t)rxd->status);
-			debug_msg("\n");
+			debug_msg("\n");*/
 
 			standard_set_ranging_broadcast_subsequence_settings(TRUE, sr_scratch->ranging_broadcast_ss_num);
 			dwt_rxenable(0);

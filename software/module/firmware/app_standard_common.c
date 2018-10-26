@@ -446,10 +446,11 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 	    } else if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
                     (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
 
-            debug_msg("WARNING: Rx error, status: ");
+            /*debug_msg("WARNING: Rx error for GLOSSY, status: ");
             debug_msg_int((uint32_t) rxd->status);
-            debug_msg("\n");
+            debug_msg("\n");*/
 
+            standard_set_ranging_response_settings(TRUE, 0);
             dwt_rxenable(0);
             return;
         }
@@ -483,11 +484,14 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 	}
 	else
     {
-	    debug_msg("WARNING: Received invalid packet of type ");
+	    /*debug_msg("WARNING: Received invalid packet of type ");
 	    debug_msg_uint(message_type_sync);
-	    debug_msg("\n");
+	    debug_msg(" with status ");
+	    debug_msg_uint(rxd->status);
+	    debug_msg("\n");*/
 
-	    // Reenable Rx though
+	    // Frame received incorrectly - Reed Solomon cannot correct it, so we just have to drop the packet
+        standard_set_ranging_response_settings(TRUE, 0);
 	    dwt_rxenable(0);
     }
 }
@@ -497,13 +501,13 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 // Helper functions
 /******************************************************************************/
 
-void helper_print_EUI(uint8_t * address) {
+void helper_print_EUI(uint8_t * address, uint8_t len) {
 
-    for (uint8_t i = 0; i < EUI_LEN; i++) {
+    for (uint8_t i = 0; i < len; i++) {
     	debug_msg_hex(address[i] >> 0x04);
         debug_msg_hex(address[i] &  0x0F);
 
-        if (i < (EUI_LEN - 1))
+        if (i < (len - 1))
         	debug_msg(":");
     }
 }

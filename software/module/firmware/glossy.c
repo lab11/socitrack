@@ -850,7 +850,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
 
 					debug_msg("Found new Glossy master: ");
-					helper_print_EUI(_lwb_master_eui);
+					helper_print_EUI(_lwb_master_eui, EUI_LEN);
 					debug_msg("\n");
 #ifndef PROTOCOL_FLEXIBLE_MASTER
 				} else {
@@ -1031,7 +1031,7 @@ static uint8_t schedule_device(uint8_t * array, uint8_t array_length, uint8_t * 
 		memcpy( (array + candidate_slot * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN);
 
 		/*debug_msg("Scheduled EUI ");
-        helper_print_EUI(eui);
+        helper_print_EUI(eui, PROTOCOL_EUI_LEN);
         debug_msg("in slot ");
         debug_msg_uint(candidate_slot);*/
 
@@ -1076,7 +1076,7 @@ static uint8_t deschedule_device(uint8_t * array, uint8_t array_length, uint8_t 
 			memset( (array + i * PROTOCOL_EUI_LEN),   0, PROTOCOL_EUI_LEN);
 
 			/*debug_msg("Descheduled EUI ");
-			helper_print_EUI(eui);
+			helper_print_EUI(eui, PROTOCOL_EUI_LEN);
 			debug_msg("from slot ");
 			debug_msg_uint(i);*/
 
