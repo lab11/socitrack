@@ -463,7 +463,7 @@ static void glossy_lwb_round_task() {
                     _cur_glossy_depth          = 0; // seqNum in packet
                     _glossy_currently_flooding = TRUE;
 
-					dwt_forcetrxoff();
+					//dwt_forcetrxoff();
 
 					uint16_t frame_len = sizeof(struct pp_signal_flood);
 					dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
@@ -479,7 +479,7 @@ static void glossy_lwb_round_task() {
 					_sched_req_pkt.turnaround_time = (uint64_t)(turnaround_time);
 					dw1000_choose_antenna(LWB_ANTENNA);
 #else
-					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(_lwb_num_timeslots_cont * LWB_SLOT_US - 2*GLOSSY_FLOOD_TIMESLOT_US)) + RANGING_CONTENTION_PADDING_US;
+					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(_lwb_num_timeslots_cont * LWB_SLOT_US - (GLOSSY_MAX_DEPTH - 1)*GLOSSY_FLOOD_TIMESLOT_US)) + RANGING_CONTENTION_PADDING_US;
 					uint32_t delay_time     = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
 #endif
 					_last_delay_time = delay_time;
@@ -839,7 +839,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 		    //debug_msg("Received schedule from Glossy master\n");
 
-		    if (memcmp(_lwb_master_eui, in_glossy_sync->header.sourceAddr, 1) != 0) {
+		    if (memcmp(_lwb_master_eui, in_glossy_sync->header.sourceAddr, PROTOCOL_EUI_LEN) != 0) {
 
 #ifndef PROTOCOL_FLEXIBLE_MASTER
 		    	if (_lwb_master_eui[0] == 0x00) // Uninitialized -> no specific Master set

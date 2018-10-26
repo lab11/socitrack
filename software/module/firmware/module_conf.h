@@ -30,7 +30,7 @@
 	#define DW1000_SMART_PWR_EN           1
 	#define DW1000_SFD_TO                 (64 + 1 + 8 - 8) /* (Preamble length + 1 + SFD length - PAC size) */
 	#define RANGING_BROADCASTS_PERIOD_US  2000
-	#define RANGING_RESPONSE_PADDING_US   1000
+	#define RANGING_RESPONSE_PADDING_US   500
     #define RANGING_CONTENTION_PADDING_US 1000
 #endif
 

@@ -374,6 +374,12 @@ void debug_print_tx(uint32_t length) {
     debug_msg("\n");*/
 }
 
+void clear_frame_event() {
+
+    // Clear SYS_STATUS_RXFCG and SYS_STATUS_TXFRS
+    dwt_write32bitreg(SYS_STATUS_ID, SYS_STATUS_RXFCG | SYS_STATUS_TXFRS);
+}
+
 static void common_txcallback(const dwt_cb_data_t *txd) {
 
 	//debug_msg("Tx -> done\n"); // datalength is NOT valid for Tx callbacks
@@ -432,6 +438,22 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 
 	if(message_type_sync == MSG_TYPE_PP_GLOSSY_SYNC || message_type_signal == MSG_TYPE_PP_GLOSSY_SIGNAL)
 	{
+	    // Verify that the frame is actually correctly received
+	    if (rxd->status & SYS_STATUS_RXFCG) {
+
+	        // Clear flag again
+	        clear_frame_event();
+	    } else if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
+                    (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
+
+            debug_msg("WARNING: Rx error, status: ");
+            debug_msg_int((uint32_t) rxd->status);
+            debug_msg("\n");
+
+            dwt_rxenable(0);
+            return;
+        }
+
 		// Handle Glossy packet; same for all roles - neither INIT nor RESP should be active currently
 		glossy_process_rxcallback(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(0), buf);
 	}

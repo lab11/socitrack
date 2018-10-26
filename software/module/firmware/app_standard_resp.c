@@ -321,7 +321,10 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 	//debug_msg("Received DW1000 packet\r\n");
 
-	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
+	if (rxd->status & SYS_STATUS_RXFCG) {
+
+        // Clear the flags first
+        clear_frame_event();
 
 		// We process based on the first byte in the packet
 		uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
@@ -450,13 +453,14 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 	} else {
 		// If an RX error has occurred, we're gonna need to setup the receiver again
 		// (because dwt_rxreset within dwt_isr smashes everything without regard)
-		if (rxd->status & SYS_STATUS_ALL_RX_ERR ||
-			rxd->status & SYS_STATUS_ALL_RX_TO) {
+		if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
+		     (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
 			debug_msg("ERROR: Rx error, status: ");
 			debug_msg_uint((uint32_t)rxd->status);
 			debug_msg("\n");
 
 			standard_set_ranging_broadcast_subsequence_settings(TRUE, sr_scratch->ranging_broadcast_ss_num);
+			dwt_rxenable(0);
 		} else {
 			// Some other unknown error, not sure what to do
 			debug_msg("ERROR: Unknown Rx issue!\n");

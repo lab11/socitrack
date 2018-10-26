@@ -183,6 +183,7 @@ uint64_t standard_get_txdelay_from_ranging_response_channel (uint8_t channel_ind
 uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_index);
 
 // TX/RX - defined inside app_standard_init and app_standard_resp
+void clear_frame_event();
 void init_txcallback  (const dwt_cb_data_t *txd);
 void init_rxcallback  (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_timestamp);
 void resp_txcallback  (const dwt_cb_data_t *txd);

@@ -61,14 +61,14 @@ void standard_initiator_init (standard_init_scratchspace_struct *app_scratchspac
 	};
 
 	// Make sure the SPI speed is slow for this function
-	dw1000_spi_slow();
+	/*dw1000_spi_slow();
 
 	// FIXME: Is the double receiver buffer necessary / useful?
 	//dwt_setdblrxbuffmode(TRUE);//FALSE);
 	dwt_enableautoack(DW1000_ACK_RESPONSE_TIME);
 
 	// Make SPI fast now that everything has been setup
-	dw1000_spi_fast();
+	dw1000_spi_fast();*/
 
     // Put source EUI in the pp_tag_poll packet
     memcpy(si_scratch->pp_tag_poll_pkt.header.sourceAddr, standard_get_EUI(), EUI_LEN);
@@ -195,9 +195,12 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 // Called when the tag receives a packet.
 void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_timestamp) {
 
-	if (rxd->status & SYS_STATUS_ALL_RX_GOOD) {
+	if (rxd->status & SYS_STATUS_RXFCG) {
 		// Everything went right when receiving this packet.
 		// We have to process it to ensure that it is a packet we are expecting to get.
+
+		// Clear the flags first
+        clear_frame_event();
 
 		// Get the message_type
 		uint8_t message_type = buf[offsetof(struct pp_anc_final, message_type)];
@@ -286,13 +289,14 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 		// Packet was NOT received correctly. Need to do some re-configuring
 		// as things get blown out when this happens. (Because dwt_rxreset
 		// within dwt_isr smashes everything without regard.)
-		if (rxd->status & SYS_STATUS_ALL_RX_ERR ||
-			rxd->status & SYS_STATUS_ALL_RX_TO) {
+		if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
+		     (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
             debug_msg("WARNING: Rx error, status: ");
             debug_msg_int((uint32_t)rxd->status);
             debug_msg("\n");
 
 			standard_set_ranging_response_settings(TRUE, 0);
+			dwt_rxenable(0);
 		} else {
 			debug_msg("ERROR: Unknown error!");
 			dwt_rxenable(0);
