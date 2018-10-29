@@ -464,8 +464,17 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 			debug_msg_hex(anchor_responses[i].anchor_addr[0] >> 4);
 			debug_msg_hex(anchor_responses[i].anchor_addr[0] & 0x0F);
 			debug_msg(": ");
-			debug_msg_uint((uint32_t)ranges_millimeters[i]);
-			debug_msg("\n");*/
+
+			if (ranges_millimeters[i] == STANDARD_INIT_RANGE_ERROR_NO_OFFSET) {
+			    debug_msg("ERROR_NO_OFFSET");
+			} else if (ranges_millimeters[i] == STANDARD_INIT_RANGE_ERROR_TOO_FEW_RANGES) {
+			    debug_msg("ERROR_TOO_FEW_RANGES");
+			} else if (ranges_millimeters[i] == STANDARD_INIT_RANGE_ERROR_MISC) {
+			    debug_msg("ERROR_MISC");
+			} else {
+                debug_msg_uint((uint32_t) ranges_millimeters[i]);
+            }
+            debug_msg("\n");*/
 		}
 	}
 
@@ -625,8 +634,7 @@ static void calculate_ranges () {
 				continue;
 			}
 
-			// Calculate the "multiplier for the crystal offset between tag
-			// and anchor".
+			// Calculate the "multiplier for the crystal offset between tag and anchor".
 			// (last_recv-first_recv) / (last_send-first_send)
 			double offset_anchor_over_tag_item = ((double) last_broadcast_recv_time - (double) first_broadcast_recv_time) /
 				((double) last_broadcast_send_time - (double) first_broadcast_send_time);
@@ -636,8 +644,11 @@ static void calculate_ranges () {
 			valid_offset_calculations++;
 		}
 
-		// If we didn't get any matching pairs in the first and last rounds
-		// then we have to skip this anchor.
+		// If we didn't get any matching pairs in the first and last rounds then we have to skip this anchor.
+		/*debug_msg("Number of matching pairs: ");
+		debug_msg_uint(valid_offset_calculations);
+		debug_msg("\n");*/
+
 		if (valid_offset_calculations == 0) {
 			si_scratch->ranges_millimeters[anchor_index] = STANDARD_INIT_RANGE_ERROR_NO_OFFSET;
 			continue;
@@ -693,6 +704,10 @@ static void calculate_ranges () {
 			double TOF = (double) broadcast_anchor_offset - (((double) broadcast_tag_offset) * offset_anchor_over_tag) + one_way_TOF;
 
 			int distance_millimeters = dwtime_to_millimeters(TOF);
+
+			/*debug_msg("Calculated range: ");
+			debug_msg_int(distance_millimeters);
+			debug_msg("\n");*/
 
 			// Check that the distance we have at this point is at all reasonable
 			if (distance_millimeters >= MIN_VALID_RANGE_MM && distance_millimeters <= MAX_VALID_RANGE_MM) {

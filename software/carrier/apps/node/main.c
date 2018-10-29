@@ -1859,6 +1859,7 @@ int main (void)
 
     // Contact module --------------------------------------------------------------------------------------------------
 
+#ifndef APP_BLE_TEST_ADV
     // Init the state machine on the module
     err_code = module_init(&app.module_interrupt_thrown, updateData);
     if (err_code == NRF_SUCCESS) {
@@ -1867,6 +1868,7 @@ int main (void)
     } else {
         printf("ERROR: Failed initialization!\r\n");
     }
+#endif
 
 //#define BYPASS_USER_INTERFACE
 #ifdef BYPASS_USER_INTERFACE

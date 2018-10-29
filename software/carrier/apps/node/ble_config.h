@@ -46,6 +46,11 @@
 
 //#define PROTOCOL_JOIN_ON_CONNECT
 
+// Test setups
+
+// Test BLE connectivity
+//#define APP_BLE_TEST_ADV
+
 // Structs -------------------------------------------------------------------------------------------------------------
 
 typedef enum {
