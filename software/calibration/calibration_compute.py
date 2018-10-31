@@ -43,9 +43,9 @@ def dist_to_dwtime(dist):
 	dwtime = dist / (DWT_TIME_UNITS * SPEED_OF_LIGHT)
 	return dwtime
 
-def nodeid_to_tripoint_id(nodeid):
-	tripoint_base = 'c0:98:e5:50:50:44:5'
-	out = '{}{}:{}'.format(tripoint_base, nodeid[9], nodeid[10:])
+def nodeid_to_module_id(nodeid):
+	module_base = 'c0:98:e5:42:00:00'
+	out = '{}{}:{}'.format(module_base, nodeid[9], nodeid[10:])
 	return out
 
 # Distance in dwtime between tags
@@ -131,13 +131,13 @@ for ch in range(3):
 	for ant in range(3):
 		print_order.append((ch,ant))
 
-tripoint_nodes = {}
+module_nodes = {}
 try:
 	for line in open(OUTPUT_FNAME):
 		if '#' in line:
 			continue
-		tripoint_node_id,rest = line.split(maxsplit=1)
-		tripoint_nodes[tripoint_node_id] = rest.split()
+		module_node_id,rest = line.split(maxsplit=1)
+		module_nodes[module_node_id] = rest.split()
 except IOError:
 	pass
 
@@ -149,7 +149,7 @@ for node in (('A','0'), ('B','1'), ('C','2')):
 			row.append(calibration[node[0]][conf])
 		except KeyError:
 			row.append(-1)
-	tripoint_nodes[nodeid_to_tripoint_id(node_id)] = row
+	module_nodes[nodeid_to_module_id(node_id)] = row
 
 outdata = []
 outdata.append('# Columns are formatted as (channel, antenna)'.split())
@@ -157,9 +157,9 @@ header = ['# Node ID',]
 header.extend(map(str, print_order))
 outdata.append(header)
 
-for tripoint_id in sorted(tripoint_nodes.keys()):
-	row = [tripoint_id,]
-	row.extend(tripoint_nodes[tripoint_id])
+for module_id in sorted(module_nodes.keys()):
+	row = [module_id,]
+	row.extend(module_nodes[module_id])
 	outdata.append(row)
 
 print(outdata)

@@ -795,10 +795,12 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             //err_code = sd_ble_gap_scan_stop();
             //APP_ERROR_CHECK(err_code);
 
+#ifndef APP_BLE_CALIBRATION
             err_code = sd_ble_gap_scan_start(&m_scan_params, &m_scan_buffer);
             if (err_code != NRF_ERROR_INVALID_STATE) {
                 APP_ERROR_CHECK(err_code);
             }
+#endif
 
             break;
         }
@@ -1121,6 +1123,8 @@ void updateData (uint8_t * data, uint32_t len)
 
     } else if (data[0] == HOST_IFACE_INTERRUPT_CALIBRATION) {
 	    printf(", set to calibration\n");
+
+	    app.app_raw_response_buffer_updated = true;
 	} else if (data[0] == HOST_IFACE_INTERRUPT_MASTER_EUI) {
 	    standard_reconfigure_master_eui(data + 1);
 
@@ -1849,7 +1853,11 @@ int main (void)
     APP_ERROR_CHECK(err_code);
 
     // Start scanning (Role: Central)
+#ifndef APP_BLE_CALIBRATION
     scan_start();
+#else
+    printf("Did not start scanning because we are in Calibration mode\n");
+#endif
 
     // Start advertisements (Role: Peripheral)
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);

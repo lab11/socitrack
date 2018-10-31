@@ -3,11 +3,11 @@
 // This file controls the calibration setup as described in https://github.com/abiri/totternary/software/calibration/README.md
 // Results are stored locally over BLE
 
-var noble = require('noble');
-var buf = require('buffer');
-var fs = require('fs');
+var noble    = require('noble');
+var buf      = require('buffer');
+var fs       = require('fs');
 var strftime = require('strftime');
-var Long = require('long');
+var Long     = require('long');
 
 // CONFIG --------------------------------------------------------------------------------------------------------------
 
@@ -17,7 +17,7 @@ var TRITAG_CHAR_UUID_RAW         = 'd68c3153a23fee900c455231395e5d2e';
 var TRITAG_CHAR_UUID_CALIB_INDEX = 'd68c3157a23fee900c455231395e5d2e';
 
 // Configuration
-var TRIPOINT_READ_INT_RANGES = 1
+var MODULE_READ_INT_RANGES = 1
 
 var assignment_index = 2;
 
@@ -182,15 +182,15 @@ noble.on('discover', function (peripheral) {
 	if (peripheral.advertisement.localName == 'tritag' && assignment_index >= 0) {
 		console.log('Found TriTag: ' + peripheral.uuid);
 
-		if (peripheral.uuid == 'c098e5450017') {
+		if (peripheral.uuid == 'c098e5420001') {
 			receive(peripheral, 2);
 		}
 
-		if (peripheral.uuid == 'c098e5450019') {
+		if (peripheral.uuid == 'c098e5420002') {
 			receive(peripheral, 1);
 		}
 
-		if (peripheral.uuid == 'c098e545001d') {
+		if (peripheral.uuid == 'c098e5420003') {
 			receive(peripheral, 0);
 		}
 

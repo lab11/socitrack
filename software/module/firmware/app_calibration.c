@@ -76,6 +76,10 @@ static void calibration_init () {
 void calibration_configure (calibration_config_t* config) {
     dw1000_err_e err;
 
+    debug_msg("Initiating calibration as node ");
+    debug_msg_uint(config->index);
+    debug_msg("\n");
+
     // Save the settings
     memcpy(&_config, config, sizeof(calibration_config_t));
 

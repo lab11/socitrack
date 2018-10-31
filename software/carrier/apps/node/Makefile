@@ -25,6 +25,9 @@ endif
 ifneq ($(GLOSSY_MASTER), )
 CFLAGS += -DGLOSSY_MASTER
 endif
+ifneq ($(APP_BLE_CALIBRATION), )
+CFLAGS += -DAPP_BLE_CALIBRATION
+endif
 
 # Source and header files
 APP_HEADER_PATHS += .

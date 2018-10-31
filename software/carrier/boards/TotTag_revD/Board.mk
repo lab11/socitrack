@@ -49,13 +49,6 @@ BOARD_SOURCES += \
 	nrf_balloc.c\
 	nrf_ble_gatt.c\
 	nrf_ble_qwr.c\
-	nrf_crypto_aes.c\
-	nrf_crypto_aead.c\
-	nrf_crypto_ecc.c\
-	nrf_crypto_ecdh.c\
-	nrf_crypto_hkdf.c\
-	nrf_crypto_hmac.c\
-	nrf_crypto_init.c\
 	nrf_crypto_rng.c\
 	nrf_drv_twi.c\
 	nrf_drv_uart.c\
@@ -100,39 +93,6 @@ BOARD_SOURCES += \
 	nrfx_clock.c\
 	nrf_drv_clock.c\
 	nrf_hw_backend_rng_mbedtls.c\
-	mbedtls_backend_aes.c\
-	mbedtls_backend_ecc.c\
-	mbedtls_backend_ecdh.c\
-	mbedtls_backend_hmac.c\
-	aes.c\
-	arc4.c\
-	bignum.c\
-	blowfish.c\
-	camellia.c\
-	ccm.c\
-	cipher.c\
-	cipher_wrap.c\
-	cmac.c\
-	ctr_drbg.c\
-	des.c\
-	ecp.c\
-	ecp_curves.c\
-	ecdh.c\
-	gcm.c\
-	md.c\
-	md5.c\
-	md_wrap.c\
-	ripemd160.c\
-	sha1.c\
-	sha256.c\
-	sha512.c\
-	cifra_backend_aes_aead.c\
-	cifra_eax_aes.c\
-	cifra_cmac.c\
-	blockwise.c\
-	eax.c\
-	gf128.c\
-	modes.c\
 	SEGGER_RTT.c\
 	SEGGER_RTT_Syscalls_GCC.c\
 	SEGGER_RTT_printf.c\
@@ -144,6 +104,50 @@ BOARD_SOURCES += \
 	better_error_handling.c\
 	module_interface.c\
 	led.c\
+
+# Files required for cryptographic apps
+#nrf_crypto_aes.c\
+#nrf_crypto_aead.c\
+#nrf_crypto_ecc.c\
+#nrf_crypto_ecdh.c\
+#nrf_crypto_hkdf.c\
+#nrf_crypto_hmac.c\
+#nrf_crypto_init.c\
+
+# Files required for mbedtls
+#mbedtls_backend_aes.c\
+#mbedtls_backend_ecc.c\
+#mbedtls_backend_ecdh.c\
+#mbedtls_backend_hmac.c\
+#aes.c\
+#arc4.c\
+#bignum.c\
+#blowfish.c\
+#camellia.c\
+#ccm.c\
+#cipher.c\
+#cipher_wrap.c\
+#cmac.c\
+#ctr_drbg.c\
+#des.c\
+#ecp.c\
+#ecp_curves.c\
+#ecdh.c\
+#gcm.c\
+#md.c\
+#md5.c\
+#md_wrap.c\
+#ripemd160.c\
+#sha1.c\
+#sha256.c\
+#sha512.c\
+#cifra_backend_aes_aead.c\
+#cifra_eax_aes.c\
+#cifra_cmac.c\
+#blockwise.c\
+#eax.c\
+#gf128.c\
+#modes.c\
 
 # Files required for Eddystone
 #es_adv.c\
