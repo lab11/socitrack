@@ -51,6 +51,8 @@
 // Test BLE connectivity
 //#define APP_BLE_TEST_ADV
 
+#define APP_BLE_CALIBRATION_INDEX_INVALID   255
+
 // Structs -------------------------------------------------------------------------------------------------------------
 
 typedef enum {
@@ -100,6 +102,7 @@ typedef struct ble_app_s {
 
 // Peripheral
 #define APP_ADV_INTERVAL_MS     500
+#define APP_ADV_INTERVAL_CAL_MS 50
 
 // Central
 #define APP_SCAN_INTERVAL_MS    5000
@@ -184,6 +187,7 @@ typedef struct ble_app_s {
 #define APP_CFG_DEFAULT_RADIO_TX_POWER                      0x00                        //!< Default TX power of the radio.
 
 #define APP_ADV_INTERVAL                    MSEC_TO_UNITS(APP_ADV_INTERVAL_MS, UNIT_0_625_MS)
+#define APP_ADV_INTERVAL_CALIBRATION        MSEC_TO_UNITS(APP_ADV_INTERVAL_CAL_MS, UNIT_0_625_MS)
 
 #define APP_SCAN_INTERVAL                   MSEC_TO_UNITS(APP_SCAN_INTERVAL_MS, UNIT_0_625_MS)
 #define APP_SCAN_WINDOW                     MSEC_TO_UNITS(APP_SCAN_WINDOW_MS, UNIT_0_625_MS)

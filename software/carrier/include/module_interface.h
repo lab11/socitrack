@@ -17,6 +17,10 @@
 #define MODULE_CMD_SET_LOCATION     0x07
 #define MODULE_CMD_READ_CALIBRATION 0x08
 
+// App configuration
+#define APP_STANDARD    0x00
+#define APP_CALIBRATION 0x01
+
 // Defines for identifying data sent to host
 #define HOST_IFACE_INTERRUPT_RANGES         0x01
 #define HOST_IFACE_INTERRUPT_CALIBRATION    0x02

@@ -268,12 +268,19 @@ void host_interface_rx_fired () {
 				PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);*/
 
 			} else if (my_app == APP_CALIBRATION) {
-				// Run the calibration application to find the TX and RX delays in the node.
+				// Run the calibration application to find the TX and RX delays in the node
+
 				calibration_config_t cal_config;
 				cal_config.index = rxBuffer[2];
 
 				module_configure_app(my_app, &cal_config);
 				module_start();
+
+			} else {
+				// Did not receive a known app code
+				debug_msg("ERROR: Unknown app ");
+				debug_msg_uint(my_app);
+				debug_msg("!\n");
 			}
 
 			break;

@@ -189,6 +189,8 @@ static void setup_round_antenna_channel (uint32_t round_num) {
 // Timer callback that marks the start of each round
 static void calib_start_round () {
 
+    debug_msg("Starting a calibration round\n");
+
     // Increment the round number
     if (_app_scratchspace.round_num == UINT32_MAX) {
         _app_scratchspace.round_num = 0; // Unknown behaviour depending on HW and compiler, so we just take care of this case ourselves

@@ -12,12 +12,12 @@ var Long     = require('long');
 // CONFIG --------------------------------------------------------------------------------------------------------------
 
 // Service UUIDs
-var TRITAG_SERVICE_UUID          = 'd68c3152a23fee900c455231395e5d2e';
-var TRITAG_CHAR_UUID_RAW         = 'd68c3153a23fee900c455231395e5d2e';
-var TRITAG_CHAR_UUID_CALIB_INDEX = 'd68c3157a23fee900c455231395e5d2e';
+var CARRIER_SERVICE_UUID          = 'd68c3152a23fee900c455231395e5d2e';
+var CARRIER_CHAR_UUID_RAW         = 'd68c3153a23fee900c455231395e5d2e';
+var CARRIER_CHAR_UUID_CALIB_INDEX = 'd68c3157a23fee900c455231395e5d2e';
 
 // Configuration
-var MODULE_READ_INT_RANGES = 1
+var MODULE_READ_INT_RANGES = 1;
 
 var assignment_index = 2;
 
@@ -89,11 +89,9 @@ function receive (peripheral, index, filename) {
 				// 	peripheral.connect();
 				// }, 5000);
 
+				console.log('Connected to TotTag ' + peripheral.uuid);
 
-
-				console.log('Connected to TriTag ' + peripheral.uuid);
-
-				peripheral.discoverServices([TRITAG_SERVICE_UUID], function (service_err, services) {
+				peripheral.discoverServices([CARRIER_SERVICE_UUID], function (service_err, services) {
 					if (service_err) {
 						console.log('Error finding services on ' + peripheral.uuid);
 						console.log(service_err);
@@ -102,9 +100,8 @@ function receive (peripheral, index, filename) {
 						// OK it seems it did work. Great.
 						// clearTimeout(retry_st);
 
-
 						if (services.length == 1) {
-							console.log('Found the TriTag service on ' + peripheral.uuid);
+							console.log('Found the TotTag service on ' + peripheral.uuid);
 
 							services[0].discoverCharacteristics([], function (char_err, characteristics) {
 								console.log('Found ' + characteristics.length + ' characteristics on ' + peripheral.uuid);
@@ -113,7 +110,7 @@ function receive (peripheral, index, filename) {
 									var characteristic = el;
 
 
-									if (characteristic.uuid == TRITAG_CHAR_UUID_RAW) {
+									if (characteristic.uuid == CARRIER_CHAR_UUID_RAW) {
 										// Setup subscribe
 
 										characteristic.on('data', function (dat) {
@@ -134,15 +131,16 @@ function receive (peripheral, index, filename) {
 											}
 										});
 
-									} else if (characteristic.uuid == TRITAG_CHAR_UUID_CALIB_INDEX) {
+									} else if (characteristic.uuid == CARRIER_CHAR_UUID_CALIB_INDEX) {
 										// Setup the index number
 										console.log('Setting ' + peripheral.uuid + ' to index ' + index);
-										characteristic.write(new Buffer([index]), false, function (write_err) {
+										var char_str = 'Calibration: ' + index;
+										characteristic.write(new Buffer(char_str, encoding='utf8'), false, function (write_err) {
 											if (write_err) {
 												console.log('err on write index ' + peripheral.uuid);
 												console.log(write_err);
 											} else {
-												console.log('Actually wrote index ' + index + ' to ' + peripheral.uuid);
+												console.log('Successfully wrote index ' + index + ' to ' + peripheral.uuid);
 											}
 										});
 									}
@@ -161,9 +159,6 @@ function receive (peripheral, index, filename) {
 
 		peripheral.connect(function (connect_err) {
 
-
-
-
 		});
 	});
 }
@@ -179,8 +174,8 @@ noble.on('stateChange', function (state) {
 });
 
 noble.on('discover', function (peripheral) {
-	if (peripheral.advertisement.localName == 'tritag' && assignment_index >= 0) {
-		console.log('Found TriTag: ' + peripheral.uuid);
+	if (peripheral.advertisement.localName == 'TotTag' && assignment_index >= 0) {
+		console.log('Found TotTag: ' + peripheral.uuid);
 
 		if (peripheral.uuid == 'c098e5420001') {
 			receive(peripheral, 2);

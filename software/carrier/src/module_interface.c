@@ -190,10 +190,7 @@ ret_code_t module_start_role (uint8_t role, bool is_glossy_master, uint8_t maste
 	// Master configuration
 	buf_cmd[1] |= (is_glossy_master << 3);
 
-	// App configuration
-    #define APP_STANDARD    0x00
-    #define APP_CALIBRATION 0x01
-
+	// Configure app
 	buf_cmd[1] |= (APP_STANDARD << 4);
 
 	// Glossy Master EUI
@@ -220,17 +217,15 @@ ret_code_t module_start_anchor (bool is_glossy_master, uint8_t master_eui) {
 	return module_start_role(APP_ROLE_NOINIT_RESP, is_glossy_master, master_eui);
 }
 
-// Tell the attached module that it should enter the calibration
-// mode.
+// Tell the attached module that it should enter the calibration mode.
 ret_code_t module_start_calibration (uint8_t index) {
     ret_code_t ret;
 
-    uint8_t buf_cmd[4];
-
+    uint8_t buf_cmd[3];
 	buf_cmd[0] = MODULE_CMD_CONFIG;
 
-	// Make TAG in CALIBRATION
-	buf_cmd[1] = 0x04;
+	// Configure app
+	buf_cmd[1] = (APP_CALIBRATION << 4);
 
 	// Set the index of the node in calibration
 	buf_cmd[2] = index;

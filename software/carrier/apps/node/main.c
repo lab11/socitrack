@@ -706,7 +706,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Handle a write to the characteristic that starts calibration
         uint8_t len = p_evt_write->len;
-        printf("Received CALIBRATION evt: %i, length %i\n", p_evt_write->data[0], len);
+        printf("Received CALIBRATION evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
         const char expected_response_calib[] = "Calibration: ";
         const uint8_t expected_response_calib_offset = 13;
@@ -715,9 +715,8 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         app.calibration_index = response;
 
-        // Configure this node for calibration and set the calibration node
-        // index. If 0, this node will immediately start calibration.
-        module_start_calibration(app.calibration_index);
+        // Calibration will be triggered in the main loop
+
     } else {
         printf("ERROR: Unknown handle: %i\n", p_evt_write->handle);
     }
@@ -1409,7 +1408,12 @@ static void advertising_init(void)
     init.srdata.uuids_complete.p_uuids   = m_sr_uuids;
 
     init.config.ble_adv_fast_enabled  = true;
+#ifndef APP_BLE_CALIBRATION
     init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
+#else
+    // Increase number of advertisements so the scanner finds all of them simultaneously
+    init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
+#endif
     //init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
 
     // Define Event handler
@@ -1619,7 +1623,7 @@ void app_init(void) {
     app.config.app_module_enabled = false;
 
     // Set to effective -1
-    app.calibration_index = 255;
+    app.calibration_index = APP_BLE_CALIBRATION_INDEX_INVALID;
 
     // Clear buffers
     app.module_inited           = false;
@@ -1928,6 +1932,17 @@ int main (void)
             // Received new data over I2C which we can expose over the BLE characteristics
             //printf("Updating location...\r\n");
             moduleDataUpdate();
+        }
+        else if ( (app.calibration_index != APP_BLE_CALIBRATION_INDEX_INVALID) && !app.config.app_module_enabled) {
+            // Configure this node for calibration and set the calibration node
+            // index. If 0, this node will immediately start calibration.
+            ret_code_t err_code = module_start_calibration(app.calibration_index);
+            if (err_code == NRF_SUCCESS) {
+                app.config.app_module_enabled = true;
+                printf("Started calibration with index %i\n", app.calibration_index);
+            } else {
+                printf("ERROR: Failed to start calibration!\n");
+            }
         }
     }
 }
