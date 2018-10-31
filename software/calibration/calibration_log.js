@@ -11,6 +11,12 @@ var Long     = require('long');
 
 // CONFIG --------------------------------------------------------------------------------------------------------------
 
+// Target devices - should be entered over command line arguments
+var peripheral_address_base = 'c098e54200';
+var peripheral_address_0	= 'c098e5420001';
+var peripheral_address_1	= 'c098e5420002';
+var peripheral_address_2	= 'c098e5420003';
+
 // Service UUIDs
 var CARRIER_SERVICE_UUID          = 'd68c3152a23fee900c455231395e5d2e';
 var CARRIER_CHAR_UUID_RAW         = 'd68c3153a23fee900c455231395e5d2e';
@@ -22,6 +28,14 @@ var MODULE_READ_INT_RANGES = 1;
 var assignment_index = 2;
 
 var filename_start = strftime('module_calibration_%Y-%m-%d_%H-%M-%S_', new Date());
+
+var num_discovered	   = 0;
+var num_discovered_max = 3;
+
+// Store handles of discovered devices
+var peripheral_0;
+var peripheral_1;
+var peripheral_2;
 
 // HELPERS -------------------------------------------------------------------------------------------------------------
 
@@ -60,8 +74,26 @@ function record (b, fd) {
 	return round;
 }
 
+function parse_cmd_args() {
+
+    for (var i = 0; i < process.argv.length; i++) {
+        var val = process.argv[i];
+
+        // Correct addresses
+        if (val == '-target_addr') {
+            peripheral_address_0 = peripheral_address_base + process.argv[++i];
+            peripheral_address_1 = peripheral_address_base + process.argv[++i];
+            peripheral_address_2 = peripheral_address_base + process.argv[++i];
+            console.log('Looking for peripherals with addresses ' + peripheral_address_0 + ', ' + peripheral_address_1 + ' and ' + peripheral_address_2);
+        }
+    }
+}
+
 
 // FUNCTIONS -----------------------------------------------------------------------------------------------------------
+
+// Start by parsing command line arguments
+parse_cmd_args();
 
 function receive (peripheral, index, filename) {
 	var filename = filename_start + peripheral.uuid.replace(':', '') + '_' + index + '.data';
@@ -101,10 +133,10 @@ function receive (peripheral, index, filename) {
 						// clearTimeout(retry_st);
 
 						if (services.length == 1) {
-							console.log('Found the TotTag service on ' + peripheral.uuid);
+							//console.log('Found the TotTag service on ' + peripheral.uuid);
 
 							services[0].discoverCharacteristics([], function (char_err, characteristics) {
-								console.log('Found ' + characteristics.length + ' characteristics on ' + peripheral.uuid);
+								//console.log('Found ' + characteristics.length + ' characteristics on ' + peripheral.uuid);
 
 								characteristics.forEach(function (el, idx, arr) {
 									var characteristic = el;
@@ -133,14 +165,15 @@ function receive (peripheral, index, filename) {
 
 									} else if (characteristic.uuid == CARRIER_CHAR_UUID_CALIB_INDEX) {
 										// Setup the index number
-										console.log('Setting ' + peripheral.uuid + ' to index ' + index);
+										//console.log('Setting ' + peripheral.uuid + ' to index ' + index);
+
 										var char_str = 'Calibration: ' + index;
 										characteristic.write(new Buffer(char_str, encoding='utf8'), false, function (write_err) {
 											if (write_err) {
 												console.log('err on write index ' + peripheral.uuid);
 												console.log(write_err);
 											} else {
-												console.log('Successfully wrote index ' + index + ' to ' + peripheral.uuid);
+												console.log('Successfully set ' + peripheral.uuid + ' to index ' + index);
 											}
 										});
 									}
@@ -149,7 +182,7 @@ function receive (peripheral, index, filename) {
 							});
 
 						} else {
-							console.log('Somehow got two services back? That shouldn\'t happen.');
+							console.log('ERROR: Somehow got two services back? That shouldn\'t happen.');
 						}
 					}
 				});
@@ -158,9 +191,18 @@ function receive (peripheral, index, filename) {
 		});
 
 		peripheral.connect(function (connect_err) {
-
+			if (connect_err) {
+                console.log('ERROR: Failed to connect to ' + peripheral.uuid);
+                console.log(connect_err)
+            } else {
+				//console.log('Successfully connected to ' + peripheral.uuid);
+			}
 		});
 	});
+}
+
+function receive_master() {
+	receive(peripheral_0, 0);
 }
 
 
@@ -169,7 +211,7 @@ noble.on('stateChange', function (state) {
 		console.log('Scanning...');
 		noble.startScanning();
 	} else {
-		console.log('Tried to start scanning, got: ' + state);
+		console.log('WARNING: Tried to start scanning, got: ' + state);
 	}
 });
 
@@ -177,18 +219,33 @@ noble.on('discover', function (peripheral) {
 	if (peripheral.advertisement.localName == 'TotTag' && assignment_index >= 0) {
 		console.log('Found TotTag: ' + peripheral.uuid);
 
-		if (peripheral.uuid == 'c098e5420001') {
-			receive(peripheral, 2);
+		if (peripheral.uuid == peripheral_address_0) {
+			//receive(peripheral, 0);
+			num_discovered = num_discovered + 1;
+			peripheral_0 = peripheral;
 		}
 
-		if (peripheral.uuid == 'c098e5420002') {
-			receive(peripheral, 1);
+		if (peripheral.uuid == peripheral_address_1) {
+			//receive(peripheral, 1);
+            num_discovered = num_discovered + 1;
+            peripheral_1 = peripheral;
 		}
 
-		if (peripheral.uuid == 'c098e5420003') {
-			receive(peripheral, 0);
+		if (peripheral.uuid == peripheral_address_2) {
+			//receive(peripheral, 2);
+            num_discovered = num_discovered + 1;
+            peripheral_2 = peripheral;
 		}
 
-		// receive(peripheral, assignment_index--);
+		// As soon as we discovered everyone, start the ranging
+		if (num_discovered === num_discovered_max) {
+
+			// Slaves
+			receive(peripheral_1, 1);
+			receive(peripheral_2, 2);
+
+			// Wait for them to be initialized, then start Master
+            setTimeout(receive_master, 200);
+		}
 	}
 });
