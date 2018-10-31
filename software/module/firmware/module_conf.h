@@ -53,7 +53,7 @@
 // #define PROTOCOL_FLEXIBLE_MASTER
 
 // Automatically deschedule after not having received a schedule for a given time
-#define PROTOCOL_ENABLE_TIMEOUT
+//#define PROTOCOL_ENABLE_TIMEOUT
 
 // ---------------------------------------------------------------------------------------------------------------------
 

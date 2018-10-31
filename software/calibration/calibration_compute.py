@@ -9,7 +9,9 @@ import sys
 
 import dataprint
 
-OUTPUT_FNAME = 'tripoint_calibration.data'
+# INIT / CONFIG --------------------------------------------------------------------------------------------------------
+
+OUTPUT_FNAME = 'module_calibration.data'
 
 if len(sys.argv) != 2:
 	print('Need to pass condensed calibration file as first argument.')
@@ -28,6 +30,8 @@ CALIBRATION_NUM_NODES=3
 CALIB_NUM_ANTENNAS=3
 CALIB_NUM_CHANNELS=3
 
+
+# HELPERS --------------------------------------------------------------------------------------------------------------
 
 def dwtime_to_dist(dwtime):
 	dist = dwtime * DWT_TIME_UNITS * SPEED_OF_LIGHT;
@@ -54,6 +58,9 @@ def sub_dw_ts(a,b):
 		raise
 	return a-b
 
+
+# PARSING --------------------------------------------------------------------------------------------------------------
+
 out = [
 		('round', 'calibration', 'deltaB', 'epsilonC', 'converted'),
 		]
@@ -72,13 +79,20 @@ for line in open(condensed):
 	antenna = int(round_num / CALIBRATION_NUM_NODES) % CALIB_NUM_ANTENNAS
 	channel = int(int(round_num / CALIBRATION_NUM_NODES) / CALIB_NUM_ANTENNAS) % CALIB_NUM_CHANNELS
 	node_cal = calibration[node]
+
 	if (antenna,channel) not in node_cal:
 		node_cal[(antenna,channel)] = []
 
+	# Adjust clock from C to B
 	k = sub_dw_ts(Q,O) / sub_dw_ts(P,N)
+
+	# Calculate BRX2 - BRX1
 	deltaB = sub_dw_ts(O,L)
+
+	# Calculate CTX2 - CRX1
 	epsilonC = sub_dw_ts(N,M)
 
+	# Calculate r_c + t_c
 	cal = deltaB - epsilonC * k - l
 
 	node_cal[(antenna,channel)].append(cal)
@@ -107,6 +121,9 @@ for node in ('A', 'B', 'C'):
 			calibration[node][conf] = int(round(np.percentile(rej, 12)))
 
 pprint.pprint(calibration)
+
+
+# PRINT ----------------------------------------------------------------------------------------------------------------
 
 # Desired print order is (channel,antenna)
 print_order = []

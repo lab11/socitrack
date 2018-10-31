@@ -4,12 +4,19 @@
 #include "stm32f0xx_i2c_cpal.h"
 #include "stm32f0xx_i2c_cpal_hal.h"
 
+#include "dw1000.h"
+
+#include "SEGGER_RTT.h"
+
 #include "board.h"
 #include "firmware.h"
 #include "host_interface.h"
-#include "dw1000.h"
+
 #include "app_standard_common.h"
-#include "SEGGER_RTT.h"
+#include "app_calibration.h"
+
+
+// STATE ---------------------------------------------------------------------------------------------------------------
 
 #define BUFFER_SIZE 128
 uint8_t rxBuffer[BUFFER_SIZE];
@@ -33,6 +40,9 @@ uint8_t* _interrupt_buffer;
 uint8_t  _interrupt_buffer_len;
 
 extern I2C_TypeDef* CPAL_I2C_DEVICE[];
+
+
+// FUNCTIONS -----------------------------------------------------------------------------------------------------------
 
 uint32_t host_interface_init () {
 	uint32_t ret;
@@ -258,12 +268,12 @@ void host_interface_rx_fired () {
 				PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);*/
 
 			} else if (my_app == APP_CALIBRATION) {
-				//// Run the calibration application to find the TX and RX
-				//// delays in the node.
-				//calibration_config_t cal_config;
-				//cal_config.index = rxBuffer[2];
-				//module_configure_app(my_app, &cal_config);
-				//module_start();
+				// Run the calibration application to find the TX and RX delays in the node.
+				calibration_config_t cal_config;
+				cal_config.index = rxBuffer[2];
+
+				module_configure_app(my_app, &cal_config);
+				module_start();
 			}
 
 			break;

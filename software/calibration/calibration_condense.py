@@ -7,17 +7,20 @@ import sys
 
 import dataprint
 
+# Initialization
 
 if len(sys.argv) != 2:
 	print('Need to pass the time string of the files to compress as the first command line argument.')
 	sys.exit(1)
 
 timestamp = sys.argv[1]
-glob_filename = 'tripoint_calibration_' + timestamp + '*.data'
+glob_filename = 'module_calibration_' + timestamp + '*.data'
 
 meta = {}
 data = {}
 
+
+# Condensation
 
 for filename in glob.glob(glob_filename):
 	fname, fext = os.path.splitext(filename)
@@ -50,11 +53,8 @@ for filename in glob.glob(glob_filename):
 					data[rnd][3] = t2
 					data[rnd][5] = t3
 
-
 			except:
 				pass
-
-
 
 outdata = []
 
@@ -68,11 +68,11 @@ for key in sorted(data):
 	outdata.append([key, node] + data[key])
 
 
-outfilename_base = 'tripoint_calibration_' + timestamp
+# Print into new file
 
+outfilename_base = 'module_calibration_' + timestamp
 
 with open(outfilename_base + '.meta', 'w') as f:
 	f.write(json.dumps(meta))
-
 
 dataprint.to_newfile(outfilename_base+'.condensed', outdata, overwrite=True)

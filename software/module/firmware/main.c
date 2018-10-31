@@ -17,6 +17,7 @@
 #include "app_test_common.h"
 #include "app_test_init.h"
 #include "app_test_resp.h"
+#include "app_calibration.h"
 #include "timer.h"
 #include "delay.h"
 #include "firmware.h"
@@ -107,6 +108,9 @@ void module_configure_app (module_application_e app, void* app_config) {
 	        // In contrast to normal applications, this function will never return
 	        simpletest_configure((module_config_t*) app_config);
 	        break;
+	    case APP_CALIBRATION:
+	        calibration_configure((calibration_config_t*) app_config);
+	        break;
 
 		default:
 			break;
@@ -135,6 +139,10 @@ void module_start () {
 			break;
 		case APP_RANGETEST:
 			rangetest_start();
+			break;
+	    case APP_CALIBRATION:
+	        calibration_start();
+	        break;
 
 		default:
 			break;
@@ -154,6 +162,9 @@ void module_stop () {
 		case APP_STANDARD:
 			standard_stop();
 			break;
+	    case APP_CALIBRATION:
+	        calibration_stop();
+	        break;
 
 		default:
 			break;
@@ -182,6 +193,9 @@ void module_reset () {
 		case APP_STANDARD:
 			standard_reset();
 			break;
+	    case APP_CALIBRATION:
+	        calibration_reset();
+	        break;
 
 		default:
 			break;
@@ -211,10 +225,6 @@ void module_tag_do_range () {
 	switch (_current_app) {
 		case APP_STANDARD:
 			standard_do_range();
-			break;
-
-		case APP_CALIBRATION:
-			// Not a thing for this app
 			break;
 
 		default:
@@ -388,6 +398,13 @@ int main () {
 	//debug_msg("Waiting for host...\r\n");
 
 #else
+
+//#define CALIBRATION
+#ifdef CALIBRATION
+	calibration_config_t config = { 1 };
+	module_configure_app(APP_CALIBRATION, &config);
+#else
+
 	// DEBUG:
 	module_config_t config;
 
@@ -428,7 +445,10 @@ int main () {
     //module_configure_app(APP_SIMPLETEST, &config);
 #else
 	module_configure_app(APP_STANDARD, &config);
-#endif
+#endif // RANGE_TEST
+
+#endif // CALIBRATION
+
 	module_start();
 #endif
 

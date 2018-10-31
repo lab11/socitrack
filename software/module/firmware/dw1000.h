@@ -15,8 +15,7 @@
 // radios should go.
 #define DW1000_USE_OTP 0
 
-// The antenna delays are set to 0 because our other calibration takes
-// care of this.
+// The antenna delays are set to 0 because our other calibration takes care of this.
 #define DW1000_ANTENNA_DELAY_TX 0
 #define DW1000_ANTENNA_DELAY_RX 0
 

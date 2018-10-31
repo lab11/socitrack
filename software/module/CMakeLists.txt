@@ -75,6 +75,8 @@ set(PROJ_FILES
         firmware/app_test_common.h
         firmware/app_test_init.c
         firmware/app_test_init.h
+        firmware/app_calibration.c
+        firmware/app_calibration.h
         firmware/module_conf.h
         firmware/stm32f0xx_conf.h
         firmware/stm32f0xx_i2c_cpal_conf.h)
