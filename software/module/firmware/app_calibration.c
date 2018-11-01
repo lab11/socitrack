@@ -90,7 +90,7 @@ void calibration_configure (calibration_config_t* config) {
     _app_scratchspace.round_num      = UINT32_MAX;
     _app_scratchspace.timeout_firing = 0;
     _app_scratchspace.init_received  = FALSE;
-    _app_scratchspace.dw_slack_delay_multiplier = 1;
+    _app_scratchspace.dw_slack_delay_multiplier = 5;
 
     _app_scratchspace.pp_calibration_pkt = (struct pp_calibration_msg) {
             .header = {
@@ -178,6 +178,9 @@ void calibration_reset () {
 // each node before switching things up.
 static void setup_round_antenna_channel (uint32_t round_num) {
 
+    // Turn transceiver off first
+    dwt_forcetrxoff();
+
     // This rotates the fastest
     uint8_t antenna =  (round_num / CALIBRATION_NUM_NODES) % CALIB_NUM_ANTENNAS;
     uint8_t channel = ((round_num / CALIBRATION_NUM_NODES) / CALIB_NUM_ANTENNAS) % CALIB_NUM_CHANNELS;
@@ -189,7 +192,7 @@ static void setup_round_antenna_channel (uint32_t round_num) {
 // Timer callback that marks the start of each round
 static void calib_start_round () {
 
-    debug_msg("Starting a calibration round\n");
+    //debug_msg("Starting a calibration round\n");
 
     // Increment the round number
     if (_app_scratchspace.round_num == UINT32_MAX) {
@@ -249,6 +252,7 @@ static void send_calibration_pkt (uint8_t message_type, uint8_t packet_num) {
     ret = dwt_starttx(DWT_START_TX_DELAYED);
     if (ret != DWT_SUCCESS) {
         // If we could not send this delayed packet, try extending the delay period next time.
+        debug_msg("WARNING: Could not send successfully!\n");
         _app_scratchspace.dw_slack_delay_multiplier++;
     }
 
@@ -346,7 +350,9 @@ static void finish () {
 static void calibration_txcallback (const dwt_cb_data_t *txd) {
 
     if (txd->status & SYS_STATUS_TXFRS) {
-        //debug_msg("Packet successfully sent\n");
+        /*debug_msg("Tx -> type ");
+        debug_msg_uint(_app_scratchspace.pp_calibration_pkt.message_type);
+        debug_msg("\n");*/
     } else {
         debug_msg("ERROR: Failed in sending packet, status: ");
         debug_msg_uint(txd->status);
@@ -419,6 +425,10 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
 
     if (rxd->status & SYS_STATUS_RXFCG) {
 
+        /*debug_msg("Rx -> length ");
+        debug_msg_uint(rxd->datalength);
+        debug_msg("\n");*/
+
         // Read in parameters of this packet reception
         uint64_t dw_rx_timestamp;
         uint8_t  buf[CALIBRATION_MAX_RX_PKT_LEN];
@@ -478,8 +488,14 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
         } else if (message_type == MSG_TYPE_PP_CALIBRATION_MSG) {
             uint8_t packet_num = rx_start_pkt->num;
 
+            debug_msg("Received calibration packet: type ");
+            debug_msg_uint(message_type);
+            debug_msg(", number ");
+            debug_msg_uint(packet_num);
+            debug_msg("\n");
+
             // Store timestamps.
-            if (packet_num <= 3) {
+            if (packet_num < 3) {
                 _app_scratchspace.calibration_timing[packet_num] = dw_rx_timestamp;
             } else {
                 // Uhh, this is bad
@@ -500,9 +516,11 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
                     debug_msg("\n");
                 }
 
-            } else if (packet_num == 2) {
-                // This is the last packet, notify the host of our findings
+            } else if ( (packet_num == 2) &&
+                        !CALIBRATION_ROUND_STARTED_BY_ME(_app_scratchspace.round_num, _config.index) ) {
+                // This is the last packet, notify the host of our findings - in some cases, the message might have been received by the starting node, which we must prevent (as it does not notify the host)
                 finish();
+                return;
             }
 
         } else {
