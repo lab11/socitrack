@@ -269,9 +269,8 @@ static void standard_resp_send_response () {
 	// Set the packet to be transmitted later.
 	dw1000_setdelayedtrxtime(delay_time);
 
-	// Record the outgoing time in the packet. Do not take calibration into
-	// account here, as that is done on all of the RX timestamps.
-	sr_scratch->pp_anc_final_pkt.dw_time_sent = (((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX);
+	// Record the outgoing time in the packet.
+	sr_scratch->pp_anc_final_pkt.dw_time_sent = (((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX, sr_scratch->pp_anc_final_pkt.final_antenna);
 
     // Write our packet to the buffer
     write_anc_final_to_buffer();
@@ -368,10 +367,10 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 					sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
 
 					// Record the timestamp. Need to subtract off the TX+RX delay from each recorded timestamp.
-					sr_scratch->pp_anc_final_pkt.init_responses[idx].first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
+					sr_scratch->pp_anc_final_pkt.init_responses[idx].first_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(TRUE, sr_scratch->ranging_broadcast_ss_num);
 					sr_scratch->pp_anc_final_pkt.init_responses[idx].first_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
 
-					sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs[sr_scratch->ranging_broadcast_ss_num] = (dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+					sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs[sr_scratch->ranging_broadcast_ss_num] = (dw_rx_timestamp - standard_get_rxdelay_from_subsequence(TRUE, sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
 
 					// Update the statistics we keep about which antenna receives the most packets from the tag
 					uint8_t recv_antenna_index = standard_subsequence_number_to_antenna(TRUE, rx_poll_pkt->subsequence);
@@ -404,8 +403,8 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 						// This is the packet we were expecting from the tag.
 						// Record the TOA, and adjust it with the calibration value.
 						sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs[sr_scratch->ranging_broadcast_ss_num] =
-							(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
-						sr_scratch->pp_anc_final_pkt.init_responses[idx].last_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(sr_scratch->ranging_broadcast_ss_num);
+							(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(TRUE, sr_scratch->ranging_broadcast_ss_num)) & 0xFFFF;
+						sr_scratch->pp_anc_final_pkt.init_responses[idx].last_rxd_toa = dw_rx_timestamp - standard_get_rxdelay_from_subsequence(TRUE, sr_scratch->ranging_broadcast_ss_num);
 						sr_scratch->pp_anc_final_pkt.init_responses[idx].last_rxd_idx = sr_scratch->ranging_broadcast_ss_num;
 
 						// Update the statistics we keep about which antenna

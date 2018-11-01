@@ -44,7 +44,7 @@ def dist_to_dwtime(dist):
 	return dwtime
 
 def nodeid_to_module_id(nodeid):
-	module_base = 'c0:98:e5:42:00:00'
+	module_base = 'c0:98:e5:42:0'
 	out = '{}{}:{}'.format(module_base, nodeid[9], nodeid[10:])
 	return out
 

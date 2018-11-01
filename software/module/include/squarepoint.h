@@ -2,14 +2,14 @@
 #define __SQUAREPOINT_H
 
 #include "stm32f0xx.h"
+#include "dw1000.h"
 
 /******************************************************************************/
 // EUI LOCATION IN FLASH
 /******************************************************************************/
-#define EUI_FLASH_LOCATION  0x0803FFF8
-#define INIT_FLASH_LOCATION 0x0803FF80
-
-// TODO: find
+#define FLASH_LOCATION_MAGIC       0x0803FF00
+#define FLASH_LOCATION_EUI         (FLASH_LOCATION_MAGIC + OFFSET_EUI)
+#define FLASH_LOCATION_CALIBRATION (FLASH_LOCATION_MAGIC + OFFSET_CALIB)
 
 
 /******************************************************************************/

@@ -343,25 +343,27 @@ uint8_t standard_get_ss_index_from_settings (uint8_t anchor_antenna_index,
 }
 
 // Get the TX delay for this node, given the channel value
-uint64_t standard_get_txdelay_from_subsequence (uint8_t subseq_num) {
+uint64_t standard_get_txdelay_from_subsequence (bool resp_active, uint8_t subseq_num) {
 	// Need to get channel and antenna to call the dw1000 function
 	uint8_t channel_index = subsequence_number_to_channel_index(subseq_num);
-	return dw1000_get_tx_delay(channel_index);
+	uint8_t antenna_index = standard_subsequence_number_to_antenna(resp_active, subseq_num);
+	return dw1000_get_tx_delay(channel_index, antenna_index);
 }
 
 // Get the RX delay for this node, given the channel value
-uint64_t standard_get_rxdelay_from_subsequence (uint8_t subseq_num) {
+uint64_t standard_get_rxdelay_from_subsequence (bool resp_active, uint8_t subseq_num) {
 	// Need to get channel and antenna to call the dw1000 function
 	uint8_t channel_index = subsequence_number_to_channel_index(subseq_num);
-	return dw1000_get_rx_delay(channel_index);
+	uint8_t antenna_index = standard_subsequence_number_to_antenna(resp_active, subseq_num);
+	return dw1000_get_rx_delay(channel_index, antenna_index);
 }
 
-uint64_t standard_get_txdelay_from_ranging_response_channel (uint8_t channel_index){
-	return dw1000_get_tx_delay(channel_index % NUM_RANGING_CHANNELS);
+uint64_t standard_get_txdelay_from_ranging_response_channel (uint8_t channel_index, uint8_t antenna_index){
+	return dw1000_get_tx_delay(channel_index % NUM_RANGING_CHANNELS, antenna_index);
 }
 
-uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_index){
-	return dw1000_get_rx_delay(channel_index % NUM_RANGING_CHANNELS);
+uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_index, uint8_t antenna_index){
+	return dw1000_get_rx_delay(channel_index % NUM_RANGING_CHANNELS, antenna_index);
 }
 
 /******************************************************************************/
@@ -456,7 +458,7 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
         }
 
 		// Handle Glossy packet; same for all roles - neither INIT nor RESP should be active currently
-		glossy_process_rxcallback(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(0), buf);
+		glossy_process_rxcallback(dw_rx_timestamp - standard_get_rxdelay_from_subsequence(FALSE, 0), buf);
 	}
 	else if (message_type_poll == MSG_TYPE_PP_NOSLOTS_TAG_POLL || message_type_final == MSG_TYPE_PP_NOSLOTS_ANC_FINAL)
 	{

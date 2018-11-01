@@ -287,12 +287,14 @@ static void setup () {
 	DMA_UART_InitStructure.DMA_M2M                = DMA_M2M_Disable;*/
 
 	// Pull from flash the calibration values
-	memcpy(&_prog_values, (uint8_t*) INIT_FLASH_LOCATION, sizeof(dw1000_programmed_values_t));
+	memcpy(&_prog_values, (uint8_t*) FLASH_LOCATION_MAGIC, sizeof(dw1000_programmed_values_t));
 	if (_prog_values.magic != PROGRAMMED_MAGIC) {
-		// Hmm this wasn't set on this chip. Not much we can do other
-		// than use default values.
-		for (uint8_t i=0; i<6; i++) {
-			_prog_values.calibration_values[i] = DW1000_DEFAULT_CALIBRATION;
+		// Hmm this wasn't set on this chip. Not much we can do other than use default values.
+		debug_msg("WARNING: Calibration values not found in FLASH\n");
+		for (uint8_t i=0; i < 3; i++) {
+			for (uint8_t j=0; j < 3; j++) {
+				_prog_values.calibration_values[i][j] = DW1000_DEFAULT_CALIBRATION;
+			}
 		}
 	}
 
@@ -657,23 +659,25 @@ void dw1000_choose_antenna (uint8_t antenna_number) {
 
 // Read this node's EUI from the correct address in flash
 void dw1000_read_eui (uint8_t *eui_buf) {
-	memcpy(eui_buf, (uint8_t*) EUI_FLASH_LOCATION, EUI_LEN);
+	memcpy(eui_buf, (uint8_t*) FLASH_LOCATION_EUI, EUI_LEN);
 }
 
 // Return the TX+RX delay calibration value for this particular node
 // in DW1000 time format.
-uint64_t dw1000_get_tx_delay (uint8_t channel_index) {
+uint64_t dw1000_get_tx_delay (uint8_t channel_index, uint8_t antenna_index) {
 	// Make sure that antenna and channel are 0<=index<3
 	channel_index = channel_index % 3;
+	antenna_index = antenna_index % 3;
 
-	return (uint64_t) _prog_values.calibration_values[channel_index*2+1];
+	return (uint64_t) (_prog_values.calibration_values[channel_index][antenna_index] * DW1000_DELAY_TX) / 100;
 }
 
-uint64_t dw1000_get_rx_delay (uint8_t channel_index) {
+uint64_t dw1000_get_rx_delay (uint8_t channel_index, uint8_t antenna_index) {
 	// Make sure that antenna and channel are 0<=index<3
 	channel_index = channel_index % 3;
+	antenna_index = antenna_index % 3;
 
-	return (uint64_t) _prog_values.calibration_values[channel_index*2];
+	return (uint64_t) (_prog_values.calibration_values[channel_index][antenna_index] * DW1000_DELAY_RX) / 100;
 }
 
 // Get access to the pointer of calibration values. Used for the host interface.

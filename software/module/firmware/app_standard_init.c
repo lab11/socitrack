@@ -271,7 +271,7 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 				// Save when we received the packet.
 				// We have already handled the calibration values so we don't need to here.
-				si_scratch->anchor_responses[si_scratch->anchor_response_count].anc_final_rx_timestamp = dw_rx_timestamp - standard_get_rxdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX);
+				si_scratch->anchor_responses[si_scratch->anchor_response_count].anc_final_rx_timestamp = dw_rx_timestamp - standard_get_rxdelay_from_ranging_response_channel(RANGING_RESPONSE_CHANNEL_INDEX, anc_final->final_antenna);
 
 				// Increment the number of anchors heard from
 				si_scratch->anchor_response_count++;
@@ -340,7 +340,7 @@ static void send_poll () {
 	// Take the TX+RX delay into account here by adding it to the time stamp
 	// of each outgoing packet.
 	si_scratch->ranging_broadcast_ss_send_times[si_scratch->ranging_broadcast_ss_num] =
-		(((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_subsequence(si_scratch->ranging_broadcast_ss_num);
+		(((uint64_t) delay_time) << 8) + dw1000_gettimestampoverflow() + standard_get_txdelay_from_subsequence(FALSE, si_scratch->ranging_broadcast_ss_num);
 
 	// Write the data
 	dwt_writetxdata(tx_len, (uint8_t*) &(si_scratch->pp_tag_poll_pkt), 0);

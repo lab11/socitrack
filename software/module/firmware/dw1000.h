@@ -19,6 +19,10 @@
 #define DW1000_ANTENNA_DELAY_TX 0
 #define DW1000_ANTENNA_DELAY_RX 0
 
+// How to split up the Tx+Rx delay
+#define DW1000_DELAY_TX 44
+#define DW1000_DELAY_RX 56
+
 // Constant for the number of UWB channels
 #define DW1000_NUM_CHANNELS 8
 
@@ -41,6 +45,7 @@
 // In case we don't have a value calculated and stored.
 // This represents the sum of the TX and RX delays.
 #define DW1000_DEFAULT_CALIBRATION 33000
+// TODO: Update this value, but seems to be about correct
 
 // Print debug output (can mess with correctness of code due to introduction of delays)
 //#define DEBUG_OUTPUT_UART 1
@@ -150,10 +155,13 @@ typedef enum {
 /******************************************************************************/
 
 #define PROGRAMMED_MAGIC 0x77AA38F9
+#define OFFSET_EUI     ( sizeof(uint32_t) )
+#define OFFSET_CALIB   ( OFFSET_EUI + 8 * sizeof(uint8_t))
 
 typedef struct {
-	uint32_t magic; // Known special magic value that verifies this struct was written
-	uint16_t calibration_values[6]; // TX+RX delays for each channel
+	uint32_t magic;                    // Known special magic value that verifies this struct was written
+	uint8_t  eui[EUI_LEN];
+	uint16_t calibration_values[3][3]; // TX+RX delays for each channel
 } __attribute__ ((__packed__)) dw1000_programmed_values_t;
 
 
@@ -180,8 +188,8 @@ dw1000_err_e  dw1000_configure_settings ();
 void          dw1000_reset ();
 void          dw1000_choose_antenna (uint8_t antenna_number);
 void          dw1000_read_eui (uint8_t *eui_buf);
-uint64_t      dw1000_get_tx_delay (uint8_t channel_index);
-uint64_t      dw1000_get_rx_delay (uint8_t channel_index);
+uint64_t      dw1000_get_tx_delay (uint8_t channel_index, uint8_t antenna_index);
+uint64_t      dw1000_get_rx_delay (uint8_t channel_index, uint8_t antenna_index);
 uint8_t*      dw1000_get_txrx_delay_raw ();
 void          dw1000_sleep ();
 dw1000_err_e  dw1000_wakeup ();
