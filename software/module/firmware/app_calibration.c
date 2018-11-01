@@ -209,6 +209,12 @@ static void calib_start_round () {
 static void send_calibration_pkt (uint8_t message_type, uint8_t packet_num) {
     int ret;
 
+    debug_msg("Sending calibration packet: type ");
+    debug_msg_uint(message_type);
+    debug_msg(", number ");
+    debug_msg_uint(packet_num);
+    debug_msg("\n");
+
     // Record the packet length to send to DW1000
     uint16_t tx_len = sizeof(struct pp_calibration_msg);
 
@@ -230,15 +236,17 @@ static void send_calibration_pkt (uint8_t message_type, uint8_t packet_num) {
     // uint32_t delay_time = dwt_readsystimestamphi32() + (APP_US_TO_DEVICETIMEU32(1000)>>8);
     delay_time &= 0xFFFFFFFE; // Make sure last bit is zero
     dwt_setdelayedtrxtime(delay_time);
+
+    // Store timing for calculations
     _app_scratchspace.calibration_timing[packet_num] = ((uint64_t) delay_time) << 8;
 
     // Write the data
     dwt_writetxdata(tx_len, (uint8_t*) &(_app_scratchspace.pp_calibration_pkt), 0);
 
     // Start the transmission and enter RX mode
-    dwt_setrxaftertxdelay(1); // us
+    //dwt_setrxaftertxdelay(1); // us
 
-    ret = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
+    ret = dwt_starttx(DWT_START_TX_DELAYED);
     if (ret != DWT_SUCCESS) {
         // If we could not send this delayed packet, try extending the delay period next time.
         _app_scratchspace.dw_slack_delay_multiplier++;
@@ -258,19 +266,22 @@ static void round_timeout () {
         // Skip the immediate callback which is triggered when the timer starts
         _app_scratchspace.timeout_firing = 1;
     } else {
+
+        debug_msg("WARNING: Timed out, try to enter again next round\n");
         timer_stop(_app_scratchspace.app_timer);
+
+        // Reset state
+        _app_scratchspace.init_received = FALSE;
+        dwt_forcetrxoff();
 
         // Wait for next round
         setup_round_antenna_channel(0);
-        _app_scratchspace.init_received = FALSE;
+        dwt_rxenable(0);
     }
 }
 
 // After we have sent/received all of the packets, tell the host about our timestamps.
 static void finish () {
-
-    // Setup initial configs
-    setup_round_antenna_channel(0);
 
     if (_config.index != CALIBRATION_MASTER_NODE) {
         // Stop the timeout timer
@@ -281,6 +292,10 @@ static void finish () {
     // we are not the round starting node (that node doesn't have any useful timestamps)
     if ((_app_scratchspace.init_received || _config.index == CALIBRATION_MASTER_NODE) &&
         !CALIBRATION_ROUND_STARTED_BY_ME(_app_scratchspace.round_num, _config.index)) {
+
+        debug_msg("Sending packet for round ");
+        debug_msg_uint(_app_scratchspace.round_num);
+        debug_msg(" to host\n");
 
         uint8_t offset = 0;
 
@@ -314,6 +329,13 @@ static void finish () {
 
     // Reset this
     _app_scratchspace.init_received = FALSE;
+
+    // Now that this round is over, start the next one
+    setup_round_antenna_channel(0);
+
+    if (_config.index != CALIBRATION_MASTER_NODE) {
+        dwt_rxenable(0);
+    }
 }
 
 /******************************************************************************/
@@ -331,30 +353,64 @@ static void calibration_txcallback (const dwt_cb_data_t *txd) {
         debug_msg("\n");
     }
 
-    if ( (_app_scratchspace.pp_calibration_pkt.message_type == MSG_TYPE_PP_CALIBRATION_INIT) &&
-         CALIBRATION_ROUND_STARTED_BY_ME(_app_scratchspace.round_num, _config.index)           ) {
+    // If we are the Master node and just sent the init, we then need to set ourselves for the correct next position
+    if (_app_scratchspace.pp_calibration_pkt.message_type == MSG_TYPE_PP_CALIBRATION_INIT) {
 
-        // We just sent the "get everybody on the same page packet".
-        // Now start the actual cycle because it is our turn to send the first packet.
-        // Delay a bit to give the other nodes a chance to download and process.
-        mDelay(2);
-
-        // Send on the next ranging cycle in this round
+        // For the next round, setup the correct channel
         setup_round_antenna_channel(_app_scratchspace.round_num);
-        send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 0);
 
-    } else if ( CALIBRATION_ROUND_FOR_ME(_app_scratchspace.round_num, _config.index) &&
-                (_app_scratchspace.pp_calibration_pkt.num == 1)                        ) {
+        if (CALIBRATION_ROUND_STARTED_BY_ME(_app_scratchspace.round_num, _config.index)) {
+            // We just sent the "get everybody on the same page packet".
+            // Now start the actual cycle because it is our turn to send the first packet.
+            // Delay a bit to give the other nodes a chance to download and process.
+            mDelay(2);
 
-        // We sent the first response, now send another
-        mDelay(2);
+            // Send on the next ranging cycle in this round
+            send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 0);
 
-        // Send on the next ranging cycle in this round
-        send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 2);
+        } else {
+            // Prepare to receive the first packet of the round
+            debug_msg("Sent Init packet for round ");
+            debug_msg_uint(_app_scratchspace.round_num);
+            debug_msg("\n");
 
-    } else if (_app_scratchspace.pp_calibration_pkt.num == 2) {
-        // We have sent enough packets, call this a day.
-        finish();
+            // Sent the start of round message
+            dwt_rxenable(0);
+        }
+
+    } else if (CALIBRATION_ROUND_FOR_ME(_app_scratchspace.round_num, _config.index)) {
+
+        if (_app_scratchspace.pp_calibration_pkt.num == 1) {
+
+            // We sent the first response, now send another
+            mDelay(2);
+
+            // Send on the next ranging cycle in this round
+            send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 2);
+
+        } else if (_app_scratchspace.pp_calibration_pkt.num == 2) {
+            // We have sent enough packets, call this a day.
+            finish();
+
+        } else {
+            debug_msg("ERROR: Sent incorrect number of packets ");
+            debug_msg_uint(_app_scratchspace.pp_calibration_pkt.num);
+            debug_msg("\n");
+        }
+
+    } else if (CALIBRATION_ROUND_STARTED_BY_ME(_app_scratchspace.round_num, _config.index)) {
+
+        if (_app_scratchspace.pp_calibration_pkt.num == 0) {
+            // We just started the round and are done for now... just wait for the next round
+            finish();
+        }
+
+    } else {
+        debug_msg("ERROR: Incorrect Tx; sent message of type ");
+        debug_msg_uint(_app_scratchspace.pp_calibration_pkt.message_type);
+        debug_msg(" in round ");
+        debug_msg_uint(_app_scratchspace.round_num);
+        debug_msg("\n");
     }
 }
 
@@ -383,6 +439,10 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
 
         if (message_type == MSG_TYPE_PP_CALIBRATION_INIT) {
 
+            debug_msg("Received Init packet for round ");
+            debug_msg_uint(rx_start_pkt->round_num);
+            debug_msg("\n");
+
             // Got the start of round message
             // Set the round number, and configure for that round
             _app_scratchspace.round_num = rx_start_pkt->round_num;
@@ -392,12 +452,13 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
             // This allows us to only report this round if we setup the antenna and channel correctly.
             _app_scratchspace.init_received = TRUE;
 
-            // Set a timeout timer. If everything doesn't complete in a certain
-            // amount of time, go back to initial state.
-            // Also, just make sure that for some weird reason (aka it should never happen) that node 0 zero does not do this.
-            if (_config.index != 0) {
+            // Set a timeout timer. If everything doesn't complete in a certain amount of time, go back to initial state.
+            if (_config.index != CALIBRATION_MASTER_NODE) {
                 _app_scratchspace.timeout_firing = 0;
                 timer_start(_app_scratchspace.app_timer, CALIBRATION_ROUND_TIMEOUT_US, round_timeout);
+            } else {
+                // Just make sure that for some weird reason (aka it should never happen) that node 0 zero does not do this.
+                debug_msg("ERROR: Received Init Packet as Master; this should not happen!\n");
             }
 
             // Decide which node should send packet number 0
@@ -407,6 +468,10 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
                 mDelay(2);
 
                 // This is us! Let's do it
+                debug_msg("Starting the new round ");
+                debug_msg_uint(_app_scratchspace.round_num);
+                debug_msg("\n");
+
                 send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 0);
             }
 
@@ -424,9 +489,16 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
                 debug_msg("\n");
             }
 
-            if (packet_num == 0 && CALIBRATION_ROUND_FOR_ME(_app_scratchspace.round_num, _config.index)) {
-                // After the first packet, based on the round number the node to be calibrated sends the next two packets.
-                send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 1);
+            if (CALIBRATION_ROUND_FOR_ME(_app_scratchspace.round_num, _config.index)) {
+
+                if (packet_num == 0) {
+                    // After the first packet, based on the round number the node to be calibrated sends the next two packets.
+                    send_calibration_pkt(MSG_TYPE_PP_CALIBRATION_MSG, 1);
+                } else {
+                    debug_msg("ERROR: Incorrect packet number ");
+                    debug_msg_uint(packet_num);
+                    debug_msg("\n");
+                }
 
             } else if (packet_num == 2) {
                 // This is the last packet, notify the host of our findings
@@ -452,5 +524,6 @@ static void calibration_rxcallback (const dwt_cb_data_t *rxd) {
         setup_round_antenna_channel(0);
     }
 
+    // Listen for the next packet
     dwt_rxenable(0);
 }

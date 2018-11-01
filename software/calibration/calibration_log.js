@@ -11,11 +11,20 @@ var Long     = require('long');
 
 // CONFIG --------------------------------------------------------------------------------------------------------------
 
-// Target devices - should be entered over command line arguments
+// Target devices - should be entered over command line arguments, these are just default values
 var peripheral_address_base = 'c098e54200';
 var peripheral_address_0	= 'c098e5420001';
 var peripheral_address_1	= 'c098e5420002';
 var peripheral_address_2	= 'c098e5420003';
+
+var num_discovered	   = 0;
+var num_discovered_max = 3;
+
+// Store handles of discovered devices
+var peripheral_0;
+var peripheral_1;
+var peripheral_2;
+
 
 // Service UUIDs
 var CARRIER_SERVICE_UUID          = 'd68c3152a23fee900c455231395e5d2e';
@@ -29,13 +38,7 @@ var assignment_index = 2;
 
 var filename_start = strftime('module_calibration_%Y-%m-%d_%H-%M-%S_', new Date());
 
-var num_discovered	   = 0;
-var num_discovered_max = 3;
-
-// Store handles of discovered devices
-var peripheral_0;
-var peripheral_1;
-var peripheral_2;
+var expected_data_length = 128;
 
 // HELPERS -------------------------------------------------------------------------------------------------------------
 
@@ -61,6 +64,14 @@ function encoded_mm_to_meters (b, offset) {
 }
 
 function record (b, fd) {
+
+    // While the entire characteristic has a length of 128, we only care about the first 18 bytes
+    // Structure: [    0]  : HOST_IFACE_INTERRUPT_CALIBRATION
+    //            [ 1- 4]: Round
+    //            [ 5- 9]: Start offset of timestamps
+    //            [10-13]: Difference 1
+    //            [14-17]: Difference 2
+
 	var round = b.readUInt32LE(1);
 	// var t1 = (b.readUInt8(9) << 32) + b.readUInt32LE(5);
 	var t1 = new Long(b.readUInt32LE(5), b.readUInt8(9));
@@ -147,18 +158,22 @@ function receive (peripheral, index, filename) {
 
 										characteristic.on('data', function (dat) {
 
-											if (dat.length == 20) {
+										    console.log('Received notification about data of length ' + dat.length + ' from ' + peripheral.uuid);
+
+											if (dat.length == expected_data_length) {
 												// console.log('got notify: ' + dat.length + ' from ' + peripheral.uuid);
 												// console.log(dat);
 												var round = record(dat, fd);
 												console.log('Round ' + round + ' on ' + peripheral.uuid);
+											} else {
+												console.log('WARNING: Incorrect data length ' + dat.length);
 											}
 
 										});
 
 										characteristic.notify(true, function (notify_err) {
 											if (notify_err) {
-												console.log('error on notify setup ' + peripheral.uuid);
+												console.log('ERROR: On notify setup ' + peripheral.uuid);
 												console.log(notify_err);
 											}
 										});
@@ -170,7 +185,7 @@ function receive (peripheral, index, filename) {
 										var char_str = 'Calibration: ' + index;
 										characteristic.write(new Buffer(char_str, encoding='utf8'), false, function (write_err) {
 											if (write_err) {
-												console.log('err on write index ' + peripheral.uuid);
+												console.log('ERROR: On writing index ' + index + ' to ' + peripheral.uuid);
 												console.log(write_err);
 											} else {
 												console.log('Successfully set ' + peripheral.uuid + ' to index ' + index);

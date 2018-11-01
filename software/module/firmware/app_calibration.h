@@ -11,13 +11,12 @@
 // Parameters for the calibration protocol
 /******************************************************************************/
 
-// How long the master waits before starting a new round of calibration
-// timing.
+// How long the master waits before starting a new round of calibration timing.
 #define CALIBRATION_ROUND_PERIOD_US 100000 // 100 ms
 
 // How long non-master nodes wait before assuming something went wrong and
 // resume waiting for the start of the next round.
-#define CALIBRATION_ROUND_TIMEOUT_US 15000 // 15 ms
+#define CALIBRATION_ROUND_TIMEOUT_US 50000 // 50 ms
 
 // How long between receiving a calibration packet and responding.
 // This must be known.
@@ -44,6 +43,9 @@
 	((round_ % CALIBRATION_NUM_NODES) == index_)
 
 // Returns true if this node index is the one being calibrated on this round.
+// Round 0: calibrate node with index 2, started by node with index 0
+// Round 1: calibrate node with index 0, started by node with index 1
+// Round 2: calibrate node with index 1, started by node with index 2
 #define CALIBRATION_ROUND_FOR_ME(round_, index_) \
 	( (( ((int) (round_%CALIBRATION_NUM_NODES)) - ((int) index_) ) == 1) || (( ((int) (round_%CALIBRATION_NUM_NODES)) - ((int) index_) ) == -2) )
 
