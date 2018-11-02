@@ -15,15 +15,20 @@ DEFAULT_CALIB = 33000
 if len(sys.argv) < 2:
 	print('Must pass ID to {}'.format(sys.argv[0]), file=sys.stderr)
 	sys.exit(1)
-elif len(sys.argv) < 3:
-	print('Must pass EUI to {}'.format(sys.argv[0]), file=sys.stderr)
-	sys.exit(1)
+#elif len(sys.argv) < 3:
+#	print('Must pass EUI to {}'.format(sys.argv[0]), file=sys.stderr)
+#	sys.exit(1)
 
 ID  = sys.argv[1]
 
 # Get the EUI for the device
-EUI = int(sys.argv[2], 16)
-print(EUI, file=sys.stderr)
+#EUI = int(sys.argv[2], 16)
+ID_hex = (int(sys.argv[1][0:2], 16) << 5*8) + (int(sys.argv[1][3:5], 16) << 4*8) + (int(sys.argv[1][6:8], 16) << 3*8) + (int(sys.argv[1][9:11], 16) << 2*8) + (int(sys.argv[1][12:14], 16) << 1*8) + int(sys.argv[1][15:17], 16)
+#print(EUI_reversed, file=sys.stderr)
+
+# EUI = ID[1-5] 0x00 0x00 ID[0]
+EUI =  ((ID_hex >> 1*8) << 3*8) + (ID_hex & 0xFF)
+#print(EUI, file=sys.stderr)
 
 # Get calibration data
 with open(CALIBRATIONS_FNAME) as f:

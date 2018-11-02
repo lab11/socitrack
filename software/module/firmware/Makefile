@@ -87,16 +87,16 @@ $(error An LIBRARY_START_PATH must be defined. Edit Makefile to define a valid L
 endif
 
 ifneq ($(PID), )
-ID = c0:98:e5:42:00:00:00:$(PID)
+ID = c0:98:e5:42:00:$(PID)
 endif
 
 # Set an ID for programming the nodes EUI
 ifeq ($(ID), )
-ID = c0:98:e5:42:00:00:00:FF
+ID = c0:98:e5:42:00:FF
 endif
 
-# This creates a .bin file for loading the calibration values
-# into the flash of the TriPoint.
+
+# This creates a .bin file for loading the calibration values into the flash of the module.
 USER_FLASH_COMMANDS = $(shell ./insert_calibration.py $(ID))
 
 # Compiler flags

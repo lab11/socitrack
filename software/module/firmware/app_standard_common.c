@@ -53,8 +53,6 @@ void standard_configure (module_config_t* config) {
 
     // Set EUI
     dw1000_read_eui(_config.my_EUI);
-    // FIXME: Load actual EUI to FLASH
-    _config.my_EUI[0] = APP_EUI_FIRST_BYTE;
 
 	// Now init based on role
 	_config.init_active = FALSE;

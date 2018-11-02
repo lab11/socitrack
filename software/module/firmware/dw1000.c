@@ -296,6 +296,10 @@ static void setup () {
 				_prog_values.calibration_values[i][j] = DW1000_DEFAULT_CALIBRATION;
 			}
 		}
+	} else {
+	    debug_msg("Successfully loaded calibration values with EUI ");
+	    debug_msg_uint(_prog_values.eui[0]);
+	    debug_msg("\n");
 	}
 
 	// Mark that this function has run so we don't do it again.
@@ -865,9 +869,6 @@ dw1000_err_e dw1000_configure_settings () {
 	// Set this node's ID and the PAN ID for our DW1000 ranging system
 	uint8_t eui_array[8];
 	dw1000_read_eui(eui_array);
-
-	// FIXME: Set EUI in Flash directly
-	eui_array[0] = APP_EUI_FIRST_BYTE;
 
 	dwt_seteui(eui_array);
 	dwt_setpanid(MODULE_PANID);

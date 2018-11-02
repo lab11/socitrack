@@ -65,8 +65,6 @@ static void calibration_init () {
 
     // Put source EUI in the pp_tag_poll packet
     dw1000_read_eui(_app_scratchspace.pp_calibration_pkt.header.sourceAddr);
-    // FIXME: Use actual EUI
-    _app_scratchspace.pp_calibration_pkt.header.sourceAddr[0] = APP_EUI_FIRST_BYTE;
 
     // Make SPI fast now that everything has been setup
     dw1000_spi_fast();
