@@ -46,12 +46,18 @@
 
 //#define PROTOCOL_JOIN_ON_CONNECT
 
+// Calibration setup
+
+// Uncommenting this enables calibration; use a specific but unknown ID for the module, e.g. c0:98:e5:42:00:fe (NOT :ff, as it is the default value)
+//#define APP_BLE_CALIBRATION
+
+#define APP_BLE_CALIBRATION_INDEX_INVALID   255
+
 // Test setups
 
 // Test BLE connectivity
 //#define APP_BLE_TEST_ADV
 
-#define APP_BLE_CALIBRATION_INDEX_INVALID   255
 
 // Structs -------------------------------------------------------------------------------------------------------------
 

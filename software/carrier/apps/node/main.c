@@ -1936,7 +1936,7 @@ int main (void)
         else if ( (app.calibration_index != APP_BLE_CALIBRATION_INDEX_INVALID) && !app.config.app_module_enabled) {
             // Configure this node for calibration and set the calibration node
             // index. If 0, this node will immediately start calibration.
-            ret_code_t err_code = module_start_calibration(app.calibration_index);
+            err_code = module_start_calibration(app.calibration_index);
             if (err_code == NRF_SUCCESS) {
                 app.config.app_module_enabled = true;
                 printf("Started calibration with index %i\n", app.calibration_index);

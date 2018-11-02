@@ -44,8 +44,7 @@
 
 // In case we don't have a value calculated and stored.
 // This represents the sum of the TX and RX delays.
-#define DW1000_DEFAULT_CALIBRATION 33000
-// TODO: Update this value, but seems to be about correct
+#define DW1000_DEFAULT_CALIBRATION 32900
 
 // Print debug output (can mess with correctness of code due to introduction of delays)
 //#define DEBUG_OUTPUT_UART 1

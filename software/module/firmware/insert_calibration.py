@@ -10,7 +10,8 @@ FLASH_LOCATION = '0x0803FF00'
 
 MAGIC_VALUE = 0x77AA38F9
 
-DEFAULT_CALIB = 33000
+# ATTENTION: This value MUST be 0, as it will be used when actual calibration is occuring; for this, use an unknown ID (e.g. :fe) which flashes "calibration" values of zero and allows gathering calibration data
+DEFAULT_CALIB = 0
 
 if len(sys.argv) < 2:
 	print('Must pass ID to {}'.format(sys.argv[0]), file=sys.stderr)

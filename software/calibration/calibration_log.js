@@ -255,6 +255,8 @@ noble.on('discover', function (peripheral) {
 		// As soon as we discovered everyone, start the ranging
 		if (num_discovered === num_discovered_max) {
 
+			console.log('Starting to connect...');
+
 			// Slaves
 			receive(peripheral_1, 1);
 			receive(peripheral_2, 2);
