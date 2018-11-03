@@ -130,6 +130,11 @@ void standard_start () {
 	// Set the anchor so it only receives data and ack packets
 	dwt_enableframefilter(DWT_FF_DATA_EN | DWT_FF_ACK_EN);
 
+#ifdef DW1000_ENABLE_OPSET_64LEN
+	// Load specific Operational Parameter Set to deal with 64-symbol preambles. This has to be done with DW1000 set to crystal speed.
+	dwt_loadopsettabfromotp(DWT_OPSET_64LEN);
+#endif
+
 	// Don't use these
 	dwt_setdblrxbuffmode(FALSE);
 	dwt_setrxtimeout(FALSE);

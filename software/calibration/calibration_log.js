@@ -80,7 +80,10 @@ function record (b, fd) {
 	var t2 = t1.add(offset1);
 	var t3 = t2.add(offset2);
 
-	fs.write(fd, round+'\t'+t1+'\t'+t2+'\t'+t3+'\n');
+	fs.write(fd, round+'\t'+t1+'\t'+t2+'\t'+t3+'\n', (err) => {
+
+		if (err) throw err;
+	});
 
 	return round;
 }

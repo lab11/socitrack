@@ -49,6 +49,7 @@ const uint32_t txPower_smartDisabled[DW1000_NUM_CHANNELS] = {
 	0xD1D1D1D1UL
 };
 
+#ifndef DW1000_MAXIMIZE_TX_POWER
 const uint32_t txPower_smartEnabled[DW1000_NUM_CHANNELS] = {
 	0x0,
 	//0x17375777UL,
@@ -60,6 +61,18 @@ const uint32_t txPower_smartEnabled[DW1000_NUM_CHANNELS] = {
 	0x0,
 	0x5171B1D1UL
 };
+#else
+const uint32_t txPower_smartEnabled[DW1000_NUM_CHANNELS] = {
+	0x0,
+	0x1F1F1F1FUL,
+	0x1F1F1F1FUL,
+	0x1F1F1F1FUL,
+	0x1F1F1F1FUL,
+	0x1F1F1F1FUL,
+	0x0,
+	0x1F1F1F1FUL
+};
+#endif
 
 /******************************************************************************/
 // Data structures used in multiple functions
