@@ -664,7 +664,15 @@ static void calculate_ranges () {
 		// to calculate ranges from all of the other polls the tag sent.
 		// To do this, we need to match the anchor_antenna, tag_antenna, and
 		// channel between the anchor response and the correct tag poll.
-		uint8_t ss_index_matching = standard_get_ss_index_from_settings(aresp->anchor_final_antenna_index, RANGING_RESPONSE_CHANNEL_INDEX);
+        uint8_t ss_index_matching = 0;
+		for (uint8_t i = 0; i < NUM_ANTENNAS; i++) {
+            ss_index_matching = standard_get_ss_index_from_settings(i, aresp->anchor_final_antenna_index, RANGING_RESPONSE_CHANNEL_INDEX);
+
+            if (tag_poll_TOAs[ss_index_matching] != 0) {
+                // Found a valid response
+                break;
+            }
+        }
 
 		// Exit early if the corresponding broadcast wasn't received
 		if(tag_poll_TOAs[ss_index_matching] == 0){

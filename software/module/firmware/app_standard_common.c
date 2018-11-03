@@ -19,8 +19,8 @@
 static module_config_t _config;
 
 // Configure the RF channels to use. This is just a mapping from 0..2 to
-// the actual RF channel numbers the DW1000 uses.
-static const uint8_t channel_index_to_channel_rf_number[NUM_RANGING_CHANNELS] = {
+// the actual RF channel numbers the DW1000 uses. Note that we must have 3 instead of NUM_RANGING_CHANNELS to allow for variations
+static const uint8_t channel_index_to_channel_rf_number[3] = {
 	1, 4, 3
 };
 
@@ -335,10 +335,9 @@ void standard_set_ranging_response_settings (bool init_active,
 // (anchor antenna index, tag antenna index, channel) were used to send
 // a broadcast poll message. The tag antenna index and channel are derived
 // from the settings used in the listening window.
-uint8_t standard_get_ss_index_from_settings (uint8_t anchor_antenna_index,
+uint8_t standard_get_ss_index_from_settings (uint8_t tag_antenna_index,
+											 uint8_t anchor_antenna_index,
                                              uint8_t channel_index) {
-	// FIXME: need something more rigorous than setting 0 here; we can also try whether we have obtained the other two packets with the same receiver antenna
-	uint8_t tag_antenna_index = 0;
 
 	return antenna_and_channel_to_subsequence_number(tag_antenna_index,
 	                                                 anchor_antenna_index,

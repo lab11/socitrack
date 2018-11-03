@@ -24,6 +24,7 @@ static void standard_resp_task();
 static void standard_resp_send_response();
 
 // Helper functions
+static uint8_t  get_final_antenna();
 static void 	write_anc_final_to_buffer();
 static uint16_t get_anc_final_packet_length(struct pp_anc_final * packet);
 
@@ -221,16 +222,7 @@ static void standard_resp_send_response () {
 	//debug_msg("Prepare to respond to TAG...\r\n");
 
 	// Determine which antenna we are going to use for the response.
-	uint8_t max_packets = 0;
-	uint8_t max_index   = 0;
-	for (uint8_t i=0; i<NUM_ANTENNAS; i++) {
-		if (sr_scratch->resp_antenna_recv_num[i] > max_packets) {
-			max_packets = sr_scratch->resp_antenna_recv_num[i];
-			max_index = i;
-		}
-	}
-	sr_scratch->pp_anc_final_pkt.final_antenna = max_index;
-
+	sr_scratch->pp_anc_final_pkt.final_antenna = get_final_antenna();
 
 	//debug_msg("Sending response to Tag\n");
 	debug_msg("Number of packets: Antenna 1 - ");
@@ -473,6 +465,74 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 // Helper functions ----------------------------------------------------------------------------------------------------
 
+static uint8_t get_final_antenna() {
+
+	uint8_t max_packets  = 0;
+	uint8_t index_first  = 0;
+
+
+	// Find the best one
+	for (uint8_t i = 0; i < NUM_ANTENNAS; i++) {
+
+		if (sr_scratch->resp_antenna_recv_num[i] > max_packets) {
+			max_packets = sr_scratch->resp_antenna_recv_num[i];
+			index_first  = i;
+		}
+	}
+
+	return index_first;
+
+    /* We are currently choosing a fitting option on the receiver (INIT) side; we could however also do the same thing on the sender side as written below
+    uint8_t index_second = 0;
+
+    // If we do not have received any requests, just reply with the "maximum" one, which will be the default
+    if (sr_scratch->pp_anc_final_pkt.init_response_length == 0) {
+        return index_first;
+    }
+
+    // Otherwise, test that at least for the first response, we did actually observe the packet for the channel on which we respond
+    // If this is not the case, the initiator will not be able to calculate the distances and must throw the packet away
+    if ( (sr_scratch->pp_anc_final_pkt.init_responses[0].TOAs[index_first] > 0) ||
+         (NUM_ANTENNAS == 1)                                                      ) {
+        debug_msg("Responding on best channel ");
+        debug_msg_uint(index_first);
+        debug_msg("\n");
+
+        return index_first;
+    } else {
+        debug_msg("WARNING: Did not observe packet for best antenna, switching to second-best option...\n");
+    }
+
+    // As we have not observed that packet, we will have to use the second-best option
+    max_packets = 0;
+    for (uint8_t i = 0; i < NUM_ANTENNAS; i++) {
+
+        if ( (sr_scratch->resp_antenna_recv_num[i] > max_packets) &&
+                (i != index_first)                                  ){
+            max_packets = sr_scratch->resp_antenna_recv_num[i];
+            index_second  = i;
+        }
+    }
+
+    if ( (sr_scratch->pp_anc_final_pkt.init_responses[0].TOAs[index_second] > 0) ||
+         (NUM_ANTENNAS == 2)													   ) {
+        debug_msg("Responding on second-best channel ");
+        debug_msg_uint(index_second);
+        debug_msg("\n");
+
+        return index_second;
+    } else {
+        debug_msg("WARNING: Did not observe packet for second-best antenna, switching to last option...\n");
+    }
+
+    // Lets hope that we at least got a single one of those packets by sending on the last remaining option
+    uint8_t index_third = (uint8_t)NUM_ANTENNAS - (index_first + index_second);
+    debug_msg("Responding on last channel ");
+    debug_msg_uint(index_third);
+    debug_msg("\n");
+
+    return index_third;*/
+}
 
 static void write_anc_final_to_buffer() {
 

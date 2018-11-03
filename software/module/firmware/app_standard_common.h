@@ -176,7 +176,7 @@ uint8_t *        standard_get_EUI();
 uint8_t  standard_subsequence_number_to_antenna (bool resp_active, uint8_t subseq_num);
 void     standard_set_ranging_broadcast_subsequence_settings (bool resp_active, uint8_t subseq_num);
 void     standard_set_ranging_response_settings (bool init_active, uint8_t antenna_num);
-uint8_t  standard_get_ss_index_from_settings (uint8_t anchor_antenna_index, uint8_t channel_index);
+uint8_t  standard_get_ss_index_from_settings (uint8_t tag_antenna_index, uint8_t anchor_antenna_index, uint8_t channel_index);
 uint64_t standard_get_txdelay_from_subsequence (bool resp_active, uint8_t subseq_num);
 uint64_t standard_get_rxdelay_from_subsequence (bool resp_active, uint8_t subseq_num);
 uint64_t standard_get_txdelay_from_ranging_response_channel (uint8_t channel_index, uint8_t antenna_index);
