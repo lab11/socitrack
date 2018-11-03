@@ -34,10 +34,10 @@ CALIB_NUM_CHANNELS=3
 # HELPERS --------------------------------------------------------------------------------------------------------------
 
 def dwtime_to_dist(dwtime):
-	dist = dwtime * DWT_TIME_UNITS * SPEED_OF_LIGHT;
+	dist = dwtime * DWT_TIME_UNITS * SPEED_OF_LIGHT
 	#dist += ANCHOR_CAL_LEN;
 	#dist -= txDelayCal[anchor_id*NUM_CHANNELS + subseq_num_to_chan(subseq, true)];
-	return dist;
+	return dist
 
 def dist_to_dwtime(dist):
 	dwtime = dist / (DWT_TIME_UNITS * SPEED_OF_LIGHT)

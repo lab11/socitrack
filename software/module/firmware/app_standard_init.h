@@ -73,7 +73,7 @@ typedef struct {
 
 	// Buffer of anchor IDs and ranges to the anchor.
 	// Long enough to hold an anchor id followed by the range, plus the number of ranges
-	uint8_t anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(EUI_LEN+sizeof(int32_t)))+1];
+	uint8_t anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(PROTOCOL_EUI_LEN+sizeof(int32_t)))+1];
 	
 	// Prepopulated struct of the outgoing broadcast poll packet.
 	struct pp_tag_poll pp_tag_poll_pkt;

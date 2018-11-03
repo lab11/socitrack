@@ -482,7 +482,7 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	si_scratch->anchor_ids_ranges[0] = num_anchor_ranges;
 
 	// Now let the host know so it can do something with the ranges.
-	host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges*(EUI_LEN+sizeof(int32_t)))+1);
+	host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges*(PROTOCOL_EUI_LEN+sizeof(int32_t)))+1);
 }
 
 // Once we have heard from all of the anchors, calculate range.

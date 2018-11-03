@@ -1088,7 +1088,7 @@ void updateData (uint8_t * data, uint32_t len)
         printf(", included number of anchors: %i\r\n", data[1]);
 
         const uint8_t packet_overhead = 2;
-        const uint8_t packet_euid     = 8;
+        const uint8_t packet_euid     = 1;
         const uint8_t packet_range    = 4;
         const uint8_t ranging_length  = packet_euid + packet_range;
         uint8_t nr_ranges = ((uint8_t) len - packet_overhead) / ranging_length;

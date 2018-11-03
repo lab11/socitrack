@@ -56,6 +56,10 @@ function encoded_mm_to_meters (b, offset) {
 	return mm / 1000.0;
 }
 
+var ERROR_NO_OFFSET		 = 0x80000001;
+var ERROR_TOO_FEW_RANGES = 0x80000002;
+var ERROR_MISC			 = 0x80000003;
+
 function record (peripheral, b) {
 
     // While the entire characteristic has a length of 128, we only care about the first 18 bytes
@@ -66,13 +70,22 @@ function record (peripheral, b) {
 	//			  [11-  ]: Additional EUI + Ranges
 
 	var num_ranges = b.readUInt8(1);
+	var eui_len    = 1;
 
 	console.log('Received ' + num_ranges + ' from ' + peripheral.uuid);
 
 	for (var i = 0; i < num_ranges; i++) {
 
-		var eui   = buf_to_eui(b,  2 + i * 12);
-		var range = b.readUInt32LE(2 + i * 12 + 8);
+		var eui   = buf_to_eui(b,  2 + i * (eui_len + 4));
+		var range = b.readUInt32LE(2 + i * (eui_len + 4) + eui_len);
+
+		if (range === ERROR_NO_OFFSET) {
+			range = -1;
+		} else if (range === ERROR_TOO_FEW_RANGES) {
+			range = -2;
+		} else if (range === ERROR_MISC) {
+			range = -3;
+		}
 
         console.log('Recorded range ' + range + ' from ' + eui);
 
@@ -80,6 +93,14 @@ function record (peripheral, b) {
 
         	if (err) throw err;
 		});
+	}
+
+	// We want to log that we did not receive a range, as it indicates either a software error or no packet reception
+	if (num_ranges === 0) {
+        fs.write(file_descriptor, peripheral.uuid + '\t' + '00:00:00:00:00:00:00:00' +'\t' + 0 + '\n', (err) => {
+
+            if (err) throw err;
+        });
 	}
 
 	return num_ranges;
@@ -213,6 +234,18 @@ function receive (peripheral) {
 
 noble.on('stateChange', function (state) {
 	if (state === 'poweredOn') {
+
+		// As connecting automatically stops the scanning, we need to reenable it directly again
+        noble.on('scanStop', function () {
+            setTimeout(function () {
+                noble.startScanning([], true, function (err) {
+                    if (err) {
+                        console.log("startScanning error: " + err);
+                    }
+                });
+            }, 1000);
+        });
+
 		console.log('Scanning...');
 		noble.startScanning();
 	} else {
