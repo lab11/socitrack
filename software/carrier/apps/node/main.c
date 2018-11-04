@@ -75,7 +75,7 @@
  ******************************************************************************/
 
 static void flush_sd_buffer();
-static void write_to_sd(uint8_t* data, uint16_t length);
+static void write_to_sd(char * data, uint16_t length);
 
 static void carrier_start_module(uint8_t role);
 static void advertising_init();
@@ -367,6 +367,91 @@ static void sd_card_init(void) {
     simple_logger_log_header("HEADER for file \'%s\', written on %s \n", filename, "08/23/18");
 }
 
+
+static void flush_sd_buffer() {
+
+    if(!sd_card_inserted()) {
+        printf("ERROR: SD card not inserted!\n");
+        return;
+    }
+
+    // Enable and select SD card
+    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
+
+    if ( (app.app_sdcard_buffer_length + 1) <= APP_SDCARD_BUFFER_LENGTH) {
+        app.app_sdcard_buffer[app.app_sdcard_buffer_length] = '\0';
+    } else {
+        app.app_sdcard_buffer[APP_SDCARD_BUFFER_LENGTH - 1] = '\0';
+        printf("WARNING: Overwriting buffer data!\n");
+    }
+
+    // Write data
+    simple_logger_log("%s", app.app_sdcard_buffer);
+
+    // Reset buffer
+    memset( app.app_sdcard_buffer, 0, sizeof(app.app_sdcard_buffer));
+    app.app_sdcard_buffer_length = 0;
+
+    printf("Successfully flushed buffer to SD card\n");
+
+    // Turn off power to SD card again
+    nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
+}
+
+// Write to SD card by buffering locally and then writing larger chunks of data
+static void write_to_sd(char * data, uint16_t length) {
+
+    if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < length) {
+        printf("ERROR: Insufficient buffer space left!\n");
+        return;
+    }
+
+    // Append to buffer
+    memcpy(app.app_sdcard_buffer + app.app_sdcard_buffer_length, data, length);
+    app.app_sdcard_buffer_length += length;
+
+    // If the buffer has less than the specified number of free space left, flush it
+    if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < APP_SDCARD_MIN_BUFFER_SPACE) {
+        flush_sd_buffer();
+    }
+}
+
+static void log_ranges(const uint8_t* data, uint16_t length) {
+
+#define APP_LOG_BUFFER_LINE     (2*8 + 7 + 1 + 6 + 1)
+#define APP_LOG_BUFFER_LENGTH   (10 * (APP_LOG_BUFFER_LINE) )
+#define APP_LOG_RANGE_LENGTH    (1 + 4)
+
+    char log_buf[APP_LOG_BUFFER_LENGTH] = { 0 };
+    uint16_t offset_data = 0;
+    uint16_t offset_buf  = 0;
+
+    uint8_t num_ranges = data[1];
+    offset_data += 1;
+
+    if ( ((length - 2) / APP_LOG_RANGE_LENGTH) != num_ranges) {
+        printf("WARNING: Incorrect number of ranges!\n");
+    }
+
+    for (uint8_t i = 0; i < num_ranges; i++) {
+
+        // Add EUI
+        sprintf(log_buf + offset_buf, "c0:98:e5:42:00:00:00:%02x\t", data[offset_data + 0]);
+
+        // Add range
+        uint32_t range = (data[offset_data + 1] << 3*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 1*8) + data[offset_data + 4];
+        sprintf(log_buf + offset_buf + 24, "%06lu\n", range);
+
+        offset_data += APP_LOG_RANGE_LENGTH;
+        offset_buf  += APP_LOG_BUFFER_LINE;
+    }
+
+    // Write to SD
+    write_to_sd(log_buf, offset_buf);
+
+    printf("INFO: Logged ranging with %i ranges to SD card\n", num_ranges);
+}
+
 /* Application state size
  *
  * Prefix:                8 +  15
@@ -445,54 +530,6 @@ static void backup_app_state() {
     simple_logger_log("%s", state_buffer);
 
     printf("Backed up Application state to SD card\n");
-}
-
-static void flush_sd_buffer() {
-
-    if(!sd_card_inserted()) {
-        printf("ERROR: SD card not inserted!\n");
-        return;
-    }
-
-    // Enable and select SD card
-    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
-
-    if ( (app.app_sdcard_buffer_length + 1) <= APP_SDCARD_BUFFER_LENGTH) {
-        app.app_sdcard_buffer[app.app_sdcard_buffer_length] = '\0';
-    } else {
-        app.app_sdcard_buffer[APP_SDCARD_BUFFER_LENGTH - 1] = '\0';
-        printf("WARNING: Overwriting buffer data!\n");
-    }
-
-    // Write data
-    simple_logger_log("%s", app.app_sdcard_buffer);
-
-    // Reset buffer
-    memset( app.app_sdcard_buffer, 0, sizeof(app.app_sdcard_buffer));
-    app.app_sdcard_buffer_length = 0;
-
-    printf("Successfully flushed buffer to SD card\n");
-
-    // Turn off power to SD card again
-    nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
-}
-
-// Write to SD card by buffering locally and then writing larger chunks of data
-static void write_to_sd(uint8_t * data, uint16_t length) {
-
-    if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < length) {
-        printf("ERROR: Insufficient buffer space left!\n");
-        return;
-    }
-
-    // Append to buffer
-    memcpy(app.app_sdcard_buffer + app.app_sdcard_buffer_length, data, length);
-    app.app_sdcard_buffer_length += length;
-
-    // If the buffer has less than the specified number of free space left, flush it
-    if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < APP_SDCARD_MIN_BUFFER_SPACE) {
-        flush_sd_buffer();
-    }
 }
 
 // Read application state from non-volatile memory
@@ -1166,6 +1203,11 @@ void moduleDataUpdate ()
 
         printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
 	}
+
+	// Store locally in log
+	/*if (app.app_raw_response_buffer[0] == HOST_IFACE_INTERRUPT_RANGES) {
+	    log_ranges(app.app_raw_response_buffer, app.app_raw_response_length);
+	}*/
 
 	// Clear flag
 	app.app_raw_response_buffer_updated = false;

@@ -32,19 +32,24 @@ var filename	   = filename_start + '.data';
 var file_descriptor;
 
 var expected_data_length = 128;
+var eui_len    = 1;
 
 // HELPERS -------------------------------------------------------------------------------------------------------------
 
 function buf_to_eui (b, offset) {
-	var eui = '';
-	for (var i=0; i<8; i++) {
+	var eui = 'c0:98:e5:42:00:00:00:';
+
+	for (var i = 0; i < eui_len; i++) {
 		var val = b.readUInt8(offset+i);
 		var val = val.toString(16);
+
 		if (val.length == 1) {
 			val = '0' + val;
 		}
-		eui = val+eui;
-		if (i<7) {
+
+		eui = val + eui;
+
+		if (i < (eui_len - 1)) {
 			eui = ':' + eui;
 		}
 	}
@@ -70,7 +75,6 @@ function record (peripheral, b) {
 	//			  [11-  ]: Additional EUI + Ranges
 
 	var num_ranges = b.readUInt8(1);
-	var eui_len    = 1;
 
 	console.log('Received ' + num_ranges + ' from ' + peripheral.uuid);
 
