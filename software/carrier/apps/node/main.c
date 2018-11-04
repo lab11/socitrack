@@ -336,6 +336,10 @@ static bool sd_card_inserted() {
     return !nrf_gpio_pin_read(CARRIER_SD_DETECT);
 }
 
+// Configs - Filename must NOT be longer than 8 characters + '.log', otherwise the file will not be written (reason unknown)
+const char sd_filename[]    = "data.log";
+const char sd_permissions[] = "a,r"; // w = write, a = append, r = read
+
 static void sd_card_init(void) {
 
     // Setup hardware
@@ -344,10 +348,6 @@ static void sd_card_init(void) {
 
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
     nrf_gpio_pin_set(CARRIER_CS_SD);
-
-    // Configs
-    const char filename[] = "testfile.log";
-    const char permissions[] = "a,r"; // w = write, a = append, r = read
 
 #ifdef APP_SD_REQUIRED
     if (!sd_card_inserted()) {
@@ -361,10 +361,10 @@ static void sd_card_init(void) {
 #endif
 
     // Start file
-    simple_logger_init(filename, permissions);
+    simple_logger_init(sd_filename, sd_permissions);
 
     // If no header, add it
-    simple_logger_log_header("HEADER for file \'%s\', written on %s \n", filename, "08/23/18");
+    simple_logger_log_header("### HEADER for file \'%s\', written on %s\n", sd_filename, "11/03/18");
 }
 
 
@@ -378,6 +378,10 @@ static void flush_sd_buffer() {
     // Enable and select SD card
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
 
+    // Re-initialize after having turned the card off
+    simple_logger_init(sd_filename, sd_permissions);
+
+    // Appending the string terminator
     if ( (app.app_sdcard_buffer_length + 1) <= APP_SDCARD_BUFFER_LENGTH) {
         app.app_sdcard_buffer[app.app_sdcard_buffer_length] = '\0';
     } else {
@@ -385,14 +389,42 @@ static void flush_sd_buffer() {
         printf("WARNING: Overwriting buffer data!\n");
     }
 
-    // Write data
-    simple_logger_log("%s", app.app_sdcard_buffer);
+    // Send data in chunks of 254 bytes, as this is the maximum which the nRF DMA can handle ( + 1 for '\0')
+#define APP_LOG_CHUNK_SIZE  254
+
+    uint8_t nr_writes = app.app_sdcard_buffer_length / APP_LOG_CHUNK_SIZE;
+
+    if (app.app_sdcard_buffer_length % APP_LOG_CHUNK_SIZE) {
+        nr_writes++; // Add another write if the integer division does not result exactly in complete chunks (basically CEIL)
+    }
+
+    //printf("Writing %i chunks of length %i to SD card\n", nr_writes, APP_LOG_CHUNK_SIZE);
+
+    char write_buf[APP_LOG_CHUNK_SIZE + 1] = { 0 };
+
+    for (uint8_t i = 0; i < nr_writes; i++) {
+
+        if (i == (nr_writes - 1)) {
+            // Last chunk
+            uint8_t rest_length = app.app_sdcard_buffer_length - i * APP_LOG_CHUNK_SIZE;
+            memcpy(write_buf, app.app_sdcard_buffer + i * APP_LOG_CHUNK_SIZE, rest_length);
+            write_buf[rest_length] = '\0';
+        } else {
+            // Full chunks
+            memcpy(write_buf, app.app_sdcard_buffer + i * APP_LOG_CHUNK_SIZE, APP_LOG_CHUNK_SIZE);
+            write_buf[APP_LOG_CHUNK_SIZE] = '\0';
+        }
+
+        // Write data
+        simple_logger_log("%s", write_buf);
+        //printf("%s", write_buf);
+    }
 
     // Reset buffer
     memset( app.app_sdcard_buffer, 0, sizeof(app.app_sdcard_buffer));
     app.app_sdcard_buffer_length = 0;
 
-    printf("Successfully flushed buffer to SD card\n");
+    //printf("Successfully flushed buffer to SD card\n");
 
     // Turn off power to SD card again
     nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
@@ -402,7 +434,7 @@ static void flush_sd_buffer() {
 static void write_to_sd(char * data, uint16_t length) {
 
     if ( (APP_SDCARD_BUFFER_LENGTH - app.app_sdcard_buffer_length) < length) {
-        printf("ERROR: Insufficient buffer space left!\n");
+        printf("ERROR: Insufficient buffer space left! Available %i, used %i, required %i\n", APP_SDCARD_BUFFER_LENGTH, app.app_sdcard_buffer_length, length);
         return;
     }
 
@@ -418,7 +450,7 @@ static void write_to_sd(char * data, uint16_t length) {
 
 static void log_ranges(const uint8_t* data, uint16_t length) {
 
-#define APP_LOG_BUFFER_LINE     (2*8 + 7 + 1 + 6 + 1)
+#define APP_LOG_BUFFER_LINE     (10 + 1 + 2*8 + 7 + 1 + 6 + 1)
 #define APP_LOG_BUFFER_LENGTH   (10 * (APP_LOG_BUFFER_LINE) )
 #define APP_LOG_RANGE_LENGTH    (1 + 4)
 
@@ -435,12 +467,21 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
 
     for (uint8_t i = 0; i < num_ranges; i++) {
 
+        // Add Timestamp
+        uint32_t current_time_stamp = app.config.app_sync_time + (nrfx_rtc_counter_get(&rtc_instance) - app.config.app_sync_rtc_counter);
+        sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
+
         // Add EUI
-        sprintf(log_buf + offset_buf, "c0:98:e5:42:00:00:00:%02x\t", data[offset_data + 0]);
+        sprintf(log_buf + offset_buf + 11, "c0:98:e5:42:00:00:00:%02x\t", data[offset_data + 0]);
 
         // Add range
         uint32_t range = (data[offset_data + 1] << 3*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 1*8) + data[offset_data + 4];
-        sprintf(log_buf + offset_buf + 24, "%06lu\n", range);
+
+        if (range >= 1000000) {
+            range = 0; // Negative ranges must be filtered, as they will print more than 6 characters
+        }
+
+        sprintf(log_buf + offset_buf + 35, "%06lu\n", range);
 
         offset_data += APP_LOG_RANGE_LENGTH;
         offset_buf  += APP_LOG_BUFFER_LINE;
@@ -695,7 +736,8 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         }
 
         // TIME: Setup time
-        app.config.app_sync_time = response_time;
+        app.config.app_sync_time        = response_time;
+        app.config.app_sync_rtc_counter = nrfx_rtc_counter_get(&rtc_instance);
         printf("Set config time: %lu\n", app.config.app_sync_time);
 
     } else if (p_evt_write->handle == carrier_ble_char_enable_handle.value_handle) {

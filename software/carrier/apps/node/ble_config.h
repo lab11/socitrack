@@ -35,8 +35,8 @@
 // Storage / Buffers
 #define APP_BLE_BUFFER_LENGTH       128
 
-#define APP_SDCARD_BUFFER_LENGTH    (64 * 1024)
-#define APP_SDCARD_MIN_BUFFER_SPACE (5 * (APP_SDCARD_BUFFER_LENGTH / 100))
+#define APP_SDCARD_BUFFER_LENGTH    (10 * 1024)
+#define APP_SDCARD_MIN_BUFFER_SPACE (10 * (APP_SDCARD_BUFFER_LENGTH / 100))
 
 #define APP_BLE_ADVDATA_LENGTH          2
 #define APP_ADVDATA_OFFSET_SERVICE_ID   0
@@ -73,6 +73,7 @@ typedef struct {
     uint8_t    my_eui[EUI_LEN];
     app_role_t app_role;
     uint32_t   app_sync_time;       // Current epoch time at moment of configuration
+    uint32_t   app_sync_rtc_counter;// Current RTC counter at the time of configuration
     bool       app_module_enabled;
 } app_config_t;
 

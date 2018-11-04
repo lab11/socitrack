@@ -37,7 +37,7 @@ var eui_len    = 1;
 // HELPERS -------------------------------------------------------------------------------------------------------------
 
 function buf_to_eui (b, offset) {
-	var eui = 'c0:98:e5:42:00:00:00:';
+	var eui = '';
 
 	for (var i = 0; i < eui_len; i++) {
 		var val = b.readUInt8(offset+i);
@@ -53,6 +53,10 @@ function buf_to_eui (b, offset) {
 			eui = ':' + eui;
 		}
 	}
+
+	// Add base address
+	eui = 'c0:98:e5:42:00:00:00:' + eui;
+
 	return eui;
 }
 
