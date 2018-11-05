@@ -57,6 +57,17 @@ HSE_CLK_FREQ = 16000000
 CFLAGS += -DHSE_VALUE=$(HSE_CLK_FREQ)
 endif
 
+# Allow to circumvent BLE interface
+ifneq ($(BYPASS_HOST_INTERFACE), )
+CFLAGS += -DBYPASS_HOST_INTERFACE
+endif
+ifneq ($(RANGE_TEST), )
+CFLAGS += -DRANGE_TEST
+endif
+ifneq ($(CALIBRATION), )
+CFLAGS += -DCALIBRATION
+endif
+
 # Add empty variable to add flags over command line
 CDBG +=
 CFLAGS += $(CDBG)

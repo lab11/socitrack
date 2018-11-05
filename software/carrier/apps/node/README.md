@@ -3,10 +3,15 @@ TotTag BLE App
 
 This apps provides the BLE interface for the TotTag localization tag.
 
+It is used for three primary use cases:
+- to provide a simple user interface to interact with, configure and restart the device
+- to access ranging and location data and offload it easily (using the provided JS scripts)
+- for neighbour discovery to start-up the module upon discovery of a network
+
 Programming
 -----------
 
-    SEGGER_SERIAL=xxxxxxxxx make flash BLE_ADDRESS=c0:98:e5:42:00:01
+    make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01
     
 For easy debugging, you can circumvent the BLE user interface and directly programm a role:
 

@@ -109,7 +109,7 @@ static void interrupt_host_clear () {
 	GPIO_WriteBit(INTERRUPT_PORT, INTERRUPT_PIN, Bit_RESET);
 }
 
-// Send to the tag the ranges.
+// Send the ranges to the host
 void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len) {
 
 	// TODO: this should be in an atomic block
@@ -118,6 +118,23 @@ void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len) {
 	_interrupt_reason = HOST_IFACE_INTERRUPT_RANGES;
 	_interrupt_buffer = anchor_ids_ranges;
 	_interrupt_buffer_len = len;
+
+	// Let the host know it should ask
+	interrupt_host_set();
+}
+
+// Send the raw ranges to the host for analysis
+void host_interface_notify_ranges_raw (uint8_t* range_measurements) {
+
+	// TODO: this should be in an atomic block
+
+	// Save the relevant state for when the host asks for it
+	_interrupt_reason = HOST_IFACE_INTERRUPT_RANGES_RAW;
+	_interrupt_buffer = range_measurements;
+	_interrupt_buffer_len = NUM_RANGING_BROADCASTS * sizeof(int);
+
+	// Already copy here, as packet is too long to respond in the interrupt afterwards
+    memcpy(txBuffer + 2, _interrupt_buffer, _interrupt_buffer_len);
 
 	// Let the host know it should ask
 	interrupt_host_set();
@@ -211,7 +228,7 @@ void host_interface_rx_fired () {
 	switch (opcode) {
 
 		/**********************************************************************/
-		// Configure the TriPoint. This can be called multiple times to change the setup.
+		// Configure the module. This can be called multiple times to change the setup.
 		/**********************************************************************/
 		case HOST_CMD_CONFIG: {
 
@@ -219,7 +236,7 @@ void host_interface_rx_fired () {
 			// Just go back to waiting for a WRITE after a config message
 			host_interface_wait();
 
-			// This packet configures the TriPoint module and
+			// This packet configures the module and
 			// is what kicks off using it.
 			uint8_t config_main   = rxBuffer[1];
 			uint8_t config_master = rxBuffer[2];
@@ -288,7 +305,7 @@ void host_interface_rx_fired () {
 
 
 		/**********************************************************************/
-		// Tell the TriPoint that it should take a range/location measurement
+		// Tell the module that it should take a range/location measurement
 		/**********************************************************************/
 		case HOST_CMD_DO_RANGE:
 
@@ -302,7 +319,7 @@ void host_interface_rx_fired () {
 			break;
 
 		/**********************************************************************/
-		// Put the TriPoint to sleep.
+		// Put the module to sleep.
 		/**********************************************************************/
 		case HOST_CMD_SLEEP:
 
@@ -411,7 +428,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 			break;
 
 		/**********************************************************************/
-		// Ask the TriPoint why it asserted the interrupt line.
+		// Ask the host why it asserted the interrupt line.
 		/**********************************************************************/
 		case HOST_CMD_READ_INTERRUPT: {
 
@@ -428,7 +445,12 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 			// Prepare a packet to send back to the host
 			txBuffer[0] = 1 + _interrupt_buffer_len;
 			txBuffer[1] = _interrupt_reason;
-			memcpy(txBuffer+2, _interrupt_buffer, _interrupt_buffer_len);
+
+			// Copy data to txBuffer; for long packets, this can take too long, which is why it has to be done before triggering the interrupt
+			if (_interrupt_reason != HOST_IFACE_INTERRUPT_RANGES_RAW) {
+                memcpy(txBuffer + 2, _interrupt_buffer, _interrupt_buffer_len);
+            }
+
 			host_interface_respond(txBuffer[0]+1, FALSE);
 
 			break;

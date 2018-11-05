@@ -546,11 +546,14 @@ static void report_range () {
 	// We're done, so go to idle.
 	si_scratch->state = ISTATE_IDLE;
 
+//#define OFFLOAD_RAW_RANGES
+#ifndef OFFLOAD_RAW_RANGES
 	// Just need to send the ranges back to the host. Send the array
 	// of ranges to the main application and let it deal with it.
 	// This also returns control to the main application and signals
 	// the end of the ranging event.
 	standard_set_ranges(si_scratch->ranges_millimeters, si_scratch->anchor_responses);
+#endif
 
 	// Check if we should try to sleep after the ranging event.
 	if (standard_get_config()->sleep_mode) {
@@ -717,13 +720,24 @@ static void calculate_ranges () {
 			debug_msg_int(distance_millimeters);
 			debug_msg("\n");*/
 
+#ifndef OFFLOAD_RAW_RANGES
 			// Check that the distance we have at this point is at all reasonable
 			if (distance_millimeters >= MIN_VALID_RANGE_MM && distance_millimeters <= MAX_VALID_RANGE_MM) {
 				// Add this to our sorted array of distances
 				insert_sorted(distances_millimeters, distance_millimeters, num_valid_distances);
 				num_valid_distances++;
 			}
+#else
+			// Always add new range
+			insert_sorted(distances_millimeters, distance_millimeters, num_valid_distances);
+			num_valid_distances++;
+#endif
 		}
+
+#ifdef OFFLOAD_RAW_RANGES
+		// For analysis: Send all the individual ranges so we can analyse them offline
+		host_interface_notify_ranges_raw((uint8_t*)distances_millimeters);
+#endif
 
 		// Check to make sure that we got enough ranges from this anchor.
 		// If not, we just skip it.

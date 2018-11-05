@@ -452,12 +452,15 @@ static void write_to_sd(char * data, uint16_t length) {
 static void log_ranges(const uint8_t* data, uint16_t length) {
 
 #define APP_LOG_BUFFER_LINE     (10 + 1 + 2*8 + 7 + 1 + 6 + 1)
-#define APP_LOG_BUFFER_LENGTH   (10 * (APP_LOG_BUFFER_LINE) )
+#define APP_LOG_BUFFER_LENGTH   (10 * APP_LOG_BUFFER_LINE)
 #define APP_LOG_RANGE_LENGTH    (1 + 4)
 
     char log_buf[APP_LOG_BUFFER_LENGTH] = { 0 };
     uint16_t offset_data = 0;
     uint16_t offset_buf  = 0;
+
+    // Jump over Interrupt reason
+    offset_data += 1;
 
     uint8_t num_ranges = data[1];
     offset_data += 1;
@@ -492,6 +495,44 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
     write_to_sd(log_buf, offset_buf);
 
     printf("INFO: Logged ranging with %i ranges to SD card\n", num_ranges);
+}
+
+static void log_ranges_raw(const uint8_t* data, uint16_t length) {
+
+#define APP_LOG_RAW_BUFFER_LINE     (2 + 1 + 10 + 1)
+#define APP_LOG_RAW_BUFFER_LENGTH   (30 * APP_LOG_RAW_BUFFER_LINE)
+#define APP_LOG_RAW_RANGE_LENGTH    (4)
+
+    char log_buf[APP_LOG_RAW_BUFFER_LENGTH] = { 0 };
+    uint16_t offset_data = 0;
+    uint16_t offset_buf  = 0;
+
+    // Jump over Interrupt reason
+    offset_data += 1;
+
+    uint8_t num_ranges = 30;
+
+    if ( ((length - 1) / APP_LOG_RAW_RANGE_LENGTH) != num_ranges) {
+        printf("WARNING: Incorrect number of ranges!\n");
+    }
+
+    for (uint8_t i = 0; i < num_ranges; i++) {
+
+        // Add channel number
+        sprintf(log_buf + offset_buf + 0, "%02u\t", i);
+
+        // Add range - due to the way int is stored in memory (big endian), we need to stitch them together in opposite order
+        uint32_t range = (data[offset_data + 3] << 3*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 1] << 1*8) + data[offset_data + 0];
+        sprintf(log_buf + offset_buf + 3, "%010lu\n", range);
+
+        offset_data += APP_LOG_RAW_RANGE_LENGTH;
+        offset_buf  += APP_LOG_RAW_BUFFER_LINE;
+    }
+
+    // Write to SD
+    write_to_sd(log_buf, offset_buf);
+
+    printf("INFO: Logged raw ranges to SD card\n");
 }
 
 /* Application state size
@@ -1267,16 +1308,18 @@ void updateData (uint8_t * data, uint32_t len)
 	        app.network_discovered = false;
 	        app.module_inited      = false;
 	    }
+	} else if (data[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
+	    printf(", storing raw ranges\n");
+
+	    app.app_raw_response_buffer_updated = true;
 	}
 }
 
 
 void moduleDataUpdate ()
 {
-    // Update the data value and notify on the data
-	if (app.app_raw_response_length >= 5) {
-        //printf("Received data from module\n");
-	}
+    // Clear flag
+    app.app_raw_response_buffer_updated = false;
 
 	if(carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) {
 
@@ -1303,12 +1346,12 @@ void moduleDataUpdate ()
 	}
 
 	// Store locally in log
-	/*if (app.app_raw_response_buffer[0] == HOST_IFACE_INTERRUPT_RANGES) {
+	if (app.app_raw_response_buffer[0] == HOST_IFACE_INTERRUPT_RANGES) {
 	    log_ranges(app.app_raw_response_buffer, app.app_raw_response_length);
-	}*/
+	} else if (app.app_raw_response_buffer[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
+	    log_ranges_raw(app.app_raw_response_buffer, app.app_raw_response_length);
+	}
 
-	// Clear flag
-	app.app_raw_response_buffer_updated = false;
 }
 
 static void watchdog_handler (void* p_context)
