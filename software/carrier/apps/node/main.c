@@ -478,8 +478,8 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
         // Add EUI
         sprintf(log_buf + offset_buf + 11, "c0:98:e5:42:00:00:00:%02x\t", data[offset_data + 0]);
 
-        // Add range
-        uint32_t range = (data[offset_data + 1] << 3*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 1*8) + data[offset_data + 4];
+        // Add range - Little endian notation
+        uint32_t range = data[offset_data + 1] + (data[offset_data + 2] << 1*8) + (data[offset_data + 3] << 2*8) + (data[offset_data + 4] << 3*8);
 
         if (range >= 1000000) {
             range = 0; // Negative ranges must be filtered, as they will print more than 6 characters
@@ -521,8 +521,8 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
         // Add channel number
         sprintf(log_buf + offset_buf + 0, "%02u\t", i);
 
-        // Add range - due to the way int is stored in memory (big endian), we need to stitch them together in opposite order
-        uint32_t range = (data[offset_data + 3] << 3*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 1] << 1*8) + data[offset_data + 0];
+        // Add range - Little endian order
+        uint32_t range = data[offset_data + 0] + (data[offset_data + 1] << 1*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 3*8);
         sprintf(log_buf + offset_buf + 3, "%010lu\n", range);
 
         offset_data += APP_LOG_RAW_RANGE_LENGTH;
