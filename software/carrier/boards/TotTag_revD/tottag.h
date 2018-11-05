@@ -3,6 +3,7 @@
 #pragma once
 
 #include "nrf_gpio.h"
+#include "nrfx_saadc.h"
 
 #ifndef DEVICE_NAME
 #define DEVICE_NAME "TotTag"
@@ -17,6 +18,7 @@
 
 // Battery monitor
 #define CARRIER_BATTERY_MONITOR NRF_GPIO_PIN_MAP(0,30)
+#define CARRIER_BATTERY_PIN     NRF_SAADC_INPUT_AIN6
 
 
 // GPIOs

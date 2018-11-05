@@ -16,6 +16,7 @@
 #include "nrfx_gpiote.h"
 #include "nrfx_power.h"
 #include "nrf_pwr_mgmt.h"
+#include "nrfx_saadc.h"
 
 // Apps
 #include "app_error.h"
@@ -659,6 +660,61 @@ static void restore_app_state() {
 
     printf("Restored Application state from SD card\n");
 }
+
+
+/*******************************************************************************
+ *   Analog pins
+ ******************************************************************************/
+#define APP_BAT_VOLT_MAX        4200
+#define APP_BAT_VOLT_DIV_UP     100
+#define APP_BAT_VOLT_DIV_DOWN   22
+
+const uint8_t bat_monitor_channel = 0;
+
+void saadc_callback(nrfx_saadc_evt_t const * p_event) {
+
+    // Dont use event handler, so this should never actually be called
+    printf("WARNING: Received an SAADC event\n");
+}
+
+void bat_monitor_init() {
+    ret_code_t err_code;
+
+    nrfx_saadc_config_t        saadc_config         = NRFX_SAADC_DEFAULT_CONFIG;
+    nrf_saadc_channel_config_t saadc_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(CARRIER_BATTERY_PIN);
+
+    // Enable SAADC
+    err_code = nrfx_saadc_init(&saadc_config, saadc_callback);
+    APP_ERROR_CHECK(err_code);
+
+    // Enable comparison channel
+    err_code = nrfx_saadc_channel_init(bat_monitor_channel, &saadc_channel_config);
+    APP_ERROR_CHECK(err_code);
+}
+
+// Returns the current battery voltage in 1/100 of V
+uint16_t get_battery_level() {
+
+    // Get voltage reading
+    nrf_saadc_value_t adc_sample;
+    ret_code_t err_code = nrfx_saadc_sample_convert(bat_monitor_channel, &adc_sample);
+
+    if (err_code != NRF_SUCCESS) {
+        // ADC is busy
+        printf("WARNING: ADC is busy\n");
+        return 0;
+    }
+
+    uint16_t voltage_sample = adc_sample * 360 / (0x3FF); // 1/100 of V, based on reference voltage 0.6V with a gain of 1/6 and 10 bit return value
+
+    // Scale it by the voltage dividing circuit
+    uint16_t voltage = voltage_sample * (APP_BAT_VOLT_DIV_UP + APP_BAT_VOLT_DIV_DOWN) / APP_BAT_VOLT_DIV_DOWN;
+
+    printf("Battery voltage level: ADC %i, BATIN %i, VBAT %i\n", adc_sample, voltage_sample, voltage);
+
+    return voltage;
+}
+
 
 /*******************************************************************************
  *   CALLBACKS - In response to various BLE & hardware events
@@ -1933,6 +1989,7 @@ int main (void)
     // Hardware services init
     sd_card_init();
     acc_init();
+    bat_monitor_init();
 
     printf("Initialized hardware services\n");
 
