@@ -377,7 +377,7 @@ static void flush_sd_buffer() {
     }
 
     // Enable and select SD card
-    nrf_gpio_pin_set(CARRIER_SD_ENABLE);
+    simple_logger_power_on();
 
     // Appending the string terminator
     if ( (app.app_sdcard_buffer_length + 1) <= APP_SDCARD_BUFFER_LENGTH) {
