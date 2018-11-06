@@ -728,8 +728,8 @@ static void calculate_ranges () {
 				num_valid_distances++;
 			}
 #else
-			// Always add new range
-			insert_sorted(distances_millimeters, distance_millimeters, num_valid_distances);
+			// Always add new range in an unsorted way
+			distances_millimeters[broadcast_index] = distance_millimeters;
 			num_valid_distances++;
 #endif
 		}

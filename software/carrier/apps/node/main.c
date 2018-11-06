@@ -497,9 +497,12 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
     printf("INFO: Logged ranging with %i ranges to SD card\n", num_ranges);
 }
 
+// Add number of measurement in front of data
+static uint16_t measurement_counter = 0;
+
 static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
-#define APP_LOG_RAW_BUFFER_LINE     (2 + 1 + 10 + 1)
+#define APP_LOG_RAW_BUFFER_LINE     (4 + 1 + 2 + 1 + 10 + 1)
 #define APP_LOG_RAW_BUFFER_LENGTH   (30 * APP_LOG_RAW_BUFFER_LINE)
 #define APP_LOG_RAW_RANGE_LENGTH    (4)
 
@@ -518,12 +521,15 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
     for (uint8_t i = 0; i < num_ranges; i++) {
 
+        // Add measurement number
+        sprintf(log_buf + offset_buf + 0, "%04u\t", measurement_counter);
+
         // Add channel number
-        sprintf(log_buf + offset_buf + 0, "%02u\t", i);
+        sprintf(log_buf + offset_buf + 5, "%02u\t", i);
 
         // Add range - Little endian order
         uint32_t range = data[offset_data + 0] + (data[offset_data + 1] << 1*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 3*8);
-        sprintf(log_buf + offset_buf + 3, "%010lu\n", range);
+        sprintf(log_buf + offset_buf + 8, "%010lu\n", range);
 
         offset_data += APP_LOG_RAW_RANGE_LENGTH;
         offset_buf  += APP_LOG_RAW_BUFFER_LINE;
@@ -533,6 +539,7 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
     write_to_sd(log_buf, offset_buf);
 
     printf("INFO: Logged raw ranges to SD card\n");
+    measurement_counter++;
 }
 
 /* Application state size
