@@ -379,9 +379,6 @@ static void flush_sd_buffer() {
     // Enable and select SD card
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
 
-    // Re-initialize after having turned the card off
-    simple_logger_init(sd_filename, sd_permissions);
-
     // Appending the string terminator
     if ( (app.app_sdcard_buffer_length + 1) <= APP_SDCARD_BUFFER_LENGTH) {
         app.app_sdcard_buffer[app.app_sdcard_buffer_length] = '\0';
@@ -417,7 +414,10 @@ static void flush_sd_buffer() {
         }
 
         // Write data
-        simple_logger_log("%s", write_buf);
+        uint8_t ret_val = simple_logger_log("%s", write_buf);
+        if (ret_val) {
+            printf("WARNING: Received return code %i when trying to write to SD card!\n", ret_val);
+        }
         //printf("%s", write_buf);
     }
 
@@ -1900,6 +1900,14 @@ void carrier_hw_init(void)
     printf("\r\n----------------------------------------------\r\n");
     printf("Initializing nRF...\r\n");
 
+    // Check that we didn't have to do a hardware reset before; if so, state the reason
+    uint32_t reset_reason = nrf_power_resetreas_get();
+
+    if (reset_reason) {
+        printf("WARNING: Chip experienced a reset with reason %lu\n", reset_reason);
+        nrf_power_resetreas_clear(0xFFFFFFFF);
+    }
+
     // Initialize ------------------------------------------------------------------------------------------------------
 
     app_init();
@@ -2038,8 +2046,8 @@ int main (void)
 
     // Hardware services init
     sd_card_init();
-    acc_init();
-    bat_monitor_init();
+    //acc_init();
+    //bat_monitor_init();
 
     printf("Initialized hardware services\n");
 
