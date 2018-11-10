@@ -294,13 +294,52 @@ void glossy_deschedule(){
 	}
 }
 
-void glossy_enable_reception() {
+void glossy_enable_reception(uint32_t starttime) {
 
 	// Start receiving
 	dwt_forcetrxoff();
 	dw1000_update_channel(LWB_CHANNEL);
 	dw1000_choose_antenna(LWB_ANTENNA);
-	dwt_rxenable(0);
+
+	if (starttime > 0) {
+		dwt_setdelayedtrxtime(starttime);
+		dwt_rxenable(1);
+	} else {
+		dwt_rxenable(0);
+	}
+}
+
+uint64_t glossy_correct_timestamp(uint64_t dw_timestamp) {
+
+	// Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
+	if(dw_timestamp < _last_overall_timestamp) {
+		_time_overflow += 0x10000000000ULL;
+	}
+	_last_overall_timestamp = dw_timestamp;
+	dw_timestamp += _time_overflow;
+
+	return dw_timestamp;
+}
+
+void glossy_listen_for_next_sync() {
+
+	// Get the number of DW time units we did not receive a new schedule
+	uint64_t curr_timestamp = dwt_readsystimestamphi32() << 8; //32 highest bits, bitshifted to get the 40bit number
+	uint64_t out_of_sync_dw = (glossy_correct_timestamp(curr_timestamp) - _last_sync_timestamp) >> 8; // Subtract and directly shift back again
+
+	// Correct the time we turn the receiver back on based on the maximal clock drift
+	uint64_t max_clock_drift_dw = (uint64_t)( (DW_CLOCK_DRIFT_MAX_PPM * out_of_sync_dw) / 1e6 );
+
+	// Calculate the number of rounds we have not received anything
+	uint64_t out_of_sync_rounds = out_of_sync_dw / GLOSSY_UPDATE_INTERVAL_DW;
+
+	// Turn the receiver on based on the maximal drift
+	uint64_t delay_time = (_last_sync_timestamp >> 8) + (out_of_sync_rounds + 1) * GLOSSY_UPDATE_INTERVAL_DW - (max_clock_drift_dw + GLOSSY_SCHEDULE_RECV_SLACK_DW);
+
+	// Only take the 32bit high part of the timestamp and make sure last bit is zero
+	delay_time &= 0xFFFFFFFE;
+
+	glossy_enable_reception((uint32_t)delay_time);
 }
 
 static void glossy_lwb_round_task() {
@@ -404,7 +443,13 @@ static void glossy_lwb_round_task() {
 		// OUT OF SYNC: Force ourselves into RX mode if we still haven't received any sync floods
 		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 10) == 0) ) {
 
-			glossy_enable_reception();
+			if (_last_sync_timestamp == 0) {
+				// We have never received a sync before
+				glossy_enable_reception(0);
+			} else {
+				// We have received a sync before but have gotten out of sync unfortunately
+				glossy_listen_for_next_sync();
+			}
 
 			debug_msg("Not in sync with Glossy master (yet)\r\n");
 
@@ -506,7 +551,7 @@ static void glossy_lwb_round_task() {
 
 				// Make sure we're in RX mode, ready for next glossy sync flood!
 				//dwt_setdblrxbuffmode(FALSE);
-				glossy_enable_reception();
+				glossy_listen_for_next_sync();
 
 			// LWB Slot > N: Invalid counter value
 			} else if (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ) {
@@ -695,12 +740,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 	struct pp_sched_flood  *in_glossy_sync   = (struct pp_sched_flood  *) buf;
 	struct pp_signal_flood *in_glossy_signal = (struct pp_signal_flood *) buf;
 
-	// Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
-	if(dw_timestamp < _last_overall_timestamp) {
-		_time_overflow += 0x10000000000ULL;
-	}
-	_last_overall_timestamp = dw_timestamp;
-	dw_timestamp += _time_overflow;
+	dw_timestamp = glossy_correct_timestamp(dw_timestamp);
 
 	// Debugging information
     /*debug_msg("Rx -> depth: ");
