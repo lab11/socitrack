@@ -37,7 +37,7 @@
 // Protocol adaptation -------------------------------------------------------------------------------------------------
 
 // Adjust Tx parameters
-//#define DW1000_MAXIMIZE_TX_POWER  // Increases transmit power to the maximal value; ATTENTION: might violate regulations and increase power consumption
+#define DW1000_MAXIMIZE_TX_POWER  // Increases transmit power to the maximal value; ATTENTION: might violate regulations and increase power consumption
 
 //#define DW1000_ENABLE_OPSET_64LEN // Uses specific parameters for length 64 preamble; requires tight clock offset between devices
 
@@ -48,17 +48,24 @@
 
 #define PROTOCOL_INIT_SCHED_MAX     10
 #define PROTOCOL_RESP_SCHED_MAX     10
+#define PROTOCOL_HYBRID_SCHED_MAX   10
 
 #define PROTOCOL_EUI_LEN            1  // Only use the first byte of the EUI to distinguish between nodes
 
-#define PROTOCOL_INIT_SCHED_OFFSET  0
-#define PROTOCOL_RESP_SCHED_OFFSET  (PROTOCOL_INIT_SCHED_OFFSET + PROTOCOL_INIT_SCHED_MAX)
+#define PROTOCOL_INIT_SCHED_OFFSET   0
+#define PROTOCOL_RESP_SCHED_OFFSET   (PROTOCOL_INIT_SCHED_OFFSET + PROTOCOL_INIT_SCHED_MAX)
+#define PROTOCOL_HYBRID_SCHED_OFFSET (PROTOCOL_RESP_SCHED_OFFSET + PROTOCOL_RESP_SCHED_MAX)
 
 // Allow nodes to connect to new masters if they discover their schedule
 // #define PROTOCOL_FLEXIBLE_MASTER
 
 // Automatically deschedule after not having received a schedule for a given time
 //#define PROTOCOL_ENABLE_TIMEOUT
+
+// Testing
+
+// Instead of aggregated ranges, just offload all 30 raw range estimations for debugging and manual analysis
+#define OFFLOAD_RAW_RANGES
 
 // ---------------------------------------------------------------------------------------------------------------------
 

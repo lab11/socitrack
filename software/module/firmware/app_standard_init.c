@@ -546,7 +546,6 @@ static void report_range () {
 	// We're done, so go to idle.
 	si_scratch->state = ISTATE_IDLE;
 
-//#define OFFLOAD_RAW_RANGES
 #ifndef OFFLOAD_RAW_RANGES
 	// Just need to send the ranges back to the host. Send the array
 	// of ranges to the main application and let it deal with it.

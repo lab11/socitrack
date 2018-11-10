@@ -49,6 +49,7 @@ static bool     _lwb_scheduled_init;        // _lwb_scheduled_X is a boolean var
 static bool     _lwb_scheduled_resp;
 static uint32_t _lwb_num_scheduled_init;
 static uint32_t _lwb_num_scheduled_resp;    // _lwb_num_scheduled_X is the number of X scheduled for the next round (only relevant for the Glossy master)
+static uint32_t _lwb_num_scheduled_hybrid;
 static uint32_t _lwb_num_timeslots_total;
 static uint32_t _lwb_num_init;              // _lwb_num_X           is the number of X in the current round
 static uint32_t _lwb_num_resp;
@@ -65,9 +66,10 @@ static        uint8_t         _sync_pkt_buffer[sizeof(struct pp_sched_flood)]; /
 
 static struct pp_signal_flood _signal_pkt;
 
-static uint8_t _init_sched_euis [PROTOCOL_INIT_SCHED_MAX][PROTOCOL_EUI_LEN];
-static uint8_t _resp_sched_euis [PROTOCOL_RESP_SCHED_MAX][PROTOCOL_EUI_LEN];
-static uint8_t _sched_timeouts  [PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX];
+static uint8_t _init_sched_euis  [PROTOCOL_INIT_SCHED_MAX][PROTOCOL_EUI_LEN];
+static uint8_t _resp_sched_euis  [PROTOCOL_RESP_SCHED_MAX][PROTOCOL_EUI_LEN];
+static uint8_t _hybrid_sched_euis[PROTOCOL_HYBRID_SCHED_MAX][PROTOCOL_EUI_LEN];
+static uint8_t _sched_timeouts   [PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX + PROTOCOL_HYBRID_SCHED_MAX];
 
 #ifdef GLOSSY_PER_TEST
 static uint32_t _total_syncs_sent;
@@ -79,8 +81,10 @@ static uint32_t _total_syncs_received;
 static void    prepare_schedule_signal();
 static uint8_t   schedule_init(uint8_t * eui);
 static uint8_t   schedule_resp(uint8_t * eui);
+static uint8_t   schedule_hybrid(uint8_t * eui);
 static uint8_t deschedule_init(uint8_t * eui);
 static uint8_t deschedule_resp(uint8_t * eui);
+static uint8_t deschedule_hybrid(uint8_t * eui);
 static int 	   check_if_scheduled(uint8_t * array, uint8_t array_length);
 
 static uint8_t glossy_get_resp_listening_slots_a();
@@ -177,6 +181,7 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	_lwb_scheduled_resp        = FALSE;
 	_lwb_num_scheduled_init    = 0;
 	_lwb_num_scheduled_resp    = 0;
+	_lwb_num_scheduled_hybrid  = 0;
 	_lwb_num_timeslots_total   = 0;
 	_lwb_num_init              = 0;
 	_lwb_num_resp              = 0;
@@ -190,9 +195,10 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	memset(_lwb_master_eui,          0, EUI_LEN);
 	memset(_lwb_prev_signalling_eui, 0, EUI_LEN);
 
-	memset(_init_sched_euis,    0, sizeof(_init_sched_euis));
-    memset(_resp_sched_euis,    0, sizeof(_resp_sched_euis));
-    memset(_sched_timeouts,     0, sizeof(_sched_timeouts));
+	memset(_init_sched_euis,   0, sizeof(_init_sched_euis));
+    memset(_resp_sched_euis,   0, sizeof(_resp_sched_euis));
+	memset(_hybrid_sched_euis, 0, sizeof(_hybrid_sched_euis));
+    memset(_sched_timeouts,    0, sizeof(_sched_timeouts));
 
 	_glossy_flood_timeslot_corrected_us = (uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8;
 
@@ -754,8 +760,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					}
 					case SCHED_REQUEST_HYBRID: {
 						debug_msg("Schedule request for HYBRID\n");
-						schedule_init(in_glossy_signal->device_eui);
-						schedule_resp(in_glossy_signal->device_eui);
+						schedule_hybrid(in_glossy_signal->device_eui);
 						break;
 					}
 					case DESCHED_REQUEST_INIT: {
@@ -770,8 +775,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					}
 					case DESCHED_REQUEST_HYBRID: {
 						debug_msg("Deschedule request for HYBRID\n");
-						deschedule_init(in_glossy_signal->device_eui);
-						deschedule_resp(in_glossy_signal->device_eui);
+						deschedule_hybrid(in_glossy_signal->device_eui);
 						break;
 					}
 					default: {
@@ -1068,6 +1072,18 @@ static uint8_t schedule_resp(uint8_t * eui) {
     return slot;
 }
 
+static uint8_t schedule_hybrid(uint8_t * eui) {
+
+	uint8_t slot = schedule_device( (uint8_t*)_hybrid_sched_euis, PROTOCOL_HYBRID_SCHED_MAX * PROTOCOL_EUI_LEN, eui);
+
+	if (slot < 0xFF) {
+		_sched_timeouts[PROTOCOL_HYBRID_SCHED_OFFSET + slot] = 0;
+		_lwb_num_scheduled_hybrid++;
+	}
+
+	return slot;
+}
+
 static uint8_t deschedule_device(uint8_t * array, uint8_t array_length, uint8_t * eui) {
 
 	for (uint8_t i = 0; i < (array_length / PROTOCOL_EUI_LEN); i++) {
@@ -1111,6 +1127,18 @@ static uint8_t deschedule_resp(uint8_t * eui) {
     }
 
     return slot;
+}
+
+static uint8_t deschedule_hybrid(uint8_t * eui) {
+
+	uint8_t slot = deschedule_device( (uint8_t*)_hybrid_sched_euis, PROTOCOL_HYBRID_SCHED_MAX * PROTOCOL_EUI_LEN, eui);
+
+	if (slot < 0xFF) {
+		_sched_timeouts[PROTOCOL_HYBRID_SCHED_OFFSET + slot] = 0;
+		_lwb_num_scheduled_hybrid--;
+	}
+
+	return slot;
 }
 
 static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
@@ -1200,6 +1228,25 @@ static void lwb_increment_sched_timeout(){
             _sched_timeouts[PROTOCOL_RESP_SCHED_OFFSET + ii] = 0;
         }
     }
+
+	// Timeout hybrids
+	for(int ii=0; ii < (PROTOCOL_HYBRID_SCHED_MAX); ii++){
+
+		// Check if slot is actually used
+		if(_hybrid_sched_euis[ii][0] > 0){
+			_sched_timeouts[PROTOCOL_HYBRID_SCHED_OFFSET + ii]++;
+
+			if(_sched_timeouts[PROTOCOL_HYBRID_SCHED_OFFSET + ii] == TAG_SCHED_TIMEOUT) {
+				memset(_hybrid_sched_euis[ii], 0, PROTOCOL_EUI_LEN);
+				_lwb_num_scheduled_hybrid--;
+
+				// Reset
+				_sched_timeouts[PROTOCOL_HYBRID_SCHED_OFFSET + ii] = 0;
+			}
+		} else {
+			_sched_timeouts[PROTOCOL_HYBRID_SCHED_OFFSET + ii] = 0;
+		}
+	}
 
     // Glossy master verifies that he doesnt kick himself out of the network
     if (standard_is_init_enabled()) {
@@ -1312,13 +1359,14 @@ static void write_data_to_sync() {
     /// INFO: We use _sync_pkt primarily as a tool to shape the packet itself and read data from it; the sent operation is done over the _sync_pkt_buffer to eliminate unused space
 
     // Clean-up array in case deletions occurred
-    compress_array( (uint8_t*)_init_sched_euis, sizeof(_init_sched_euis), PROTOCOL_EUI_LEN);
-    compress_array( (uint8_t*)_resp_sched_euis, sizeof(_init_sched_euis), PROTOCOL_EUI_LEN);
+    compress_array( (uint8_t*)_init_sched_euis,   sizeof(_init_sched_euis),   PROTOCOL_EUI_LEN);
+    compress_array( (uint8_t*)_resp_sched_euis,   sizeof(_resp_sched_euis),   PROTOCOL_EUI_LEN);
+	compress_array( (uint8_t*)_hybrid_sched_euis, sizeof(_hybrid_sched_euis), PROTOCOL_EUI_LEN);
 
     // Set correct values
-    _sync_pkt.init_schedule_length = (uint8_t)_lwb_num_scheduled_init;
-    _sync_pkt.resp_schedule_length = (uint8_t)_lwb_num_scheduled_resp;
-    _sync_pkt.round_length         = (uint8_t)( 1 /*Sync itself*/ + _lwb_num_scheduled_init * LWB_SLOTS_PER_RANGE + ceil_fraction(_lwb_num_scheduled_resp, LWB_RESPONSES_PER_SLOT) + _lwb_num_timeslots_cont);
+    _sync_pkt.init_schedule_length = (uint8_t)_lwb_num_scheduled_init + (uint8_t)_lwb_num_scheduled_hybrid;
+    _sync_pkt.resp_schedule_length = (uint8_t)_lwb_num_scheduled_resp + (uint8_t)_lwb_num_scheduled_hybrid;
+    _sync_pkt.round_length         = (uint8_t)( 1 /*Sync itself*/ + _sync_pkt.init_schedule_length * LWB_SLOTS_PER_RANGE + ceil_fraction(_sync_pkt.resp_schedule_length, LWB_RESPONSES_PER_SLOT) + _lwb_num_timeslots_cont);
 
     // For Glossy Master, as it does not read the schedule - note that due to signalling, _lwb_num_scheduled_X and _lwb_num_X might NOT be identital during the course of a round
     _lwb_num_init            = _sync_pkt.init_schedule_length;
@@ -1328,8 +1376,19 @@ static void write_data_to_sync() {
     // Set array; as this array is sparse, we use the sync_pkt_buffer to send the data afterwards
     memset(_sync_pkt.eui_array, 0, sizeof(_sync_pkt.eui_array));
 
-    memcpy(_sync_pkt.eui_array + PROTOCOL_INIT_SCHED_OFFSET * PROTOCOL_EUI_LEN, _init_sched_euis, _lwb_num_init * PROTOCOL_EUI_LEN);
-    memcpy(_sync_pkt.eui_array + PROTOCOL_RESP_SCHED_OFFSET * PROTOCOL_EUI_LEN, _resp_sched_euis, _lwb_num_resp * PROTOCOL_EUI_LEN);
+    // Set all the initiators - be advised that the combined number of pure initiators and hybrids must not exceed PROTOCOL_INIT_SCHED_MAX
+    memcpy(_sync_pkt.eui_array + (PROTOCOL_INIT_SCHED_OFFSET + 0                      ) * PROTOCOL_EUI_LEN, _init_sched_euis,   _lwb_num_scheduled_init   * PROTOCOL_EUI_LEN);
+	memcpy(_sync_pkt.eui_array + (PROTOCOL_INIT_SCHED_OFFSET + _lwb_num_scheduled_init) * PROTOCOL_EUI_LEN, _hybrid_sched_euis, _lwb_num_scheduled_hybrid * PROTOCOL_EUI_LEN);
+
+    // Set all the responders
+    memcpy(_sync_pkt.eui_array + PROTOCOL_RESP_SCHED_OFFSET * PROTOCOL_EUI_LEN, _resp_sched_euis, _lwb_num_scheduled_resp * PROTOCOL_EUI_LEN);
+
+    // Ranging pyramid - schedule hybrids in reverse order for responses
+    for (uint8_t i = 0; i < _lwb_num_scheduled_hybrid; i++) {
+    	memcpy(_sync_pkt.eui_array + (PROTOCOL_RESP_SCHED_OFFSET + _lwb_num_scheduled_resp + i) * PROTOCOL_EUI_LEN, _hybrid_sched_euis + (_lwb_num_scheduled_hybrid - i - 1) * PROTOCOL_EUI_LEN, PROTOCOL_EUI_LEN);
+    }
+
+    // All INIT, RESP and HBRIDs are now correctly stored and the packet is ready to be sent
 }
 
 static void write_sync_to_packet_buffer() {
