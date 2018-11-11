@@ -62,6 +62,9 @@
 // Automatically deschedule after not having received a schedule for a given time
 //#define PROTOCOL_ENABLE_TIMEOUT
 
+// Allow the highest slave to take over upon not receiving schedules for TIMEOUT schedules
+//#define PROTOCOL_ENABLE_MASTER_TAKEOVER
+
 // Testing
 
 // Instead of aggregated ranges, just offload all 30 raw range estimations for debugging and manual analysis

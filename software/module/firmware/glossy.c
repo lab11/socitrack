@@ -99,6 +99,9 @@ static void    lwb_send_sync(uint32_t delay_time);
 
 // Helpers
 static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator);
+static uint8_t get_master_candidate();
+static void	   save_schedule_information(uint8_t* buffer);
+static void    restore_schedule_information(uint8_t* buffer);
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -481,6 +484,55 @@ static void glossy_lwb_round_task() {
 				// Deschedule from network
 				memset(_lwb_master_eui, 0, sizeof(_lwb_master_eui));
 				host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
+			}
+#endif
+
+#ifdef PROTOCOL_ENABLE_MASTER_TAKEOVER
+			// Timeout: If have not heard from Master for more than Timeout, try to take over network with highest slave
+			if (_lwb_counter > GLOSSY_SCHEDULE_TIMEOUT) {
+
+				debug_msg("WARNING: Timing out, trying network takeover\n");
+
+				// Stop reception
+				glossy_stop();
+
+				standard_stop();
+
+				uint8_t master_candidate_eui = get_master_candidate();
+
+				// Inform host
+				_lwb_master_eui[0] = master_candidate_eui;
+				host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
+
+				if (standard_get_config()->my_EUI[0] == master_candidate_eui) {
+					// This node will try to take over
+					debug_msg("INFO: Node will try to take over network\n");
+
+					// Backup scheduling information
+					uint8_t eui_copy_buffer[PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX + PROTOCOL_HYBRID_SCHED_MAX][PROTOCOL_EUI_LEN] = { 0 };
+					save_schedule_information((uint8_t*)eui_copy_buffer);
+
+					// Restart
+					glossy_init(GLOSSY_MASTER, master_candidate_eui);
+
+					// Fill in copied information
+					restore_schedule_information((uint8_t*)eui_copy_buffer);
+
+					// Let's try and get this new network running
+					standard_start();
+
+				} else {
+					// Configure new master and switch
+					debug_msg("INFO: Node ");
+					debug_msg_uint(master_candidate_eui);
+					debug_msg(" will take over network\n");
+
+					// Restart
+					glossy_init(GLOSSY_SLAVE, master_candidate_eui);
+
+					standard_start();
+				}
+
 			}
 #endif
 
@@ -949,6 +1001,12 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			_lwb_num_init            = in_glossy_sync->init_schedule_length;
 			_lwb_num_resp            = in_glossy_sync->resp_schedule_length;
 			_lwb_num_timeslots_cont  = _lwb_num_timeslots_total - (1 + _lwb_num_init * LWB_SLOTS_PER_RANGE + ceil_fraction(_lwb_num_resp, LWB_RESPONSES_PER_SLOT));
+
+#ifdef PROTOCOL_ENABLE_MASTER_TAKEOVER
+			// Store scheduling information if need to attempt network takeover afterwards
+			memcpy(_init_sched_euis, (uint8_t*)in_glossy_sync->eui_array                                                          , _lwb_num_init * PROTOCOL_EUI_LEN);
+			memcpy(_resp_sched_euis, (uint8_t*)in_glossy_sync->eui_array + in_glossy_sync->init_schedule_length * PROTOCOL_EUI_LEN, _lwb_num_resp * PROTOCOL_EUI_LEN);
+#endif
 
 			debug_msg("Scheduled nodes this round: I ");
 			debug_msg_uint(_lwb_num_init);
@@ -1480,6 +1538,136 @@ static void write_sync_to_packet_buffer() {
 
 	// Footer
 	memcpy(_sync_pkt_buffer + offset, &_sync_pkt.footer, sizeof(struct ieee154_footer));
+}
+
+// Find the highest scheduled EUI in the network and propose it as new master for network takeover
+static uint8_t get_master_candidate() {
+
+	uint8_t candidate_eui = 0;
+
+	// Search through INITs
+	for (uint8_t i = 0; i < _lwb_num_init; i++) {
+
+		if (_init_sched_euis[i][0] > candidate_eui) {
+			candidate_eui = _init_sched_euis[i][0];
+		}
+	}
+
+	// Search through RESPs
+	for (uint8_t i = 0; i < _lwb_num_resp; i++) {
+
+		if (_resp_sched_euis[i][0] > candidate_eui) {
+			candidate_eui = _resp_sched_euis[i][0];
+		}
+	}
+
+	if (candidate_eui > 0) {
+		debug_msg("Found candidate EUI ");
+		debug_msg_uint(candidate_eui);
+		debug_msg("\n");
+	} else {
+		debug_msg("ERROR: Could not find valid candidate EUI!\n");
+	}
+
+	return candidate_eui;
+}
+
+// Copy over information into correct buffer space so we can restore it later-on
+static void save_schedule_information(uint8_t* buffer) {
+
+	_lwb_num_scheduled_init   = 0;
+	_lwb_num_scheduled_resp   = 0;
+	_lwb_num_scheduled_hybrid = 0;
+
+	// Find all INITs and differentiate whether they are also hybrids
+	for (uint8_t i = 0; i < _lwb_num_init; i++) {
+
+		// Figure out if INIT or HYBRID
+		bool is_hybrid = FALSE;
+
+		for (uint8_t j = 0; i < _lwb_num_resp; j++) {
+
+			if (_init_sched_euis[i][0] == _resp_sched_euis[j][0]) {
+				is_hybrid = TRUE;
+			}
+		}
+
+		if (is_hybrid) {
+			*(buffer + PROTOCOL_HYBRID_SCHED_OFFSET + _lwb_num_scheduled_hybrid * PROTOCOL_EUI_LEN) = _init_sched_euis[i][0];
+			_lwb_num_scheduled_hybrid++;
+		} else {
+			*(buffer + PROTOCOL_INIT_SCHED_OFFSET   + _lwb_num_scheduled_init   * PROTOCOL_EUI_LEN) = _init_sched_euis[i][0];
+			_lwb_num_scheduled_init++;
+		}
+	}
+
+	// Find all RESPs and differentiate whether they are also hybrids
+	for (uint8_t i = 0; i < _lwb_num_resp; i++) {
+
+		// Figure out if RESP or HYBRID
+		bool is_hybrid = FALSE;
+
+		for (uint8_t j = 0; i < _lwb_num_init; j++) {
+
+			if (_resp_sched_euis[i][0] == _init_sched_euis[j][0]) {
+				is_hybrid = TRUE;
+			}
+		}
+
+		if (is_hybrid) {
+			// Already added before
+		} else {
+			*(buffer + PROTOCOL_RESP_SCHED_OFFSET + _lwb_num_scheduled_resp * PROTOCOL_EUI_LEN) = _resp_sched_euis[i][0];
+			_lwb_num_scheduled_resp++;
+		}
+	}
+}
+
+// Save information from buffer back to the app memory space
+static void restore_schedule_information(uint8_t* buffer) {
+
+	_lwb_num_scheduled_init   = 0;
+	_lwb_num_scheduled_resp   = 0;
+	_lwb_num_scheduled_hybrid = 0;
+
+	// Restore INITs
+	for (uint8_t i = 0; i < PROTOCOL_INIT_SCHED_MAX; i++) {
+
+		if ( *(buffer + PROTOCOL_INIT_SCHED_OFFSET + i * PROTOCOL_EUI_LEN) > 0) {
+			// Stored EUI
+			memcpy(_init_sched_euis, buffer + PROTOCOL_INIT_SCHED_OFFSET + i * PROTOCOL_EUI_LEN, PROTOCOL_EUI_LEN);
+			_lwb_num_scheduled_init++;
+		} else {
+			// End of stored INITs
+			i = PROTOCOL_INIT_SCHED_MAX;
+		}
+	}
+
+	// Restore RESPs
+	for (uint8_t i = 0; i < PROTOCOL_RESP_SCHED_MAX; i++) {
+
+		if ( *(buffer + PROTOCOL_RESP_SCHED_OFFSET + i * PROTOCOL_EUI_LEN) > 0) {
+			// Stored EUI
+			memcpy(_resp_sched_euis, buffer + PROTOCOL_RESP_SCHED_OFFSET + i * PROTOCOL_EUI_LEN, PROTOCOL_EUI_LEN);
+			_lwb_num_scheduled_resp++;
+		} else {
+			// End of stored RESPs
+			i = PROTOCOL_RESP_SCHED_MAX;
+		}
+	}
+
+	// Restore HYBRIDs
+	for (uint8_t i = 0; i < PROTOCOL_HYBRID_SCHED_MAX; i++) {
+
+		if ( *(buffer + PROTOCOL_HYBRID_SCHED_OFFSET + i * PROTOCOL_EUI_LEN) > 0) {
+			// Stored EUI
+			memcpy(_hybrid_sched_euis, buffer + PROTOCOL_HYBRID_SCHED_OFFSET + i * PROTOCOL_EUI_LEN, PROTOCOL_EUI_LEN);
+			_lwb_num_scheduled_hybrid++;
+		} else {
+			// End of stored HYBRIDs
+			i = PROTOCOL_HYBRID_SCHED_MAX;
+		}
+	}
 }
 
 static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator) {
