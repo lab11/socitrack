@@ -309,11 +309,13 @@ void glossy_enable_reception(uint32_t starttime) {
 	}
 }
 
+// Get linearly increasing 40bit timestamps; ATTENTION: when comparing to the current time (32bit), make sure to cast it to uint64_t and shift it so it corresponds to a 40bit timestamp
 uint64_t glossy_correct_timestamp(uint64_t dw_timestamp) {
 
 	// Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
 	if(dw_timestamp < _last_overall_timestamp) {
 		_time_overflow += 0x10000000000ULL;
+		//debug_msg("INFO: Owerflow in DecaWave clock\n");
 	}
 	_last_overall_timestamp = dw_timestamp;
 	dw_timestamp += _time_overflow;
@@ -324,8 +326,8 @@ uint64_t glossy_correct_timestamp(uint64_t dw_timestamp) {
 void glossy_listen_for_next_sync() {
 
 	// Get the number of DW time units we did not receive a new schedule
-	uint64_t curr_timestamp = dwt_readsystimestamphi32() << 8; //32 highest bits, bitshifted to get the 40bit number
-	uint64_t out_of_sync_dw = (glossy_correct_timestamp(curr_timestamp) - _last_sync_timestamp) >> 8; // Subtract and directly shift back again
+	uint64_t curr_timestamp = glossy_correct_timestamp((uint64_t)dwt_readsystimestamphi32() << 8); //32 highest bits, bitshifted to compare to the 40bit timestamp
+	uint64_t out_of_sync_dw = (curr_timestamp - _last_sync_timestamp) >> 8; // Subtract and directly shift back again to get the 32bit number
 
 	// Correct the time we turn the receiver back on based on the maximal clock drift
 	uint64_t max_clock_drift_dw = (uint64_t)( (DW_CLOCK_DRIFT_MAX_PPM * out_of_sync_dw) / 1e6 );
@@ -338,6 +340,16 @@ void glossy_listen_for_next_sync() {
 
 	// Only take the 32bit high part of the timestamp and make sure last bit is zero
 	delay_time &= 0xFFFFFFFE;
+
+	/*debug_msg("Current time: ");
+	debug_msg_uint(curr_timestamp >> 8);
+	debug_msg("; out of sync: ");
+	debug_msg_uint(out_of_sync_dw);
+	debug_msg("; no sync for ");
+	debug_msg_uint(out_of_sync_rounds);
+	debug_msg(" rounds; delayed timestamp: ");
+	debug_msg_uint(delay_time);
+	debug_msg("\n");*/
 
 	glossy_enable_reception((uint32_t)delay_time);
 }
