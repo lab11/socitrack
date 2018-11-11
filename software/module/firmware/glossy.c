@@ -30,8 +30,6 @@ static ranctx        _prng_state;
 
 static uint8_t  _last_sync_depth;
 static uint64_t _last_sync_timestamp;
-static uint64_t _last_overall_timestamp;
-static uint64_t _time_overflow;
 static uint64_t _last_time_sent;
 static uint64_t _glossy_flood_timeslot_corrected_us;
 static uint32_t _last_delay_time;
@@ -167,8 +165,6 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	_glossy_timer           = NULL;
 	_last_sync_depth		= 0;
 	_last_sync_timestamp    = 0;
-	_last_overall_timestamp = 0;
-	_time_overflow			= 0;
 	_last_time_sent			= 0;
 	_last_delay_time 		= 0;
 	_lwb_in_sync 			= FALSE;
@@ -309,24 +305,10 @@ void glossy_enable_reception(uint32_t starttime) {
 	}
 }
 
-// Get linearly increasing 40bit timestamps; ATTENTION: when comparing to the current time (32bit), make sure to cast it to uint64_t and shift it so it corresponds to a 40bit timestamp
-uint64_t glossy_correct_timestamp(uint64_t dw_timestamp) {
-
-	// Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
-	if(dw_timestamp < _last_overall_timestamp) {
-		_time_overflow += 0x10000000000ULL;
-		//debug_msg("INFO: Owerflow in DecaWave clock\n");
-	}
-	_last_overall_timestamp = dw_timestamp;
-	dw_timestamp += _time_overflow;
-
-	return dw_timestamp;
-}
-
 void glossy_listen_for_next_sync() {
 
-	// Get the number of DW time units we did not receive a new schedule
-	uint64_t curr_timestamp = glossy_correct_timestamp((uint64_t)dwt_readsystimestamphi32() << 8); //32 highest bits, bitshifted to compare to the 40bit timestamp
+	// Get the number of DW time units for which we did not receive a new schedule
+	uint64_t curr_timestamp = dw1000_correct_timestamp((uint64_t)dwt_readsystimestamphi32() << 8); //32 highest bits, bitshifted to compare to the 40bit timestamp
 	uint64_t out_of_sync_dw = (curr_timestamp - _last_sync_timestamp) >> 8; // Subtract and directly shift back again to get the 32bit number
 
 	// Correct the time we turn the receiver back on based on the maximal clock drift
@@ -341,10 +323,20 @@ void glossy_listen_for_next_sync() {
 	// Only take the 32bit high part of the timestamp and make sure last bit is zero
 	delay_time &= 0xFFFFFFFE;
 
+	// FIXME: It might occasionally happen that the out_of_sync_dw is miscalculated (due to DW bugs at Tx/Rx); for reliability reasons, we just start to always listen if we havent heard for more than 10 rounds
+	if (out_of_sync_rounds > 10) {
+	    delay_time = 0; // Triggers immediate listening
+	    debug_msg("WARNING: Out of sync for more than 10 rounds!\n");
+	}
+
 	/*debug_msg("Current time: ");
-	debug_msg_uint(curr_timestamp >> 8);
+	debug_msg_uint((curr_timestamp >> 40));
+	debug_msg(" | ");
+	debug_msg_uint((curr_timestamp >> 8) & 0xFFFFFFFF);
 	debug_msg("; out of sync: ");
-	debug_msg_uint(out_of_sync_dw);
+	debug_msg_uint(out_of_sync_dw >> 32);
+	debug_msg(" | ");
+	debug_msg_uint(out_of_sync_dw & 0xFFFFFFFF);
 	debug_msg("; no sync for ");
 	debug_msg_uint(out_of_sync_rounds);
 	debug_msg(" rounds; delayed timestamp: ");
@@ -463,7 +455,9 @@ static void glossy_lwb_round_task() {
 				glossy_listen_for_next_sync();
 			}
 
-			debug_msg("Not in sync with Glossy master (yet)\r\n");
+			debug_msg("Not in sync with Glossy master (yet); current counter: ");
+			debug_msg_uint(_lwb_counter);
+			debug_msg("\n");
 
 #if (BOARD_V == SQUAREPOINT)
 			// Signal normal operation by turning on BLUE
@@ -752,7 +746,8 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 	struct pp_sched_flood  *in_glossy_sync   = (struct pp_sched_flood  *) buf;
 	struct pp_signal_flood *in_glossy_signal = (struct pp_signal_flood *) buf;
 
-	dw_timestamp = glossy_correct_timestamp(dw_timestamp);
+	// Not required anymore, as already handled in dw1000.c for receive timestamps
+	//dw_timestamp = dw1000_correct_timestamp(dw_timestamp);
 
 	// Debugging information
     /*debug_msg("Rx -> depth: ");
@@ -838,6 +833,8 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					}
 				}
 #endif
+			} else {
+			    //debug_msg("INFO: Received same signalling packet multiple times\n");
 			}
 
 			// Re-enable rx for other signalling packets
@@ -963,8 +960,8 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			_sched_req_pkt.sync_depth = in_glossy_sync->header.seqNum;
 #endif
 
-			if(_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 0.5)) << 8) < dw_timestamp){
-				if(_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 1.5)) << 8) > dw_timestamp){
+			if(    (_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 0.5)) << 8) ) < dw_timestamp){
+				if((_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 1.5)) << 8) ) > dw_timestamp){
 					// If we're between 0.5 to 1.5 times the update interval, we are now able to update our clock and perpetuate the flood!
 			
 					// Calculate the ppm offset from the last two received sync messages
@@ -1028,10 +1025,20 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 				} else {
 					// We lost sync :(
 					_lwb_in_sync = FALSE;
+
+                    // Get the number of DW time units for which we did not receive a new schedule
+                    /*uint64_t curr_timestamp = dw1000_correct_timestamp((uint64_t)dwt_readsystimestamphi32() << 8); //32 highest bits, bitshifted to compare to the 40bit timestamp
+                    uint64_t out_of_sync_dw = (curr_timestamp - _last_sync_timestamp);
+                    uint32_t out_of_sync_us = (uint32_t)APP_DEVICETIME_TO_USU64(out_of_sync_dw);
+
+                    debug_msg("WARNING: Lost sync, as last schedule received ");
+                    debug_msg_uint(out_of_sync_us);
+                    debug_msg(" us ago\n");*/
 				}
 			} else {
 				// We've just received a following packet in the flood
 				// This really shouldn't happen, but for now let's ignore it
+				//debug_msg("WARNING: Received schedule too quickly!\n");
 			}
 
 			_last_sync_timestamp = dw_timestamp - (_glossy_flood_timeslot_corrected_us * in_glossy_sync->header.seqNum);
@@ -1441,6 +1448,11 @@ static void write_data_to_sync() {
     }
 
     // All INIT, RESP and HBRIDs are now correctly stored and the packet is ready to be sent
+    /*debug_msg("INFO: Sending schedule with ");
+    debug_msg_uint(_sync_pkt.init_schedule_length);
+    debug_msg(" INITs, ");
+    debug_msg_uint(_sync_pkt.resp_schedule_length);
+    debug_msg(" RESPs\n");*/
 }
 
 static void write_sync_to_packet_buffer() {

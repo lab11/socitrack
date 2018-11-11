@@ -90,7 +90,7 @@ static dwt_txconfig_t global_tx_config;
 // Calibration values and other things programmed in with flash
 static dw1000_programmed_values_t _prog_values;
 
-static uint32_t _last_dw_timestamp;
+static uint64_t _last_dw_timestamp;
 static uint64_t _dw_timestamp_overflow;
 
 /******************************************************************************/
@@ -1056,13 +1056,28 @@ void insert_sorted (int arr[], int new, unsigned end) {
 	}
 }
 
-uint64_t dw1000_readrxtimestamp(){
+// Get linearly increasing 40bit timestamps; ATTENTION: when comparing to the current time (32bit), make sure to cast it to uint64_t and shift it so it corresponds to a 40bit timestamp
+uint64_t dw1000_correct_timestamp(uint64_t dw_timestamp) {
+
+    // Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
+    if(dw_timestamp < _last_dw_timestamp) {
+        _dw_timestamp_overflow += 0x10000000000ULL;
+        //debug_msg("INFO: Overflow 1 in DecaWave clock\n");
+    }
+    _last_dw_timestamp = dw_timestamp;
+
+    return _dw_timestamp_overflow + dw_timestamp;
+}
+
+uint64_t dw1000_readrxtimestamp() {
+
 	uint64_t cur_dw_timestamp = 0;
 	dwt_readrxtimestamp(&cur_dw_timestamp);
 	
 	// Check to see if an overflow has occurred.
 	if(cur_dw_timestamp < _last_dw_timestamp){
 		_dw_timestamp_overflow += 0x10000000000ULL;
+        //debug_msg("INFO: Overflow 2 in DecaWave clock\n");
 	}
 	_last_dw_timestamp = cur_dw_timestamp;
 
@@ -1075,12 +1090,13 @@ uint64_t dw1000_setdelayedtrxtime(uint32_t delay_time){
 	// Check to see if an overflow has occurred.
 	if(cur_dw_timestamp < _last_dw_timestamp){
 		_dw_timestamp_overflow += 0x10000000000ULL;
+        //debug_msg("INFO: Overflow 3 in DecaWave clock\n");
 	}
 	_last_dw_timestamp = cur_dw_timestamp;
 	
 	dwt_setdelayedtrxtime(delay_time);
 
-	return cur_dw_timestamp;
+	return _dw_timestamp_overflow + cur_dw_timestamp;
 }
 
 uint64_t dw1000_gettimestampoverflow(){
