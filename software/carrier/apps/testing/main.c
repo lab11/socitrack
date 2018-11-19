@@ -616,11 +616,31 @@ int main(void) {
     sd_card_init();
 
     // Write sample lines
-    int nr_lines = 5;
-    for (int i = 0; i < nr_lines; i++) {
+    uint64_t nr_lines = 0;
+    uint64_t nr_bytes = 0;
+
+    uint8_t log_buf[1000] = { 0 };
+
+    while(true) {
 
         uint32_t current_time_stamp = nrfx_rtc_counter_get(&rtc_instance);
-        simple_logger_log("%i: Line %i - Additional line added\n", current_time_stamp, i+1);
+        sprintf(log_buf, "%li: Line %llu - Additional line added\n", current_time_stamp, nr_lines + 1);
+
+        // Add bytes
+        for (int16_t i = 0; i < 1000; i++) {
+
+            if (log_buf[i] == '\0') {
+                nr_bytes += i;
+                break;
+            }
+        }
+
+        // Write
+        simple_logger_log("%s", log_buf);
+        printf("Bytes written: %llu; line: %llu\n", nr_bytes, nr_lines);
+
+
+        nr_lines++;
     }
 
     printf("OK\r\n");
@@ -650,7 +670,7 @@ int main(void) {
 #endif
 
     // Test BLE --------------------------------------------------------------------------------------------------------
-#define TEST_BLE_SCAN
+//#define TEST_BLE_SCAN
 #ifdef TEST_BLE_ADV
     printf("Testing BLE advertisements:");
 

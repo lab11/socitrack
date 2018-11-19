@@ -502,7 +502,7 @@ static uint16_t measurement_counter = 0;
 
 static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
-#define APP_LOG_RAW_BUFFER_LINE     (4 + 1 + 2 + 1 + 10 + 1)
+#define APP_LOG_RAW_BUFFER_LINE     (10 + 1 + 4 + 1 + 2 + 1 + 10 + 1)
 #define APP_LOG_RAW_BUFFER_LENGTH   (30 * APP_LOG_RAW_BUFFER_LINE)
 #define APP_LOG_RAW_RANGE_LENGTH    (4)
 
@@ -519,17 +519,22 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
         printf("WARNING: Incorrect number of ranges!\n");
     }
 
+    uint32_t current_time_stamp = app.config.app_sync_time + (nrfx_rtc_counter_get(&rtc_instance) - app.config.app_sync_rtc_counter);
+
     for (uint8_t i = 0; i < num_ranges; i++) {
 
+        // Add Timestamp
+        sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
+
         // Add measurement number
-        sprintf(log_buf + offset_buf + 0, "%04u\t", measurement_counter);
+        sprintf(log_buf + offset_buf + 11, "%04u\t", measurement_counter);
 
         // Add channel number
-        sprintf(log_buf + offset_buf + 5, "%02u\t", i);
+        sprintf(log_buf + offset_buf + 16, "%02u\t", i);
 
         // Add range - Little endian order
         uint32_t range = data[offset_data + 0] + (data[offset_data + 1] << 1*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 3*8);
-        sprintf(log_buf + offset_buf + 8, "%010lu\n", range);
+        sprintf(log_buf + offset_buf + 19, "%010lu\n", range);
 
         offset_data += APP_LOG_RAW_RANGE_LENGTH;
         offset_buf  += APP_LOG_RAW_BUFFER_LINE;
