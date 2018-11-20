@@ -79,6 +79,7 @@ typedef struct {
 
 typedef struct ble_app_s {
     app_config_t config;
+    uint32_t     timer_counter;
     bool         module_inited;       // Whether or not we successfully got through to the module and got it configured properly.
     bool         network_discovered;  // Whether we know there are other devices in our proximity
     uint8_t      master_eui[EUI_LEN];

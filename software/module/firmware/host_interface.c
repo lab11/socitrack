@@ -14,6 +14,7 @@
 
 #include "app_standard_common.h"
 #include "app_calibration.h"
+#include "glossy.h"
 
 
 // STATE ---------------------------------------------------------------------------------------------------------------
@@ -343,6 +344,20 @@ void host_interface_rx_fired () {
 
 			// And we just have to start the application.
 			module_start();
+			break;
+
+		/**********************************************************************/
+		// Set epoch timestamp
+		/**********************************************************************/
+		case HOST_CMD_SET_TIME:
+
+			debug_msg("Op code 9: Set Time\r\n");
+			// Just go back to waiting for a WRITE after a configuration message
+			host_interface_wait();
+
+			// Set the internal time
+			uint32_t curr_epoch = (rxBuffer[1] << 3*8) + (rxBuffer[2] << 2*8) + (rxBuffer[3] << 1*8) + rxBuffer[4];
+			glossy_set_epoch_time(curr_epoch);
 			break;
 
 		/**********************************************************************/

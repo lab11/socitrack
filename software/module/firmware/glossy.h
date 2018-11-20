@@ -61,15 +61,22 @@ typedef enum {
 
 struct pp_sched_flood {
 	struct ieee154_header_broadcast header;
-	uint8_t message_type;
-	uint8_t round_length;
-	uint8_t init_schedule_length;
-	uint8_t resp_schedule_length;
-	uint8_t eui_array[PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX][PROTOCOL_EUI_LEN]; // The array MUST be the last member, as it will be only partially sent ( anything beyond index "init_sched_length + resp_sched_length" is invalid)
+	uint8_t  message_type;
+	uint8_t  round_length;
+#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+	uint32_t epoch_time;
+#endif
+	uint8_t  init_schedule_length;
+	uint8_t  resp_schedule_length;
+	uint8_t  eui_array[PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX][PROTOCOL_EUI_LEN]; // The array MUST be the last member, as it will be only partially sent ( anything beyond index "init_sched_length + resp_sched_length" is invalid)
 	struct ieee154_footer footer;
 } __attribute__ ((__packed__));
 
+#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+#define MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH   8 // 4 * uint8_t + 1 * uint32_t
+#else
 #define MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH   4 // 4 * uint8_t
+#endif
 
 struct pp_signal_flood {
 	struct ieee154_header_broadcast header;
@@ -96,9 +103,11 @@ bool glossy_process_txcallback();
 
 // Helpers
 
-//	 	glossy_get_resp_listening_slots_a -> static
-uint8_t glossy_get_resp_listening_slots_b();
-void    glossy_reset_counter_offset();
+//	 	 glossy_get_resp_listening_slots_a -> static
+uint8_t  glossy_get_resp_listening_slots_b();
+void     glossy_reset_counter_offset();
+void     glossy_set_epoch_time(uint32_t epoch);
+uint32_t glossy_get_epoch_time();
 
 #endif
 

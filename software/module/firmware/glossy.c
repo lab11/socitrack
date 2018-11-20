@@ -30,6 +30,7 @@ static ranctx        _prng_state;
 
 static uint8_t  _last_sync_depth;
 static uint64_t _last_sync_timestamp;
+static uint32_t _last_sync_epoch;
 static uint64_t _last_time_sent;
 static uint64_t _glossy_flood_timeslot_corrected_us;
 static uint32_t _last_delay_time;
@@ -131,6 +132,9 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 		},
 		.message_type = MSG_TYPE_PP_GLOSSY_SYNC,
 		.round_length = 0,
+#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+        .epoch_time = 0,
+#endif
         .init_schedule_length = 0,
         .resp_schedule_length = 0,
         //.eui_array            = { 0 },
@@ -168,6 +172,7 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	_glossy_timer           = NULL;
 	_last_sync_depth		= 0;
 	_last_sync_timestamp    = 0;
+	_last_sync_epoch		= 0;
 	_last_time_sent			= 0;
 	_last_delay_time 		= 0;
 	_lwb_in_sync 			= FALSE;
@@ -426,6 +431,11 @@ static void glossy_lwb_round_task() {
 
 			// Copy information into buffer
 			write_sync_to_packet_buffer();
+
+#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+			// Clear epoch time (only transmit once when actually fresh)
+			_sync_pkt.epoch_time = 0;
+#endif
 
 			_last_time_sent += GLOSSY_UPDATE_INTERVAL_DW;
 
@@ -984,6 +994,13 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			}
 #endif
 
+#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+			// Check out if epoch has been updated
+			if (_last_sync_epoch < in_glossy_sync->epoch_time) {
+				_last_sync_epoch = in_glossy_sync->epoch_time;
+			}
+#endif
+
 			// Check out whether the node has been scheduled
 			int init_slot = check_if_scheduled((uint8_t*) in_glossy_sync->eui_array                                                          , in_glossy_sync->init_schedule_length * (uint8_t)PROTOCOL_EUI_LEN);
 			int resp_slot = check_if_scheduled((uint8_t*) in_glossy_sync->eui_array + in_glossy_sync->init_schedule_length * PROTOCOL_EUI_LEN, in_glossy_sync->resp_schedule_length * (uint8_t)PROTOCOL_EUI_LEN);
@@ -1281,6 +1298,24 @@ static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
 	return -1;
 }
 
+// The master sends its epoch time regularly to synchronize the network
+void glossy_set_epoch_time(uint32_t epoch) {
+
+#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+	// Use epoch time provided by carrier and distribute it throughout the network
+	_last_sync_epoch = epoch;
+
+	// Set inside the packet
+	_sync_pkt.epoch_time = _last_sync_epoch;
+#else
+	debug_msg("ERROR: Global timestamps not enabled!\n");
+#endif
+}
+
+uint32_t glossy_get_epoch_time() {
+	return _last_sync_epoch;
+}
+
 // This function is called upon the successful reception of a packet; this means that other nodes are still scheduled and transmitting.
 // Therefore, we simply missed a schedule and the master is still alive
 void glossy_reset_counter_offset() {
@@ -1296,7 +1331,7 @@ void glossy_reset_counter_offset() {
     } else if ( _lwb_counter >  (GLOSSY_MASTER_TAKEOVER_PERIOD - 50)) {
         // Soon, another Master will take over; as it will then start transmitting, we give up on waiting for the old master, as due to time desync, this could already be a part of the new schedule
         return;
-        
+
     } else {
 
         // Prevent triggering a takeover or timeout by reducing the counter offset to a single round period, as some nodes are still scheduled

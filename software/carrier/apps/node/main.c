@@ -166,6 +166,20 @@ BLE_ADVERTISING_DEF(m_advertising);
  *   Helper functions
  ******************************************************************************/
 
+// RTC0 is used by SoftDevice, RTC1 is used by app_timer
+const nrfx_rtc_t rtc_instance = NRFX_RTC_INSTANCE(2);
+
+// Function starting the internal LFCLK XTAL oscillator
+/*static void lfclk_config(void) {
+    ret_code_t err_code = nrf_drv_clock_init();
+    APP_ERROR_CHECK(err_code);
+
+    nrf_drv_clock_lfclk_request(NULL);
+}*/
+
+// Interrupt handler; currently not used
+static void rtc_handler(nrfx_rtc_int_type_t int_type) {}
+
 uint8_t ascii_to_i(uint8_t number) {
 
     if        ( (number >= '0') && (number <= '9')) {
@@ -194,19 +208,13 @@ bool addr_in_whitelist(ble_gap_addr_t const * ble_addr) {
     return false;
 }
 
-// RTC0 is used by SoftDevice, RTC1 is used by app_timer
-const nrfx_rtc_t rtc_instance = NRFX_RTC_INSTANCE(2);
+bool node_is_master() {
+    return (app.master_eui[0] == app.config.my_eui[0]);
+}
 
-// Function starting the internal LFCLK XTAL oscillator
-/*static void lfclk_config(void) {
-    ret_code_t err_code = nrf_drv_clock_init();
-    APP_ERROR_CHECK(err_code);
-
-    nrf_drv_clock_lfclk_request(NULL);
-}*/
-
-// Interrupt handler; currently not used
-static void rtc_handler(nrfx_rtc_int_type_t int_type) {}
+uint32_t app_get_current_time() {
+    return app.config.app_sync_time + (nrfx_rtc_counter_get(&rtc_instance) - app.config.app_sync_rtc_counter);
+}
 
 
 /*******************************************************************************
@@ -472,7 +480,7 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
     for (uint8_t i = 0; i < num_ranges; i++) {
 
         // Add Timestamp
-        uint32_t current_time_stamp = app.config.app_sync_time + (nrfx_rtc_counter_get(&rtc_instance) - app.config.app_sync_rtc_counter);
+        uint32_t current_time_stamp = app_get_current_time();
         sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
 
         // Add EUI
@@ -519,7 +527,7 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
         printf("WARNING: Incorrect number of ranges!\n");
     }
 
-    uint32_t current_time_stamp = app.config.app_sync_time + (nrfx_rtc_counter_get(&rtc_instance) - app.config.app_sync_rtc_counter);
+    uint32_t current_time_stamp = app_get_current_time();
 
     for (uint8_t i = 0; i < num_ranges; i++) {
 
@@ -866,8 +874,17 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Stop or start the module based on the value we just got
         if (app.config.app_module_enabled) {
-            module_resume();
+
+            // Start the advertisements - if discovered, this will trigger the module to wake up
+            ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+
         } else {
+
+            // Stop advertisements
+            ret_code_t err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
+            APP_ERROR_CHECK(err_code);
+
+            // Stop the module
             module_sleep();
         }
 
@@ -1279,7 +1296,7 @@ void updateData (uint8_t * data, uint32_t len)
         const uint8_t packet_euid     = 1;
         const uint8_t packet_range    = 4;
         const uint8_t ranging_length  = packet_euid + packet_range;
-        uint8_t nr_ranges = ((uint8_t) len - packet_overhead) / ranging_length;
+        uint8_t nr_ranges = data[1];
 
         for (uint8_t i = 0; i < nr_ranges; i++) {
             uint8_t offset = packet_overhead + i * ranging_length;
@@ -1303,6 +1320,17 @@ void updateData (uint8_t * data, uint32_t len)
             }
 
             printf("\r\n");
+        }
+
+        // Check if we received a new epoch
+        if (!node_is_master() && (copy_len > (packet_overhead + nr_ranges * ranging_length))) {
+
+            uint8_t offset = packet_overhead + nr_ranges * ranging_length;
+            uint32_t epoch = data[offset] + (data[offset + 1] << 1*8) + (data[offset + 2] << 2*8) + (data[offset + 3] << 3*8);
+
+            app.config.app_sync_time        = epoch;
+            app.config.app_sync_rtc_counter = nrfx_rtc_counter_get(&rtc_instance);
+            printf("Updated current epoch time: %li\n", epoch);
         }
 
         // Trigger moduleDataUpdate from main loop
@@ -1366,6 +1394,7 @@ void moduleDataUpdate ()
 
 }
 
+// This function is triggered every WATCHDOG_CHECK_RATE (currently 10s)
 static void watchdog_handler (void* p_context)
 {
     uint32_t err_code;
@@ -1380,6 +1409,15 @@ static void watchdog_handler (void* p_context)
             printf("INFO: Watchdog initialized module\n");
         }
     }
+
+    // Increase counter first - else everything is triggered simultaneously at == 0
+    app.timer_counter++;
+
+    // Epoch counter
+    if (node_is_master() && (app.timer_counter % 6) ) {
+        module_set_time(app_get_current_time());
+    }
+
 }
 
 // If no pending operation, sleep until the next event occurs
@@ -1957,7 +1995,7 @@ void carrier_start_module(uint8_t role) {
     }
 
     // Configure whether we are the Glossy Master
-    bool is_glossy_master = (app.master_eui[0] == app.config.my_eui[0]);
+    bool is_glossy_master = node_is_master();
 
     switch(role) {
         case APP_ROLE_INIT_NORESP: {

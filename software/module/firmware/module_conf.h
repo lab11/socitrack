@@ -65,6 +65,9 @@
 // Allow the highest slave to take over upon not receiving schedules for TIMEOUT schedules
 //#define PROTOCOL_ENABLE_MASTER_TAKEOVER
 
+// Transmit the epoch timestamp as the master, and read it from the schedule as slave
+#define PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
+
 // Testing
 
 // Instead of aggregated ranges, just offload all 30 raw range estimations for debugging and manual analysis

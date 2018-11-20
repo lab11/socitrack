@@ -454,7 +454,7 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	uint8_t num_anchor_ranges = 0;
 
 	// Iterate through all ranges and copy the correct data into the ranges buffer.
-	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
+	for (uint8_t i = 0; i < MAX_NUM_ANCHOR_RESPONSES; i++) {
 		if (ranges_millimeters[i] != INT32_MAX) {
 			// This is a valid range
 			memcpy(si_scratch->anchor_ids_ranges + buffer_index, anchor_responses[i].anchor_addr, PROTOCOL_EUI_LEN);
@@ -484,8 +484,19 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	// Set the first byte as the number of ranges
 	si_scratch->anchor_ids_ranges[0] = num_anchor_ranges;
 
-	// Now let the host know so it can do something with the ranges.
-	host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges*(PROTOCOL_EUI_LEN+sizeof(int32_t)))+1);
+	// If new epoch time, inform at the end
+	uint32_t curr_epoch = glossy_get_epoch_time();
+	if (curr_epoch == 0) {
+		// Now let the host know so it can do something with the ranges.
+		host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(int32_t))) + 1);
+	} else {
+
+		// Update the epoch time so that the current ranges are correctly time stamped
+		memcpy(si_scratch->anchor_ids_ranges + 1 + (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(uint32_t))), (uint8_t*)&curr_epoch, sizeof(uint32_t));
+
+		// Now let the host know
+		host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(int32_t))) + 1 + sizeof(uint32_t));
+	}
 }
 
 // Once we have heard from all of the anchors, calculate range.

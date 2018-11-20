@@ -293,6 +293,30 @@ ret_code_t module_resume () {
 	return NRF_SUCCESS;
 }
 
+// Send the current epoch time to the module so it can be distributed
+ret_code_t module_set_time (uint32_t epoch) {
+	ret_code_t ret;
+
+	uint8_t buf_cmd[5];
+
+	buf_cmd[0] = MODULE_CMD_SET_TIME;
+
+	// Set epoch time
+	buf_cmd[1] = (epoch >> 3*8) & 0xFF;
+    buf_cmd[2] = (epoch >> 2*8) & 0xFF;
+    buf_cmd[3] = (epoch >> 1*8) & 0xFF;
+    buf_cmd[4] = (epoch >> 0*8) & 0xFF;
+
+	nrf_twi_mngr_transfer_t const write_transfer[] = {
+			NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 5, 0)
+	};
+
+	ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
+	APP_ERROR_CHECK(ret);
+
+	return NRF_SUCCESS;
+}
+
 
 
 
