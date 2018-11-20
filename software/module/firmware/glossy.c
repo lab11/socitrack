@@ -398,7 +398,8 @@ static void glossy_lwb_round_task() {
 #endif
 
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
-		} else if(_lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ){
+		} else if((  _lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) )                         ||
+				  ( (_lwb_counter >  ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && (_lwb_counter % 10) )  ){
 
 			dwt_forcetrxoff();
 
@@ -427,6 +428,12 @@ static void glossy_lwb_round_task() {
 			write_sync_to_packet_buffer();
 
 			_last_time_sent += GLOSSY_UPDATE_INTERVAL_DW;
+
+			// BUG FIX: If the Tx callback is not triggered, the schedule will never be sent anymore; to prevent this, we resent the schedule if the counter is higher than expected
+			if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && (_lwb_counter % 10) ) {
+				_last_time_sent = ( dwt_readsystimestamphi32() + GLOSSY_SCHEDULE_RETRY_SLACK_US) & 0xFFFFFFFE;
+			}
+
 			lwb_send_sync(_last_time_sent);
 			_sending_sync = TRUE;
 
@@ -472,7 +479,7 @@ static void glossy_lwb_round_task() {
 
 #ifdef PROTOCOL_ENABLE_TIMEOUT
 			// Timeout: if have not heard from Master for more than Timeout, leave network and wait for neighbour discovery
-			if (_lwb_counter > GLOSSY_SCHEDULE_TIMEOUT) {
+			if (_lwb_counter > GLOSSY_MASTER_TIMEOUT_PERIOD) {
 
 			    debug_msg("WARNING: Timing out, leaving this network...\n");
 
@@ -488,8 +495,8 @@ static void glossy_lwb_round_task() {
 #endif
 
 #ifdef PROTOCOL_ENABLE_MASTER_TAKEOVER
-			// Timeout: If have not heard from Master for more than Timeout, try to take over network with highest slave
-			if (_lwb_counter > GLOSSY_SCHEDULE_TIMEOUT) {
+			// Timeout: If have not heard from Master for more than given time, try to take over network with highest slave
+			if (_lwb_counter > GLOSSY_MASTER_TAKEOVER_PERIOD) {
 
 				debug_msg("WARNING: Timing out, trying network takeover\n");
 
@@ -1272,6 +1279,30 @@ static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
 
 	//debug_msg("Device is not scheduled\n");
 	return -1;
+}
+
+// This function is called upon the successful reception of a packet; this means that other nodes are still scheduled and transmitting.
+// Therefore, we simply missed a schedule and the master is still alive
+void glossy_reset_counter_offset() {
+
+    if (_role == GLOSSY_MASTER) {
+        // The master never waits for itself, so we do not reset
+        return;
+
+    } else if ( _lwb_counter <= (2 * (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US)) ) {
+        // Normal behaviour, we dont have to do anything; maybe we just missed a single schedule, the control loop will catch this
+        return;
+
+    } else if ( _lwb_counter >  (GLOSSY_MASTER_TAKEOVER_PERIOD - 50)) {
+        // Soon, another Master will take over; as it will then start transmitting, we give up on waiting for the old master, as due to time desync, this could already be a part of the new schedule
+        return;
+        
+    } else {
+
+        // Prevent triggering a takeover or timeout by reducing the counter offset to a single round period, as some nodes are still scheduled
+        // This means that we are still in recovery mode but give the master more time to deliver a schedule successfully
+        _lwb_counter = (uint16_t) (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US);
+    }
 }
 
 static uint8_t glossy_get_resp_listening_slots_a() {

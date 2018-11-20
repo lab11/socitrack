@@ -317,6 +317,9 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
         // Clear the flags first
         clear_frame_event();
 
+		// If LWB counter is above expected value, prevent a timeout as we successfully receive a (unknown) packet and other nodes are still scheduled
+		glossy_reset_counter_offset();
+
 		// We process based on the first byte in the packet
 		uint8_t message_type = buf[offsetof(struct pp_tag_poll, message_type)];
 

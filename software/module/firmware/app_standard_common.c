@@ -447,6 +447,10 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 
 	        // Clear flag again
 	        clear_frame_event();
+
+			// If LWB counter is above expected value, prevent a timeout as we successfully receive a (unknown) packet and other nodes are still scheduled
+			glossy_reset_counter_offset();
+
 	    } else if ( (rxd->status & SYS_STATUS_ALL_RX_ERR) ||
                     (rxd->status & SYS_STATUS_ALL_RX_TO )   ) {
 

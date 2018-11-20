@@ -337,7 +337,7 @@ static bool sd_card_inserted() {
     return !nrf_gpio_pin_read(CARRIER_SD_DETECT);
 }
 
-// Configs - Filename must NOT be longer than 8 characters + '.log', otherwise the file will not be written (reason unknown)
+// Configs - Filename must NOT be longer than 8 characters + '.log', otherwise the file will not be written (due to FAT limitations)
 const char sd_filename[]    = "data.log";
 const char sd_permissions[] = "a,r"; // w = write, a = append, r = read
 

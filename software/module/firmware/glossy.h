@@ -32,7 +32,10 @@
 
 #define GLOSSY_UPDATE_INTERVAL_DW (DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US) & 0xFFFFFFFE)
 
-#define GLOSSY_SCHEDULE_TIMEOUT	  	   (5 * (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US))
+#define GLOSSY_MASTER_TIMEOUT_PERIOD   (10 * (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US))
+#define GLOSSY_MASTER_TAKEOVER_PERIOD  ( 5 * (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US))
+
+#define GLOSSY_SCHEDULE_RETRY_SLACK_US 2000
 #define GLOSSY_SCHEDULE_RECV_SLACK_US  1000
 #define GLOSSY_SCHEDULE_RECV_SLACK_DW  (DW_DELAY_FROM_US(GLOSSY_SCHEDULE_RECV_SLACK_US) & 0xFFFFFFFE)
 
@@ -95,6 +98,7 @@ bool glossy_process_txcallback();
 
 //	 	glossy_get_resp_listening_slots_a -> static
 uint8_t glossy_get_resp_listening_slots_b();
+void    glossy_reset_counter_offset();
 
 #endif
 
