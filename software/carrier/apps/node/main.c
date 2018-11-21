@@ -502,7 +502,7 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
     // Write to SD
     write_to_sd(log_buf, offset_buf);
 
-    printf("INFO: Logged ranging with %i ranges to SD card\n", num_ranges);
+    //printf("INFO: Logged ranging with %i ranges to SD card\n", num_ranges);
 }
 
 // Add number of measurement in front of data
@@ -551,7 +551,7 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
     // Write to SD
     write_to_sd(log_buf, offset_buf);
 
-    printf("INFO: Logged raw ranges to SD card\n");
+    //printf("INFO: Logged raw ranges to SD card\n");
     measurement_counter++;
 }
 
@@ -890,12 +890,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
             // Disabling the module will not allow wake-ups though
 
             // Stop the module
-            // FIXME: Currently does not return from writing (while executing this correctly)
-            module_sleep();
-
-            app.config.app_module_running = false;
-
-            printf("INFO: Module stopped\n");
+            // ATTENTION: This must occur outside of the callback function, as otherwise, the Tx callback will never be triggered
         }
 
     } else if (p_evt_write->handle == carrier_ble_char_status_handle.value_handle) {
@@ -1159,6 +1154,11 @@ static void on_device_discovery(ble_gap_addr_t const * peer_addr)
 
 static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
 
+    if (app.master_eui[0] == discovered_master_eui[0]) {
+        // Same Master, we just resent the notification
+        return;
+    }
+
     printf(", switched Master EUI from %02X to %02X\n", app.master_eui[0], discovered_master_eui[0]);
 
     for (uint8_t i = 0; i < EUI_LEN; i++) {
@@ -1170,7 +1170,9 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
 
     // Stop advertisements
     ret_code_t err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
-    APP_ERROR_CHECK(err_code);
+    if (err_code != NRF_ERROR_INVALID_STATE) {
+        APP_ERROR_CHECK(err_code);
+    }
 
     // Reinitialize advertising
     advertising_init();
@@ -1395,7 +1397,7 @@ void moduleDataUpdate ()
             APP_ERROR_CHECK(err_code);
         }
 
-        printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
+        //printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
 	}
 
 	// Store locally in log
@@ -1427,7 +1429,7 @@ static void watchdog_handler (void* p_context)
     app.timer_counter++;
 
     // Epoch counter
-    if (node_is_master() && (app.timer_counter % 6) ) {
+    if (node_is_master() && ( (app.timer_counter % 6) == 0) ) {
         printf("INFO: Distributing global timestamp\n");
         module_set_time(app_get_current_time());
     }
@@ -2184,6 +2186,15 @@ int main (void)
         else if (app.config.app_module_enabled && app.network_discovered && !app.config.app_module_running) {
             // Initialize module with configured role
             carrier_start_module(app.config.app_role);
+        }
+        else if (!app.config.app_module_enabled && app.config.app_module_running) {
+
+            // Stop execution after we disabled the module
+            module_sleep();
+
+            app.config.app_module_running = false;
+
+            printf("INFO: Module stopped\n");
         }
         else if (app.app_raw_response_buffer_updated) {
             // Received new data over I2C which we can expose over the BLE characteristics

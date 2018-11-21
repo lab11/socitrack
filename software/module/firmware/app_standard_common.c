@@ -166,19 +166,21 @@ void standard_stop () {
 
 	// Turn off the DecaWave from reception
 	dwt_forcetrxoff();
-	//debug_msg("INFO: Stopped DecaWave\n");
+
+	// Stop Glossy
+	glossy_stop();
 
 	if (_config.init_enabled) {
 		standard_init_stop();
-		debug_msg("INFO: Stopped INIT functions\n");
+		//debug_msg("INFO: Stopped INIT functions\n");
 	}
 
 	if (_config.resp_enabled) {
 		standard_resp_stop();
-		debug_msg("INFO: Stopped RESP functions\n");
+		//debug_msg("INFO: Stopped RESP functions\n");
 	}
 
-	//debug_msg("INFO: Module stopped\n");
+	debug_msg("INFO: Module stopped\n");
 }
 
 // The whole DW1000 reset, so we need to get this app running again

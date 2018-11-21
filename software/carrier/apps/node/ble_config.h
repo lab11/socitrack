@@ -29,7 +29,7 @@
 #define EUI_LEN                8
 
 // Behaviour
-#define WATCHDOG_CHECK_RATE     APP_TIMER_TICKS(10000)
+#define WATCHDOG_CHECK_RATE       APP_TIMER_TICKS(10000)
 //#define APP_SD_REQUIRED         0
 
 // Storage / Buffers
