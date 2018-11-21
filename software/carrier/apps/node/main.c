@@ -510,7 +510,7 @@ static uint16_t measurement_counter = 0;
 
 static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
-#define APP_LOG_RAW_BUFFER_LINE     (10 + 1 + 4 + 1 + 2 + 1 + 10 + 1)
+#define APP_LOG_RAW_BUFFER_LINE     (10 + 1 + 6 + 1 + 2 + 1 + 10 + 1)
 #define APP_LOG_RAW_BUFFER_LENGTH   (30 * APP_LOG_RAW_BUFFER_LINE)
 #define APP_LOG_RAW_RANGE_LENGTH    (4)
 
@@ -535,14 +535,14 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
         sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
 
         // Add measurement number
-        sprintf(log_buf + offset_buf + 11, "%04u\t", measurement_counter);
+        sprintf(log_buf + offset_buf + 11, "%06u\t", measurement_counter);
 
         // Add channel number
-        sprintf(log_buf + offset_buf + 16, "%02u\t", i);
+        sprintf(log_buf + offset_buf + 18, "%02u\t", i);
 
         // Add range - Little endian order
         uint32_t range = data[offset_data + 0] + (data[offset_data + 1] << 1*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 3*8);
-        sprintf(log_buf + offset_buf + 19, "%010lu\n", range);
+        sprintf(log_buf + offset_buf + 21, "%010lu\n", range);
 
         offset_data += APP_LOG_RAW_RANGE_LENGTH;
         offset_buf  += APP_LOG_RAW_BUFFER_LINE;
@@ -875,17 +875,24 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         // Stop or start the module based on the value we just got
         if (app.config.app_module_enabled) {
 
-            // Start the advertisements - if discovered, this will trigger the module to wake up
-            ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+            // Main loop will now start the module if it is not running yet
+            if (app.config.app_module_running) {
+                printf("WARNING: Module already running!\n");
+            } else {
+                printf("INFO: Starting module...\n");
+            }
 
         } else {
 
-            // Stop advertisements
-            ret_code_t err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
-            APP_ERROR_CHECK(err_code);
+            printf("INFO: Stopping module...\n");
+
+            // Do not stop advertisements, as we want to reconfigure it afterwards and need them for it!
+            // Disabling the module will not allow wake-ups though
 
             // Stop the module
             module_sleep();
+
+            app.config.app_module_running = false;
         }
 
     } else if (p_evt_write->handle == carrier_ble_char_status_handle.value_handle) {
@@ -1179,7 +1186,7 @@ static void standard_reconfigure_module(uint8_t discovered_master_eui) {
     standard_reconfigure_master_eui(&discovered_master_eui);
 
     // Re-configure module in main loop
-    app.config.app_module_enabled = false;
+    app.config.app_module_running = false;
 }
 
 // Handles advertising reports
@@ -1340,14 +1347,17 @@ void updateData (uint8_t * data, uint32_t len)
 	    printf(", set to calibration\n");
 
 	    app.app_raw_response_buffer_updated = true;
+
 	} else if (data[0] == HOST_IFACE_INTERRUPT_MASTER_EUI) {
 	    standard_reconfigure_master_eui(data + 1);
 
 	    // If Master EUI is set to 0, we descheduled from existing networks
 	    if (data[1] == 0x00) {
-	        app.network_discovered = false;
-	        app.module_inited      = false;
+	        app.network_discovered        = false;
+	        app.module_inited             = false;
+	        app.config.app_module_running = false;
 	    }
+	    
 	} else if (data[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
 	    printf(", storing raw ranges\n");
 
@@ -1852,8 +1862,9 @@ void app_init(void) {
     app.config.app_sync_time = 0;
     memset(app.config.my_eui, 0, sizeof(app.config.my_eui));
 
-    // We default to disable the module at the start
-    app.config.app_module_enabled = false;
+    // We default to enable discovery, but not start the module at the beginning
+    app.config.app_module_enabled = true;
+    app.config.app_module_running = false;
 
     // Set to effective -1
     app.calibration_index = APP_BLE_CALIBRATION_INDEX_INVALID;
@@ -1977,7 +1988,7 @@ void carrier_hw_init(void)
 void carrier_start_module(uint8_t role) {
     ret_code_t err_code;
 
-    if (app.config.app_module_enabled) {
+    if (app.config.app_module_running) {
         // Module is already enabled!
         printf("ERROR: Module already enabled!\n");
         return;
@@ -2071,7 +2082,7 @@ void carrier_start_module(uint8_t role) {
             return;
     }
 
-    app.config.app_module_enabled = true;
+    app.config.app_module_running = true;
 }
 
 
@@ -2166,7 +2177,7 @@ int main (void)
             // Module is trying to communicate over I2C
             module_interrupt_dispatch();
         }
-        else if (app.network_discovered && !app.config.app_module_enabled) {
+        else if (app.config.app_module_enabled && app.network_discovered && !app.config.app_module_running) {
             // Initialize module with configured role
             carrier_start_module(app.config.app_role);
         }
@@ -2175,12 +2186,12 @@ int main (void)
             //printf("Updating location...\r\n");
             moduleDataUpdate();
         }
-        else if ( (app.calibration_index != APP_BLE_CALIBRATION_INDEX_INVALID) && !app.config.app_module_enabled) {
+        else if ( (app.calibration_index != APP_BLE_CALIBRATION_INDEX_INVALID) && !app.config.app_module_running) {
             // Configure this node for calibration and set the calibration node
             // index. If 0, this node will immediately start calibration.
             err_code = module_start_calibration(app.calibration_index);
             if (err_code == NRF_SUCCESS) {
-                app.config.app_module_enabled = true;
+                app.config.app_module_running = true;
                 printf("Started calibration with index %i\n", app.calibration_index);
             } else {
                 printf("ERROR: Failed to start calibration!\n");

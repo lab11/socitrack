@@ -75,6 +75,7 @@ typedef struct {
     uint32_t   app_sync_time;       // Current epoch time at moment of configuration
     uint32_t   app_sync_rtc_counter;// Current RTC counter at the time of configuration
     bool       app_module_enabled;
+    bool       app_module_running;
 } app_config_t;
 
 typedef struct ble_app_s {
