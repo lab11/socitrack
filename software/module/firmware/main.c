@@ -153,6 +153,10 @@ void module_start () {
 void module_stop () {
 	// Don't stop if we are already stopped
 	if (_state == APPSTATE_STOPPED) {
+	    debug_msg("WARNING: Module already stopped\n");
+		return;
+	} else if (_state == APPSTATE_NOT_INITED) {
+		debug_msg("WARNING: Tried stopping the app while not being initialized in the first place\n");
 		return;
 	}
 

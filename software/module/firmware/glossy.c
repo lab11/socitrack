@@ -403,8 +403,8 @@ static void glossy_lwb_round_task() {
 #endif
 
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
-		} else if((  _lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) )                         ||
-				  ( (_lwb_counter >  ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && (_lwb_counter % 10) )  ){
+		} else if((  _lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) )                                 ||
+				  ( (_lwb_counter >  ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) )  ){
 
 			dwt_forcetrxoff();
 
@@ -440,12 +440,18 @@ static void glossy_lwb_round_task() {
 			_last_time_sent += GLOSSY_UPDATE_INTERVAL_DW;
 
 			// BUG FIX: If the Tx callback is not triggered, the schedule will never be sent anymore; to prevent this, we resent the schedule if the counter is higher than expected
-			if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && (_lwb_counter % 10) ) {
+			if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) ) {
 				_last_time_sent = ( dwt_readsystimestamphi32() + GLOSSY_SCHEDULE_RETRY_SLACK_US) & 0xFFFFFFFE;
+				debug_msg("WARNING: Did not successfully send the schedule; retrying in round ");
+				debug_msg_int(_lwb_counter);
+				debug_msg("\n");
 			}
 
+			// Enable Tx callback to reset the LWB counter
+            _sending_sync = TRUE;
+
+			// Trigger send operation
 			lwb_send_sync(_last_time_sent);
-			_sending_sync = TRUE;
 
 			debug_msg("Sent LWB schedule\r\n");
 
@@ -735,6 +741,8 @@ bool glossy_process_txcallback(){
 	bool is_glossy_callback = FALSE;
 
 	if(_role == GLOSSY_MASTER && _sending_sync) {
+
+	    //debug_msg("INFO: Successfully sent the schedule... resetting timers and starting a new round\n");
 
 		// Sync has sent, set the timer to send the next one at a later time
 		timer_reset(_glossy_timer, 0);

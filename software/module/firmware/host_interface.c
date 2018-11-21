@@ -491,6 +491,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		case HOST_CMD_DO_RANGE:
 		case HOST_CMD_SLEEP:
 		case HOST_CMD_RESUME:
+		case HOST_CMD_SET_TIME:
 
 			// Just go back to waiting for a WRITE after a config message
 			host_interface_wait();

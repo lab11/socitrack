@@ -441,8 +441,8 @@ var app = {
         return array.buffer;
     },
 
-    setAsStandalone: function() {
-        app.log('Telling device to configure as STANDALONE');
+    setAsHybrid: function() {
+        app.log('Telling device to configure as HYBRID');
 
         // Send current time
         var time_stamp = (new Date()).getTime();

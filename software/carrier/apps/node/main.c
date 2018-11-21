@@ -828,7 +828,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         switch(app.config.app_role)
         {
             case APP_ROLE_INIT_RESP: {
-                printf("Setting node to STANDALONE\n");
+                printf("Setting node to HYBRID\n");
 
                 break;
             }
@@ -843,7 +843,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
                 break;
             }
             case APP_ROLE_NOINIT_NORESP: {
-                printf("Setting node to PASSIVE\n");
+                printf("Setting node to SUPPORT\n");
 
                 break;
             }
@@ -890,9 +890,12 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
             // Disabling the module will not allow wake-ups though
 
             // Stop the module
+            // FIXME: Currently does not return from writing (while executing this correctly)
             module_sleep();
 
             app.config.app_module_running = false;
+
+            printf("INFO: Module stopped\n");
         }
 
     } else if (p_evt_write->handle == carrier_ble_char_status_handle.value_handle) {
@@ -1357,7 +1360,7 @@ void updateData (uint8_t * data, uint32_t len)
 	        app.module_inited             = false;
 	        app.config.app_module_running = false;
 	    }
-	    
+
 	} else if (data[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
 	    printf(", storing raw ranges\n");
 
@@ -1425,6 +1428,7 @@ static void watchdog_handler (void* p_context)
 
     // Epoch counter
     if (node_is_master() && (app.timer_counter % 6) ) {
+        printf("INFO: Distributing global timestamp\n");
         module_set_time(app_get_current_time());
     }
 
