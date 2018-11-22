@@ -86,9 +86,6 @@ static uint8_t deschedule_resp(uint8_t * eui);
 static uint8_t deschedule_hybrid(uint8_t * eui);
 static int 	   check_if_scheduled(uint8_t * array, uint8_t array_length);
 
-static uint8_t glossy_get_resp_listening_slots_a();
-//             glossy_get_resp_listening_slots_b -> public
-
 static void    glossy_lwb_round_task();
 static void    lwb_increment_sched_timeout();
 static void    lwb_adjust_contention_period();
@@ -406,6 +403,13 @@ static void glossy_lwb_round_task() {
 		} else if((  _lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) )                                 ||
 				  ( (_lwb_counter >  ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) )  ){
 
+		    // BUG FIX: Find reason for DW failure after multiple hours
+            if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) ) {
+
+                // Get status information before it is cleared
+                dw1000_get_status_register();
+            }
+
 			dwt_forcetrxoff();
 
 		#ifdef GLOSSY_PER_TEST
@@ -446,19 +450,19 @@ static void glossy_lwb_round_task() {
                 debug_msg("\n");
 
                 // Get status information
-                dw1000_get_status_register();
+                //dw1000_get_status_register();
 
                 // Reset the DW
-                /*dw1000_reset();
+                dw1000_reset();
 
                 // Restart DW and the app itself; all the state should however be preserved
-                start_dw1000();
+                dw1000_init();
                 module_start();
 
                 // Setup sending again
 				dwt_forcetrxoff();
 				dw1000_update_channel(LWB_CHANNEL);
-				dw1000_choose_antenna(LWB_ANTENNA);*/
+				dw1000_choose_antenna(LWB_ANTENNA);
 
                 // Attempt to resend
 				_last_time_sent = ( dwt_readsystimestamphi32() + GLOSSY_SCHEDULE_RETRY_SLACK_US) & 0xFFFFFFFE;
@@ -719,36 +723,24 @@ static void glossy_lwb_round_task() {
 		}
 
     // LWB Slots (I+1) - (I + R): Responder slots
-	} else if( (lwb_slot_resp_start <= _lwb_counter                      ) &&
-		       (                       _lwb_counter < lwb_slot_cont_start)   ) {
+	} else if ( lwb_slot_resp_start == _lwb_counter ) {
 
-		if( _lwb_scheduled_resp                                                                      &&
-			( (_lwb_counter - lwb_slot_resp_start) == (_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) )  ) {
-			// Our scheduled timeslot! The timer will trigger the correct message slot inside the LWB slot
-			standard_resp_trigger_response(_lwb_timeslot_resp % LWB_RESPONSES_PER_SLOT);
+	    // Trigger listening as a initiator
+	    if (_lwb_scheduled_init) {
 
-		} else {
+	        // We will stop internally if the node is scheduled as a responder and respond
+            standard_init_start_response_listening(_lwb_scheduled_resp, _lwb_timeslot_resp);
 
-			// Turn on reception if you are interested in timestamps; either at the beginning (as an initiator) or again after your slot (as a hybrid)
-			if ( (_lwb_counter == lwb_slot_resp_start)                                                                                    ||
-                 (_lwb_scheduled_resp && ( (_lwb_counter - lwb_slot_resp_start) == ( (_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) + 1) ))  ){
+	    } else if (_lwb_scheduled_resp) {
 
-			    // Turn off RESP
-                standard_set_resp_active(FALSE);
+	        // If you are only a responder, trigger a send operation in your slot; hybrids are included above
+            standard_resp_trigger_response(_lwb_timeslot_resp);
 
-				if (_lwb_scheduled_init) {
+	    } else {
+            // Turn transceiver off (save energy)
+            dwt_forcetrxoff();
+        }
 
-				    // Calculate number of slots we need to listen
-				    uint8_t nr_responses = glossy_get_resp_listening_slots_a();
-
-                    // (Re-)Enable initiators to receive the rest of the responses
-					standard_init_start_response_listening(nr_responses);
-				} else {
-                    // Turn transceiver off (save energy)
-                    dwt_forcetrxoff();
-				}
-			}
-		}
     // After the official round is over, we can turn off listening for signals
     } else if(_lwb_counter == (lwb_slot_last + (uint32_t)1)) {
         // Turn off all reception
@@ -757,6 +749,12 @@ static void glossy_lwb_round_task() {
         debug_msg("\n");*/
 
         dwt_forcetrxoff();
+
+        if (_lwb_scheduled_init) {
+
+            // Send ranges to carrier
+            standard_init_report_ranges();
+        }
     }
 
 }
@@ -1382,59 +1380,22 @@ void glossy_reset_counter_offset() {
     }
 }
 
-static uint8_t glossy_get_resp_listening_slots_a() {
+uint8_t glossy_get_resp_listening_slots()  {
 
-    // We set the timer if:
-    // i)  We are only a initiator
-    // ii) We are a hybrid and a) are not in the first round or b) already finished our round
-
-    // i)
-    if (!standard_is_resp_enabled()) {
-        return (uint8_t)_lwb_num_resp;
-
-    } // ii)
-    else {
-
-        // a)
-        if (_lwb_timeslot_resp >= LWB_RESPONSES_PER_SLOT) {
-
-        	return (uint8_t)(_lwb_timeslot_resp - (_lwb_timeslot_resp % LWB_RESPONSES_PER_SLOT));
-
-        } // b)
-        else {
-
-			return (uint8_t)(_lwb_num_resp - ( (_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) + 1) * LWB_RESPONSES_PER_SLOT);
-		}
-    }
+    return (uint8_t)_lwb_num_resp;
 }
 
-uint8_t glossy_get_resp_listening_slots_b(uint8_t response_nr, uint8_t window_nr) {
+uint8_t glossy_get_resp_timeslot() {
 
-    // Timer used during an active slot of a responder scheduled as response X if:
-    // i) Slot  0     - (X-1)
-    // ii) Slot (X+1) - LWB_RESPONSES_PER_SLOT
-
-    // i)
-    if (window_nr == 0) {
-        return response_nr;
-
-    } // ii)
-    else {
-
-        // Figure out how many other nodes are in this slot
-        uint8_t resp_slot = (uint8_t)((_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) + 1);
-
-        if (_lwb_num_resp <= resp_slot * LWB_RESPONSES_PER_SLOT) {
-            // Last slot
-            return (uint8_t)(_lwb_num_resp - (_lwb_timeslot_resp + 1));
-        } else {
-            // This slot is not the last yet and still full
-            return (uint8_t)(LWB_RESPONSES_PER_SLOT - (response_nr + 1));
-        }
-    }
+	// If not scheduled, return maximum
+	if (_lwb_scheduled_resp) {
+		return (uint8_t)_lwb_timeslot_resp;
+	} else {
+		return 0xFF;
+	}
 }
 
-static void lwb_increment_sched_timeout(){
+static void lwb_increment_sched_timeout() {
 
     // Timeout initiators
     for(int ii=0; ii < (PROTOCOL_INIT_SCHED_MAX); ii++){

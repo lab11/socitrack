@@ -22,8 +22,8 @@ standard_init_scratchspace_struct *si_scratch;
 
 static void send_poll ();
 static void ranging_broadcast_subsequence_task ();
+static void standard_init_listening_task();
 static void calculate_ranges ();
-static void report_range ();
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -396,12 +396,8 @@ static void ranging_broadcast_subsequence_task () {
 	si_scratch->ranging_broadcast_ss_num += 1;
 }
 
-void standard_init_start_response_listening(uint8_t nr_responses) {
-
-    // nr_responses == 0 -> we do not set the timer, as it is not required to stop reception (no partly used slot)
-    if (nr_responses == 0) {
-        return;
-    }
+// Start listening for responses
+void standard_init_start_response_listening() {
 
     //debug_msg("Listening for responses\n");
 
@@ -419,37 +415,45 @@ void standard_init_start_response_listening(uint8_t nr_responses) {
 
     // Turn off Rx mode inside an only partly used LWB response slot (e.g. when we use a new one with only a single responder, turn of Rx after that last one)
     if (si_scratch->init_timer != NULL) {
-    	si_scratch->response_listening_timer_active = TRUE;
-        timer_start(si_scratch->init_timer, (LWB_SLOT_US / LWB_RESPONSES_PER_SLOT) * nr_responses, standard_init_stop_response_listening);
+        timer_start(si_scratch->init_timer, (LWB_SLOT_US / LWB_RESPONSES_PER_SLOT), standard_init_listening_task);
     }
 
 }
 
 // This is called after the broadcasts have been sent in order to receive
 // the responses from the anchors.
-void standard_init_stop_response_listening () {
+void standard_init_listening_task () {
 
-	if (si_scratch->response_listening_timer_active) {
-		// First time the timer is triggerd (directly after it is set, i.e. when counter == 0), we do NOT yet stop
-		// Setting timer to false will result in successful stopping listening when the timer is triggered after the configured number of slots
-		si_scratch->response_listening_timer_active = FALSE;
-		return;
+	// If the node is a hybrid and also scheduled as a responder, get the slot; else, the slot will be 0xFF
+	if (si_scratch->response_listening_slot == glossy_get_resp_timeslot()) {
+		standard_resp_trigger_response(0);
 	}
+	if (si_scratch->response_listening_slot == glossy_get_resp_listening_slots()) {
 
-    // Stop the radio
-    dwt_forcetrxoff();
+		// TODO: This could also be triggered in the round after a hybrid sent (according to the ranging pyramid principle)
 
-    // End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
-    standard_set_init_active(FALSE);
+		standard_init_stop_response_listening();
 
-    // Turn off timer in case we used it to stop reception earlier and safe energy
-    if (si_scratch->init_timer != NULL) {
-        timer_stop(si_scratch->init_timer);
-    }
+	} else {
+		// Dont have to do anything, as already listening; just make sure that still receiving as initiator (as responder might have interfered)
+		standard_set_resp_active(FALSE);
+		standard_set_init_active(TRUE);
+	}
+}
 
-    // This function finishes up this ranging event.
-    report_range();
+// Function is also used by Glossy to guarantee no interference with contention
+void standard_init_stop_response_listening() {
 
+	// Stop the radio
+	dwt_forcetrxoff();
+
+	// End active stage of init; we do NOT want to enable Rx afterwards, as this is done by LWB
+	standard_set_init_active(FALSE);
+
+	// Turn off timer in case we used it to stop reception earlier and safe energy
+	if (si_scratch->init_timer != NULL) {
+		timer_stop(si_scratch->init_timer);
+	}
 }
 
 // Record ranges that the tag found.
@@ -508,7 +512,7 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 }
 
 // Once we have heard from all of the anchors, calculate range.
-static void report_range () {
+void standard_init_report_ranges () {
 	// New state
 	si_scratch->state = ISTATE_CALCULATE_RANGE;
 

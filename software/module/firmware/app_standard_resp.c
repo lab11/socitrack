@@ -20,7 +20,7 @@ standard_resp_scratchspace_struct *sr_scratch;
 
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
-static void standard_resp_task();
+static void standard_resp_responding_task();
 static void standard_resp_send_response();
 
 // Helper functions
@@ -175,42 +175,26 @@ void standard_resp_trigger_response (uint8_t slot_nr) {
     debug_msg_uint(slot_nr);
     debug_msg("\n");*/
 
-    // We wait for our message slot inside the LWB slot
-    timer_start(sr_scratch->resp_timer, LWB_SLOT_US / LWB_RESPONSES_PER_SLOT, standard_resp_task);
+    if (slot_nr == 0) {
+    	// Directly transmit
+    	standard_resp_send_response();
+    } else {
+		// We wait for our message slot inside the LWB slot
+		timer_start(sr_scratch->resp_timer, LWB_SLOT_US / LWB_RESPONSES_PER_SLOT, standard_resp_responding_task);
+	}
 }
 
-static void standard_resp_task () {
+static void standard_resp_responding_task () {
+
+    debug_msg("Triggered response task with window nr ");
+    debug_msg_uint(sr_scratch->resp_window_nr);
+    debug_msg("\n");
 
     if (sr_scratch->resp_window_nr == sr_scratch->resp_window_timeslot) {
         // Our slot
         standard_resp_send_response();
-    } else if ( (sr_scratch->resp_window_nr == 0)                                     ||
-                (sr_scratch->resp_window_nr == (sr_scratch->resp_window_timeslot + 1))  ) {
 
-        // Turn off RESP
-        standard_set_resp_active(FALSE);
-
-        // Turn on listening for other responders either before or after our own timeslot
-        if (standard_is_init_enabled()) {
-
-            // Calculate number of slots we need to listen
-            uint8_t nr_responses = glossy_get_resp_listening_slots_b(sr_scratch->resp_window_timeslot, sr_scratch->resp_window_nr);
-
-            if (nr_responses > 0) {
-				// (Re-)Enable initiators to receive the rest of the responses
-				standard_init_start_response_listening(nr_responses);
-			} else {
-            	// Nothing to do anymore in this round
-            	dwt_forcetrxoff();
-            }
-        } else {
-            // Turn transceiver off (save energy)
-            dwt_forcetrxoff();
-        }
-    }
-
-    if (sr_scratch->resp_window_nr == (LWB_RESPONSES_PER_SLOT - 1) ) {
-        timer_stop(sr_scratch->resp_timer);
+		timer_stop(sr_scratch->resp_timer);
     }
 
     sr_scratch->resp_window_nr++;

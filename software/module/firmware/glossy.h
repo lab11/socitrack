@@ -104,8 +104,8 @@ bool glossy_process_txcallback();
 
 // Helpers
 
-//	 	 glossy_get_resp_listening_slots_a -> static
-uint8_t  glossy_get_resp_listening_slots_b(uint8_t response_nr, uint8_t window_nr);
+uint8_t  glossy_get_resp_listening_slots();
+uint8_t  glossy_get_resp_timeslot();
 void     glossy_reset_counter_offset();
 void     glossy_set_epoch_time(uint32_t epoch);
 uint32_t glossy_get_epoch_time();
