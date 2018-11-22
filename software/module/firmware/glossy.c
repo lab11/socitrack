@@ -730,8 +730,8 @@ static void glossy_lwb_round_task() {
 		} else {
 
 			// Turn on reception if you are interested in timestamps; either at the beginning (as an initiator) or again after your slot (as a hybrid)
-			if ( (_lwb_counter == lwb_slot_resp_start)                                                        ||
-                 (_lwb_scheduled_resp && ( (_lwb_counter - lwb_slot_resp_start) == (_lwb_timeslot_resp + 1) ))  ){
+			if ( (_lwb_counter == lwb_slot_resp_start)                                                                                    ||
+                 (_lwb_scheduled_resp && ( (_lwb_counter - lwb_slot_resp_start) == ( (_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) + 1) ))  ){
 
 			    // Turn off RESP
                 standard_set_resp_active(FALSE);
@@ -739,10 +739,10 @@ static void glossy_lwb_round_task() {
 				if (_lwb_scheduled_init) {
 
 				    // Calculate number of slots we need to listen
-				    uint8_t nr_slots = glossy_get_resp_listening_slots_a();
+				    uint8_t nr_responses = glossy_get_resp_listening_slots_a();
 
                     // (Re-)Enable initiators to receive the rest of the responses
-					standard_init_start_response_listening(nr_slots);
+					standard_init_start_response_listening(nr_responses);
 				} else {
                     // Turn transceiver off (save energy)
                     dwt_forcetrxoff();
@@ -1385,32 +1385,52 @@ void glossy_reset_counter_offset() {
 static uint8_t glossy_get_resp_listening_slots_a() {
 
     // We set the timer if:
-    // i)  We are either a) solely an initiator or if b) we already finished our responder responsibilities and only act as an initiator
-    // ii) We are only partly using a responder slot, i.e. there are less than LWB_RESPONSES_PER_SLOT in the last slot
+    // i)  We are only a initiator
+    // ii) We are a hybrid and a) are not in the first round or b) already finished our round
 
-    // Here, we only test for case a)
-    if ( (!_lwb_scheduled_resp) && ( (_lwb_num_resp % LWB_RESPONSES_PER_SLOT) != 0 ) ) {
-        // Set timer to expire nr_slots timeslots from now as soon as the last responder sent its message
-        uint32_t lwb_slot_resp_start = 1 + _lwb_num_init * LWB_SLOTS_PER_RANGE;
+    // i)
+    if (!standard_is_resp_enabled()) {
+        return (uint8_t)_lwb_num_resp;
 
-        return (uint8_t)(_lwb_num_resp - (_lwb_counter - lwb_slot_resp_start) * LWB_RESPONSES_PER_SLOT);
-    } else {
-        return 0;
+    } // ii)
+    else {
+
+        // a)
+        if (_lwb_timeslot_resp >= LWB_RESPONSES_PER_SLOT) {
+
+        	return (uint8_t)(_lwb_timeslot_resp - (_lwb_timeslot_resp % LWB_RESPONSES_PER_SLOT));
+
+        } // b)
+        else {
+
+			return (uint8_t)(_lwb_num_resp - ( (_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) + 1) * LWB_RESPONSES_PER_SLOT);
+		}
     }
 }
 
-uint8_t glossy_get_resp_listening_slots_b() {
+uint8_t glossy_get_resp_listening_slots_b(uint8_t response_nr, uint8_t window_nr) {
 
-    // We set the timer if:
-    // i)  We are either a) solely an initiator or if b) we already finished our responder responsibilities and only act as an initiator
-    // ii) We are only partly using a responder slot, i.e. there are less than LWB_RESPONSES_PER_SLOT in the last slot
+    // Timer used during an active slot of a responder scheduled as response X if:
+    // i) Slot  0     - (X-1)
+    // ii) Slot (X+1) - LWB_RESPONSES_PER_SLOT
 
-    // Here, we only handle case b)
-    if ( (_lwb_num_resp % LWB_RESPONSES_PER_SLOT) != 0) {
-        // Set timer to expire nr_slots timeslots from now as soon as the last responder sent its message
-        return (uint8_t)(_lwb_num_resp - (_lwb_timeslot_resp + 1));
-    } else {
-        return 0;
+    // i)
+    if (window_nr == 0) {
+        return response_nr;
+
+    } // ii)
+    else {
+
+        // Figure out how many other nodes are in this slot
+        uint8_t resp_slot = (uint8_t)((_lwb_timeslot_resp / LWB_RESPONSES_PER_SLOT) + 1);
+
+        if (_lwb_num_resp <= resp_slot * LWB_RESPONSES_PER_SLOT) {
+            // Last slot
+            return (uint8_t)(_lwb_num_resp - (_lwb_timeslot_resp + 1));
+        } else {
+            // This slot is not the last yet and still full
+            return (uint8_t)(LWB_RESPONSES_PER_SLOT - (response_nr + 1));
+        }
     }
 }
 

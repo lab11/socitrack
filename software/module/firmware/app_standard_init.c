@@ -396,7 +396,12 @@ static void ranging_broadcast_subsequence_task () {
 	si_scratch->ranging_broadcast_ss_num += 1;
 }
 
-void standard_init_start_response_listening(uint8_t nr_slots) {
+void standard_init_start_response_listening(uint8_t nr_responses) {
+
+    // nr_responses == 0 -> we do not set the timer, as it is not required to stop reception (no partly used slot)
+    if (nr_responses == 0) {
+        return;
+    }
 
     //debug_msg("Listening for responses\n");
 
@@ -413,10 +418,9 @@ void standard_init_start_response_listening(uint8_t nr_slots) {
 	dwt_rxenable(0);
 
     // Turn off Rx mode inside an only partly used LWB response slot (e.g. when we use a new one with only a single responder, turn of Rx after that last one)
-    // Note: nr_slots == 0 -> we do not set the timer, as it is not required to stop reception (no partly used slot)
-    if ( (nr_slots > 0) && (si_scratch->init_timer != NULL) ) {
+    if (si_scratch->init_timer != NULL) {
     	si_scratch->response_listening_timer_active = TRUE;
-        timer_start(si_scratch->init_timer, LWB_SLOT_US / LWB_RESPONSES_PER_SLOT * nr_slots, standard_init_stop_response_listening);
+        timer_start(si_scratch->init_timer, (LWB_SLOT_US / LWB_RESPONSES_PER_SLOT) * nr_responses, standard_init_stop_response_listening);
     }
 
 }

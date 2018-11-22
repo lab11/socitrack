@@ -165,6 +165,7 @@ static void ranging_broadcast_subsequence_task () {
 	}
 }
 
+// The node is scheduled as a responder in this slot; let's listen for other responses and then send our own one
 void standard_resp_trigger_response (uint8_t slot_nr) {
 
     sr_scratch->resp_window_timeslot = slot_nr;
@@ -193,10 +194,15 @@ static void standard_resp_task () {
         if (standard_is_init_enabled()) {
 
             // Calculate number of slots we need to listen
-            uint8_t nr_slots = glossy_get_resp_listening_slots_b();
+            uint8_t nr_responses = glossy_get_resp_listening_slots_b(sr_scratch->resp_window_timeslot, sr_scratch->resp_window_nr);
 
-            // (Re-)Enable initiators to receive the rest of the responses
-            standard_init_start_response_listening(nr_slots);
+            if (nr_responses > 0) {
+				// (Re-)Enable initiators to receive the rest of the responses
+				standard_init_start_response_listening(nr_responses);
+			} else {
+            	// Nothing to do anymore in this round
+            	dwt_forcetrxoff();
+            }
         } else {
             // Turn transceiver off (save energy)
             dwt_forcetrxoff();

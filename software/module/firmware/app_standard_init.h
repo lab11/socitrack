@@ -84,7 +84,7 @@ typedef struct {
 void         standard_initiator_init (standard_init_scratchspace_struct *app_scratchspace);
 dw1000_err_e standard_init_start_ranging_event ();
 
-void         standard_init_start_response_listening(uint8_t nr_slots);
+void         standard_init_start_response_listening(uint8_t nr_responses);
 void         standard_init_stop_response_listening();
 void         standard_init_stop ();
 
