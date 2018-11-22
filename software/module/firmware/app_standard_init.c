@@ -489,13 +489,17 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	if (curr_epoch == 0) {
 		// Now let the host know so it can do something with the ranges.
 		host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(int32_t))) + 1);
+
 	} else {
 
 		// Update the epoch time so that the current ranges are correctly time stamped
-		memcpy(si_scratch->anchor_ids_ranges + 1 + (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(uint32_t))), (uint8_t*)&curr_epoch, sizeof(uint32_t));
+		memcpy(si_scratch->anchor_ids_ranges + 1 + (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(uint32_t))), &curr_epoch, sizeof(uint32_t));
 
 		// Now let the host know
 		host_interface_notify_ranges(si_scratch->anchor_ids_ranges, (num_anchor_ranges * (PROTOCOL_EUI_LEN + sizeof(int32_t))) + 1 + sizeof(uint32_t));
+
+        // Reset epoch time again
+        glossy_set_epoch_time(0);
 	}
 }
 

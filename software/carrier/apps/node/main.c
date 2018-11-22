@@ -180,6 +180,16 @@ const nrfx_rtc_t rtc_instance = NRFX_RTC_INSTANCE(2);
 // Interrupt handler; currently not used
 static void rtc_handler(nrfx_rtc_int_type_t int_type) {}
 
+// Convert RTC ticks to milliseconds
+uint32_t rtc_to_s(uint32_t ticks) {
+
+    // If RTC returns actual ticks
+    //return ticks / (NRFX_RTC_DEFAULT_CONFIG_FREQUENCY);
+
+    // Using prescaler
+    return ticks / 1000;
+}
+
 uint8_t ascii_to_i(uint8_t number) {
 
     if        ( (number >= '0') && (number <= '9')) {
@@ -213,7 +223,18 @@ bool node_is_master() {
 }
 
 uint32_t app_get_current_time() {
-    return app.config.app_sync_time + (nrfx_rtc_counter_get(&rtc_instance) - app.config.app_sync_rtc_counter);
+
+    uint32_t time = app.config.app_sync_time + (rtc_to_s(nrfx_rtc_counter_get(&rtc_instance)) - app.config.app_sync_rtc_counter);
+
+    //printf("Epoch time: %li; RTC counter: %li; Current time: %li; Result: %li\n", app.config.app_sync_time, app.config.app_sync_rtc_counter, rtc_to_s(nrfx_rtc_counter_get(&rtc_instance)), time);
+
+    if (time < app.config.app_sync_time) {
+        printf("WARNING: RTC overflow has occurred\n");
+        app.config.app_sync_time += rtc_to_s(0xFFFFFFFF);
+        time                     += rtc_to_s(0xFFFFFFFF);
+    }
+
+    return time;
 }
 
 
@@ -473,7 +494,7 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
     uint8_t num_ranges = data[1];
     offset_data += 1;
 
-    if ( ((length - 2) / APP_LOG_RANGE_LENGTH) != num_ranges) {
+    if ( ( ((length - 2) / APP_LOG_RANGE_LENGTH) != num_ranges) && ( ((length - 6) / APP_LOG_RANGE_LENGTH) != num_ranges) ) {
         printf("WARNING: Incorrect number of ranges!\n");
     }
 
@@ -523,8 +544,8 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
     uint8_t num_ranges = 30;
 
-    if ( ((length - 1) / APP_LOG_RAW_RANGE_LENGTH) != num_ranges) {
-        printf("WARNING: Incorrect number of ranges!\n");
+    if ( ( ((length - 1) / APP_LOG_RAW_RANGE_LENGTH) != num_ranges) && ( ((length - 5) / APP_LOG_RAW_RANGE_LENGTH) != num_ranges) ) {
+        printf("WARNING: Incorrect number of ranges!");
     }
 
     uint32_t current_time_stamp = app_get_current_time();
@@ -854,7 +875,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // TIME: Setup time
         app.config.app_sync_time        = response_time;
-        app.config.app_sync_rtc_counter = nrfx_rtc_counter_get(&rtc_instance);
+        app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
         printf("Set config time: %lu\n", app.config.app_sync_time);
 
     } else if (p_evt_write->handle == carrier_ble_char_enable_handle.value_handle) {
@@ -1341,7 +1362,7 @@ void updateData (uint8_t * data, uint32_t len)
             uint32_t epoch = data[offset] + (data[offset + 1] << 1*8) + (data[offset + 2] << 2*8) + (data[offset + 3] << 3*8);
 
             app.config.app_sync_time        = epoch;
-            app.config.app_sync_rtc_counter = nrfx_rtc_counter_get(&rtc_instance);
+            app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
             printf("Updated current epoch time: %li\n", epoch);
         }
 
@@ -1365,6 +1386,20 @@ void updateData (uint8_t * data, uint32_t len)
 
 	} else if (data[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
 	    printf(", storing raw ranges\n");
+
+        // Check if we received a new epoch
+        uint8_t packet_overhead = 1;
+        uint8_t nr_ranges       = 30;
+
+        if (!node_is_master() && (len > (packet_overhead + nr_ranges * sizeof(uint32_t)))) {
+
+            uint8_t offset = packet_overhead + nr_ranges * sizeof(uint32_t);
+            uint32_t epoch = data[offset] + (data[offset + 1] << 1*8) + (data[offset + 2] << 2*8) + (data[offset + 3] << 3*8);
+
+            app.config.app_sync_time        = epoch;
+            app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
+            printf("Updated current epoch time: %li\n", epoch);
+        }
 
 	    app.app_raw_response_buffer_updated = true;
 	}
@@ -1409,6 +1444,8 @@ void moduleDataUpdate ()
 
 }
 
+bool app_timer_triggered_epoch = false;
+
 // This function is triggered every WATCHDOG_CHECK_RATE (currently 10s)
 static void watchdog_handler (void* p_context)
 {
@@ -1427,11 +1464,11 @@ static void watchdog_handler (void* p_context)
 
     // Increase counter first - else everything is triggered simultaneously at == 0
     app.timer_counter++;
+    //printf("Current Timer Counter: %li\n", app.timer_counter);
 
-    // Epoch counter
-    if (node_is_master() && ( (app.timer_counter % 6) == 0) ) {
-        printf("INFO: Distributing global timestamp\n");
-        module_set_time(app_get_current_time());
+    // Epoch timer
+    if ( ( (app.timer_counter % 6) == 0) && node_is_master()) {
+        app_timer_triggered_epoch = true;
     }
 
 }
@@ -1864,8 +1901,9 @@ void app_init(void) {
 
     // Configuration
 
-    app.config.app_role      = APP_ROLE_INIT_RESP; // Default to HYBRID
-    app.config.app_sync_time = 0;
+    app.config.app_role             = APP_ROLE_INIT_RESP; // Default to HYBRID
+    app.config.app_sync_time        = 0;
+    app.config.app_sync_rtc_counter = 0;
     memset(app.config.my_eui, 0, sizeof(app.config.my_eui));
 
     // We default to enable discovery, but not start the module at the beginning
@@ -1901,14 +1939,19 @@ void app_init(void) {
 
 static void timers_init (void)
 {
-    uint32_t err_code = app_timer_init();
+    ret_code_t err_code = app_timer_init();
     APP_ERROR_CHECK(err_code);
 
     // Create and start watchdog
     err_code = app_timer_create(&watchdog_timer, APP_TIMER_MODE_REPEATED, watchdog_handler);
     APP_ERROR_CHECK(err_code);
 
-    err_code = app_timer_start(watchdog_timer, WATCHDOG_CHECK_RATE, NULL);
+}
+
+static void timers_start (void)
+{
+    // Start the watchdog
+    ret_code_t err_code = app_timer_start(watchdog_timer, WATCHDOG_CHECK_RATE, NULL);
     APP_ERROR_CHECK(err_code);
 }
 
@@ -2166,6 +2209,9 @@ int main (void)
     printf("Waiting for discovery of other devices...\n");
 #endif
 
+    // Start timers
+    timers_start();
+
     // Signal end of initialization
     led_off(CARRIER_LED_RED);
     led_on(CARRIER_LED_BLUE);
@@ -2211,6 +2257,15 @@ int main (void)
             } else {
                 printf("ERROR: Failed to start calibration!\n");
             }
+        }
+
+        // If application count triggered an action, we must catch it here as well
+        if (app_timer_triggered_epoch) {
+            // Epoch counter update
+            app_timer_triggered_epoch = false;
+
+            printf("INFO: Distributing global timestamp\n");
+            module_set_time(app_get_current_time());
         }
     }
 }

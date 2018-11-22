@@ -1004,7 +1004,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 #ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
 			// Check out if epoch has been updated
-			if (_last_sync_epoch < in_glossy_sync->epoch_time) {
+			if (in_glossy_sync->epoch_time > 0) {
 				_last_sync_epoch = in_glossy_sync->epoch_time;
 			}
 #endif
@@ -1315,6 +1315,10 @@ void glossy_set_epoch_time(uint32_t epoch) {
 
 	// Set inside the packet
 	_sync_pkt.epoch_time = _last_sync_epoch;
+
+	/*debug_msg("INFO: Set new epoch time: ");
+	debug_msg_uint(_last_sync_epoch);
+	debug_msg("\n");*/
 #else
 	debug_msg("ERROR: Global timestamps not enabled!\n");
 #endif
