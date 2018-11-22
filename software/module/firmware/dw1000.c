@@ -1017,6 +1017,19 @@ void dw1000_reset_configuration () {
 #endif
 }
 
+// Called to go get information on the current status of the DW
+uint32_t dw1000_get_status_register () {
+
+	uint32_t status = (uint32_t) dwt_read32bitreg(SYS_STATUS_ID); // Read status register low 32bits
+
+	debug_msg("\n-----------------------\n");
+	debug_msg("INFO: Status register: ");
+	debug_msg_uint(status);
+	debug_msg("\n-----------------------\n\n");
+
+	return status;
+}
+
 
 /******************************************************************************/
 // Decawave specific utility functions

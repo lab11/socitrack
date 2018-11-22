@@ -203,6 +203,7 @@ uint64_t      dw1000_readrxtimestamp();
 uint64_t      dw1000_setdelayedtrxtime(uint32_t delay_time);
 uint64_t      dw1000_gettimestampoverflow();
 void      	  dw1000_calculatediagnostics();
+uint32_t 	  dw1000_get_status_register();
 
 // for main.c
 void          dw1000_interrupt_fired ();

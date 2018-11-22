@@ -441,10 +441,27 @@ static void glossy_lwb_round_task() {
 
 			// BUG FIX: If the Tx callback is not triggered, the schedule will never be sent anymore; to prevent this, we resent the schedule if the counter is higher than expected
 			if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) ) {
+                debug_msg("WARNING: Did not successfully send the schedule; retrying in round ");
+                debug_msg_int(_lwb_counter);
+                debug_msg("\n");
+
+                // Get status information
+                dw1000_get_status_register();
+
+                // Reset the DW
+                /*dw1000_reset();
+
+                // Restart DW and the app itself; all the state should however be preserved
+                start_dw1000();
+                module_start();
+
+                // Setup sending again
+				dwt_forcetrxoff();
+				dw1000_update_channel(LWB_CHANNEL);
+				dw1000_choose_antenna(LWB_ANTENNA);*/
+
+                // Attempt to resend
 				_last_time_sent = ( dwt_readsystimestamphi32() + GLOSSY_SCHEDULE_RETRY_SLACK_US) & 0xFFFFFFFE;
-				debug_msg("WARNING: Did not successfully send the schedule; retrying in round ");
-				debug_msg_int(_lwb_counter);
-				debug_msg("\n");
 			}
 
 			// Enable Tx callback to reset the LWB counter
