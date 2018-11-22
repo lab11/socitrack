@@ -1133,7 +1133,7 @@ static uint32_t adv_report_parse(uint8_t type, const ble_data_t * p_advdata, ble
             p_typedata->len      = field_length;
             return NRF_SUCCESS;
         } else {
-            index += field_length + 2;
+            index += field_length + 1;
         }
     }
     return NRF_ERROR_NOT_FOUND;
@@ -1218,6 +1218,7 @@ static void standard_reconfigure_module(uint8_t discovered_master_eui) {
 // Handles advertising reports
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 {
+    ret_code_t err_code;
 
 #ifdef APP_BLE_TEST_ADV
     // Signal received advertisement and keep on scanning
@@ -1225,30 +1226,46 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
         led_toggle(CARRIER_LED_BLUE);
     }
 
-    ret_code_t err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+    err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
     APP_ERROR_CHECK(err_code);
     return;
 #endif
 
-    // If device is in our whitelist, we just discovered it
-    if (addr_in_whitelist(&p_adv_report->peer_addr)) {
+    // If it is a scan response, we dont need to analyse it
+    if (p_adv_report->type.scan_response) {
+        // Could extract full name here
+
+    } // If device is in our whitelist, we just discovered it
+    else if (addr_in_whitelist(&p_adv_report->peer_addr)) {
 
         // Find Master EUI
         uint8_t discovered_master_eui = 0;
         ble_data_t advdata;
-        ret_code_t err_code = adv_report_parse(BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA, &p_adv_report->data, &advdata);
+        err_code = adv_report_parse(BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA, &p_adv_report->data, &advdata);
 
         if (err_code == NRF_SUCCESS) {
             // Parse manufacturer-specific data
-            uint16_t company_identifier = (advdata.p_data[0] << 8) + advdata.p_data[1];
+            uint16_t company_identifier = advdata.p_data[0] + (advdata.p_data[1] << 1*8);
             if ( company_identifier != APP_COMPANY_IDENTIFIER) {
                 printf("ERROR: Incorrect company identifier received!\n");
             }
 
-            discovered_master_eui = advdata.p_data[2];
+            uint8_t service_id = advdata.p_data[2];
+            if ( service_id != APP_SERVICE_IDENTIFIER) {
+                printf("ERROR: Incorrect service identifier received!\n");
+            }
+
+            // Obtain Master EUI of node; if == 0, it is not part of a network
+            discovered_master_eui = advdata.p_data[3];
+
+            if (discovered_master_eui > 0x00) {
+                printf("INFO: Network with master %i discovered\n", discovered_master_eui);
+            } else {
+                printf("INFO: Discovered new node %i without network\n", p_adv_report->peer_addr.addr[0]);
+            }
 
         } else {
-            //printf("WARNING: Found no Master EUI in advertisement!\n");
+            printf("WARNING: Found no Master EUI in advertisement!\n");
         }
 
         if (!app.network_discovered) {
@@ -1273,22 +1290,18 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
             }
 
         } else {
+
             // Switch if new Master of an existing network found with a higher EUI than the current one
             if (app.master_eui[0] < discovered_master_eui) {
                 standard_reconfigure_module(discovered_master_eui);
             }
-
-            // Restart scanning
-            // Clear scan buffer
-            err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
-            APP_ERROR_CHECK(err_code);
         }
-    } else {
-
-        // Clear scan buffer
-        ret_code_t err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
-        APP_ERROR_CHECK(err_code);
     }
+
+    // Restart scanning
+    // Clear scan buffer
+    err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+    APP_ERROR_CHECK(err_code);
 }
 
 // Function for handling Queued Write Module errors
@@ -1375,6 +1388,8 @@ void updateData (uint8_t * data, uint32_t len)
 	    app.app_raw_response_buffer_updated = true;
 
 	} else if (data[0] == HOST_IFACE_INTERRUPT_MASTER_EUI) {
+	    printf(", changing master EUI to %i\n", data[1]);
+
 	    standard_reconfigure_master_eui(data + 1);
 
 	    // If Master EUI is set to 0, we descheduled from existing networks

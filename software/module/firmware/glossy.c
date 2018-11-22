@@ -470,7 +470,20 @@ static void glossy_lwb_round_task() {
 			// Trigger send operation
 			lwb_send_sync(_last_time_sent);
 
-			debug_msg("Sent LWB schedule\r\n");
+			debug_msg("Sent LWB schedule - INIT: ");
+			uint8_t offset = sizeof(struct ieee154_header_broadcast) + MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH;
+			for (uint8_t i = 0; i < _lwb_num_init; i++) {
+			    debug_msg_uint(_sync_pkt_buffer[offset]);
+			    debug_msg(" ");
+			    offset++;
+			}
+			debug_msg("; RESP: ");
+			for (uint8_t i = 0; i < _lwb_num_resp; i++) {
+			    debug_msg_uint(_sync_pkt_buffer[offset]);
+			    debug_msg(" ");
+			    offset++;
+			}
+			debug_msg("\n");
 
 #if (BOARD_V == SQUAREPOINT)
 			// Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
