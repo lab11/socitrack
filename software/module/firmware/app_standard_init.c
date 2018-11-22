@@ -415,6 +415,7 @@ void standard_init_start_response_listening() {
 
     // Turn off Rx mode inside an only partly used LWB response slot (e.g. when we use a new one with only a single responder, turn of Rx after that last one)
     if (si_scratch->init_timer != NULL) {
+        si_scratch->response_listening_slot = 0;
         timer_start(si_scratch->init_timer, (LWB_SLOT_US / LWB_RESPONSES_PER_SLOT), standard_init_listening_task);
     }
 
@@ -426,19 +427,34 @@ void standard_init_listening_task () {
 
 	// If the node is a hybrid and also scheduled as a responder, get the slot; else, the slot will be 0xFF
 	if (si_scratch->response_listening_slot == glossy_get_resp_timeslot()) {
-		standard_resp_trigger_response(0);
-	}
-	if (si_scratch->response_listening_slot == glossy_get_resp_listening_slots()) {
 
-		// TODO: This could also be triggered in the round after a hybrid sent (according to the ranging pyramid principle)
+		// Send our response
+		standard_resp_trigger_response(0);
+
+	} else if ( (si_scratch->response_listening_slot == (glossy_get_resp_timeslot() + 1) ) && (glossy_get_resp_timeslot() < 0xFF) ) {
+
+#ifdef PROTOCOL_REENABLE_HYBRIDS
+		// Reenable receiving as initiator (as responder might have interfered)
+		standard_set_resp_active(FALSE);
+		standard_set_init_active(TRUE);
+
+		// Set the correct listening settings
+		standard_set_ranging_response_settings(TRUE, 0);
+
+		// Make SURE we're in RX mode!
+		dwt_rxenable(0);
+#endif
+
+	}
+	else if (si_scratch->response_listening_slot == glossy_get_resp_listening_slots()) {
 
 		standard_init_stop_response_listening();
 
 	} else {
-		// Dont have to do anything, as already listening; just make sure that still receiving as initiator (as responder might have interfered)
-		standard_set_resp_active(FALSE);
-		standard_set_init_active(TRUE);
+		// Dont have to do anything, as already listening
 	}
+
+	si_scratch->response_listening_slot++;
 }
 
 // Function is also used by Glossy to guarantee no interference with contention

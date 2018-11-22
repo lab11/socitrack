@@ -180,6 +180,7 @@ void standard_resp_trigger_response (uint8_t slot_nr) {
     	standard_resp_send_response();
     } else {
 		// We wait for our message slot inside the LWB slot
+		sr_scratch->resp_window_nr = 0;
 		timer_start(sr_scratch->resp_timer, LWB_SLOT_US / LWB_RESPONSES_PER_SLOT, standard_resp_responding_task);
 	}
 }

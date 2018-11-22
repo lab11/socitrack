@@ -681,6 +681,10 @@ static void glossy_lwb_round_task() {
 	}
 
 	// Both Master and Slave can do ranging if they are scheduled
+	if (!_lwb_in_sync) {
+	    // We are not part of any network and should therefore not communicate
+	    return;
+	}
 
 	// LWB Slots 1 - I: Initiator slots
 	if( (lwb_slot_init_start <= _lwb_counter					  ) &&
@@ -729,12 +733,12 @@ static void glossy_lwb_round_task() {
 	    if (_lwb_scheduled_init) {
 
 	        // We will stop internally if the node is scheduled as a responder and respond
-            standard_init_start_response_listening(_lwb_scheduled_resp, _lwb_timeslot_resp);
+            standard_init_start_response_listening();
 
 	    } else if (_lwb_scheduled_resp) {
 
-	        // If you are only a responder, trigger a send operation in your slot; hybrids are included above
-            standard_resp_trigger_response(_lwb_timeslot_resp);
+	        // If node is only a responder, trigger a send operation in its slot; hybrids are already included above
+            standard_resp_trigger_response((uint8_t)_lwb_timeslot_resp);
 
 	    } else {
             // Turn transceiver off (save energy)
