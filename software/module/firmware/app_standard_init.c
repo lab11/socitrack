@@ -278,6 +278,22 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 				// Increment the number of anchors heard from
 				si_scratch->anchor_response_count++;
+
+			} else {
+			    if (anc_already_found) {
+			        debug_msg("WARNING: Anchor already found!\n");
+			    }
+
+			    if (resp_idx < 0) {
+                    debug_msg("WARNING: Anchor does not contain any responses for us!\n");
+
+                    /*debug_msg("Found ranges for ");
+                    for (uint8_t i = 0; i < anc_final->init_response_length; i++) {
+                        debug_msg_uint(anc_final->init_responses[i].init_eui[0]);
+                        debug_msg(" ");
+                    }
+                    debug_msg("\n");*/
+			    }
 			}
 
 			// Reenable Rx

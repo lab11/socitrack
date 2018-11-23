@@ -347,7 +347,7 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 					memset(sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs, 0, sizeof(sr_scratch->pp_anc_final_pkt.init_responses[idx].TOAs));
 
 					// Record the EUI of the tag so that we don't get mixed up
-					memcpy(sr_scratch->pp_anc_final_pkt.init_responses->init_eui, rx_poll_pkt->header.sourceAddr, PROTOCOL_EUI_LEN);
+					memcpy(sr_scratch->pp_anc_final_pkt.init_responses[idx].init_eui, rx_poll_pkt->header.sourceAddr, PROTOCOL_EUI_LEN);
 
 					// Record which ranging subsequence the tag is on
 					sr_scratch->ranging_broadcast_ss_num = rx_poll_pkt->subsequence;
@@ -409,6 +409,13 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 				} else {
 					// Not the same tag, ignore
+
+					debug_msg("WARNING: Expected poll from ");
+					debug_msg_uint(sr_scratch->pp_anc_final_pkt.init_responses[idx].init_eui[0]);
+					debug_msg(", but received one from ");
+					debug_msg_uint(rx_poll_pkt->header.sourceAddr[0]);
+					debug_msg("\n");
+
 					dwt_rxenable(0);
 				}
 			} else {
