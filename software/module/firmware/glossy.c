@@ -401,10 +401,10 @@ static void glossy_lwb_round_task() {
 
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
 		} else if((  _lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) )                                 ||
-				  ( (_lwb_counter >  ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) )  ){
+				  ( (_lwb_counter >  ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 25) == 0) )  ){
 
 		    // BUG FIX: Find reason for DW failure after multiple hours
-            if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) ) {
+            if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 25) == 0) ) {
 
                 // Get status information before it is cleared
                 dw1000_get_status_register();
@@ -444,7 +444,7 @@ static void glossy_lwb_round_task() {
 			_last_time_sent += GLOSSY_UPDATE_INTERVAL_DW;
 
 			// BUG FIX: If the Tx callback is not triggered, the schedule will never be sent anymore; to prevent this, we resent the schedule if the counter is higher than expected
-			if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 10) == 0) ) {
+			if ( (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) + 1) ) && ( (_lwb_counter % 25) == 0) ) {
                 debug_msg("WARNING: Did not successfully send the schedule; retrying in round ");
                 debug_msg_int(_lwb_counter);
                 debug_msg("\n");
@@ -453,7 +453,7 @@ static void glossy_lwb_round_task() {
                 //dw1000_get_status_register();
 
                 // Reset the DW
-                dw1000_reset();
+                dw1000_reset_soft();
 
                 // Restart DW and the app itself; all the state should however be preserved
                 dw1000_init();

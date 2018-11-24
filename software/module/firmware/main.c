@@ -283,7 +283,7 @@ void start_dw1000 () {
 			mDelay(50000);
 
 			// Reset DW
-			dw1000_reset();
+			dw1000_reset_hard();
 		} else {
 			// Success
 			break;

@@ -647,7 +647,8 @@ void usleep (uint32_t u) {
 /******************************************************************************/
 
 // Hard reset the DW1000 using its reset pin
-void dw1000_reset () {
+void dw1000_reset_hard () {
+
 	// To reset, assert the reset pin for 100ms
 	GPIO_WriteBit(DW_RESET_PORT, DW_RESET_PIN, Bit_RESET);
 	// Wait for ~100ms
@@ -655,6 +656,40 @@ void dw1000_reset () {
 	GPIO_WriteBit(DW_RESET_PORT, DW_RESET_PIN, Bit_SET);
 
 	_dw1000_asleep = FALSE;
+}
+
+// Soft reset the DW1000 using its internal registers
+void dw1000_reset_soft () {
+
+	uint8_t buffer;
+
+	// Slow down DW1000 to talk
+	dw1000_spi_slow();
+
+	uDelay(1000);
+
+	// Reset procedure for PMSC_CTRL0
+
+	// 1. Set SYSCLKS to 01
+	buffer = 1;
+	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_OFFSET,           1, &buffer);
+
+	// 2. Clear SOFTRESET to all zeros
+	buffer = 0x00;
+	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_SOFTRESET_OFFSET, 1, &buffer);
+
+	// 3. Set SOFTRESET to all ones
+	buffer = 0xF0;
+	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_SOFTRESET_OFFSET, 1, &buffer);
+
+	// 4. Again enable auto-clock selection
+	buffer = 0;
+	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_OFFSET,           1, &buffer);
+
+	uDelay(1000);
+
+	// Put the SPI back.
+	dw1000_spi_fast();
 }
 
 // Choose which antenna to connect to the radio
@@ -705,29 +740,17 @@ uint8_t* dw1000_get_txrx_delay_raw () {
 // First (generic) init of the DW1000
 dw1000_err_e dw1000_init () {
 	dw1000_err_e err = 0;
-	uint8_t buffer;
 
 	// Do the STM setup that initializes pin and peripherals and whatnot.
 	if (!_stm_dw1000_interface_setup) {
 		setup();
 	}
 
-	// Make sure the SPI clock is slow so that the DW1000 doesn't miss any
-	// edges.
-	dw1000_spi_slow();
+	// Reset the dw1000...for some reason
+	dw1000_reset_soft();
 
-	//// Reset the dw1000...for some reason
-	//dw1000_reset();
-	uDelay(1000);
-	buffer = 1;
-	dwt_writetodevice(0x36, 0, 1, &buffer);
-	buffer = 0x00;
-	dwt_writetodevice(0x36, 3, 1, &buffer);
-	buffer = 0xF0;
-	dwt_writetodevice(0x36, 3, 1, &buffer);
-	buffer = 0;
-	dwt_writetodevice(0x36, 0, 1, &buffer);
-	uDelay(1000);
+	// Make sure the SPI clock is slow so that the DW1000 doesn't miss any edges.
+	dw1000_spi_slow();
 
 	// Make sure we can talk to the DW1000
 	uint32_t devID;
