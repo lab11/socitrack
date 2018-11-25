@@ -49,6 +49,9 @@
 // Print debug output (can mess with correctness of code due to introduction of delays)
 //#define DEBUG_OUTPUT_UART 1
 
+// Enable wake-up either over CS or the WAKE-UP pin
+//#define DW1000_WAKEUP_CS
+
 /******************************************************************************/
 // Timing defines for this particular MCU
 /******************************************************************************/

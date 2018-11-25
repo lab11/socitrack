@@ -840,7 +840,7 @@ dw1000_err_e dw1000_configure_settings () {
 		return DW1000_COMM_ERR;
 	}
 
-
+#ifdef  DW1000_WAKEUP_CS
 	// Configure sleep parameters.
 	// Note: This is taken from the decawave fast2wr_t.c file. I don't have
 	//       a great idea as to whether this is right or not.
@@ -848,7 +848,14 @@ dw1000_err_e dw1000_configure_settings () {
 	                   DWT_LOADOPSET |
 	                   DWT_CONFIG |
 	                   DWT_LOADEUI,
+	                   DWT_WAKE_CS | DWT_SLP_EN);
+#else
+    dwt_configuresleep(DWT_PRESRV_SLEEP |
+	                   DWT_LOADOPSET |
+	                   DWT_CONFIG |
+	                   DWT_LOADEUI,
 	                   DWT_WAKE_WK | DWT_SLP_EN);
+#endif
 
 	// Configure interrupts
 	dwt_setinterrupt(0xFFFFFFFF, 0);
@@ -941,6 +948,15 @@ dw1000_err_e dw1000_wakeup () {
 		return DW1000_NO_ERR;
 	}
 
+
+#ifdef DW1000_WAKEUP_CS
+    // Dummy buffer for DW1000 wake-up SPI read - must write for at least 500us
+    #define DUMMY_BUFFER_LEN 600
+    static uint8 dummy_buffer[DUMMY_BUFFER_LEN];
+
+	// Read for >500us so that the SPI select line is low and the chip will wake up
+	dwt_spicswakeup(dummy_buffer, DUMMY_BUFFER_LEN);
+#else
 	// Assert the WAKEUP pin. There seems to be some weirdness where a single
 	// WAKEUP assert can get missed, so we do it multiple times to make
 	// sure the DW1000 is awake.
@@ -959,6 +975,7 @@ dw1000_err_e dw1000_wakeup () {
 	GPIO_WriteBit(DW_WAKEUP_PORT, DW_WAKEUP_PIN, Bit_SET);
 	uDelay(1000);
 	GPIO_WriteBit(DW_WAKEUP_PORT, DW_WAKEUP_PIN, Bit_RESET);
+#endif
 
 	// Now wait for 5ms for the chip to move from the wakeup to the idle
 	// state. The datasheet says 4ms, but we buffer a little in case things
