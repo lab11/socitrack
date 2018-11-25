@@ -148,7 +148,7 @@ void standard_start () {
 	if (_config.resp_enabled) {
 		// Start the state machine for responders. The app doesn't have to do anything for this, it just runs.
 
-		err = standard_resp_start();
+		err = standard_resp_start(FALSE);
 		if (err == DW1000_WAKEUP_ERR) {
 			debug_msg("ERROR: Did not wakeup!\n");
 			module_reset();

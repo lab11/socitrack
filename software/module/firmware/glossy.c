@@ -621,6 +621,11 @@ static void glossy_lwb_round_task() {
 						debug_msg("Sending schedule request...\n");
 
 						prepare_schedule_signal();
+
+						// Signal that not scheduled by flashing RED
+                        GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+						GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
+
 					} else {
                         debug_msg("Sending signalling packet...\r\n");
                     }
@@ -703,7 +708,7 @@ static void glossy_lwb_round_task() {
 
 		        if (_lwb_scheduled_resp) {
                     // Enable responders
-                    standard_resp_start();
+                    standard_resp_start(FALSE);
 		        } else {
 		            // Turn transceiver off (save energy) - initiators will wake up in their own slot
 		            dwt_forcetrxoff();
@@ -720,7 +725,7 @@ static void glossy_lwb_round_task() {
 #ifdef PROTOCOL_REENABLE_HYBRIDS
                 // Reenable hybrid nodes after their ranging slot, so that they can respond to others
                 if (standard_is_resp_enabled() && standard_is_init_enabled()) {
-                    standard_resp_start();
+                    standard_resp_start(FALSE);
                 }
 #endif
 		    }
@@ -758,6 +763,12 @@ static void glossy_lwb_round_task() {
 
             // Send ranges to carrier
             standard_init_report_ranges();
+        }
+
+        // If have not been scheduled, we are glowing RED - turn this into GREEN again
+        if (!GPIO_ReadOutputDataBit(STM_LED_RED_PORT, STM_LED_RED_PIN)) {
+            GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+            GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
         }
     }
 

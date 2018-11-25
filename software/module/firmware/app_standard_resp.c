@@ -84,7 +84,7 @@ void standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace) {
 }
 
 // Tell the anchor to start its job of being an anchor
-dw1000_err_e standard_resp_start () {
+dw1000_err_e standard_resp_start (bool delayed_rx) {
 	dw1000_err_e err;
 
 	// Make sure the DW1000 is awake.
@@ -109,7 +109,14 @@ dw1000_err_e standard_resp_start () {
 	standard_set_ranging_broadcast_subsequence_settings(TRUE, 0);
 
 	// Obviously we want to be able to receive packets
-	dwt_rxenable(0);
+	if (delayed_rx) {
+	    // We need to have a gap after the Initiator sent its polls so that the responders can successfully iterate their buffers; in this gap, we do NOT listen but simply wait
+        uint32_t rx_delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_US(RANGING_BROADCASTS_GAP_US)) & 0xFFFFFFFE;
+        dwt_setdelayedtrxtime(rx_delay_time);
+        dwt_rxenable(DWT_START_RX_DELAYED);
+	} else {
+        dwt_rxenable(0);
+    }
 
 	return DW1000_NO_ERR;
 }
@@ -154,7 +161,7 @@ static void ranging_broadcast_subsequence_task () {
 		sr_scratch->pp_anc_final_pkt.init_response_length++;
 
 		// Now, we either wait for the next initiator or will start responding with our packet when its our turn
-		standard_resp_start();
+		standard_resp_start(TRUE);
 
 	} else {
 		// Update the anchor listening settings
@@ -210,12 +217,18 @@ static void standard_resp_send_response () {
 	standard_set_init_active(FALSE);
 	standard_set_resp_active(TRUE);
 
-	//debug_msg("Prepare to respond to TAG...\r\n");
+	//debug_msg("Prepare to respond to INIT...\r\n");
 
 	// Determine which antenna we are going to use for the response.
 	sr_scratch->pp_anc_final_pkt.final_antenna = get_final_antenna();
 
-	//debug_msg("Sending response to Tag\n");
+	/*debug_msg("Sending response to initiator ");
+	for (uint8_t i = 0; i < sr_scratch->pp_anc_final_pkt.init_response_length; i++) {
+		debug_msg_uint(sr_scratch->pp_anc_final_pkt.init_responses[i].init_eui[0]);
+		debug_msg(" ");
+	}
+	debug_msg("\n");*/
+
 	debug_msg("Number of packets: Antenna 1 - ");
 	debug_msg_int(sr_scratch->resp_antenna_recv_num[0]);
 	debug_msg("; Antenna 2 - ");

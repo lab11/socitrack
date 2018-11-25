@@ -52,7 +52,7 @@ typedef struct {
 // PUBLIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 void 		 standard_resp_init (standard_resp_scratchspace_struct *app_scratchspace);
-dw1000_err_e standard_resp_start ();
+dw1000_err_e standard_resp_start (bool delayed_rx);
 void 		 standard_resp_stop ();
 
 void		 standard_resp_trigger_response (uint8_t slot_nr);

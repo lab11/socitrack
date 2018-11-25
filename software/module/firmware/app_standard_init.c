@@ -365,14 +365,7 @@ static void send_poll () {
 	dwt_writetxdata(tx_len, (uint8_t*) &(si_scratch->pp_tag_poll_pkt), 0);
 
 	// Start the transmission
-	if (si_scratch->ranging_broadcast_ss_num == NUM_RANGING_BROADCASTS-1) {
-		// This is the last broadcast ranging packet, so we want to transition
-		// to RX mode after this packet to receive the responses from the anchors.
-		dwt_setrxaftertxdelay(1); // us
-		err = dwt_starttx(DWT_START_TX_DELAYED | DWT_RESPONSE_EXPECTED);
-	} else {
-		err = dwt_starttx(DWT_START_TX_DELAYED);
-	}
+	err = dwt_starttx(DWT_START_TX_DELAYED);
 
 	// MP bug - TX antenna delay needs reprogramming as it is not preserved
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);

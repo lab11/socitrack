@@ -15,7 +15,7 @@
 
 #define LWB_SLOT_US               1e4
 
-#define LWB_SLOTS_PER_RANGE       10
+#define LWB_SLOTS_PER_RANGE       7
 #define LWB_RESPONSES_PER_SLOT    4
 
 #define MAX_SCHED_TAGS            10
