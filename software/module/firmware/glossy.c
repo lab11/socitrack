@@ -847,7 +847,7 @@ void lwb_send_sync(uint32_t delay_time){
 	_last_delay_time = delay_time;
 
 	dwt_setdelayedtrxtime(delay_time);
-	dwt_setrxaftertxdelay(1);
+	//dwt_setrxaftertxdelay(1);
 
 	dwt_starttx(DWT_START_TX_DELAYED);
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
