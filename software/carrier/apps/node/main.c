@@ -2026,6 +2026,9 @@ void carrier_hw_init(void)
         nrf_power_resetreas_clear(0xFFFFFFFF);
     }
 
+    // Init DCDC regulator when not using the SoftDevice
+    //nrf_power_dcdcen_set(1);
+
     // Initialize ------------------------------------------------------------------------------------------------------
 
     app_init();
@@ -2039,6 +2042,9 @@ void carrier_hw_init(void)
     // ATTENTION: inside ble_init(), we further initialize the SoftDevice (triggering the low-power clock)
     ble_init();
     rtc_init();
+
+    // As the SoftDevice is now enabled, we can tell it to use the DC/DC regulator
+    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
 
     printf("Initialized software services\n");
 
