@@ -11,21 +11,26 @@ addpath(genpath('Matlab model - Kindt 18'))
 % Constants in mA for current / ms for time
 
 % TX
-TX_ADV_BARE_I  = 7.7;
-TX_ADV_REQ_1_I = 8.4;
-TX_ADV_REQ_2_I = 9.0;
-TX_ADV_REQ_3_I = 9.5;
+TX_ADV_BARE_I  = 4.1;
+TX_ADV_REQ_1_I = 4.6;
+TX_ADV_REQ_2_I = 4.9;
+TX_ADV_REQ_3_I = 5.2;
 
 TX_ADV_BARE_T  = 4.6;
 TX_ADV_REQ_1_T = 5.2;
 TX_ADV_REQ_2_T = 5.8;
 TX_ADV_REQ_3_T = 6.4;
 
-TX_ADV_I = TX_ADV_BARE_I;
-TX_ADV_T = TX_ADV_BARE_T;
+ADV_BARE_P  = 0.2;
+ADV_REQ_1_P = 0.54;
+ADV_REQ_2_P = 0.24;
+ADV_REQ_3_P = 0.02;
+
+TX_ADV_I = ADV_BARE_P * TX_ADV_BARE_I + ADV_REQ_1_P * TX_ADV_REQ_1_I + ADV_REQ_2_P * TX_ADV_REQ_2_I + ADV_REQ_3_P * TX_ADV_REQ_3_I;
+TX_ADV_T = ADV_BARE_P * TX_ADV_BARE_T + ADV_REQ_1_P * TX_ADV_REQ_1_T + ADV_REQ_2_P * TX_ADV_REQ_2_T + ADV_REQ_3_P * TX_ADV_REQ_3_T;
 
 % RX
-RX_ADV_I = 13.9;
+RX_ADV_I = 6.9;
 
 % General
 IDLE_I = 0.7;

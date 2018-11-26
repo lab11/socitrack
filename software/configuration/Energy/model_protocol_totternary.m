@@ -13,7 +13,7 @@ num_support = 0;
 
 % Bluetooth
 
-interval_adv  =  100; % ms
+interval_adv  =  125; % ms
 interval_scan = 5000; % ms
 duration_scan = interval_adv + 10; % ms
 
@@ -49,6 +49,10 @@ duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_pass
 
 duration_rang_resp  = 2.5; % ms
 
+% SD card
+
+bytes_per_ranging_log = 10 + 1 + 2*8 + 7 + 1 + 6 + 1;
+
 % Functionality
 protocol_reenable_hybrids = 1;
 
@@ -59,6 +63,7 @@ protocol_timeout_period = 5 * interval_round;
 protocol_enable_master_takeover = 0;
 protocol_master_takeover_period = 10 * interval_round;
 
+protocol_local_logging = 1;
 
 % PLATFORM PARAMS ---------------------------------------------------------
 
@@ -82,10 +87,10 @@ ble_adv_length_one   = 5.2; % ms
 ble_adv_length_two   = 5.8; % ms
 ble_adv_length_three = 6.4; % ms
 
-I_ble_adv_zero  = 7.7; % mA
-I_ble_adv_one   = 8.4; % mA
-I_ble_adv_two   = 9.0; % mA
-I_ble_adv_three = 9.5; % mA
+I_ble_adv_zero  = 4.1; % mA
+I_ble_adv_one   = 4.6; % mA
+I_ble_adv_two   = 4.9; % mA
+I_ble_adv_three = 5.2; % mA
 
 Q_ble_adv =             ble_adv_probability_zero  * ble_adv_length_zero  * I_ble_adv_zero;
 Q_ble_adv = Q_ble_adv + ble_adv_probability_one   * ble_adv_length_one   * I_ble_adv_one;
@@ -95,7 +100,7 @@ Q_ble_adv = Q_ble_adv + ble_adv_probability_three * ble_adv_length_three * I_ble
 duration_adv = ble_adv_probability_zero * ble_adv_length_zero + ble_adv_probability_one * ble_adv_length_one + ble_adv_probability_two * ble_adv_length_two + ble_adv_probability_three * ble_adv_length_three;
 I_ble_adv    = Q_ble_adv / duration_adv;
 
-I_ble_scan = 13.9; % mA
+I_ble_scan = 6.9; % mA
 
 % Schedule
 
@@ -105,8 +110,7 @@ I_contention = 151.0;
 % Ranging
 
 I_rang_idle  = 23.1;
-I_rang_dc    = I_sleep + 9.0;
-I_rang_sleep = I_sleep;
+I_rang_dc    = 12.0;
 
 I_rang_poll_tx_1ms = 41.1;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
@@ -120,6 +124,12 @@ I_rang_requ_rx     = ( I_rang_poll_rx * duration_rang_requ_active + I_rang_idle 
 
 I_rang_resp_tx = 37.8;
 I_rang_resp_rx = 93.5;
+
+% SD card - 20 * 1024 bytes in 240ms
+
+I_sd_write = 26.5; % mA
+sd_write_size = 20 * 1024; % bytes
+sd_write_time = 240; % ms
 
 
 % CALCULATIONS ------------------------------------------------------------
@@ -170,12 +180,18 @@ I_resp_tot   = (I_resp   * duration_resp   + I_rang_dc * (interval_round - durat
 I_hybrid_tot = (I_hybrid * duration_hybrid + I_rang_dc * (interval_round - duration_hybrid) ) / (interval_round)
 
 
+
+% SD card
+I_sd_init   = I_sd_write * ((           num_resp + num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size) ;
+I_sd_resp   = I_sd_write * ((num_init +            num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size) ;
+I_sd_hybrid = I_sd_write * ((num_init + num_resp + num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size) ;
+
 % EVAL --------------------------------------------------------------------
 
 duration_day = 24;
 
-life_time_init   = Q_bat / (I_init_tot   + I_ble) / 3600 / duration_day
-life_time_resp   = Q_bat / (I_resp_tot   + I_ble) / 3600 / duration_day
-life_time_hybrid = Q_bat / (I_hybrid_tot + I_ble) / 3600 / duration_day
+life_time_init   = Q_bat / (I_init_tot   + I_sd_init   + I_ble) / 3600 / duration_day
+life_time_resp   = Q_bat / (I_resp_tot   + I_sd_resp   + I_ble) / 3600 / duration_day
+life_time_hybrid = Q_bat / (I_hybrid_tot + I_sd_hybrid + I_ble) / 3600 / duration_day
 
 % FIGURES -----------------------------------------------------------------
