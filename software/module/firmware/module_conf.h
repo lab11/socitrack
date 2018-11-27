@@ -62,7 +62,7 @@
 // #define PROTOCOL_FLEXIBLE_MASTER
 
 // Automatically deschedule after not having received a schedule for a given time
-//#define PROTOCOL_ENABLE_TIMEOUT
+#define PROTOCOL_ENABLE_TIMEOUT
 
 // Allow the highest slave to take over upon not receiving schedules for TIMEOUT schedules
 //#define PROTOCOL_ENABLE_MASTER_TAKEOVER

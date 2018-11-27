@@ -1204,9 +1204,10 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
         return;
     }
 
-    printf(", switched Master EUI from %02X to %02X\n", app.master_eui[0], discovered_master_eui[0]);
+    printf("Switched Master EUI from %02X to %02X\n", app.master_eui[0], discovered_master_eui[0]);
 
-    for (uint8_t i = 0; i < EUI_LEN; i++) {
+    // We only use a single byte to identify devices
+    for (uint8_t i = 0; i < 1; i++) {
         app.master_eui[i] = discovered_master_eui[i];
     }
 
@@ -1230,7 +1231,7 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
 // Resets the Master EUI and restarts the module
 static void standard_reconfigure_module(uint8_t discovered_master_eui) {
 
-    printf("INFO: Discovered new Master");
+    //printf("INFO: Discovered new Master\n");
 
     // Change Master EUI
     standard_reconfigure_master_eui(&discovered_master_eui);
@@ -1254,6 +1255,8 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     APP_ERROR_CHECK(err_code);
     return;
 #endif
+
+    //printf("Received advertisement from %i\n", p_adv_report->peer_addr.addr[0]);
 
     // If it is a scan response, we dont need to analyse it
     if (p_adv_report->type.scan_response) {
@@ -1323,7 +1326,6 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     }
 
     // Restart scanning
-    // Clear scan buffer
     err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
     APP_ERROR_CHECK(err_code);
 }
@@ -1421,8 +1423,9 @@ void updateData (uint8_t * data, uint32_t len)
 	    // If Master EUI is set to 0, we descheduled from existing networks
 	    if (data[1] == 0x00) {
 	        app.network_discovered        = false;
-	        app.module_inited             = false;
 	        app.config.app_module_running = false;
+
+	        printf("Left the network... again searching for a new network\n");
 	    }
 
 	} else if (data[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
@@ -2276,15 +2279,25 @@ int main (void)
         //printf("Going back go sleep...\r\n");
         power_manage();
 
-        if      (app.module_interrupt_thrown) {
+        // I2C and data handling
+        if (app.module_interrupt_thrown) {
             // Module is trying to communicate over I2C
             module_interrupt_dispatch();
         }
-        else if (app.config.app_module_enabled && app.network_discovered && !app.config.app_module_running) {
-            // Initialize module with configured role
-            carrier_start_module(app.config.app_role);
+
+        if (app.app_raw_response_buffer_updated) {
+            // Received new data over I2C which we can expose over the BLE characteristics
+            //printf("Updating location...\r\n");
+            moduleDataUpdate();
         }
-        else if (!app.config.app_module_enabled && app.config.app_module_running) {
+
+        // Network discovery
+        if (app.config.app_module_enabled && app.network_discovered && !app.config.app_module_running) {
+            // Initialize module with configured role
+            printf("INFO: Starting node\n");
+            carrier_start_module(app.config.app_role);
+
+        } else if (!app.config.app_module_enabled && app.config.app_module_running) {
 
             // Stop execution after we disabled the module
             module_sleep();
@@ -2292,13 +2305,8 @@ int main (void)
             app.config.app_module_running = false;
 
             printf("INFO: Module stopped\n");
-        }
-        else if (app.app_raw_response_buffer_updated) {
-            // Received new data over I2C which we can expose over the BLE characteristics
-            //printf("Updating location...\r\n");
-            moduleDataUpdate();
-        }
-        else if ( (app.calibration_index != APP_BLE_CALIBRATION_INDEX_INVALID) && !app.config.app_module_running) {
+
+        } else if ( (app.calibration_index != APP_BLE_CALIBRATION_INDEX_INVALID) && !app.config.app_module_running) {
             // Configure this node for calibration and set the calibration node
             // index. If 0, this node will immediately start calibration.
             err_code = module_start_calibration(app.calibration_index);
@@ -2309,6 +2317,7 @@ int main (void)
                 printf("ERROR: Failed to start calibration!\n");
             }
         }
+
 
         // If application count triggered an action, we must catch it here as well
         if (app_timer_triggered_epoch) {
