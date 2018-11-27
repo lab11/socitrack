@@ -531,7 +531,7 @@ static uint16_t measurement_counter = 0;
 
 static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
-#define APP_LOG_RAW_BUFFER_LINE     (10 + 1 + 6 + 1 + 2 + 1 + 10 + 1)
+#define APP_LOG_RAW_BUFFER_LINE     (10 + 1 + 6 + 1 + 2 + 1 + 2 + 1 + 10 + 1)
 #define APP_LOG_RAW_BUFFER_LENGTH   (30 * APP_LOG_RAW_BUFFER_LINE)
 #define APP_LOG_RAW_RANGE_LENGTH    (4)
 
@@ -544,36 +544,56 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
     uint8_t num_ranges = 30;
 
-    if ( ( ((length - 1) / APP_LOG_RAW_RANGE_LENGTH) != num_ranges) && ( ((length - 5) / APP_LOG_RAW_RANGE_LENGTH) != num_ranges) ) {
+    if ( ( ((length - 1) / APP_LOG_RAW_RANGE_LENGTH) % (1 + num_ranges) != 0) && ( ((length - 1 - sizeof(uint32_t)) / APP_LOG_RAW_RANGE_LENGTH) % (1 + num_ranges) != 0) ) {
         printf("WARNING: Incorrect number of ranges!");
     }
 
+    // Get current time
     uint32_t current_time_stamp = app_get_current_time();
 
-    for (uint8_t i = 0; i < num_ranges; i++) {
-
-        // Add Timestamp
-        sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
-
-        // Add measurement number
-        sprintf(log_buf + offset_buf + 11, "%06u\t", measurement_counter);
-
-        // Add channel number
-        sprintf(log_buf + offset_buf + 18, "%02u\t", i);
-
-        // Add range - Little endian order
-        uint32_t range = data[offset_data + 0] + (data[offset_data + 1] << 1*8) + (data[offset_data + 2] << 2*8) + (data[offset_data + 3] << 3*8);
-        sprintf(log_buf + offset_buf + 21, "%010lu\n", range);
-
-        offset_data += APP_LOG_RAW_RANGE_LENGTH;
-        offset_buf  += APP_LOG_RAW_BUFFER_LINE;
+    uint8_t num_responses;
+    if ( (length - 1) % (1 + num_ranges) == 0) {
+        // No epoch
+        num_responses = (length - 1) / (APP_LOG_RAW_RANGE_LENGTH * (1 + num_ranges));
+    } else {
+        // With epoch
+        num_responses = (length - 1 - sizeof(uint32_t)) / (APP_LOG_RAW_RANGE_LENGTH * (1 + num_ranges));
     }
 
-    // Write to SD
-    write_to_sd(log_buf, offset_buf);
+    for (uint8_t j = 0; j < num_responses; j++) {
 
-    //printf("INFO: Logged raw ranges to SD card\n");
-    measurement_counter++;
+        uint8_t node_id = data[offset_data];
+        offset_data += APP_LOG_RAW_RANGE_LENGTH;
+
+        for (uint8_t i = 0; i < num_ranges; i++) {
+
+            // Add Timestamp
+            sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
+
+            // Add measurement number
+            sprintf(log_buf + offset_buf + 11, "%06u\t", measurement_counter);
+
+            // Add node ID
+            sprintf(log_buf + offset_buf + 18, "%02u\t", node_id);
+
+            // Add channel number
+            sprintf(log_buf + offset_buf + 21, "%02u\t", i);
+
+            // Add range - Little endian order
+            uint32_t range = data[offset_data + 0] + (data[offset_data + 1] << 1 * 8) + (data[offset_data + 2] << 2 * 8) + (data[offset_data + 3] << 3 * 8);
+            sprintf(log_buf + offset_buf + 24, "%010lu\n", range);
+
+            offset_data += APP_LOG_RAW_RANGE_LENGTH;
+            offset_buf += APP_LOG_RAW_BUFFER_LINE;
+        }
+
+        // Write to SD
+        write_to_sd(log_buf, offset_buf);
+
+        printf("INFO: Logged raw ranges from %02u to SD card\n", node_id);
+        measurement_counter++;
+    }
+
 }
 
 /* Application state size
@@ -1406,9 +1426,13 @@ void updateData (uint8_t * data, uint32_t len)
         uint8_t packet_overhead = 1;
         uint8_t nr_ranges       = 30;
 
-        if (!node_is_master() && (len > (packet_overhead + nr_ranges * sizeof(uint32_t)))) {
+        if (!node_is_master() && ( (len - packet_overhead) % ((1 + nr_ranges) * sizeof(int32_t)) != 0)) {
 
-            uint8_t offset = packet_overhead + nr_ranges * sizeof(uint32_t);
+            uint8_t num_responses = (len - packet_overhead - sizeof(uint32_t)) / ((1 + nr_ranges) * sizeof(int32_t));
+
+            uint8_t offset = packet_overhead + num_responses * (1 + nr_ranges) * sizeof(int32_t);
+
+            // Read epoch
             uint32_t epoch = data[offset] + (data[offset + 1] << 1*8) + (data[offset + 2] << 2*8) + (data[offset + 3] << 3*8);
 
             app.config.app_sync_time        = epoch;

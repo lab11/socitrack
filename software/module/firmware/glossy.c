@@ -1606,7 +1606,7 @@ static void write_data_to_sync() {
 
     // Ranging pyramid - schedule hybrids in reverse order for responses
     for (uint8_t i = 0; i < _lwb_num_scheduled_hybrid; i++) {
-    	memcpy(_sync_pkt.eui_array + (PROTOCOL_RESP_SCHED_OFFSET + _lwb_num_scheduled_resp + i) * PROTOCOL_EUI_LEN, _hybrid_sched_euis + (_lwb_num_scheduled_hybrid - i - 1) * PROTOCOL_EUI_LEN, PROTOCOL_EUI_LEN);
+    	memcpy(_sync_pkt.eui_array + (PROTOCOL_RESP_SCHED_OFFSET + _lwb_num_scheduled_resp + i) * PROTOCOL_EUI_LEN, ((uint8_t*)_hybrid_sched_euis) + (_lwb_num_scheduled_hybrid - i - 1) * PROTOCOL_EUI_LEN, PROTOCOL_EUI_LEN);
     }
 
     // All INIT, RESP and HBRIDs are now correctly stored and the packet is ready to be sent

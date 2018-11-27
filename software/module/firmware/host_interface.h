@@ -45,7 +45,7 @@ uint32_t host_interface_init();
 uint32_t host_interface_wait ();
 uint32_t host_interface_respond (uint8_t length, bool fixed_length);
 void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len);
-void host_interface_notify_ranges_raw (uint8_t* range_measurements);
+void host_interface_notify_ranges_raw (uint8_t* range_measurements, uint8_t len);
 void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len);
 void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len);
 

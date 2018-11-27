@@ -71,6 +71,12 @@ typedef struct {
 	// Invalid ranges are marked with INT32_MAX.
 	int32_t ranges_millimeters[MAX_NUM_ANCHOR_RESPONSES];
 
+#ifdef OFFLOAD_RAW_RANGES
+#define MAX_RAW_RANGES 2
+	// Send all ranges instead of only the processed ones - only possible for 2 responses due to SPI limitations
+	int32_t ranges_raw[(MAX_RAW_RANGES * (1 + NUM_RANGING_BROADCASTS)) + 1];
+#endif
+
 	// Buffer of anchor IDs and ranges to the anchor.
 	// Long enough to hold an anchor id followed by the range, plus the number of ranges
 	uint8_t anchor_ids_ranges[(MAX_NUM_ANCHOR_RESPONSES*(PROTOCOL_EUI_LEN+sizeof(int32_t))) + 1 + sizeof(uint32_t)];

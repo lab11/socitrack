@@ -19,7 +19,7 @@
 
 // STATE ---------------------------------------------------------------------------------------------------------------
 
-#define BUFFER_SIZE 128
+#define BUFFER_SIZE 256
 uint8_t rxBuffer[BUFFER_SIZE];
 uint8_t txBuffer[BUFFER_SIZE];
 uint8_t pending_tx = 0;
@@ -125,32 +125,17 @@ void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len) {
 }
 
 // Send the raw ranges to the host for analysis
-void host_interface_notify_ranges_raw (uint8_t* range_measurements) {
+void host_interface_notify_ranges_raw (uint8_t* range_measurements, uint8_t len) {
 
 	// TODO: this should be in an atomic block
 
 	// Save the relevant state for when the host asks for it
 	_interrupt_reason = HOST_IFACE_INTERRUPT_RANGES_RAW;
 	_interrupt_buffer = range_measurements;
-	_interrupt_buffer_len = NUM_RANGING_BROADCASTS * sizeof(int);
+	_interrupt_buffer_len = len;
 
 	// Already copy here, as packet is too long to respond in the interrupt afterwards
     memcpy(txBuffer + 2, _interrupt_buffer, _interrupt_buffer_len);
-
-#ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
-    // Add epoch time
-	// If new epoch time, inform at the end
-	uint32_t curr_epoch = glossy_get_epoch_time();
-	if (curr_epoch > 0) {
-
-		// Update the epoch time so that the current ranges are correctly time stamped
-		memcpy(txBuffer + 2 + NUM_RANGING_BROADCASTS * sizeof(int), &curr_epoch, sizeof(uint32_t));
-		_interrupt_buffer_len += sizeof(uint32_t);
-
-		// Reset epoch time again
-		glossy_set_epoch_time(0);
-	}
-#endif
 
 	// Let the host know it should ask
 	interrupt_host_set();

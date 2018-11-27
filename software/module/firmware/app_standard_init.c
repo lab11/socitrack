@@ -536,6 +536,45 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	}
 }
 
+// Record raw ranges that the tag found.
+void standard_set_ranges_raw () {
+	uint8_t num_anchor_ranges = 0;
+
+	// Figure out how many ranges we actually received
+	for (uint8_t i = 0; i < MAX_RAW_RANGES; i++) {
+
+		if (si_scratch->ranges_raw[i * (1 + NUM_RANGING_BROADCASTS)] != 0) {
+			num_anchor_ranges++;
+		}
+	}
+
+	if (si_scratch->anchor_response_count > MAX_RAW_RANGES) {
+		debug_msg("WARNING: Limited raw logging due to insufficient space! Maximally log 2 responses\n");
+	} else {
+	    /*debug_msg("INFO: Logging ");
+	    debug_msg_uint(num_anchor_ranges);
+	    debug_msg(" responses\n");*/
+	}
+
+	// If new epoch time, inform at the end
+	uint32_t curr_epoch = glossy_get_epoch_time();
+	if (curr_epoch == 0) {
+		// Now let the host know so it can do something with the ranges.
+		host_interface_notify_ranges_raw((uint8_t*)si_scratch->ranges_raw, sizeof(int32_t) * (num_anchor_ranges * (1 + NUM_RANGING_BROADCASTS)));
+
+	} else {
+
+		// Update the epoch time so that the current ranges are correctly time stamped
+		memcpy(si_scratch->ranges_raw + (num_anchor_ranges * (1 + NUM_RANGING_BROADCASTS)), &curr_epoch, sizeof(uint32_t));
+
+		// Now let the host know
+		host_interface_notify_ranges_raw((uint8_t*)si_scratch->ranges_raw, sizeof(int32_t) * (num_anchor_ranges * (1 + NUM_RANGING_BROADCASTS)) + sizeof(uint32_t));
+
+		// Reset epoch time again
+		glossy_set_epoch_time(0);
+	}
+}
+
 // Once we have heard from all of the anchors, calculate range.
 void standard_init_report_ranges () {
 	// New state
@@ -597,7 +636,9 @@ void standard_init_report_ranges () {
 	// We're done, so go to idle.
 	si_scratch->state = ISTATE_IDLE;
 
-#ifndef OFFLOAD_RAW_RANGES
+#ifdef OFFLOAD_RAW_RANGES
+	standard_set_ranges_raw();
+#else
 	// Just need to send the ranges back to the host. Send the array
 	// of ranges to the main application and let it deal with it.
 	// This also returns control to the main application and signals
@@ -618,13 +659,17 @@ void standard_init_report_ranges () {
 // After getting responses from anchors calculate the range to each anchor.
 // These values are stored in si_scratch->ranges_millimeters.
 static void calculate_ranges () {
+
+#ifdef OFFLOAD_RAW_RANGES
+	memset(si_scratch->ranges_raw, 0, sizeof(si_scratch->ranges_raw));
+#endif
+
 	// Clear array, don't use memset
 	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
 		si_scratch->ranges_millimeters[i] = INT32_MAX;
 	}
 
-	// Iterate through all anchors to calculate the range from the tag
-	// to each anchor
+	// Iterate through all anchors to calculate the range from the tag to each anchor
 	for (uint8_t anchor_index=0; anchor_index<si_scratch->anchor_response_count; anchor_index++) {
 		anchor_responses_t* aresp = &(si_scratch->anchor_responses[anchor_index]);
 
@@ -785,8 +830,11 @@ static void calculate_ranges () {
 		}
 
 #ifdef OFFLOAD_RAW_RANGES
-		// For analysis: Send all the individual ranges so we can analyse them offline
-		host_interface_notify_ranges_raw((uint8_t*)distances_millimeters);
+		// For analysis: Store all the individual ranges so we can analyse them offline
+		if (anchor_index < MAX_RAW_RANGES) {
+            memcpy(si_scratch->ranges_raw + (anchor_index * (1 + NUM_RANGING_BROADCASTS)    ), aresp->anchor_addr, 1);
+			memcpy(si_scratch->ranges_raw + (anchor_index * (1 + NUM_RANGING_BROADCASTS) + 1), distances_millimeters, sizeof(int32_t) * NUM_RANGING_BROADCASTS);
+		}
 #endif
 
 		// Check to make sure that we got enough ranges from this anchor.
