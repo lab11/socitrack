@@ -1225,7 +1225,9 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
 
     // Restart advertisements
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-    APP_ERROR_CHECK(err_code);
+    if (err_code != NRF_ERROR_INVALID_STATE) {
+        APP_ERROR_CHECK(err_code);
+    }
 }
 
 // Resets the Master EUI and restarts the module
@@ -1459,7 +1461,7 @@ void moduleDataUpdate ()
     // Clear flag
     app.app_raw_response_buffer_updated = false;
 
-	if(carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) {
+	if( (carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (app.app_raw_response_length <= APP_BLE_MAX_CHAR_LEN) ) {
 
 	    ble_gatts_hvx_params_t notify_params;
 		memset(&notify_params, 0, sizeof(notify_params));

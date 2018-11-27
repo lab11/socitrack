@@ -34,6 +34,7 @@
 
 // Storage / Buffers
 #define APP_BLE_BUFFER_LENGTH       256
+#define APP_BLE_MAX_CHAR_LEN        128
 
 #define APP_SDCARD_BUFFER_LENGTH    (20 * 1024)
 #define APP_SDCARD_MIN_BUFFER_SPACE (20 * (APP_SDCARD_BUFFER_LENGTH / 100))
