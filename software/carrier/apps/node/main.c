@@ -592,6 +592,10 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
         printf("INFO: Logged raw ranges from %02u to SD card\n", node_id);
         measurement_counter++;
+
+        // Reset buffer again
+        memset(log_buf, 0, sizeof(log_buf));
+        offset_buf = 0;
     }
 
 }
@@ -1337,7 +1341,9 @@ static void nrf_qwr_error_handler(uint32_t nrf_error)
 
 void updateData (uint8_t * data, uint32_t len)
 {
-    uint16_t copy_len = (uint16_t) MIN(len, 256);
+    uint16_t copy_len = (uint16_t) MIN(len, APP_BLE_BUFFER_LENGTH);
+
+    // Copy for transmit
 	memcpy(app.app_raw_response_buffer, data, copy_len);
 	app.app_raw_response_length = copy_len;
 
