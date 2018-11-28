@@ -1,25 +1,58 @@
-% New ranging protocol - TotTernary
-
-% Parameters are actual ones from the DW1000
-% We ignore DEEPSLEEP current, as its 100nA and therefore much less than BLE and the STM
+% Energy model - TotTernary
+% Author: Andreas Biri
+% Date:   2018-11-27
 clear all;
 
-% PROTOCOL PARAMS ---------------------------------------------------------
+% INPUT PARAMS ------------------------------------------------------------
+
+update_freq = 1; % Hz
+
+accuracy  = 1000; % mm
+precision = 1000; %mm
+
+% Range is adjustable according ot DW1000 mode; this does however also
+% influence timing and therefore requires non-trivial changes
+
+discovery_latency     = 5000;
+discovery_probability = 0.9;
 
 num_init    = 0;
 num_resp    = 0;
 num_hybrid  = 2;
 num_support = 0;
 
+nr_nodes = num_init + num_resp + num_hybrid + num_support;
+
+% Functionality
+
+% Do not use ranging pyramid - all hybrids will gather all ranges locally
+protocol_reenable_hybrids = 0;
+
+%protocol_enable_timeout = 1;
+%protocol_timeout_period = 5 / update_freq;
+%protocol_enable_master_takeover = 0;
+%protocol_master_takeover_period = 10 / update_freq;
+
+% Stop packet reception as initiator after a given amount
+protocol_max_responses = 0; % 0: off, X : stop listening after maximally X responses
+
+% Enable local logging to SD card
+protocol_local_logging = 1; % 0 : off, 1 : on
+
+% PROTOCOL PARAMS ---------------------------------------------------------
+
 % Bluetooth
 
-interval_adv  =  125; % ms
-interval_scan = 5000; % ms
-duration_scan = interval_adv + 10; % ms
+%interval_scan = discovery_latency; % ms
+%interval_adv  = 125; % ms
+
+% Derive directly using the BLEnd optimizer
+[interval_scan, interval_adv] = get_optimized_ble_parameters(discovery_latency, discovery_probability, nr_nodes);
+
 
 % Scheduling
 
-interval_round = 1000; % ms
+interval_round = 1000/update_freq; % ms
 interval_slot  = 10; % ms
 
 duration_schedule = 10;
@@ -39,7 +72,7 @@ num_ow_rangings = num_antennas * num_antennas * num_channels;
 num_tw_rangings = num_channels;
 num_rangings    = num_ow_rangings + num_tw_rangings;
 
-interval_poll  = interval_flood;
+interval_poll = interval_flood;
 
 interval_rang_requ = interval_poll;
 
@@ -52,18 +85,6 @@ duration_rang_resp  = 2.5; % ms
 % SD card
 
 bytes_per_ranging_log = 10 + 1 + 2*8 + 7 + 1 + 6 + 1;
-
-% Functionality
-protocol_reenable_hybrids = 1;
-
-protocol_flexible_master = 0;
-
-protocol_enable_timeout = 1;
-protocol_timeout_period = 5 * interval_round;
-protocol_enable_master_takeover = 0;
-protocol_master_takeover_period = 10 * interval_round;
-
-protocol_local_logging = 1;
 
 % PLATFORM PARAMS ---------------------------------------------------------
 
@@ -100,7 +121,9 @@ Q_ble_adv = Q_ble_adv + ble_adv_probability_three * ble_adv_length_three * I_ble
 duration_adv = ble_adv_probability_zero * ble_adv_length_zero + ble_adv_probability_one * ble_adv_length_one + ble_adv_probability_two * ble_adv_length_two + ble_adv_probability_three * ble_adv_length_three;
 I_ble_adv    = Q_ble_adv / duration_adv;
 
+duration_scan = interval_adv + duration_adv + 10; % ms -> 10ms is max BLE random slack
 I_ble_scan = 6.9; % mA
+
 
 % Schedule
 
@@ -110,7 +133,7 @@ I_contention = 151.0;
 % Ranging
 
 I_rang_idle  = 23.1;
-I_rang_dc    = 12.0;
+I_rang_dc    = 11.1;
 
 I_rang_poll_tx_1ms = 41.1;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
@@ -127,7 +150,7 @@ I_rang_resp_rx = 93.5;
 
 % SD card - 20 * 1024 bytes in 240ms
 
-I_sd_write = 26.5; % mA
+I_sd_write    = 26.5; % mA
 sd_write_size = 20 * 1024; % bytes
 sd_write_time = 240; % ms
 
@@ -135,12 +158,14 @@ sd_write_time = 240; % ms
 % CALCULATIONS ------------------------------------------------------------
 
 % Bluetooth
-I_ble = (I_ble_adv  * (interval_scan / interval_adv * duration_adv ) ...
-       + I_ble_scan * (                           1 * duration_scan) ...
-       + I_ble_idle * (interval_scan - (interval_scan / interval_adv * duration_adv) - duration_scan)) ...
+nr_adv = floor(interval_scan / interval_adv) - 1;
+
+I_ble = (I_ble_adv  * (nr_adv * duration_adv) ...
+       + I_ble_scan * (     1 * duration_scan) ...
+       + I_ble_idle * (interval_scan - nr_adv * duration_adv - 1 * duration_scan) ) ...
        / interval_scan;
 
-
+dc_ble = (nr_adv * duration_adv + 1 * duration_scan) / interval_scan;
 
 % Scheduling
 nr_contention_avg = protocol_standard_contention_length;
@@ -172,6 +197,25 @@ I_hybrid = (I_common * duration_common ...
           + I_rang_resp_tx *                       1 * duration_rang_resp + I_rang_resp_rx * (num_resp + num_hybrid - 1) * duration_rang_resp) ...
           / (duration_common + duration_hybrid);
       
+      
+if (protocol_max_responses)
+    % Calculate number of responses
+    nr_resp = min(protocol_max_responses, num_resp + num_hybrid);
+    
+    I_init = (I_common * duration_common ...
+            + I_rang_requ_tx *       1 * duration_rang_requ + I_rang_idle * (num_init + num_hybrid -       1) * duration_rang_requ ...
+            + I_rang_resp_rx * nr_resp * duration_rang_resp + I_rang_idle * (num_init + num_hybrid - nr_resp) * duration_rang_resp) ...
+            / (duration_common + duration_init);
+end
+      
+if (not(protocol_reenable_hybrids))      
+    % Use ranging pyramid - average number
+    I_hybrid = (I_common * duration_common ...
+          + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_requ_rx * (num_init + (num_hybrid - 1)/2) * duration_rang_requ + I_rang_idle * ( (num_hybrid - 1)/2 ) * duration_rang_requ ...
+          + I_rang_resp_tx *                       1 * duration_rang_resp + I_rang_resp_rx * (num_resp + (num_hybrid - 1)/2) * duration_rang_resp + I_rang_idle * ( (num_hybrid - 1)/2 ) * duration_rang_resp) ...
+          / (duration_common + duration_hybrid);
+end
+      
 % Add duty-cycling costs
 I_init_tot   = (I_init   * duration_init   + I_rang_dc * (interval_round - duration_init  ) ) / (interval_round)
 
@@ -182,16 +226,62 @@ I_hybrid_tot = (I_hybrid * duration_hybrid + I_rang_dc * (interval_round - durat
 
 
 % SD card
-I_sd_init   = I_sd_write * ((           num_resp + num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size) ;
-I_sd_resp   = I_sd_write * ((num_init +            num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size) ;
-I_sd_hybrid = I_sd_write * ((num_init + num_resp + num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size) ;
+I_sd_init   = I_sd_write * ((           num_resp + num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size);
+I_sd_resp   = I_sd_write * ((num_init +            num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size);
+I_sd_hybrid = I_sd_write * ((num_init + num_resp + num_hybrid) * bytes_per_ranging_log / interval_round) * (sd_write_time / sd_write_size);
+
+if (not(protocol_local_logging))
+    I_sd_init   = 0;
+    I_sd_resp   = 0;
+    I_sd_hybrid = 0;
+end
+
+% Total system current
+I_system_init   = I_init_tot   + I_sd_init   + I_ble;
+I_system_resp   = I_resp_tot   + I_sd_resp   + I_ble;
+I_system_hybrid = I_hybrid_tot + I_sd_hybrid + I_ble;
 
 % EVAL --------------------------------------------------------------------
 
 duration_day = 24;
 
-life_time_init   = Q_bat / (I_init_tot   + I_sd_init   + I_ble) / 3600 / duration_day
-life_time_resp   = Q_bat / (I_resp_tot   + I_sd_resp   + I_ble) / 3600 / duration_day
-life_time_hybrid = Q_bat / (I_hybrid_tot + I_sd_hybrid + I_ble) / 3600 / duration_day
+life_time_init   = Q_bat / I_system_init   / 3600 / duration_day
+life_time_resp   = Q_bat / I_system_resp   / 3600 / duration_day
+life_time_hybrid = Q_bat / I_system_hybrid / 3600 / duration_day
+
+power_budget_init   = [ (I_init   * duration_init   / interval_round) / I_system_init  , (I_rang_dc * (interval_round - duration_init  ) / interval_round) / I_system_init  , I_ble / I_system_init  , I_sd_init   / I_system_init   ];
+power_budget_resp   = [ (I_resp   * duration_resp   / interval_round) / I_system_resp  , (I_rang_dc * (interval_round - duration_resp  ) / interval_round) / I_system_resp  , I_ble / I_system_resp  , I_sd_resp   / I_system_resp   ];
+power_budget_hybrid = [ (I_hybrid * duration_hybrid / interval_round) / I_system_hybrid, (I_rang_dc * (interval_round - duration_hybrid) / interval_round) / I_system_hybrid, I_ble / I_system_hybrid, I_sd_hybrid / I_system_hybrid ];
 
 % FIGURES -----------------------------------------------------------------
+
+% Power budget
+font_size = 20;
+figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
+name = categorical({'Initiator', 'Responder', 'Hybrid'});
+data_relative = [power_budget_init; power_budget_resp; power_budget_hybrid];
+bar(name, data_relative);
+ylim([0,1]);
+xlabel('Node classes', 'FontSize', font_size);
+ylabel('Energy consumption [%]', 'FontSize', font_size);
+legend('Active period', 'Passive period', 'Discovery', 'Logging');
+
+font_size = 20;
+figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
+name = categorical({'Initiator', 'Responder', 'Hybrid'});
+data_absolute = [power_budget_init * I_system_init; power_budget_resp * I_system_resp; power_budget_hybrid * I_system_hybrid];
+bar(name, data_absolute, 'stacked');
+xlabel('Node classes', 'FontSize', font_size);
+ylabel('Energy consumption [mA]', 'FontSize', font_size);
+
+% Life time
+font_size = 20;
+figure('Name', 'Life time', 'DefaultAxesFontSize', font_size)
+name = categorical({'Initiator', 'Responder', 'Hybrid'});
+data = [life_time_init * duration_day; life_time_resp * duration_day; life_time_hybrid * duration_day];
+bar(name, data);
+xlabel('Node classes', 'FontSize', font_size);
+ylabel('Life time [h]', 'FontSize', font_size);
+
+
+
