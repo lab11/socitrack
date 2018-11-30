@@ -276,7 +276,23 @@ static void standard_resp_send_response () {
     // TODO: handle if starttx errors. I'm not sure what to do about it, other than just wait for the next slot.
 	dwt_starttx(DWT_START_TX_DELAYED);
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-	dwt_writetxdata(frame_len, sr_scratch->pp_anc_final_pkt_buffer, 0);
+
+    // Set transmit buffer
+    uint16_t num_transactions = frame_len / MAX_SPI_TRANSACTION_BYTES;
+
+    if (frame_len % MAX_SPI_TRANSACTION_BYTES) {
+        num_transactions++;
+    }
+
+    for (uint16_t i = 0; i < num_transactions; i++) {
+        uint16_t write_bytes = MAX_SPI_TRANSACTION_BYTES;
+
+        if (i == (num_transactions - 1)) {
+            write_bytes = frame_len - (i * MAX_SPI_TRANSACTION_BYTES);
+        }
+
+        dwt_writetxdata(write_bytes, sr_scratch->pp_anc_final_pkt_buffer + (i * MAX_SPI_TRANSACTION_BYTES), i * MAX_SPI_TRANSACTION_BYTES);
+    }
 
 	// Done with our response; Go back to IDLE
 	sr_scratch->state = RSTATE_IDLE;

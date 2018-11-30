@@ -32,7 +32,7 @@
 	#define DW1000_SFD_TO                 (64 + 1 + 8 - 8) /* (Preamble length + 1 + SFD length - PAC size) */
 	#define RANGING_BROADCASTS_PERIOD_US  2000
     #define RANGING_BROADCASTS_GAP_US     9000
-	#define RANGING_RESPONSE_PADDING_US   500
+	#define RANGING_RESPONSE_PADDING_US   750
     #define RANGING_CONTENTION_PADDING_US 1000
 #endif
 
@@ -73,7 +73,7 @@
 // Testing
 
 // Instead of aggregated ranges, just offload all 30 raw range estimations for debugging and manual analysis
-#define OFFLOAD_RAW_RANGES
+//#define OFFLOAD_RAW_RANGES
 
 // ---------------------------------------------------------------------------------------------------------------------
 

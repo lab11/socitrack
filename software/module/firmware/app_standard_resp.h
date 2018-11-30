@@ -10,6 +10,9 @@
 
 // DATA STRUCTURES -----------------------------------------------------------------------------------------------------
 
+// For longer packets, we need to split the data up into multiple SPI transactions
+#define MAX_SPI_TRANSACTION_BYTES	((uint16_t)250)
+
 typedef enum {
 	RSTATE_IDLE,
 	RSTATE_RANGING,

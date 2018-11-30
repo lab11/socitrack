@@ -435,7 +435,21 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 	dw_rx_timestamp = dw1000_readrxtimestamp();
 
 	// Get the actual packet bytes
-	dwt_readrxdata(buf, MIN(MSG_MAX_PACK_LEN, rxd->datalength), 0);
+	uint16_t num_transactions = rxd->datalength / MAX_SPI_TRANSACTION_BYTES;
+
+	if (rxd->datalength % MAX_SPI_TRANSACTION_BYTES) {
+		num_transactions++;
+	}
+
+	for (uint16_t i = 0; i < num_transactions; i++) {
+		uint16_t read_bytes = MAX_SPI_TRANSACTION_BYTES;
+
+		if (i == (num_transactions - 1)) {
+			read_bytes = rxd->datalength - (i * MAX_SPI_TRANSACTION_BYTES);
+		}
+
+		dwt_readrxdata(buf + (i * MAX_SPI_TRANSACTION_BYTES), read_bytes, i * MAX_SPI_TRANSACTION_BYTES);
+	}
 
 	if (rxd->datalength > MSG_MAX_PACK_LEN) {
 		debug_msg("ERROR: Received packet which exceeds maximal length!\n");
