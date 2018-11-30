@@ -840,6 +840,8 @@ bool glossy_process_txcallback(){
 }
 
 void lwb_send_sync(uint32_t delay_time){
+	dw1000_err_e error;
+
 	uint16_t frame_len = get_sync_packet_length(&_sync_pkt);
 	dwt_writetxfctrl(frame_len, 0, MSG_TYPE_CONTROL);
 	debug_print_tx(frame_len);
@@ -849,9 +851,23 @@ void lwb_send_sync(uint32_t delay_time){
 	dwt_setdelayedtrxtime(delay_time);
 	//dwt_setrxaftertxdelay(1);
 
-	dwt_starttx(DWT_START_TX_DELAYED);
+	error = dwt_starttx(DWT_START_TX_DELAYED);
+	if (error != DWT_SUCCESS) {
+		debug_msg("ERROR: Failed to transmit schedule! Tried sending at ");
+		debug_msg_uint(delay_time);
+		debug_msg(", but current time is ");
+		debug_msg_uint((uint32_t)dwt_readsystimestamphi32());
+		debug_msg("\n");
+	}
+
 	dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
-	dwt_writetxdata(frame_len, _sync_pkt_buffer, 0);
+
+	error = dwt_writetxdata(frame_len, _sync_pkt_buffer, 0);
+	if (error != DWT_SUCCESS) {
+		debug_msg("ERROR: Failed to write schedule with length ");
+		debug_msg_uint(frame_len);
+		debug_msg("\n");
+	}
 }
 
 #define CW_CAL_12PF ((3.494350-3.494173)/3.4944*1e6/30)

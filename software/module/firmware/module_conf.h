@@ -32,7 +32,7 @@
 	#define DW1000_SFD_TO                 (64 + 1 + 8 - 8) /* (Preamble length + 1 + SFD length - PAC size) */
 	#define RANGING_BROADCASTS_PERIOD_US  2000
     #define RANGING_BROADCASTS_GAP_US     9000
-	#define RANGING_RESPONSE_PADDING_US   750
+	#define RANGING_RESPONSE_PADDING_US   1000
     #define RANGING_CONTENTION_PADDING_US 1000
 #endif
 
@@ -62,7 +62,7 @@
 // #define PROTOCOL_FLEXIBLE_MASTER
 
 // Automatically deschedule after not having received a schedule for a given time
-#define PROTOCOL_ENABLE_TIMEOUT
+//#define PROTOCOL_ENABLE_TIMEOUT
 
 // Allow the highest slave to take over upon not receiving schedules for TIMEOUT schedules
 //#define PROTOCOL_ENABLE_MASTER_TAKEOVER
