@@ -437,6 +437,10 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
 	// Get the actual packet bytes
 	dwt_readrxdata(buf, MIN(MSG_MAX_PACK_LEN, rxd->datalength), 0);
 
+	if (rxd->datalength > MSG_MAX_PACK_LEN) {
+		debug_msg("ERROR: Received packet which exceeds maximal length!\n");
+	}
+
 	// Get the message type for the different package types; with the current implementation, they should all have the same offset
 	uint8_t message_type_sync   = buf[offsetof(struct pp_sched_flood,  message_type)];
     uint8_t message_type_signal = buf[offsetof(struct pp_signal_flood, message_type)];

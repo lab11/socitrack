@@ -60,15 +60,15 @@
 // of measurements, these define which percentile of the measurements to use.
 // They are split up to facilitate non-floating point math.
 // EXAMPLE: N=1, D=10 means take the 10th percentile.
-#define RANGE_PERCENTILE_NUMERATOR 1
-#define RANGE_PERCENTILE_DENOMENATOR 10
+#define RANGE_PERCENTILE_NUMERATOR 5
+#define RANGE_PERCENTILE_DENOMINATOR 10
 
 
 /******************************************************************************/
 // Data Structs for packet messages between tags and anchors
 /******************************************************************************/
 
-#define MSG_MAX_PACK_LEN	296
+#define MSG_MAX_PACK_LEN	1023
 
 // Message types that identify the UWB packets.
 #define MSG_TYPE_PP_NOSLOTS_TAG_POLL  0x80

@@ -245,15 +245,15 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 			if (!anc_already_found && (resp_idx >= 0)) {
 
                 /*debug_msg("Received an Anchor response packet from ");
-                helper_print_EUI(anc_final->header.sourceAddr);
-                debug_msg("\r\n");
-
-                debug_msg("First index: ");
+                helper_print_EUI(anc_final->header.sourceAddr, 1);
+                debug_msg(": First index: ");
                 debug_msg_int(anc_final->init_responses[resp_idx].first_rxd_idx);
                 debug_msg("; last index: ");
                 debug_msg_int(anc_final->init_responses[resp_idx].last_rxd_idx);
                 debug_msg("; length of packet: ");
                 debug_msg_uint(rxd->datalength);
+                debug_msg("; index: ");
+                debug_msg_int(resp_idx);
                 debug_msg("\n");*/
 
 				// Save the anchor address
@@ -536,6 +536,7 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 	}
 }
 
+#ifdef OFFLOAD_RAW_RANGES
 // Record raw ranges that the tag found.
 void standard_set_ranges_raw () {
 	uint8_t num_anchor_ranges = 0;
@@ -574,6 +575,7 @@ void standard_set_ranges_raw () {
 		glossy_set_epoch_time(0);
 	}
 }
+#endif
 
 // Once we have heard from all of the anchors, calculate range.
 void standard_init_report_ranges () {
@@ -668,6 +670,10 @@ static void calculate_ranges () {
 	for (uint8_t i=0; i<MAX_NUM_ANCHOR_RESPONSES; i++) {
 		si_scratch->ranges_millimeters[i] = INT32_MAX;
 	}
+
+	/*debug_msg("INFO: Received responses from ");
+	debug_msg_uint(si_scratch->anchor_response_count);
+	debug_msg(" responders\n");*/
 
 	// Iterate through all anchors to calculate the range from the tag to each anchor
 	for (uint8_t anchor_index=0; anchor_index<si_scratch->anchor_response_count; anchor_index++) {
@@ -847,7 +853,7 @@ static void calculate_ranges () {
 
 		// Now that we have all of the calculated ranges from all of the tag
 		// broadcasts we can calculate some percentile range.
-		uint8_t bot = (num_valid_distances*RANGE_PERCENTILE_NUMERATOR)/RANGE_PERCENTILE_DENOMENATOR;
+		uint8_t bot = (num_valid_distances*RANGE_PERCENTILE_NUMERATOR)/RANGE_PERCENTILE_DENOMINATOR;
 		uint8_t top = bot+1;
 		// bot represents the whole index of the item at the percentile.
 		// Then we are going to use the remainder decimal portion to get
@@ -857,7 +863,7 @@ static void calculate_ranges () {
 		//                  distances[3] + 0.4*(distances[4]-distances[3])
 		int32_t result = distances_millimeters[bot] +
 			(((distances_millimeters[top]-distances_millimeters[bot]) * ((RANGE_PERCENTILE_NUMERATOR*num_valid_distances)
-			 - (bot*RANGE_PERCENTILE_DENOMENATOR))) / RANGE_PERCENTILE_DENOMENATOR);
+			 - (bot*RANGE_PERCENTILE_DENOMINATOR))) / RANGE_PERCENTILE_DENOMINATOR);
 
 		// Save the result
 		si_scratch->ranges_millimeters[anchor_index] = result;
