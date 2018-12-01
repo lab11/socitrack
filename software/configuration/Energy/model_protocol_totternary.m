@@ -10,6 +10,9 @@ update_freq = 1; % Hz
 accuracy  = 1000; % mm
 precision = 1000; %mm
 
+frequ_diversity = 3;
+antenna_diversity = 3;
+
 % Range is adjustable according ot DW1000 mode; this does however also
 % influence timing and therefore requires non-trivial changes
 
@@ -65,11 +68,11 @@ protocol_standard_contention_length = 1;
 
 % Ranging
 
-num_antennas = 3;
-num_channels = 3;
+num_antennas    = antenna_diversity;
+num_frequ_bands = frequ_diversity;
 
-num_ow_rangings = num_antennas * num_antennas * num_channels;
-num_tw_rangings = num_channels;
+num_ow_rangings = num_antennas * num_antennas * num_frequ_bands;
+num_tw_rangings = num_frequ_bands;
 num_rangings    = num_ow_rangings + num_tw_rangings;
 
 interval_poll = interval_flood;
@@ -93,6 +96,9 @@ U_sys = 3.3; %V_CC
 Q_bat = 2000 * 3600; % mA * s
 
 I_sleep = 2.1; % mA
+
+div_avg_accuracy  = [408.2750, 376.8175, 354.4500; 313.6500, 299.7675, 271.7625; 246.0600, 225.2150, 120.8600];
+div_avg_precision = [185.4250, 167.2300, 149.8500; 180.7575, 157.7350, 156.9125; 172.9050, 165.3850, 149.1400];
 
 % Bluetooth
 
@@ -217,11 +223,11 @@ if (not(protocol_reenable_hybrids))
 end
       
 % Add duty-cycling costs
-I_init_tot   = (I_init   * duration_init   + I_rang_dc * (interval_round - duration_init  ) ) / (interval_round)
+I_init_tot   = (I_init   * duration_init   + I_rang_dc * (interval_round - duration_init  ) ) / (interval_round);
 
-I_resp_tot   = (I_resp   * duration_resp   + I_rang_dc * (interval_round - duration_resp  ) ) / (interval_round)
+I_resp_tot   = (I_resp   * duration_resp   + I_rang_dc * (interval_round - duration_resp  ) ) / (interval_round);
 
-I_hybrid_tot = (I_hybrid * duration_hybrid + I_rang_dc * (interval_round - duration_hybrid) ) / (interval_round)
+I_hybrid_tot = (I_hybrid * duration_hybrid + I_rang_dc * (interval_round - duration_hybrid) ) / (interval_round);
 
 
 
@@ -245,13 +251,20 @@ I_system_hybrid = I_hybrid_tot + I_sd_hybrid + I_ble;
 
 duration_day = 24;
 
-life_time_init   = Q_bat / I_system_init   / 3600 / duration_day
-life_time_resp   = Q_bat / I_system_resp   / 3600 / duration_day
-life_time_hybrid = Q_bat / I_system_hybrid / 3600 / duration_day
+life_time_init   = Q_bat / I_system_init   / 3600 / duration_day;
+life_time_resp   = Q_bat / I_system_resp   / 3600 / duration_day;
+life_time_hybrid = Q_bat / I_system_hybrid / 3600 / duration_day;
 
 power_budget_init   = [ (I_init   * duration_init   / interval_round) / I_system_init  , (I_rang_dc * (interval_round - duration_init  ) / interval_round) / I_system_init  , I_ble / I_system_init  , I_sd_init   / I_system_init   ];
 power_budget_resp   = [ (I_resp   * duration_resp   / interval_round) / I_system_resp  , (I_rang_dc * (interval_round - duration_resp  ) / interval_round) / I_system_resp  , I_ble / I_system_resp  , I_sd_resp   / I_system_resp   ];
 power_budget_hybrid = [ (I_hybrid * duration_hybrid / interval_round) / I_system_hybrid, (I_rang_dc * (interval_round - duration_hybrid) / interval_round) / I_system_hybrid, I_ble / I_system_hybrid, I_sd_hybrid / I_system_hybrid ];
+
+fprintf('Estimated lifetime INIT: \t %1.2f days @ %2.1f mA\n',     life_time_init, I_system_init);
+fprintf('Estimated lifetime RESP: \t %1.2f days @ %2.1f mA\n',     life_time_resp, I_system_resp);
+fprintf('Estimated lifetime HYBRID: \t %1.2f days @ %2.1f mA\n', life_time_hybrid, I_system_hybrid);
+
+fprintf('Estimated accuracy  with %i frequency and %i antenna diversity: %4.1f mm\n',  frequ_diversity, antenna_diversity, div_avg_accuracy(frequ_diversity, antenna_diversity));
+fprintf('Estimated precision with %i frequency and %i antenna diversity: %4.1f mm\n', frequ_diversity, antenna_diversity, div_avg_precision(frequ_diversity, antenna_diversity));
 
 % FIGURES -----------------------------------------------------------------
 
