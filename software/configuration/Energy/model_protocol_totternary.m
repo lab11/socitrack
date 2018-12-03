@@ -77,10 +77,8 @@ num_rangings    = num_ow_rangings + num_tw_rangings;
 
 interval_poll = interval_flood;
 
-interval_rang_requ = interval_poll;
-
 duration_rang_requ_passive = 10; %ms
-duration_rang_requ_active  = num_rangings * interval_rang_requ;
+duration_rang_requ_active  = num_rangings * interval_poll;
 duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_passive;
 
 duration_rang_resp  = 2.5; % ms

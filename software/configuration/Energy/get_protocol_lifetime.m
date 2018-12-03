@@ -1,4 +1,4 @@
-function [lifetime_totternary, lifetime_surepoint] = get_protocol_lifetime(num_init, num_resp, num_hybrid, update_freq, frequ_div, antenna_div)
+function [lifetime_totternary, lifetime_surepoint] = get_protocol_lifetime(num_init, num_resp, num_hybrid, update_freq, frequ_div, antenna_div, use_optimized_params)
 %GET_PROTOCOL_LIFETIME Returnes estimated life time based on the energy
 %models
 %   
@@ -12,6 +12,8 @@ function [lifetime_totternary, lifetime_surepoint] = get_protocol_lifetime(num_i
 % update_freq:  targeted update frequency / round period [Hz]
 % frequ_div:    frequency diversity channels (1-3)
 % antenna_div:  antenna diversity channels (1-3)
+
+% use_optimized_params: Adjust parameters to reflect an improved version
 
 %% General params
 
@@ -43,7 +45,12 @@ interval_slot  = 10; % ms
 
 duration_schedule = 10;
 
-interval_flood  = 2; % ms
+if (use_optimized_params > 0)
+    interval_flood = 1; %ms
+else
+    interval_flood  = 2; % ms
+end
+
 max_flood_depth = 5;
 
 protocol_automatic_timeout_rounds   = 250; % rounds
@@ -60,13 +67,16 @@ num_rangings    = num_ow_rangings + num_tw_rangings;
 
 interval_poll = interval_flood;
 
-interval_rang_requ = interval_poll;
-
-duration_rang_requ_passive = 10; %ms
-duration_rang_requ_active  = num_rangings * interval_rang_requ;
+if (use_optimized_params > 0)
+    duration_rang_requ_passive = 0; %ms
+    duration_rang_resp  = 2; % ms
+else
+    duration_rang_requ_passive = 10; %ms
+    duration_rang_resp  = 2.5; % ms
+end
+duration_rang_requ_active  = num_rangings * interval_poll;
 duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_passive;
 
-duration_rang_resp  = 2.5; % ms
 
 % SD card
 
@@ -118,8 +128,13 @@ I_contention = 151.0;
 
 % Ranging
 
-I_rang_idle  = 23.1;
-I_rang_dc    = 11.1;
+if (use_optimized_params > 0)
+    I_rang_idle = 11.1;
+    I_rang_dc   = I_sleep;
+else
+    I_rang_idle  = 23.1;
+    I_rang_dc    = 11.1;
+end
 
 I_rang_poll_tx_1ms = 41.1;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
@@ -241,9 +256,9 @@ if (not(protocol_local_logging))
 end
 
 % Total system current
-I_system_init   = I_init_tot   + I_sd_init   + I_ble;
-I_system_resp   = I_resp_tot   + I_sd_resp   + I_ble;
-I_system_hybrid = I_hybrid_tot + I_sd_hybrid + I_ble;
+I_system_init   = I_init_tot; %   + I_sd_init   + I_ble;
+I_system_resp   = I_resp_tot; %   + I_sd_resp   + I_ble;
+I_system_hybrid = I_hybrid_tot; % + I_sd_hybrid + I_ble;
 
 % EVAL --------------------------------------------------------------------
 
@@ -255,7 +270,8 @@ lifetime_totternary(3) = Q_bat / I_system_hybrid / 3600;
 
 %% SurePoint
 
-duration_rang_resp    = 30; % ms
+duration_rang_resp_slot = 10; %ms
+duration_rang_resp    = 3 * duration_rang_resp_slot;
 duration_rang_resp_rx = 2; %ms
 duration_rang_resp_tx = 2; %ms
 
@@ -274,8 +290,8 @@ duration_hybrid = (num_init + num_hybrid) * duration_rang_requ + (num_init + num
 I_common = (I_schedule * duration_schedule + I_contention * nr_contention_avg * interval_slot) / duration_common;
 
 % Calculate average responses per responder (due to contention)
-p_one_col = 1 - (9/10)^(        1 * (num_resp + num_hybrid - 1));
-p_two_col = 1 - (9/10)^(p_one_col * (num_resp + num_hybrid - 1));
+p_one_col = 1 - ((duration_rang_resp_slot - duration_rang_resp_tx)/duration_rang_resp_slot)^(        1 * (num_resp + num_hybrid - 1));
+p_two_col = 1 - ((duration_rang_resp_slot - duration_rang_resp_tx)/duration_rang_resp_slot)^(p_one_col * (num_resp + num_hybrid - 1));
 num_responses = (1 + p_one_col * 1 + p_two_col * 1);
 
 num_responses_received = min( (num_resp + num_hybrid) * num_responses, duration_rang_resp / duration_rang_resp_tx);
@@ -290,7 +306,7 @@ I_init   = (I_common * duration_common ...
 % Responder costs
 I_resp   = (I_common * duration_common ...
           + I_rang_requ_rx *                 (num_init + num_hybrid) * duration_rang_requ ...
-          + I_rang_resp_tx * num_responses * (num_init + num_hybrid) * duration_rang_resp_tx + I_rang_idle * (num_init + num_hybrid) * (duration_rang_resp - num_responses * duration_rang_resp_rx) ) ...
+          + I_rang_resp_tx * num_responses * (num_init + num_hybrid) * duration_rang_resp_tx + I_rang_idle * (num_init + num_hybrid) * (duration_rang_resp - num_responses * duration_rang_resp_tx) ) ...
           / (duration_common + duration_resp);
       
 % Hybrid costs
@@ -298,7 +314,7 @@ I_hybrid = (I_common * duration_common ...
           + I_rang_requ_tx        *                                           1 * duration_rang_requ ...
           + I_rang_resp_rx_active *                      num_responses_received * duration_rang_resp_rx + I_rang_resp_rx_passive *                           1 * (duration_rang_resp - num_responses_received * duration_rang_resp_rx) ...
           + I_rang_requ_rx        *                 (num_init + num_hybrid - 1) * duration_rang_requ ...
-          + I_rang_resp_tx        * num_responses * (num_init + num_hybrid - 1) * duration_rang_resp_tx + I_rang_idle            * (num_init + num_hybrid - 1) * (duration_rang_resp -          num_responses * duration_rang_resp_rx) ) ...
+          + I_rang_resp_tx        * num_responses * (num_init + num_hybrid - 1) * duration_rang_resp_tx + I_rang_idle            * (num_init + num_hybrid - 1) * (duration_rang_resp -          num_responses * duration_rang_resp_tx) ) ...
           / (duration_common + duration_hybrid);
     
 % Add duty-cycling costs

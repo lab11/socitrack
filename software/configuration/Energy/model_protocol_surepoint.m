@@ -48,13 +48,12 @@ num_rangings    = num_ow_rangings + num_tw_rangings;
 
 interval_poll = interval_flood;
 
-interval_rang_requ = interval_poll;
-
-duration_rang_requ_passive = 20; %ms
-duration_rang_requ_active  = num_rangings * interval_rang_requ;
+duration_rang_requ_passive = 10; %ms
+duration_rang_requ_active  = num_rangings * interval_poll;
 duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_passive;
 
-duration_rang_resp    = 30; % ms
+duration_rang_resp_slot = 10; %ms
+duration_rang_resp    = 3 * duration_rang_resp_slot;
 duration_rang_resp_rx = 2; %ms
 duration_rang_resp_tx = 2; %ms
 
@@ -105,8 +104,8 @@ duration_hybrid = (num_init + num_hybrid) * duration_rang_requ + (num_init + num
 I_common = (I_schedule * duration_schedule + I_contention * nr_contention_avg * interval_slot) / duration_common;
 
 % Calculate average responses per responder (due to contention)
-p_one_col = 1 - (9/10)^(        1 * (num_resp + num_hybrid - 1));
-p_two_col = 1 - (9/10)^(p_one_col * (num_resp + num_hybrid - 1));
+p_one_col = 1 - ((duration_rang_resp_slot - duration_rang_resp_tx)/duration_rang_resp_slot)^(        1 * (num_resp + num_hybrid - 1));
+p_two_col = 1 - ((duration_rang_resp_slot - duration_rang_resp_tx)/duration_rang_resp_slot)^(p_one_col * (num_resp + num_hybrid - 1));
 num_responses = (1 + p_one_col * 1 + p_two_col * 1);
 
 num_responses_received = min( (num_resp + num_hybrid) * num_responses, duration_rang_resp / duration_rang_resp_tx);
@@ -121,7 +120,7 @@ I_init   = (I_common * duration_common ...
 % Responder costs
 I_resp   = (I_common * duration_common ...
           + I_rang_requ_rx *                 (num_init + num_hybrid) * duration_rang_requ ...
-          + I_rang_resp_tx * num_responses * (num_init + num_hybrid) * duration_rang_resp_tx + I_rang_idle * (num_init + num_hybrid) * (duration_rang_resp - num_responses * duration_rang_resp_rx) ) ...
+          + I_rang_resp_tx * num_responses * (num_init + num_hybrid) * duration_rang_resp_tx + I_rang_idle * (num_init + num_hybrid) * (duration_rang_resp - num_responses * duration_rang_resp_tx) ) ...
           / (duration_common + duration_resp);
       
 % Hybrid costs
@@ -129,7 +128,7 @@ I_hybrid = (I_common * duration_common ...
           + I_rang_requ_tx        *                                           1 * duration_rang_requ ...
           + I_rang_resp_rx_active *                      num_responses_received * duration_rang_resp_rx + I_rang_resp_rx_passive *                           1 * (duration_rang_resp - num_responses_received * duration_rang_resp_rx) ...
           + I_rang_requ_rx        *                 (num_init + num_hybrid - 1) * duration_rang_requ ...
-          + I_rang_resp_tx        * num_responses * (num_init + num_hybrid - 1) * duration_rang_resp_tx + I_rang_idle            * (num_init + num_hybrid - 1) * (duration_rang_resp -          num_responses * duration_rang_resp_rx) ) ...
+          + I_rang_resp_tx        * num_responses * (num_init + num_hybrid - 1) * duration_rang_resp_tx + I_rang_idle            * (num_init + num_hybrid - 1) * (duration_rang_resp -          num_responses * duration_rang_resp_tx) ) ...
           / (duration_common + duration_hybrid);
     
 % Add duty-cycling costs
