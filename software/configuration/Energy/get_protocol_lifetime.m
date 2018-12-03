@@ -1,46 +1,29 @@
-% Energy model - TotTernary
-% Author: Andreas Biri
-% Date:   2018-11-27
-clear all;
+function [lifetime_totternary, lifetime_surepoint] = get_protocol_lifetime(num_init, num_resp, num_hybrid, update_freq, frequ_div, antenna_div)
+%GET_PROTOCOL_LIFETIME Returnes estimated life time based on the energy
+%models
+%   
+% Based on the energy models for both TotTernary and SurePoint, this
+% function returns the estimated life times for each node class
+%
+% INPUTS:
+% num_init:     number of (pure) initiators
+% num_resp:     number of (pure) responders
+% num_hybrid:   number of hybrids
+% update_freq:  targeted update frequency / round period [Hz]
+% frequ_div:    frequency diversity channels (1-3)
+% antenna_div:  antenna diversity channels (1-3)
+
+%% General params
 
 % INPUT PARAMS ------------------------------------------------------------
 
-update_freq = 1; % Hz
-
-accuracy  = 1000; % mm
-precision = 1000; %mm
-
-frequ_diversity = 3;
-antenna_diversity = 3;
-
-% Range is adjustable according ot DW1000 mode; this does however also
-% influence timing and therefore requires non-trivial changes
+frequ_diversity   = frequ_div;
+antenna_diversity = antenna_div;
 
 discovery_latency     = 5000;
 discovery_probability = 0.9;
 
-num_init    = 0;
-num_resp    = 0;
-num_hybrid  = 2;
-num_support = 0;
-
-nr_nodes = num_init + num_resp + num_hybrid + num_support;
-
-% Functionality
-
-% Do not use ranging pyramid - all hybrids will gather all ranges locally
-protocol_reenable_hybrids = 0;
-
-%protocol_enable_timeout = 1;
-%protocol_timeout_period = 5 / update_freq;
-%protocol_enable_master_takeover = 0;
-%protocol_master_takeover_period = 10 / update_freq;
-
-% Stop packet reception as initiator after a given amount
-protocol_max_responses = 0; % 0: off, X : stop listening after maximally X responses
-
-% Enable local logging to SD card
-protocol_local_logging = 1; % 0 : off, 1 : on
+nr_nodes = num_init + num_resp + num_hybrid;
 
 % PROTOCOL PARAMS ---------------------------------------------------------
 
@@ -97,9 +80,6 @@ Q_bat = 2000 * 3600; % mA * s
 
 I_sleep = 2.1; % mA
 
-div_avg_accuracy  = [408.2750, 376.8175, 354.4500; 313.6500, 299.7675, 271.7625; 246.0600, 225.2150, 120.8600];
-div_avg_precision = [185.4250, 167.2300, 149.8500; 180.7575, 157.7350, 156.9125; 172.9050, 165.3850, 149.1400];
-
 % Bluetooth
 
 I_ble_idle = 0.7; % mA
@@ -152,7 +132,8 @@ I_rang_requ_rx     = ( I_rang_poll_rx * duration_rang_requ_active + I_rang_idle 
 
 
 I_rang_resp_tx = 37.8;
-I_rang_resp_rx = 93.5;
+I_rang_resp_rx_active  =  93.5;
+I_rang_resp_rx_passive = 151.0;
 
 % SD card - 20 * 1024 bytes in 240ms
 
@@ -160,6 +141,23 @@ I_sd_write    = 26.5; % mA
 sd_write_size = 20 * 1024; % bytes
 sd_write_time = 240; % ms
 
+%% TotTernary
+
+% Functionality
+
+% Do not use ranging pyramid - all hybrids will gather all ranges locally
+protocol_reenable_hybrids = 0;
+
+%protocol_enable_timeout = 1;
+%protocol_timeout_period = 5 / update_freq;
+%protocol_enable_master_takeover = 0;
+%protocol_master_takeover_period = 10 / update_freq;
+
+% Stop packet reception as initiator after a given amount
+protocol_max_responses = 0; % 0: off, X : stop listening after maximally X responses
+
+% Enable local logging to SD card
+protocol_local_logging = 1; % 0 : off, 1 : on
 
 % CALCULATIONS ------------------------------------------------------------
 
@@ -187,8 +185,8 @@ I_common = (I_schedule * duration_schedule + I_contention * nr_contention_avg * 
 
 % Initiator costs
 I_init   = (I_common * duration_common ...
-          + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_idle * (num_init + num_hybrid - 1) * duration_rang_requ ...
-          + I_rang_resp_rx * (num_resp + num_hybrid) * duration_rang_resp) ...
+          + I_rang_requ_tx        *                       1 * duration_rang_requ + I_rang_idle * (num_init + num_hybrid - 1) * duration_rang_requ ...
+          + I_rang_resp_rx_active * (num_resp + num_hybrid) * duration_rang_resp) ...
           / (duration_common + duration_init);
       
 % Responder costs
@@ -199,8 +197,8 @@ I_resp   = (I_common * duration_common ...
       
 % Hybrid costs
 I_hybrid = (I_common * duration_common ...
-          + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_requ_rx * (num_init + num_hybrid - 1) * duration_rang_requ ...
-          + I_rang_resp_tx *                       1 * duration_rang_resp + I_rang_resp_rx * (num_resp + num_hybrid - 1) * duration_rang_resp) ...
+          + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_requ_rx        * (num_init + num_hybrid - 1) * duration_rang_requ ...
+          + I_rang_resp_tx *                       1 * duration_rang_resp + I_rang_resp_rx_active * (num_resp + num_hybrid - 1) * duration_rang_resp) ...
           / (duration_common + duration_hybrid);
       
       
@@ -209,16 +207,16 @@ if (protocol_max_responses)
     nr_resp = min(protocol_max_responses, num_resp + num_hybrid);
     
     I_init = (I_common * duration_common ...
-            + I_rang_requ_tx *       1 * duration_rang_requ + I_rang_idle * (num_init + num_hybrid -       1) * duration_rang_requ ...
-            + I_rang_resp_rx * nr_resp * duration_rang_resp + I_rang_idle * (num_init + num_hybrid - nr_resp) * duration_rang_resp) ...
+            + I_rang_requ_tx        *       1 * duration_rang_requ + I_rang_idle * (num_init + num_hybrid -       1) * duration_rang_requ ...
+            + I_rang_resp_rx_active * nr_resp * duration_rang_resp + I_rang_idle * (num_init + num_hybrid - nr_resp) * duration_rang_resp) ...
             / (duration_common + duration_init);
 end
       
 if (not(protocol_reenable_hybrids))      
     % Use ranging pyramid - average number
     I_hybrid = (I_common * duration_common ...
-          + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_requ_rx * (num_init + (num_hybrid - 1)/2) * duration_rang_requ + I_rang_idle * ( (num_hybrid - 1)/2 ) * duration_rang_requ ...
-          + I_rang_resp_tx *                       1 * duration_rang_resp + I_rang_resp_rx * (num_resp + (num_hybrid - 1)/2) * duration_rang_resp + I_rang_idle * ( (num_hybrid - 1)/2 ) * duration_rang_resp) ...
+          + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_requ_rx        * (num_init + (num_hybrid - 1)/2) * duration_rang_requ + I_rang_idle * ( (num_hybrid - 1)/2 ) * duration_rang_requ ...
+          + I_rang_resp_tx *                       1 * duration_rang_resp + I_rang_resp_rx_active * (num_resp + (num_hybrid - 1)/2) * duration_rang_resp + I_rang_idle * ( (num_hybrid - 1)/2 ) * duration_rang_resp) ...
           / (duration_common + duration_hybrid);
 end
       
@@ -249,52 +247,78 @@ I_system_hybrid = I_hybrid_tot + I_sd_hybrid + I_ble;
 
 % EVAL --------------------------------------------------------------------
 
-duration_day = 24;
-
-life_time_init   = Q_bat / I_system_init   / 3600 / duration_day;
-life_time_resp   = Q_bat / I_system_resp   / 3600 / duration_day;
-life_time_hybrid = Q_bat / I_system_hybrid / 3600 / duration_day;
-
-power_budget_init   = [ (I_init   * (duration_common + duration_init  ) / interval_round) / I_system_init  , (I_rang_dc * (interval_round - (duration_common + duration_init  ) ) / interval_round) / I_system_init  , I_ble / I_system_init  , I_sd_init   / I_system_init   ];
-power_budget_resp   = [ (I_resp   * (duration_common + duration_resp  ) / interval_round) / I_system_resp  , (I_rang_dc * (interval_round - (duration_common + duration_resp  ) ) / interval_round) / I_system_resp  , I_ble / I_system_resp  , I_sd_resp   / I_system_resp   ];
-power_budget_hybrid = [ (I_hybrid * (duration_common + duration_hybrid) / interval_round) / I_system_hybrid, (I_rang_dc * (interval_round - (duration_common + duration_hybrid) ) / interval_round) / I_system_hybrid, I_ble / I_system_hybrid, I_sd_hybrid / I_system_hybrid ];
-
-fprintf('Estimated lifetime INIT: \t %1.2f days @ %2.1f mA\n',     life_time_init, I_system_init);
-fprintf('Estimated lifetime RESP: \t %1.2f days @ %2.1f mA\n',     life_time_resp, I_system_resp);
-fprintf('Estimated lifetime HYBRID: \t %1.2f days @ %2.1f mA\n', life_time_hybrid, I_system_hybrid);
-
-fprintf('Estimated accuracy  with %i frequency and %i antenna diversity: %4.1f mm\n',  frequ_diversity, antenna_diversity, div_avg_accuracy(frequ_diversity, antenna_diversity));
-fprintf('Estimated precision with %i frequency and %i antenna diversity: %4.1f mm\n', frequ_diversity, antenna_diversity, div_avg_precision(frequ_diversity, antenna_diversity));
-
-% FIGURES -----------------------------------------------------------------
-
-% Power budget
-font_size = 20;
-figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
-name = categorical({'Initiator', 'Responder', 'Hybrid'});
-data_relative = [power_budget_init; power_budget_resp; power_budget_hybrid];
-bar(name, data_relative);
-ylim([0,1]);
-xlabel('Node classes', 'FontSize', font_size);
-ylabel('Energy consumption [%]', 'FontSize', font_size);
-legend('Active period', 'Passive period', 'Discovery', 'Logging');
-
-font_size = 20;
-figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
-name = categorical({'Initiator', 'Responder', 'Hybrid'});
-data_absolute = [power_budget_init * I_system_init; power_budget_resp * I_system_resp; power_budget_hybrid * I_system_hybrid];
-bar(name, data_absolute, 'stacked');
-xlabel('Node classes', 'FontSize', font_size);
-ylabel('Energy consumption [mA]', 'FontSize', font_size);
-
-% Life time
-font_size = 20;
-figure('Name', 'Life time', 'DefaultAxesFontSize', font_size)
-name = categorical({'Initiator', 'Responder', 'Hybrid'});
-data = [life_time_init * duration_day; life_time_resp * duration_day; life_time_hybrid * duration_day];
-bar(name, data);
-xlabel('Node classes', 'FontSize', font_size);
-ylabel('Life time [h]', 'FontSize', font_size);
+lifetime_totternary(1) = Q_bat / I_system_init   / 3600;
+lifetime_totternary(2) = Q_bat / I_system_resp   / 3600;
+lifetime_totternary(3) = Q_bat / I_system_hybrid / 3600;
 
 
+
+%% SurePoint
+
+duration_rang_resp    = 30; % ms
+duration_rang_resp_rx = 2; %ms
+duration_rang_resp_tx = 2; %ms
+
+% CALCULATIONS ------------------------------------------------------------
+
+% Scheduling
+nr_contention_avg = protocol_standard_contention_length;
+
+
+% Durations
+duration_common = duration_schedule + nr_contention_avg * interval_slot;
+duration_init   = (num_init + num_hybrid) * duration_rang_requ + (num_init + num_hybrid) * duration_rang_resp;
+duration_resp   = (num_init + num_hybrid) * duration_rang_requ + (num_init + num_hybrid) * duration_rang_resp;
+duration_hybrid = (num_init + num_hybrid) * duration_rang_requ + (num_init + num_hybrid) * duration_rang_resp;
+
+I_common = (I_schedule * duration_schedule + I_contention * nr_contention_avg * interval_slot) / duration_common;
+
+% Calculate average responses per responder (due to contention)
+p_one_col = 1 - (9/10)^(        1 * (num_resp + num_hybrid - 1));
+p_two_col = 1 - (9/10)^(p_one_col * (num_resp + num_hybrid - 1));
+num_responses = (1 + p_one_col * 1 + p_two_col * 1);
+
+num_responses_received = min( (num_resp + num_hybrid) * num_responses, duration_rang_resp / duration_rang_resp_tx);
+
+% Initiator costs
+I_init   = (I_common * duration_common ...
+          + I_rang_requ_tx        *                           1 *  duration_rang_requ ...
+          + I_rang_resp_rx_active *      num_responses_received *  duration_rang_resp_rx + I_rang_resp_rx_passive * 1 * (duration_rang_resp -  num_responses_received * duration_rang_resp_rx) ...
+          + I_rang_idle           * (num_init + num_hybrid - 1) * (duration_rang_requ + duration_rang_resp) ) ...
+          / (duration_common + duration_init);
+      
+% Responder costs
+I_resp   = (I_common * duration_common ...
+          + I_rang_requ_rx *                 (num_init + num_hybrid) * duration_rang_requ ...
+          + I_rang_resp_tx * num_responses * (num_init + num_hybrid) * duration_rang_resp_tx + I_rang_idle * (num_init + num_hybrid) * (duration_rang_resp - num_responses * duration_rang_resp_rx) ) ...
+          / (duration_common + duration_resp);
+      
+% Hybrid costs
+I_hybrid = (I_common * duration_common ...
+          + I_rang_requ_tx        *                                           1 * duration_rang_requ ...
+          + I_rang_resp_rx_active *                      num_responses_received * duration_rang_resp_rx + I_rang_resp_rx_passive *                           1 * (duration_rang_resp - num_responses_received * duration_rang_resp_rx) ...
+          + I_rang_requ_rx        *                 (num_init + num_hybrid - 1) * duration_rang_requ ...
+          + I_rang_resp_tx        * num_responses * (num_init + num_hybrid - 1) * duration_rang_resp_tx + I_rang_idle            * (num_init + num_hybrid - 1) * (duration_rang_resp -          num_responses * duration_rang_resp_rx) ) ...
+          / (duration_common + duration_hybrid);
+    
+% Add duty-cycling costs
+I_init_tot   = (I_init   * (duration_common + duration_init  ) + I_rang_dc * (interval_round - (duration_common + duration_init  ) ) ) / (interval_round);
+
+I_resp_tot   = (I_resp   * (duration_common + duration_resp  ) + I_rang_dc * (interval_round - (duration_common + duration_resp  ) ) ) / (interval_round);
+
+I_hybrid_tot = (I_hybrid * (duration_common + duration_hybrid) + I_rang_dc * (interval_round - (duration_common + duration_hybrid) ) ) / (interval_round);
+
+
+% Total system current
+I_system_init   = I_init_tot;
+I_system_resp   = I_resp_tot;
+I_system_hybrid = I_hybrid_tot;
+
+% EVAL --------------------------------------------------------------------
+
+lifetime_surepoint(1) = Q_bat / I_system_init   / 3600;
+lifetime_surepoint(2) = Q_bat / I_system_resp   / 3600;
+lifetime_surepoint(3) = Q_bat / I_system_hybrid / 3600;
+
+end
 
