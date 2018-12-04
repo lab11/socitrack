@@ -170,8 +170,18 @@ function location_optimize (tag_position, anchor_ranges, anchor_locations) {
 /******************************************************************************/
 
 function buf_to_eui (dv, offset) {
-    var eui = '';
-    for (var i=0; i<8; i++) {
+    var eui = 'c0:98:e5:42:00:';
+
+    // Evaluate single byte EUI
+    var val = dv.getUint8(offset);
+    val = val.toString(16);
+    if (val.length == 1) {
+        val = '0' + val;
+    }
+    eui = eui + val;
+
+    // Evaluate full EUI
+    /*for (var i=0; i<8; i++) {
         var val = dv.getUint8(offset+i);
         val = val.toString(16);
         if (val.length == 1) {
@@ -181,7 +191,8 @@ function buf_to_eui (dv, offset) {
         if (i<7) {
             eui = ':' + eui;
         }
-    }
+    }*/
+
     return eui;
 }
 
@@ -209,19 +220,19 @@ function process_raw_buffer (buf) {
         // How many?
         var num_ranges = dv.getUint8(1);
         if (num_ranges == 0) {
-            app.log('Got range, 0 anchors');
+            app.log('Got 0 ranges.');
             app.update_location('Didn\'t get any ranges.');
         } else {
             app.log('Got ' + num_ranges + ' ranges.');
             var offset_start = 2;
-            var instance_length = 12;
+            var instance_length = 1 + 4;
             var ranges = {};
             var ranges_update = '';
             var num_valid_ranges = 0;
             for (var i=0; i<num_ranges; i++) {
                 var start = offset_start + (i*instance_length);
                 var eui = buf_to_eui(dv, start);
-                var range = encoded_mm_to_meters(dv, start+8);
+                var range = encoded_mm_to_meters(dv, start+1);
 
                 // Strip out ranges that are error codes
                 if (range > -1000) {
@@ -232,7 +243,7 @@ function process_raw_buffer (buf) {
                 app.log('  ' + eui + ': ' + range);
 
                 // Add to string
-                ranges_update += 'Resp ' + i + ': \t' + range + '\n';
+                ranges_update += 'Resp ' + (i+1) + ': \t' + range + '\n';
             }
 
             // Got ranges
@@ -245,13 +256,13 @@ function process_raw_buffer (buf) {
             }
 
             // Calculate a location
-            if (num_valid_ranges >= 3) {
+            /*if (num_valid_ranges >= 3) {
                 var loc = calculate_location(ranges, _anchor_locations);
                 var location_update =  'X: ' + loc[0].toFixed(2) + ';';
                     location_update += ' Y: ' + loc[1].toFixed(2) + ';';
                     location_update += ' Z: ' + loc[2].toFixed(2);
                 app.update_location(location_update);
-            }
+            }*/
 
             // In any cases, show all the ranges
             app.update_ranges(ranges_update);
