@@ -55,8 +55,8 @@ Byte 0: 0x02  Opcode
 Byte 1:      Config 1
    Bits 4-7: Application select
                0 = APP_STANDARD
-   	           1 = APP_CALIBRATION
-   	           2 = APP_RANGETEST
+   	         1 = APP_CALIBRATION
+   	         2 = APP_RANGETEST
                3 = APP_SIMPLETEST
    Bits 3: Glossy role select
                0 = GLOSSY_SLAVE
@@ -74,10 +74,10 @@ Byte 2:     Master EUI
 
 
 IF APP_CALIBRATION:
-Byte 2:      Calibration node index.
-             The index of the node in the calibration session. Valid values
-             are 0,1,2. When a node is assigned index 0, it automatically
-             starts the calibration round.
+Byte 2:    Calibration node index.
+           The index of the node in the calibration session. Valid values
+           are 0,1,2. When a node is assigned index 0, it automatically
+           starts the calibration round.
 
 ```
 
