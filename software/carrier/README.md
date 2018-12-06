@@ -1,11 +1,15 @@
 nRF BLE Code
 ============
 
-The software in this folder runs on the nRF51822 BLE chip. Look in the `/apps`
-folder for the software that runs on the different hardware platforms.
+The software in this folder runs on the nRF52840 BLE chip. Look in the `/apps`
+folder for the software that runs on the different hardware platforms:
+
+- `blink`: Simply blinks an LED to verify that the board is working correctly (useful in combination with timers and for power testing).
+- `node`: Standard application code for both initiators and responders; configures itself automatically for correct Glossy roles.
+- `testing`: Application to run seperate hardware tests for BLE, accelerometer, SD card, timers and other individual functionality.
 
 We leverage the `nrf5x-base` repository for some helper code and
-build files.
+build files. Make sure that you check out the correct, active branch.
 
 Remote debugging
 ----------------

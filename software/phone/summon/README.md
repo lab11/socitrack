@@ -1,7 +1,7 @@
-ToTTag Summon App
+TotTernary Summon App
 =================
 
-Copy everything in this folder to the URL where the TriTag eddystone
+Copy everything in this folder to the URL where the Eddystone
 beacon points to (except for init_cordova.sh).
 
 To rebuild everything:

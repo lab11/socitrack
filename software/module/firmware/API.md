@@ -1,7 +1,7 @@
-Tripoint API
+Module API
 ============
 
-This defines the I2C interface for the TriPoint module. TriPoint is an
+This defines the I2C interface for the module; it is always an
 I2C slave.
 
 ```
@@ -12,19 +12,20 @@ I2C Address: 0x65
 Commands
 --------
 
-These commands are set as a WRITE I2C command from the host to the TriPoint. Each
+These commands are set as a WRITE I2C command from the host to the module. Each
 write command starts with the opcode.
 
 | Opcode             | Byte | Type | Description                                            |
 | ------             | ---- | ---- | -----------                                            |
 | `INFO`             | 0x01 | W/R  | Get information about the module.                      |
-| `CONFIG`           | 0x02 | W    | Configure options. Set tag/anchor.                     |
+| `CONFIG`           | 0x02 | W    | Configure app options. Set mode and network role.      |
 | `READ_INTERRUPT`   | 0x03 | W/R  | Ask the chip why it asserted the interrupt pin.        |
 | `DO_RANGE`         | 0x04 | W    | If not doing periodic ranging, initiate a range now.   |
 | `SLEEP`            | 0x05 | W    | Stop all ranging and put the device in sleep mode.     |
 | `RESUME`           | 0x06 | W    | Restart ranging.                                       |
 | `SET_LOCATION`     | 0x07 | W    | Set location of this device. Useful only for anchors.  |
-| `READ_CALIBRATION` | 0x08 | W/R  | Read the stored calibration values from this TriPoint. |
+| `READ_CALIBRATION` | 0x08 | W/R  | Read the stored calibration values from this module.   |
+| `SET_TIME`         | 0x09 | W    | Set the current epoch time for the master node.        |
 
 
 
@@ -52,57 +53,33 @@ Byte 2: version
 Byte 0: 0x02  Opcode
 
 Byte 1:      Config 1
-   Bits 4-7: Reserved
-   Bits 2-4: Application select.
-             Choose which ranging application to execute on the TriPoint.
-               0 = Default
-               1 = Calibration
-               2-7 = reserved
-   Bits 0-1: Anchor/Tag select.
-               0 = tag
-               1 = anchor
-               2 = reserved
-               3 = reserved
+   Bits 4-7: Application select
+               0 = APP_STANDARD
+   	           1 = APP_CALIBRATION
+   	           2 = APP_RANGETEST
+               3 = APP_SIMPLETEST
+   Bits 3: Glossy role select
+               0 = GLOSSY_SLAVE
+               1 = GLOSSY_MASTER
+   Bits 0-2: Mode select.
+               0 = APP_ROLE_INVALID
+               1 = APP_ROLE_INIT_RESP     (hybrid)
+               2 = APP_ROLE_INIT_NORESP   (initiator)
+               3 = APP_ROLE_NOINIT_RESP   (responder)
+               4 = APP_ROLE_NOINIT_NORESP (support)
 
-IF TAG:
-Byte 2:
-   Bits 4-7: Reserved.
-   Bit 3:    Sleep settings.
-             Configure if TriPoint should sleep the DW1000 between ranging
-             events.
-               0 = Do not sleep.
-               1 = Enter sleep between ranging events.
-   Bits 1-2: Update mode.
-             Configure if the module should periodically get new locations
-             or if it should get locations on demand.
-               0 = update periodically
-               1 = update only on demand
-               2 = reserved
-               3 = reserved
-   Bit 0:    Report locations or ranges.
-             Configure if the module should report raw ranges or a computed
-             location. NOTE: The module may need to offload the location
-             computation.
-               0 = return ranges
-               1 = return location
 
-Byte 3:      Location update rate.
-             Specify the rate at which the module should get location updates.
-             Specified in multiples of 0.1 Hz. 0 indicates as fast as possible.
+IF APP_STANDARD
+Byte 2:     Master EUI
 
-IF ANCHOR:
-   TODO
 
-IF CALIBRATION:
+IF APP_CALIBRATION:
 Byte 2:      Calibration node index.
              The index of the node in the calibration session. Valid values
              are 0,1,2. When a node is assigned index 0, it automatically
              starts the calibration round.
 
 ```
-
-
-### Both TAG and ANCHOR Commands
 
 
 #### `READ_INTERRUPT`
@@ -122,17 +99,25 @@ Byte 1: Interrupt reason
 
 
 IF byte1 == 0x1:
-Byte 2: Number of ranges.
-Bytes 3-n: 8 bytes of anchor EUI then 4 bytes of range in millimeters.
+Byte  2:       Number of ranges.
+Bytes 3-n:     8 bytes of anchor EUI then 4 bytes of range in millimeters.
+Bytes (n-3)-n: Can contain epoch time if n % 8 != 0
 
 IF byte1 == 0x2:
-Bytes 2-3:   Round number
-Bytes 4-8:   Round A timestamp. TX/RX depends on which node index this node is.
-Bytes 9-12:  Diff between Round A timestamp and Round B timestamp.
-Bytes 13-16: Diff between Round B timestamp and Round C timestamp.
-Bytes 17-20: Diff between Round C timestamp and Round D timestamp.
+Bytes 2-3:     Round number
+Bytes 4-8:     Round A timestamp. TX/RX depends on which node index this node is.
+Bytes 9-12:    Diff between Round A timestamp and Round B timestamp.
+Bytes 13-16:   Diff between Round B timestamp and Round C timestamp.
+Bytes 17-20:   Diff between Round C timestamp and Round D timestamp.
 
-TODO
+IF byte1 == 0x3:
+bytes 2-n: master EUI
+
+IF byte1 == 0x4:
+Byte  2:       Number of ranges
+Bytes 3-n:     1*4 bytes of EUI then 30*4 bytes of raw ranges in millimeters.
+Bytes (n-3)-n: Can contain epoch time if n % (1 + 30)*4 != 0
+
 ```
 
 
@@ -173,7 +158,21 @@ Bytes 14-15: Channel 2, Antenna 1 TX+RX delay
 Bytes 16-17: Channel 2, Antenna 2 TX+RX delay
 ```
 
-### TAG Commands
+#### `SET_TIME`
+
+Set the current epoch time for the master node. Overwritten on slaves at the next update.
+
+Write:
+```
+Byte 0: 0x09  Opcode
+
+Byte 1:   Bits 24-31 of the epoch time
+Byte 2:   Bits 16-23 of the epoch time
+Byte 3:   Bits  8-15 of the epoch time
+Byte 4:   Bits  0- 7 of the epoch time 
+```
+
+### INITIATOR Commands
 
 
 #### `DO_RANGE`

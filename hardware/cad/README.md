@@ -1,4 +1,4 @@
 CAD Models
 ==========
 
-A few designs including a case for TriTag.
+A few designs including a case for TriTag and TotTag.

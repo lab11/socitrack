@@ -1,11 +1,11 @@
-TriPoint Software
+Module software
 =================
 
-This firmware runs on the triangular TriPoint module and performs the basis
-for the PolyPoint ranging system. Ideally, each TriPoint will ship with
+This firmware runs on the module and provides the basis
+for the ranging system. Ideally, each module will ship with
 this firmware already installed.
 
-The following steps demonstrate how to re-program TriPoints.
+The following steps demonstrate how to re-program them:
 
 1. Get the arm-gcc compiler for your platform: https://launchpad.net/gcc-arm-embedded
 
@@ -13,27 +13,25 @@ The following steps demonstrate how to re-program TriPoints.
 
         make
 
-3. Programming the STM32F0 on TriPoint requires a JLink JTAG programmer:
-https://www.segger.com/jlink-general-info.html, the JLink programming software:
-https://www.segger.com/jlink-software.html, and a ARM JTAG to Tag-Connect
-adapter:
-https://github.com/lab11/nrf51-tools/tree/master/hardware/jlink_to_tag/rev_b or
-https://www.segger.com/jlink-6-pin-needle-adapter.html.
+3. Programming the STM32F091CC on the module requires a [JLink JTAG programmer](
+https://www.segger.com/jlink-general-info.html) and the [JLink programming software](
+https://www.segger.com/jlink-software.html). To connect them to the board, you further require a ARM JTAG to Tag-Connect
+adapter from either of two sources:
 
-4. Program the STM32F0, and set the ID:
+- Lab11 version: https://github.com/lab11/jtag-tagconnect/tree/master/hardware/jlink_to_tag/rev_d
+- Off-the-shelf version: https://www.segger.com/jlink-6-pin-needle-adapter.html
 
-        make flash ID=c0:98:e5:50:50:00:00:01
+4. Program the STM32F091CC, and set the ID:
+
+        make flash ID=c0:98:e5:42:00:01
         
     If you have multiple JLink boxes attached to your computer:
     
-        SEGGER_SERIAL=<segger id> make flash ID=c0:98:e5:50:50:00:00:01
+        SEGGER_SERIAL=<segger id> make flash ID=c0:98:e5:42:00:01
 
 5. To output J-Link RTT packets, use the J-Link Commander `JLinkExe`:
     
-        J-Link>device STM32F031G6
-        J-Link>connect
-        TIF>s
-        Speed> <press enter>
+        JLinkExe -Device STM32F091CC -if SWD -speed 4000
         
    You can then use the J-Link RTT Viewer to see and log the packets:
    
@@ -41,7 +39,7 @@ https://www.segger.com/jlink-6-pin-needle-adapter.html.
         
    To specify the port you want to listen on, do the following:
    
-        $ JLinkExe -Device STM32F031G6 -if SWD -speed 4000 -SelectEmuBySN <J-Link S/N> -RTTTelnetPort 9200
+        $ JLinkExe -Device STM32F091CC -if SWD -speed 4000 -SelectEmuBySN <J-Link S/N> -RTTTelnetPort 9200
         J-Link>connect
         
         $ telnet localhost 9200
@@ -50,5 +48,5 @@ https://www.segger.com/jlink-6-pin-needle-adapter.html.
 I2C API
 -------
 
-The interface between the host and TriPoint is described in `firmware/API.md`.
+The interface between the host and module is described in `firmware/API.md`.
 

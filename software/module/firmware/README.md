@@ -23,7 +23,7 @@ If the default values should be used, make use of the special address
 
     make flash ID=c0:98:e5:42:00:FF
     
-Be aware that this influences scheduling, as the node directly uses the last byte for its EUI.
+Be aware that this influences scheduling, as the node directly uses the last byte for its EUI. In such a case, one should handle the EUI on the application level using the configured ID (handed over as a #define directly through the compiler).
 
 
 **Install options:**

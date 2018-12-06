@@ -1,14 +1,12 @@
-TriPoint
+TriPoint Serial Debugging
 ========
 
-This folder contains the software for TriPoint.
+This folder contains the serial debugging software for TriPoint.
 
 Firmware
 --------
 
-The code that runs on TriPoint is in `/firmware`.
-
-
+The code that runs on TriPoint is in `../module/firmware`.
 
 Python
 ------

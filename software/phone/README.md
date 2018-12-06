@@ -5,17 +5,17 @@ This folder contains code for connecting to the BLE services provided
 by the hardware.
 
 
-tritag-summon
+summon
 -------------
 
-App for summon on mobile phones. See the readme in the folder.
+App for Summon on mobile phones. See the README in the folder `summon`.
 
 
 tritag.js
 ---------
 
 This is a script that runs with Node.js to get range estimates
-from the TriTag device.
+from the carrier board.
 
 To use:
 

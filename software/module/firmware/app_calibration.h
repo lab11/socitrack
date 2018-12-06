@@ -22,7 +22,7 @@
 // This must be known.
 #define CALIBRATION_EPSILON_US 5000 // 3 ms
 
-// How many TriPoint nodes participate in calibration
+// How many nodes participate in calibration
 #define CALIBRATION_NUM_NODES   3
 #define CALIBRATION_MASTER_NODE 0
 

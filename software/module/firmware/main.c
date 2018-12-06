@@ -80,7 +80,7 @@ static void error () {
 // Main operation functions called by the host interface
 /******************************************************************************/
 
-// Call this to configure this TriPoint as the correct application.
+// Call this to configure this module as the correct application.
 // If this is called while the application is stopped, it will not be
 // automatically started.
 // If this is called when the app is running, the app will be restarted.
@@ -176,7 +176,7 @@ void module_stop () {
 }
 
 // Drop the big hammer on the DW1000 and reset the chip (along with the app).
-// All state should be preserved, so after the reset the tripoint should go
+// All state should be preserved, so after the reset the module should go
 // back to what it was doing, just after a reset and re-init of the dw1000.
 void module_reset () {
 	bool resume = FALSE;
@@ -390,7 +390,7 @@ int main () {
 //#define BYPASS_HOST_INTERFACE
 #ifndef BYPASS_HOST_INTERFACE
 	// Initialize the I2C listener. This is the main interface
-	// the host controller (that is using TriPoint for ranging/localization)
+	// the host controller (that is using module for ranging/localization)
 	// uses to configure how this module operates.
 	err = host_interface_init();
 	if (err) error();
