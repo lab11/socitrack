@@ -77,7 +77,7 @@ end
 duration_rang_requ_active  = num_rangings * interval_poll;
 duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_passive;
 
-response_length = 96;
+response_length   = 96;
 max_packet_length = 1023;
 
 % SD card
@@ -171,7 +171,7 @@ protocol_reenable_hybrids = 0;
 %protocol_master_takeover_period = 10 / update_freq;
 
 % Stop packet reception as initiator after a given amount
-protocol_max_responses = 0; % 0: off, X : stop listening after maximally X responses
+protocol_max_responses = 15; % 0: off, X : stop listening after maximally X responses
 
 % Enable local logging to SD card
 protocol_local_logging = 1; % 0 : off, 1 : on

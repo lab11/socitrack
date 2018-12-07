@@ -42,6 +42,9 @@ protocol_max_responses = 0; % 0: off, X : stop listening after maximally X respo
 % Enable local logging to SD card
 protocol_local_logging = 1; % 0 : off, 1 : on
 
+% Optimize parameters
+use_optimized_params = 0;
+
 % PROTOCOL PARAMS ---------------------------------------------------------
 
 % Bluetooth
@@ -60,7 +63,12 @@ interval_slot  = 10; % ms
 
 duration_schedule = 10;
 
-interval_flood  = 2; % ms
+if (use_optimized_params > 0)
+    interval_flood = 1; %ms
+else
+    interval_flood  = 2; % ms
+end
+
 max_flood_depth = 5;
 
 protocol_automatic_timeout_rounds   = 250; % rounds
@@ -77,13 +85,17 @@ num_rangings    = num_ow_rangings + num_tw_rangings;
 
 interval_poll = interval_flood;
 
-duration_rang_requ_passive = 10; %ms
+if (use_optimized_params > 0)
+    duration_rang_requ_passive = 0; %ms
+    duration_rang_resp  = 2; % ms
+else
+    duration_rang_requ_passive = 10; %ms
+    duration_rang_resp  = 2.5; % ms
+end
 duration_rang_requ_active  = num_rangings * interval_poll;
 duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_passive;
 
-duration_rang_resp  = 2.5; % ms
-
-response_length = 96;
+response_length   = 96;
 max_packet_length = 1023;
 
 % SD card
@@ -139,8 +151,13 @@ I_contention = 151.0;
 
 % Ranging
 
-I_rang_idle  = 23.1;
-I_rang_dc    = 11.1;
+if (use_optimized_params > 0)
+    I_rang_idle = 11.1;
+    I_rang_dc   = I_sleep;
+else
+    I_rang_idle  = 23.1;
+    I_rang_dc    = 11.1;
+end
 
 I_rang_poll_tx_1ms = 41.1;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
@@ -263,6 +280,10 @@ power_budget_init   = [ (I_init   * (duration_common + duration_init  ) / interv
 power_budget_resp   = [ (I_resp   * (duration_common + duration_resp  ) / interval_round) / I_system_resp  , (I_rang_dc * (interval_round - (duration_common + duration_resp  ) ) / interval_round) / I_system_resp  , I_ble / I_system_resp  , I_sd_resp   / I_system_resp   ];
 power_budget_hybrid = [ (I_hybrid * (duration_common + duration_hybrid) / interval_round) / I_system_hybrid, (I_rang_dc * (interval_round - (duration_common + duration_hybrid) ) / interval_round) / I_system_hybrid, I_ble / I_system_hybrid, I_sd_hybrid / I_system_hybrid ];
 
+schedule_overhead(1) = (duration_common * I_common)/(I_system_init   * interval_round);
+schedule_overhead(2) = (duration_common * I_common)/(I_system_resp   * interval_round);
+schedule_overhead(3) = (duration_common * I_common)/(I_system_hybrid * interval_round);
+
 fprintf('Estimated lifetime INIT: \t %1.2f days @ %2.1f mA\n',     life_time_init, I_system_init);
 fprintf('Estimated lifetime RESP: \t %1.2f days @ %2.1f mA\n',     life_time_resp, I_system_resp);
 fprintf('Estimated lifetime HYBRID: \t %1.2f days @ %2.1f mA\n', life_time_hybrid, I_system_hybrid);
@@ -281,7 +302,8 @@ bar(name, data_relative);
 ylim([0,1]);
 xlabel('Node classes', 'FontSize', font_size);
 ylabel('Energy consumption [%]', 'FontSize', font_size);
-legend('Active period', 'Passive period', 'Discovery', 'Logging');
+lgd = legend('Active period', 'Passive period', 'Discovery', 'Logging');
+lgd.FontSize = 15;
 
 font_size = 20;
 figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
