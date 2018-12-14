@@ -63,7 +63,7 @@ TotTag, a PCB which utilizes SquarePoint and provides a self-contained unit for 
 - microUSB connector including FTDI FT232R for debugging
 - 3-axis accelerometer
 
-TotTag is designed to be a node which can be used both as an anchor, a tag or a combination of both. It offers infrastructure-free and -based network structures and enables centimeter-accurate, multi-day deployments. Both schematic and board design are open-source and can be found in the `hardware/tottag` folder; a suitable 3-D printable case is provided in `hardware/cad/tottag-case`.
+TotTag is designed to be a node which can be used both as an anchor, a tag or a combination of both. It offers infrastructure-free and -based network structures and enables centimeter-accurate, multi-day deployments. Both schematic and board design are open-source and can be found in the [`hardware/tottag`](hardware/tottag) folder; a suitable 3-D printable case is provided in [`hardware/cad/tottag-case`](hardware/cad/tottag-case/).
 
 
 Software
@@ -74,23 +74,23 @@ the system.
 
 #### SquarePoint
 
-Found in `software/module`, the core firmware that makes the SquarePoint module work
+Found in [`software/module`](software/module/), the core firmware that makes the SquarePoint module work
 includes all of the logic to implement our custom ranging protocol on top of the DecaWave DW1000 UWB radio. It makes use of frequency and antenna diversity and leverages both one-way and two-way ToF ranging to achieve efficient and reliable ranging in various environments. The firmware architecture supports multiple "applications", or ranging algorithms, that can
 be selected at runtime; currently, we officially support:
 
 - *Standard*: the full protocol, using maximal diversity to achieve highly-reliable ranging measurements over 30 different channels.
 - *Calibration*: automatically triggered by our calibration scripts, the app allows for automated device-specific calibration which is then applied for future measurements.
-- *Tests*: implemention one-way transmission and reception, this application is meant for reliability and connectivity tests.
+- *Tests*: implementation of one-way transmission and reception, this application is meant for reliability and connectivity tests.
 
 #### TotTag
 
-The TotTag code, situated at `software/carrier`, implements a BLE application
+The TotTag code, situated at [`software/carrier`](software/carrier/), implements a BLE application
 that uses the SquarePoint module as an I2C slave and provides
 a BLE service. It exposes services to configure and enable the device, set the current time to enable accurate time stamping of ranging data as well as accessing data in real-time over a BLE characteristic.
 
 #### Phone and BLE
 
-The tools in the `/software/phone` directory interact with TotTag and read data
+The tools in the [`/software/phone`](software/phone/) directory interact with TotTag and read data
 across the BLE interface. It uses the Summon app ([Google Play](https://play.google.com/store/apps/details?id=edu.umich.eecs.lab11.summon), [App Store](https://itunes.apple.com/us/app/summon-lab11/id1051205682)) to easily access and interact with the nodes. The website must be configured in the carrier code and can be hosted on a personal domain; we recommend the use of a link shortener to reduce the BLE advertisement length.
 
 ### Linux Development
