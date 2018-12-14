@@ -90,7 +90,7 @@ a BLE service. It exposes services to configure and enable the device, set the c
 
 #### Phone and BLE
 
-The tools in the [`/software/phone`](software/phone/) directory interact with TotTag and read data
+The tools in the [`software/phone`](software/phone/) directory interact with TotTag and read data
 across the BLE interface. It uses the Summon app ([Google Play](https://play.google.com/store/apps/details?id=edu.umich.eecs.lab11.summon), [App Store](https://itunes.apple.com/us/app/summon-lab11/id1051205682)) to easily access and interact with the nodes. The website must be configured in the carrier code and can be hosted on a personal domain; we recommend the use of a link shortener to reduce the BLE advertisement length.
 
 ### Linux Development
