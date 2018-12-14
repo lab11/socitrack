@@ -10,5 +10,5 @@ To rebuild everything:
 
 ---
 
-<img src="https://github.com/abiri/totternary/raw/master/software/phone/summon/screenshot.png" width="300px" />
+<img src="https://github.com/lab11/totternary/raw/master/software/phone/summon/screenshot.png" width="300px" />
 
