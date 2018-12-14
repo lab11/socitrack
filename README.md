@@ -1,7 +1,7 @@
 TotTernary
 =========
 
-<img src="https://raw.githubusercontent.com/abiri/totternary/master/media/tern_comic_1280.png" alt="TotTernary" width="25%" align="left">
+<img src="https://raw.githubusercontent.com/lab11/totternary/master/media/tern_comic_1280.png" alt="TotTernary" width="25%" align="left">
 
 *TotTernary* is a system for using ultra-wideband RF time-of-flight ranging to perform indoor ranging and localization.
 It incorporates the *SquarePoint* module, containing the DecaWave DW1000 for UWB packet transmission and timestamping.
@@ -21,7 +21,7 @@ Git Clone
 
 When cloning this repository, be absolutely sure to do
 
-    git clone --recursive https://github.com/abiri/totternary.git
+    git clone --recursive https://github.com/lab11/totternary.git
 
 so that you get the submodules as well. All of the supporting
 libraries and build tools are in submodules for the various
@@ -50,7 +50,7 @@ protocol. This module provides a simple abstraction layer for quick integration 
 
 ### TotTag
 
-  <img src="https://raw.githubusercontent.com/abiri/totternary/master/media/tottag_vE_front.jpg" alt="TotTag Front" width="40%;" align="right">
+  <img src="https://raw.githubusercontent.com/lab11/totternary/master/media/tottag_vE_front.jpg" alt="TotTag Front" width="40%;" align="right">
 
 TotTag, a PCB which utilizes SquarePoint and provides a self-contained unit for interaction tracking, includes:
 
