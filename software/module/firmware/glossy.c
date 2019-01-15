@@ -38,6 +38,7 @@ static uint8_t  _xtal_trim;
 static uint8_t  _last_xtal_trim;
 static bool     _sending_sync;
 static uint32_t _lwb_counter;
+static uint8_t  _lwb_empty_round_counter;
 static uint8_t  _cur_glossy_depth;
 static bool     _glossy_currently_flooding;
 
@@ -175,7 +176,8 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	_lwb_in_sync 			= FALSE;
 	_sending_sync 			= FALSE;
 	_lwb_counter 			= 0;
-	_cur_glossy_depth		= 0;
+	_lwb_empty_round_counter   = 0;
+	_cur_glossy_depth		   = 0;
 	_glossy_currently_flooding = FALSE;
 	_lwb_sched_en 			   = FALSE;
 	_lwb_scheduled_init        = FALSE;
@@ -384,8 +386,27 @@ static void glossy_lwb_round_task() {
 
 	if(_role == GLOSSY_MASTER) {
 
+		// Disable Master again if he did not find anyone
+		if (_lwb_empty_round_counter > TIMEOUT_PERIODS) {
+
+			// Stop
+			debug_msg("WARNING: Timing out, abandoning this network...\n");
+
+			// Stop reception
+			glossy_stop();
+
+			standard_stop();
+
+			// Deschedule from network
+			memset(_lwb_master_eui, 0, sizeof(_lwb_master_eui));
+			host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
+
+			_lwb_empty_round_counter = 0;
+
+			return;
+
 		// LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
-		if(_lwb_counter == lwb_slot_cont_start){
+		} else if(_lwb_counter == lwb_slot_cont_start) {
 
             if (standard_is_init_active()) {
                 // Stop if still listening for responses
@@ -561,7 +582,11 @@ static void glossy_lwb_round_task() {
 				_lwb_master_eui[0] = master_candidate_eui;
 				host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
 
-				if (standard_get_config()->my_EUI[0] == master_candidate_eui) {
+				if (master_candidate_eui == 0) {
+                    // Could not find a valid candidate, so we just have to do normal discovery again
+                    return;
+
+                } else if (standard_get_config()->my_EUI[0] == master_candidate_eui) {
 					// This node will try to take over
 					debug_msg("INFO: Node will try to take over network\n");
 
@@ -570,13 +595,16 @@ static void glossy_lwb_round_task() {
 					save_schedule_information((uint8_t*)eui_copy_buffer);
 
 					// Restart
+					debug_msg("Restarting Glossy...\n");
 					glossy_init(GLOSSY_MASTER, master_candidate_eui);
 
 					// Fill in copied information
 					restore_schedule_information((uint8_t*)eui_copy_buffer);
+					debug_msg("Node is ready to take over the network...\n");
 
 					// Let's try and get this new network running
 					standard_start();
+					debug_msg("INFO: Network restarted with new master\n");
 
 				} else {
 					// Configure new master and switch
@@ -1399,9 +1427,11 @@ void glossy_reset_counter_offset() {
         // Normal behaviour, we dont have to do anything; maybe we just missed a single schedule, the control loop will catch this
         return;
 
+#ifdef PROTOCOL_ENABLE_MASTER_TAKEOVER
     } else if ( _lwb_counter >  (GLOSSY_MASTER_TAKEOVER_PERIOD - 50)) {
         // Soon, another Master will take over; as it will then start transmitting, we give up on waiting for the old master, as due to time desync, this could already be a part of the new schedule
         return;
+#endif
 
     } else {
 
@@ -1631,6 +1661,20 @@ static void write_data_to_sync() {
     debug_msg(" INITs, ");
     debug_msg_uint(_sync_pkt.resp_schedule_length);
     debug_msg(" RESPs\n");*/
+
+#ifdef PROTOCOL_ENABLE_TIMEOUT
+    // If the schedule is empty, increase the master timeout
+    if ( ((_lwb_num_init - standard_is_init_enabled()) == 0) &&
+         ((_lwb_num_resp - standard_is_resp_enabled()) == 0)   ) {
+
+        // Noone (except for the host) is scheduled
+        _lwb_empty_round_counter++;
+    } else {
+        // Reset counter
+        _lwb_empty_round_counter = 0;
+    }
+#endif
+
 }
 
 static void write_sync_to_packet_buffer() {
@@ -1668,7 +1712,8 @@ static uint8_t get_master_candidate() {
 	// Search through INITs
 	for (uint8_t i = 0; i < _lwb_num_init; i++) {
 
-		if (_init_sched_euis[i][0] > candidate_eui) {
+		if ( (_init_sched_euis[i][0] >  candidate_eui)      &&
+		     (_init_sched_euis[i][0] != _lwb_master_eui[0])   ){
 			candidate_eui = _init_sched_euis[i][0];
 		}
 	}
@@ -1676,7 +1721,8 @@ static uint8_t get_master_candidate() {
 	// Search through RESPs
 	for (uint8_t i = 0; i < _lwb_num_resp; i++) {
 
-		if (_resp_sched_euis[i][0] > candidate_eui) {
+		if ( (_resp_sched_euis[i][0] > candidate_eui)       &&
+		     (_resp_sched_euis[i][0] != _lwb_master_eui[0])   ){
 			candidate_eui = _resp_sched_euis[i][0];
 		}
 	}

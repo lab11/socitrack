@@ -62,10 +62,18 @@
 // #define PROTOCOL_FLEXIBLE_MASTER
 
 // Automatically deschedule after not having received a schedule for a given time
-//#define PROTOCOL_ENABLE_TIMEOUT
+#define PROTOCOL_ENABLE_TIMEOUT
+
+#ifdef PROTOCOL_ENABLE_TIMEOUT
+#define TIMEOUT_PERIODS		10 // LWB rounds without contact
+#endif
 
 // Allow the highest slave to take over upon not receiving schedules for TIMEOUT schedules
-//#define PROTOCOL_ENABLE_MASTER_TAKEOVER
+#define PROTOCOL_ENABLE_MASTER_TAKEOVER
+
+#ifdef PROTOCOL_ENABLE_MASTER_TAKEOVER
+#define TAKEOVER_PERIODS	5  // LWB rounds without contact
+#endif
 
 // Transmit the epoch timestamp as the master, and read it from the schedule as slave
 #define PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
