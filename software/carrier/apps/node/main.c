@@ -72,7 +72,7 @@
 #include "simple_logger.h"
 
 /*******************************************************************************
- *   Static function delcarations
+ *   Static function declarations
  ******************************************************************************/
 
 static void flush_sd_buffer();
@@ -186,8 +186,9 @@ uint32_t rtc_to_s(uint32_t ticks) {
     // If RTC returns actual ticks
     //return ticks / (NRFX_RTC_DEFAULT_CONFIG_FREQUENCY);
 
-    // Using prescaler
-    return ticks / 1000;
+    // Using prescaler; ATTENTION: Prescaler is max 12bit, RTC max 24bit -> 24 days until clock overflows
+    // Calculation: 32768 (2¹⁵) / (rtc_instance.p_reg->PRESCALER + 1) = 2¹⁵ / 2¹² = 2³ = 8
+    return ticks / 8;
 }
 
 uint8_t ascii_to_i(uint8_t number) {
@@ -230,8 +231,10 @@ uint32_t app_get_current_time() {
 
     if (time < app.config.app_sync_time) {
         printf("WARNING: RTC overflow has occurred\n");
-        app.config.app_sync_time += rtc_to_s(0xFFFFFFFF);
-        time                     += rtc_to_s(0xFFFFFFFF);
+
+        // 24bit RTC has overflown - occurrence depends on prescaler
+        app.config.app_sync_time += rtc_to_s(0x00FFFFFF);
+        time                     += rtc_to_s(0x00FFFFFF);
     }
 
     return time;
@@ -498,10 +501,13 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
         printf("WARNING: Incorrect number of ranges!\n");
     }
 
+    // Get current time
+    uint32_t current_time_stamp = app_get_current_time();
+    //printf("Current time: %010lu\n", current_time_stamp);
+
     for (uint8_t i = 0; i < num_ranges; i++) {
 
         // Add Timestamp
-        uint32_t current_time_stamp = app_get_current_time();
         sprintf(log_buf + offset_buf + 0, "%010lu\t", current_time_stamp);
 
         // Add EUI
@@ -550,6 +556,7 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
     // Get current time
     uint32_t current_time_stamp = app_get_current_time();
+    //printf("Current time: %010lu\n", current_time_stamp);
 
     uint8_t num_responses;
     if ( (length - 1) % (1 + num_ranges) == 0) {
@@ -2012,7 +2019,7 @@ static void rtc_init(void) {
 
     // Initialize RTC instance
     nrfx_rtc_config_t rtc_config = NRFX_RTC_DEFAULT_CONFIG;
-    rtc_config.prescaler = 32; // Approximately 1000 Hz
+    rtc_config.prescaler = 4095; // Approximately 8 Hz; PRESCALER is 12bit register (2^12 - 1 = 4095)
     ret_code_t err_code = nrfx_rtc_init( &rtc_instance, &rtc_config, rtc_handler);
     APP_ERROR_CHECK(err_code);
 
@@ -2326,8 +2333,9 @@ int main (void)
             // Epoch counter update
             app_timer_triggered_epoch = false;
 
-            printf("INFO: Distributing global timestamp\n");
-            module_set_time(app_get_current_time());
+            uint32_t current_time = app_get_current_time();
+            printf("INFO: Distributing global timestamp %lu\n", current_time);
+            module_set_time(current_time);
         }
     }
 }
