@@ -17,14 +17,14 @@ To keep the local code up-to-date with the repository:
 
 ## Virtual machine
 
-To facilitate keeping the software up-to-date, we provide a virtual machine which has all necessary tools pre-installed. Currently, we support Ubuntu 18.04 LTS under [this link](www.https://n.ethz.ch/~abiri/download/projects/totternary/totternary.ova).
+To facilitate keeping the software up-to-date, we provide a virtual machine which has all necessary tools pre-installed. Currently, we support Ubuntu 18.04 LTS under [this link](https://n.ethz.ch/~abiri/download/projects/totternary/totternary.ova).
 
 Installation instructions:
 
 1. [Download VirtualBox](https://www.virtualbox.org/wiki/Downloads).
 2. Install it *with* the USB driver (will be required to connect to the SEGGER JLink).
 3. Import the virtual machine.
-4. Log in: *Username* tot, *Password* lab11totternary.
+4. Log in: **Username** *tot*, **Password** *lab11totternary*.
 
 The VM runs a Linux distribution (Ubuntu 18.04.1) and is up to date (2019/01/16). To enter commands, use the 'Terminal' (left side of the screen, black box icon).
 
