@@ -276,6 +276,14 @@ void glossy_stop() {
 	// Stop the Glossy timer
 	timer_stop(_glossy_timer);
 	timer_free(_glossy_timer);
+
+#if (BOARD_V == SQUAREPOINT)
+    // Make sure that LEDs are in default (BLUE) state
+    GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+    GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+#endif
+
 }
 
 void glossy_deschedule(){
@@ -474,7 +482,13 @@ static void glossy_lwb_round_task() {
                 //dw1000_get_status_register();
 
                 // Reset the DW
-                dw1000_reset_soft();
+                if ( (_lwb_counter % 50) == 0) {
+                    debug_msg("Resetting soft\n");
+                    dw1000_reset_soft();
+                } else {
+                    debug_msg("Resetting hard\n");
+                    dw1000_reset_hard();
+                }
 
                 // Restart DW and the app itself; all the state should however be preserved
                 dw1000_init();
