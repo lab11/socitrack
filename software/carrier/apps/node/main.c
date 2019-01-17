@@ -225,16 +225,31 @@ bool node_is_master() {
 
 uint32_t app_get_current_time() {
 
-    uint32_t time = app.config.app_sync_time + (rtc_to_s(nrfx_rtc_counter_get(&rtc_instance)) - app.config.app_sync_rtc_counter);
+    uint32_t current_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
+
+    uint32_t time = app.config.app_sync_time + (current_rtc_counter - app.config.app_sync_rtc_counter);
 
     //printf("Epoch time: %li; RTC counter: %li; Current time: %li; Result: %li\n", app.config.app_sync_time, app.config.app_sync_rtc_counter, rtc_to_s(nrfx_rtc_counter_get(&rtc_instance)), time);
 
-    if (time < app.config.app_sync_time) {
+    if ( (!app.config.app_sync_rtc_overflown)                   &&
+         (current_rtc_counter < app.config.app_sync_rtc_counter)  ) {
         printf("WARNING: RTC overflow has occurred\n");
 
         // 24bit RTC has overflown - occurrence depends on prescaler
-        app.config.app_sync_time += rtc_to_s(0x00FFFFFF);
-        time                     += rtc_to_s(0x00FFFFFF);
+        app.config.app_sync_rtc_overflown = true;
+        app.config.app_sync_rtc_overflow_counter++;
+
+    } else if ( (app.config.app_sync_rtc_overflown)                    &&
+                (current_rtc_counter > app.config.app_sync_rtc_counter)  ){
+        printf("INFO: RTC overflow flag cleared, ready for next overflow\n");
+
+        // Counter is again above the counter value where we sync'ed
+        app.config.app_sync_rtc_overflown = false;
+    }
+
+    // Include overflow - check for efficiency when no overflow occurred so far (normal case for most deployments)
+    if (app.config.app_sync_rtc_overflow_counter) {
+        time += app.config.app_sync_rtc_overflow_counter * rtc_to_s(0x00FFFFFF);
     }
 
     return time;
@@ -907,6 +922,8 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         // TIME: Setup time
         app.config.app_sync_time        = response_time;
         app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
+        app.config.app_sync_rtc_overflow_counter = 0;
+        app.config.app_sync_rtc_overflown        = false;
         printf("Set config time: %lu\n", app.config.app_sync_time);
 
     } else if (p_evt_write->handle == carrier_ble_char_enable_handle.value_handle) {
@@ -1413,6 +1430,8 @@ void updateData (uint8_t * data, uint32_t len)
 
             app.config.app_sync_time        = epoch;
             app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
+            app.config.app_sync_rtc_overflow_counter = 0;
+            app.config.app_sync_rtc_overflown        = false;
             printf("Updated current epoch time: %li\n", epoch);
         }
 
@@ -1455,6 +1474,8 @@ void updateData (uint8_t * data, uint32_t len)
 
             app.config.app_sync_time        = epoch;
             app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
+            app.config.app_sync_rtc_overflow_counter = 0;
+            app.config.app_sync_rtc_overflown        = false;
             printf("Updated current epoch time: %li\n", epoch);
         }
 
@@ -1961,6 +1982,8 @@ void app_init(void) {
     app.config.app_role             = APP_ROLE_INIT_RESP; // Default to HYBRID
     app.config.app_sync_time        = 0;
     app.config.app_sync_rtc_counter = 0;
+    app.config.app_sync_rtc_overflow_counter = 0;
+    app.config.app_sync_rtc_overflown        = false;
     memset(app.config.my_eui, 0, sizeof(app.config.my_eui));
 
     // We default to enable discovery, but not start the module at the beginning

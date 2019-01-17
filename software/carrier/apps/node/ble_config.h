@@ -75,6 +75,8 @@ typedef struct {
     app_role_t app_role;
     uint32_t   app_sync_time;       // Current epoch time at moment of configuration
     uint32_t   app_sync_rtc_counter;// Current RTC counter at the time of configuration
+    uint32_t   app_sync_rtc_overflow_counter;
+    bool       app_sync_rtc_overflown; // Signals a known overflow which is already included
     bool       app_module_enabled;
     bool       app_module_running;
 } app_config_t;
