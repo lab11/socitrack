@@ -17,7 +17,7 @@ To keep the local code up-to-date with the repository:
 
 ## Virtual machine
 
-To facilitate keeping the software up-to-date, we provide a virtual machine which has all necessary tools pre-installed. Currently, we support Ubuntu 18.04 LTS under [this link](https://n.ethz.ch/~abiri/download/projects/totternary/totternary.ova).
+To facilitate keeping the software up-to-date, we provide a virtual machine which has all necessary tools pre-installed. Currently, we support Ubuntu 18.04 LTS under [this link](https://people.ee.ethz.ch/~abiri/projects/totternary/totternary.ova).
 
 Installation instructions:
 
