@@ -32,7 +32,7 @@ static uint8_t  _last_sync_depth;
 static uint64_t _last_sync_timestamp;
 static uint32_t _last_sync_epoch;
 static uint64_t _last_time_sent;
-static uint64_t _glossy_flood_timeslot_corrected_us;
+static uint64_t _glossy_flood_timeslot_corrected;
 static uint32_t _last_delay_time;
 static uint8_t  _xtal_trim;
 static uint8_t  _last_xtal_trim;
@@ -203,7 +203,7 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
 	memset(_hybrid_sched_euis, 0, sizeof(_hybrid_sched_euis));
     memset(_sched_timeouts,    0, sizeof(_sched_timeouts));
 
-	_glossy_flood_timeslot_corrected_us = (uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8;
+	_glossy_flood_timeslot_corrected = (uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8;
 
 #ifdef GLOSSY_PER_TEST
 	_total_syncs_sent = 0;
@@ -500,7 +500,7 @@ static void glossy_lwb_round_task() {
 				dw1000_choose_antenna(LWB_ANTENNA);
 
                 // Attempt to resend
-				_last_time_sent = ( dwt_readsystimestamphi32() + GLOSSY_SCHEDULE_RETRY_SLACK_US) & 0xFFFFFFFE;
+				_last_time_sent = ( dwt_readsystimestamphi32() + GLOSSY_SCHEDULE_RETRY_SLACK_DW) & 0xFFFFFFFE;
 			}
 
 			// Enable Tx callback to reset the LWB counter
@@ -509,7 +509,7 @@ static void glossy_lwb_round_task() {
 			// Trigger send operation
 			lwb_send_sync(_last_time_sent);
 
-			debug_msg("Sent LWB schedule - INIT: ");
+			debug_msg("INFO: Sent LWB schedule - INIT: ");
 			uint8_t offset = sizeof(struct ieee154_header_broadcast) + MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH;
 			for (uint8_t i = 0; i < _lwb_num_init; i++) {
 			    debug_msg_uint(_sync_pkt_buffer[offset]);
@@ -523,6 +523,18 @@ static void glossy_lwb_round_task() {
 			    offset++;
 			}
 			debug_msg("\n");
+
+			// Verify that set this early enough
+			uint64_t curr_time = dwt_readsystimestamphi32();
+
+			debug_msg("DEBUG: Set with ");
+			if (curr_time > _last_time_sent) {
+                debug_msg("-");
+                debug_msg_uint((uint32_t)(curr_time - _last_time_sent));
+            } else {
+			    debug_msg_uint((uint32_t)(_last_time_sent - curr_time));
+			}
+			debug_msg(" of slack time before transmission\n");
 
 #if (BOARD_V == SQUAREPOINT)
 			// Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
@@ -805,6 +817,8 @@ static void glossy_lwb_round_task() {
 
             // Send ranges to carrier
             standard_init_report_ranges();
+        } else {
+        	debug_msg("WARNING: Did not report any ranges!\n");
         }
 
         // If have not been scheduled, we are glowing RED - turn this into GREEN again
@@ -1163,8 +1177,8 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					_sched_req_pkt.clock_offset_ppm = clock_offset_ppm;
 #endif
 					
-					_clock_offset = (clock_offset_ppm/1e6)+1.0;
-					_glossy_flood_timeslot_corrected_us = (uint64_t)((double)((uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8)*_clock_offset);
+					_clock_offset = (clock_offset_ppm/1e6) + 1.0;
+					_glossy_flood_timeslot_corrected = (uint64_t)((double)((uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8)*_clock_offset);
 
 					// Great, we're still sync'd!
 					_last_sync_depth = in_glossy_sync->header.seqNum;
@@ -1232,7 +1246,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 				//debug_msg("WARNING: Received schedule too quickly!\n");
 			}
 
-			_last_sync_timestamp = dw_timestamp - (_glossy_flood_timeslot_corrected_us * in_glossy_sync->header.seqNum);
+			_last_sync_timestamp = dw_timestamp - (_glossy_flood_timeslot_corrected * in_glossy_sync->header.seqNum);
 
 		} else {
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy slave!\n");
@@ -1562,9 +1576,16 @@ static void lwb_adjust_contention_period() {
 
         // Maximally set it so that all slots are used
         uint8_t lwb_round_length_static = (uint8_t)(1 /*Sync*/ + _lwb_num_scheduled_init * LWB_SLOTS_PER_RANGE + ceil_fraction(_lwb_num_scheduled_resp, LWB_RESPONSES_PER_SLOT) + 1 /*Preparation for next round*/);
-        while ( (lwb_round_length_static + _lwb_num_timeslots_cont) > (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US ) ) {
-            _lwb_num_timeslots_cont--;
+
+        if (lwb_round_length_static > (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US)) {
+            // Use more than allowed number of slots
+            debug_msg("ERROR: Too many nodes scheduled!\n");
+            _lwb_num_timeslots_cont = 0;
+        } else if ( (lwb_round_length_static + _lwb_num_timeslots_cont) > (GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US ) ) {
+            debug_msg("WARNING: Tried to schedule more than maximally possible slots due to heavy contention\n");
+            _lwb_num_timeslots_cont = (uint32_t)((GLOSSY_UPDATE_INTERVAL_US / LWB_SLOT_US) - lwb_round_length_static);
         }
+
     } else if (_lwb_num_signalling_used > (_lwb_num_timeslots_cont / 4) ) {
         // Nothing to be done
     } else if (_lwb_num_signalling_used > 0) {
