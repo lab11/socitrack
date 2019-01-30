@@ -82,6 +82,9 @@ function createArray(length) {
     if (arguments.length > 1) {
         var args = Array.prototype.slice.call(arguments, 1);
         while(i--) arr[length-1 - i] = createArray.apply(this, args);
+    } else {
+      // Initialize with 0
+      arr.fill(0);
     }
 
     return arr;
@@ -186,7 +189,7 @@ function record (peripheral, b) {
 	var num_ranges = b.readUInt8(1);
 	var ranges = [num_ranges];
 
-	console.log('Received ' + num_ranges + ' from ' + peripheral.uuid);
+	//console.log('Received ' + num_ranges + ' from ' + peripheral.uuid);
 
 	for (var i = 0; i < num_ranges; i++) {
 
@@ -200,10 +203,10 @@ function record (peripheral, b) {
 		} else if (range === ERROR_MISC) {
 			range = -3;
 		}
-        console.log('Recorded range ' + range + ' from ' + peripheral.uuid);
+        //console.log('Recorded range ' + range + ' from ' + eui);
 
 				// Write to array
-				ranges.push(parseInt(peripheral.uuid.charAt(11),16)); // EUI (last 4 bits)
+				ranges.push(parseInt(eui.charAt(22),16)); // EUI (last 4 bits)
 				ranges.push(range);                       // Range
 
 				// Write to file
@@ -313,7 +316,7 @@ function receive (peripheral) {
 
 									characteristic.on('data', function (dat) {
 
-										console.log('Received notification about data of length ' + dat.length + ' from ' + peripheral.uuid);
+										//console.log('Received notification about data of length ' + dat.length + ' from ' + peripheral.uuid);
 
 										if (dat.length == expected_data_length) {
 											// console.log('got notify: ' + dat.length + ' from ' + peripheral.uuid);
