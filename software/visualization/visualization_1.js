@@ -27,7 +27,7 @@ for (i = 0; i < 3; i++) {
   };
 }
 
-var max_distance = 20000;
+var max_distance = 20;
 
 var connectivity_data = {
   labels: [0],
@@ -127,8 +127,7 @@ function updateGraphs(eui, ids, range) {
 
   var firstIdx = getIdx(parseInt(eui.charAt(11),16));
 
-  // Notice: We start at 1 to jump the zero at the beginning for initialization
-  for (i = 1; i < ids.length; i++) {
+  for (i = 0; i < ids.length; i++) {
 
     // Find index
     var secondIdx = getIdx(ids[i]);
@@ -158,6 +157,7 @@ function updateGraphs(eui, ids, range) {
 
     // Update graph
     timeseries[graphIdx].update(timeseries_data[graphIdx]);
+    //console.log('Added measurement from ' + parseInt(eui.charAt(11),16) + '('+ firstIdx + ') to ' + ids[i] + '(' + secondIdx + ')');
   }
 
 
@@ -171,8 +171,9 @@ function updateGraphs(eui, ids, range) {
   connectivity_data.series[0].data[secondNode_last_x] = null;
 
   // Calculate avg distance
-  var length = timeseries_data[0].series[2].length;
-  var dist_1_2 = Math.floor((timeseries_data[0].series[2][length - 1] + timeseries_data[0].series[3][length - 1]) / 2);
+  var length_1 = timeseries_data[0].series[2].data.length;
+  var length_2 = timeseries_data[0].series[3].data.length;
+  var dist_1_2 = Math.floor((timeseries_data[0].series[2].data[length_1 - 1] + timeseries_data[0].series[3].data[length_2 - 1]) / 2);
 
   connectivity_data.series[0].data[dist_1_2] = 0;
 
@@ -182,17 +183,21 @@ function updateGraphs(eui, ids, range) {
   connectivity_data.series[0].data[thirdNode_last_x] = null;
 
   // Calculate avg distances
-  length = timeseries_data[1].series[2].length;
-  var dist_1_3 = Math.floor((timeseries_data[1].series[2][length - 1] + timeseries_data[1].series[3][length - 1]) / 2);
+  length_1 = timeseries_data[1].series[2].data.length;
+  length_2 = timeseries_data[1].series[3].data.length;
+  var dist_1_3 = Math.floor((timeseries_data[1].series[2].data[length_1 - 1] + timeseries_data[1].series[3].data[length_2 - 1]) / 2);
 
-  length = timeseries_data[2].series[2].length;
-  var dist_2_3 = Math.floor((timeseries_data[2].series[2][length - 1] + timeseries_data[2].series[3][length - 1]) / 2);
+  length_1 = timeseries_data[2].series[2].data.length;
+  length_2 = timeseries_data[2].series[3].data.length;
+  var dist_2_3 = Math.floor((timeseries_data[2].series[2].data[length_1 - 1] + timeseries_data[2].series[3].data[length_2 - 1]) / 2);
 
   // Compute x_3 and y_3
   s = (dist_1_2 + dist_1_3 + dist_2_3) / 2;
 
-  x_3 = thirdNode_last_x = (dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2);
-  y_3 = 2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3;
+  x_3 = Math.floor((dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2));
+  y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3);
+
+  console.log('s: ' + s + ' ; dist_1_2: ' + dist_1_2 + ' ; dist_1_3: ' + dist_1_3 + ' ; dist_2_3: ' + dist_2_3);
 
   connectivity_data.series[0].data[x_3] = y_3;
 
@@ -209,6 +214,7 @@ function updateGraphs(eui, ids, range) {
 
   // Update the final graph
   connectivity.update(connectivity_data);
+  console.log('Updated connectivity: 0 -> (0,0), 1 -> (' + dist_1_2 + ',0), 2 -> (' + x_3 + ',' + y_3 + ')');
 
   // Store data for next round
   secondNode_last_x = dist_1_2;
@@ -234,10 +240,10 @@ socket.on('message', function(data){
   var data_array = data.split(',');
   var length = parseInt(data_array[0].split(':')[1],10);
 
-  for (i = 1; i <= length; i++) {
-    ids[i]   = parseInt(data_array[i    ], 10);
-    range[i] = parseInt(data_array[i + 1], 10);
-    console.log('Added distance ' + range[i] + ' to node ' + ids[i]);
+  for (i = 0; i < length; i++) {
+    ids[i]   = parseInt(data_array[1 + 2*i    ], 10);
+    range[i] = parseInt(data_array[1 + 2*i + 1], 10);
+    //console.log('Added distance ' + range[i] + ' to node ' + ids[i]);
   }
 
   console.log('Received IDs ' + ids + ' with ranges ' + range + ' from EUI ' + eui);
