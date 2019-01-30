@@ -53,6 +53,8 @@ timeseries[2] = new Chartist.Line('#chart2', timeseries_data[2], options);
 // UPDATE ----------------------------------------------------------------------
 
 // Update graphs
+var max_window = 30;
+var median_filter_width = 5;
 
 function updateGraphs(eui, ids, range) {
 
@@ -68,15 +70,26 @@ function updateGraphs(eui, ids, range) {
     var graphIdx  = getGraphIdx(firstIdx, secondIdx);
     var seriesIdx = (firstIdx < secondIdx) ? 0 : 1;
 
-    // Add range
-    timeseries_data[graphIdx].series[seriesIdx].push(ToInt32(range[i]));
+    // Add new range at the end
+    timeseries_data[graphIdx].series[seriesIdx    ].push(ToInt32(range[i]));
+
+    // Add filtered version
+    timeseries_data[graphIdx].series[seriesIdx + 2].push(median(timeseries_data[graphIdx].series[seriesIdx].slice(- Math.min(median_filter_width, timeseries_data[graphIdx].series[seriesIdx].length))));
+
+    // Respect max window
+    if (timeseries_data[graphIdx].series[seriesIdx].length >= max_window) {
+      // Shift entire array (labels are ignored) to keep length constant - removes first element
+      timeseries_data[graphIdx].series[seriesIdx    ].shift();
+
+      timeseries_data[graphIdx].series[seriesIdx + 2].shift();
+    }
 
     // Add another label if none does exist
-    if (timeseries_data[graphIdx].labels.length < timeseries_data[graphIdx].series[seriesIdx]) {
+    if (timeseries_data[graphIdx].labels.length < timeseries_data[graphIdx].series[seriesIdx].length) {
       timeseries_data[graphIdx].labels.push(timeseries_data[graphIdx].labels.length);
     }
 
-    // UpdateGraph
+    // Update graph
     timeseries[graphIdx].update(timeseries_data[graphIdx]);
   }
 
@@ -182,4 +195,10 @@ function ToInt32(x) {
     } else {
         return x;
     }
+}
+
+// Calculate the median values
+function median(array) {
+  array.sort((a, b) => a - b);
+  return (array[(array.length - 1) >> 1] + array[array.length >> 1]) / 2;
 }
