@@ -1,0 +1,9 @@
+.ct-series-a .ct-line, .ct-series-b .ct-line {
+  opacity: 0.25
+}
+
+#chart_connectivity {
+  opacity:      1;
+  stroke:       red;
+  stroke-width: 10px;
+}
