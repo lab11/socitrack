@@ -8,7 +8,7 @@ var timeseries_name = [];
 var dimensions = 3;
 var timeseries_data = [];
 
-for (i = 0; i < 3; i++) {
+for (i = 0; i < dimensions; i++) {
   timeseries_data[i] = {
     labels: [0],
     series: [{
@@ -27,29 +27,27 @@ for (i = 0; i < 3; i++) {
   };
 }
 
-var max_distance = 20;
-
 var connectivity_data = {
   labels: [0],
   series: [{
     name: 'series-positions',
-    data: new Array(max_distance).fill(null)
+    data: [0]
   }, {
     name: 'series-connection',
-    data: new Array(max_distance).fill(null)
+    data: [0]
   }]
 }
 
 // Set Graph options
 var timeseries_options = {
   // Don't draw the line chart points
-  showPoint: false,
+  showPoint:  false,
   // Disable line smoothing
   lineSmooth: true,
   // X-Axis specific configuration
   axisX: {
     // We can disable the grid for this axis
-    showGrid: false,
+    showGrid:  false,
     // and also don't show the label
     showLabel: false
   },
@@ -88,18 +86,29 @@ var timeseries_options = {
 
 var connectivity_options = {
   showPoint: true,
+  showLine:  true,
   // X-Axis specific configuration
   axisX: {
     // We can disable the grid for this axis
-    showGrid: false,
+    showGrid:  false,
     // and also don't show the label
-    showLabel: false
+    showLabel: false,
+    // Make sure that point is not outside (80px)
+    offset:    40
   },
   // Y-Axis specific configuration
   axisY: {
-    showGrid: false,
-    showLabel: false
+    showGrid:  false,
+    showLabel: false,
+    // Make sure that point is not outside (80px)
+    offset:    40
   },
+  // Series options for all series
+  lineSmooth: Chartist.Interpolation.none( {
+    fillHoles: true
+  }),
+  fillHoles: true,
+  showArea:  true
 };
 
 // Timeseries graphs; Mapping: 0 -> 1:2, 1 -> 1:3, 2 -> 2:3
@@ -167,20 +176,12 @@ function updateGraphs(eui, ids, range) {
 
   // 2. node: Fixed at (x,y=0)
 
-  // Delete old point
-  connectivity_data.series[0].data[secondNode_last_x] = null;
-
   // Calculate avg distance
   var length_1 = timeseries_data[0].series[2].data.length;
   var length_2 = timeseries_data[0].series[3].data.length;
   var dist_1_2 = Math.floor((timeseries_data[0].series[2].data[length_1 - 1] + timeseries_data[0].series[3].data[length_2 - 1]) / 2);
 
-  connectivity_data.series[0].data[dist_1_2] = 0;
-
   // 3. node: At (x>0,y>0)
-
-  // Delete old point
-  connectivity_data.series[0].data[thirdNode_last_x] = null;
 
   // Calculate avg distances
   length_1 = timeseries_data[1].series[2].data.length;
@@ -197,28 +198,48 @@ function updateGraphs(eui, ids, range) {
   x_3 = Math.floor((dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2));
   y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3);
 
-  console.log('s: ' + s + ' ; dist_1_2: ' + dist_1_2 + ' ; dist_1_3: ' + dist_1_3 + ' ; dist_2_3: ' + dist_2_3);
+  //console.log('s: ' + s + ' ; dist_1_2: ' + dist_1_2 + ' ; dist_1_3: ' + dist_1_3 + ' ; dist_2_3: ' + dist_2_3);
 
-  connectivity_data.series[0].data[x_3] = y_3;
+  // Cannot update if: a) x_3 < 0 (cannot display negative indexes), b) y_3 is NaN (invalid inputs)
+  if ((x_3 > 0) && !isNaN(y_3)) {
 
-  // Second series only contains the point with larger x coordinate
-  connectivity_data.series[1].data[Math.max(secondNode_last_x, thirdNode_last_x)] = null;
+    // Delete old points which are no longer valid
+    connectivity_data.series[0].data[secondNode_last_x] = null;
+    connectivity_data.series[0].data[thirdNode_last_x]  = null;
 
-  if (dist_1_2 > x_3) {
-    // Second point will be stored
-    connectivity_data.series[1].data[dist_1_2] = 0;
+    // Update position
+    connectivity_data.series[0].data[dist_1_2] = 0;
+    connectivity_data.series[0].data[x_3]      = y_3;
+
+    // Second series only contains the point with larger x coordinate
+    connectivity_data.series[1].data[Math.max(secondNode_last_x, thirdNode_last_x)] = null;
+
+    if (dist_1_2 > x_3) {
+      // Second point will be stored
+      connectivity_data.series[1].data[dist_1_2] = 0;
+    } else {
+      // Third point will be stored
+      connectivity_data.series[1].data[x_3] = y_3;
+    }
+
+    // Update the final graph
+    connectivity.update(connectivity_data);
+    console.log('Updated connectivity: 0 -> (0,0), 1 -> (' + dist_1_2 + ',0), 2 -> (' + x_3 + ',' + y_3 + ')');
+
+    // Store data for next round
+    secondNode_last_x = dist_1_2;
+    thirdNode_last_x  = x_3;
+
   } else {
-    // Third point will be stored
-    connectivity_data.series[1].data[x_3] = y_3;
+    // Cannot calculate position, so do not update anything
+    if (isNaN(y_3)) {
+      console.log('Cannot update; y_3 is NaN!');
+    } else if (x_3 < 0) {
+      console.log('Cannot update; x_3 is negative with value ' + x_3);
+    } else {
+      console.log('Cannot update; unknown error!');
+    }
   }
-
-  // Update the final graph
-  connectivity.update(connectivity_data);
-  console.log('Updated connectivity: 0 -> (0,0), 1 -> (' + dist_1_2 + ',0), 2 -> (' + x_3 + ',' + y_3 + ')');
-
-  // Store data for next round
-  secondNode_last_x = dist_1_2;
-  thirdNode_last_x  = x_3;
 }
 
 

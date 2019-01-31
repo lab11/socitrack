@@ -92,8 +92,6 @@ function createArray(length) {
 
 // Calculations ----------------------------------------------------------------
 
-var range_data = createArray(5,1);
-
 function process_data(ranges, uuid) {
 
   var num_ranges = ranges[0];
@@ -395,9 +393,6 @@ noble.on('discover', function (peripheral) {
 
 			console.log('Recording packets of ' + peripheral.uuid);
 			num_discovered = num_discovered + 1;
-
-      var eui_last_digit = peripheral.uuid.charAt(11);
-      range_data[num_discovered][0] = parseInt(eui_last_digit,16);
 
 			receive(peripheral);
 		}
