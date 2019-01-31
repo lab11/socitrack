@@ -21,13 +21,18 @@
 
     <div class="ct-chart ct-golden-section timeseries_graph" id="chart2"></div>
 
+    <div class="axis_title" id="chart0_axis">Node 1 (<span class="eui_0"></span>) &nbsp <i class="fa fa-arrows-h" aria-hidden="true"></i> &nbsp Node 2 (<span class="eui_1"></span>)</div>
+
+    <div class="axis_title" id="chart1_axis">Node 1 (<span class="eui_0"></span>) &nbsp <i class="fa fa-arrows-h" aria-hidden="true"></i> &nbsp Node 3 (<span class="eui_2"></span>)<span id="chart1_axis_title"></span></div>
+
+    <div class="axis_title" id="chart2_axis">Node 2 (<span class="eui_1"></span>) &nbsp <i class="fa fa-arrows-h" aria-hidden="true"></i> &nbsp Node 3 (<span class="eui_2"></span>)<span id="chart2_axis_title"></span></div>
+
     <!-- Connectivity graph -->
     <div class="ct-chart ct-golden-section connectivity_graph" id="chart_connectivity"></div>
 
     <!-- Include JavaScript-->
-    <script type="text/javascript" src="node_modules/chartist/dist/chartist.min.js"></script>
+    <script type="text/javascript" src="node_modules/chartist/dist/chartist.js"></script>
     <script type="text/javascript" src="libs/socket.io.js"></script>
-    <!--<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>-->
     <script type="text/javascript" src="visualization_1.js"></script>
 
   </body>

@@ -9,6 +9,15 @@
   width: 33%;
 }
 
+/* Axis titles */
+.axis_title {
+  font-weight: bold;
+  font-size:   150%;
+  width: 33%;
+  display: inline-block;
+  text-align: center;
+}
+
 /* Connectivity graph */
 #chart_connectivity {
   max-width:    45%;
@@ -20,7 +29,7 @@
 .ct-series-a .ct-point, .ct-series-b .ct-point {
   opacity:      1;
   stroke:       #d70206;
-  stroke-width: 80px;
+  stroke-width: 70px;
 }
 
 /* All lines should have the same colour for the connectivity graph*/

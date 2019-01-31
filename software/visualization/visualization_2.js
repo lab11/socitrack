@@ -1,4 +1,4 @@
-// JS for visualization_1.html
+// JS for visualization_2.html
 
 // DEFAULT ---------------------------------------------------------------------
 
@@ -27,110 +27,60 @@ for (i = 0; i < dimensions; i++) {
   };
 }
 
-var connectivity_data = {
+var zone_data = {
   labels: [0],
   series: [{
-    name: 'series-positions',
+    name: 'series-zone-0',
     data: [0]
   }, {
-    name: 'series-connection',
+    name: 'series-zone-1',
+    data: [0]
+  }, {
+    name: 'series-zone-2',
+    data: [0]
+  }, {
+    name: 'series-zone-3',
+    data: [0]
+  }, {
+    name: 'series-zone-4',
     data: [0]
   }]
 }
 
-// Set Graph options
-var timeseries_options = {
-  // Don't draw the line chart points
-  showPoint:  false,
-  // Disable line smoothing
-  lineSmooth: true,
-  // X-Axis specific configuration
-  axisX: {
-    // We can disable the grid for this axis
-    showGrid:  false,
-    // and also don't show the label
-    showLabel: false
-  },
-  // Y-Axis specific configuration
-  axisY: {
-    // Lets offset the chart a bit from the labels
-    offset: 60,
-    // The label interpolation function enables you to modify the values
-    // used for the labels on each axis. Here we are converting the
-    // values into million pound.
-    labelInterpolationFnc: function(value) {
-      return value + 'mm';
-    }
-  },
-  // Set maximum and minimum on Y-Axis
-  //high: 5000,
-  //low:  -500,
-  // Modify series individually
-  series: {
-    'series-0': {
-      lineSmooth: Chartist.Interpolation.monotoneCubic(),
-      opacity: 0.1
-    },
-    'series-1': {
-      lineSmooth: Chartist.Interpolation.monotoneCubic(),
-      opacity: 0.1
-    },
-    'series-2': {
-      showArea: false
-    },
-    'series-3': {
-      showArea: false
-    }
-  }
-};
 
-var connectivity_options = {
-  showPoint: true,
+var zone_options = {
+  showPoint: false,
   showLine:  true,
   // X-Axis specific configuration
   axisX: {
     // We can disable the grid for this axis
     showGrid:  false,
-    // and also don't show the label
-    showLabel: false,
-    // Make sure that point is not outside (70px)
-    offset:    35
+    showLabel: true,
+    offset:    40
   },
   // Y-Axis specific configuration
   axisY: {
     showGrid:  false,
     showLabel: false,
-    // Make sure that point is not outside (70px)
-    offset:    35
+    offset:    0
   },
   // Series options for all series
   lineSmooth: Chartist.Interpolation.none( {
     fillHoles: true
   }),
   fillHoles: true,
-  showArea:  false
+  showArea:  true
 };
 
-// Timeseries graphs; Mapping: 0 -> 1:2, 1 -> 1:3, 2 -> 2:3
-var timeseries = [];
-timeseries[0] = new Chartist.Line('#chart0', timeseries_data[0], timeseries_options);
-
-timeseries[1] = new Chartist.Line('#chart1', timeseries_data[1], timeseries_options);
-
-timeseries[2] = new Chartist.Line('#chart2', timeseries_data[2], timeseries_options);
-
 // Connectivity graph
-connectivity  = new Chartist.Line('#chart_connectivity', connectivity_data, connectivity_options);
+zones  = new Chartist.Line('#chart_zones', zone_data, zone_options);
 
 
 // UPDATE ----------------------------------------------------------------------
 
 // Update graphs
-var max_window = 25;
 var median_filter_width = 5;
-
-var secondNode_last_x = 1;
-var thirdNode_last_x  = 1;
+var current_zone        = 0;
 
 function updateGraphs(eui, ids, range) {
 
@@ -169,77 +119,37 @@ function updateGraphs(eui, ids, range) {
     //console.log('Added measurement from ' + parseInt(eui.charAt(11),16) + '('+ firstIdx + ') to ' + ids[i] + '(' + secondIdx + ')');
   }
 
-
-  // After having updated the timeseries, we can now draw the new connectivity graph from the calculated median values
-
-  // 1. node: Fixed at (x=0,y=0)
-
-  // 2. node: Fixed at (x,y=0)
-
   // Calculate avg distance
   var length_1 = timeseries_data[0].series[2].data.length;
   var length_2 = timeseries_data[0].series[3].data.length;
-  var dist_1_2 = Math.floor((timeseries_data[0].series[2].data[length_1 - 1] + timeseries_data[0].series[3].data[length_2 - 1]) / 2);
+  var range = Math.floor((timeseries_data[0].series[2].data[length_1 - 1] + timeseries_data[0].series[3].data[length_2 - 1]) / 2);
 
-  // 3. node: At (x>0,y>0)
-
-  // Calculate avg distances
-  length_1 = timeseries_data[1].series[2].data.length;
-  length_2 = timeseries_data[1].series[3].data.length;
-  var dist_1_3 = Math.floor((timeseries_data[1].series[2].data[length_1 - 1] + timeseries_data[1].series[3].data[length_2 - 1]) / 2);
-
-  length_1 = timeseries_data[2].series[2].data.length;
-  length_2 = timeseries_data[2].series[3].data.length;
-  var dist_2_3 = Math.floor((timeseries_data[2].series[2].data[length_1 - 1] + timeseries_data[2].series[3].data[length_2 - 1]) / 2);
-
-  // Compute x_3 and y_3
-  s = (dist_1_2 + dist_1_3 + dist_2_3) / 2;
-
-  x_3 = Math.floor((dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2));
-  y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3);
-
-  //console.log('s: ' + s + ' ; dist_1_2: ' + dist_1_2 + ' ; dist_1_3: ' + dist_1_3 + ' ; dist_2_3: ' + dist_2_3);
-
-  // Cannot update if: a) x_3 < 0 (cannot display negative indexes), b) y_3 is NaN (invalid inputs)
-  if ((x_3 > 0) && !isNaN(y_3)) {
-
-    // Delete old points which are no longer valid
-    connectivity_data.series[0].data[secondNode_last_x] = null;
-    connectivity_data.series[0].data[thirdNode_last_x]  = null;
-
-    // Update position
-    connectivity_data.series[0].data[dist_1_2] = 0;
-    connectivity_data.series[0].data[x_3]      = y_3;
-
-    // Second series only contains the point with larger x coordinate
-    connectivity_data.series[1].data[Math.max(secondNode_last_x, thirdNode_last_x)] = null;
-
-    if (dist_1_2 > x_3) {
-      // Second point will be stored
-      connectivity_data.series[1].data[dist_1_2] = 0;
-    } else {
-      // Third point will be stored
-      connectivity_data.series[1].data[x_3] = y_3;
-    }
-
-    // Update the final graph
-    connectivity.update(connectivity_data);
-    console.log('Updated connectivity: 0 -> (0,0), 1 -> (' + dist_1_2 + ',0), 2 -> (' + x_3 + ',' + y_3 + ')');
-
-    // Store data for next round
-    secondNode_last_x = dist_1_2;
-    thirdNode_last_x  = x_3;
-
+  // Find corresponding zone; data according to 'The influence of subject's personality traits on personal spatial zones in a human-robot interaction experiment', Walters et al, 2005
+  var new_zone = -1;
+  if (        range <=  150) {
+    console.log('Range: Close Intimate');
+    new_zone = 0;
+  } else if ( range <=  450) {
+    console.log('Range: Intimate Zone');
+    new_zone = 0;
+  } else if ( range <= 1200) {
+    console.log('Range: Personal Zone');
+    new_zone = 0;
+  } else if ( range <= 3600) {
+    console.log('Range: Social Zone');
+    new_zone = 0;
   } else {
-    // Cannot calculate position, so do not update anything
-    if (isNaN(y_3)) {
-      console.log('Cannot update; y_3 is NaN!');
-    } else if (x_3 < 0) {
-      console.log('Cannot update; x_3 is negative with value ' + x_3);
-    } else {
-      console.log('Cannot update; unknown error!');
-    }
+    console.log('Range: Public Zone');
+    new_zone = 0;
   }
+
+  // Update the final graph
+  zones.update(zone_data);
+  console.log('Updated connectivity: New range ' + range + ', new zone ' + new_zone);
+
+  // Store data for next round
+  current_zone = new_zone;
+
 }
 
 
@@ -322,21 +232,6 @@ function getIdx(eui) {
   return idx;
 }
 
-// Find index of timeseries graph
-function getGraphIdx(idx_1, idx_2) {
-
-  if ( (idx_1 == 0) || (idx_2 == 0) ) {
-    if ( (idx_1 == 1) || (idx_2 == 1) ) {
-      return 0;
-    } else {
-      return 1;
-    }
-  }
-  else {
-    return 2;
-  }
-}
-
 // Convert negative numbers from UInt32 to Int32
 function ToInt32(x) {
     if (x >= Math.pow(2, 31)) {
@@ -353,20 +248,20 @@ function median(array) {
 }
 
 // Update axis titles below the timeseries
-function updateAxisTitles(index) {
+function updateZoneScreen(index) {
   var names;
 
   switch(index) {
     case 0:
-      names = document.getElementsByClassName('eui_0');
+      names = document.getElementsByClassName('eui_0')
       for (let i = 0; i < names.length; i++) { names[i].innerHTML = '0' + timeseries_name[0].toString(16).toUpperCase();}
       break;
     case 1:
-      names = document.getElementsByClassName('eui_1');
+      names = document.getElementsByClassName('eui_1')
       for (let i = 0; i < names.length; i++) { names[i].innerHTML = '0' + timeseries_name[1].toString(16).toUpperCase();}
       break;
     case 2:
-      names = document.getElementsByClassName('eui_2');
+      names = document.getElementsByClassName('eui_2')
       for (let i = 0; i < names.length; i++) { names[i].innerHTML = '0' + timeseries_name[2].toString(16).toUpperCase();}
       break;
     default:
