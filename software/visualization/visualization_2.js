@@ -86,7 +86,7 @@ zones.on('draw', function(data) {
 var median_filter_width = 5;
 var current_zone        = 0;
 
-function updateGraphs(eui, ids, range) {
+function updateGraphs(eui, ids, ranges) {
 
   var firstIdx = getIdx(parseInt(eui.charAt(11),16));
 
@@ -100,7 +100,7 @@ function updateGraphs(eui, ids, range) {
     var seriesIdx = (firstIdx < secondIdx) ? 0 : 1;
 
     // Add new range at the end
-    timeseries_data[pairIdx].series[seriesIdx    ].data.push(ToInt32(range[i]));
+    timeseries_data[pairIdx].series[seriesIdx    ].data.push(ToInt32(ranges[i]));
 
     // Add filtered version
     timeseries_data[pairIdx].series[seriesIdx + 2].data.push(median(timeseries_data[pairIdx].series[seriesIdx].data.slice(- Math.min(median_filter_width, timeseries_data[pairIdx].series[seriesIdx].data.length))));
@@ -221,7 +221,6 @@ socket.connect();
 socket.on('message', function(data){
   // Parse data
   var eui = data.substring(0,12);
-  var eui_last_digit = eui.charAt(11);
 
   //console.log('Received data from node ' + eui + ' with length ' + data.length);
 
@@ -292,7 +291,7 @@ function getIdx(eui) {
   return idx;
 }
 
-// Find index of timeseries
+// Find index of time series
 function getPairIdx(idx_1, idx_2) {
 
   if ( (idx_1 == 0) || (idx_2 == 0) ) {
@@ -341,11 +340,9 @@ function updateIndices(idx) {
       break;
     default:
   }
-
-  console.log('Updated incides');
 }
 
-// Update axis titles below the timeseries
+// Update axis titles below the time series
 function updateZoneScreen(new_range, index) {
   var back  = document.getElementById('zone_screen');
   var drop  = document.getElementById('selector');

@@ -2,11 +2,13 @@
 
 // Visualization script
 
-var http = require("http");
-var fs   = require('fs');
-var url  = require('url');
-var mime = require('mime');
-var io   = require('socket.io')(http);
+var http 	 = require("http");
+var fs   	 = require('fs');
+var url  	 = require('url');
+var mime 	 = require('mime');
+var io       = require('socket.io')(http);
+var noble    = require('noble');
+var strftime = require('strftime');
 
 // SERVER ----------------------------------------------------------------------
 
@@ -105,14 +107,6 @@ function process_data(ranges, uuid) {
 
 // DATA ------------------------------------------------------------------------
 
-// Logging script
-
-var noble    = require('noble');
-var buf      = require('buffer');
-var fs       = require('fs');
-var strftime = require('strftime');
-var Long     = require('long');
-
 // Config ----------------------------------------------------------------------
 
 // Target devices - should be entered over command line arguments, these are just default values
@@ -120,8 +114,9 @@ var peripheral_address_base = 'c098e54200';
 var peripheral_address_0	= 'c098e5420001';
 var peripheral_address_1	= 'c098e5420002';
 var peripheral_address_2	= 'c098e5420003';
+var peripheral_addresses    = [];
 
-var num_discovered	 = 0;
+var num_discovered	   = 0;
 var num_specified	   = 0;
 var num_maximal		   = 10;
 
@@ -129,9 +124,6 @@ var num_maximal		   = 10;
 var CARRIER_SERVICE_UUID          = 'd68c3152a23fee900c455231395e5d2e';
 var CARRIER_CHAR_UUID_RAW         = 'd68c3153a23fee900c455231395e5d2e';
 var CARRIER_CHAR_UUID_CALIB_INDEX = 'd68c3157a23fee900c455231395e5d2e';
-
-// Configuration
-var MODULE_READ_INT_RANGES = 1;
 
 var filename_start = strftime('module_log_%Y-%m-%d_%H-%M-%S', new Date());
 var filename	   = filename_start + '.data';
@@ -147,7 +139,7 @@ function buf_to_eui (b, offset) {
 
 	for (var i = 0; i < eui_len; i++) {
 		var val = b.readUInt8(offset+i);
-		var val = val.toString(16);
+		    val = val.toString(16);
 
 		if (val.length == 1) {
 			val = '0' + val;

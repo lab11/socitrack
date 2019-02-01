@@ -36,7 +36,7 @@ var connectivity_data = {
     name: 'series-connection',
     data: [0]
   }]
-}
+};
 
 // Set Graph options
 var timeseries_options = {
@@ -111,7 +111,7 @@ var connectivity_options = {
   showArea:  false
 };
 
-// Timeseries graphs; Mapping: 0 -> 1:2, 1 -> 1:3, 2 -> 2:3
+// Time series graphs; Mapping: 0 -> 1:2, 1 -> 1:3, 2 -> 2:3
 var timeseries = [];
 timeseries[0] = new Chartist.Line('#chart0', timeseries_data[0], timeseries_options);
 
@@ -132,11 +132,11 @@ var median_filter_width = 5;
 var secondNode_last_x = 1;
 var thirdNode_last_x  = 1;
 
-function updateGraphs(eui, ids, range) {
+function updateGraphs(eui, ids, ranges) {
 
   var firstIdx = getIdx(parseInt(eui.charAt(11),16));
 
-  for (i = 0; i < ids.length; i++) {
+  for (let i = 0; i < ids.length; i++) {
 
     // Find index
     var secondIdx = getIdx(ids[i]);
@@ -146,7 +146,7 @@ function updateGraphs(eui, ids, range) {
     var seriesIdx = (firstIdx < secondIdx) ? 0 : 1;
 
     // Add new range at the end
-    timeseries_data[graphIdx].series[seriesIdx    ].data.push(ToInt32(range[i]));
+    timeseries_data[graphIdx].series[seriesIdx    ].data.push(ToInt32(ranges[i]));
 
     // Add filtered version
     timeseries_data[graphIdx].series[seriesIdx + 2].data.push(median(timeseries_data[graphIdx].series[seriesIdx].data.slice(- Math.min(median_filter_width, timeseries_data[graphIdx].series[seriesIdx].data.length))));
@@ -170,7 +170,7 @@ function updateGraphs(eui, ids, range) {
   }
 
 
-  // After having updated the timeseries, we can now draw the new connectivity graph from the calculated median values
+  // After having updated the time series, we can now draw the new connectivity graph from the calculated median values
 
   // 1. node: Fixed at (x=0,y=0)
 
@@ -193,10 +193,10 @@ function updateGraphs(eui, ids, range) {
   var dist_2_3 = Math.floor((timeseries_data[2].series[2].data[length_1 - 1] + timeseries_data[2].series[3].data[length_2 - 1]) / 2);
 
   // Compute x_3 and y_3
-  s = (dist_1_2 + dist_1_3 + dist_2_3) / 2;
+  var s = (dist_1_2 + dist_1_3 + dist_2_3) / 2;
 
-  x_3 = Math.floor((dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2));
-  y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3);
+  var x_3 = Math.floor((dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2));
+  var y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3);
 
   //console.log('s: ' + s + ' ; dist_1_2: ' + dist_1_2 + ' ; dist_1_3: ' + dist_1_3 + ' ; dist_2_3: ' + dist_2_3);
 
@@ -251,7 +251,6 @@ socket.connect();
 socket.on('message', function(data){
   // Parse data
   var eui = data.substring(0,12);
-  var eui_last_digit = eui.charAt(11);
 
   //console.log('Received data from node ' + eui + ' with length ' + data.length);
 
@@ -322,7 +321,7 @@ function getIdx(eui) {
   return idx;
 }
 
-// Find index of timeseries graph
+// Find index of time series graph
 function getGraphIdx(idx_1, idx_2) {
 
   if ( (idx_1 == 0) || (idx_2 == 0) ) {
@@ -352,7 +351,7 @@ function median(array) {
   return (array[(array.length - 1) >> 1] + array[array.length >> 1]) / 2;
 }
 
-// Update axis titles below the timeseries
+// Update axis titles below the time series
 function updateAxisTitles(index) {
   var names;
 
