@@ -26,3 +26,14 @@
 .ct-chart {
   height: 28vh;
 }
+
+/* Customize the drop-down menu */
+#selector {
+  background-color: grey;
+  color:            #606060;
+}
+
+/* Adjust EUI text */
+.euis {
+  color: #606060;
+}
