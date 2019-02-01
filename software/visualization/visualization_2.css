@@ -1,0 +1,28 @@
+/* Customize zone screen */
+#zone_screen {
+  height:           70vh;
+  background-color: grey;
+  text-align:       center;
+}
+
+.zone_text {
+  font-size: 300%;
+}
+
+/* Define the properties of the zone name */
+#zone_name {
+  display:        block;
+  line-height:    500px;
+  vertical-align: middle;
+  font-size:      600%;
+}
+
+/* Define the properties of the current range */
+#zone_distance {
+  font-size: 400%;
+}
+
+/* Zone chart */
+.ct-chart {
+  height: 28vh;
+}

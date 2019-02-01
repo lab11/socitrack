@@ -31,50 +31,51 @@ var zone_data = {
   labels: [0],
   series: [{
     name: 'series-zone-0',
-    data: [0]
+    data: [1,0,0,0,0]
   }, {
     name: 'series-zone-1',
-    data: [0]
+    data: [0,2,0,0,0]
   }, {
     name: 'series-zone-2',
-    data: [0]
+    data: [0,0,3,0,0]
   }, {
     name: 'series-zone-3',
-    data: [0]
+    data: [0,0,0,4,0]
   }, {
     name: 'series-zone-4',
-    data: [0]
+    data: [0,0,0,0,5]
   }]
 }
 
 
 var zone_options = {
-  showPoint: false,
-  showLine:  true,
   // X-Axis specific configuration
   axisX: {
     // We can disable the grid for this axis
     showGrid:  false,
-    showLabel: true,
-    offset:    40
+    showLabel: false,
+    offset:    0
   },
   // Y-Axis specific configuration
   axisY: {
     showGrid:  false,
     showLabel: false,
     offset:    0
-  },
-  // Series options for all series
-  lineSmooth: Chartist.Interpolation.none( {
-    fillHoles: true
-  }),
-  fillHoles: true,
-  showArea:  true
+  }
 };
 
-// Connectivity graph
-zones  = new Chartist.Line('#chart_zones', zone_data, zone_options);
+// Zones graph
+zones  = new Chartist.Bar('#chart_zones', zone_data, zone_options);
 
+// Adjust bar width and colour
+max_value = 5;
+zones.on('draw', function(data) {
+  if(data.type === 'bar') {
+    data.element.attr({
+      style: 'stroke-width: 400px; stroke: hsl(' + (120 - Math.floor(Chartist.getMultiValue(data.value) / max_value * 100)) + ', 50%, 50%);'
+    });
+  }
+});
 
 // UPDATE ----------------------------------------------------------------------
 
@@ -128,20 +129,23 @@ function updateGraphs(eui, ids, range) {
   var new_zone = -1;
   if (        range <=  150) {
     console.log('Range: Close Intimate');
-    new_zone = 0;
+    new_zone = 4;
   } else if ( range <=  450) {
     console.log('Range: Intimate Zone');
-    new_zone = 0;
+    new_zone = 3;
   } else if ( range <= 1200) {
     console.log('Range: Personal Zone');
-    new_zone = 0;
+    new_zone = 2;
   } else if ( range <= 3600) {
     console.log('Range: Social Zone');
-    new_zone = 0;
+    new_zone = 1;
   } else {
     console.log('Range: Public Zone');
     new_zone = 0;
   }
+
+  // Update zone_screen
+  updateZoneScreen(range, new_zone);
 
   // Update the final graph
   zones.update(zone_data);
@@ -248,23 +252,53 @@ function median(array) {
 }
 
 // Update axis titles below the timeseries
-function updateZoneScreen(index) {
-  var names;
+function updateZoneScreen(new_range, index) {
+  var back  = document.getElementById('zone_screen');
+  var name  = document.getElementById('zone_name');
+  var lower = document.getElementById('zone_bound_lower');
+  var upper = document.getElementById('zone_bound_upper');
+  var range = document.getElementById('zone_distance');
 
+  // Update range
+  range.innerHTML = String(new_range);
+
+  // Update text
   switch(index) {
-    case 0:
-      names = document.getElementsByClassName('eui_0')
-      for (let i = 0; i < names.length; i++) { names[i].innerHTML = '0' + timeseries_name[0].toString(16).toUpperCase();}
+    case 4:
+      name.innerHTML  = String('Close Intimate');
+      lower.innerHTML = String('0 cm');
+      upper.innerHTML = String('15 cm');
+      back.style.backgroundColor = 'hsl( 20, 50%, 50%)';
       break;
-    case 1:
-      names = document.getElementsByClassName('eui_1')
-      for (let i = 0; i < names.length; i++) { names[i].innerHTML = '0' + timeseries_name[1].toString(16).toUpperCase();}
+    case 3:
+      name.innerHTML  = String('Intimate Zone');
+      lower.innerHTML = String('15 cm');
+      upper.innerHTML = String('45 cm');
+      back.style.backgroundColor = 'hsl( 40, 50%, 50%)';
       break;
     case 2:
-      names = document.getElementsByClassName('eui_2')
-      for (let i = 0; i < names.length; i++) { names[i].innerHTML = '0' + timeseries_name[2].toString(16).toUpperCase();}
+      name.innerHTML  = String('Personal Zone');
+      lower.innerHTML = String('45 cm');
+      upper.innerHTML = String('120 cm');
+      back.style.backgroundColor = 'hsl( 60, 50%, 50%)';
+      break;
+    case 1:
+      name.innerHTML  = String('Social Zone');
+      lower.innerHTML = String('120 cm');
+      upper.innerHTML = String('360 cm');
+      back.style.backgroundColor = 'hsl( 80, 50%, 50%)';
+      break;
+    case 0:
+      name.innerHTML  = String('Public Zone');
+      lower.innerHTML = String('360 cm');
+      upper.innerHTML = String('&#8734;');
+      back.style.backgroundColor = 'hsl(100, 50%, 50%)';
       break;
     default:
+      name.innerHTML  = String('Unknown');
+      lower.innerHTML = String('?');
+      upper.innerHTML = String('?');
+      back.style.backgroundColor = 'grey';
   }
 
 }

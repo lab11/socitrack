@@ -15,10 +15,19 @@
 
   <body>
     <!-- Zone screen -->
+    <div id="zone_screen">
+      <span id="zone_name">Unknown</span>
 
+      <span class="zone_text" id="zone_bound_lower">?</span>
+      <span class="zone_text">	&#60; </span>
+      <span id="zone_distance">?</span>
+      <span class="zone_text"> &#8804; </span>
+      <span class="zone_text" id="zone_bound_upper">?</span>
+
+    </div>
 
     <!-- Zone diagram -->
-
+    <div class="ct-chart" id="chart_zones"></div>
 
     <!-- Include JavaScript -->
     <script type="text/javascript" src="node_modules/chartist/dist/chartist.js"></script>
