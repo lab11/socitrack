@@ -17,7 +17,7 @@ var peripheral_address_1	= 'c098e5420002';
 var peripheral_address_2	= 'c098e5420003';
 
 var num_discovered	 = 0;
-var num_specified	   = 3;
+var num_specified	   = 0;
 var num_maximal		   = 10;
 
 // Service UUIDs
