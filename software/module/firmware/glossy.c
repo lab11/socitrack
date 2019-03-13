@@ -101,6 +101,7 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator);
 static uint8_t get_master_candidate();
 static void	   save_schedule_information(uint8_t* buffer);
 static void    restore_schedule_information(uint8_t* buffer);
+static uint8_t debug_print_time(uint8_t point_idx, uint32_t time);
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -418,6 +419,7 @@ static void glossy_lwb_round_task() {
 
             if (standard_is_init_active()) {
                 // Stop if still listening for responses
+                debug_msg("INFO: Stop listening and starting contention\n");
                 standard_init_stop_response_listening();
             }
 
@@ -524,17 +526,6 @@ static void glossy_lwb_round_task() {
 			}
 			debug_msg("\n");
 
-			// Verify that set this early enough
-			uint64_t curr_time = dwt_readsystimestamphi32();
-
-			debug_msg("DEBUG: Set with ");
-			if (curr_time > _last_time_sent) {
-                debug_msg("-");
-                debug_msg_uint((uint32_t)(curr_time - _last_time_sent));
-            } else {
-			    debug_msg_uint((uint32_t)(_last_time_sent - curr_time));
-			}
-			debug_msg(" of slack time before transmission\n");
 
 #if (BOARD_V == SQUAREPOINT)
 			// Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
@@ -1920,4 +1911,14 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator) {
 	} else {
 		return (uint8_t)(  nominator / denominator     );
 	}
+}
+
+static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
+    debug_msg("DEBUG: POINT ");
+    debug_msg_uint(point_idx);
+    debug_msg(" - Desired time ");
+    debug_msg_uint(time);
+    debug_msg(", actual time ");
+    debug_msg_uint((uint32_t) dwt_readsystimestamphi32());
+    debug_msg("\n");
 }

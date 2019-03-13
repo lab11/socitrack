@@ -5,6 +5,7 @@
   "main": "measurement_visualize.js",
   "dependencies": {
     "chartist": "^0.11.0",
+    "debug": "^4.1.1",
     "long": "^4.0.0",
     "mime": "^2.4.0",
     "noble": "^1.9.1",
