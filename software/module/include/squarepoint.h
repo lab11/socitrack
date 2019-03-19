@@ -44,6 +44,10 @@
 #define INTERRUPT_PIN   GPIO_Pin_2
 #define INTERRUPT_PORT  GPIOA
 #define INTERRUPT_CLK   RCC_AHBPeriph_GPIOA
+#define INTERRUPT_EXTI_LINE  EXTI_Line3
+#define INTERRUPT_EXTI_IRQn  EXTI2_3_IRQn
+#define INTERRUPT_EXTI_PORT  EXTI_PortSourceGPIOA
+#define INTERRUPT_EXTI_PIN   EXTI_PinSource2
 
 
 /******************************************************************************/

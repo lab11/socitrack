@@ -10,6 +10,7 @@
 #include "host_interface.h"
 #include "firmware.h"
 #include "module_conf.h"
+#include "squarepoint.h"
 
 #include "app_standard_init.h"
 #include "app_standard_resp.h"
@@ -158,8 +159,53 @@ void standard_init_stop () {
   //dw1000_sleep();
 
   //debug_msg("Put DW1000 into sleep...\r\n");
+
   // Notify carrier, reverse interrupt, and put self into STOP mode
   // After STOP, reconfigure clock and interrupt
+  GPIO_InitTypeDef  GPIO_InitStructure;
+  EXTI_InitTypeDef EXTI_InitStructure;
+
+  GPIO_InitStructure.GPIO_Pin  = INTERRUPT_PIN;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(INTERRUPT_PORT, &GPIO_InitStructure);
+
+  // Enable SYSCFG clock
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  // Connect EXTIx Line to DW Int pin
+  SYSCFG_EXTILineConfig(INTERRUPT_EXTI_PORT, INTERRUPT_EXTI_PIN);
+
+  // Configure EXTIx line for interrupt
+  EXTI_InitStructure.EXTI_Line    = INTERRUPT_EXTI_LINE;
+  EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
+  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+  EXTI_Init(&EXTI_InitStructure);
+
+  // Enable SYSCFG clock
+  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  // Connect EXTIx Line to DW Int pin
+  SYSCFG_EXTILineConfig(INTERRUPT_EXTI_PORT, INTERRUPT_EXTI_PIN);
+
+  uint8_t clksrc = RCC_GetSYSCLKSource();
+  debug_msg("Clock Source Before: ");
+  debug_msg_int(clksrc);
+  debug_msg("\r\n");
+  PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
+  // Restart and reselect HSE clock
+  RCC_HSEConfig(RCC_HSE_ON);
+  RCC_WaitForHSEStartUp();
+  RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE);
+  // Check that HSE is the current SYSCLK
+  clksrc = RCC_GetSYSCLKSource();
+  debug_msg("Clock Source After: ");
+  debug_msg_int(clksrc);
+  debug_msg("\r\n");
+  // Disable EXTI connection
+  EXTI_InitStructure.EXTI_LineCmd = DISABLE;
+  EXTI_Init(&EXTI_InitStructure);
+  // Re-init host interface
+  host_interface_init();
 }
 
 // Called after the TAG has transmitted a packet.

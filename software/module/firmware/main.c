@@ -296,12 +296,16 @@ void start_dw1000 () {
 
 
 int main () {
-	uint32_t err;
-	bool interrupt_triggered = FALSE;
+    uint32_t err;
+    bool interrupt_triggered = FALSE;
 
-	// Enable PWR APB clock
-	// Not entirely sure why.
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    // Enable PWR APB clock
+    // Not entirely sure why.
+    RCC_APB1PeriphClockCmd(RCC_APB1Periph_PWR, ENABLE);
+    uint8_t clksrc = RCC_GetSYSCLKSource();
+    debug_msg("Clock Source Main: ");
+    debug_msg_int(clksrc);
+    debug_msg("\r\n");
 
     GPIO_InitTypeDef GPIO_InitStructure_A;
     RCC_AHBPeriphClockCmd(STM_GPIO2_CLK, ENABLE);
