@@ -110,25 +110,37 @@ ret_code_t module_interrupt_dispatch() {
     return NRF_SUCCESS;
 }
 
-ret_code_t module_hw_init () {
+ret_code_t module_interrupt_init() {
 	ret_code_t ret;
 
-	// Initialize the GPIO interrupt from the device
+    // Initialize the GPIO interrupt from the device
 	if (!nrfx_gpiote_is_init()) {
 		ret = nrfx_gpiote_init();
 		if (ret != NRF_SUCCESS) return ret;
 	}
 
+    // Set Interrupt handler
+	nrfx_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+	ret = nrfx_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &in_config, module_interrupt_handler);
+
+	nrfx_gpiote_in_event_enable(CARRIER_INTERRUPT_MODULE, true);
+
+    return ret;
+}
+
+ret_code_t module_interrupt_reverse() {
+    // Set up Interrupt pin as reverse, to wake up STM
+    nrf_drv_gpiote_in_event_disable(CARRIER_INTERRUPT_MODULE);
+    nrfx_gpiote_in_uninit(CARRIER_INTERRUPT_MODULE);
+	nrfx_gpiote_out_config_t out_config = GPIOTE_CONFIG_OUT_SIMPLE(1);
+	return nrfx_gpiote_out_init(CARRIER_INTERRUPT_MODULE, &out_config);
+}
+
+ret_code_t module_hw_init () {
 	// Setup TWI
 	twi_init();
 
-	// Set Interrupt handler
-	nrfx_gpiote_in_config_t in_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
-	ret = nrfx_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &in_config, module_interrupt_handler);
-	if (ret != NRF_SUCCESS) return ret;
-
-	nrfx_gpiote_in_event_enable(CARRIER_INTERRUPT_MODULE, true);
-	return NRF_SUCCESS;
+    return module_interrupt_init();
 }
 
 ret_code_t module_init (bool* module_interrupt_thrown, module_interface_data_cb_f cb) {

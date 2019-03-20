@@ -43,6 +43,8 @@ typedef void (*module_interface_data_cb_f)(uint8_t* data, uint32_t len);
 
 
 ret_code_t module_init (bool* module_interrupt_thrown, module_interface_data_cb_f cb);
+ret_code_t module_interrupt_init();
+ret_code_t module_interrupt_reverse();
 ret_code_t module_hw_init ();
 ret_code_t module_get_info (uint16_t* id, uint8_t* version);
 ret_code_t module_start_role(uint8_t role, bool is_glossy_master, uint8_t master_eui);

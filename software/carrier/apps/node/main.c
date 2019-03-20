@@ -152,6 +152,9 @@ ble_gap_addr_t pp_wl_addrs[APP_BLE_ADDR_NR];
 // GP Timer. Used to retry initializing the module.
 APP_TIMER_DEF(watchdog_timer);
 
+// Module wakeup timer
+APP_TIMER_DEF(wakeup_timer);
+
 // GATT module instance
 NRF_BLE_GATT_DEF(m_gatt);
 
@@ -853,9 +856,9 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 {
     // Use better_error_handling.c
     /*printf("ERROR: assert in SoftDevice failed!\n");
-    
+
     while(1) { led_toggle(CARRIER_LED_RED); }*/
-    
+
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
@@ -1389,7 +1392,7 @@ void updateData (uint8_t * data, uint32_t len)
     */
 	printf("Interrupt with reason %i", data[0]);
 
-	if (data[0] == HOST_IFACE_INTERRUPT_RANGES) {
+    if (data[0] == HOST_IFACE_INTERRUPT_RANGES) {
         printf(", included number of anchors: %i\r\n", data[1]);
 
         const uint8_t packet_overhead = 2;
@@ -1406,7 +1409,7 @@ void updateData (uint8_t * data, uint32_t len)
             // Little-endian notation
             offset += packet_euid;
             int32_t range = data[offset] + (data[offset + 1] << 1*8) + (data[offset + 2] << 2*8) + (data[offset + 3] << 3*8);
-            
+
             if (range > ONEWAY_TAG_RANGE_MIN) {
                 printf("%li", range);
             } else if (range == (int32_t)ONEWAY_TAG_RANGE_ERROR_NO_OFFSET) {
@@ -1481,6 +1484,12 @@ void updateData (uint8_t * data, uint32_t len)
 
 	    app.app_raw_response_buffer_updated = true;
 	}
+
+    // Reverse interrupt to allow us to wake up STM when we get new advertisement
+    module_interrupt_reverse();
+    // Start the timer
+    ret_code_t err_code = app_timer_start(wakeup_timer, APP_TIMER_TICKS(500), NULL);
+    APP_ERROR_CHECK(err_code);
 }
 
 
@@ -1523,6 +1532,15 @@ void moduleDataUpdate ()
 }
 
 bool app_timer_triggered_epoch = false;
+
+static void wakeup_module(void* p_context) {
+    // Wake up STM from STOP
+    nrfx_gpiote_out_clear(CARRIER_INTERRUPT_MODULE);
+    nrfx_gpiote_out_set(CARRIER_INTERRUPT_MODULE);
+    nrfx_gpiote_out_uninit(CARRIER_INTERRUPT_MODULE);
+    // Ensure module interrupt is properly configured:
+    module_interrupt_init();
+}
 
 // This function is triggered every WATCHDOG_CHECK_RATE (currently 10s)
 static void watchdog_handler (void* p_context)
@@ -2024,6 +2042,9 @@ static void timers_init (void)
 
     // Create and start watchdog
     err_code = app_timer_create(&watchdog_timer, APP_TIMER_MODE_REPEATED, watchdog_handler);
+    APP_ERROR_CHECK(err_code);
+
+    err_code = app_timer_create(&wakeup_timer, APP_TIMER_MODE_SINGLE_SHOT, wakeup_module);
     APP_ERROR_CHECK(err_code);
 
 }
