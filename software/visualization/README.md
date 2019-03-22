@@ -7,7 +7,7 @@ The scripts in this directory allow users to log and visualize data in real-time
 - `measurement_visualize.js`: Provides a local HTTP server which other visualizations can access to gather the data.
 
 - `visualization_1.*`: Demonstrates a real-time graph of up to 3 inter-node distances and displays the connectivity graph. Accessible over `http://127.0.0.1:8081/visualization_1.html`
-- `visualization_2.*`: Demonstrates a real-time binning into spacial zones. Accessible over `http://127.0.0.1:8081/visualization_2.html`
+- `visualization_2.*`: Demonstrates real-time binning into spatial zones. Accessible over `http://127.0.0.1:8081/visualization_2.html`
 
 
 Running the server
