@@ -162,50 +162,66 @@ void standard_init_stop () {
 
   // Notify carrier, reverse interrupt, and put self into STOP mode
   // After STOP, reconfigure clock and interrupt
-  GPIO_InitTypeDef  GPIO_InitStructure;
-  EXTI_InitTypeDef EXTI_InitStructure;
+  //GPIO_InitTypeDef  GPIO_InitStructure;
+  //EXTI_InitTypeDef EXTI_InitStructure;
 
-  GPIO_InitStructure.GPIO_Pin  = INTERRUPT_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(INTERRUPT_PORT, &GPIO_InitStructure);
+  //GPIO_InitStructure.GPIO_Pin  = INTERRUPT_PIN;
+  //GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  //GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  //GPIO_Init(INTERRUPT_PORT, &GPIO_InitStructure);
 
-  // Enable SYSCFG clock
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-  // Connect EXTIx Line to DW Int pin
-  SYSCFG_EXTILineConfig(INTERRUPT_EXTI_PORT, INTERRUPT_EXTI_PIN);
+  //// Enable SYSCFG clock
+  //RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  //// Connect EXTIx Line to DW Int pin
+  //SYSCFG_EXTILineConfig(INTERRUPT_EXTI_PORT, INTERRUPT_EXTI_PIN);
 
-  // Configure EXTIx line for interrupt
-  EXTI_InitStructure.EXTI_Line    = INTERRUPT_EXTI_LINE;
-  EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
-  EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
-  EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-  EXTI_Init(&EXTI_InitStructure);
+  //// Configure EXTIx line for interrupt
+  //EXTI_InitStructure.EXTI_Line    = INTERRUPT_EXTI_LINE;
+  //EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Interrupt;
+  //EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling;
+  //EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+  //EXTI_Init(&EXTI_InitStructure);
 
-  // Enable SYSCFG clock
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-  // Connect EXTIx Line to DW Int pin
-  SYSCFG_EXTILineConfig(INTERRUPT_EXTI_PORT, INTERRUPT_EXTI_PIN);
+  //// Enable SYSCFG clock
+  //RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+  //// Connect EXTIx Line to DW Int pin
+  //SYSCFG_EXTILineConfig(INTERRUPT_EXTI_PORT, INTERRUPT_EXTI_PIN);
 
   uint8_t clksrc = RCC_GetSYSCLKSource();
   debug_msg("Clock Source Before: ");
   debug_msg_int(clksrc);
   debug_msg("\r\n");
-  PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
+  //PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
   // Restart and reselect HSE clock
   RCC_HSEConfig(RCC_HSE_ON);
   RCC_WaitForHSEStartUp();
-  RCC_SYSCLKConfig(RCC_SYSCLKSource_HSE);
+  RCC_PLLCmd(ENABLE);
+  while(1) {
+    if (RCC_GetFlagStatus(RCC_FLAG_PLLRDY) == SET) {
+        break;
+    }
+  }
+  RCC_SYSCLKConfig(RCC_SYSCLKSource_PLLCLK);
   // Check that HSE is the current SYSCLK
   clksrc = RCC_GetSYSCLKSource();
   debug_msg("Clock Source After: ");
   debug_msg_int(clksrc);
   debug_msg("\r\n");
   // Disable EXTI connection
-  EXTI_InitStructure.EXTI_LineCmd = DISABLE;
-  EXTI_Init(&EXTI_InitStructure);
-  // Re-init host interface
-  host_interface_init();
+  //EXTI_InitStructure.EXTI_LineCmd = DISABLE;
+  //EXTI_Init(&EXTI_InitStructure);
+  //// Re-init host interface
+  //host_interface_init();
+  // Enabled the Interrupt pin
+  //RCC_AHBPeriphClockCmd(INTERRUPT_CLK, ENABLE);
+
+  //GPIO_InitStructure.GPIO_Pin   = INTERRUPT_PIN;
+  //GPIO_InitStructure.GPIO_Mode  = GPIO_Mode_OUT;
+  //GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  //GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  //GPIO_InitStructure.GPIO_PuPd  = GPIO_PuPd_NOPULL;
+  //GPIO_Init(INTERRUPT_PORT, &GPIO_InitStructure);
+  //INTERRUPT_PORT->BRR = INTERRUPT_PIN; // clear
 }
 
 // Called after the TAG has transmitted a packet.
