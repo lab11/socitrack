@@ -15,6 +15,7 @@ var peripheral_address_base = 'c098e54200';
 var peripheral_address_0	= 'c098e5420001';
 var peripheral_address_1	= 'c098e5420002';
 var peripheral_address_2	= 'c098e5420003';
+var peripheral_addresses    = [];
 
 var num_discovered	 = 0;
 var num_specified	   = 0;
@@ -276,8 +277,7 @@ noble.on('stateChange', function (state) {
 noble.on('discover', function (peripheral) {
 	if (peripheral.advertisement.localName == 'TotTag') {
 		console.log('Found TotTag: ' + peripheral.uuid);
-
-		if ( ( (num_specified > 0) && (peripheral.uuid in peripheral_addresses) ) ||
+		if ( ( (num_specified > 0) && (peripheral_addresses.includes(peripheral.uuid)) ) ||
 			 (num_specified === 0)													) {
 			console.log('Recording packets of ' + peripheral.uuid);
 			num_discovered = num_discovered + 1;
