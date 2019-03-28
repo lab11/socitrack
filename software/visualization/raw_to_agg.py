@@ -9,13 +9,7 @@ percentile = 45
 avg_span_1 = 1
 avg_span_2 = 5
 
-# Make folders if needed
-if not os.path.exists('aggregated'):
-    os.makedirs('aggregated')
-
-fnames = glob('raw/*.LOG')
-
-for fname in fnames:
+def raw_to_agg(fname):
     col_time = 0
     col_nr   = 2
     col_chan = 3
@@ -51,7 +45,17 @@ for fname in fnames:
     sim[:,0] = times_sim[:,0]
     sim[:,1] = nr_sim[:,0]
     sim[:,2] = ranges_sim[:,0]
-    sim = sim.astype('int32')
+    return sim.astype('int32')
+
+
+# Make folders if needed
+if not os.path.exists('agg'):
+    os.makedirs('agg')
+
+fnames = glob('raw/*.LOG')
+
+for fname in fnames:
+    data = raw_to_agg(fname)
     new_fname = fname.split('/')[-1].split('.')
     new_fname = new_fname[0] + '_agg' + '.' + new_fname[1]
-    np.savetxt('aggregated/'+new_fname, sim, fmt='%010d', delimiter='\t')
+    np.savetxt('agg/'+new_fname, data, fmt='%010d', delimiter='\t')
