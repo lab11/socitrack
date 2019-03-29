@@ -8,6 +8,7 @@
 // DATA STRUCTURES -----------------------------------------------------------------------------------------------------
 
 typedef enum {
+    ISTATE_SLEEP,
 	ISTATE_IDLE,
 	ISTATE_BROADCASTS,
 	ISTATE_TRANSITION_TO_ANC_FINAL,
@@ -94,5 +95,7 @@ void         standard_init_start_response_listening ();
 void         standard_init_stop_response_listening ();
 void         standard_init_report_ranges ();
 void         standard_init_stop ();
+void         standard_init_sleep ();
+void         standard_init_continue ();
 
 #endif

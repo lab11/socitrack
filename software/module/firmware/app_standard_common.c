@@ -2,12 +2,14 @@
 #include <string.h>
 
 #include "dw1000.h"
+#include "stm32f0xx_pwr.h"
 
 #include "timer.h"
 #include "SEGGER_RTT.h"
 
 #include "firmware.h"
 #include "module_conf.h"
+#include "host_interface.h"
 
 #include "app_standard_common.h"
 #include "app_standard_init.h"
@@ -181,6 +183,58 @@ void standard_stop () {
 	}
 
 	debug_msg("INFO: Module stopped\n");
+
+    // Last but not least, lets put the MCU to sleep: WFE (Wait for (Wakeup) Event)
+    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFE);
+}
+
+// Put everything to sleep
+void standard_sleep () {
+
+    debug_msg("INFO: Putting module to sleep...\n");
+
+    // Turn off DecaWave
+    dwt_forcetrxoff();
+
+    // FIXME: Enable DW sleep
+    //dw1000_sleep();
+
+    // Pause Glossy
+    glossy_sleep();
+
+    // Pause function timers
+    if (_config.init_enabled) {
+        standard_init_sleep();
+    }
+
+    if (_config.resp_enabled) {
+        standard_resp_sleep();
+    }
+
+    // Put MCU to sleep
+    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFE);
+
+    // -----------------------------------------------------------
+
+    // Lets wake up and restart
+    debug_msg("INFO: *alarm rings*\n");
+
+    // First, respond to waiting carrier
+    host_interface_heartbeat();
+
+    if (_config.init_enabled) {
+        standard_init_continue();
+    }
+
+    if (_config.resp_enabled) {
+        standard_resp_continue();
+    }
+
+    glossy_continue();
+
+    dw1000_wakeup();
+
+    debug_msg("INFO: Module awake again... ready to rumble!\n");
 }
 
 // The whole DW1000 reset, so we need to get this app running again

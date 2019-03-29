@@ -82,21 +82,22 @@ uint32_t host_interface_init () {
 	I2C1_DevStructure.CPAL_Dev       = 0;
 	I2C1_DevStructure.CPAL_Direction = CPAL_DIRECTION_TXRX;
 	I2C1_DevStructure.CPAL_Mode      = CPAL_MODE_SLAVE;
+    I2C1_DevStructure.CPAL_ProgModel = CPAL_PROGMODEL_INTERRUPT;
+    I2C1_DevStructure.pCPAL_TransferTx = &txStructure;
+    I2C1_DevStructure.pCPAL_TransferRx = &rxStructure;
 	I2C1_DevStructure.CPAL_State     = CPAL_STATE_READY;
+    I2C1_DevStructure.wCPAL_DevError = CPAL_I2C_ERR_NONE;
+    I2C1_DevStructure.wCPAL_Options  =  CPAL_OPT_NO_MEM_ADDR | CPAL_OPT_I2C_WAKEUP_STOP;
 	I2C1_DevStructure.wCPAL_Timeout  = 6;
-	I2C1_DevStructure.wCPAL_Options  =  CPAL_OPT_NO_MEM_ADDR | CPAL_OPT_I2C_WAKEUP_STOP;
-	// I2C1_DevStructure.wCPAL_Options =  0;
-	I2C1_DevStructure.CPAL_ProgModel = CPAL_PROGMODEL_INTERRUPT;
-	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_Timing = I2C_TIMING;
-	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_OwnAddress1 = (I2C_OWN_ADDRESS << 1);
-	I2C1_DevStructure.pCPAL_TransferRx = &rxStructure;
-	I2C1_DevStructure.pCPAL_TransferTx = &txStructure;
+
+	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_Timing        = I2C_TIMING;
+	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_OwnAddress1   = (I2C_OWN_ADDRESS << 1);
+    I2C1_DevStructure.pCPAL_I2C_Struct->I2C_DigitalFilter = 0x00;
 
 	// Initialize CPAL device with the selected parameters
 	ret = CPAL_I2C_Init(&I2C1_DevStructure);
 
-	// See if this takes care of issues when STM is busy and can't respond
-	// right away. It's also possible this was already configured.
+	// NOSTRETCH=0
 	__CPAL_I2C_HAL_DISABLE_NOSTRETCH(0);
 
 	return ret;
@@ -163,7 +164,15 @@ void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len) {
 
 	// Let the host know it should ask
 	interrupt_host_set();
+}
 
+void host_interface_notify_wakeup () {
+
+    _interrupt_reason = HOST_IFACE_INTERRUPT_WAKEUP_START;
+    _interrupt_buffer_len = 0;
+
+    // Let the host know it should ask
+    interrupt_host_set();
 }
 
 // Doesn't block, but waits for an I2C master to initiate a WRITE.
@@ -535,4 +544,16 @@ void CPAL_I2C_TXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
   */
 void CPAL_I2C_ERR_UserCallback(CPAL_DevTypeDef pDevInstance, uint32_t DeviceError) {
 
+}
+
+void host_interface_heartbeat() {
+
+    // Set rxBuffer
+    rxBuffer[0] = HOST_CMD_INFO;
+
+    // Answer read request
+    CPAL_I2C_RXTC_UserCallback(NULL);
+
+    // Clear interrupt flag
+    clear_interrupt(INTERRUPT_I2C_RX);
 }

@@ -60,5 +60,6 @@ void module_tag_do_range ();
 // OS functions.
 /******************************************************************************/
 void mark_interrupt (interrupt_source_e src);
+void clear_interrupt (interrupt_source_e src);
 
 #endif

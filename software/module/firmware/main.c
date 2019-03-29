@@ -57,6 +57,10 @@ void mark_interrupt (interrupt_source_e src) {
 	interrupts_triggered[src] = TRUE;
 }
 
+void clear_interrupt (interrupt_source_e src) {
+    interrupts_triggered[src] = FALSE;
+}
+
 static void error () {
     debug_msg("ERROR\r\n");
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);

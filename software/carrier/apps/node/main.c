@@ -152,6 +152,9 @@ ble_gap_addr_t pp_wl_addrs[APP_BLE_ADDR_NR];
 // GP Timer. Used to retry initializing the module.
 APP_TIMER_DEF(watchdog_timer);
 
+// Wakeup timer. Used to resume with the module after having shut down between a round
+APP_TIMER_DEF(wakeup_timer);
+
 // GATT module instance
 NRF_BLE_GATT_DEF(m_gatt);
 
@@ -1506,7 +1509,13 @@ void updateData (uint8_t * data, uint32_t len)
         }
 
 	    app.app_raw_response_buffer_updated = true;
-	}
+	} else if (data[0] == HOST_IFACE_INTERRUPT_WAKEUP_START) {
+        printf(", setting wake-up timer\n");
+
+        // Start the wakeup timer
+        ret_code_t err_code = app_timer_start(wakeup_timer, APP_TIMER_TICKS(500), NULL);
+        APP_ERROR_CHECK(err_code);
+    }
 }
 
 
@@ -1575,6 +1584,21 @@ static void watchdog_handler (void* p_context)
         app_timer_triggered_epoch = true;
     }
 
+}
+
+static void wakeup_handler (void* p_context) {
+
+    uint32_t err_code;
+
+    printf("INFO: Waking up module...\n");
+
+    uint16_t info    = 0;
+    uint8_t  version = 0;
+
+    err_code = module_get_info(&info, &version);
+    APP_ERROR_CHECK(err_code);
+
+    printf("INFO: Module is awake\n");
 }
 
 // If no pending operation, sleep until the next event occurs
@@ -2052,6 +2076,8 @@ static void timers_init (void)
     err_code = app_timer_create(&watchdog_timer, APP_TIMER_MODE_REPEATED, watchdog_handler);
     APP_ERROR_CHECK(err_code);
 
+    err_code = app_timer_create(&wakeup_timer, APP_TIMER_MODE_SINGLE_SHOT, wakeup_handler);
+    APP_ERROR_CHECK(err_code);
 }
 
 static void timers_start (void)

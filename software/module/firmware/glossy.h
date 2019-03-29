@@ -103,6 +103,8 @@ struct pp_signal_flood {
 void glossy_init(glossy_role_e role, uint8_t config_master_eui);
 void glossy_start();
 void glossy_stop();
+void glossy_sleep();
+void glossy_continue();
 void glossy_deschedule();
 void lwb_set_sched_request(bool sched_en);
 void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf);

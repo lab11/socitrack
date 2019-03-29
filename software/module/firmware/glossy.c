@@ -287,6 +287,18 @@ void glossy_stop() {
 
 }
 
+void glossy_sleep() {
+
+    // Turn off the timer
+    timer_stop(_glossy_timer);
+}
+
+void glossy_continue() {
+
+    // Continue with Glossy
+    timer_start(_glossy_timer, LWB_SLOT_US, glossy_lwb_round_task);
+}
+
 void glossy_deschedule(){
 
 	// Prevent re-scheduling
@@ -806,6 +818,10 @@ static void glossy_lwb_round_task() {
 
         dwt_forcetrxoff();
 
+        // In any case, lets start the wakeup timer (independent of calculations or received data
+        debug_msg("INFO: Setting wake-up alarm...\n");
+        host_interface_notify_wakeup();
+
         if (_lwb_scheduled_init) {
 
             // Send ranges to carrier
@@ -820,6 +836,12 @@ static void glossy_lwb_round_task() {
             GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
             GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
         }
+
+        // Lets sleep
+        standard_sleep();
+
+        // As we woke up again, lets prepare for the very last round to setup the next schedule
+        _lwb_counter = (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 2;
     }
 
 }

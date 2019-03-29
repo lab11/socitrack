@@ -160,6 +160,7 @@ typedef struct {
 void             standard_configure (module_config_t* config);
 void             standard_start ();
 void             standard_stop ();
+void             standard_sleep ();
 void             standard_reset ();
 void             standard_do_range ();
 module_config_t* standard_get_config ();

@@ -34,10 +34,11 @@
 
 // Defines for identifying data sent to host
 typedef enum {
-	HOST_IFACE_INTERRUPT_RANGES      = 0x01,
-	HOST_IFACE_INTERRUPT_CALIBRATION = 0x02,
-	HOST_IFACE_INTERRUPT_MASTER_EUI  = 0x03,
-	HOST_IFACE_INTERRUPT_RANGES_RAW  = 0x04
+	HOST_IFACE_INTERRUPT_RANGES       = 0x01,
+	HOST_IFACE_INTERRUPT_CALIBRATION  = 0x02,
+	HOST_IFACE_INTERRUPT_MASTER_EUI   = 0x03,
+	HOST_IFACE_INTERRUPT_RANGES_RAW   = 0x04,
+	HOST_IFACE_INTERRUPT_WAKEUP_START = 0x05
 } interrupt_reason_e;
 
 
@@ -48,6 +49,8 @@ void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len);
 void host_interface_notify_ranges_raw (uint8_t* range_measurements, uint8_t len);
 void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len);
 void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len);
+void host_interface_notify_wakeup ();
+void host_interface_heartbeat();
 
 
 // Interrupt callbacks

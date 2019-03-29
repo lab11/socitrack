@@ -138,6 +138,18 @@ void standard_resp_stop () {
 	//dw1000_sleep();
 }
 
+void standard_resp_sleep () {
+
+    sr_scratch->state = RSTATE_SLEEP;
+
+    timer_stop(sr_scratch->resp_timer);
+}
+
+void standard_resp_continue () {
+
+    sr_scratch->state = RSTATE_IDLE;
+}
+
 // This is called by the periodic timer that tracks the tag's periodic
 // broadcast ranging poll messages. This is responsible for setting the
 // antenna and channel properties for the anchor.

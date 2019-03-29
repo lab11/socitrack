@@ -160,6 +160,18 @@ void standard_init_stop () {
 	//debug_msg("Put DW1000 into sleep...\r\n");
 }
 
+void standard_init_sleep () {
+
+    si_scratch->state = ISTATE_SLEEP;
+
+    timer_stop(si_scratch->init_timer);
+}
+
+void standard_init_continue () {
+
+    si_scratch->state = ISTATE_IDLE;
+}
+
 // Called after the TAG has transmitted a packet.
 void init_txcallback (const dwt_cb_data_t *txd) {
 
