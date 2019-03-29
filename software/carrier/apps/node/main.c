@@ -1038,7 +1038,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
             // Continue advertising, but nonconnectably
             m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
-            ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+
+            // Notice that ble_advertising_start() IGNORES some input parameters and sets them to defaults
+            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
+            err_code = sd_ble_gap_adv_start(m_advertising.adv_handle, m_advertising.conn_cfg_tag);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
 
             // Connected to device. Set initial CCCD attributes to NULL
             err_code = sd_ble_gatts_sys_attr_set(carrier_ble_conn_handle, NULL, 0, 0);
@@ -1067,7 +1076,16 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
             // Go back to advertising connectably
             m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
-            ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+
+            // Restart advertisements
+            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
+            err_code = sd_ble_gap_adv_start(m_advertising.adv_handle, m_advertising.conn_cfg_tag);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
 
             // Re-start scanning, as connecting automatically stops this
             //err_code = sd_ble_gap_scan_stop();
@@ -1154,8 +1172,15 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
         case BLE_ADV_EVT_IDLE: {
             NRF_LOG_INFO("Application is idle.");
 
-            err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-            APP_ERROR_CHECK(err_code);
+            // Start advertisements
+            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
+            err_code = sd_ble_gap_adv_start(m_advertising.adv_handle, m_advertising.conn_cfg_tag);
+            if (err_code != NRF_ERROR_INVALID_STATE) {
+                APP_ERROR_CHECK(err_code);
+            }
             break;
         }
         default:
@@ -1244,11 +1269,12 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
         APP_ERROR_CHECK(err_code);
     }
 
-    // Reinitialize advertising
-    advertising_init();
-
     // Restart advertisements
-    err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+    err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+    if (err_code != NRF_ERROR_INVALID_STATE) {
+        APP_ERROR_CHECK(err_code);
+    }
+    err_code = sd_ble_gap_adv_start(m_advertising.adv_handle, m_advertising.conn_cfg_tag);
     if (err_code != NRF_ERROR_INVALID_STATE) {
         APP_ERROR_CHECK(err_code);
     }
