@@ -107,14 +107,16 @@ for s in steps:
     end   = best_offset + s
     print(best_offset)
 
-optitrack_data[:,0] += best_offset
-#plt.plot(optitrack_data[:,0], optitrack_data[:, 1])
-#plt.plot(tot_data[:,0], tot_data[:, 1])
-#plt.ylim(0, 2000)
-#plt.show()
-
 speed = o_fname.split('.')[-2].split('-')[-1]
+optitrack_data[:,0] += best_offset
+plt.figure()
+plt.plot(optitrack_data[:,0], optitrack_data[:, 1])
+plt.plot(tot_data[:,0], tot_data[:, 1])
+plt.ylim(0, 2000)
+plt.savefig('ranges-'+speed+'.pdf', format='pdf')
+
 error = abs_error(optitrack_data, tot_data)/1000
+plt.figure()
 plt.title('Moving average of error for speed ' + speed)
 plt.xlabel('Time (s)')
 plt.ylabel('Error (m)')
