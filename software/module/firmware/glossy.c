@@ -508,6 +508,8 @@ static void glossy_lwb_round_task() {
 			// Enable Tx callback to reset the LWB counter
             _sending_sync = TRUE;
 
+			//debug_msg("Sending the scheduling...\n");
+
 			// Trigger send operation
 			lwb_send_sync(_last_time_sent);
 
@@ -807,6 +809,7 @@ static void glossy_lwb_round_task() {
         if (_lwb_scheduled_init) {
 
             // Send ranges to carrier
+            //debug_msg("INFO: Reporting ranges\n");
             standard_init_report_ranges();
         } else {
         	debug_msg("WARNING: Did not report any ranges!\n");
