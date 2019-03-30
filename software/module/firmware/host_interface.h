@@ -50,7 +50,6 @@ void host_interface_notify_ranges_raw (uint8_t* range_measurements, uint8_t len)
 void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len);
 void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len);
 void host_interface_notify_wakeup ();
-void host_interface_heartbeat();
 
 
 // Interrupt callbacks

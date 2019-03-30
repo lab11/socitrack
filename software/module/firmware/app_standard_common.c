@@ -219,9 +219,6 @@ void standard_sleep () {
     // Lets wake up and restart
     debug_msg("INFO: *alarm rings*\n");
 
-    // First, respond to waiting carrier
-    host_interface_heartbeat();
-
     if (_config.init_enabled) {
         standard_init_continue();
     }

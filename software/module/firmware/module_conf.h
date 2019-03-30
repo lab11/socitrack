@@ -38,6 +38,9 @@
 
 // Protocol adaptation -------------------------------------------------------------------------------------------------
 
+// Power options
+#define STM_ENABLE_SLEEP_IN_PASSIVE_PHASE 1
+
 // Adjust Tx parameters
 //#define DW1000_MAXIMIZE_TX_POWER  // Increases transmit power to the maximal value; ATTENTION: might violate regulations and increase power consumption
 

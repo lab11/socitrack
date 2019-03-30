@@ -166,10 +166,11 @@ void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len) {
 	interrupt_host_set();
 }
 
-void host_interface_notify_wakeup () {
+void host_interface_notify_wakeup (uint8_t* wakeup_delay) {
 
     _interrupt_reason = HOST_IFACE_INTERRUPT_WAKEUP_START;
-    _interrupt_buffer_len = 0;
+    _interrupt_buffer = wakeup_delay;
+    _interrupt_buffer_len = 1;
 
     // Let the host know it should ask
     interrupt_host_set();
@@ -544,16 +545,4 @@ void CPAL_I2C_TXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
   */
 void CPAL_I2C_ERR_UserCallback(CPAL_DevTypeDef pDevInstance, uint32_t DeviceError) {
 
-}
-
-void host_interface_heartbeat() {
-
-    // Set rxBuffer
-    rxBuffer[0] = HOST_CMD_INFO;
-
-    // Answer read request
-    CPAL_I2C_RXTC_UserCallback(NULL);
-
-    // Clear interrupt flag
-    clear_interrupt(INTERRUPT_I2C_RX);
 }

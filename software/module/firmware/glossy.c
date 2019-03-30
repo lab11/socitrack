@@ -102,6 +102,7 @@ static uint8_t get_master_candidate();
 static void	   save_schedule_information(uint8_t* buffer);
 static void    restore_schedule_information(uint8_t* buffer);
 static uint8_t debug_print_time(uint8_t point_idx, uint32_t time);
+static uint8_t calculate_wakeup_delay();
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -818,9 +819,12 @@ static void glossy_lwb_round_task() {
 
         dwt_forcetrxoff();
 
+#ifdef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
         // In any case, lets start the wakeup timer (independent of calculations or received data
         debug_msg("INFO: Setting wake-up alarm...\n");
-        host_interface_notify_wakeup();
+        uint8_t wakeup_delay = calculate_wakeup_delay();
+        host_interface_notify_wakeup(&wakeup_delay);
+#endif
 
         if (_lwb_scheduled_init) {
 
@@ -837,11 +841,13 @@ static void glossy_lwb_round_task() {
             GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
         }
 
+#ifdef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
         // Lets sleep
         standard_sleep();
 
         // As we woke up again, lets prepare for the very last round to setup the next schedule
         _lwb_counter = (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 2;
+#endif
     }
 
 }
@@ -1946,4 +1952,13 @@ static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
     debug_msg(", actual time ");
     debug_msg_uint((uint32_t) dwt_readsystimestamphi32());
     debug_msg("\n");
+}
+
+static uint8_t calculate_wakeup_delay() {
+
+    // FIXME: Calculate based on current schedule
+    uint16_t wakeup_delay = 500;
+
+    // Return (ms that wakeup should be delayed) / 4, maximally for 1 second
+    return (wakeup_delay) / 4;
 }

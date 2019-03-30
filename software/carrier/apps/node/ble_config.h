@@ -90,6 +90,7 @@ typedef struct ble_app_s {
     uint8_t      calibration_index;
     uint8_t      current_location[6]; // Value of num characteristic
     bool         module_interrupt_thrown;
+    bool         module_wakeup_triggered;
     bool         app_raw_response_buffer_updated;
     uint16_t     app_raw_response_length;
     uint8_t      app_raw_response_buffer[APP_BLE_BUFFER_LENGTH]; // Buffer to store raw responses from module so that it can be sent over BLE

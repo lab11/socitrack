@@ -1512,8 +1512,10 @@ void updateData (uint8_t * data, uint32_t len)
 	} else if (data[0] == HOST_IFACE_INTERRUPT_WAKEUP_START) {
         printf(", setting wake-up timer\n");
 
+        uint16_t wakeup_delay = 4 * data[1]; // ms
+
         // Start the wakeup timer
-        ret_code_t err_code = app_timer_start(wakeup_timer, APP_TIMER_TICKS(500), NULL);
+        ret_code_t err_code = app_timer_start(wakeup_timer, APP_TIMER_TICKS(wakeup_delay), NULL);
         APP_ERROR_CHECK(err_code);
     }
 }
@@ -1564,6 +1566,8 @@ static void watchdog_handler (void* p_context)
 {
     uint32_t err_code;
 
+    // FIXME: Verify that module_init is successfully triggered inside another interrupt routine (and doesnt just keep waiting for an interrupt source which cannot trigger)
+
     if (!app.module_inited) {
         err_code = module_init(&app.module_interrupt_thrown, updateData);
         APP_ERROR_CHECK(err_code);
@@ -1588,17 +1592,9 @@ static void watchdog_handler (void* p_context)
 
 static void wakeup_handler (void* p_context) {
 
-    uint32_t err_code;
-
-    printf("INFO: Waking up module...\n");
-
-    uint16_t info    = 0;
-    uint8_t  version = 0;
-
-    err_code = module_get_info(&info, &version);
-    APP_ERROR_CHECK(err_code);
-
-    printf("INFO: Module is awake\n");
+    // Signal main loop that we should wake up the STM
+    // Note: As this triggers an I2C communication, whose success is signalled with an interrupt, we need to perform this outside of an interrupt routine (not nested)
+    app.module_wakeup_triggered = true;
 }
 
 // If no pending operation, sleep until the next event occurs
@@ -2046,6 +2042,7 @@ void app_init(void) {
     // Clear buffers
     app.module_inited           = false;
     app.module_interrupt_thrown = false;
+    app.module_wakeup_triggered = false;
     app.network_discovered      = false;
 
     memset(app.master_eui, 0, sizeof(app.master_eui));
@@ -2402,6 +2399,22 @@ int main (void)
             }
         }
 
+        // Timers
+        if (app.module_wakeup_triggered) {
+            uint32_t err_code;
+
+            printf("INFO: Waking up module...\n");
+
+            uint16_t info    = 0;
+            uint8_t  version = 0;
+
+            err_code = module_get_info(&info, &version);
+            APP_ERROR_CHECK(err_code);
+
+            printf("INFO: Module is awake\n");
+
+            app.module_wakeup_triggered = false;
+        }
 
         // If application count triggered an action, we must catch it here as well
         if (app_timer_triggered_epoch) {
