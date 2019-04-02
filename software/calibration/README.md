@@ -32,9 +32,9 @@ Then install the dependencies:
 
         sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
         
-2. Turn off neighbour discovery, as nodes will automatically start ranging otherwise. You can do this using compile-time arguments:
+2. Turn off neighbour discovery, as nodes will automatically start ranging otherwise. You can do this using compile-time arguments while flashing onto the nRF (the STM does not require any adaptations):
 
-    mark flash ID=c0:98:e5:42:00:XX APP_BLE_CALIBRATION=1
+    mark flash BLE_ADDRESS=c0:98:e5:42:00:XX APP_BLE_CALIBRATION=1
 
 3. Collect the data from each node with EUIs as specified (examples are `c0:98:e5:42:00:07`, `c0:98:e5:42:00:08` and `c0:98:e5:42:00:09`):
 
