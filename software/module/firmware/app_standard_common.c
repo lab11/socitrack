@@ -240,6 +240,9 @@ void standard_sleep () {
     // Lets wake up and restart
     debug_msg("INFO: *alarm rings*\n");
 
+    // Get the clocks back into the correct state
+    host_interface_restore();
+
     /*debug_msg("EXTI->IMR: ");
     debug_msg_uint(EXTI->IMR);
     debug_msg("; EXTI->EMR: ");

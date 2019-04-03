@@ -125,6 +125,12 @@ uint32_t host_interface_init () {
 	return ret;
 }
 
+uint32_t host_interface_restore () {
+
+    // Re-configure clock setup
+    SystemInit();
+}
+
 static void interrupt_host_set () {
 	GPIO_WriteBit(INTERRUPT_PORT, INTERRUPT_PIN, Bit_SET);
 }

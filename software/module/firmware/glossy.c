@@ -820,7 +820,7 @@ static void glossy_lwb_round_task() {
         dwt_forcetrxoff();
 
 #ifdef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
-        // In any case, lets start the wakeup timer (independent of calculations or received data
+        // In any case, let's start the wakeup timer (independent of calculations or received data)
         debug_msg("INFO: Setting wake-up alarm...\n");
         uint8_t wakeup_delay = calculate_wakeup_delay();
         host_interface_notify_wakeup(&wakeup_delay);
@@ -1957,7 +1957,7 @@ static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
 static uint8_t calculate_wakeup_delay() {
 
     // FIXME: Calculate based on current schedule
-    uint16_t wakeup_delay = 500;
+    uint16_t wakeup_delay = 600;
 
     // Return (ms that wakeup should be delayed) / 4, maximally for 1 second
     return (wakeup_delay) / 4;
