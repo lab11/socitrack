@@ -1,5 +1,6 @@
 #include <stddef.h>
 #include <string.h>
+#include <stm32f0xx_i2c_cpal.h>
 
 #include "dw1000.h"
 #include "stm32f0xx_pwr.h"
@@ -186,8 +187,8 @@ void standard_stop () {
 
 	debug_msg("INFO: Module stopped\n");
 
-    // Last but not least, lets put the MCU to sleep: WFE (Wait for (Wakeup) Event)
-    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFE);
+    // Last but not least, lets put the MCU to sleep: WFE (Wait for (Wakeup) Event) or WFI (Wait for Interrupt)
+    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 }
 
 // Put everything to sleep
@@ -213,13 +214,46 @@ void standard_sleep () {
         standard_resp_sleep();
     }
 
+    // Get status
+    /*debug_msg("EXTI->IMR: ");
+    debug_msg_uint(EXTI->IMR);
+    debug_msg("; EXTI->EMR: ");
+    debug_msg_uint(EXTI->EMR);
+    debug_msg("; EXTI->RTSR: ");
+    debug_msg_uint(EXTI->RTSR);
+    debug_msg("; EXTI->PR: ");
+    debug_msg_uint(EXTI->PR);
+    debug_msg("; I2C1->CR1: ");
+    debug_msg_uint(I2C1->CR1);
+    debug_msg("\n");*/
+
+    // Make sure Event line is not yet triggered
+    EXTI_ClearITPendingBit(I2C_EXTI_LINE);
+
+    debug_msg("INFO: Sleep tight!\n");
+
     // Put MCU to sleep
-    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFE);
+    PWR_EnterSTOPMode(PWR_Regulator_LowPower, PWR_STOPEntry_WFI);
 
     // -----------------------------------------------------------
 
     // Lets wake up and restart
     debug_msg("INFO: *alarm rings*\n");
+
+    /*debug_msg("EXTI->IMR: ");
+    debug_msg_uint(EXTI->IMR);
+    debug_msg("; EXTI->EMR: ");
+    debug_msg_uint(EXTI->EMR);
+    debug_msg("; EXTI->RTSR: ");
+    debug_msg_uint(EXTI->RTSR);
+    debug_msg("; EXTI->PR: ");
+    debug_msg_uint(EXTI->PR);
+    debug_msg("; I2C1->CR1: ");
+    debug_msg_uint(I2C1->CR1);
+    debug_msg("\n");*/
+
+    // Clear event line
+    //EXTI_ClearITPendingBit(I2C_EXTI_LINE);
 
     if (_config.init_enabled) {
         standard_init_continue();

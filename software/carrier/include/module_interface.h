@@ -17,6 +17,7 @@
 #define MODULE_CMD_SET_LOCATION     0x07
 #define MODULE_CMD_READ_CALIBRATION 0x08
 #define MODULE_CMD_SET_TIME         0x09
+#define MODULE_CMD_WAKEUP           0x0a
 
 // App configuration
 #define APP_STANDARD    0x00
@@ -55,5 +56,6 @@ ret_code_t module_interrupt_dispatch ();
 ret_code_t module_sleep ();
 ret_code_t module_resume ();
 ret_code_t module_set_time(uint32_t epoch);
+ret_code_t module_wakeup();
 
 #endif

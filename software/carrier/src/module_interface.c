@@ -317,6 +317,24 @@ ret_code_t module_set_time (uint32_t epoch) {
 	return NRF_SUCCESS;
 }
 
+// Wake up module over I2C
+ret_code_t module_wakeup () {
+    ret_code_t ret;
+
+    uint8_t buf_cmd[1];
+
+    buf_cmd[0] = MODULE_CMD_WAKEUP;
+
+    nrf_twi_mngr_transfer_t const write_transfer[] = {
+            NRF_TWI_MNGR_WRITE(MODULE_ADDRESS, buf_cmd, 1, 0)
+    };
+
+    ret = nrf_twi_mngr_perform(&twi_mngr_instance, NULL, write_transfer, 1, NULL);
+    APP_ERROR_CHECK(ret);
+
+    return NRF_SUCCESS;
+}
+
 
 
 

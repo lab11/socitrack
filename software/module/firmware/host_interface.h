@@ -14,6 +14,7 @@
 #define HOST_CMD_SET_LOCATION     0x07
 #define HOST_CMD_READ_CALIBRATION 0x08
 #define HOST_CMD_SET_TIME		  0x09
+#define HOST_CMD_WAKEUP           0x0a
 
 
 // Structs for parsing the messages for each command
@@ -49,7 +50,7 @@ void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len);
 void host_interface_notify_ranges_raw (uint8_t* range_measurements, uint8_t len);
 void host_interface_notify_calibration (uint8_t* calibration_data, uint8_t len);
 void host_interface_notify_master_change (uint8_t* master_eui, uint8_t len);
-void host_interface_notify_wakeup ();
+void host_interface_notify_wakeup (uint8_t* wakeup_delay);
 
 
 // Interrupt callbacks

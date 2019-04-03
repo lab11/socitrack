@@ -2405,10 +2405,7 @@ int main (void)
 
             printf("INFO: Waking up module...\n");
 
-            uint16_t info    = 0;
-            uint8_t  version = 0;
-
-            err_code = module_get_info(&info, &version);
+            err_code = module_wakeup();
             APP_ERROR_CHECK(err_code);
 
             printf("INFO: Module is awake\n");

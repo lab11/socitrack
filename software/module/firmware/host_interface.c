@@ -83,7 +83,8 @@ uint32_t host_interface_init () {
 	RCC_I2CCLKConfig(RCC_I2C1CLK_HSI);
 
 	// Configure the device structure
-	CPAL_I2C_StructInit(&I2C1_DevStructure);      /* Set all fields to default values */
+    CPAL_I2C_DeInit(&I2C1_DevStructure);          /* Deinitialize I2C1 Device */
+    CPAL_I2C_StructInit(&I2C1_DevStructure);      /* Set all fields to default values */
 	I2C1_DevStructure.CPAL_Dev       = 0x00;      /* CPAL_I2C1 */
 	I2C1_DevStructure.CPAL_Direction = CPAL_DIRECTION_TXRX;
 	I2C1_DevStructure.CPAL_Mode      = CPAL_MODE_SLAVE;
@@ -97,22 +98,25 @@ uint32_t host_interface_init () {
 
 	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_Timing        = I2C_TIMING;
 	I2C1_DevStructure.pCPAL_I2C_Struct->I2C_OwnAddress1   = (I2C_OWN_ADDRESS << 1);
-    I2C1_DevStructure.pCPAL_I2C_Struct->I2C_DigitalFilter = 0x00;
+    I2C1_DevStructure.pCPAL_I2C_Struct->I2C_DigitalFilter = 0x00; /* Disable digital filters */
 
 	// Initialize CPAL device with the selected parameters
 	ret = CPAL_I2C_Init(&I2C1_DevStructure);
+
+	// Enable STOP mode
+    I2C_StopModeCmd(I2C1, ENABLE);
 
 	// NOSTRETCH=0
 	__CPAL_I2C_HAL_DISABLE_NOSTRETCH(0);
 
     // Configure EXTI line 23 for I2C event
-    EXTI_InitStructure.EXTI_Line    = I2C_EXTI_LINE;
+    /*EXTI_InitStructure.EXTI_Line    = I2C_EXTI_LINE;
     EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Event;
     EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
     EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-    EXTI_Init(&EXTI_InitStructure);
+    EXTI_Init(&EXTI_InitStructure);*/
 
-	// FIXME: Connect I2C to EXTI line
+	// Connect I2C to EXTI line
     /*NVIC_InitStructure.NVIC_IRQChannel = I2C_EXTI_IRQn;
     NVIC_InitStructure.NVIC_IRQChannelPriority = 0x00;
     NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
@@ -380,13 +384,24 @@ void host_interface_rx_fired () {
 		case HOST_CMD_SET_TIME:
 
 			debug_msg("Op code 9: Set Time\r\n");
-			// Just go back to waiting for a WRITE after a configuration message
+			// Just go back to waiting for a WRITE after a time message
 			host_interface_wait();
 
 			// Set the internal time
 			uint32_t curr_epoch = (rxBuffer[1] << 3*8) + (rxBuffer[2] << 2*8) + (rxBuffer[3] << 1*8) + rxBuffer[4];
 			glossy_set_epoch_time(curr_epoch);
 			break;
+
+        /**********************************************************************/
+        // Just prepare for future reads
+        /**********************************************************************/
+        case HOST_CMD_WAKEUP:
+
+            debug_msg("Op code 10: Wakeup\r\n");
+            // Just go back to waiting for a WRITE after a wakeup message
+            host_interface_wait();
+
+            break;
 
 		/**********************************************************************/
 		// These are handled from the interrupt context.
@@ -520,6 +535,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		case HOST_CMD_SLEEP:
 		case HOST_CMD_RESUME:
 		case HOST_CMD_SET_TIME:
+		case HOST_CMD_WAKEUP:
 
 			// Just go back to waiting for a WRITE after a config message
 			host_interface_wait();
