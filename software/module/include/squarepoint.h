@@ -51,6 +51,9 @@
 /******************************************************************************/
 #define I2C_TIMING  0x00731012
 
+#define I2C_EXTI_LINE  EXTI_Line23
+#define I2C_EXTI_IRQn  I2C1_IRQn
+
 // The I2C pins are directly configured in stm32f0xx_i2c_cpal_conf.h
 // I2C1_SCL GPIOA_Pin9
 // I2C1_SDA GPIOA_Pin10

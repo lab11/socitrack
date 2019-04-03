@@ -3,10 +3,12 @@
 
 #include "dw1000.h"
 #include "stm32f0xx_pwr.h"
+#include "stm32f0xx_exti.h"
 
 #include "timer.h"
 #include "SEGGER_RTT.h"
 
+#include "board.h"
 #include "firmware.h"
 #include "module_conf.h"
 #include "host_interface.h"

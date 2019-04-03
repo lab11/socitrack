@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "stm32f0xx.h"
 #include "stm32f0xx_i2c_cpal.h"
 #include "stm32f0xx_i2c_cpal_hal.h"
+#include "stm32f0xx_exti.h"
 
 #include "dw1000.h"
 
@@ -49,7 +51,10 @@ uint32_t host_interface_init () {
 	uint32_t ret;
 
 	// Enabled the Interrupt pin
-	GPIO_InitTypeDef  GPIO_InitStructure;
+	GPIO_InitTypeDef GPIO_InitStructure;
+    EXTI_InitTypeDef EXTI_InitStructure;
+    NVIC_InitTypeDef NVIC_InitStructure;
+
 	RCC_AHBPeriphClockCmd(INTERRUPT_CLK, ENABLE);
 
 	GPIO_InitStructure.GPIO_Pin   = INTERRUPT_PIN;
@@ -79,7 +84,7 @@ uint32_t host_interface_init () {
 
 	// Configure the device structure
 	CPAL_I2C_StructInit(&I2C1_DevStructure);      /* Set all fields to default values */
-	I2C1_DevStructure.CPAL_Dev       = 0;
+	I2C1_DevStructure.CPAL_Dev       = 0x00;      /* CPAL_I2C1 */
 	I2C1_DevStructure.CPAL_Direction = CPAL_DIRECTION_TXRX;
 	I2C1_DevStructure.CPAL_Mode      = CPAL_MODE_SLAVE;
     I2C1_DevStructure.CPAL_ProgModel = CPAL_PROGMODEL_INTERRUPT;
@@ -99,6 +104,19 @@ uint32_t host_interface_init () {
 
 	// NOSTRETCH=0
 	__CPAL_I2C_HAL_DISABLE_NOSTRETCH(0);
+
+    // Configure EXTI line 23 for I2C event
+    EXTI_InitStructure.EXTI_Line    = I2C_EXTI_LINE;
+    EXTI_InitStructure.EXTI_Mode    = EXTI_Mode_Event;
+    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
+    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+    EXTI_Init(&EXTI_InitStructure);
+
+	// FIXME: Connect I2C to EXTI line
+    /*NVIC_InitStructure.NVIC_IRQChannel = I2C_EXTI_IRQn;
+    NVIC_InitStructure.NVIC_IRQChannelPriority = 0x00;
+    NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+    NVIC_Init(&NVIC_InitStructure);*/
 
 	return ret;
 }
