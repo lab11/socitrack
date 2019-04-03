@@ -26,7 +26,7 @@ def raw_to_agg(fname):
     nr_sim = np.zeros((num_measurements, 1))
 
     for i in range(num_measurements):
-        distances = ranges[(i * num_channels):(1 + i * num_channels), col_meas]
+        distances = ranges[(i * num_channels):((1 + i) * num_channels), col_meas]
         ranges_sim[i] = np.percentile(distances, percentile)
         times_sim[i] = ranges[i * num_channels, col_time]
         nr_sim[i] = ranges[i * num_channels, col_nr]
