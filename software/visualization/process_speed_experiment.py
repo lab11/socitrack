@@ -2,6 +2,7 @@
 import os
 import math
 import numpy as np
+from scipy import stats
 import matplotlib.pyplot as plt
 from glob import glob
 import argparse
@@ -14,6 +15,7 @@ parser.add_argument('-o', dest='optitrack_file', help='input optitrack data file
 parser.add_argument('-p', action="store_true", default=False, help='just plot the two traces')
 parser.add_argument('-s', dest="start", type=float, help='start of search')
 parser.add_argument('-e', dest="end", type=float, help='end of search')
+parser.add_argument('-g', dest="gradient", default=False, help='use gradients to align')
 args = parser.parse_args()
 
 tot_fname = args.totternary_file
@@ -33,12 +35,29 @@ def xyz_to_distance(points1, points2):
     sq_sum = np.sum(square, axis=1)
     return np.sqrt(sq_sum)
 
+def xyz_to_speed(points):
+    grad = np.gradient(points, 1.0/120, axis=0)
+    return np.sqrt(np.sum(np.square(grad), axis=1))
+
 def find_nearest(array, value):
     array = np.asarray(array)
     idx = (np.abs(array - value)).argmin()
     return idx
 
 def sum_squared_error(a, b):
+    error = 0
+    longer = a
+    shorter = b
+    if len(a) < len(b):
+        longer = b
+        shorter = a
+    for x in shorter:
+        y = longer[find_nearest(b[:,0], x[0])]
+        square = (x[1] - y[1])**2
+        error += square
+    return np.array(error)
+
+def sum_squared_error_gradient(a, b):
     error = 0
     longer = a
     shorter = b
@@ -65,9 +84,9 @@ def abs_error(a, b):
     return np.array(error)
 
 # load and process optitrack file to get ranges
-loc_data = np.genfromtxt(o_fname, delimiter=',', skip_header=7, usecols=[0,1,2,3,4,5,6,7], missing_values=[''],filling_values=[0])
-xyz_1 = loc_data[:,2:5] * 1000 # in mm
-xyz_2 = loc_data[:,5:] * 1000
+loc_data = np.genfromtxt(o_fname, delimiter=',', skip_header=7, usecols=[0,1,2,3,4,5,6,7], missing_values=[''],filling_values=[0], dtype='float')
+xyz_1 = np.nan_to_num(loc_data[:,2:5]) * 1000
+xyz_2 = np.nan_to_num(loc_data[:,5:]) * 1000
 distances = xyz_to_distance(xyz_1, xyz_2)
 optitrack_data = loc_data[:, [1, 2]]
 optitrack_data[:,1] = distances
@@ -97,7 +116,10 @@ for s in steps:
         # sum squared error
         aligned_optitrack = np.nan_to_num(optitrack_data, copy=True)
         aligned_optitrack[:,0] += offset
-        error = sum_squared_error(tot_data, aligned_optitrack)
+        if args.gradient:
+            error = sum_squared_error(np.gradient(tot_data, 1, axis=0), np.gradient(aligned_optitrack, 1.0/120, axis=0))
+        else:
+            error = sum_squared_error(tot_data, aligned_optitrack)
         errors.append(error)
 
     errors = np.array(errors)
