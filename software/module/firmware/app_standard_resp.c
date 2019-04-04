@@ -241,7 +241,7 @@ static void standard_resp_send_response () {
 	}
 	debug_msg("\n");*/
 
-	debug_msg("Number of packets: Antenna 1 - ");
+	debug_msg("INFO: Number of packets: Antenna 1 - ");
 	debug_msg_int(sr_scratch->resp_antenna_recv_num[0]);
 	debug_msg("; Antenna 2 - ");
 	debug_msg_int(sr_scratch->resp_antenna_recv_num[1]);

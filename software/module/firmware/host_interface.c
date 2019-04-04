@@ -142,6 +142,8 @@ static void interrupt_host_clear () {
 // Send the ranges to the host
 void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len) {
 
+// FIXME: This interferes with the wake-up signalling
+#ifndef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
 	// TODO: this should be in an atomic block
 
 	// Save the relevant state for when the host asks for it
@@ -151,6 +153,7 @@ void host_interface_notify_ranges (uint8_t* anchor_ids_ranges, uint8_t len) {
 
 	// Let the host know it should ask
 	interrupt_host_set();
+#endif
 }
 
 // Send the raw ranges to the host for analysis

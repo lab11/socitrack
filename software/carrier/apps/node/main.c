@@ -1513,6 +1513,7 @@ void updateData (uint8_t * data, uint32_t len)
         printf(", setting wake-up timer\n");
 
         uint16_t wakeup_delay = 4 * data[1]; // ms
+        //printf("DEBUG: Wakeup delay %u\n", wakeup_delay);
 
         // Start the wakeup timer
         ret_code_t err_code = app_timer_start(wakeup_timer, APP_TIMER_TICKS(wakeup_delay), NULL);
