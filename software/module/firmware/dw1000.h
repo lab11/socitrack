@@ -50,7 +50,7 @@
 //#define DEBUG_OUTPUT_UART 1
 
 // Enable wake-up either over CS or the WAKE-UP pin
-//#define DW1000_WAKEUP_CS
+#define DW1000_WAKEUP_CS
 
 /******************************************************************************/
 // Timing defines for this particular MCU
@@ -200,6 +200,8 @@ uint8_t*      dw1000_get_txrx_delay_raw ();
 void          dw1000_sleep ();
 dw1000_err_e  dw1000_wakeup ();
 dw1000_err_e  dw1000_force_wakeup ();
+void          dw1000_enterINIT ();
+void          dw1000_exitINIT ();
 void          dw1000_update_channel (uint8_t chan);
 void          dw1000_reset_configuration ();
 uint64_t      dw1000_correct_timestamp(uint64_t dw_timestamp);

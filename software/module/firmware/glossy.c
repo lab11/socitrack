@@ -359,12 +359,8 @@ void glossy_listen_for_next_sync() {
 	}
 
 	/*debug_msg("DEBUG: Current time: ");
-	debug_msg_uint((curr_timestamp >> 40));
-	debug_msg(" | ");
 	debug_msg_uint((curr_timestamp >> 8) & 0xFFFFFFFF);
 	debug_msg("; out of sync: ");
-	debug_msg_uint(out_of_sync_dw >> 32);
-	debug_msg(" | ");
 	debug_msg_uint(out_of_sync_dw & 0xFFFFFFFF);
 	debug_msg("; no sync for ");
 	debug_msg_uint(out_of_sync_rounds);
@@ -372,6 +368,15 @@ void glossy_listen_for_next_sync() {
 	debug_msg_uint(delay_time);
 	debug_msg("\n");*/
 
+#ifdef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
+	// Differ from current clock, as PLL is turned off during INIT
+	if (_lwb_in_sync) {
+	    // FIXME: This causes a delay of 250 where the DW is listening but cannot successfully receive if reduced
+        //delay_time = (curr_timestamp >> 8) + GLOSSY_UPDATE_INTERVAL_DW / 100 * 0;
+        //delay_time &= 0xFFFFFFFE;
+        delay_time = 0;
+    }
+#endif
 	glossy_enable_reception((uint32_t)delay_time);
 }
 
@@ -408,6 +413,7 @@ static void glossy_lwb_round_task() {
 
 	if(_role == GLOSSY_MASTER) {
 
+#ifdef PROTOCOL_ENABLE_TIMEOUT
 		// Disable Master again if he did not find anyone
 		if (_lwb_empty_round_counter > TIMEOUT_PERIODS) {
 
@@ -429,7 +435,10 @@ static void glossy_lwb_round_task() {
 
 		// LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
 		} else if(_lwb_counter == lwb_slot_cont_start) {
-
+#else
+        // LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
+		if(_lwb_counter == lwb_slot_cont_start) {
+#endif
             if (standard_is_init_active()) {
                 // Stop if still listening for responses
                 //debug_msg("INFO: Stop listening and starting contention\n");
@@ -1960,8 +1969,8 @@ static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
 
 static uint8_t calculate_wakeup_delay() {
 
-    // FIXME: Calculate based on current schedule
-    uint16_t wakeup_delay = 800;
+    // FIXME: Calculate based on current schedule; for only the STM, 800 is sufficient
+    uint16_t wakeup_delay = 550;
 
     // Return (ms that wakeup should be delayed) / 4, maximally for 1 second
     return (wakeup_delay) / 4;

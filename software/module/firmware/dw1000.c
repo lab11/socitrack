@@ -106,6 +106,10 @@ decaIrqStatus_t dw1000_irq_onoff = 0;
 // Whether the DW1000 is in SLEEP mode
 static bool _dw1000_asleep = FALSE;
 
+// Variables used to store valid register configurations
+uint8  _pmsc_ctrl0;
+uint16 _pmsc_ctrl1;
+
 
 /******************************************************************************/
 // STM32F0 Hardware setup functions
@@ -845,9 +849,7 @@ dw1000_err_e dw1000_configure_settings () {
 	// Note: This is taken from the decawave fast2wr_t.c file. I don't have
 	//       a great idea as to whether this is right or not.
 	dwt_configuresleep(DWT_PRESRV_SLEEP |
-	                   DWT_LOADOPSET |
-	                   DWT_CONFIG |
-	                   DWT_LOADEUI,
+	                   DWT_CONFIG,
 	                   DWT_WAKE_CS | DWT_SLP_EN);
 #else
     dwt_configuresleep(DWT_PRESRV_SLEEP |
@@ -955,7 +957,13 @@ dw1000_err_e dw1000_wakeup () {
     static uint8 dummy_buffer[DUMMY_BUFFER_LEN];
 
 	// Read for >500us so that the SPI select line is low and the chip will wake up
-	dwt_spicswakeup(dummy_buffer, DUMMY_BUFFER_LEN);
+	int ret = dwt_spicswakeup(dummy_buffer, DUMMY_BUFFER_LEN);
+
+	if (ret != DWT_SUCCESS) {
+	    debug_msg("ERROR: Could not wake up DW!\n");
+	} else {
+	    //debug_msg("DEBUG: Woke up DW\n");
+	}
 #else
 	// Assert the WAKEUP pin. There seems to be some weirdness where a single
 	// WAKEUP assert can get missed, so we do it multiple times to make
@@ -1024,6 +1032,34 @@ dw1000_err_e dw1000_force_wakeup () {
 
     // Now wake up
     return dw1000_wakeup();
+}
+
+void dw1000_enterINIT(){
+
+    // Enable writing to registers
+    dw1000_spi_slow();
+
+    // Record the current values of these registers, to restore later
+    _pmsc_ctrl0 = dwt_read8bitoffsetreg(PMSC_ID, PMSC_CTRL0_OFFSET);
+    _pmsc_ctrl1 = dwt_read16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET);
+
+    //  Set clock to XTAL
+    dwt_write8bitoffsetreg(PMSC_ID, PMSC_CTRL0_OFFSET, PMSC_CTRL0_SYSCLKS_19M);
+    //  Disable sequencing
+    dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, PMSC_CTRL1_PKTSEQ_DISABLE);
+}
+
+void dw1000_exitINIT(){
+
+    // Restore old register values
+    dwt_write8bitoffsetreg(PMSC_ID,  PMSC_CTRL0_OFFSET, _pmsc_ctrl0);
+    dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, _pmsc_ctrl1);
+
+    // Turn SPI fast again
+    dw1000_spi_fast();
+
+    // For some reason, configuring the settings alone is not enough; this works, so le'ts call it a day and move on
+    dw1000_wakeup();
 }
 
 // Call to change the DW1000 channel and force set all of the configs
