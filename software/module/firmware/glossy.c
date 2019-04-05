@@ -567,7 +567,7 @@ static void glossy_lwb_round_task() {
 	} else if (_role == GLOSSY_SLAVE) {
 
 		// OUT OF SYNC: Force ourselves into RX mode if we still haven't received any sync floods
-		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 10) == 0) ) {
+		if( (!_lwb_in_sync || (_lwb_counter > (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US)) ) && ((_lwb_counter % 100) == 0) ) {
 
 			if (_last_sync_timestamp == 0) {
 				// We have never received a sync before
@@ -1200,6 +1200,8 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			_sched_req_pkt.sync_depth = in_glossy_sync->header.seqNum;
 #endif
 
+// DW PLL is turned off during sleep, resulting in clock periods of 6.6us instead of 1us for single ticks
+#ifndef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
 			if(    (_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 0.5)) << 8) ) < dw_timestamp){
 				if((_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 1.5)) << 8) ) > dw_timestamp){
 					// If we're between 0.5 to 1.5 times the update interval, we are now able to update our clock and perpetuate the flood!
@@ -1214,6 +1216,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					
 					_clock_offset = (clock_offset_ppm/1e6) + 1.0;
 					_glossy_flood_timeslot_corrected = (uint64_t)((double)((uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8)*_clock_offset);
+#endif
 
 					// Great, we're still sync'd!
 					_last_sync_depth = in_glossy_sync->header.seqNum;
@@ -1223,6 +1226,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					_lwb_counter = 0;
 					timer_reset(_glossy_timer, ((uint32_t)(in_glossy_sync->header.seqNum))*GLOSSY_FLOOD_TIMESLOT_US);
 
+#ifndef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
 					// Update DW1000's crystal trim to account for observed PPM offset
 					_last_xtal_trim = _xtal_trim;
 					int8_t trim_diff = clock_offset_to_trim_diff(clock_offset_ppm);
@@ -1237,6 +1241,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					if(_last_xtal_trim != _xtal_trim)
 						_sched_req_pkt.sync_depth = 0xFF;
 #endif
+#endif /* STM_ENABLE_SLEEP_IN_PASSIVE_PHASE */
 
 					// Perpetuate the flood!
                     _cur_glossy_depth = ++in_glossy_sync->header.seqNum;
@@ -1262,6 +1267,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
                         dwt_rxenable(0);
                     }
 
+#ifndef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
 				} else {
 					// We lost sync :(
 					_lwb_in_sync = FALSE;
@@ -1280,6 +1286,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 				// This really shouldn't happen, but for now let's ignore it
 				//debug_msg("WARNING: Received schedule too quickly!\n");
 			}
+#endif
 
 			_last_sync_timestamp = dw_timestamp - (_glossy_flood_timeslot_corrected * in_glossy_sync->header.seqNum);
 
@@ -1969,8 +1976,8 @@ static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
 
 static uint8_t calculate_wakeup_delay() {
 
-    // FIXME: Calculate based on current schedule; for only the STM, 800 is sufficient
-    uint16_t wakeup_delay = 550;
+    // FIXME: Calculate based on current schedule
+    uint16_t wakeup_delay = 800;
 
     // Return (ms that wakeup should be delayed) / 4, maximally for 1 second
     return (wakeup_delay) / 4;
