@@ -675,7 +675,7 @@ void dw1000_reset_soft () {
 	// Reset procedure for PMSC_CTRL0
 
 	// 1. Set SYSCLKS to 01
-	buffer = 1;
+	/*buffer = 1;
 	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_OFFSET,           1, &buffer);
 
 	// 2. Clear SOFTRESET to all zeros
@@ -688,7 +688,10 @@ void dw1000_reset_soft () {
 
 	// 4. Again enable auto-clock selection
 	buffer = 0;
-	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_OFFSET,           1, &buffer);
+	dwt_writetodevice(PMSC_ID, PMSC_CTRL0_OFFSET,           1, &buffer);*/
+
+	// Use DW function
+	dwt_softreset();
 
 	uDelay(1000);
 
@@ -1039,21 +1042,27 @@ void dw1000_enterINIT(){
     // Enable writing to registers
     dw1000_spi_slow();
 
-    // Record the current values of these registers, to restore later
-    _pmsc_ctrl0 = dwt_read8bitoffsetreg(PMSC_ID, PMSC_CTRL0_OFFSET);
-    _pmsc_ctrl1 = dwt_read16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET);
-
     //  Set clock to XTAL
-    dwt_write8bitoffsetreg(PMSC_ID, PMSC_CTRL0_OFFSET, PMSC_CTRL0_SYSCLKS_19M);
-    //  Disable sequencing
-    dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, PMSC_CTRL1_PKTSEQ_DISABLE);
+    //_pmsc_ctrl0 = dwt_read8bitoffsetreg(PMSC_ID, PMSC_CTRL0_OFFSET);
+    //dwt_write8bitoffsetreg(PMSC_ID, PMSC_CTRL0_OFFSET, PMSC_CTRL0_SYSCLKS_19M);
+
+    //  Disable sequencing - use official DW function for this
+    _pmsc_ctrl1 = dwt_read16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET);
+    //dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, PMSC_CTRL1_PKTSEQ_DISABLE);
+    _dwt_disablesequencing();
 }
 
 void dw1000_exitINIT(){
 
     // Restore old register values
-    dwt_write8bitoffsetreg(PMSC_ID,  PMSC_CTRL0_OFFSET, _pmsc_ctrl0);
+    //dwt_write8bitoffsetreg(PMSC_ID,  PMSC_CTRL0_OFFSET, _pmsc_ctrl0);
     dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, _pmsc_ctrl1);
+
+    // Note: ENABLE_ALL_SEQ = 1
+    _dwt_enableclocks(1); // Enable clocks for sequencing
+
+    // DW1000 needs a 10us sleep to let clk PLL lock - the PLL will automatically lock
+    deca_sleep(1);
 
     // Turn SPI fast again
     dw1000_spi_fast();
