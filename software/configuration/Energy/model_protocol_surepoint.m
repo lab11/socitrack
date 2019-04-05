@@ -23,6 +23,8 @@ num_support = 0;
 
 nr_nodes = num_init + num_resp + num_hybrid + num_support;
 
+use_optimized_params = 0;
+
 % PROTOCOL PARAMS ---------------------------------------------------------
 
 % Scheduling
@@ -32,7 +34,12 @@ interval_slot  = 10; % ms
 
 duration_schedule = 10;
 
-interval_flood  = 2; % ms
+if (use_optimized_params > 0)
+    interval_flood = 1; %ms
+else
+    interval_flood  = 2; % ms
+end
+
 max_flood_depth = 5;
 
 protocol_standard_contention_length = 1;
@@ -48,7 +55,11 @@ num_rangings    = num_ow_rangings + num_tw_rangings;
 
 interval_poll = interval_flood;
 
-duration_rang_requ_passive = 10; %ms
+if (use_optimized_params > 0)
+    duration_rang_requ_passive = 0; %ms
+else
+    duration_rang_requ_passive = 10; %ms
+end
 duration_rang_requ_active  = num_rangings * interval_poll;
 duration_rang_requ         = duration_rang_requ_active + duration_rang_requ_passive;
 
@@ -72,8 +83,13 @@ I_contention = 151.0;
 
 % Ranging
 
-I_rang_idle  = 23.1;
-I_rang_dc    = 11.1;
+if (use_optimized_params > 0)
+    I_rang_idle = 11.1;
+    I_rang_dc   = I_sleep;
+else
+    I_rang_idle  = 23.1;
+    I_rang_dc    = 11.1;
+end
 
 I_rang_poll_tx_1ms = 41.1;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
@@ -116,13 +132,13 @@ I_init   = (I_common * duration_common ...
           + I_rang_resp_rx_active *      num_responses_received *  duration_rang_resp_rx + I_rang_resp_rx_passive * 1 * (duration_rang_resp -  num_responses_received * duration_rang_resp_rx) ...
           + I_rang_idle           * (num_init + num_hybrid - 1) * (duration_rang_requ + duration_rang_resp) ) ...
           / (duration_common + duration_init);
-      
+
 % Responder costs
 I_resp   = (I_common * duration_common ...
           + I_rang_requ_rx *                 (num_init + num_hybrid) * duration_rang_requ ...
           + I_rang_resp_tx * num_responses * (num_init + num_hybrid) * duration_rang_resp_tx + I_rang_idle * (num_init + num_hybrid) * (duration_rang_resp - num_responses * duration_rang_resp_tx) ) ...
           / (duration_common + duration_resp);
-      
+
 % Hybrid costs
 I_hybrid = (I_common * duration_common ...
           + I_rang_requ_tx        *                                           1 * duration_rang_requ ...
@@ -130,7 +146,7 @@ I_hybrid = (I_common * duration_common ...
           + I_rang_requ_rx        *                 (num_init + num_hybrid - 1) * duration_rang_requ ...
           + I_rang_resp_tx        * num_responses * (num_init + num_hybrid - 1) * duration_rang_resp_tx + I_rang_idle            * (num_init + num_hybrid - 1) * (duration_rang_resp -          num_responses * duration_rang_resp_tx) ) ...
           / (duration_common + duration_hybrid);
-    
+
 % Add duty-cycling costs
 I_init_tot   = (I_init   * (duration_common + duration_init  ) + I_rang_dc * (interval_round - (duration_common + duration_init  ) ) ) / (interval_round);
 
@@ -169,16 +185,17 @@ name = categorical({'Initiator', 'Responder', 'Hybrid'});
 data_relative = [power_budget_init; power_budget_resp; power_budget_hybrid];
 bar(name, data_relative);
 ylim([0,1]);
-xlabel('Node classes', 'FontSize', font_size);
+xlabel('Mode', 'FontSize', font_size);
 ylabel('Energy consumption [%]', 'FontSize', font_size);
-legend('Active period', 'Passive period');
+lgd = legend({'Active period', 'Passive period'}, 'Location', 'northwest');
+lgd.FontSize = 15;
 
 font_size = 20;
 figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
 name = categorical({'Initiator', 'Responder', 'Hybrid'});
 data_absolute = [power_budget_init * I_system_init; power_budget_resp * I_system_resp; power_budget_hybrid * I_system_hybrid];
 bar(name, data_absolute, 'stacked');
-xlabel('Node classes', 'FontSize', font_size);
+xlabel('Mode', 'FontSize', font_size);
 ylabel('Energy consumption [mA]', 'FontSize', font_size);
 
 % Life time
@@ -187,6 +204,5 @@ figure('Name', 'Life time', 'DefaultAxesFontSize', font_size)
 name = categorical({'Initiator', 'Responder', 'Hybrid'});
 data = [life_time_init * duration_day; life_time_resp * duration_day; life_time_hybrid * duration_day];
 bar(name, data);
-xlabel('Node classes', 'FontSize', font_size);
+xlabel('Mode', 'FontSize', font_size);
 ylabel('Life time [h]', 'FontSize', font_size);
-

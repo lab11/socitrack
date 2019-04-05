@@ -211,38 +211,38 @@ I_init   = (I_common * duration_common ...
           + I_rang_requ_tx *                                       1 * duration_rang_requ + I_rang_idle * (num_init + num_hybrid - 1) * duration_rang_requ ...
           + I_rang_resp_rx * num_responses * (num_resp + num_hybrid) * duration_rang_resp) ...
           / (duration_common + duration_init);
-      
+
 % Responder costs
 I_resp   = (I_common * duration_common ...
           + I_rang_requ_rx * (num_init + num_hybrid) * duration_rang_requ ...
           + I_rang_resp_tx *           num_responses * duration_rang_resp + I_rang_idle * num_responses * (num_resp + num_hybrid - 1) * duration_rang_resp)...
           / (duration_common + duration_resp);
-      
+
 % Hybrid costs
 I_hybrid = (I_common * duration_common ...
           + I_rang_requ_tx *             1 * duration_rang_requ + I_rang_requ_rx *                 (num_init + num_hybrid - 1) * duration_rang_requ ...
           + I_rang_resp_tx * num_responses * duration_rang_resp + I_rang_resp_rx * num_responses * (num_resp + num_hybrid - 1) * duration_rang_resp) ...
           / (duration_common + duration_hybrid);
-      
-      
+
+
 if (protocol_max_responses)
     % Calculate number of responses
     nr_resp = min(protocol_max_responses, num_resp + num_hybrid);
-    
+
     I_init = (I_common * duration_common ...
             + I_rang_requ_tx *                       1 * duration_rang_requ + I_rang_idle *                 (num_init + num_hybrid -       1) * duration_rang_requ ...
             + I_rang_resp_rx * num_responses * nr_resp * duration_rang_resp + I_rang_idle * num_responses * (num_init + num_hybrid - nr_resp) * duration_rang_resp) ...
             / (duration_common + duration_init);
 end
-      
-if (not(protocol_reenable_hybrids))      
+
+if (not(protocol_reenable_hybrids))
     % Use ranging pyramid - average number
     I_hybrid = (I_common * duration_common ...
           + I_rang_requ_tx *             1 * duration_rang_requ + I_rang_requ_rx *                 (num_init + (num_hybrid - 1)/2) * duration_rang_requ + I_rang_idle * (                 (num_hybrid - 1)/2 ) * duration_rang_requ ...
           + I_rang_resp_tx * num_responses * duration_rang_resp + I_rang_resp_rx * num_responses * (num_resp + (num_hybrid - 1)/2) * duration_rang_resp + I_rang_idle * ( num_responses * (num_hybrid - 1)/2 ) * duration_rang_resp) ...
           / (duration_common + duration_hybrid);
 end
-      
+
 % Add duty-cycling costs
 I_init_tot   = (I_init   * (duration_common + duration_init  ) + I_rang_dc * (interval_round - (duration_common + duration_init  ) ) ) / (interval_round);
 
@@ -300,9 +300,9 @@ name = categorical({'Initiator', 'Responder', 'Hybrid'});
 data_relative = [power_budget_init; power_budget_resp; power_budget_hybrid];
 bar(name, data_relative);
 ylim([0,1]);
-xlabel('Node classes', 'FontSize', font_size);
+xlabel('Mode', 'FontSize', font_size);
 ylabel('Energy consumption [%]', 'FontSize', font_size);
-lgd = legend('Active period', 'Passive period', 'Discovery', 'Logging');
+lgd = legend({'Active period', 'Passive period', 'Discovery', 'Logging'}, 'Location', 'northwest');
 lgd.FontSize = 15;
 
 font_size = 20;
@@ -310,7 +310,7 @@ figure('Name', 'Power budget distribution', 'DefaultAxesFontSize', font_size)
 name = categorical({'Initiator', 'Responder', 'Hybrid'});
 data_absolute = [power_budget_init * I_system_init; power_budget_resp * I_system_resp; power_budget_hybrid * I_system_hybrid];
 bar(name, data_absolute, 'stacked');
-xlabel('Node classes', 'FontSize', font_size);
+xlabel('Mode', 'FontSize', font_size);
 ylabel('Energy consumption [mA]', 'FontSize', font_size);
 
 % Life time
@@ -319,8 +319,5 @@ figure('Name', 'Life time', 'DefaultAxesFontSize', font_size)
 name = categorical({'Initiator', 'Responder', 'Hybrid'});
 data = [life_time_init * duration_day; life_time_resp * duration_day; life_time_hybrid * duration_day];
 bar(name, data);
-xlabel('Node classes', 'FontSize', font_size);
+xlabel('Mode', 'FontSize', font_size);
 ylabel('Life time [h]', 'FontSize', font_size);
-
-
-
