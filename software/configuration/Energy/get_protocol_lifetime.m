@@ -125,8 +125,12 @@ I_ble_scan = 6.9; % mA
 
 % Schedule
 
-I_schedule   =  25.8;
-I_contention = 151.0;
+if (use_optimized_params > 0)
+    I_schedule   =  51.54;
+else
+    I_schedule   = 407.70; % including overhead
+end
+I_contention = 131.93;
 
 % Ranging
 
@@ -134,23 +138,23 @@ if (use_optimized_params > 0)
     I_rang_idle = 11.1;
     I_rang_dc   = I_sleep;
 else
-    I_rang_idle  = 23.1;
-    I_rang_dc    = 11.1;
+    I_rang_idle  = 22.53;
+    I_rang_dc    = 7.14;
 end
 
-I_rang_poll_tx_1ms = 41.1;
+I_rang_poll_tx_1ms = 36.65;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
 
-I_rang_poll_rx_1ms = 94.7;
+I_rang_poll_rx_1ms = 87.18;
 I_rang_poll_rx     = (I_rang_poll_rx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
 
 I_rang_requ_tx     = ( I_rang_poll_tx * duration_rang_requ_active + I_rang_idle * duration_rang_requ_passive) / duration_rang_requ;
 I_rang_requ_rx     = ( I_rang_poll_rx * duration_rang_requ_active + I_rang_idle * duration_rang_requ_passive) / duration_rang_requ;
 
 
-I_rang_resp_tx = 37.8;
-I_rang_resp_rx_active  =  93.5;
-I_rang_resp_rx_passive = 151.0;
+I_rang_resp_tx         =  29.72;
+I_rang_resp_rx_active  =  99.61;
+I_rang_resp_rx_passive = 131.93;
 
 % SD card - 20 * 1024 bytes in 240ms
 

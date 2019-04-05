@@ -1,6 +1,6 @@
 % Energy model - TotTernary
 % Author: Andreas Biri
-% Date:   2018-11-27
+% Date:   2019-04-05
 clear all;
 
 % INPUT PARAMS ------------------------------------------------------------
@@ -10,7 +10,7 @@ update_freq = 1; % Hz
 accuracy  = 1000; % mm
 precision = 1000; %mm
 
-frequ_diversity = 3;
+frequ_diversity   = 3;
 antenna_diversity = 3;
 
 % Range is adjustable according ot DW1000 mode; this does however also
@@ -115,7 +115,7 @@ div_avg_precision = [185.4250, 167.2300, 149.8500; 180.7575, 157.7350, 156.9125;
 
 % Bluetooth
 
-I_ble_idle = 0.7; % mA
+I_ble_idle = 0; % mA (overhead counted for UWB as baseband, as it needs to trigger it for sleeping)
 
 ble_adv_probability_zero  = 0.2;
 ble_adv_probability_one   = 0.54;
@@ -127,10 +127,10 @@ ble_adv_length_one   = 5.2; % ms
 ble_adv_length_two   = 5.8; % ms
 ble_adv_length_three = 6.4; % ms
 
-I_ble_adv_zero  = 4.1; % mA
-I_ble_adv_one   = 4.6; % mA
-I_ble_adv_two   = 4.9; % mA
-I_ble_adv_three = 5.2; % mA
+I_ble_adv_zero  = 2.68; % mA
+I_ble_adv_one   = 3.01; % mA
+I_ble_adv_two   = 3.30; % mA
+I_ble_adv_three = 3.60; % mA
 
 Q_ble_adv =             ble_adv_probability_zero  * ble_adv_length_zero  * I_ble_adv_zero;
 Q_ble_adv = Q_ble_adv + ble_adv_probability_one   * ble_adv_length_one   * I_ble_adv_one;
@@ -141,13 +141,16 @@ duration_adv = ble_adv_probability_zero * ble_adv_length_zero + ble_adv_probabil
 I_ble_adv    = Q_ble_adv / duration_adv;
 
 duration_scan = interval_adv + duration_adv + 10; % ms -> 10ms is max BLE random slack
-I_ble_scan = 6.9; % mA
+I_ble_scan = 5.42; % mA
 
 
 % Schedule
-
-I_schedule   =  25.8;
-I_contention = 151.0;
+if (use_optimized_params > 0)
+    I_schedule   =  51.54;
+else
+    I_schedule   = 407.70; % including overhead
+end
+I_contention = 131.93;
 
 % Ranging
 
@@ -155,22 +158,22 @@ if (use_optimized_params > 0)
     I_rang_idle = 11.1;
     I_rang_dc   = I_sleep;
 else
-    I_rang_idle  = 23.1;
-    I_rang_dc    = 11.1;
+    I_rang_idle  = 22.53;
+    I_rang_dc    =  7.14;
 end
 
-I_rang_poll_tx_1ms = 41.1;
+I_rang_poll_tx_1ms = 36.65;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
 
-I_rang_poll_rx_1ms = 94.7;
+I_rang_poll_rx_1ms = 87.18;
 I_rang_poll_rx     = (I_rang_poll_rx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
 
 I_rang_requ_tx     = ( I_rang_poll_tx * duration_rang_requ_active + I_rang_idle * duration_rang_requ_passive) / duration_rang_requ;
 I_rang_requ_rx     = ( I_rang_poll_rx * duration_rang_requ_active + I_rang_idle * duration_rang_requ_passive) / duration_rang_requ;
 
 
-I_rang_resp_tx = 37.8;
-I_rang_resp_rx = 93.5;
+I_rang_resp_tx = 29.72;
+I_rang_resp_rx = 99.61;
 
 % SD card - 20 * 1024 bytes in 240ms
 

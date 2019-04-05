@@ -1,6 +1,6 @@
 % Energy model - SurePoint
 % Author: Andreas Biri
-% Date:   2018-12-02
+% Date:   2019-04-05
 clear all;
 
 % INPUT PARAMS ------------------------------------------------------------
@@ -10,7 +10,7 @@ update_freq = 1; % Hz
 accuracy  = 1000; % mm
 precision = 1000; %mm
 
-frequ_diversity = 3;
+frequ_diversity   = 3;
 antenna_diversity = 3;
 
 % Range is adjustable according ot DW1000 mode; this does however also
@@ -78,8 +78,12 @@ I_sleep = 2.1; % mA
 
 % Schedule
 
-I_schedule   =  25.8;
-I_contention = 151.0;
+if (use_optimized_params > 0)
+    I_schedule   =  51.54;
+else
+    I_schedule   = 407.70; % including overhead
+end
+I_contention = 131.93;
 
 % Ranging
 
@@ -87,23 +91,23 @@ if (use_optimized_params > 0)
     I_rang_idle = 11.1;
     I_rang_dc   = I_sleep;
 else
-    I_rang_idle  = 23.1;
-    I_rang_dc    = 11.1;
+    I_rang_idle  = 22.53;
+    I_rang_dc    =  7.14;
 end
 
-I_rang_poll_tx_1ms = 41.1;
+I_rang_poll_tx_1ms = 36.65;
 I_rang_poll_tx     = (I_rang_poll_tx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
 
-I_rang_poll_rx_1ms = 94.7;
+I_rang_poll_rx_1ms = 87.18;
 I_rang_poll_rx     = (I_rang_poll_rx_1ms + (interval_poll - 1) * I_rang_idle) / interval_poll;
 
 I_rang_requ_tx     = ( I_rang_poll_tx * duration_rang_requ_active + I_rang_idle * duration_rang_requ_passive) / duration_rang_requ;
 I_rang_requ_rx     = ( I_rang_poll_rx * duration_rang_requ_active + I_rang_idle * duration_rang_requ_passive) / duration_rang_requ;
 
 
-I_rang_resp_tx = 37.8;
-I_rang_resp_rx_active  =  93.5;
-I_rang_resp_rx_passive = 151.0;
+I_rang_resp_tx         =  29.72;
+I_rang_resp_rx_active  =  99.61;
+I_rang_resp_rx_passive = 131.93;
 
 % CALCULATIONS ------------------------------------------------------------
 

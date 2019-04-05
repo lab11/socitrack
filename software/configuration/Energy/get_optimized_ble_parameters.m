@@ -11,10 +11,10 @@ function [interval_scan,interval_adv] = get_optimized_ble_parameters(DISC_LATENC
 % Constants in mA for current / ms for time -------------------------------
 
 % TX
-TX_ADV_BARE_I  = 4.1;
-TX_ADV_REQ_1_I = 4.6;
-TX_ADV_REQ_2_I = 4.9;
-TX_ADV_REQ_3_I = 5.2;
+TX_ADV_BARE_I  = 2.68;
+TX_ADV_REQ_1_I = 3.01;
+TX_ADV_REQ_2_I = 3.3;
+TX_ADV_REQ_3_I = 3.6;
 
 TX_ADV_BARE_T  = 4.6;
 TX_ADV_REQ_1_T = 5.2;
@@ -30,10 +30,10 @@ TX_ADV_I = ADV_BARE_P * TX_ADV_BARE_I + ADV_REQ_1_P * TX_ADV_REQ_1_I + ADV_REQ_2
 TX_ADV_T = ADV_BARE_P * TX_ADV_BARE_T + ADV_REQ_1_P * TX_ADV_REQ_1_T + ADV_REQ_2_P * TX_ADV_REQ_2_T + ADV_REQ_3_P * TX_ADV_REQ_3_T;
 
 % RX
-RX_ADV_I = 6.9;
+RX_ADV_I = 5.42;
 
 % General
-IDLE_I = 0.7;
+IDLE_I = 0;
 
 BLE_SLACK_MAX   = 10; % 10ms randomness
 
