@@ -63,10 +63,12 @@ void rangetest_start () {
 	dw1000_err_e err;
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Turn off all LEDs
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
 	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 	GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 #endif
 
 	if (_config.my_role == APP_ROLE_NOINIT_RESP) {

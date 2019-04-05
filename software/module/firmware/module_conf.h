@@ -39,7 +39,12 @@
 // Protocol adaptation -------------------------------------------------------------------------------------------------
 
 // Power options
+
+// Enable STM and DW to go to lower-power modes in-between rangings
 #define STM_ENABLE_SLEEP_IN_PASSIVE_PHASE 1
+
+// Disable LEDs to save power (and reduce distraction)
+#define STM_DISABLE_LEDS 1
 
 // Adjust Tx parameters
 //#define DW1000_MAXIMIZE_TX_POWER  // Increases transmit power to the maximal value; ATTENTION: might violate regulations and increase power consumption

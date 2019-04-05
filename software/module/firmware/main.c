@@ -67,6 +67,8 @@ static void error () {
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
 #if (BOARD_V == SQUAREPOINT)
+	// We explicitly also allow this to happen when LEDs are disabled to signal an error
+
     // Turn all LEDs off
     GPIO_SetBits(STM_LED_RED_PORT, STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN);
 
@@ -330,10 +332,17 @@ int main () {
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure_B);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
     // Signal init by turning on WHITE
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#else
+    // Turn all of them (permanently) off
+    GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+    GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 #endif
 
 	//Initialize UART1 on GPIO0 and GPIO1
@@ -367,9 +376,11 @@ int main () {
     USART_Cmd(USART1, ENABLE);*/
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Signal that internal setup is finished by setting RED
 	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 #endif
 
 	// Next up do some preliminary setup of the DW1000. This mostly configures
@@ -461,9 +472,11 @@ int main () {
 #endif
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Signal normal operation by turning on BLUE
 	GPIO_WriteBit(STM_LED_RED_PORT,  STM_LED_RED_PIN,  Bit_SET);
 	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_RESET);
+#endif
 #endif
 
 	// MAIN LOOP

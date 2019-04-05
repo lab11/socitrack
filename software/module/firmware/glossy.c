@@ -280,10 +280,12 @@ void glossy_stop() {
 	timer_free(_glossy_timer);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
     // Make sure that LEDs are in default (BLUE) state
     GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+#endif
 #endif
 
 }
@@ -552,10 +554,12 @@ static void glossy_lwb_round_task() {
 
 
 #if (BOARD_V == SQUAREPOINT)
-			// Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
+#ifndef STM_DISABLE_LEDS
+            // Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
 			GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
 			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
 #endif
 		// LWB Slot > N: Invalid counter value
 		} else if (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ) {
@@ -582,11 +586,13 @@ static void glossy_lwb_round_task() {
 			debug_msg("\n");
 
 #if (BOARD_V == SQUAREPOINT)
-			// Signal normal operation by turning on BLUE
+#ifndef STM_DISABLE_LEDS
+            // Signal normal operation by turning on BLUE
 			if (GPIO_ReadOutputDataBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN)) {
 				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			}
+#endif
 #endif
 
 #ifdef PROTOCOL_ENABLE_TIMEOUT
@@ -889,10 +895,12 @@ bool glossy_process_txcallback(){
 		memset(_lwb_prev_signalling_eui, 0, EUI_LEN);
 
 #if (BOARD_V == SQUAREPOINT)
-		// Signal normal round by turning on GREEN
+#ifndef STM_DISABLE_LEDS
+        // Signal normal round by turning on GREEN
 		GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
 		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 		GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
 #endif
 
 		is_glossy_callback = TRUE;
@@ -1145,11 +1153,13 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 		    }
 
 #if (BOARD_V == SQUAREPOINT)
-			// Signal that in sync with Glossy by turning on GREEN
+#ifndef STM_DISABLE_LEDS
+            // Signal that in sync with Glossy by turning on GREEN
 			if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 			}
+#endif
 #endif
 
 #ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
