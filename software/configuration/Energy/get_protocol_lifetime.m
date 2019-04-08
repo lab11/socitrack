@@ -94,7 +94,7 @@ I_sleep = 2.1; % mA
 
 % Bluetooth
 
-I_ble_idle = 0.7; % mA
+I_ble_idle = 0; % mA (overhead counted for UWB as baseband, as it needs to trigger it for sleeping)
 
 ble_adv_probability_zero  = 0.2;
 ble_adv_probability_one   = 0.54;
@@ -106,10 +106,10 @@ ble_adv_length_one   = 5.2; % ms
 ble_adv_length_two   = 5.8; % ms
 ble_adv_length_three = 6.4; % ms
 
-I_ble_adv_zero  = 4.1; % mA
-I_ble_adv_one   = 4.6; % mA
-I_ble_adv_two   = 4.9; % mA
-I_ble_adv_three = 5.2; % mA
+I_ble_adv_zero  = 2.68; % mA
+I_ble_adv_one   = 3.01; % mA
+I_ble_adv_two   = 3.30; % mA
+I_ble_adv_three = 3.60; % mA
 
 Q_ble_adv =             ble_adv_probability_zero  * ble_adv_length_zero  * I_ble_adv_zero;
 Q_ble_adv = Q_ble_adv + ble_adv_probability_one   * ble_adv_length_one   * I_ble_adv_one;
@@ -120,8 +120,7 @@ duration_adv = ble_adv_probability_zero * ble_adv_length_zero + ble_adv_probabil
 I_ble_adv    = Q_ble_adv / duration_adv;
 
 duration_scan = interval_adv + duration_adv + 10; % ms -> 10ms is max BLE random slack
-I_ble_scan = 6.9; % mA
-
+I_ble_scan = 5.42; % mA
 
 % Schedule
 
