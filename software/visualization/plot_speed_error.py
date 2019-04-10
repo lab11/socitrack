@@ -99,6 +99,9 @@ end = start + 10*60
 optitrack_data[:,0] += 18.33
 
 error = abs_error(optitrack_data, tot_data)/1000
+print('average error train: ' + str(np.average(error)))
+print('90th percentile error train: ' + str(np.percentile(error, 90)))
+print('95th percentile error train: ' + str(np.percentile(error, 95)))
 print(stats.describe(error))
 error_ma = moving_average(error, 10)
 #plt.subplot(2,2,2)
@@ -145,7 +148,9 @@ end = start + 10*60
 optitrack_data[:,0] += 37.713
 
 error = abs_error(optitrack_data, tot_data)/1000
-print(stats.describe(error))
+print('average error car: ' + str(np.average(error)))
+print('90th percentile error car: ' + str(np.percentile(error, 90)))
+print('95th percentile error car: ' + str(np.percentile(error, 95)))
 error_ma = moving_average(error, 10)
 #plt.subplot(2,2,4)
 
@@ -178,4 +183,4 @@ for i, ax in enumerate(axarr.flat):
         ax.set(ylabel='Error (m)', ylim=(0,1))
     ax.label_outer()
 plt.tight_layout()
-plt.savefig('speed_vs_error.pdf', format='pdf')
+plt.savefig('speed_error.pdf', format='pdf')
