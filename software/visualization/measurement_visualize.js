@@ -111,12 +111,14 @@ function process_data(ranges, uuid) {
 
 // Target devices - should be entered over command line arguments, these are just default values
 var peripheral_address_base = 'c098e54200';
-var peripheral_address_0	= 'c098e5420001';
-var peripheral_address_1	= 'c098e5420002';
-var peripheral_address_2	= 'c098e5420003';
+var peripheral_address_0	  = 'c098e5420001';
+var peripheral_address_1	  = 'c098e5420002';
+var peripheral_address_2	  = 'c098e5420003';
 var peripheral_addresses    = [];
 
-var num_discovered	   = 0;
+var peripherals_connected   = [];
+
+var num_discovered	 = 0;
 var num_specified	   = 0;
 var num_maximal		   = 10;
 
@@ -348,6 +350,16 @@ function receive (peripheral) {
 		if (connect_err) {
 			console.log('ERROR: Failed to connect to ' + peripheral.uuid);
 			console.log(connect_err)
+
+      // Remove from connected tags (so can retry)
+      for (var j = 0; j < num_discovered; j++) {
+        if (peripherals_connected[j] === peripheral.uuid) {
+          peripherals_connected[j] = 0;
+          num_discovered--;
+          j = num_discovered;
+        }
+      }
+
 		} else {
 			console.log('Successfully connected to ' + peripheral.uuid);
 		}
@@ -378,16 +390,27 @@ noble.on('stateChange', function (state) {
 
 noble.on('discover', function (peripheral) {
 	if (peripheral.advertisement.localName == 'TotTag') {
-		console.log('Found TotTag: ' + peripheral.uuid);
 
-		if ( ( (num_specified > 0) && (peripheral.uuid in peripheral_addresses) ) ||
-			 (num_specified === 0)													                          ) {
+    // console.log('Connected:' + peripherals_connected.toString());
 
-			console.log('Recording packets of ' + peripheral.uuid);
-			num_discovered = num_discovered + 1;
+    if (!(peripherals_connected.includes(peripheral.uuid))) {
 
-			receive(peripheral);
-		}
+	    console.log('Found TotTag: ' + peripheral.uuid);
 
+  		if ( ( (num_specified > 0) && (peripheral.uuid in peripheral_addresses) ) ||
+  			 (num_specified === 0)													                          ) {
+
+    			console.log('Recording packets of ' + peripheral.uuid);
+
+          // Add to connected tags
+          peripherals_connected[num_discovered] = peripheral.uuid;
+          num_discovered = num_discovered + 1;
+
+    			receive(peripheral);
+      }
+
+		} else {
+      // console.log('Already connected');
+    }
 	}
 });
