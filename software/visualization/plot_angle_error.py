@@ -21,23 +21,23 @@ for fname in fnames:
     angle = fname.split('.')[0].split('_')[-1]
     print(fname)
     print(angle)
-    angles.append(angle)
+    angles.append(str(int(angle) - 90))
 
     # load tot ranges
     tot_data = raw_to_agg(fname)[:,[0,2]]
     datas.append(np.abs(tot_data[:120,1] - 1000)/10)
 print(angles)
 
-w, h = matplotlib.figure.figaspect(0.5)
-plt.figure(dpi=300,figsize=(w,h))
+w, h = matplotlib.figure.figaspect(0.4)
+fig = plt.figure(dpi=300,figsize=(w,h))
+#ax = fig.add_subplot(111, polar=True)
 plt.grid(True, 'both', 'y')
 plt.boxplot(datas, 0, '')
 
 plt.yticks(fontsize=20)
 plt.xticks(range(1,len(datas)+1), angles, fontsize=20)
 plt.ylabel('Error (cm)', fontsize=22)
-plt.xlabel('Totternary Angle (°)', fontsize=22)
-#ax = plt.gca()
-#ax.set_theta_min(0)
-#ax.set_theta_max(180)
+plt.xlabel('Angle of Arrival (°)', fontsize=22)
+#ax.set_thetamin(0)
+#ax.set_thetamax(180)
 plt.savefig('angle.pdf', bbox_inches='tight', format='pdf')
