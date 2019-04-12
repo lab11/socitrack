@@ -101,7 +101,7 @@ end = start + 10*60
 
 optitrack_data[:,0] += 18.33
 
-error = abs_error(optitrack_data, tot_data)/1000
+error = abs_error(optitrack_data, tot_data)/10
 print('average error train: ' + str(np.average(error)))
 print('90th percentile error train: ' + str(np.percentile(error, 90)))
 print('95th percentile error train: ' + str(np.percentile(error, 95)))
@@ -115,7 +115,7 @@ error_ma = moving_average(error, 10)
 #plt.xlim((start-5)/60, (end+5)/60)
 #plt.ylim(0, 1)
 #plt.grid(True)
-ax3.plot(tot_data[int(.5*60):int(5.5*60),0]/60 - .5, error_ma[int(.5*60):int(5.5*60)])
+ax3.plot(tot_data[int(.5*60):int(5.5*60),0] - .5*60, error_ma[int(.5*60):int(5.5*60)])
 
 #plt.subplot(2,2,1)
 speed_2 = xyz_to_speed(xyz_1)
@@ -127,7 +127,7 @@ speed_2_sec = np.mean((speed_2[:len(speed_2)//120*120]).reshape(-1, 120), axis=1
 #plt.xlim((start-5)/60, (end+5)/60)
 #plt.ylim(0, 1)
 optitrack_sec = optitrack_data[0::120,0]
-ax1.plot(optitrack_sec[int(.5*60):int(5.5*60)]/60 - .5, speed_2_sec[int(.5*60):int(5.5*60)]/1000)
+ax1.plot(optitrack_sec[int(.5*60):int(5.5*60)] - .5*60, speed_2_sec[int(.5*60):int(5.5*60)]/1000)
 ax1.set_title("Model Train")
 
 
@@ -154,7 +154,7 @@ error = abs_error(optitrack_data, tot_data)/1000
 print('average error car: ' + str(np.average(error)))
 print('90th percentile error car: ' + str(np.percentile(error, 90)))
 print('95th percentile error car: ' + str(np.percentile(error, 95)))
-error_ma = moving_average(error, 10)
+error_ma = moving_average(error, 10) * 100
 #plt.subplot(2,2,4)
 
 #plt.xlabel('Time (minutes)')
@@ -162,7 +162,7 @@ error_ma = moving_average(error, 10)
 #plt.xlim((start-5)/60, (end+5)/60)
 #plt.ylim(0, 1)
 #plt.grid(True)
-ax4.plot(tot_data[int(1*60):6*60,0]/60 - 1, error_ma[int(1*60):6*60])
+ax4.plot(tot_data[int(1*60):6*60,0] - 60, error_ma[int(1*60):6*60])
 
 #plt.subplot(2,2,3)
 speed_2 = xyz_to_speed(xyz_2)
@@ -174,16 +174,16 @@ speed_2_sec = np.mean((speed_2[:len(speed_2)//120*120]).reshape(-1, 120), axis=1
 #plt.ylabel('Speed (m/s)')
 #plt.xlim((start-5)/60, (end+5)/60)
 #plt.ylim(0, 1)
-ax2.plot((optitrack_data[::120,0])[int(1*60):6*60]/60 - 1, moving_average(speed_2_sec, 10)[int(1*60):6*60]/1000)
+ax2.plot((optitrack_data[::120,0])[int(1*60):6*60] - 60, moving_average(speed_2_sec, 10)[int(1*60):6*60]/1000)
 ax2.set_title("Slot Car")
 
 for i, ax in enumerate(axarr.flat):
-    ax.set(xlabel='Time (minutes)')
-    ax.set(xlim=(0, 5))
+    ax.set(xlabel='Time (s)')
+    ax.set(xlim=(0, 5*60))
     if i < 2:
         ax.set(ylabel='Speed (m/s)', ylim=(0,3.5), yticks=np.arange(0,4, .5))
     else:
-        ax.set(ylabel='Error (m)', ylim=(0,1))
+        ax.set(ylabel='Error (cm)', ylim=(0,1*100))
     ax.label_outer()
 plt.tight_layout()
-plt.savefig('speed_error.pdf', format='pdf')
+plt.savefig('speed_vs_error.pdf', format='pdf')
