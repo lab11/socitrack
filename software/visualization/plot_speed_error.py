@@ -5,6 +5,8 @@ import numpy as np
 import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
+matplotlib.rcParams['font.family'] = 'sans-serif'
+matplotlib.rcParams['font.sans-serif'] = 'Arial'
 from scipy import stats
 import matplotlib.pyplot as plt
 from glob import glob
