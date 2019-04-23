@@ -192,11 +192,11 @@ function updateGraphs(eui, ids, ranges) {
   length_2 = timeseries_data[2].series[3].data.length;
   var dist_2_3 = Math.floor((timeseries_data[2].series[2].data[length_1 - 1] + timeseries_data[2].series[3].data[length_2 - 1]) / 2);
 
-  // Compute x_3 and y_3
+  // Compute x_3 and y_3 using Heron's formula: https://en.wikipedia.org/wiki/Heron%27s_formula
   var s = (dist_1_2 + dist_1_3 + dist_2_3) / 2;
 
   var x_3 = Math.floor((dist_1_3*dist_1_3 + dist_1_2*dist_1_2 - dist_2_3*dist_2_3) / (2 * dist_1_2));
-  var y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_2_3);
+  var y_3 = Math.floor(2 * Math.sqrt(s*(s - dist_1_2)*(s - dist_1_3)*(s - dist_2_3)) / dist_1_2);
 
   //console.log('s: ' + s + ' ; dist_1_2: ' + dist_1_2 + ' ; dist_1_3: ' + dist_1_3 + ' ; dist_2_3: ' + dist_2_3);
 

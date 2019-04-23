@@ -353,7 +353,7 @@ function receive (peripheral) {
 
       // Remove from connected tags (so can retry)
       for (var j = 0; j < num_discovered; j++) {
-        if (peripherals_connected[j] === peripheral.uuid) {
+        if (peripherals_connected[j] == peripheral.uuid) {
           peripherals_connected[j] = 0;
           num_discovered--;
           j = num_discovered;
