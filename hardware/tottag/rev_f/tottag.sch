@@ -5578,6 +5578,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="311-10KJRCT-ND "/>
 <attribute name="MPN" value="RC0402JR-0710KL"/>
 </part>
+<part name="R26" library="passives" deviceset="RESISTOR" device="0402_RES" value="10k">
+<attribute name="DIGIKEY" value="311-10KJRCT-ND "/>
+<attribute name="MPN" value="RC0402JR-0710KL"/>
+</part>
 </parts>
 <sheets>
 <sheet>
@@ -5596,6 +5600,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="135.382" y1="76.2" x2="254" y2="76.2" width="0.1524" layer="98" style="longdash"/>
 <text x="180.34" y="160.02" size="2.54" layer="98">J-LINK</text>
 <text x="180.34" y="167.64" size="2.54" layer="98">LED</text>
+<text x="188.722" y="126.238" size="1.778" layer="98">Pull-up nCS to prevent float</text>
 </plain>
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -5846,6 +5851,12 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </instance>
 <instance part="P+16" gate="VCC" x="143.002" y="123.19" smashed="yes">
 <attribute name="VALUE" x="145.542" y="121.412" size="1.778" layer="96"/>
+</instance>
+<instance part="R26" gate="G$1" x="177.8" y="127" smashed="yes" rot="R180">
+<attribute name="DIGIKEY" x="177.8" y="127" size="1.778" layer="96" rot="R180" display="off"/>
+<attribute name="MPN" x="177.8" y="127" size="1.778" layer="96" rot="R180" display="off"/>
+<attribute name="NAME" x="179.07" y="125.5014" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="183.896" y="125.476" size="1.778" layer="96" rot="R180"/>
 </instance>
 </instances>
 <busses>
@@ -6454,10 +6465,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$41" class="0">
 <segment>
-<wire x1="148.082" y1="115.57" x2="173.482" y2="115.57" width="0.1524" layer="91"/>
-<wire x1="173.482" y1="115.57" x2="173.482" y2="110.49" width="0.1524" layer="91"/>
+<wire x1="148.082" y1="115.57" x2="170.942" y2="115.57" width="0.1524" layer="91"/>
+<wire x1="170.942" y1="115.57" x2="170.942" y2="110.49" width="0.1524" layer="91"/>
 <pinref part="U11" gate="G$1" pin="XI"/>
-<wire x1="173.482" y1="110.49" x2="186.182" y2="110.49" width="0.1524" layer="91"/>
+<wire x1="170.942" y1="110.49" x2="186.182" y2="110.49" width="0.1524" layer="91"/>
 <pinref part="X5" gate="G$1" pin="1"/>
 <wire x1="148.082" y1="115.57" x2="148.082" y2="107.95" width="0.1524" layer="91"/>
 <wire x1="148.082" y1="107.95" x2="150.622" y2="107.95" width="0.1524" layer="91"/>
@@ -6504,8 +6515,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <net name="!NRF_CS_RTC" class="0">
 <segment>
 <pinref part="U11" gate="G$1" pin="!CS"/>
-<wire x1="186.182" y1="90.17" x2="183.642" y2="90.17" width="0.1524" layer="91"/>
+<wire x1="186.182" y1="90.17" x2="184.912" y2="90.17" width="0.1524" layer="91"/>
 <label x="183.642" y="90.17" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="R26" gate="G$1" pin="1"/>
+<wire x1="184.912" y1="90.17" x2="183.642" y2="90.17" width="0.1524" layer="91"/>
+<wire x1="182.88" y1="127" x2="184.912" y2="127" width="0.1524" layer="91"/>
+<wire x1="184.912" y1="127" x2="184.912" y2="90.17" width="0.1524" layer="91"/>
+<junction x="184.912" y="90.17"/>
 </segment>
 <segment>
 <pinref part="U7" gate="G$1" pin="P0.28/AIN4"/>
@@ -6516,10 +6532,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <net name="VBAT_RTC" class="0">
 <segment>
 <pinref part="U11" gate="G$1" pin="VBAT"/>
-<wire x1="186.182" y1="115.57" x2="183.642" y2="115.57" width="0.1524" layer="91"/>
-<wire x1="183.642" y1="115.57" x2="183.642" y2="124.46" width="0.1524" layer="91"/>
-<label x="180.34" y="124.46" size="1.27" layer="95" rot="R180" xref="yes"/>
-<wire x1="180.34" y1="124.46" x2="183.642" y2="124.46" width="0.1524" layer="91"/>
+<wire x1="186.182" y1="115.57" x2="173.482" y2="115.57" width="0.1524" layer="91"/>
+<wire x1="173.482" y1="115.57" x2="173.482" y2="127" width="0.1524" layer="91"/>
+<label x="170.18" y="127" size="1.27" layer="95" rot="R180" xref="yes"/>
+<wire x1="170.18" y1="127" x2="172.72" y2="127" width="0.1524" layer="91"/>
+<pinref part="R26" gate="G$1" pin="2"/>
+<wire x1="172.72" y1="127" x2="173.482" y2="127" width="0.1524" layer="91"/>
+<wire x1="175.26" y1="127" x2="173.482" y2="127" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <wire x1="249.682" y1="109.22" x2="249.682" y2="118.11" width="0.1524" layer="91"/>

@@ -3875,11 +3875,17 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="MPN" value="MS518SE-FL35E" x="9.9568" y="35.2298" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="9.9568" y="38.2778" size="0.889" layer="25" font="vector" ratio="12" align="bottom-center"/>
 </element>
-<element name="R24" library="passives" package="0402_RES" value="1.41k" x="-29.1846" y="-7.9756" smashed="yes">
-<attribute name="DIGIKEY" value="311-10KJRCT-ND " x="-27.7876" y="-7.9756" size="1.778" layer="27" display="off"/>
-<attribute name="MPN" value="RC0402JR-0710KL" x="-27.7876" y="-7.9756" size="1.778" layer="27" display="off"/>
-<attribute name="NAME" x="-29.1846" y="-7.5946" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center"/>
-<attribute name="VALUE" x="-29.1846" y="-9.3726" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center"/>
+<element name="R24" library="passives" package="0402_RES" value="1.41k" x="35.433" y="24.3078" smashed="yes">
+<attribute name="DIGIKEY" value="311-10KJRCT-ND " x="36.83" y="24.3078" size="1.778" layer="27" display="off"/>
+<attribute name="MPN" value="RC0402JR-0710KL" x="36.83" y="24.3078" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="35.433" y="24.6888" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center"/>
+<attribute name="VALUE" x="35.433" y="22.9108" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center"/>
+</element>
+<element name="R26" library="passives" package="0402_RES" value="10k" x="35.4584" y="22.098" smashed="yes">
+<attribute name="DIGIKEY" value="311-10KJRCT-ND " x="35.4584" y="22.098" size="1.778" layer="27" display="off"/>
+<attribute name="MPN" value="RC0402JR-0710KL" x="35.4584" y="22.098" size="1.778" layer="27" display="off"/>
+<attribute name="NAME" x="35.4584" y="22.479" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center"/>
+<attribute name="VALUE" x="35.4584" y="20.701" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center"/>
 </element>
 </elements>
 <signals>
@@ -7135,16 +7141,20 @@ Quickturn PCB 4 Layer .DRU</description>
 <signal name="!NRF_CS_RTC">
 <contactref element="U11" pad="12"/>
 <contactref element="U7" pad="B11"/>
+<contactref element="R26" pad="1"/>
 <wire x1="12.073" y1="21.673" x2="20.4508" y2="34.151" width="0" layer="19" extent="1-1"/>
+<wire x1="35.02533125" y1="22.098" x2="12.073" y2="21.673" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="VBAT_RTC">
 <contactref element="U11" pad="5"/>
 <contactref element="R23" pad="2"/>
 <contactref element="R25" pad="2"/>
 <contactref element="R24" pad="1"/>
+<contactref element="R26" pad="2"/>
 <wire x1="28.85566875" y1="32.766" x2="35.28186875" y2="32.8168" width="0" layer="19" extent="1-1"/>
 <wire x1="18.3508" y1="32.001" x2="28.85566875" y2="32.766" width="0" layer="19" extent="1-1"/>
-<wire x1="-29.61766875" y1="-7.9756" x2="18.3508" y2="32.001" width="0" layer="19" extent="1-1"/>
+<wire x1="34.99993125" y1="24.3078" x2="18.3508" y2="32.001" width="0" layer="19" extent="1-1"/>
+<wire x1="35.89146875" y1="22.098" x2="34.99993125" y2="24.3078" width="0" layer="19" extent="1-1"/>
 </signal>
 <signal name="N$43">
 <contactref element="U11" pad="10"/>
@@ -7154,7 +7164,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <signal name="N$45">
 <contactref element="R24" pad="2"/>
 <contactref element="B1" pad="+"/>
-<wire x1="-28.75153125" y1="-7.9756" x2="14.1568" y2="35.9798" width="0" layer="19" extent="1-1"/>
+<wire x1="35.86606875" y1="24.3078" x2="14.1568" y2="35.9798" width="0" layer="19" extent="1-1"/>
 </signal>
 </signals>
 <mfgpreviewcolors>
