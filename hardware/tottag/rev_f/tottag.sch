@@ -6488,9 +6488,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <label x="224.282" y="107.95" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.29/AIN5"/>
-<wire x1="106.68" y1="119.38" x2="111.76" y2="119.38" width="0.1524" layer="91"/>
-<label x="111.76" y="119.38" size="1.27" layer="95" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P0.02/AIN0"/>
+<wire x1="106.68" y1="132.08" x2="111.76" y2="132.08" width="0.1524" layer="91"/>
+<label x="111.76" y="132.08" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="RTC_WDI" class="0">
@@ -6507,9 +6507,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="236.22" y1="109.22" x2="238.76" y2="109.22" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.02/AIN0"/>
-<wire x1="106.68" y1="132.08" x2="111.76" y2="132.08" width="0.1524" layer="91"/>
-<label x="111.76" y="132.08" size="1.27" layer="95" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P0.31/AIN7"/>
+<wire x1="106.68" y1="114.3" x2="111.76" y2="114.3" width="0.1524" layer="91"/>
+<label x="111.76" y="114.3" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="!NRF_CS_RTC" class="0">
@@ -6524,9 +6524,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <junction x="184.912" y="90.17"/>
 </segment>
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.28/AIN4"/>
-<wire x1="106.68" y1="121.92" x2="111.76" y2="121.92" width="0.1524" layer="91"/>
-<label x="111.76" y="121.92" size="1.27" layer="95" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P0.29/AIN5"/>
+<wire x1="106.68" y1="119.38" x2="111.76" y2="119.38" width="0.1524" layer="91"/>
+<label x="111.76" y="119.38" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="VBAT_RTC" class="0">
@@ -6535,10 +6535,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="186.182" y1="115.57" x2="173.482" y2="115.57" width="0.1524" layer="91"/>
 <wire x1="173.482" y1="115.57" x2="173.482" y2="127" width="0.1524" layer="91"/>
 <label x="170.18" y="127" size="1.27" layer="95" rot="R180" xref="yes"/>
-<wire x1="170.18" y1="127" x2="172.72" y2="127" width="0.1524" layer="91"/>
+<wire x1="170.18" y1="127" x2="173.482" y2="127" width="0.1524" layer="91"/>
 <pinref part="R26" gate="G$1" pin="2"/>
-<wire x1="172.72" y1="127" x2="173.482" y2="127" width="0.1524" layer="91"/>
 <wire x1="175.26" y1="127" x2="173.482" y2="127" width="0.1524" layer="91"/>
+<junction x="173.482" y="127"/>
 </segment>
 <segment>
 <wire x1="249.682" y1="109.22" x2="249.682" y2="118.11" width="0.1524" layer="91"/>
@@ -8958,11 +8958,11 @@ Furthermore, try to keep them as short and straight as possible</text>
 </sheet>
 </sheets>
 <errors>
-<approved hash="104,2,91.44,160.02,U6,VDD/1,VUSB,,,"/>
-<approved hash="104,2,91.44,157.48,U6,VDD/2,VUSB,,,"/>
-<approved hash="104,2,127,160.02,U6,VBAT/3,VBAT,,,"/>
-<approved hash="104,2,127,157.48,U6,VBAT/4,VBAT,,,"/>
-<approved hash="104,2,127,147.32,U6,VSS,GND,,,"/>
+<approved hash="104,2,63.5,162.56,U6,VDD/1,VUSB,,,"/>
+<approved hash="104,2,63.5,160.02,U6,VDD/2,VUSB,,,"/>
+<approved hash="104,2,99.06,162.56,U6,VBAT/3,VBAT,,,"/>
+<approved hash="104,2,99.06,160.02,U6,VBAT/4,VBAT,,,"/>
+<approved hash="104,2,99.06,149.86,U6,VSS,GND,,,"/>
 <approved hash="104,2,193.04,101.6,U2,VCC,VUSB,,,"/>
 <approved hash="202,2,193.04,88.9,U2,OSCI,,,,"/>
 <approved hash="202,2,220.98,93.98,U2,!CTS,,,,"/>
@@ -8993,6 +8993,7 @@ Furthermore, try to keep them as short and straight as possible</text>
 <approved hash="104,3,162.56,177.8,U1,VDDBAT,+3V3,,,"/>
 <approved hash="104,3,162.56,137.16,U1,VDDIO/42,VDDIO,,,"/>
 <approved hash="106,3,208.28,160.02,DW_SYNC,,,,,"/>
+<approved hash="113,2,233.68,140.97,B1,,,,,"/>
 </errors>
 </schematic>
 </drawing>
