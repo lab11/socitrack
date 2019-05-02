@@ -71,11 +71,6 @@ static uint8_t _resp_sched_euis  [PROTOCOL_RESP_SCHED_MAX][PROTOCOL_EUI_LEN];
 static uint8_t _hybrid_sched_euis[PROTOCOL_HYBRID_SCHED_MAX][PROTOCOL_EUI_LEN];
 static uint8_t _sched_timeouts   [PROTOCOL_INIT_SCHED_MAX + PROTOCOL_RESP_SCHED_MAX + PROTOCOL_HYBRID_SCHED_MAX];
 
-#ifdef GLOSSY_PER_TEST
-static uint32_t _total_syncs_sent;
-static uint32_t _total_syncs_received;
-#endif
-
 // STATIC FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 static void    prepare_schedule_signal();
@@ -206,10 +201,6 @@ void glossy_init(glossy_role_e role, uint8_t config_master_eui){
     memset(_sched_timeouts,    0, sizeof(_sched_timeouts));
 
 	_glossy_flood_timeslot_corrected = (uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8;
-
-#ifdef GLOSSY_PER_TEST
-	_total_syncs_sent = 0;
-#endif
 
 	// Set crystal trim to mid-range
 	_last_xtal_trim = 0;
@@ -450,9 +441,6 @@ static void glossy_lwb_round_task() {
 		    //debug_msg("Listening for requests...\n");
 
 			dwt_rxenable(0);
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-			dw1000_choose_antenna(LWB_ANTENNA);
-#endif
 
 		// LWB Slot N-1: Last timeslot is used by the master to schedule the next glossy sync packet
 		} else if((  _lwb_counter == ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) )                                 ||
@@ -466,15 +454,6 @@ static void glossy_lwb_round_task() {
             }
 
 			dwt_forcetrxoff();
-
-		#ifdef GLOSSY_PER_TEST
-			_total_syncs_sent++;
-			if(_total_syncs_sent >= 10000){
-				while(1){
-					dwt_write32bitreg(3, _total_syncs_received);
-				}
-			}
-		#endif
 
 			dw1000_update_channel(LWB_CHANNEL);
 			dw1000_choose_antenna(LWB_ANTENNA);
@@ -717,17 +696,9 @@ static void glossy_lwb_round_task() {
 
 					// Send out a signalling packet during this contention slot
 					// Pick a random time offset to avoid colliding with others
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-					uint32_t sched_req_time = (uint32_t)(_sched_req_pkt.tag_sched_eui[0] - 0x31) * GLOSSY_FLOOD_TIMESLOT_US;
-					uint32_t delay_time = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
-					double turnaround_time = (double)((((uint64_t)(delay_time) << 8) - _last_sync_timestamp) & 0xFFFFFFFFFFUL);// + DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US)*_last_sync_depth;
-					turnaround_time /= _clock_offset;
-					_sched_req_pkt.turnaround_time = (uint64_t)(turnaround_time);
-					dw1000_choose_antenna(LWB_ANTENNA);
-#else
 					uint32_t sched_req_time = (ranval(&_prng_state) % (uint32_t)(_lwb_num_timeslots_cont * LWB_SLOT_US - (GLOSSY_MAX_DEPTH - 1)*GLOSSY_FLOOD_TIMESLOT_US)) + RANGING_CONTENTION_PADDING_US;
 					uint32_t delay_time     = (dwt_readsystimestamphi32() + DW_DELAY_FROM_PKT_LEN(sizeof(struct pp_signal_flood)) + DW_DELAY_FROM_US(sched_req_time)) & 0xFFFFFFFE;
-#endif
+
 					_last_delay_time = delay_time;
 					dwt_setdelayedtrxtime(delay_time);
 					//dwt_setrxaftertxdelay(LWB_SLOT_US);
@@ -1007,24 +978,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 				debug_msg("INFO: Received signalling packet: ");
 
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-                uint64_t actual_turnaround = (dw_timestamp - ((uint64_t)(_last_delay_time) << 8)) & 0xFFFFFFFFFFUL;//in_glossy_sched_req->turnaround_time;
-                const uint8_t header[] = {0x80, 0x01, 0x80, 0x01};
-                uart_write(4, header);
-
-                actual_turnaround = in_glossy_sched_req->turnaround_time - actual_turnaround;
-
-                uart_write(1, &(in_glossy_sched_req->tag_sched_eui[0]));
-                uart_write(1, &(in_glossy_sched_req->sync_depth));
-                //uart_write(1, &(in_glossy_sched_req->xtal_trim));
-                uart_write(sizeof(uint32_t), &actual_turnaround);
-                uart_write(sizeof(double), &(in_glossy_sched_req->clock_offset_ppm));
-
-                dwt_forcetrxoff();
-                dw1000_update_channel(LWB_CHANNEL);
-                dw1000_choose_antenna(LWB_ANTENNA);
-                dwt_rxenable(0);
-#else
 				switch (in_glossy_signal->info_type) {
 					case SIGNAL_UNDEFINED: {
 						debug_msg("UNDEFINED!\n");
@@ -1067,7 +1020,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 						break;
 					}
 				}
-#endif
 			} else {
 			    //debug_msg("INFO: Received same signalling packet multiple times\n");
 			}
@@ -1079,9 +1031,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy master!\n");
 		}
 
-#ifdef GLOSSY_PER_TEST
-		_total_syncs_received++;
-#endif
 		return;
 	}
 	else if(_role == GLOSSY_SLAVE) {
@@ -1090,7 +1039,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 		    debug_msg("WARNING: Received signalling packet from another node\n");
 
-#ifndef GLOSSY_ANCHOR_SYNC_TEST
 			// Increment depth counter
 			_cur_glossy_depth = ++in_glossy_signal->header.seqNum;
 
@@ -1121,7 +1069,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
                 // We are on the very edge of the network - just listen
                 dwt_rxenable(0);
 			}
-#endif
 		}
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
 
@@ -1206,10 +1153,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			debug_msg_uint(_lwb_num_resp);
 			debug_msg("\r\n");
 
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-			_sched_req_pkt.sync_depth = in_glossy_sync->header.seqNum;
-#endif
-
 // DW PLL is turned off during sleep, resulting in clock periods of 6.6us instead of 1us for single ticks
 #ifndef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
 			if(    (_last_sync_timestamp + ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_UPDATE_INTERVAL_US * 0.5)) << 8) ) < dw_timestamp){
@@ -1220,9 +1163,6 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					double clock_offset_ppm = (((double)(dw_timestamp - 
 					                                     ((uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8)*(in_glossy_sync->header.seqNum) - 
 					                                     _last_sync_timestamp) / ((uint64_t)(GLOSSY_UPDATE_INTERVAL_DW) << 8)) - 1.0) * 1e6;
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-					_sched_req_pkt.clock_offset_ppm = clock_offset_ppm;
-#endif
 					
 					_clock_offset = (clock_offset_ppm/1e6) + 1.0;
 					_glossy_flood_timeslot_corrected = (uint64_t)((double)((uint64_t)(DW_DELAY_FROM_US(GLOSSY_FLOOD_TIMESLOT_US) & 0xFFFFFFFE) << 8)*_clock_offset);
@@ -1245,13 +1185,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					else if(_xtal_trim > 31) _xtal_trim = 31;
 
 					dwt_setxtaltrim(_xtal_trim);
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-					_sched_req_pkt.xtal_trim = trim_diff;
-					// Sync is invalidated if the xtal trim has changed (this won't happen often)
-					if(_last_xtal_trim != _xtal_trim)
-						_sched_req_pkt.sync_depth = 0xFF;
 #endif
-#endif /* STM_ENABLE_SLEEP_IN_PASSIVE_PHASE */
 
 					// Perpetuate the flood!
                     _cur_glossy_depth = ++in_glossy_sync->header.seqNum;

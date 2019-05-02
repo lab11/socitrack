@@ -774,13 +774,6 @@ dw1000_err_e dw1000_init () {
 	_last_dw_timestamp = 0;
 	_dw_timestamp_overflow = 0;
 
-#ifdef CW_TEST_MODE
-	uint8_t buf[2];
-	dwt_configcwmode(1);
-	buf[0] = 0x61;
-	dwt_writetodevice(FS_CTRL_ID, FS_XTALT_OFFSET, 1, buf);
-	while(1){};
-#endif
 	// Setup our settings for the DW1000
 	err = dw1000_configure_settings();
 	if (err) return err;

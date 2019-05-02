@@ -22,11 +22,7 @@
 #define GLOSSY_MAX_DEPTH          5
 #define TAG_SCHED_TIMEOUT         250
 
-#ifdef GLOSSY_PER_TEST
-#define GLOSSY_UPDATE_INTERVAL_US 1e4
-#else
 #define GLOSSY_UPDATE_INTERVAL_US 1e6
-#endif
 
 #define GLOSSY_FLOOD_TIMESLOT_US  2e3
 
@@ -89,12 +85,6 @@ struct pp_signal_flood {
 	uint8_t message_type;
 	uint8_t info_type; // enum "lwb_signal_e"
 	uint8_t device_eui[PROTOCOL_EUI_LEN];
-#ifdef GLOSSY_ANCHOR_SYNC_TEST
-	uint64_t turnaround_time;
-	double clock_offset_ppm;
-	uint8_t sync_depth;
-	int8_t xtal_trim;
-#endif
 	struct ieee154_footer footer;
 } __attribute__ ((__packed__));
 
