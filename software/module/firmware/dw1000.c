@@ -851,14 +851,18 @@ dw1000_err_e dw1000_configure_settings () {
 	// Configure sleep parameters.
 	dwt_configuresleep(DWT_TANDV |
 	                   DWT_CONFIG |
+#ifdef DW1000_ENABLE_OPSET_64LEN
                        DWT_LOADOPSET |
+#endif
 	                   DWT_PRESRV_SLEEP |
 	                   DWT_LOAD_LDE,
 	                   DWT_SLP_EN | DWT_WAKE_CS);
 #else
     dwt_configuresleep(DWT_TANDV |
                        DWT_CONFIG |
+#ifdef DW1000_ENABLE_OPSET_64LEN
                        DWT_LOADOPSET |
+#endif
                        DWT_PRESRV_SLEEP |
 	                   DWT_LOAD_LDE,
 	                   DWT_SLP_EN | DWT_WAKE_WK);
@@ -936,11 +940,6 @@ void dw1000_restore_settings() {
     // Enable writing to registers
     dw1000_spi_slow();
 
-    // This puts all of the settings back on the DW1000. In theory it
-    // is capable of remembering these, but that doesn't seem to work
-    // very well. This does work, so we do it and move on.
-    //dw1000_configure_settings();
-
     // BUG FIX: DW forgets to store AGC_TUNE 2, so we have to restore its state
     // CREDIT: Maximilien Charlier, UMONS University
     const uint32_t agc_tune2_val = 0X2502A907UL;  // Hard-coded value
@@ -948,6 +947,11 @@ void dw1000_restore_settings() {
 
     // Go back to fast SPI speed again
     dw1000_spi_fast();
+
+    // This puts all of the settings back on the DW1000. In theory it
+    // is capable of remembering these, but that doesn't seem to work
+    // very well. This does work, so we do it and move on.
+    dw1000_configure_settings();
 }
 
 // Put the DW1000 into sleep mode

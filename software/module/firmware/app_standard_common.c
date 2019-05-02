@@ -214,19 +214,6 @@ void standard_sleep () {
         standard_resp_sleep();
     }
 
-    // Get status
-    /*debug_msg("EXTI->IMR: ");
-    debug_msg_uint(EXTI->IMR);
-    debug_msg("; EXTI->EMR: ");
-    debug_msg_uint(EXTI->EMR);
-    debug_msg("; EXTI->RTSR: ");
-    debug_msg_uint(EXTI->RTSR);
-    debug_msg("; EXTI->PR: ");
-    debug_msg_uint(EXTI->PR);
-    debug_msg("; I2C1->CR1: ");
-    debug_msg_uint(I2C1->CR1);
-    debug_msg("\n");*/
-
     // Make sure Event line is not yet triggered
     EXTI_ClearITPendingBit(I2C_EXTI_LINE);
 
@@ -242,21 +229,6 @@ void standard_sleep () {
 
     // Get the clocks back into the correct state
     host_interface_restore();
-
-    /*debug_msg("EXTI->IMR: ");
-    debug_msg_uint(EXTI->IMR);
-    debug_msg("; EXTI->EMR: ");
-    debug_msg_uint(EXTI->EMR);
-    debug_msg("; EXTI->RTSR: ");
-    debug_msg_uint(EXTI->RTSR);
-    debug_msg("; EXTI->PR: ");
-    debug_msg_uint(EXTI->PR);
-    debug_msg("; I2C1->CR1: ");
-    debug_msg_uint(I2C1->CR1);
-    debug_msg("\n");*/
-
-    // Clear event line
-    //EXTI_ClearITPendingBit(I2C_EXTI_LINE);
 
     if (_config.init_enabled) {
         standard_init_continue();

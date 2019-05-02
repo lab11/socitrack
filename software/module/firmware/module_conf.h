@@ -49,6 +49,7 @@
 // Adjust Tx parameters
 //#define DW1000_MAXIMIZE_TX_POWER  // Increases transmit power to the maximal value; ATTENTION: might violate regulations and increase power consumption
 
+// Optimize performance for very short preambles
 //#define DW1000_ENABLE_OPSET_64LEN // Uses specific parameters for length 64 preamble; requires tight clock offset between devices
 
 // Allow hybrids to continue responding after they finished their own rangings
