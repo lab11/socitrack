@@ -199,8 +199,8 @@ void standard_sleep () {
     // Turn off DecaWave
     dwt_forcetrxoff();
 
-    // Enter INIT state to reduce energy consumption of DW
-    dw1000_enterINIT();
+    // Enter SLEEP state to reduce energy consumption of DW
+    dw1000_enterSLEEP();
 
     // Pause Glossy
     glossy_sleep();
@@ -268,7 +268,8 @@ void standard_sleep () {
 
     glossy_continue();
 
-    dw1000_exitINIT();
+    // Wake up DW from SLEEP
+    dw1000_exitSLEEP();
 
     debug_msg("INFO: Module awake again... ready to rumble!\n");
 }

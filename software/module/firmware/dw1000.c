@@ -849,28 +849,32 @@ dw1000_err_e dw1000_configure_settings () {
 
 #ifdef  DW1000_WAKEUP_CS
 	// Configure sleep parameters.
-	// Note: This is taken from the decawave fast2wr_t.c file. I don't have
-	//       a great idea as to whether this is right or not.
-	dwt_configuresleep(DWT_PRESRV_SLEEP |
-	                   DWT_CONFIG,
-	                   DWT_WAKE_CS | DWT_SLP_EN);
-#else
-    dwt_configuresleep(DWT_PRESRV_SLEEP |
-	                   DWT_LOADOPSET |
+	dwt_configuresleep(DWT_TANDV |
 	                   DWT_CONFIG |
-	                   DWT_LOADEUI,
-	                   DWT_WAKE_WK | DWT_SLP_EN);
+                       DWT_LOADOPSET |
+	                   DWT_PRESRV_SLEEP |
+	                   DWT_LOAD_LDE,
+	                   DWT_SLP_EN | DWT_WAKE_CS);
+#else
+    dwt_configuresleep(DWT_TANDV |
+                       DWT_CONFIG |
+                       DWT_LOADOPSET |
+                       DWT_PRESRV_SLEEP |
+	                   DWT_LOAD_LDE,
+	                   DWT_SLP_EN | DWT_WAKE_WK);
 #endif
 
 	// Configure interrupts
 	dwt_setinterrupt(0xFFFFFFFF, 0);
-	dwt_setinterrupt(DWT_INT_TFRS |
+	dwt_setinterrupt(DWT_INT_PLOCK |
+                	 DWT_INT_TFRS |
 	                 DWT_INT_RFCG |
 	                 DWT_INT_RPHE |
 	                 DWT_INT_RFCE |
 	                 DWT_INT_RFSL |
 	                 DWT_INT_RFTO |
 	                 DWT_INT_RXPTO |
+                     DWT_INT_SLP2INIT |
 	                 DWT_INT_SFDT |
 	                 DWT_INT_ARFE, 1);
 
@@ -927,6 +931,25 @@ dw1000_err_e dw1000_configure_settings () {
 	return DW1000_NO_ERR;
 }
 
+void dw1000_restore_settings() {
+
+    // Enable writing to registers
+    dw1000_spi_slow();
+
+    // This puts all of the settings back on the DW1000. In theory it
+    // is capable of remembering these, but that doesn't seem to work
+    // very well. This does work, so we do it and move on.
+    //dw1000_configure_settings();
+
+    // BUG FIX: DW forgets to store AGC_TUNE 2, so we have to restore its state
+    // CREDIT: Maximilien Charlier, UMONS University
+    const uint32_t agc_tune2_val = 0X2502A907UL;  // Hard-coded value
+    dwt_write32bitoffsetreg( AGC_CTRL_ID, AGC_TUNE2_OFFSET, agc_tune2_val);
+
+    // Go back to fast SPI speed again
+    dw1000_spi_fast();
+}
+
 // Put the DW1000 into sleep mode
 void dw1000_sleep () {
 	if (_dw1000_asleep) {
@@ -936,6 +959,13 @@ void dw1000_sleep () {
 
 	// Don't need the DW1000 to be in TX or RX mode
 	dwt_forcetrxoff();
+
+#ifdef DW1000_WAKEUP_CS
+	// Make sure CS is high (as active-low signal)
+#else
+	// Make sure Wakeup pin is low
+    GPIO_WriteBit(DW_WAKEUP_PORT, DW_WAKEUP_PIN, Bit_RESET);
+#endif
 
 	// Put the TAG into sleep mode at this point.
 	// The chip will need to come out of sleep mode
@@ -1017,13 +1047,10 @@ dw1000_err_e dw1000_wakeup () {
 	// No longer asleep
 	_dw1000_asleep = FALSE;
 
-	// Go back fast again
+	// Go back to fast SPI speed again
 	dw1000_spi_fast();
 
-	// This puts all of the settings back on the DW1000. In theory it
-	// is capable of remembering these, but that doesn't seem to work
-	// very well. This does work, so we do it and move on.
-	dw1000_configure_settings();
+	dw1000_restore_settings();
 
 	return DW1000_WAKEUP_SUCCESS;
 }
@@ -1049,7 +1076,7 @@ void dw1000_enterINIT(){
     //  Disable sequencing - use official DW function for this
     _pmsc_ctrl1 = dwt_read16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET);
     //dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, PMSC_CTRL1_PKTSEQ_DISABLE);
-    _dwt_disablesequencing();
+    dwt_disablesequencing();
 }
 
 void dw1000_exitINIT(){
@@ -1059,7 +1086,7 @@ void dw1000_exitINIT(){
     dwt_write16bitoffsetreg(PMSC_ID, PMSC_CTRL1_OFFSET, _pmsc_ctrl1);
 
     // Note: ENABLE_ALL_SEQ = 1
-    _dwt_enableclocks(1); // Enable clocks for sequencing
+    dwt_enableclocks(1); // Enable clocks for sequencing
 
     // DW1000 needs a 10us sleep to let clk PLL lock - the PLL will automatically lock
     deca_sleep(1);
@@ -1069,6 +1096,32 @@ void dw1000_exitINIT(){
 
     // For some reason, configuring the settings alone is not enough; this works, so le'ts call it a day and move on
     dw1000_wakeup();
+}
+
+// Simple wrapper for SLEEP to keep similarity with other states
+void dw1000_enterSLEEP(){
+
+    dw1000_sleep();
+}
+
+void dw1000_exitSLEEP(){
+
+    dw1000_err_e error;
+
+    if (_dw1000_asleep) {
+        error = dw1000_wakeup();
+
+    } else {
+        debug_msg("ERROR: DW was not put to sleep correctly; enforcing wake-up!\n");
+
+        error = dw1000_force_wakeup();
+    }
+
+    if (error != DW1000_WAKEUP_SUCCESS) {
+        debug_msg("WARNING: Received return value ");
+        debug_msg_int(error);
+        debug_msg(" when trying to wake up DW!\n");
+    }
 }
 
 // Call to change the DW1000 channel and force set all of the configs

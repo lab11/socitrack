@@ -101,7 +101,7 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator);
 static uint8_t get_master_candidate();
 static void	   save_schedule_information(uint8_t* buffer);
 static void    restore_schedule_information(uint8_t* buffer);
-static uint8_t debug_print_time(uint8_t point_idx, uint32_t time);
+static void    debug_print_time(uint8_t point_idx, uint32_t time);
 static uint8_t calculate_wakeup_delay();
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -1974,7 +1974,7 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator) {
 	}
 }
 
-static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
+static void debug_print_time(uint8_t point_idx, uint32_t time) {
     debug_msg("DEBUG: POINT ");
     debug_msg_uint(point_idx);
     debug_msg(" - Desired time ");

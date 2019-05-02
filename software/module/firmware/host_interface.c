@@ -129,6 +129,9 @@ uint32_t host_interface_restore () {
 
     // Re-configure clock setup
     SystemInit();
+
+    // No error
+    return 0;
 }
 
 static void interrupt_host_set () {
