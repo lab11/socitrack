@@ -329,6 +329,13 @@ void glossy_enable_reception(uint32_t starttime) {
 
 void glossy_listen_for_next_sync() {
 
+    uint64_t delay_time = 0;
+
+#ifdef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
+    // Differ from current clock, as PLL is turned off during INIT
+    // FIXME: Try to estimate maximal clock drift based on sleep duration - currently just directly re-enable listening
+#elif
+
 	// Get the number of DW time units for which we did not receive a new schedule
 	uint64_t curr_timestamp = dw1000_correct_timestamp((uint64_t)dwt_readsystimestamphi32() << 8); //32 highest bits, bitshifted to compare to the 40bit timestamp
 	uint64_t out_of_sync_dw = (curr_timestamp - _last_sync_timestamp) >> 8; // Subtract and directly shift back again to get the 32bit number
@@ -340,7 +347,7 @@ void glossy_listen_for_next_sync() {
 	uint64_t out_of_sync_rounds = out_of_sync_dw / GLOSSY_UPDATE_INTERVAL_DW;
 
 	// Turn the receiver on based on the maximal drift
-	uint64_t delay_time = (_last_sync_timestamp >> 8) + (out_of_sync_rounds + 1) * GLOSSY_UPDATE_INTERVAL_DW - (max_clock_drift_dw + GLOSSY_SCHEDULE_RECV_SLACK_DW);
+	delay_time = (_last_sync_timestamp >> 8) + (out_of_sync_rounds + 1) * GLOSSY_UPDATE_INTERVAL_DW - (max_clock_drift_dw + GLOSSY_SCHEDULE_RECV_SLACK_DW);
 
 	// Only take the 32bit high part of the timestamp and make sure last bit is zero
 	delay_time &= 0xFFFFFFFE;
@@ -360,16 +367,8 @@ void glossy_listen_for_next_sync() {
 	debug_msg(" rounds; delayed timestamp: ");
 	debug_msg_uint(delay_time);
 	debug_msg("\n");*/
-
-#ifdef STM_ENABLE_SLEEP_IN_PASSIVE_PHASE
-	// Differ from current clock, as PLL is turned off during INIT
-	if (_lwb_in_sync) {
-	    // FIXME: This causes a delay of 250 where the DW is listening but cannot successfully receive if reduced
-        //delay_time = (curr_timestamp >> 8) + GLOSSY_UPDATE_INTERVAL_DW / 100 * 0;
-        //delay_time &= 0xFFFFFFFE;
-        delay_time = 0;
-    }
 #endif
+
 	glossy_enable_reception((uint32_t)delay_time);
 }
 

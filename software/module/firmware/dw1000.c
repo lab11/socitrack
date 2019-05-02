@@ -863,15 +863,13 @@ dw1000_err_e dw1000_configure_settings () {
 
 	// Configure interrupts
 	dwt_setinterrupt(0xFFFFFFFF, 0);
-	dwt_setinterrupt(DWT_INT_PLOCK |
-                	 DWT_INT_TFRS |
+	dwt_setinterrupt(DWT_INT_TFRS |
 	                 DWT_INT_RFCG |
 	                 DWT_INT_RPHE |
 	                 DWT_INT_RFCE |
 	                 DWT_INT_RFSL |
 	                 DWT_INT_RFTO |
 	                 DWT_INT_RXPTO |
-                     DWT_INT_SLP2INIT |
 	                 DWT_INT_SFDT |
 	                 DWT_INT_ARFE, 1);
 
