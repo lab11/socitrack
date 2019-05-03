@@ -848,7 +848,8 @@ dw1000_err_e dw1000_configure_settings () {
                        DWT_LOADOPSET |
 #endif
 	                   DWT_PRESRV_SLEEP |
-	                   DWT_LOAD_LDE,
+	                   DWT_LOAD_LDE |
+	                   DWT_LOAD_LDO,
 	                   DWT_SLP_EN | DWT_WAKE_CS);
 #else
     dwt_configuresleep(DWT_TANDV |
@@ -857,7 +858,8 @@ dw1000_err_e dw1000_configure_settings () {
                        DWT_LOADOPSET |
 #endif
                        DWT_PRESRV_SLEEP |
-	                   DWT_LOAD_LDE,
+	                   DWT_LOAD_LDE |
+                       DWT_LOAD_LDO,
 	                   DWT_SLP_EN | DWT_WAKE_WK);
 #endif
 
@@ -903,7 +905,7 @@ dw1000_err_e dw1000_configure_settings () {
 
 	// Need to set some radio properties. Ideally these would come from the
 	// OTP memory on the DW1000
-#if DW1000_USE_OTP == 0
+#if (DW1000_USE_OTP == 0)
 
 	// This defaults to 8. Don't know why.
 	dwt_setxtaltrim(DW1000_DEFAULT_XTALTRIM);
@@ -936,13 +938,28 @@ void dw1000_restore_settings() {
     const uint32_t agc_tune2_val = 0X2502A907UL;  // Hard-coded value
     dwt_write32bitoffsetreg( AGC_CTRL_ID, AGC_TUNE2_OFFSET, agc_tune2_val);
 
+#if (DW1000_USE_OTP == 0)
+
+    // Restore Tx Antenna Delay (as overwritten by other register when waking up; let's just reset everything here)
+    dwt_setxtaltrim(DW1000_DEFAULT_XTALTRIM);
+    dwt_setrxantennadelay(DW1000_ANTENNA_DELAY_RX);
+    dwt_settxantennadelay(DW1000_ANTENNA_DELAY_TX);
+#endif
+
+    // Restore EUI for correct reception (should not be necessary, but DW being DW, who knows...)
+    uint8_t eui_array[8];
+    dw1000_read_eui(eui_array);
+
+    dwt_seteui(eui_array);
+    dwt_setpanid(MODULE_PANID);
+
     // Go back to fast SPI speed again
     dw1000_spi_fast();
 
     // This puts all of the settings back on the DW1000. In theory it
     // is capable of remembering these, but that doesn't seem to work
     // very well. This does work, so we do it and move on.
-    dw1000_configure_settings();
+    //dw1000_configure_settings();
 }
 
 // Put the DW1000 into sleep mode
@@ -962,9 +979,19 @@ void dw1000_sleep () {
     GPIO_WriteBit(DW_WAKEUP_PORT, DW_WAKEUP_PIN, Bit_RESET);
 #endif
 
+    // Enable writing to registers
+    dw1000_spi_slow();
+
+    // Clear the AON_CFG1 register as described in the user manual
+    const uint16_t aon_cfg1_val = 0;
+    dwt_write16bitoffsetreg( AON_ID, AON_CFG1_OFFSET, aon_cfg1_val);
+
 	// Put the TAG into sleep mode at this point.
 	// The chip will need to come out of sleep mode
 	dwt_entersleep();
+
+    // Go back to fast SPI speed again
+    dw1000_spi_fast();
 
 	// Mark that we put the DW1000 to sleep.
 	_dw1000_asleep = TRUE;
