@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="9.3.2">
+<eagle version="9.4.2">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -4884,34 +4884,33 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <library name="regulators">
 <description>LAB11 - Regulators.</description>
 <packages>
-<package name="LXDC2HN">
-<smd name="2" x="-0.525" y="-0.65" dx="0.9" dy="0.65" layer="1" rot="R90"/>
-<smd name="1" x="-0.525" y="0.65" dx="0.9" dy="0.65" layer="1" rot="R90"/>
-<smd name="4" x="0.525" y="0.65" dx="0.9" dy="0.65" layer="1" rot="R90"/>
-<smd name="3" x="0.525" y="-0.65" dx="0.9" dy="0.65" layer="1" rot="R90"/>
-<wire x1="-1" y1="-1.25" x2="1" y2="-1.25" width="0.127" layer="21"/>
-<wire x1="1" y1="-1.25" x2="1" y2="1.25" width="0.127" layer="21"/>
-<wire x1="1" y1="1.25" x2="-1" y2="1.25" width="0.127" layer="21"/>
-<wire x1="-1" y1="1.25" x2="-1" y2="-1.25" width="0.127" layer="21"/>
-<circle x="-1.354" y="1.273" radius="0.14141875" width="0.127" layer="21"/>
-<text x="-0.927" y="1.454" size="0.5" layer="25">&gt;NAME</text>
-<text x="-0.927" y="-1.954" size="0.5" layer="27">&gt;VALUE</text>
+<package name="XCL20X">
+<smd name="6" x="-0.55" y="1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="5" x="0" y="1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="4" x="0.55" y="1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="1" x="-0.55" y="-1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="2" x="0" y="-1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="3" x="0.55" y="-1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="PAD" x="0" y="0" dx="1.5" dy="0.9" layer="1"/>
+<smd name="7" x="-1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
+<smd name="8" x="1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
+<polygon width="0.0762" layer="1">
+<vertex x="-0.75" y="-0.4"/>
+<vertex x="-0.6" y="-0.55"/>
+<vertex x="0.75" y="-0.55"/>
+<vertex x="0.75" y="0.55"/>
+<vertex x="-0.75" y="0.55"/>
+</polygon>
+<wire x1="-1.25" y1="1" x2="1.25" y2="1" width="0.127" layer="51"/>
+<wire x1="1.25" y1="1" x2="1.25" y2="-1" width="0.127" layer="51"/>
+<wire x1="1.25" y1="-1" x2="-1.25" y2="-1" width="0.127" layer="51"/>
+<wire x1="-1.25" y1="-1" x2="-1.25" y2="1" width="0.127" layer="51"/>
+<circle x="-1.2" y="-1.4" radius="0.1" width="0.127" layer="21"/>
+<text x="-1.778" y="-1.27" size="1.016" layer="25" font="vector" ratio="12" rot="R90">&gt;NAME</text>
+<text x="1.778" y="-1.27" size="1.016" layer="27" font="vector" ratio="12" rot="R90" align="top-left">&gt;VALUE</text>
 </package>
 </packages>
 <symbols>
-<symbol name="LXDC2HN18A">
-<description>&lt;b&gt;Description:&lt;/b&gt; Symbol for &lt;a href='https://www.murata.com/~/media/webrenewal/campaign/ads/america/udcdc/lxdc_product_brief.ashx'&gt;&lt;i&gt;LXDC2HN18A-097&lt;/i&gt;&lt;/a&gt;, a DC-DC converter by Murata Electronics.</description>
-<wire x1="-10.16" y1="5.08" x2="-10.16" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="-10.16" y1="-5.08" x2="10.16" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="10.16" y1="-5.08" x2="10.16" y2="5.08" width="0.254" layer="94"/>
-<wire x1="10.16" y1="5.08" x2="-10.16" y2="5.08" width="0.254" layer="94"/>
-<pin name="VIN" x="-15.24" y="2.54" visible="pin" length="middle" direction="pwr"/>
-<pin name="EN" x="-15.24" y="-2.54" visible="pin" length="middle"/>
-<pin name="VOUT" x="15.24" y="2.54" visible="pin" length="middle" direction="pwr" rot="R180"/>
-<pin name="GND" x="15.24" y="-2.54" visible="pin" length="middle" direction="pwr" rot="R180"/>
-<text x="-10.16" y="6.35" size="2.54" layer="95">&gt;NAME</text>
-<text x="-10.16" y="-8.89" size="2.54" layer="96">&gt;VALUE</text>
-</symbol>
 <symbol name="GND">
 <wire x1="-1.905" y1="0" x2="1.905" y2="0" width="0.254" layer="94"/>
 <text x="-2.54" y="-2.54" size="1.778" layer="96">&gt;VALUE</text>
@@ -4929,35 +4928,24 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <text x="-2.54" y="-5.08" size="1.778" layer="96" rot="R90">&gt;VALUE</text>
 <pin name="+1V8" x="0" y="-2.54" visible="off" length="short" direction="sup" rot="R90"/>
 </symbol>
+<symbol name="XCL20X">
+<description>Inductor Built-in Step-Down “micro DC/DC” Converter</description>
+<pin name="LX" x="-12.7" y="2.54" length="middle"/>
+<pin name="GND" x="12.7" y="-5.08" length="middle" rot="R180"/>
+<pin name="VIN" x="-12.7" y="5.08" length="middle"/>
+<pin name="L1" x="-12.7" y="0" length="middle"/>
+<pin name="CE/MODE" x="12.7" y="-2.54" length="middle" rot="R180"/>
+<pin name="L2" x="12.7" y="0" length="middle" rot="R180"/>
+<wire x1="-7.62" y1="7.62" x2="7.62" y2="7.62" width="0.254" layer="94"/>
+<wire x1="7.62" y1="7.62" x2="7.62" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="7.62" y1="-7.62" x2="-7.62" y2="-7.62" width="0.254" layer="94"/>
+<wire x1="-7.62" y1="-7.62" x2="-7.62" y2="7.62" width="0.254" layer="94"/>
+<text x="-7.366" y="8.128" size="1.778" layer="95">&gt;NAME</text>
+<text x="-7.62" y="-10.16" size="1.778" layer="96">&gt;VALUE</text>
+<pin name="VOUT" x="12.7" y="5.08" length="middle" rot="R180"/>
+</symbol>
 </symbols>
 <devicesets>
-<deviceset name="LXDC2HN18A" prefix="U">
-<description>&lt;b&gt;Description:&lt;/b&gt; Symbol for &lt;a href='https://www.murata.com/~/media/webrenewal/campaign/ads/america/udcdc/lxdc_product_brief.ashx'&gt;&lt;i&gt;LXDC2HN18A-097&lt;/i&gt;&lt;/a&gt;, a DC-DC converter by Murata Electronics.
-
-&lt;b&gt;ATTENTION: LAST TIME BUY&lt;/b&gt;</description>
-<gates>
-<gate name="U1" symbol="LXDC2HN18A" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="LXDC2HN">
-<connects>
-<connect gate="U1" pin="EN" pad="2"/>
-<connect gate="U1" pin="GND" pad="4"/>
-<connect gate="U1" pin="VIN" pad="1"/>
-<connect gate="U1" pin="VOUT" pad="3"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DATASHEET" value="https://www.murata.com/~/media/webrenewal/campaign/ads/america/udcdc/lxdc_product_brief.ashx" constant="no"/>
-<attribute name="DESCRIPTION" value="DC/DC CONVERTER SMD" constant="no"/>
-<attribute name="DIGIKEY" value="490-12092-1-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="Murata Electronics North America" constant="no"/>
-<attribute name="MPN" value="LXDC2HN18A-097" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
 <deviceset name="GND" prefix="GND">
 <description>&lt;b&gt;SUPPLY SYMBOL&lt;/b&gt;</description>
 <gates>
@@ -4993,6 +4981,31 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <device name="">
 <technologies>
 <technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="XCL206B" prefix="U">
+<description>Non-Isolated PoL Module DC DC Converter 1 Output 1.8V 600mA 2V - 6V Input</description>
+<gates>
+<gate name="G$1" symbol="XCL20X" x="0" y="0"/>
+</gates>
+<devices>
+<device name="&quot;" package="XCL20X">
+<connects>
+<connect gate="G$1" pin="CE/MODE" pad="4"/>
+<connect gate="G$1" pin="GND" pad="2 5"/>
+<connect gate="G$1" pin="L1" pad="7"/>
+<connect gate="G$1" pin="L2" pad="8"/>
+<connect gate="G$1" pin="LX" pad="1"/>
+<connect gate="G$1" pin="VIN" pad="6"/>
+<connect gate="G$1" pin="VOUT" pad="3"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="893-1406-2-ND" constant="no"/>
+<attribute name="MPN" value="XCL206B183CR-G" constant="no"/>
+</technology>
 </technologies>
 </device>
 </devices>
@@ -5437,19 +5450,16 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="FRAME3" library="lab11-frames" deviceset="LETTER_L_BLANK" device=""/>
 <part name="U10" library="chips" deviceset="STM32F091CC" device=""/>
 <part name="U9" library="switches" deviceset="SKY13317" device=""/>
-<part name="U4" library="regulators" deviceset="LXDC2HN18A" device=""/>
 <part name="T1" library="rf" deviceset="HHM1595A1" device=""/>
 <part name="SUPPLY1" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY12" library="regulators" deviceset="GND" device=""/>
 <part name="C6" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF"/>
 <part name="C7" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF"/>
 <part name="SUPPLY13" library="regulators" deviceset="GND" device=""/>
-<part name="C62" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
 <part name="SUPPLY15" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY18" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY19" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY20" library="regulators" deviceset="GND" device=""/>
-<part name="C70" library="passives" deviceset="CAPACITOR" device="0603_CAP" value="10uF"/>
 <part name="SUPPLY21" library="regulators" deviceset="GND" device=""/>
 <part name="V3P3" library="regulators" deviceset="+3V3" device=""/>
 <part name="+3V2" library="regulators" deviceset="+3V3" device=""/>
@@ -5582,6 +5592,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="311-10KJRCT-ND "/>
 <attribute name="MPN" value="RC0402JR-0710KL"/>
 </part>
+<part name="U4" library="regulators" deviceset="XCL206B" device="&quot;"/>
+<part name="C62" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
+<part name="C70" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10uF"/>
 </parts>
 <sheets>
 <sheet>
@@ -7370,6 +7383,9 @@ and STANDBY (WKUP4)</text>
 <text x="241.3" y="157.988" size="1.016" layer="98" rot="R90">Pull-down
 for (DEEP)SLEEP</text>
 <text x="66.04" y="25.4" size="2.032" layer="98" rot="R90">VDD/48</text>
+<text x="38.1" y="137.16" size="1.016" layer="97">For regularator caps, please
+use B, X5R, and X7R grades in
+temperature characteristics</text>
 </plain>
 <instances>
 <instance part="FRAME3" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -7387,10 +7403,6 @@ for (DEEP)SLEEP</text>
 <instance part="U9" gate="U1" x="104.14" y="172.72" smashed="yes">
 <attribute name="NAME" x="96.52" y="184.15" size="2.54" layer="95"/>
 <attribute name="VALUE" x="96.52" y="158.75" size="2.54" layer="96"/>
-</instance>
-<instance part="U4" gate="U1" x="45.72" y="149.86" smashed="yes">
-<attribute name="NAME" x="35.56" y="156.21" size="2.54" layer="95"/>
-<attribute name="VALUE" x="35.56" y="140.97" size="2.54" layer="96"/>
 </instance>
 <instance part="T1" gate="T1" x="43.18" y="177.8" smashed="yes">
 <attribute name="NAME" x="33.02" y="184.15" size="2.54" layer="95"/>
@@ -7410,12 +7422,8 @@ for (DEEP)SLEEP</text>
 <attribute name="NAME" x="19.05" y="171.45" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="19.05" y="173.99" size="1.778" layer="96" ratio="12" align="bottom-center"/>
 </instance>
-<instance part="SUPPLY13" gate="G1" x="63.5" y="142.24" smashed="yes">
-<attribute name="VALUE" x="60.96" y="139.7" size="1.778" layer="96"/>
-</instance>
-<instance part="C62" gate="G$1" x="12.7" y="147.32" smashed="yes" rot="R180">
-<attribute name="NAME" x="13.97" y="148.59" size="1.778" layer="95" ratio="12" rot="R270" align="bottom-center"/>
-<attribute name="VALUE" x="11.43" y="148.59" size="1.778" layer="96" ratio="12" rot="R90" align="bottom-center"/>
+<instance part="SUPPLY13" gate="G1" x="63.5" y="139.7" smashed="yes">
+<attribute name="VALUE" x="60.96" y="137.16" size="1.778" layer="96"/>
 </instance>
 <instance part="SUPPLY15" gate="G1" x="213.36" y="25.4" smashed="yes">
 <attribute name="VALUE" x="210.82" y="22.86" size="1.778" layer="96"/>
@@ -7426,24 +7434,20 @@ for (DEEP)SLEEP</text>
 <instance part="SUPPLY19" gate="G1" x="76.2" y="40.64" smashed="yes">
 <attribute name="VALUE" x="73.66" y="38.1" size="1.778" layer="96"/>
 </instance>
-<instance part="SUPPLY20" gate="G1" x="12.7" y="139.7" smashed="yes">
-<attribute name="VALUE" x="10.16" y="137.16" size="1.778" layer="96"/>
+<instance part="SUPPLY20" gate="G1" x="22.86" y="139.7" smashed="yes">
+<attribute name="VALUE" x="20.32" y="137.16" size="1.778" layer="96"/>
 </instance>
-<instance part="C70" gate="G$1" x="71.12" y="149.86" smashed="yes">
-<attribute name="NAME" x="69.85" y="148.59" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="72.39" y="148.59" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="SUPPLY21" gate="G1" x="76.2" y="139.7" smashed="yes">
+<attribute name="VALUE" x="73.66" y="137.16" size="1.778" layer="96"/>
 </instance>
-<instance part="SUPPLY21" gate="G1" x="71.12" y="142.24" smashed="yes">
-<attribute name="VALUE" x="68.58" y="139.7" size="1.778" layer="96"/>
-</instance>
-<instance part="V3P3" gate="P1" x="27.94" y="162.56" smashed="yes">
-<attribute name="VALUE" x="25.4" y="157.48" size="1.778" layer="96" rot="R90"/>
+<instance part="V3P3" gate="P1" x="27.94" y="165.1" smashed="yes">
+<attribute name="VALUE" x="25.4" y="160.02" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="+3V2" gate="P1" x="160.02" y="185.42" smashed="yes">
 <attribute name="VALUE" x="157.48" y="180.34" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="V1P8" gate="P1" x="63.5" y="162.56" smashed="yes">
-<attribute name="VALUE" x="60.96" y="157.48" size="1.778" layer="96" rot="R90"/>
+<instance part="V1P8" gate="P1" x="63.5" y="165.1" smashed="yes">
+<attribute name="VALUE" x="68.58" y="160.02" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="C34" gate="G$1" x="152.4" y="35.56" smashed="yes">
 <attribute name="NAME" x="151.13" y="34.29" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
@@ -7738,9 +7742,9 @@ for (DEEP)SLEEP</text>
 <attribute name="NAME" x="128.27" y="125.73" size="1.778" layer="95"/>
 <attribute name="TP_SIGNAL_NAME" x="130.81" y="123.19" size="1.778" layer="97"/>
 </instance>
-<instance part="+1V8" gate="G$1" x="78.74" y="152.4" smashed="yes" rot="R270">
-<attribute name="NAME" x="80.01" y="153.67" size="1.778" layer="95" rot="R270"/>
-<attribute name="TP_SIGNAL_NAME" x="77.47" y="151.13" size="1.778" layer="97" rot="R270"/>
+<instance part="+1V8" gate="G$1" x="81.28" y="154.94" smashed="yes" rot="R270">
+<attribute name="NAME" x="82.55" y="156.21" size="1.778" layer="95" rot="R270"/>
+<attribute name="TP_SIGNAL_NAME" x="80.01" y="153.67" size="1.778" layer="97" rot="R270"/>
 </instance>
 <instance part="C71" gate="G$1" x="248.92" y="66.04" smashed="yes">
 <attribute name="DIGIKEY" x="248.92" y="66.04" size="1.016" layer="96" align="bottom-center" display="off"/>
@@ -7748,9 +7752,21 @@ for (DEEP)SLEEP</text>
 <attribute name="NAME" x="247.65" y="64.77" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="250.19" y="64.77" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="JP1" gate="G$1" x="45.72" y="162.56" smashed="yes">
-<attribute name="NAME" x="43.18" y="157.48" size="1.778" layer="95" font="vector"/>
-<attribute name="VALUE" x="43.18" y="160.02" size="1.778" layer="96" font="vector" align="top-left" display="off"/>
+<instance part="JP1" gate="G$1" x="45.72" y="165.1" smashed="yes">
+<attribute name="NAME" x="48.26" y="162.56" size="1.778" layer="95" font="vector"/>
+<attribute name="VALUE" x="43.18" y="162.56" size="1.778" layer="96" font="vector" align="top-left" display="off"/>
+</instance>
+<instance part="U4" gate="G$1" x="45.72" y="152.4" smashed="yes">
+<attribute name="NAME" x="38.354" y="160.528" size="1.778" layer="95"/>
+<attribute name="VALUE" x="38.1" y="142.24" size="1.778" layer="96"/>
+</instance>
+<instance part="C62" gate="G$1" x="22.86" y="149.86" smashed="yes">
+<attribute name="NAME" x="21.59" y="148.59" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="24.13" y="148.59" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+</instance>
+<instance part="C70" gate="G$1" x="76.2" y="149.86" smashed="yes">
+<attribute name="NAME" x="74.93" y="148.59" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="77.47" y="148.59" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
 </instances>
 <busses>
@@ -7777,19 +7793,10 @@ for (DEEP)SLEEP</text>
 <pinref part="SUPPLY12" gate="G1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="U4" gate="U1" pin="GND"/>
-<wire x1="60.96" y1="147.32" x2="63.5" y2="147.32" width="0.1524" layer="91"/>
-<wire x1="63.5" y1="147.32" x2="63.5" y2="144.78" width="0.1524" layer="91"/>
+<wire x1="58.42" y1="147.32" x2="63.5" y2="147.32" width="0.1524" layer="91"/>
+<wire x1="63.5" y1="147.32" x2="63.5" y2="142.24" width="0.1524" layer="91"/>
 <pinref part="SUPPLY13" gate="G1" pin="GND"/>
-</segment>
-<segment>
-<pinref part="C62" gate="G$1" pin="1"/>
-<wire x1="12.7" y1="144.78" x2="12.7" y2="142.24" width="0.1524" layer="91"/>
-<pinref part="SUPPLY20" gate="G1" pin="GND"/>
-</segment>
-<segment>
-<pinref part="C70" gate="G$1" pin="2"/>
-<pinref part="SUPPLY21" gate="G1" pin="GND"/>
+<pinref part="U4" gate="G$1" pin="GND"/>
 </segment>
 <segment>
 <pinref part="C34" gate="G$1" pin="2"/>
@@ -8019,6 +8026,16 @@ for (DEEP)SLEEP</text>
 <pinref part="GND1" gate="G1" pin="GND"/>
 <wire x1="233.68" y1="162.56" x2="233.68" y2="160.02" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="SUPPLY21" gate="G1" pin="GND"/>
+<pinref part="C70" gate="G$1" pin="2"/>
+<wire x1="76.2" y1="142.24" x2="76.2" y2="144.78" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="SUPPLY20" gate="G1" pin="GND"/>
+<pinref part="C62" gate="G$1" pin="2"/>
+<wire x1="22.86" y1="142.24" x2="22.86" y2="144.78" width="0.1524" layer="91"/>
+</segment>
 </net>
 <net name="ANT_SEL1" class="0">
 <segment>
@@ -8118,9 +8135,9 @@ for (DEEP)SLEEP</text>
 </net>
 <net name="REG_EN" class="0">
 <segment>
-<pinref part="U4" gate="U1" pin="EN"/>
-<wire x1="30.48" y1="147.32" x2="25.4" y2="147.32" width="0.1524" layer="91"/>
-<label x="25.4" y="147.32" size="1.27" layer="95" rot="MR0" xref="yes"/>
+<wire x1="58.42" y1="149.86" x2="60.96" y2="149.86" width="0.1524" layer="91"/>
+<label x="60.96" y="149.86" size="1.27" layer="95" rot="MR180" xref="yes"/>
+<pinref part="U4" gate="G$1" pin="CE/MODE"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="EXTON"/>
@@ -8130,25 +8147,28 @@ for (DEEP)SLEEP</text>
 </net>
 <net name="+1V8" class="0">
 <segment>
-<pinref part="U4" gate="U1" pin="VOUT"/>
-<pinref part="C70" gate="G$1" pin="1"/>
-<wire x1="60.96" y1="152.4" x2="63.5" y2="152.4" width="0.1524" layer="91"/>
-<wire x1="63.5" y1="152.4" x2="71.12" y2="152.4" width="0.1524" layer="91"/>
-<wire x1="63.5" y1="152.4" x2="63.5" y2="154.94" width="0.1524" layer="91"/>
-<junction x="63.5" y="152.4"/>
-<wire x1="63.5" y1="154.94" x2="66.04" y2="154.94" width="0.1524" layer="91"/>
-<label x="66.04" y="154.94" size="1.27" layer="95" xref="yes"/>
+<wire x1="63.5" y1="154.94" x2="76.2" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="76.2" y1="154.94" x2="78.74" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="63.5" y1="154.94" x2="63.5" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="63.5" y1="157.48" x2="66.04" y2="157.48" width="0.1524" layer="91"/>
+<label x="66.04" y="157.48" size="1.27" layer="95" xref="yes"/>
 <pinref part="V1P8" gate="P1" pin="+1V8"/>
-<wire x1="63.5" y1="154.94" x2="63.5" y2="160.02" width="0.1524" layer="91"/>
-<junction x="63.5" y="154.94"/>
+<wire x1="63.5" y1="157.48" x2="63.5" y2="162.56" width="0.1524" layer="91"/>
+<junction x="63.5" y="157.48"/>
 <pinref part="+1V8" gate="G$1" pin="TP"/>
-<wire x1="71.12" y1="152.4" x2="76.2" y2="152.4" width="0.1524" layer="91"/>
-<junction x="71.12" y="152.4"/>
-<wire x1="50.8" y1="162.56" x2="58.42" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="58.42" y1="162.56" x2="58.42" y2="157.48" width="0.1524" layer="91"/>
-<wire x1="58.42" y1="157.48" x2="58.42" y2="154.94" width="0.1524" layer="91"/>
-<wire x1="58.42" y1="154.94" x2="63.5" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="50.8" y1="165.1" x2="60.96" y2="165.1" width="0.1524" layer="91"/>
+<wire x1="60.96" y1="165.1" x2="60.96" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="60.96" y1="157.48" x2="63.5" y2="157.48" width="0.1524" layer="91"/>
 <pinref part="JP1" gate="G$1" pin="2"/>
+<pinref part="U4" gate="G$1" pin="VOUT"/>
+<wire x1="60.96" y1="157.48" x2="58.42" y2="157.48" width="0.1524" layer="91"/>
+<junction x="60.96" y="157.48"/>
+<wire x1="60.96" y1="157.48" x2="60.96" y2="152.4" width="0.1524" layer="91"/>
+<pinref part="U4" gate="G$1" pin="L2"/>
+<wire x1="60.96" y1="152.4" x2="58.42" y2="152.4" width="0.1524" layer="91"/>
+<pinref part="C70" gate="G$1" pin="1"/>
+<wire x1="76.2" y1="152.4" x2="76.2" y2="154.94" width="0.1524" layer="91"/>
+<junction x="76.2" y="154.94"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="VDDLDOD"/>
@@ -8540,21 +8560,22 @@ for (DEEP)SLEEP</text>
 <wire x1="248.92" y1="71.12" x2="248.92" y2="68.58" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="U4" gate="U1" pin="VIN"/>
-<pinref part="C62" gate="G$1" pin="2"/>
-<wire x1="30.48" y1="152.4" x2="27.94" y2="152.4" width="0.1524" layer="91"/>
-<wire x1="27.94" y1="152.4" x2="12.7" y2="152.4" width="0.1524" layer="91"/>
-<wire x1="27.94" y1="152.4" x2="27.94" y2="154.94" width="0.1524" layer="91"/>
-<junction x="27.94" y="152.4"/>
-<wire x1="27.94" y1="154.94" x2="25.4" y2="154.94" width="0.1524" layer="91"/>
-<label x="25.4" y="154.94" size="1.27" layer="95" rot="MR0" xref="yes"/>
+<wire x1="27.94" y1="157.48" x2="22.86" y2="157.48" width="0.1524" layer="91"/>
+<label x="20.32" y="157.48" size="1.27" layer="95" rot="MR0" xref="yes"/>
 <pinref part="V3P3" gate="P1" pin="+3V3"/>
-<wire x1="27.94" y1="154.94" x2="27.94" y2="160.02" width="0.1524" layer="91"/>
-<junction x="27.94" y="154.94"/>
-<wire x1="27.94" y1="154.94" x2="33.02" y2="154.94" width="0.1524" layer="91"/>
-<wire x1="33.02" y1="154.94" x2="33.02" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="33.02" y1="162.56" x2="40.64" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="157.48" x2="20.32" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="157.48" x2="27.94" y2="162.56" width="0.1524" layer="91"/>
+<junction x="27.94" y="157.48"/>
+<wire x1="27.94" y1="157.48" x2="30.48" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="157.48" x2="30.48" y2="165.1" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="165.1" x2="40.64" y2="165.1" width="0.1524" layer="91"/>
 <pinref part="JP1" gate="G$1" pin="1"/>
+<pinref part="U4" gate="G$1" pin="VIN"/>
+<wire x1="30.48" y1="157.48" x2="33.02" y2="157.48" width="0.1524" layer="91"/>
+<junction x="30.48" y="157.48"/>
+<pinref part="C62" gate="G$1" pin="1"/>
+<wire x1="22.86" y1="152.4" x2="22.86" y2="157.48" width="0.1524" layer="91"/>
+<junction x="22.86" y="157.48"/>
 </segment>
 <segment>
 <pinref part="+3V2" gate="P1" pin="+3V3"/>
@@ -8871,6 +8892,15 @@ for (DEEP)SLEEP</text>
 <pinref part="TP6" gate="G$1" pin="TESTPOINT"/>
 <wire x1="96.52" y1="53.34" x2="101.6" y2="53.34" width="0.1524" layer="91"/>
 <label x="96.52" y="53.34" size="1.27" layer="95" rot="MR180"/>
+</segment>
+</net>
+<net name="N$44" class="0">
+<segment>
+<pinref part="U4" gate="G$1" pin="LX"/>
+<wire x1="33.02" y1="154.94" x2="30.48" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="154.94" x2="30.48" y2="152.4" width="0.1524" layer="91"/>
+<pinref part="U4" gate="G$1" pin="L1"/>
+<wire x1="30.48" y1="152.4" x2="33.02" y2="152.4" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
