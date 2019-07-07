@@ -4885,12 +4885,12 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 <description>LAB11 - Regulators.</description>
 <packages>
 <package name="XCL20X">
-<smd name="6" x="-0.55" y="1.0625" dx="0.35" dy="0.375" layer="1"/>
-<smd name="5" x="0" y="1.0625" dx="0.35" dy="0.375" layer="1"/>
-<smd name="4" x="0.55" y="1.0625" dx="0.35" dy="0.375" layer="1"/>
-<smd name="1" x="-0.55" y="-1.0625" dx="0.35" dy="0.375" layer="1"/>
-<smd name="2" x="0" y="-1.0625" dx="0.35" dy="0.375" layer="1"/>
-<smd name="3" x="0.55" y="-1.0625" dx="0.35" dy="0.375" layer="1"/>
+<smd name="6" x="-0.55" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="5" x="0" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="4" x="0.55" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="1" x="-0.55" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="2" x="0" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="3" x="0.55" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
 <smd name="PAD" x="0" y="0" dx="1.5" dy="0.9" layer="1"/>
 <smd name="7" x="-1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
 <smd name="8" x="1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
@@ -4985,13 +4985,13 @@ Source: http://www.ftdichip.com/Documents/DataSheets/DS_FT232R_v104.pdf</descrip
 </device>
 </devices>
 </deviceset>
-<deviceset name="XCL206B" prefix="U">
+<deviceset name="XCL206" prefix="U" uservalue="yes">
 <description>Non-Isolated PoL Module DC DC Converter 1 Output 1.8V 600mA 2V - 6V Input</description>
 <gates>
 <gate name="G$1" symbol="XCL20X" x="0" y="0"/>
 </gates>
 <devices>
-<device name="&quot;" package="XCL20X">
+<device name="B" package="XCL20X">
 <connects>
 <connect gate="G$1" pin="CE/MODE" pad="4"/>
 <connect gate="G$1" pin="GND" pad="2 5"/>
@@ -5592,9 +5592,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="311-10KJRCT-ND "/>
 <attribute name="MPN" value="RC0402JR-0710KL"/>
 </part>
-<part name="U4" library="regulators" deviceset="XCL206B" device="&quot;"/>
 <part name="C62" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF"/>
 <part name="C70" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10uF"/>
+<part name="U4" library="regulators" deviceset="XCL206" device="B"/>
 </parts>
 <sheets>
 <sheet>
@@ -7756,10 +7756,6 @@ temperature characteristics</text>
 <attribute name="NAME" x="48.26" y="162.56" size="1.778" layer="95" font="vector"/>
 <attribute name="VALUE" x="43.18" y="162.56" size="1.778" layer="96" font="vector" align="top-left" display="off"/>
 </instance>
-<instance part="U4" gate="G$1" x="45.72" y="152.4" smashed="yes">
-<attribute name="NAME" x="38.354" y="160.528" size="1.778" layer="95"/>
-<attribute name="VALUE" x="38.1" y="142.24" size="1.778" layer="96"/>
-</instance>
 <instance part="C62" gate="G$1" x="22.86" y="149.86" smashed="yes">
 <attribute name="NAME" x="21.59" y="148.59" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="24.13" y="148.59" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
@@ -7767,6 +7763,10 @@ temperature characteristics</text>
 <instance part="C70" gate="G$1" x="76.2" y="149.86" smashed="yes">
 <attribute name="NAME" x="74.93" y="148.59" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="77.47" y="148.59" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+</instance>
+<instance part="U4" gate="G$1" x="45.72" y="152.4" smashed="yes">
+<attribute name="NAME" x="38.354" y="160.528" size="1.778" layer="95"/>
+<attribute name="VALUE" x="38.1" y="142.24" size="1.778" layer="96"/>
 </instance>
 </instances>
 <busses>
@@ -8160,15 +8160,15 @@ temperature characteristics</text>
 <wire x1="60.96" y1="165.1" x2="60.96" y2="157.48" width="0.1524" layer="91"/>
 <wire x1="60.96" y1="157.48" x2="63.5" y2="157.48" width="0.1524" layer="91"/>
 <pinref part="JP1" gate="G$1" pin="2"/>
-<pinref part="U4" gate="G$1" pin="VOUT"/>
 <wire x1="60.96" y1="157.48" x2="58.42" y2="157.48" width="0.1524" layer="91"/>
 <junction x="60.96" y="157.48"/>
 <wire x1="60.96" y1="157.48" x2="60.96" y2="152.4" width="0.1524" layer="91"/>
-<pinref part="U4" gate="G$1" pin="L2"/>
 <wire x1="60.96" y1="152.4" x2="58.42" y2="152.4" width="0.1524" layer="91"/>
 <pinref part="C70" gate="G$1" pin="1"/>
 <wire x1="76.2" y1="152.4" x2="76.2" y2="154.94" width="0.1524" layer="91"/>
 <junction x="76.2" y="154.94"/>
+<pinref part="U4" gate="G$1" pin="L2"/>
+<pinref part="U4" gate="G$1" pin="VOUT"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="VDDLDOD"/>
@@ -8570,12 +8570,12 @@ temperature characteristics</text>
 <wire x1="30.48" y1="157.48" x2="30.48" y2="165.1" width="0.1524" layer="91"/>
 <wire x1="30.48" y1="165.1" x2="40.64" y2="165.1" width="0.1524" layer="91"/>
 <pinref part="JP1" gate="G$1" pin="1"/>
-<pinref part="U4" gate="G$1" pin="VIN"/>
 <wire x1="30.48" y1="157.48" x2="33.02" y2="157.48" width="0.1524" layer="91"/>
 <junction x="30.48" y="157.48"/>
 <pinref part="C62" gate="G$1" pin="1"/>
 <wire x1="22.86" y1="152.4" x2="22.86" y2="157.48" width="0.1524" layer="91"/>
 <junction x="22.86" y="157.48"/>
+<pinref part="U4" gate="G$1" pin="VIN"/>
 </segment>
 <segment>
 <pinref part="+3V2" gate="P1" pin="+3V3"/>
@@ -8896,11 +8896,11 @@ temperature characteristics</text>
 </net>
 <net name="N$44" class="0">
 <segment>
-<pinref part="U4" gate="G$1" pin="LX"/>
 <wire x1="33.02" y1="154.94" x2="30.48" y2="154.94" width="0.1524" layer="91"/>
 <wire x1="30.48" y1="154.94" x2="30.48" y2="152.4" width="0.1524" layer="91"/>
-<pinref part="U4" gate="G$1" pin="L1"/>
 <wire x1="30.48" y1="152.4" x2="33.02" y2="152.4" width="0.1524" layer="91"/>
+<pinref part="U4" gate="G$1" pin="LX"/>
+<pinref part="U4" gate="G$1" pin="L1"/>
 </segment>
 </net>
 </nets>
