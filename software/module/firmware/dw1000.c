@@ -303,7 +303,7 @@ static void setup () {
 	memcpy(&_prog_values, (uint8_t*) FLASH_LOCATION_MAGIC, sizeof(dw1000_programmed_values_t));
 	if (_prog_values.magic != PROGRAMMED_MAGIC) {
 		// Hmm this wasn't set on this chip. Not much we can do other than use default values.
-		debug_msg("WARNING: Calibration values not found in FLASH\n");
+		debug_msg("WARNING: Calibration values not found in FLASH\r\n");
 		for (uint8_t i=0; i < 3; i++) {
 			for (uint8_t j=0; j < 3; j++) {
 				_prog_values.calibration_values[i][j] = DW1000_DEFAULT_CALIBRATION;
@@ -312,7 +312,7 @@ static void setup () {
 	} else {
 	    debug_msg("Successfully loaded calibration values with EUI ");
 	    debug_msg_uint(_prog_values.eui[0]);
-	    debug_msg("\n");
+	    debug_msg("\r\n");
 	}
 
 	// Mark that this function has run so we don't do it again.
@@ -1062,10 +1062,10 @@ uint32_t dw1000_get_status_register () {
 
 	uint32_t status = (uint32_t) dwt_read32bitreg(SYS_STATUS_ID); // Read status register low 32bits
 
-	debug_msg("\n-----------------------\n");
+	debug_msg("\n-----------------------\r\n");
 	debug_msg("INFO: Status register: ");
 	debug_msg_uint(status);
-	debug_msg("\n-----------------------\n\n");
+	debug_msg("\n-----------------------\r\n\r\n");
 
 	return status;
 }
@@ -1115,7 +1115,7 @@ uint64_t dw1000_correct_timestamp(uint64_t dw_timestamp) {
     // Due to frequent overflow in the Decawave system time counter, we must keep a running total of the number of times it's overflown
     if(dw_timestamp < _last_dw_timestamp) {
         _dw_timestamp_overflow += 0x10000000000ULL;
-        //debug_msg("INFO: Overflow 1 in DecaWave clock\n");
+        //debug_msg("INFO: Overflow 1 in DecaWave clock\r\n");
     }
     _last_dw_timestamp = dw_timestamp;
 
@@ -1130,7 +1130,7 @@ uint64_t dw1000_readrxtimestamp() {
 	// Check to see if an overflow has occurred.
 	if(cur_dw_timestamp < _last_dw_timestamp){
 		_dw_timestamp_overflow += 0x10000000000ULL;
-        //debug_msg("INFO: Overflow 2 in DecaWave clock\n");
+        //debug_msg("INFO: Overflow 2 in DecaWave clock\r\n");
 	}
 	_last_dw_timestamp = cur_dw_timestamp;
 
@@ -1143,7 +1143,7 @@ uint64_t dw1000_setdelayedtrxtime(uint32_t delay_time){
 	// Check to see if an overflow has occurred.
 	if(cur_dw_timestamp < _last_dw_timestamp){
 		_dw_timestamp_overflow += 0x10000000000ULL;
-        //debug_msg("INFO: Overflow 3 in DecaWave clock\n");
+        //debug_msg("INFO: Overflow 3 in DecaWave clock\r\n");
 	}
 	_last_dw_timestamp = cur_dw_timestamp;
 	
@@ -1167,17 +1167,17 @@ void dw1000_calculatediagnostics(){
     dwt_readdiagnostics(&diagnostics);
 
     // Print variables
-    /*debug_msg("Printing diagnostics values:\n");
+    /*debug_msg("Printing diagnostics values:\r\n");
     debug_msg_uint(diagnostics.firstPathAmp1);
-    debug_msg("\n");
+    debug_msg("\r\n");
     debug_msg_uint(diagnostics.firstPathAmp2);
-    debug_msg("\n");
+    debug_msg("\r\n");
     debug_msg_uint(diagnostics.firstPathAmp3);
-    debug_msg("\n");
+    debug_msg("\r\n");
     debug_msg_uint(diagnostics.rxPreamCount);
-    debug_msg("\n");
+    debug_msg("\r\n");
     debug_msg_uint(diagnostics.maxGrowthCIR);
-    debug_msg("\n");*/
+    debug_msg("\r\n");*/
 
     uint32_t N_squared = (uint32_t)diagnostics.rxPreamCount * (uint32_t)diagnostics.rxPreamCount;
 
@@ -1200,5 +1200,5 @@ void dw1000_calculatediagnostics(){
     debug_msg(" ; Rx - ");
     debug_msg_uint(rx_signal / N_squared);
     //debug_msg_int(rx_signal_dBm);
-    debug_msg("\n");
+    debug_msg("\r\n");
 }
