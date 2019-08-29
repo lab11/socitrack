@@ -389,6 +389,8 @@ int main () {
 
 //#define BYPASS_HOST_INTERFACE
 #ifndef BYPASS_HOST_INTERFACE
+	debug_msg("Connecting to host interface...\r\n");
+
 	// Initialize the I2C listener. This is the main interface
 	// the host controller (that is using module for ranging/localization)
 	// uses to configure how this module operates.
@@ -399,12 +401,12 @@ int main () {
 	err = host_interface_wait();
 	if (err) error();
 
-	//debug_msg("Waiting for host...\r\n");
-
 #else
+	debug_msg("BYPASS_HOST_INTERFACE active\r\n");
 
 //#define CALIBRATION
 #ifdef CALIBRATION
+	debug_msg("CALIBRATION active\r\n");
 	calibration_config_t config = { 1 };
 	module_configure_app(APP_CALIBRATION, &config);
 #else
@@ -443,11 +445,13 @@ int main () {
 
 //#define RANGE_TEST
 #ifdef RANGE_TEST
+	debug_msg("Configured as APP_RANGETEST\r\n");
 	module_configure_app(APP_RANGETEST, &config);
 
 	// If using APP_SIMPLETEST, also comment out "dw1000_configure_settings" in dw1000_init()
     //module_configure_app(APP_SIMPLETEST, &config);
 #else
+	debug_msg("Configured as APP_STANDARD\r\n");
 	module_configure_app(APP_STANDARD, &config);
 #endif // RANGE_TEST
 
@@ -463,6 +467,7 @@ int main () {
 #endif
 
 	// MAIN LOOP
+	debug_msg("Begin MAIN LOOP\r\n");
 	while (1) {
 
 #ifndef	DEBUG_OUTPUT_UART
