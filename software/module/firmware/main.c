@@ -362,18 +362,6 @@ int main () {
 
     USART_Cmd(USART1, ENABLE);*/
 
-#if (BOARD_V == SQUAREPOINT)
-	// Signal that internal setup is finished by setting RED
-	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
-    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
-#endif
-
-	// Next up do some preliminary setup of the DW1000. This mostly configures
-	// pins and hardware peripherals, as well as straightening out some
-	// of the settings on the DW1000.
-    //debug_msg("Configuring DW1000...\r\n");
-	start_dw1000();
-
 #ifdef DEBUG_OUTPUT_RTT
     // Test output channels
     // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
@@ -386,6 +374,18 @@ int main () {
 	// 2. Test UART (does not succeed if done before)
 	uart_write_message(19, "Initialized UART\r\n");
 #endif
+
+#if (BOARD_V == SQUAREPOINT)
+	// Signal that internal setup is finished by setting RED
+	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
+
+	// Next up do some preliminary setup of the DW1000. This mostly configures
+	// pins and hardware peripherals, as well as straightening out some
+	// of the settings on the DW1000.
+    //debug_msg("Configuring DW1000...\r\n");
+	start_dw1000();
 
 //#define BYPASS_HOST_INTERFACE
 #ifndef BYPASS_HOST_INTERFACE
