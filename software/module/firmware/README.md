@@ -3,11 +3,13 @@ Module Firmware
 
 This is the software that runs on the module.
 
+
 Build
 -----
 
     make
-    
+
+
 Install
 -------
 
@@ -39,3 +41,15 @@ Additionally, to perform a range test:
 Additionally, to enforce calibration mode (for debugging):
 
     make flash CALIBRATION=1
+
+
+Debug
+-----
+
+If you have multiple tags, it's generally useful to fully specify everything. You'll need two terminals for this:
+
+    JLinkExe -AutoConnect 1 -Device STM32F091CC -if SWD -speed 4000 -SelectEmuBySN <Written on back of JLink> -RTTTelnetPort <Pick A Number, I match ID>
+
+    telnet localhost <The port you chose above>
+
+Note that you will have to manually kill off this JLink session **before** trying to reprogram the device.
