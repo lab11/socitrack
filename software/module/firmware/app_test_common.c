@@ -55,6 +55,8 @@ void rangetest_configure (module_config_t* config) {
 	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
 		rangetest_anchor_init(&_app_scratchspace.tr_scratch);
 		debug_msg("Initialized as ANCHOR\n");
+	} else {
+		debug_msg("!!! ERROR !!! Invalid configuration, not initialized.\n");
 	}
 }
 
