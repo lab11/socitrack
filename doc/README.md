@@ -1,0 +1,17 @@
+TotTag Documentation
+====================
+
+Here you can find detailed documentation on how to get started and use TotTag.
+
+If you find errors or think something could be made clearer, please go ahead
+and submit an edit to the documentation directly (small pencil icon in the
+upper-right). If there is a more substantial question, please
+[create a new issue](https://github.com/lab11/totternary/issues) so we can keep
+track of it and fix it.
+
+
+Overview
+--------
+
+ - **[Getting Started](GettingStarted.md)** - Definitions, initial setup, etc
+ - **[Calibration](Calibration.md)** - 
