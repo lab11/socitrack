@@ -25,6 +25,11 @@ README](../software/carrier).
 
 1. Connect the JLink programmer to the nRF programming header (right side of the board).
 
+   ![Programmer plugged into nRF side](media/tottag_nrf_connection.jpeg)
+
+   Do not worry about the LEDs at this stage, they will be something random as
+   the boards are not yet programmed.
+
 1. Go to the [carrier node application folder](../software/carrier/apps/node):
 
         cd lab11/totternary/software/carrier/apps/node
@@ -66,6 +71,11 @@ README](../software/carrier).
 Note these steps are very similar to programming the nRF. Key differences have been highlighted.
 
 1. Connect the JLink programmer to the **STM programming header (left side of the board)**.
+
+   ![Programmer plugged into STM side](media/tottag_idle.jpeg)
+
+   Do not worry about the LEDs at this stage, they will be something random as
+   the boards are not yet programmed.
 
 1. Go to the [module firmware folder](../software/module/firmware):
 
