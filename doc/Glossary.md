@@ -1,15 +1,17 @@
-Getting Started
-===============
+Glossary
+========
 
-This document covers the basic pieces and has all the directions for software you will need.
+This document covers the basic pieces and should have pointers to any software
+or hardware you might need.
 
-<!-- npm i -g markdown-toc; markdown-toc -i GettingStarted.md -->
+<!-- npm i -g markdown-toc; markdown-toc -i Glossary.md -->
 
 <!-- toc -->
 
 - [Hardware Glossary](#hardware-glossary)
 - [Software Glossary](#software-glossary)
 - [Miscellaneous](#miscellaneous)
+  * [Debugging JLink Problems](#debugging-jlink-problems)
 
 <!-- tocstop -->
 
@@ -103,12 +105,49 @@ You will need to have each of these tools installed:
  - [git](https://git-scm.com/) - Version control software. Used to keep track
    of all of TotTag code and documentation.
 
+    - **git submodule** - A method for one collection of code to point to
+      another one. TotTernary uses some libraries, that are linked to as
+      submodules. If the remote library updates, you will have to manually
+      update your local version. Generally, this command is safe to run and
+      will do all the things you need: `git submodule update --init --recursive`
+
  - [JLink Software](https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack) - Software
    for your computer to talk to the JLink programmer. You need to hit the
    "Click for Downloads" link under "J-Link Software and Documentation Pack".
+
+ - [Summon App](https://github.com/lab11/summon) - This is a phone/tablet
+   application used to easily interface with the TotTag devices. You may need
+   to search for `lab11 summon` for it to pop up
+
+    - ![Screenshot of Summon in the iOS App Store](media/summon_appstore.jpeg)
+
+    - **BLE Addresses on iOS** - As a security policy, Apple does not allow
+      applications to see the MAC address (aka the Device ID) of Bluetooth
+      peripherals. This means that on iOS devices, the ID will not match the
+      ID on the TotTag sticker.
 
 ## Miscellaneous
 
  - [The TotTernary Repository](https://github.com/lab11/totternary) - This
    website, where you will find all of the code and documentation for the
    platform.
+
+### Debugging JLink Problems
+
+JLink tends to fail silently or unhelpfully sometimes. Here are a few common problems:
+
+    J-Link connection not established yet but required for command.
+    Connecting to J-Link via USB...
+    # Hangs here with no more output
+
+ - I found this can happen if your JLink software is older than the software on
+   the JLink programmer. Every time anyone uses one of the JLink boxes, their
+   software will update the firmware on the box. The JLink software prints out
+   the version on your computer when it starts, but there's not an obvious way to
+   see the version that's in the box. If yours is old, try updating the JLink
+   software.  (As example, I ran into this problem when an old laptop was running
+   `SEGGER J-Link Commander V6.10c (Compiled Sep 28 2016 18:29:56)`, which I
+   updated to `SEGGER J-Link Commander V6.50a (Compiled Aug 26 2019 10:26:37)`).
+
+ - Occasionally, JLink will just refuse to connect until you reboot your computer.
+   I find this happens more often on Macs. No idea why.

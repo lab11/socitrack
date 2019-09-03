@@ -13,5 +13,6 @@ track of it and fix it.
 Overview
 --------
 
- - **[Getting Started](GettingStarted.md)** - Definitions, initial setup, etc
- - **[Calibration](Calibration.md)** - 
+ - **[Glossary](Glossary.md)** - Definitions, pictures of components, etc
+ - **[Provisioning New Devices](Provisioning.md)** - One-offs for new hardware.
+   If you come across a tag in an unknown state, this is a good place to start.
