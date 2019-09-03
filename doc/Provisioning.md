@@ -11,9 +11,10 @@ a systemic absolute range offset of around half a meter.
 
 <!-- toc -->
 
-- [Hardware Glossary](#hardware-glossary)
-- [Software Glossary](#software-glossary)
-- [Miscellaneous](#miscellaneous)
+- [Programming the nRF](#programming-the-nrf)
+- [Programming the STM](#programming-the-stm)
+- [Pause to test basic operation](#pause-to-test-basic-operation)
+- [Calibration](#calibration)
 
 <!-- tocstop -->
 
@@ -126,3 +127,18 @@ Open the [Summon App](Glossary#software-glossary) and verify that you can see
 the new TotTag:
 
 ![The device list in Summon, with one TotTag showing](media/summon_devicelist.jpeg)
+
+
+_Outline_
+
+  - Validate BLE connection with summon and the nRF <> STM link
+
+## Calibration
+
+_Outline_
+
+  - Physcial setup requirements
+
+  - Number of tags / computer requirements
+
+  - Procedural walkthrough
