@@ -139,6 +139,9 @@ JLink tends to fail silently or unhelpfully sometimes. Here are a few common pro
     J-Link connection not established yet but required for command.
     Connecting to J-Link via USB...
     # Hangs here with no more output
+    
+ - Do you have another terminal window open that's connected to JLink (e.g. one
+   with an RTT debug connection going)? You need to close that first.
 
  - I found this can happen if your JLink software is older than the software on
    the JLink programmer. Every time anyone uses one of the JLink boxes, their
