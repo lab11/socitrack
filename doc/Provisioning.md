@@ -35,6 +35,16 @@ README](../software/carrier).
 
         cd lab11/totternary/software/carrier/apps/node
 
+1. Ensure repository is up to date with latest software:
+
+    ```bash
+    git pull
+
+    git status
+    # On branch master
+    # Your branch is up to date with 'origin/master'.
+    ```
+
 1. Ensure all submodules are up to date:
 
         git submodule update --init --recursive
@@ -82,6 +92,16 @@ Note these steps are very similar to programming the nRF. Key differences have b
 
         cd lab11/totternary/software/module/firmware
 
+1. Ensure repository is up to date with latest software:
+
+    ```bash
+    git pull
+
+    git status
+    # On branch master
+    # Your branch is up to date with 'origin/master'.
+    ```
+
 1. Ensure all submodules are up to date:
 
         git submodule update --init --recursive
@@ -127,6 +147,32 @@ Open the [Summon App](Glossary#software-glossary) and verify that you can see
 the new TotTag:
 
 ![The device list in Summon, with one TotTag showing](media/summon_devicelist.jpeg)
+
+If you click on the TotTag entry, it should open the TotTag application.
+Notice that when the app first opens, all of the buttons are greyed out still,
+it will take a few seconds for the tag to connect to the phone:
+
+![TotTag app view in Summon, before connecting](media/summon_preconnect.png)
+
+Once the tag has connected, the buttons will become clickable:
+
+![TotTag app view in Summon, after connecting](media/summon_connected.png)
+
+Notice in these screen captures, the TotTag ID looks like a long random string.
+This is because this guide used an iPhone to grab the screen shots, and iOS
+does not allow apps to see device addresses. If you use an Android device, you
+will see the actual TotTag address here.
+
+There is no visual indicator for this, but if you slide from the right side of
+the screen, you can pull up a debug pane, that should help see what the Summon
+app and TotTag are doing:
+
+![TotTag debug bar, after connecting](media/summon_connected_debug.png)
+
+For example, if you click the `Anchor` button to instruct this tag to act as an
+achor, you can verify it succeeded using the debug bar:
+
+![TotTag debug bar, after configuring tag to act as an anchor](media/summon_debug_anchor.png)
 
 
 _Outline_
