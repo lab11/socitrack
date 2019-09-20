@@ -175,16 +175,19 @@ achor, you can verify it succeeded using the debug bar:
 ![TotTag debug bar, after configuring tag to act as an anchor](media/summon_debug_anchor.png)
 
 
-_Outline_
-
-  - Validate BLE connection with summon and the nRF <> STM link
-
 ## Calibration
 
-_Outline_
+**STOP. Before beginning calibration, it is recommended to finish initial setup
+of all nodes. This will save on re-programming time later.**
 
-  - Physcial setup requirements
+[Please follow the directions in the calibration documentation](../software/calibration/README#Detailed-Instructions)
 
-  - Number of tags / computer requirements
 
-  - Procedural walkthrough
+## Re-programming
+
+**STOP. Don't do the final reprogram for nodes until you have finished
+calibrating all nodes. It's usually faster this way.**
+
+Follow the initial programming steps again. You will need to reprogram the nRF
+to take it out of calibration mode and reprogram the STM to include new
+calibration data.

@@ -14,6 +14,6 @@ Overview
 --------
 
  - **[Glossary](Glossary.md)** - Definitions, pictures of components, etc
- - **[Provisioning New Devices](Provisioning.md)** - One-offs for new hardware.
+ - **[Provisioning New Devices](Provisioning.md)** - First steps for new hardware.
    If you come across a tag in an unknown state, this is a good place to start.
  - **[Running a New Deployment](Deployment.md)** - Steps to run a deployment.
