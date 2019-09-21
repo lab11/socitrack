@@ -14,6 +14,8 @@ Overview
 --------
 
  - **[Glossary](Glossary.md)** - Definitions, pictures of components, etc
+ - **[Setting Up a Programming Machine](Setup.md)** - Software and tools that you
+   will need to have on your computer.
  - **[Provisioning New Devices](Provisioning.md)** - First steps for new hardware.
    If you come across a tag in an unknown state, this is a good place to start.
  - **[Running a New Deployment](Deployment.md)** - Steps to run a deployment.
