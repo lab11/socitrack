@@ -98,6 +98,12 @@ function parse_cmd_args() {
             peripheral_address_0 = peripheral_address_base + process.argv[++i];
             peripheral_address_1 = peripheral_address_base + process.argv[++i];
             peripheral_address_2 = peripheral_address_base + process.argv[++i];
+
+            // IDs from tags will be lower case, correct user entry if needed
+            peripheral_address_0 = peripheral_address_0.toLowerCase();
+            peripheral_address_1 = peripheral_address_1.toLowerCase();
+            peripheral_address_2 = peripheral_address_2.toLowerCase();
+
             console.log('Looking for peripherals with addresses ' + peripheral_address_0 + ', ' + peripheral_address_1 + ' and ' + peripheral_address_2);
         }
     }
