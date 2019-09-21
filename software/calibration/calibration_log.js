@@ -210,9 +210,9 @@ function receive (peripheral, index, filename) {
 
 		peripheral.connect(function (connect_err) {
 			if (connect_err) {
-                console.log('ERROR: Failed to connect to ' + peripheral.uuid);
-                console.log(connect_err)
-            } else {
+				console.log('ERROR: Failed to connect to ' + peripheral.uuid);
+				console.log(connect_err)
+			} else {
 				//console.log('Successfully connected to ' + peripheral.uuid);
 			}
 		});
@@ -265,7 +265,7 @@ noble.on('discover', function (peripheral) {
 			receive(peripheral_2, 2);
 
 			// Wait for them to be initialized, then start Master
-            setTimeout(receive_master, 200);
+			setTimeout(receive_master, 200);
 		}
 	}
 });
