@@ -159,6 +159,9 @@ arm-none-eabi-size _build/firmware.elf
 
 ## Getting Python
 
+_Note: Python is only used during calibration. If you won't need to calibrate
+any nodes, you can skip this._
+
 If you have a brand new machine, you'll need to install Python:
 
 ```bash
@@ -174,6 +177,20 @@ pannuto@ubuntu:~$ python3 --version
 Python 3.7.3
 # Exact versions may vary
 ```
+
+
+### Getting Python Dependencies
+
+The package manager for python does not come with the Python install, so need to
+grab that as well:
+
+    sudo apt install python-pip python3-pip
+
+Then we need to use `pip3` to install some python packages that tools will use:
+
+    pip3 install dataprint numpy
+
+> Don't lose the `3` on the end of this command!
 
 
 ## Getting Node
@@ -273,6 +290,25 @@ nowadays, so _something_ should print.
 
 #### Debugging noble
 
+Bluetooth is unfortunately kind of finicky, so here's some issues:
+
+##### Powered Off
+
+Occasionally, noble will print a message about being powered off, like this:
+
+    ppannuto@ubuntu:~/totternary/software/debug$ ./test_tags_visible.js
+    ** TotTag -- Bluetooth test
+    **
+    ** Each TotTag seen via Bluetooth will print. Press Ctrl-C to exit at any time
+
+    Scanning...
+    Found TotTag: c098e5420025
+    WARNING: Tried to start scanning, got: poweredOff
+
+If this happens, simply kill the script that was running and start it again.
+
+##### Permissions
+
 If at any point you see this message
 
     noble warning: adapter state unauthorized, please run as root or with sudo
@@ -287,7 +323,7 @@ It means you need to run the permission step above.
 If you happen to have an already programmed TotTag around, you can try looking
 for just that:
 
-    ppannuto@ubuntu:~/totternary/software/debug$ ./test_tags_visible.js 
+    ppannuto@ubuntu:~/totternary/software/debug$ ./test_tags_visible.js
     ** TotTag -- Bluetooth test
     **
     ** Each TotTag seen via Bluetooth will print. Press Ctrl-C to exit at any time
