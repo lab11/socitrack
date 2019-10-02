@@ -33,7 +33,7 @@ CFLAGS += $(CDBG)
 
 
 # Include board Makefile (if any)
-include ../../boards/TotTag_revD/Board.mk
+include ../../boards/TotTag_revF/Board.mk
 
 # Path to base of nRF52-base repo
 NRF_BASE_DIR = ../../nrf5x-base

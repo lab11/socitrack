@@ -69,6 +69,7 @@
 #include "boards.h"
 #include "led.h"
 #include "module_interface.h"
+#include "rtc_ab1815.h"
 #include "simple_logger.h"
 
 /*******************************************************************************
@@ -275,8 +276,10 @@ void spi_init(void) {
     // Setup Chip selects (CS)
     nrf_gpio_cfg_output(CARRIER_CS_SD);
     nrf_gpio_cfg_output(CARRIER_CS_ACC);
+    nrf_gpio_cfg_output(CARRIER_CS_RTC);
     nrf_gpio_pin_set(CARRIER_CS_SD);
     nrf_gpio_pin_set(CARRIER_CS_ACC);
+    nrf_gpio_pin_set(CARRIER_CS_RTC);
 
     // Configure SPI lines
     nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
@@ -370,6 +373,52 @@ static void acc_init(void) {
 
     // Reset FIFO
     lis2dw12_fifo_reset();
+}
+
+
+/*******************************************************************************
+ *  RTC functions
+ ******************************************************************************/
+
+static void rtc_external_init(void) {
+
+    // Startup RTC
+    ab1815_init(&spi_instance);
+
+    static ab1815_control_t ctrl_config = {
+            .stop      = 0,
+            .hour_12   = 0,
+            .OUTB      = 0,
+            .OUT       = 0,
+            .rst_pol   = 0,
+            .auto_rst  = 1,
+            .write_rtc = 1,
+            .psw_nirq2_function = 0,
+            .fout_nirq_function = 0
+    };
+    static ab1815_int_config_t int_config = {
+            .century_en = 1,
+            .int_mode   = 0x3,
+            .bat_low_en = 0,
+            .timer_en   = 0,
+            .alarm_en   = 0,
+            .xt2_en     = 0,
+            .xt1_en     = 0
+    };
+
+    // Set configs
+    ab1815_set_config(ctrl_config);
+    ab1815_set_int_config(int_config);
+
+    // Initialize time - only done once after first flash of code
+    ab1815_init_time();
+
+    // Set our own time on the NRF
+    app.config.app_sync_time        = ab1815_get_time_unix().tv_sec;
+    app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
+    app.config.app_sync_rtc_overflow_counter = 0;
+    app.config.app_sync_rtc_overflown        = false;
+    printf("Set config time: %lu\n", app.config.app_sync_time);
 }
 
 
@@ -2061,7 +2110,7 @@ static void timers_start (void)
     APP_ERROR_CHECK(err_code);
 }
 
-static void rtc_init(void) {
+static void rtc_internal_init(void) {
 
     // Initialize LFCLK if no SoftDevice available
     //lfclk_config();
@@ -2132,7 +2181,7 @@ void carrier_hw_init(void)
     // Software services init
     // ATTENTION: inside ble_init(), we further initialize the SoftDevice (triggering the low-power clock)
     ble_init();
-    rtc_init();
+    rtc_internal_init();
 
     // As the SoftDevice is now enabled, we can tell it to use the DC/DC regulator
     sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
@@ -2261,6 +2310,7 @@ int main (void)
 
     // Hardware services init
     sd_card_init();
+    rtc_external_init();
     //acc_init();
     //bat_monitor_init();
 

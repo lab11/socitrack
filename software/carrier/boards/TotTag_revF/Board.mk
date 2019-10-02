@@ -101,6 +101,7 @@ BOARD_SOURCES += \
 	ff.c\
 	mmc_nrf.c\
 	accelerometer_lis2dw12.c\
+	rtc_ab1815.c\
 	better_error_handling.c\
 	module_interface.c\
 	led.c\
@@ -166,5 +167,10 @@ BOARD_SOURCES += \
 #es_tlm.c\
 #nrf_ble_es.c\
 #nrf_ble_escs.c\
+
+# Make sure that rtc_ab1815.c is always compile so that the compile time is correct
+rtc_ab1815.o: .FORCE
+
+.FORCE:
 
 endif

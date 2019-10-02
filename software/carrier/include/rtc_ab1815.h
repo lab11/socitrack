@@ -1,6 +1,9 @@
 // Datasheet: https://abracon.com/Support/AppsManuals/Precisiontiming/AB18XX-Application-Manual.pdf
 #pragma once
 
+#include "nrf_drv_spi.h"
+#include "time.h"
+
 // Time and date registers
 #define AB1815_HUND               0x00
 #define AB1815_SEC                0x01
@@ -39,6 +42,9 @@
 #define AB1815_OSCILLATOR_CTRL    0x1C
 #define AB1815_OSCILLATOR_STATUS  0x1D
 #define AB1815_OSCILLATOR_KEY     0x1F
+
+// Past timestamp of 2001/09/09
+#define TIMESTAMP_UNIX_PAST (1000*1000*1000)
 
 typedef void ab1815_alarm_callback(void);
 
@@ -119,6 +125,7 @@ typedef struct {
 } ab1815_time_t;
 
 void ab1815_init(const nrf_drv_spi_t* instance);
+void ab1815_init_time(void);
 void ab1815_get_config(ab1815_control_t* config);
 void ab1815_set_config(ab1815_control_t config);
 void ab1815_set_int_config(ab1815_int_config_t config);
