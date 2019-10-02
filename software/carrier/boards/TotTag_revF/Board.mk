@@ -168,9 +168,9 @@ BOARD_SOURCES += \
 #nrf_ble_es.c\
 #nrf_ble_escs.c\
 
-# Make sure that rtc_ab1815.c is always compile so that the compile time is correct
-rtc_ab1815.o: .FORCE
+# Make sure that rtc_ab1815.c is always compiled so that the compile time is correct
+_build/rtc_ab1815.o: FORCE
 
-.FORCE:
+.PHONY: FORCE
 
 endif
