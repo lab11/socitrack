@@ -68,8 +68,8 @@ include_directories(${recursive_list})
 # Add source files
 set(PROJ_FILES
         TriTag_revC/tritag.h
-        TotTag_revD/app_config.h
-        TotTag_revD/tottag.h)
+        TotTag_revF/app_config.h
+        TotTag_revF/tottag.h)
 
 # Create dummy executable for CLion
 add_executable(project_boards ${PROJ_FILES})

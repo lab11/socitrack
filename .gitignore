@@ -59,3 +59,8 @@ docs/_build/
 target/
 
 node_modules
+/.idea/
+/software/carrier/apps/blink/_build/
+/software/carrier/apps/node/_build/
+/software/carrier/cmake-build-debug/
+/software/cmake-build-debug/
