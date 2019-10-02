@@ -414,11 +414,12 @@ static void rtc_external_init(void) {
     ab1815_init_time();
 
     // Set our own time on the NRF
-    app.config.app_sync_time        = ab1815_get_time_unix().tv_sec;
+    struct timeval tv = ab1815_get_time_unix();
+    app.config.app_sync_time        = tv.tv_sec;
     app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
     app.config.app_sync_rtc_overflow_counter = 0;
     app.config.app_sync_rtc_overflown        = false;
-    printf("Set config time: %lu\n", app.config.app_sync_time);
+    ab1815_printTime(unix_to_ab1815(tv));
 }
 
 

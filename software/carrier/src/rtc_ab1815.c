@@ -37,6 +37,8 @@ void ab1815_init_time(void) {
   // Check whether RTC is already running; if so, DONT overwrite
   struct timeval curr_time = ab1815_get_time_unix();
 
+  //printf("DEBUG: Unix time is %08llx\n", curr_time.tv_sec);
+
   if (curr_time.tv_sec < TIMESTAMP_UNIX_PAST) {
 
       char _date[] = __DATE__; // the format is "Jan  1 2000"
@@ -50,7 +52,7 @@ void ab1815_init_time(void) {
 
       comp_time.date       = ascii_to_i(_date[4]) * 10 + ascii_to_i(_date[5]);
       comp_time.months     = month_to_i(&_date[0]);
-      comp_time.years      = ascii_to_i(_date[7]) * 1000 + ascii_to_i(_date[8]) * 100 + ascii_to_i(_date[9]) * 10 + ascii_to_i(_date[10]);
+      comp_time.years      = ascii_to_i(_date[9]) * 10 + ascii_to_i(_date[10]);
 
       ab1815_set_time(comp_time);
   }
@@ -61,9 +63,9 @@ void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
   uint8_t readreg = reg;
   uint8_t buf[257];
 
+  nrf_drv_spi_uninit(spi_instance);
   nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
   nrf_drv_spi_transfer(spi_instance, &readreg, 1, buf, len+1);
-  nrf_drv_spi_uninit(spi_instance);
 
   memcpy(read_buf, buf+1, len);
 }
@@ -74,9 +76,9 @@ void ab1815_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
   buf[0] = 0x80 | reg;
   memcpy(buf+1, write_buf, len);
 
+  nrf_drv_spi_uninit(spi_instance);
   nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
   nrf_drv_spi_transfer(spi_instance, buf, len+1, NULL, 0);
-  nrf_drv_spi_uninit(spi_instance);
 }
 
 static void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
@@ -298,6 +300,10 @@ void ab1815_tickle_watchdog(void) {
 void ab1815_clear_watchdog(void) {
   uint8_t buf = 0;
   ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
+}
+
+void ab1815_printTime(ab1815_time_t time) {
+    printf("INFO: Time is %02u:%02u:%02u, 20%02u/%02u/%02u\n", time.hours, time.minutes, time.seconds, time.years, time.months, time.date);
 }
 
 // Helpers

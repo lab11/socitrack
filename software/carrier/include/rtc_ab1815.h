@@ -139,3 +139,4 @@ void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_ala
 void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);
 void ab1815_tickle_watchdog(void);
 void ab1815_clear_watchdog(void);
+void ab1815_printTime(ab1815_time_t time);
