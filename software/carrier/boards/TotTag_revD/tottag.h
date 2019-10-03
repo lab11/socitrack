@@ -2,6 +2,10 @@
 
 #pragma once
 
+#ifndef BOARD_V
+#define BOARD_V 0xD
+#endif
+
 #include "nrf_gpio.h"
 #include "nrfx_saadc.h"
 

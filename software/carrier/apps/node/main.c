@@ -382,6 +382,7 @@ static void acc_init(void) {
 
 static void rtc_external_init(void) {
 
+#if (BOARD_V >= 0xF)
     // Startup RTC
     ab1815_init(&spi_instance);
 
@@ -420,6 +421,9 @@ static void rtc_external_init(void) {
     app.config.app_sync_rtc_overflow_counter = 0;
     app.config.app_sync_rtc_overflown        = false;
     ab1815_printTime(unix_to_ab1815(tv));
+#else
+    printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
+#endif
 }
 
 

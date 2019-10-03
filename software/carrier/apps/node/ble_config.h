@@ -22,9 +22,9 @@
 #define APP_COMPANY_IDENTIFIER 0x02E0
 #define APP_SERVICE_IDENTIFIER 0x0022
 #define MANUFACTURER_NAME      "Lab11"
-#define MODEL_NUMBER           DEVICE_NAME
-#define HARDWARE_REVISION      "E"
-#define FIRMWARE_REVISION      "0.1"
+#define MODEL_NUMBER           TOTTAG
+#define HARDWARE_REVISION      "F"
+#define FIRMWARE_REVISION      "0.9"
 
 #define EUI_LEN                8
 
