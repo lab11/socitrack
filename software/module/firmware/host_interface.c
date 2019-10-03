@@ -233,7 +233,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_CONFIG: {
 
-            debug_msg("Op code 2: Config\r\n");
+            debug_msg("INFO: Op code 2: Config\r\n");
 			// Just go back to waiting for a WRITE after a config message
 			host_interface_wait();
 
@@ -258,7 +258,7 @@ void host_interface_rx_fired () {
 			// Receive Master EUI
 			my_master_eui =	  config_master;
 
-            /*debug_msg("Role: ");
+            /*debug_msg("DEBUG: Role: ");
             debug_msg_int(my_role);
             debug_msg("; Glossy Role: ");
             debug_msg_int(my_glossy_role);
@@ -310,7 +310,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_DO_RANGE:
 
-            debug_msg("Op code 4: Do range\r\n");
+            debug_msg("INFO: Op code 4: Do range\r\n");
 			// Just need to go back to waiting for the host to write more
 			// after getting a sleep command
 			host_interface_wait();
@@ -324,7 +324,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_SLEEP:
 
-            debug_msg("Op code 5: Sleep\r\n");
+            debug_msg("INFO: Op code 5: Sleep\r\n");
 			// Just need to go back to waiting for the host to write more
 			// after getting a sleep command
 			host_interface_wait();
@@ -338,7 +338,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_RESUME:
 
-            debug_msg("Op code 6: Resume\r\n");
+            debug_msg("INFO: Op code 6: Resume\r\n");
 			// Keep listening for the next command.
 			host_interface_wait();
 
@@ -351,7 +351,7 @@ void host_interface_rx_fired () {
 		/**********************************************************************/
 		case HOST_CMD_SET_TIME:
 
-			debug_msg("Op code 9: Set Time\r\n");
+			debug_msg("INFO: Op code 9: Set Time\r\n");
 			// Just go back to waiting for a WRITE after a time message
 			host_interface_wait();
 
@@ -381,7 +381,7 @@ void host_interface_rx_fired () {
 // to go back to waiting for a WRITE.
 void host_interface_tx_fired () {
 
-	//debug_msg("Data sent\r\n");
+	//debug_msg("DEBUG: Data sent\r\n");
 }
 
 // Called after timeout
@@ -427,7 +427,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		/**********************************************************************/
 		case HOST_CMD_INFO:
 
-            //debug_msg("Op code 1: Info\r\n");
+            //debug_msg("INFO: Op code 1: Info\r\n");
 			// Check what status the main application is in. If it has contacted
 			// the DW1000, then it will be ready and we return the correct
 			// info string. If it is not ready, we return the null string
@@ -447,11 +447,11 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		/**********************************************************************/
 		case HOST_CMD_READ_INTERRUPT: {
 
-            //debug_msg("Op code 3: Interrupt\r\n");
+            //debug_msg("INFO: Op code 3: Interrupt\r\n");
 			// Clear interrupt
 			interrupt_host_clear();
 
-			/*debug_msg("Interrupt buffer len: ");
+			/*debug_msg("DEBUG: Interrupt buffer len: ");
 			debug_msg_int(_interrupt_buffer_len);
 			debug_msg("; Interrupt reason: ");
 			debug_msg_int(_interrupt_reason);
@@ -476,7 +476,7 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef* pDevInitStruct) {
 		/**********************************************************************/
 		case HOST_CMD_READ_CALIBRATION: {
 
-            //debug_msg("Op code 8: Calibration\r\n");
+            //debug_msg("INFO: Op code 8: Calibration\r\n");
 			// Copy the raw values from the stored array
 			memcpy(txBuffer, dw1000_get_txrx_delay_raw(), 12);
 			host_interface_respond(12, TRUE);

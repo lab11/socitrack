@@ -17,6 +17,16 @@ For easy debugging, you can circumvent the BLE user interface and directly progr
 
     make flash BYPASS_USER_INTERFACE=1 ROLE=INITIATOR GLOSSY_MASTER=1    
 
+LED color code
+--------------
+
+The central RGB LED `D2` at the top of the board, northwest of the nRF52840, is the status LED for this app.
+It demonstrates the current state of the state-machine on the carrier board:
+
+-  **Red**: Board did not (yet) finish initialization; usually stuck trying to access peripherals such as SD card.
+-  **Blue**: Board is advertising BLE advertisements but is not connected to another device.
+-  **Green**: Another device (smartphone, PC) is connected over a BLE connection.
+-  **White flashing**: The app encountered a critical error and is not able to continue operation; the code is busy-looping inside the error handler.
 
 Advertisement
 -------------

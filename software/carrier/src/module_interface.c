@@ -52,12 +52,12 @@ static void twi_init(void) {
     err_code = nrf_twi_mngr_init(&twi_mngr_instance, &twi_config);
     APP_ERROR_CHECK(err_code);
 
-    //printf("Initialized TWI\n");
+    //printf("DEBUG: Initialized TWI\n");
 }
 
 void module_interrupt_handler (nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
 
-    //printf("Detected interrupt on pin: %i \r\n", pin);
+    //printf("DEBUG: Detected interrupt on pin: %i \r\n", pin);
 
     // As this is triggered by events, we do not have to clear the interrupt
 
@@ -77,7 +77,7 @@ ret_code_t module_interrupt_dispatch() {
     uint8_t len = 0;
     uint8_t cmd = MODULE_CMD_READ_INTERRUPT;
 
-    //printf("Sending CMD_READ_INTERRUPT...\n");
+    //printf("DEBUG: Sending CMD_READ_INTERRUPT...\n");
 
     // Figure out the length of what we need to receive by checking the first byte of the response.
     nrf_twi_mngr_transfer_t const read_transfer[] = {
@@ -89,7 +89,7 @@ ret_code_t module_interrupt_dispatch() {
     APP_ERROR_CHECK(ret);
 
     // Now that we know the length, read the rest
-    //printf("Reading I2C response of length %i\n", len);
+    //printf("DEBUG: Reading I2C response of length %i\n", len);
     if (len > 0) {
         nrf_twi_mngr_transfer_t const read_rest_transfer[] = {
                 NRF_TWI_MNGR_READ(MODULE_ADDRESS, twi_rx_buf, len, 0)
@@ -99,7 +99,7 @@ ret_code_t module_interrupt_dispatch() {
         APP_ERROR_CHECK(ret);
 
         // Send back the I2C data
-        printf("Received I2C response of length %i \r\n", len);
+        //printf("INFO: Received I2C response of length %i \r\n", len);
     } else {
         printf("ERROR: Tried reading I2C packet of length %i\n", len);
     }

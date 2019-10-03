@@ -44,6 +44,16 @@ adapter from either of two sources:
         
         $ telnet localhost 9200
 
+LED color code
+--------------
+
+The central RGB LED `D3` in the middle of the board on the right, east of the STM32F091CC, is the status LED for this app.
+It demonstrates the current state of the state-machine on the module:
+
+-  **Red**: Board did not (yet) finish initialization; usually stuck trying to access the DW.
+-  **Blue**: Board is ready for a UWB network but is not connected to another device.
+-  **Green**: Device is part of a UWB network and is receiving schedules.
+-  **Green with white flashes**: Device is the host of a UWB network; the white flash signals a schedule distribution.
 
 I2C API
 -------
