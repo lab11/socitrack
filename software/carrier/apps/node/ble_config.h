@@ -20,7 +20,7 @@
 
 // Information
 #define APP_COMPANY_IDENTIFIER 0x02E0
-#define APP_SERVICE_IDENTIFIER 0x0022
+#define APP_SERVICE_IDENTIFIER 0x22
 #define MANUFACTURER_NAME      "Lab11"
 #define MODEL_NUMBER           TOTTAG
 #define HARDWARE_REVISION      "F"

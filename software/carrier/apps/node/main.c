@@ -148,6 +148,11 @@ static ble_data_t m_scan_buffer =
 // Whitelisted addresses
 ble_gap_addr_t pp_wl_addrs[APP_BLE_ADDR_NR];
 
+// Advertising data
+static ble_advertising_init_t     adv_init;
+static ble_advdata_manuf_data_t   manuf_data_adv;
+static ble_advdata_service_data_t service_data;
+
 // State defines -------------------------------------------------------------------------------------------------------
 
 // GP Timer. Used to retry initializing the module.
@@ -1251,9 +1256,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 static uint32_t adv_report_parse(uint8_t type, const ble_data_t * p_advdata, ble_data_t * p_typedata)
 {
     uint32_t index = 0;
-    uint8_t * p_data;
-
-    p_data = p_advdata->p_data;
+    uint8_t * p_data = p_advdata->p_data;
 
     while (index < p_advdata->len)
     {
@@ -1329,6 +1332,10 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
         APP_ERROR_CHECK(err_code);
     }
 
+    // Update advertising data
+    err_code = ble_advdata_encode(&adv_init.advdata, m_advertising.enc_advdata, &m_advertising.adv_data.adv_data.len);
+    APP_ERROR_CHECK(err_code);
+
     // Restart advertisements
     err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
     if (err_code != NRF_ERROR_INVALID_STATE) {
@@ -1343,7 +1350,7 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
 // Resets the Master EUI and restarts the module
 static void standard_reconfigure_module(uint8_t discovered_master_eui) {
 
-    //printf("INFO: Discovered new Master\n");
+    //printf("DEBUG: Discovered new Master %02X\n", discovered_master_eui);
 
     // Change Master EUI
     standard_reconfigure_master_eui(&discovered_master_eui);
@@ -1383,6 +1390,11 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
         err_code = adv_report_parse(BLE_GAP_AD_TYPE_MANUFACTURER_SPECIFIC_DATA, &p_adv_report->data, &advdata);
 
         if (err_code == NRF_SUCCESS) {
+
+            if (advdata.len != (1 + 2 + APP_BLE_ADVDATA_LENGTH)) {
+                printf("WARNING: Received BLE advertisement with length %u!\n", advdata.len);
+            }
+
             // Parse manufacturer-specific data
             uint16_t company_identifier = advdata.p_data[0] + (advdata.p_data[1] << 1*8);
             if ( company_identifier != APP_COMPANY_IDENTIFIER) {
@@ -1796,24 +1808,21 @@ static void gatt_init(void)
 static void advertising_init(void)
 {
     ret_code_t             err_code;
-    ble_advertising_init_t init;
-
-    memset(&init, 0, sizeof(init));
+    memset(&adv_init, 0, sizeof(adv_init));
 
     // Advertisement
 
     // Custom advertisement data
-    ble_advdata_manuf_data_t             manuf_data_adv;
-    manuf_data_adv.company_identifier    = APP_COMPANY_IDENTIFIER; // UMich's Company ID
-    manuf_data_adv.data.p_data           = app.app_ble_advdata;
-    manuf_data_adv.data.size             = sizeof(app.app_ble_advdata);
-    init.advdata.p_manuf_specific_data   = &manuf_data_adv;
+    manuf_data_adv.company_identifier      = APP_COMPANY_IDENTIFIER; // UMich's Company ID
+    manuf_data_adv.data.p_data             = app.app_ble_advdata;
+    manuf_data_adv.data.size               = sizeof(app.app_ble_advdata);
+    adv_init.advdata.p_manuf_specific_data = &manuf_data_adv;
 
     // Add device name in advertisements
-    // init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
+    // adv_init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     // For shorter names, adjust as follows. The full name will still be displayed in connections
-    init.advdata.name_type               = BLE_ADVDATA_NO_NAME;
-    //init.advdata.short_name_len          = 4; // Advertise the first X letters of the name
+    adv_init.advdata.name_type               = BLE_ADVDATA_NO_NAME;
+    //adv_init.advdata.short_name_len          = 4; // Advertise the first X letters of the name
 
     // Physical Web data
     const char* url_str = PHYSWEB_URL;
@@ -1828,19 +1837,18 @@ static void advertising_init(void)
     }
 
     // Advertise Physical Web service
-    ble_advdata_service_data_t service_data;
-    service_data.service_uuid            = PHYSWEB_SERVICE_ID;
-    service_data.data.p_data             = m_url_frame;
-    service_data.data.size               = url_frame_length;
-    init.advdata.p_service_data_array    = &service_data;
-    init.advdata.service_data_count      = 1;
+    service_data.service_uuid                = PHYSWEB_SERVICE_ID;
+    service_data.data.p_data                 = m_url_frame;
+    service_data.data.size                   = url_frame_length;
+    adv_init.advdata.p_service_data_array    = &service_data;
+    adv_init.advdata.service_data_count      = 1;
 
     //printf("DEBUG: Advertising Eddystone address %s with total length %i\n", url_str, url_frame_length);
 
-    init.advdata.include_appearance      = false;
-    init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
-    init.advdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
-    init.advdata.uuids_complete.p_uuids  = m_adv_uuids;
+    adv_init.advdata.include_appearance      = false;
+    adv_init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
+    adv_init.advdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
+    adv_init.advdata.uuids_complete.p_uuids  = m_adv_uuids;
 
     // Scan response
 
@@ -1851,25 +1859,25 @@ static void advertising_init(void)
     manuf_data_resp.company_identifier   = APP_COMPANY_IDENTIFIER;
     manuf_data_resp.data.p_data          = app.app_ble_advdata;
     manuf_data_resp.data.size            = APP_BLE_ADVDATA_LENGTH;
-    init.srdata.p_manuf_specific_data    = &manuf_data_resp;*/
+    adv_init.srdata.p_manuf_specific_data    = &manuf_data_resp;*/
 
-    init.srdata.name_type                = BLE_ADVDATA_FULL_NAME;
-    init.srdata.uuids_complete.uuid_cnt  = sizeof(m_sr_uuids) / sizeof(m_sr_uuids[0]);
-    init.srdata.uuids_complete.p_uuids   = m_sr_uuids;
+    adv_init.srdata.name_type                = BLE_ADVDATA_FULL_NAME;
+    adv_init.srdata.uuids_complete.uuid_cnt  = sizeof(m_sr_uuids) / sizeof(m_sr_uuids[0]);
+    adv_init.srdata.uuids_complete.p_uuids   = m_sr_uuids;
 
-    init.config.ble_adv_fast_enabled  = true;
+    adv_init.config.ble_adv_fast_enabled  = true;
 #ifndef APP_BLE_CALIBRATION
-    init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
+    adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
 #else
     // Increase number of advertisements so the scanner finds all of them simultaneously
-    init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
+    adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
 #endif
-    //init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
+    //adv_init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
 
     // Define Event handler
-    init.evt_handler = on_adv_evt;
+    adv_init.evt_handler = on_adv_evt;
 
-    err_code = ble_advertising_init(&m_advertising, &init);
+    err_code = ble_advertising_init(&m_advertising, &adv_init);
     APP_ERROR_CHECK(err_code);
 
     ble_advertising_conn_cfg_tag_set(&m_advertising, APP_BLE_CONN_CFG_TAG);
