@@ -6,6 +6,16 @@
 #define BOARD_TOTTAG
 #endif
 
+// Board options
+#ifdef BOARD_TOTTAG
+
+// Disable LEDs
+//#define NRF_DISABLE_LEDS 1
+
+#endif
+
+
+// Include board file
 #if defined(BOARD_TRITAG)
 	#include "tritag.h"
 #elif defined(BOARD_TOTTAG)

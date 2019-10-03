@@ -101,7 +101,7 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator);
 static uint8_t get_master_candidate();
 static void	   save_schedule_information(uint8_t* buffer);
 static void    restore_schedule_information(uint8_t* buffer);
-static uint8_t debug_print_time(uint8_t point_idx, uint32_t time);
+static void    debug_print_time(uint8_t point_idx, uint32_t time);
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -279,10 +279,12 @@ void glossy_stop() {
 	timer_free(_glossy_timer);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
     // Make sure that LEDs are in default (BLUE) state
     GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
+#endif
 #endif
 
 }
@@ -345,9 +347,7 @@ void glossy_listen_for_next_sync() {
 	    debug_msg("WARNING: Out of sync for more than 10 rounds!\n");
 	}
 
-	/*debug_msg("Current time: ");
-	debug_msg_uint((curr_timestamp >> 40));
-	debug_msg(" | ");
+	/*debug_msg("DEBUG: Current time: ");
 	debug_msg_uint((curr_timestamp >> 8) & 0xFFFFFFFF);
 	debug_msg("; out of sync: ");
 	debug_msg_uint(out_of_sync_dw >> 32);
@@ -365,7 +365,7 @@ void glossy_listen_for_next_sync() {
 static void glossy_lwb_round_task() {
 	_lwb_counter++;
 
-    /*debug_msg("LWB slot: ");
+    /*debug_msg("DEBUG: LWB slot: ");
     debug_msg_int(_lwb_counter);
     debug_msg("\n");*/
 
@@ -378,7 +378,7 @@ static void glossy_lwb_round_task() {
 
 	// Debugging information
 	/*if (_lwb_counter == 1) {
-        debug_msg("Round info: init_start ");
+        debug_msg("DEBUG: Round info: init_start ");
         debug_msg_uint(lwb_slot_init_start);
         debug_msg("; resp_start ");
         debug_msg_uint(lwb_slot_resp_start);
@@ -395,6 +395,7 @@ static void glossy_lwb_round_task() {
 
 	if(_role == GLOSSY_MASTER) {
 
+#ifdef PROTOCOL_ENABLE_TIMEOUT
 		// Disable Master again if he did not find anyone
 		if (_lwb_empty_round_counter > TIMEOUT_PERIODS) {
 
@@ -416,10 +417,13 @@ static void glossy_lwb_round_task() {
 
 		// LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
 		} else if(_lwb_counter == lwb_slot_cont_start) {
-
+#else
+        // LWB Slot N-C: During the first timeslot, put ourselves back into RX mode to listen for schedule requests
+		if(_lwb_counter == lwb_slot_cont_start) {
+#endif
             if (standard_is_init_active()) {
                 // Stop if still listening for responses
-                debug_msg("INFO: Stop listening and starting contention\n");
+                //debug_msg("INFO: Stop listening and starting contention\n");
                 standard_init_stop_response_listening();
             }
 
@@ -485,10 +489,10 @@ static void glossy_lwb_round_task() {
 
                 // Reset the DW
                 if ( (_lwb_counter % 50) == 0) {
-                    debug_msg("Resetting soft\n");
+                    debug_msg("DEBUG: Resetting soft\n");
                     dw1000_reset_soft();
                 } else {
-                    debug_msg("Resetting hard\n");
+                    debug_msg("DEBUG: Resetting hard\n");
                     dw1000_reset_hard();
                 }
 
@@ -508,7 +512,7 @@ static void glossy_lwb_round_task() {
 			// Enable Tx callback to reset the LWB counter
             _sending_sync = TRUE;
 
-			//debug_msg("Sending the scheduling...\n");
+			//debug_msg("INFO: Sending the scheduling...\n");
 
 			// Trigger send operation
 			lwb_send_sync(_last_time_sent);
@@ -530,10 +534,12 @@ static void glossy_lwb_round_task() {
 
 
 #if (BOARD_V == SQUAREPOINT)
-			// Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
+#ifndef STM_DISABLE_LEDS
+            // Signal that distributing schedule by turning on WHITE (will blink and be turned off after 10ms)
 			GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
 			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
 #endif
 		// LWB Slot > N: Invalid counter value
 		} else if (_lwb_counter > ( (GLOSSY_UPDATE_INTERVAL_US/LWB_SLOT_US) - 1) ) {
@@ -555,16 +561,18 @@ static void glossy_lwb_round_task() {
 				glossy_listen_for_next_sync();
 			}
 
-			debug_msg("Not in sync with Glossy master (yet); current counter: ");
+			debug_msg("WARNING: Not in sync with Glossy master (yet); current counter: ");
 			debug_msg_uint(_lwb_counter);
 			debug_msg("\n");
 
 #if (BOARD_V == SQUAREPOINT)
-			// Signal normal operation by turning on BLUE
+#ifndef STM_DISABLE_LEDS
+            // Signal normal operation by turning on BLUE
 			if (GPIO_ReadOutputDataBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN)) {
 				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
 			}
+#endif
 #endif
 
 #ifdef PROTOCOL_ENABLE_TIMEOUT
@@ -614,12 +622,12 @@ static void glossy_lwb_round_task() {
 					save_schedule_information(eui_copy_buffer);
 
 					// Restart
-					debug_msg("Restarting Glossy...\n");
+					debug_msg("INFO: Restarting Glossy...\n");
 					glossy_init(GLOSSY_MASTER, master_candidate_eui);
 
 					// Fill in copied information
 					restore_schedule_information(eui_copy_buffer);
-					debug_msg("Node is ready to take over the network...\n");
+					//debug_msg("DEBUG: Node is ready to take over the network...\n");
 
 					// Let's try and get this new network running
 					standard_start();
@@ -665,7 +673,7 @@ static void glossy_lwb_round_task() {
 
 					// Verify that there is no other signal we might overwrite when sending our schedule request
 					if (_lwb_sched_en && (_signal_pkt.info_type == SIGNAL_UNDEFINED) ) {
-						debug_msg("Sending schedule request...\n");
+						debug_msg("INFO: Sending schedule request...\n");
 
 						prepare_schedule_signal();
 
@@ -674,7 +682,7 @@ static void glossy_lwb_round_task() {
 						GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
 
 					} else {
-                        debug_msg("Sending signalling packet...\r\n");
+                        debug_msg("INFO: Sending signalling packet...\r\n");
                     }
 
                     // Enable flooding already at the source
@@ -800,7 +808,7 @@ static void glossy_lwb_round_task() {
     // After the official round is over, we can turn off listening for signals
     } else if(_lwb_counter == (lwb_slot_last + (uint32_t)1)) {
         // Turn off all reception
-        /*debug_msg(" - End of round; total length ");
+        /*debug_msg("INFO: - End of round; total length ");
         debug_msg_uint(_lwb_num_timeslots_total);
         debug_msg("\n");*/
 
@@ -848,10 +856,12 @@ bool glossy_process_txcallback(){
 		memset(_lwb_prev_signalling_eui, 0, EUI_LEN);
 
 #if (BOARD_V == SQUAREPOINT)
-		// Signal normal round by turning on GREEN
+#ifndef STM_DISABLE_LEDS
+        // Signal normal round by turning on GREEN
 		GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
 		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 		GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
 #endif
 
 		is_glossy_callback = TRUE;
@@ -862,7 +872,7 @@ bool glossy_process_txcallback(){
 
         if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-            /*debug_msg("Sending flooding message with depth ");
+            /*debug_msg("DEBUG: Sending flooding message with depth ");
             debug_msg_uint(_cur_glossy_depth);
             debug_msg("\n");*/
 
@@ -936,7 +946,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 	//dw_timestamp = dw1000_correct_timestamp(dw_timestamp);
 
 	// Debugging information
-    /*debug_msg("Rx -> depth: ");
+    /*debug_msg("DEBUG: Rx -> depth: ");
     debug_msg_uint(in_glossy_sync->header.seqNum);
     debug_msg("; sender: ");
     debug_msg_uint(in_glossy_sync->header.sourceAddr[0]);
@@ -956,7 +966,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 				_lwb_prev_signalling_type = in_glossy_signal->message_type;
 				memcpy(_lwb_prev_signalling_eui, in_glossy_signal->header.sourceAddr, EUI_LEN);
 
-				debug_msg("Received signalling packet: ");
+				debug_msg("INFO: Received signalling packet: ");
 
 #ifdef GLOSSY_ANCHOR_SYNC_TEST
                 uint64_t actual_turnaround = (dw_timestamp - ((uint64_t)(_last_delay_time) << 8)) & 0xFFFFFFFFFFUL;//in_glossy_sched_req->turnaround_time;
@@ -1039,7 +1049,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 		if(in_glossy_signal->message_type == MSG_TYPE_PP_GLOSSY_SIGNAL) {
 
-		    debug_msg("Received signalling packet from another node\n");
+		    debug_msg("WARNING: Received signalling packet from another node\n");
 
 #ifndef GLOSSY_ANCHOR_SYNC_TEST
 			// Increment depth counter
@@ -1047,7 +1057,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
 			if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-                /*debug_msg("Sending flooding message with depth ");
+                /*debug_msg("DEBUG: Sending flooding message with depth ");
                 debug_msg_uint(_cur_glossy_depth);
                 debug_msg("\n");*/
 
@@ -1076,7 +1086,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 		}
 		else if (in_glossy_sync->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
 
-		    //debug_msg("Received schedule from Glossy master\n");
+		    //debug_msg("INFO: Received schedule from Glossy master\n");
 
 		    if (memcmp(_lwb_master_eui, in_glossy_sync->header.sourceAddr, PROTOCOL_EUI_LEN) != 0) {
 
@@ -1088,7 +1098,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					memcpy(_lwb_master_eui, in_glossy_sync->header.sourceAddr, EUI_LEN);
 					host_interface_notify_master_change(_lwb_master_eui, EUI_LEN);
 
-					debug_msg("Found new Glossy master: ");
+					debug_msg("INFO: Found new Glossy master: ");
 					helper_print_EUI(_lwb_master_eui, EUI_LEN);
 					debug_msg("\n");
 #ifndef PROTOCOL_FLEXIBLE_MASTER
@@ -1104,11 +1114,13 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 		    }
 
 #if (BOARD_V == SQUAREPOINT)
-			// Signal that in sync with Glossy by turning on GREEN
+#ifndef STM_DISABLE_LEDS
+            // Signal that in sync with Glossy by turning on GREEN
 			if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
 				GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
 			}
+#endif
 #endif
 
 #ifdef PROTOCOL_ENABLE_GLOBAL_TIMESTAMPS
@@ -1126,7 +1138,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 				_lwb_scheduled_init = TRUE;
 				_lwb_timeslot_init = (uint8_t)init_slot;
 			} else {
-                debug_msg("Device is not scheduled as INIT\n");
+                debug_msg("INFO: Device is not scheduled as INIT\n");
 				_lwb_scheduled_init = FALSE;
 			}
 
@@ -1134,7 +1146,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 				_lwb_scheduled_resp = TRUE;
 				_lwb_timeslot_resp  = (uint8_t)resp_slot;
 			} else {
-                debug_msg("Device is not scheduled as RESP\n");
+                debug_msg("INFO: Device is not scheduled as RESP\n");
 				_lwb_scheduled_resp = FALSE;
 			}
 
@@ -1149,7 +1161,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			memcpy(_resp_sched_euis, (uint8_t*)in_glossy_sync->eui_array + in_glossy_sync->init_schedule_length * PROTOCOL_EUI_LEN, _lwb_num_resp * PROTOCOL_EUI_LEN);
 #endif
 
-			debug_msg("Scheduled nodes this round: I ");
+			debug_msg("INFO: Scheduled nodes this round: I ");
 			debug_msg_uint(_lwb_num_init);
 			debug_msg(", R ");
 			debug_msg_uint(_lwb_num_resp);
@@ -1202,7 +1214,7 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 
                     if (_cur_glossy_depth < GLOSSY_MAX_DEPTH) {
 
-                        /*debug_msg("Sending flooding message with depth ");
+                        /*debug_msg("DEBUG: Sending flooding message with depth ");
                         debug_msg_uint(_cur_glossy_depth);
                         debug_msg("\n");*/
 
@@ -1275,7 +1287,7 @@ static uint8_t schedule_device(uint8_t * array, uint8_t array_length, uint8_t * 
 
 		// Check if already inside
 		if (memcmp( (array + i * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN) == 0) {
-			debug_msg("INFO: Node has already been scheduled\n");
+			debug_msg("WARNING: Node has already been scheduled\n");
 			return 0xFF;
 		}
 
@@ -1292,7 +1304,7 @@ static uint8_t schedule_device(uint8_t * array, uint8_t array_length, uint8_t * 
 		// Found empty space, and node is not already scheduled
 		memcpy( (array + candidate_slot * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN);
 
-		/*debug_msg("Scheduled EUI ");
+		/*debug_msg("INFO: Scheduled EUI ");
         helper_print_EUI(eui, PROTOCOL_EUI_LEN);
         debug_msg("in slot ");
         debug_msg_uint(candidate_slot);*/
@@ -1349,7 +1361,7 @@ static uint8_t deschedule_device(uint8_t * array, uint8_t array_length, uint8_t 
 		if (memcmp( (array + i * PROTOCOL_EUI_LEN), eui, PROTOCOL_EUI_LEN) == 0) {
 			memset( (array + i * PROTOCOL_EUI_LEN),   0, PROTOCOL_EUI_LEN);
 
-			/*debug_msg("Descheduled EUI ");
+			/*debug_msg("INFO: Descheduled EUI ");
 			helper_print_EUI(eui, PROTOCOL_EUI_LEN);
 			debug_msg("from slot ");
 			debug_msg_uint(i);*/
@@ -1404,14 +1416,14 @@ static int check_if_scheduled(uint8_t * array, uint8_t array_length) {
 	for (uint8_t i = 0; i < (array_length / PROTOCOL_EUI_LEN); i++) {
 
 		if (memcmp( (array + i * PROTOCOL_EUI_LEN), standard_get_EUI(), PROTOCOL_EUI_LEN) == 0) {
-			debug_msg("Device is scheduled in slot ");
+			/*debug_msg("INFO: Device is scheduled in slot ");
 			debug_msg_uint(i);
-			debug_msg("\n");
+			debug_msg("\n");*/
 			return i;
 		}
 	}
 
-	//debug_msg("Device is not scheduled\n");
+	debug_msg("WARNING: Device is not scheduled\n");
 	return -1;
 }
 
@@ -1606,7 +1618,7 @@ static uint8_t get_sync_packet_length(struct pp_sched_flood * packet) {
 	uint8_t packet_size  = sizeof(struct ieee154_header_broadcast) + MSG_PP_SCHED_FLOOD_PAYLOAD_DEFAULT_LENGTH + sizeof(struct ieee154_footer);
 			packet_size += (packet->init_schedule_length + packet->resp_schedule_length) * PROTOCOL_EUI_LEN;
 
-	/*debug_msg("Schedule packet size: ");
+	/*debug_msg("INFO: Schedule packet size: ");
 	debug_msg_uint(packet_size);
 	debug_msg("\n");*/
 
@@ -1757,7 +1769,7 @@ static uint8_t get_master_candidate() {
 	}
 
 	if (candidate_eui > 0) {
-		debug_msg("Found candidate EUI ");
+		debug_msg("INFO: Found candidate EUI ");
 		debug_msg_uint(candidate_eui);
 		debug_msg("\n");
 	} else {
@@ -1916,7 +1928,7 @@ static uint8_t ceil_fraction(uint32_t nominator, uint32_t denominator) {
 	}
 }
 
-static uint8_t debug_print_time(uint8_t point_idx, uint32_t time) {
+static void debug_print_time(uint8_t point_idx, uint32_t time) {
     debug_msg("DEBUG: POINT ");
     debug_msg_uint(point_idx);
     debug_msg(" - Desired time ");

@@ -276,10 +276,13 @@ void spi_init(void) {
     // Setup Chip selects (CS)
     nrf_gpio_cfg_output(CARRIER_CS_SD);
     nrf_gpio_cfg_output(CARRIER_CS_ACC);
-    nrf_gpio_cfg_output(CARRIER_CS_RTC);
     nrf_gpio_pin_set(CARRIER_CS_SD);
     nrf_gpio_pin_set(CARRIER_CS_ACC);
+
+#if (BOARD_V >= 0xF)
+    nrf_gpio_cfg_output(CARRIER_CS_RTC);
     nrf_gpio_pin_set(CARRIER_CS_RTC);
+#endif
 
     // Configure SPI lines
     nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
@@ -1082,8 +1085,10 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             break;
         }
         case BLE_GAP_EVT_CONNECTED: {
+#ifndef NRF_DISABLE_LEDS
             led_on(CARRIER_LED_GREEN);
             led_off(CARRIER_LED_BLUE);
+#endif
             NRF_LOG_INFO("Connected.");
 
             carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
@@ -1122,9 +1127,11 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             break;
         }
         case BLE_GAP_EVT_DISCONNECTED: {
+#ifndef NRF_DISABLE_LEDS
             // LED indication will be changed when advertising starts.
             led_on(CARRIER_LED_BLUE);
             led_off(CARRIER_LED_GREEN);
+#endif
             NRF_LOG_INFO("Disconnected.");
             carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 
@@ -2152,9 +2159,15 @@ void carrier_hw_init(void)
     led_init(CARRIER_LED_GREEN);
 
     // Signal initialization
+#ifndef NRF_DISABLE_LEDS
     led_on(CARRIER_LED_RED);
     led_off(CARRIER_LED_BLUE);
     led_off(CARRIER_LED_GREEN);
+#else
+    led_off(CARRIER_LED_RED);
+    led_off(CARRIER_LED_BLUE);
+    led_off(CARRIER_LED_GREEN);
+#endif
 
     // Initialize RTT library
     err_code = NRF_LOG_INIT(NULL);
@@ -2379,9 +2392,11 @@ int main (void)
     // Start timers
     timers_start();
 
+#ifndef NRF_DISABLE_LEDS
     // Signal end of initialization
     led_off(CARRIER_LED_RED);
     led_on(CARRIER_LED_BLUE);
+#endif
 
     // -----------------------------------------------------------------------------------------------------------------
 

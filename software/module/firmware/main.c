@@ -63,6 +63,8 @@ static void error () {
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
 #if (BOARD_V == SQUAREPOINT)
+	// We explicitly also allow this to happen when LEDs are disabled to signal an error
+
     // Turn all LEDs off
     GPIO_SetBits(STM_LED_RED_PORT, STM_LED_RED_PIN | STM_LED_BLUE_PIN | STM_LED_GREEN_PIN);
 
@@ -326,10 +328,17 @@ int main () {
 	GPIO_Init(STM_GPIO3_PORT, &GPIO_InitStructure_B);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
     // Signal init by turning on WHITE
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_RESET);
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_RESET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#else
+    // Turn all of them (permanently) off
+    GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
+    GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
+    GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 #endif
 
 	//Initialize UART1 on GPIO0 and GPIO1
@@ -376,9 +385,11 @@ int main () {
 #endif
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Signal that internal setup is finished by setting RED
 	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 #endif
 
 	// Next up do some preliminary setup of the DW1000. This mostly configures
@@ -389,7 +400,7 @@ int main () {
 
 //#define BYPASS_HOST_INTERFACE
 #ifndef BYPASS_HOST_INTERFACE
-	debug_msg("Connecting to host interface...\r\n");
+	debug_msg("INFO: Connecting to host interface...\r\n");
 
 	// Initialize the I2C listener. This is the main interface
 	// the host controller (that is using module for ranging/localization)
@@ -401,12 +412,14 @@ int main () {
 	err = host_interface_wait();
 	if (err) error();
 
+	//debug_msg("Waiting for host...\r\n");
+
 #else
-	debug_msg("BYPASS_HOST_INTERFACE active\r\n");
+	debug_msg("INFO: BYPASS_HOST_INTERFACE active\r\n");
 
 //#define CALIBRATION
 #ifdef CALIBRATION
-	debug_msg("CALIBRATION active\r\n");
+	debug_msg("INFO: CALIBRATION active\r\n");
 	calibration_config_t config = { 1 };
 	module_configure_app(APP_CALIBRATION, &config);
 #else
@@ -445,13 +458,13 @@ int main () {
 
 //#define RANGE_TEST
 #ifdef RANGE_TEST
-	debug_msg("Configured as APP_RANGETEST\r\n");
+	debug_msg("INFO: Configured as APP_RANGETEST\r\n");
 	module_configure_app(APP_RANGETEST, &config);
 
 	// If using APP_SIMPLETEST, also comment out "dw1000_configure_settings" in dw1000_init()
     //module_configure_app(APP_SIMPLETEST, &config);
 #else
-	debug_msg("Configured as APP_STANDARD\r\n");
+	debug_msg("INFO: Configured as APP_STANDARD\r\n");
 	module_configure_app(APP_STANDARD, &config);
 #endif // RANGE_TEST
 
@@ -461,13 +474,14 @@ int main () {
 #endif
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Signal normal operation by turning on BLUE
 	GPIO_WriteBit(STM_LED_RED_PORT,  STM_LED_RED_PIN,  Bit_SET);
 	GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, Bit_RESET);
 #endif
+#endif
 
 	// MAIN LOOP
-	debug_msg("Begin MAIN LOOP\r\n");
 	while (1) {
 
 #ifndef	DEBUG_OUTPUT_UART

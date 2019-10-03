@@ -828,6 +828,11 @@ static void calculate_ranges () {
 				insert_sorted(distances_millimeters, distance_millimeters, num_valid_distances);
 				num_valid_distances++;
 			}
+			else {
+			    debug_msg("INFO: Disregard range: ");
+			    debug_msg_int(distance_millimeters);
+			    debug_msg("\n");
+			}
 #else
 			// Always add new range in an unsorted way
 			distances_millimeters[broadcast_index] = distance_millimeters;

@@ -51,12 +51,12 @@ void rangetest_configure (module_config_t* config) {
 	// Now init based on role
 	if (_config.my_role == APP_ROLE_INIT_NORESP) {
 		rangetest_tag_init(&_app_scratchspace.ti_scratch);
-		debug_msg("Initialized as TAG\n");
+		debug_msg("INFO: Initialized as TAG\n");
 	} else if (_config.my_role == APP_ROLE_NOINIT_RESP) {
 		rangetest_anchor_init(&_app_scratchspace.tr_scratch);
-		debug_msg("Initialized as ANCHOR\n");
+		debug_msg("INFO: Initialized as ANCHOR\n");
 	} else {
-		debug_msg("!!! ERROR !!! Invalid configuration, not initialized.\n");
+		debug_msg("ERROR: Invalid configuration, not initialized!\n");
 	}
 }
 
@@ -65,10 +65,12 @@ void rangetest_start () {
 	dw1000_err_e err;
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Turn off all LEDs
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
 	GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 	GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
+#endif
 #endif
 
 	if (_config.my_role == APP_ROLE_NOINIT_RESP) {

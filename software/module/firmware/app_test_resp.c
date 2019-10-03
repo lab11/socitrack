@@ -88,6 +88,7 @@ static void ranging_broadcast_received_task () {
 	rangetest_set_ranging_broadcast_settings(APP_ROLE_NOINIT_RESP, test_oa_scratch->ranging_broadcast_ss_num);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Toggle GREEN, turn off BLUE
     GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 	if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
@@ -95,6 +96,7 @@ static void ranging_broadcast_received_task () {
 	} else {
 		GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 	}
+#endif
 #endif
 
 	// And re-enable RX. The set_broadcast_settings function disables tx and rx.
@@ -220,9 +222,11 @@ dw1000_err_e simpletest_anchor_start(void) {
 	dwt_configure(&simpletest_config);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Turn on GREEN
 	GPIO_WriteBit(STM_LED_RED_PORT,   STM_LED_RED_PIN,   Bit_SET);
     GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_RESET);
+#endif
 #endif
 
 	/* Loop forever receiving frames. */
@@ -261,6 +265,7 @@ dw1000_err_e simpletest_anchor_start(void) {
 			dw1000_calculatediagnostics();
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 			// Toggle GREEN, turn off BLUE
 			GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 			if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
@@ -268,6 +273,7 @@ dw1000_err_e simpletest_anchor_start(void) {
 			} else {
 				GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 			}
+#endif
 #endif
 
 			/* Clear good RX frame event in the DW1000 status register. */

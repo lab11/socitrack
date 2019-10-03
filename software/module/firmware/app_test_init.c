@@ -238,6 +238,7 @@ static void send_poll () {
 	} else {
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 		// Toggle GREEN, turn off BLUE
 		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 		if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
@@ -245,6 +246,7 @@ static void send_poll () {
 		} else {
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 		}
+#endif
 #endif
 	}
 
@@ -288,8 +290,10 @@ dw1000_err_e simpletest_tag_start(void) {
 	dwt_configure(&simpletest_config);
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 	// Turn off RED
 	GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, Bit_SET);
+#endif
 #endif
 
 	/* Loop forever sending frames periodically. */
@@ -315,6 +319,7 @@ dw1000_err_e simpletest_tag_start(void) {
 		debug_msg("\n");
 
 #if (BOARD_V == SQUAREPOINT)
+#ifndef STM_DISABLE_LEDS
 		// Toggle GREEN, turn off BLUE
 		GPIO_WriteBit(STM_LED_BLUE_PORT,  STM_LED_BLUE_PIN,  Bit_SET);
 		if (GPIO_ReadOutputDataBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN)) {
@@ -322,6 +327,7 @@ dw1000_err_e simpletest_tag_start(void) {
 		} else {
 			GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, Bit_SET);
 		}
+#endif
 #endif
 
 		/* Execute a delay between transmissions. */

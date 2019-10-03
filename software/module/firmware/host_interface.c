@@ -352,7 +352,7 @@ void host_interface_rx_fired () {
 		case HOST_CMD_SET_TIME:
 
 			debug_msg("Op code 9: Set Time\r\n");
-			// Just go back to waiting for a WRITE after a configuration message
+			// Just go back to waiting for a WRITE after a time message
 			host_interface_wait();
 
 			// Set the internal time
