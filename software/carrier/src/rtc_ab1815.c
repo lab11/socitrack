@@ -43,6 +43,7 @@ void ab1815_init_time(void) {
 
       char _date[] = __DATE__; // the format is "Jan  1 2000"
       char _time[] = __TIME__; // the format is "00:00:00"
+      //printf("DEBUG: Compile time %s, %s\n", _time, _date);
 
       ab1815_time_t comp_time;
       comp_time.hundredths = 0;
@@ -53,6 +54,7 @@ void ab1815_init_time(void) {
       comp_time.date       = ascii_to_i(_date[4]) * 10 + ascii_to_i(_date[5]);
       comp_time.months     = month_to_i(&_date[0]);
       comp_time.years      = ascii_to_i(_date[9]) * 10 + ascii_to_i(_date[10]);
+      comp_time.weekday    = 0; // default
 
       ab1815_set_time(comp_time);
   }
