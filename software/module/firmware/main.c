@@ -58,7 +58,7 @@ void mark_interrupt (interrupt_source_e src) {
 }
 
 static void error () {
-    debug_msg("ERROR\r\n");
+    debug_msg("/// --- ERROR --- //\r\n");
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_SET);
 	GPIO_WriteBit(STM_GPIO3_PORT, STM_GPIO3_PIN, Bit_RESET);
 
@@ -271,7 +271,7 @@ void start_dw1000 () {
 
 			// Try to wake up, assuming that DW1000 is sleeping
             if (err && (tries > DW1000_NUM_CONTACT_TRIES_BEFORE_RESET/2)) {
-				debug_msg("Rise and shine, sunny boy...\r\n");
+				debug_msg("DEBUG: Rise and shine, sunny boy...\r\n");
 				dw1000_force_wakeup();
             }
 
@@ -376,7 +376,7 @@ int main () {
     // 1. J-Link RTT - Init is used in combination with SEGGER_RTT_IN_RAM to find the correct RAM segment
     SEGGER_RTT_Init();
     debug_msg("\r\n----------------------------------------------\r\n");
-    debug_msg("Initialized RTT...\r\n");
+    debug_msg("INFO: Initialized RTT...\r\n");
 #endif
 
 #ifdef DEBUG_OUTPUT_UART
@@ -395,7 +395,7 @@ int main () {
 	// Next up do some preliminary setup of the DW1000. This mostly configures
 	// pins and hardware peripherals, as well as straightening out some
 	// of the settings on the DW1000.
-    //debug_msg("Configuring DW1000...\r\n");
+    //debug_msg("DEBUG: Configuring DW1000...\r\n");
 	start_dw1000();
 
 //#define BYPASS_HOST_INTERFACE
@@ -427,7 +427,7 @@ int main () {
 	// DEBUG:
 	module_config_t config;
 
-	debug_msg("Configured role as: ");
+	debug_msg("INFO: Configured role as: ");
 
 	// Choose role
 	if (0) {
@@ -494,7 +494,7 @@ int main () {
 
         GPIO_WriteBit(STM_GPIO2_PORT, STM_GPIO2_PIN, Bit_SET);
 		GPIO_WriteBit(STM_GPIO2_PORT, STM_GPIO2_PIN, Bit_RESET);
-		//debug_msg("Interrupt triggered\n");
+		//debug_msg("DEBUG: Interrupt triggered\n");
 
 		// When an interrupt fires we end up here.
 		// Check all of the interrupt "queues" and call the appropriate
@@ -506,7 +506,7 @@ int main () {
 
 			if (interrupts_triggered[INTERRUPT_TIMER_17] == TRUE) {
 			    // Glossy Timer
-			    //debug_msg("Interrupt: TIMER_17 (Glossy)\r\n");
+			    //debug_msg("INFO: Interrupt - TIMER_17 (Glossy)\r\n");
 				interrupts_triggered[INTERRUPT_TIMER_17] = FALSE;
 				interrupt_triggered = TRUE;
 				timer_17_fired();
@@ -514,35 +514,35 @@ int main () {
 
 			if (interrupts_triggered[INTERRUPT_TIMER_16] == TRUE) {
 			    // Tag/Anchor timer for SurePoint ranging
-			    //debug_msg("Interrupt: TIMER_16 (Tag/Anchor)\r\n");
+			    //debug_msg("INFO: Interrupt - TIMER_16 (Tag/Anchor)\r\n");
 				interrupts_triggered[INTERRUPT_TIMER_16] = FALSE;
 				interrupt_triggered = TRUE;
 				timer_16_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_DW1000] == TRUE) {
-			    //debug_msg("Interrupt: DW1000\r\n");
+			    //debug_msg("INFO: Interrupt - DW1000\r\n");
 				interrupts_triggered[INTERRUPT_DW1000] = FALSE;
 				interrupt_triggered = TRUE;
 				dw1000_interrupt_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_RX] == TRUE) {
-			    //debug_msg("Interrupt: I2C_RX\r\n");
+			    //debug_msg("INFO: Interrupt - I2C_RX\r\n");
 				interrupts_triggered[INTERRUPT_I2C_RX] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_rx_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_TX] == TRUE) {
-			    //debug_msg("Interrupt: I2C_TX\r\n");
+			    //debug_msg("INFO: Interrupt - I2C_TX\r\n");
 				interrupts_triggered[INTERRUPT_I2C_TX] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_tx_fired();
 			}
 
 			if (interrupts_triggered[INTERRUPT_I2C_TIMEOUT] == TRUE) {
-			    debug_msg("Interrupt: I2C_TIMEOUT\r\n");
+			    debug_msg("INFO: Interrupt - I2C_TIMEOUT\r\n");
 				interrupts_triggered[INTERRUPT_I2C_TIMEOUT] = FALSE;
 				interrupt_triggered = TRUE;
 				host_interface_timeout_fired();

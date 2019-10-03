@@ -100,7 +100,7 @@ dw1000_err_e standard_init_start_ranging_event () {
         }
 	}
 
-    //debug_msg("Start ranging event...\r\n");
+    //debug_msg("INFO: Start ranging event...\r\n");
     standard_set_resp_active(FALSE);
     standard_set_init_active(TRUE);
 
@@ -134,7 +134,7 @@ dw1000_err_e standard_init_start_ranging_event () {
 	// Start a timer that will kick off the broadcast ranging events
 	timer_start(si_scratch->init_timer, RANGING_BROADCASTS_PERIOD_US, ranging_broadcast_subsequence_task);
 
-	//debug_msg("Started ranging...\n");
+	//debug_msg("DEBUG: Started ranging...\n");
 
 	return DW1000_NO_ERR;
 }
@@ -157,7 +157,7 @@ void standard_init_stop () {
 	// FIXME: Use the DW1000 library to put the chip to sleep
 	//dw1000_sleep();
 
-	//debug_msg("Put DW1000 into sleep...\r\n");
+	//debug_msg("INFO: Put DW1000 into sleep...\r\n");
 }
 
 // Called after the TAG has transmitted a packet.
@@ -165,7 +165,7 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 
 	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
-		//debug_msg("TAG transmitted a packet\n");
+		//debug_msg("DEBUG: TAG transmitted a packet\n");
 
 		// Check which state we are in to decide what to do.
 		// We use TX_callback because it will get called after we have sent
@@ -178,7 +178,7 @@ void init_txcallback (const dwt_cb_data_t *txd) {
 			// Init some state
 			si_scratch->anchor_response_count = 0;
 
-			//debug_msg("Finished ranging. Waiting for responses from anchors...\n");
+			//debug_msg("DEBUG: Finished ranging. Waiting for responses from anchors...\n");
 
 		} else {
 			// We don't need to do anything on TX done for any other states
@@ -244,7 +244,7 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 			// Only save this response if we haven't already seen this anchor
 			if (!anc_already_found && (resp_idx >= 0)) {
 
-                /*debug_msg("Received an Anchor response packet from ");
+                /*debug_msg("DEBUG: Received an Anchor response packet from ");
                 helper_print_EUI(anc_final->header.sourceAddr, 1);
                 debug_msg(": First index: ");
                 debug_msg_int(anc_final->init_responses[resp_idx].first_rxd_idx);
@@ -287,7 +287,7 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 			    if (resp_idx < 0) {
                     debug_msg("WARNING: Anchor does not contain any responses for us!\n");
 
-                    /*debug_msg("Found ranges for ");
+                    /*debug_msg("WARNING: Found ranges for ");
                     for (uint8_t i = 0; i < anc_final->init_response_length; i++) {
                         debug_msg_uint(anc_final->init_responses[i].init_eui[0]);
                         debug_msg(" ");
@@ -330,7 +330,7 @@ void init_rxcallback (const dwt_cb_data_t* rxd, uint8_t * buf, uint64_t dw_rx_ti
 static void send_poll () {
 	int err;
 
-	/*debug_msg("Sending poll ");
+	/*debug_msg("DEBUG: Sending poll ");
 	debug_msg_int(si_scratch->ranging_broadcast_ss_num);
 	debug_msg("\n");*/
 
@@ -408,7 +408,7 @@ static void ranging_broadcast_subsequence_task () {
 // Start listening for responses
 void standard_init_start_response_listening() {
 
-    //debug_msg("Listening for responses\n");
+    //debug_msg("DEBUG: Listening for responses\n");
 
 	standard_set_resp_active(FALSE);
 	standard_set_init_active(TRUE);
@@ -496,7 +496,7 @@ void standard_set_ranges (int32_t* ranges_millimeters, anchor_responses_t* ancho
 			buffer_index += sizeof(int32_t);
 			num_anchor_ranges++;
 
-			/*debug_msg("Range to anchor ");
+			/*debug_msg("INFO: Range to anchor ");
 			debug_msg_hex(anchor_responses[i].anchor_addr[0] >> 4);
 			debug_msg_hex(anchor_responses[i].anchor_addr[0] & 0x0F);
 			debug_msg(": ");
@@ -582,7 +582,7 @@ void standard_init_report_ranges () {
 	// New state
 	si_scratch->state = ISTATE_CALCULATE_RANGE;
 
-	/*debug_msg("Calculating & reporting ranges to ");
+	/*debug_msg("DEBUG: Calculating & reporting ranges to ");
 	debug_msg_int(si_scratch->anchor_response_count);
 	debug_msg(" anchors\r\n");*/
 
@@ -679,7 +679,7 @@ static void calculate_ranges () {
 	for (uint8_t anchor_index=0; anchor_index<si_scratch->anchor_response_count; anchor_index++) {
 		anchor_responses_t* aresp = &(si_scratch->anchor_responses[anchor_index]);
 
-		debug_msg("Anchor ID: ");
+		debug_msg("INFO: Anchor ID: ");
 		helper_print_EUI(aresp->anchor_addr, PROTOCOL_EUI_LEN);
 		debug_msg("; First index: ");
 		debug_msg_int(aresp->tag_poll_first_idx);
@@ -749,7 +749,7 @@ static void calculate_ranges () {
 		}
 
 		// If we didn't get any matching pairs in the first and last rounds then we have to skip this anchor.
-		/*debug_msg("Number of matching pairs: ");
+		/*debug_msg("DEBUG: Number of matching pairs: ");
 		debug_msg_uint(valid_offset_calculations);
 		debug_msg("\n");*/
 
@@ -817,7 +817,7 @@ static void calculate_ranges () {
 
 			int distance_millimeters = dwtime_to_millimeters(TOF);
 
-			/*debug_msg("Calculated range: ");
+			/*debug_msg("DEBUG: Calculated range: ");
 			debug_msg_int(distance_millimeters);
 			debug_msg("\n");*/
 

@@ -63,28 +63,28 @@ void standard_configure (module_config_t* config) {
 			_config.init_enabled = TRUE;
 			_config.resp_enabled = FALSE;
 
-			debug_msg("Initialized as TAG\n");
+			debug_msg("INFO: Initialized as TAG\n");
 			break;
 		}
 		case APP_ROLE_INIT_RESP: {
 			_config.init_enabled = TRUE;
 			_config.resp_enabled = TRUE;
 
-			debug_msg("Initialized as HYBRID\n");
+			debug_msg("INFO: Initialized as HYBRID\n");
 			break;
 		}
 		case APP_ROLE_NOINIT_RESP: {
 			_config.init_enabled = FALSE;
 			_config.resp_enabled = TRUE;
 
-			debug_msg("Initialized as ANCHOR\n");
+			debug_msg("INFO: Initialized as ANCHOR\n");
 			break;
 		}
 		case APP_ROLE_NOINIT_NORESP: {
 			_config.init_enabled = FALSE;
 			_config.resp_enabled = FALSE;
 
-			debug_msg("Initialized as SUPPORT\n");
+			debug_msg("INFO: Initialized as SUPPORT\n");
 			break;
 		}
 		default: {
@@ -382,7 +382,7 @@ uint64_t standard_get_rxdelay_from_ranging_response_channel (uint8_t channel_ind
 /******************************************************************************/
 
 void debug_print_tx(uint32_t length) {
-    /*debug_msg("Tx -> length ");
+    /*debug_msg("DEBUG: Tx -> length ");
     debug_msg_uint(length);
     debug_msg("\n");*/
 }
@@ -395,7 +395,7 @@ void clear_frame_event() {
 
 static void common_txcallback(const dwt_cb_data_t *txd) {
 
-	//debug_msg("Tx -> done\n"); // datalength is NOT valid for Tx callbacks
+	//debug_msg("DEBUG: Tx -> done\n"); // datalength is NOT valid for Tx callbacks
 
 	// Handle GLOSSY
 	if (glossy_process_txcallback()) {
@@ -461,7 +461,7 @@ static void common_rxcallback(const dwt_cb_data_t *rxd) {
     uint8_t message_type_poll   = buf[offsetof(struct pp_tag_poll,     message_type)];
     uint8_t message_type_final  = buf[offsetof(struct pp_anc_final,    message_type)];
 
-	/*debug_msg("Rx -> length: ");
+	/*debug_msg("DEBUG: Rx -> length: ");
 	debug_msg_uint(rxd->datalength);
 	debug_msg("; type: ");
 	debug_msg_uint(message_type_sync);

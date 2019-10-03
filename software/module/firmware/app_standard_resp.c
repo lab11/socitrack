@@ -178,7 +178,7 @@ void standard_resp_trigger_response (uint8_t slot_nr) {
     sr_scratch->resp_window_timeslot = slot_nr;
     sr_scratch->resp_window_nr       = 0;
 
-    /*debug_msg("Triggered response window, responding in slot ");
+    /*debug_msg("DEBUG: Triggered response window, responding in slot ");
     debug_msg_uint(slot_nr);
     debug_msg("\n");*/
 
@@ -194,9 +194,9 @@ void standard_resp_trigger_response (uint8_t slot_nr) {
 
 static void standard_resp_responding_task () {
 
-    debug_msg("Triggered response task with window nr ");
+    /*debug_msg("DEBUG: Triggered response task with window nr ");
     debug_msg_uint(sr_scratch->resp_window_nr);
-    debug_msg("\n");
+    debug_msg("\n");*/
 
     if (sr_scratch->resp_window_nr == sr_scratch->resp_window_timeslot) {
         // Our slot
@@ -217,12 +217,12 @@ static void standard_resp_send_response () {
 	standard_set_init_active(FALSE);
 	standard_set_resp_active(TRUE);
 
-	//debug_msg("Prepare to respond to INIT...\r\n");
+	//debug_msg("INFO: Prepare to respond to INIT...\r\n");
 
 	// Determine which antenna we are going to use for the response.
 	sr_scratch->pp_anc_final_pkt.final_antenna = get_final_antenna();
 
-	/*debug_msg("Sending response to initiator ");
+	/*debug_msg("DEBUG: Sending response to initiator ");
 	for (uint8_t i = 0; i < sr_scratch->pp_anc_final_pkt.init_response_length; i++) {
 		debug_msg_uint(sr_scratch->pp_anc_final_pkt.init_responses[i].init_eui[0]);
 		debug_msg(" ");
@@ -310,7 +310,7 @@ void resp_txcallback (const dwt_cb_data_t *txd) {
 
 	if (txd->status & SYS_STATUS_TXFRS) {
 		// Packet was sent successfully
-		//debug_msg("ANCHOR transmitted a packet\n");
+		//debug_msg("DEBUG: ANCHOR transmitted a packet\n");
 
 		// As we sent our single packet, we switch back to INIT mode to catch the rest of the packets
 		if (standard_is_init_enabled()) {
@@ -330,7 +330,7 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 	timer_disable_interrupt(sr_scratch->resp_timer);
 
-	//debug_msg("Received DW1000 packet\r\n");
+	//debug_msg("DEBUG: Received DW1000 packet\r\n");
 
 	if (rxd->status & SYS_STATUS_RXFCG) {
 
@@ -347,7 +347,7 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 			// This is one of the broadcast ranging packets from the tag
 			struct pp_tag_poll* rx_poll_pkt = (struct pp_tag_poll*) buf;
 
-			/*debug_msg("Received Poll message ");
+			/*debug_msg("DEBUG: Received Poll message ");
 			debug_msg_int(rx_poll_pkt->subsequence);
 			debug_msg(": ");
 			debug_msg_uint((uint32_t)(dw_rx_timestamp >> 32));
@@ -361,7 +361,7 @@ void resp_rxcallback (const dwt_cb_data_t *rxd, uint8_t * buf, uint64_t dw_rx_ti
 
 				if (rx_poll_pkt->subsequence < NUM_RANGING_CHANNELS) {
 
-					/*debug_msg("Discovered new tag with EUI ");
+					/*debug_msg("INFO: Discovered new tag with EUI ");
 					debug_msg_int(rx_poll_pkt->header.sourceAddr[0] >> 4);
 					debug_msg_int(rx_poll_pkt->header.sourceAddr[0] & 0x0F);
 					debug_msg("\r\n");*/
@@ -524,7 +524,7 @@ static uint8_t get_final_antenna() {
     // If this is not the case, the initiator will not be able to calculate the distances and must throw the packet away
     if ( (sr_scratch->pp_anc_final_pkt.init_responses[0].TOAs[index_first] > 0) ||
          (NUM_ANTENNAS == 1)                                                      ) {
-        debug_msg("Responding on best channel ");
+        debug_msg("DEBUG: Responding on best channel ");
         debug_msg_uint(index_first);
         debug_msg("\n");
 
@@ -546,7 +546,7 @@ static uint8_t get_final_antenna() {
 
     if ( (sr_scratch->pp_anc_final_pkt.init_responses[0].TOAs[index_second] > 0) ||
          (NUM_ANTENNAS == 2)													   ) {
-        debug_msg("Responding on second-best channel ");
+        debug_msg("DEBUG: Responding on second-best channel ");
         debug_msg_uint(index_second);
         debug_msg("\n");
 
@@ -557,7 +557,7 @@ static uint8_t get_final_antenna() {
 
     // Lets hope that we at least got a single one of those packets by sending on the last remaining option
     uint8_t index_third = (uint8_t)NUM_ANTENNAS - (index_first + index_second);
-    debug_msg("Responding on last channel ");
+    debug_msg("DEBUG: Responding on last channel ");
     debug_msg_uint(index_third);
     debug_msg("\n");
 
@@ -595,7 +595,7 @@ static uint16_t get_anc_final_packet_length(struct pp_anc_final * packet) {
 	uint16_t packet_length  = sizeof(struct ieee154_header_broadcast) + MSG_PP_ANC_FINAL_PAYLOAD_DEFAULT_LENGTH + sizeof(struct ieee154_footer);
 			 packet_length += packet->init_response_length * sizeof(struct pp_anc_final_init_response);
 
-	/*debug_msg("Anchor response packet size: ");
+	/*debug_msg("DEBUG: Anchor response packet size: ");
 	debug_msg_uint(packet_length);
 	debug_msg("\n");*/
 

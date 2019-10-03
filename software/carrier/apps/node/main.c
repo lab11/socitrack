@@ -230,7 +230,7 @@ uint32_t app_get_current_time() {
 
     uint32_t time = app.config.app_sync_time + (current_rtc_counter - app.config.app_sync_rtc_counter);
 
-    //printf("Epoch time: %li; RTC counter: %li; Current time: %li; Result: %li\n", app.config.app_sync_time, app.config.app_sync_rtc_counter, rtc_to_s(nrfx_rtc_counter_get(&rtc_instance)), time);
+    //printf("DEBUG: Epoch time: %li; RTC counter: %li; Current time: %li; Result: %li\n", app.config.app_sync_time, app.config.app_sync_rtc_counter, rtc_to_s(nrfx_rtc_counter_get(&rtc_instance)), time);
 
     if ( (!app.config.app_sync_rtc_overflown)                   &&
          (current_rtc_counter < app.config.app_sync_rtc_counter)  ) {
@@ -334,7 +334,7 @@ lis2dw12_config_t acc_config = {
 static void acc_fifo_read_handler(void) {
 
     for(int i = 0; i < 32; i++) {
-        //printf("x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
+        //printf("DEBUG: x: %d, y: %d, z: %d\n", x[i], y[i], z[i]);
     }
 
     // Reset FIFO
@@ -456,12 +456,12 @@ static void sd_card_init(void) {
 
 #ifdef APP_SD_REQUIRED
     if (!sd_card_inserted()) {
-        printf("ATTENTION: Waiting for SD card to be inserted...\n");
+        printf("WARNING: Waiting for SD card to be inserted...\n");
 
         // Wait for SC card
         while (!sd_card_inserted()) {};
 
-        printf("Detected SD card; trying to connect...\n");
+        printf("INFO: Detected SD card; trying to connect...\n");
     }
 #endif
 
@@ -500,7 +500,7 @@ static void flush_sd_buffer() {
         nr_writes++; // Add another write if the integer division does not result exactly in complete chunks (basically CEIL)
     }
 
-    //printf("Writing %i chunks of length %i to SD card\n", nr_writes, APP_LOG_CHUNK_SIZE);
+    //printf("DEBUG: Writing %i chunks of length %i to SD card\n", nr_writes, APP_LOG_CHUNK_SIZE);
 
     char write_buf[APP_LOG_CHUNK_SIZE + 1] = { 0 };
 
@@ -522,14 +522,13 @@ static void flush_sd_buffer() {
         if (ret_val) {
             printf("WARNING: Received return code %i when trying to write to SD card!\n", ret_val);
         }
-        //printf("%s", write_buf);
     }
 
     // Reset buffer
     memset( app.app_sdcard_buffer, 0, sizeof(app.app_sdcard_buffer));
     app.app_sdcard_buffer_length = 0;
 
-    //printf("Successfully flushed buffer to SD card\n");
+    //printf("INFO: Successfully flushed buffer to SD card\n");
 
     // Turn off power to SD card again
     nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
@@ -575,7 +574,7 @@ static void log_ranges(const uint8_t* data, uint16_t length) {
 
     // Get current time
     uint32_t current_time_stamp = app_get_current_time();
-    //printf("Current time: %010lu\n", current_time_stamp);
+    //printf("DEBUG: Current time: %010lu\n", current_time_stamp);
 
     for (uint8_t i = 0; i < num_ranges; i++) {
 
@@ -628,7 +627,7 @@ static void log_ranges_raw(const uint8_t* data, uint16_t length) {
 
     // Get current time
     uint32_t current_time_stamp = app_get_current_time();
-    //printf("Current time: %010lu\n", current_time_stamp);
+    //printf("DEBUG: Current time: %010lu\n", current_time_stamp);
 
     uint8_t num_responses;
     if ( (length - 1) % (1 + num_ranges) == 0) {
@@ -756,7 +755,7 @@ static void backup_app_state() {
     //printf           ("%s", state_buffer);
     simple_logger_log("%s", state_buffer);
 
-    printf("Backed up Application state to SD card\n");
+    printf("INFO: Backed up Application state to SD card\n");
 }
 
 // Read application state from non-volatile memory
@@ -843,7 +842,7 @@ static void restore_app_state() {
         app.app_raw_response_buffer[i] = 0;
     }
 
-    printf("Restored Application state from SD card\n");
+    printf("INFO: Restored Application state from SD card\n");
 }
 
 
@@ -895,7 +894,7 @@ uint16_t get_battery_level() {
     // Scale it by the voltage dividing circuit
     uint16_t voltage = voltage_sample * (APP_BAT_VOLT_DIV_UP + APP_BAT_VOLT_DIV_DOWN) / APP_BAT_VOLT_DIV_DOWN;
 
-    printf("Battery voltage level: ADC %i, BATIN %i, VBAT %i\n", adc_sample, voltage_sample, voltage);
+    printf("INFO: Battery voltage level: ADC %i, BATIN %i, VBAT %i\n", adc_sample, voltage_sample, voltage);
 
     return voltage;
 }
@@ -927,7 +926,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Parse input
         uint8_t len = p_evt_write->len;
-        printf("Received CONFIG evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+        printf("INFO: Received CONFIG evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
         const char expected_response_role[] = "Role: ";
         const uint8_t expected_response_role_offset = 6;
@@ -952,27 +951,27 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         switch(app.config.app_role)
         {
             case APP_ROLE_INIT_RESP: {
-                printf("Setting node to HYBRID\n");
+                printf("INFO: Setting node to HYBRID\n");
 
                 break;
             }
             case APP_ROLE_INIT_NORESP: {
-                printf("Setting node to TAG\n");
+                printf("INFO: Setting node to TAG\n");
 
                 break;
             }
             case APP_ROLE_NOINIT_RESP: {
-                printf("Setting node to ANCHOR\n");
+                printf("INFO: Setting node to ANCHOR\n");
 
                 break;
             }
             case APP_ROLE_NOINIT_NORESP: {
-                printf("Setting node to SUPPORT\n");
+                printf("INFO: Setting node to SUPPORT\n");
 
                 break;
             }
             default:
-                printf("Setting node to DEFAULT\n");
+                printf("INFO: Setting node to DEFAULT\n");
 
         }
 
@@ -981,13 +980,13 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
         app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
         app.config.app_sync_rtc_overflow_counter = 0;
         app.config.app_sync_rtc_overflown        = false;
-        printf("Set config time: %lu\n", app.config.app_sync_time);
+        printf("INFO: Set config time: %lu\n", app.config.app_sync_time);
 
     } else if (p_evt_write->handle == carrier_ble_char_enable_handle.value_handle) {
 
         // Handle a write to the characteristic that is used for enabling and disabling functionality
         uint8_t len = p_evt_write->len;
-        printf("Received ENABLE evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+        printf("INFO: Received ENABLE evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
         const char expected_response_ranging[] = "Ranging: ";
         const uint8_t expected_response_ranging_offset = 9;
@@ -1023,7 +1022,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Handle a write to the characteristic that is used for setting the status of the device
         uint8_t len = p_evt_write->len;
-        printf("Received STATUS evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+        printf("INFO: Received STATUS evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
         const char expected_response_state[] = "Backup: ";
         const uint8_t expected_response_state_offset = 8;
@@ -1042,7 +1041,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Handle a write to the characteristic that starts calibration
         uint8_t len = p_evt_write->len;
-        printf("Received CALIBRATION evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+        printf("INFO: Received CALIBRATION evt: %s, length %i\n", (const char*)p_evt_write->data, len);
 
         const char expected_response_calib[] = "Calibration: ";
         const uint8_t expected_response_calib_offset = 13;
@@ -1115,7 +1114,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             // Check whether another tag; if yes, start module
             if (addr_in_whitelist(&p_ble_evt->evt.gap_evt.params.connected.peer_addr)) {
                 if (!app.network_discovered) {
-                    printf("Discovered other device in proximity\n");
+                    printf("INFO: Discovered other device in proximity\n");
                     app.network_discovered = true;
                 }
 
@@ -1163,7 +1162,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         }
         case BLE_GAP_EVT_ADV_REPORT: {
             /*ble_gap_addr_t const * peer_addr = &p_ble_evt->evt.gap_evt.params.adv_report.peer_addr;
-            printf("Discovered another device with address %02x:%02x:%02x:%02x:%02x:%02x\n", peer_addr->addr[5],
+            printf("DEBUG: Discovered another device with address %02x:%02x:%02x:%02x:%02x:%02x\n", peer_addr->addr[5],
                                                                                              peer_addr->addr[4],
                                                                                              peer_addr->addr[3],
                                                                                              peer_addr->addr[2],
@@ -1194,7 +1193,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         case BLE_GAP_EVT_TIMEOUT: {
             // We have not specified a timeout for scanning, so only connection attemps can timeout.
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN) {
-                printf("Connection attempts timed out\n");
+                printf("WARNING: Connection attempts timed out\n");
             }
             break;
         }
@@ -1277,12 +1276,12 @@ static void on_device_discovery(ble_gap_addr_t const * peer_addr)
 {
     ret_code_t err_code;
 
-    printf("Discovered address: %02x:%02x:%02x:%02x:%02x:%02x\n", peer_addr->addr[5],
-                                                                  peer_addr->addr[4],
-                                                                  peer_addr->addr[3],
-                                                                  peer_addr->addr[2],
-                                                                  peer_addr->addr[1],
-                                                                  peer_addr->addr[0]);
+    printf("DEBUG: Discovered address: %02x:%02x:%02x:%02x:%02x:%02x\n", peer_addr->addr[5],
+                                                                         peer_addr->addr[4],
+                                                                         peer_addr->addr[3],
+                                                                         peer_addr->addr[2],
+                                                                         peer_addr->addr[1],
+                                                                         peer_addr->addr[0]);
 
     if(app.network_discovered) {
         // We already know that we are in the network
@@ -1314,7 +1313,7 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
         return;
     }
 
-    printf("Switched Master EUI from %02X to %02X\n", app.master_eui[0], discovered_master_eui[0]);
+    printf("INFO: Switched Master EUI from %02X to %02X\n", app.master_eui[0], discovered_master_eui[0]);
 
     // We only use a single byte to identify devices
     for (uint8_t i = 0; i < 1; i++) {
@@ -1369,7 +1368,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     return;
 #endif
 
-    //printf("Received advertisement from %i\n", p_adv_report->peer_addr.addr[0]);
+    //printf("DEBUG: Received advertisement from %i\n", p_adv_report->peer_addr.addr[0]);
 
     // If it is a scan response, we dont need to analyse it
     if (p_adv_report->type.scan_response) {
@@ -1474,7 +1473,7 @@ void updateData (uint8_t * data, uint32_t len)
        8:   EUI
        4:   Range in mm
     */
-	printf("Interrupt with reason %i", data[0]);
+	printf("INFO: Interrupt with reason %i", data[0]);
 
 	if (data[0] == HOST_IFACE_INTERRUPT_RANGES) {
         printf(", included number of anchors: %i\r\n", data[1]);
@@ -1487,7 +1486,7 @@ void updateData (uint8_t * data, uint32_t len)
 
         for (uint8_t i = 0; i < nr_ranges; i++) {
             uint8_t offset = packet_overhead + i * ranging_length;
-            printf(" Nr %i", i + 1);
+            printf("DEBUG: Nr %i", i + 1);
             printf(": Anchor %02X with range ", data[offset + 0]);
 
             // Little-endian notation
@@ -1519,7 +1518,7 @@ void updateData (uint8_t * data, uint32_t len)
             app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
             app.config.app_sync_rtc_overflow_counter = 0;
             app.config.app_sync_rtc_overflown        = false;
-            printf("Updated current epoch time: %li\n", epoch);
+            printf("INFO: Updated current epoch time: %li\n", epoch);
         }
 
         // Trigger moduleDataUpdate from main loop
@@ -1540,7 +1539,7 @@ void updateData (uint8_t * data, uint32_t len)
 	        app.network_discovered        = false;
 	        app.config.app_module_running = false;
 
-	        printf("Left the network... again searching for a new network\n");
+	        printf("INFO: Left the network... again searching for a new network\n");
 	    }
 
 	} else if (data[0] == HOST_IFACE_INTERRUPT_RANGES_RAW) {
@@ -1563,7 +1562,7 @@ void updateData (uint8_t * data, uint32_t len)
             app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
             app.config.app_sync_rtc_overflow_counter = 0;
             app.config.app_sync_rtc_overflown        = false;
-            printf("Updated current epoch time: %li\n", epoch);
+            printf("INFO: Updated current epoch time: %li\n", epoch);
         }
 
 	    app.app_raw_response_buffer_updated = true;
@@ -1597,7 +1596,7 @@ void moduleDataUpdate ()
             APP_ERROR_CHECK(err_code);
         }
 
-        //printf("Sent BLE packet of length %i \r\n", app.app_raw_response_length);
+        //printf("DEBUG: Sent BLE packet of length %i \r\n", app.app_raw_response_length);
 	}
 
 	// Store locally in log
@@ -1629,7 +1628,7 @@ static void watchdog_handler (void* p_context)
 
     // Increase counter first - else everything is triggered simultaneously at == 0
     app.timer_counter++;
-    //printf("Current Timer Counter: %li\n", app.timer_counter);
+    //printf("DEBUG: Current Timer Counter: %li\n", app.timer_counter);
 
     // Epoch timer
     if ( ( (app.timer_counter % 6) == 0) && node_is_master()) {
@@ -1753,7 +1752,7 @@ static void gap_params_init(void)
         carrier_ble_address[(BLE_ADDRESS_LENGTH-1) - i] = (uint8_t)strtoul(&ble_address_string[3*i], NULL, 16);
     }
 
-    printf("Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", carrier_ble_address[5],
+    printf("DEBUG: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", carrier_ble_address[5],
                                                                  carrier_ble_address[4],
                                                                  carrier_ble_address[3],
                                                                  carrier_ble_address[2],
@@ -1836,7 +1835,7 @@ static void advertising_init(void)
     init.advdata.p_service_data_array    = &service_data;
     init.advdata.service_data_count      = 1;
 
-    //printf("Advertising Eddystone address %s with total length %i\n", url_str, url_frame_length);
+    //printf("DEBUG: Advertising Eddystone address %s with total length %i\n", url_str, url_frame_length);
 
     init.advdata.include_appearance      = false;
     init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
@@ -2008,7 +2007,7 @@ static void scan_start(void)
     err_code = sd_ble_gap_scan_start(&m_scan_params, &m_scan_buffer);
     APP_ERROR_CHECK(err_code);
 
-    printf("Started scanning...\n");
+    printf("INFO: Started scanning...\n");
 }
 
 // Initializing the Connection Parameters module.
@@ -2032,32 +2031,32 @@ static void conn_params_init(void)
 
 void ble_init(void)
 {
-    //printf("Started initializing BLE...\n");
+    //printf("DEBUG: Started initializing BLE...\n");
 
     ble_stack_init();
-    //printf("Stack initialized\n");
+    //printf("DEBUG: Stack initialized\n");
 
     gap_params_init();
-    //printf("GAP parameters initialized\n");
+    //printf("DEBUG: GAP parameters initialized\n");
 
     gatt_init();
-    //printf("GATT module initialized\n");
+    //printf("DEBUG: GATT module initialized\n");
 
     services_init();
-    //printf("BLE services initialized\n");
+    //printf("DEBUG: BLE services initialized\n");
 
     advertising_init();
-    //printf("Advertising initialized\n");
+    //printf("DEBUG: Advertising initialized\n");
 
     central_init();
-    //printf("Scanning initialized\n");
+    //printf("DEBUG: Scanning initialized\n");
 
     conn_params_init();
-    //printf("Connection parameters initialized\n");
+    //printf("DEBUG: Connection parameters initialized\n");
 
     // Instead of advertising directly, use Eddystone library
     //nrf_ble_es_init(on_es_evt);
-    //printf("Eddystone beaconing initialized\n");
+    //printf("DEBUG: Eddystone beaconing initialized\n");
 }
 
 // Non-BLE inits -------------------------------------------------------------------------------------------------------
@@ -2174,7 +2173,7 @@ void carrier_hw_init(void)
     APP_ERROR_CHECK(err_code);
     NRF_LOG_DEFAULT_BACKENDS_INIT();
     printf("\r\n----------------------------------------------\r\n");
-    printf("Initializing nRF...\r\n");
+    printf("INFO: Initializing nRF...\r\n");
 
     // Check that we didn't have to do a hardware reset before; if so, state the reason
     uint32_t reset_reason = nrf_power_resetreas_get();
@@ -2194,7 +2193,7 @@ void carrier_hw_init(void)
     scheduler_init();
     power_management_init();
 
-    printf("Initialized software modules\n");
+    printf("INFO: Initialized software modules\n");
 
     // Software services init
     // ATTENTION: inside ble_init(), we further initialize the SoftDevice (triggering the low-power clock)
@@ -2204,13 +2203,13 @@ void carrier_hw_init(void)
     // As the SoftDevice is now enabled, we can tell it to use the DC/DC regulator
     sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
 
-    printf("Initialized software services\n");
+    printf("INFO: Initialized software services\n");
 
     // Buses init
     spi_init();
     //twi_init(); // Moved to module_interface.c
 
-    printf("Initialized buses\n");
+    printf("INFO: Initialized buses\n");
 }
 
 void carrier_start_module(uint8_t role) {
@@ -2226,7 +2225,7 @@ void carrier_start_module(uint8_t role) {
         err_code = module_init(&app.module_interrupt_thrown, updateData);
         if (err_code == NRF_SUCCESS) {
             app.module_inited = true;
-            printf("Finished initialization\r\n");
+            printf("INFO: Finished initialization\r\n");
         } else {
             printf("ERROR: Failed initialization!\r\n");
             return;
@@ -2238,7 +2237,7 @@ void carrier_start_module(uint8_t role) {
 
     switch(role) {
         case APP_ROLE_INIT_NORESP: {
-            printf("Role: INITIATOR\n");
+            printf("INFO: Role - INITIATOR\n");
 
             err_code = module_start_role(APP_ROLE_INIT_NORESP, is_glossy_master, app.master_eui[0]);
 
@@ -2246,16 +2245,16 @@ void carrier_start_module(uint8_t role) {
                 printf("ERROR: Failed to start ranging!\r\n");
                 return;
             } else {
-                printf("Started ranging...\r\n");
+                printf("INFO: Started ranging...\r\n");
             }
             break;
         }
         case APP_ROLE_INIT_RESP: {
 
             if (is_glossy_master) {
-                printf("Role: HYBRID Master\n");
+                printf("INFO: Role - HYBRID Master\n");
             } else {
-                printf("Role: HYBRID\n");
+                printf("INFO: Role - HYBRID\n");
             }
 
             err_code = module_start_role(APP_ROLE_INIT_RESP, is_glossy_master, app.master_eui[0]);
@@ -2264,16 +2263,16 @@ void carrier_start_module(uint8_t role) {
                 printf("ERROR: Failed to start the module!\r\n");
                 return;
             } else {
-                printf("Started the module...\r\n");
+                printf("INFO: Started the module...\r\n");
             }
             break;
         }
         case APP_ROLE_NOINIT_RESP: {
 
             if (is_glossy_master) {
-                printf("Role: RESPONDER Master\n");
+                printf("INFO: Role - RESPONDER Master\n");
             } else {
-                printf("Role: RESPONDER\n");
+                printf("INFO: Role - RESPONDER\n");
             }
 
             err_code = module_start_role(APP_ROLE_NOINIT_RESP, is_glossy_master, app.master_eui[0]);
@@ -2285,14 +2284,14 @@ void carrier_start_module(uint8_t role) {
 #ifdef GLOSSY_MASTER
                 printf("Started responding as Glossy master...\r\n");
 #else
-                printf("Started responding...\r\n");
+                printf("INFO: Started responding...\r\n");
 #endif
             }
             break;
         }
         case APP_ROLE_NOINIT_NORESP: {
 
-            printf("Role: SUPPORT\n");
+            printf("INFO: Role - SUPPORT\n");
 
             err_code = module_start_role(APP_ROLE_NOINIT_NORESP, is_glossy_master, app.master_eui[0]);
 
@@ -2300,7 +2299,7 @@ void carrier_start_module(uint8_t role) {
                 printf("ERROR: Failed to start the module!\r\n");
                 return;
             } else {
-                printf("Started the module...\r\n");
+                printf("INFO: Started the module...\r\n");
             }
             break;
         }
@@ -2332,7 +2331,7 @@ int main (void)
     //acc_init();
     //bat_monitor_init();
 
-    printf("Initialized hardware services\n");
+    printf("INFO: Initialized hardware services\n");
 
     // Module connection setup
     err_code = module_hw_init();
@@ -2342,14 +2341,14 @@ int main (void)
 #ifndef APP_BLE_CALIBRATION
     scan_start();
 #else
-    printf("Did not start scanning because we are in Calibration mode\n");
+    printf("WARNING: Did not start scanning because we are in Calibration mode\n");
 #endif
 
     // Start advertisements (Role: Peripheral)
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 
-    printf("Started broadcasting BLE advertisements...\n");
+    printf("INFO: Started broadcasting BLE advertisements...\n");
 
     // Contact module --------------------------------------------------------------------------------------------------
 
@@ -2358,7 +2357,7 @@ int main (void)
     err_code = module_init(&app.module_interrupt_thrown, updateData);
     if (err_code == NRF_SUCCESS) {
         app.module_inited = true;
-        printf("Finished initialization\r\n");
+        printf("INFO: Finished initialization\r\n");
     } else {
         printf("ERROR: Failed initialization!\r\n");
     }
@@ -2386,7 +2385,7 @@ int main (void)
 #else
     // Wait for BLE to configure us as a specific device
     // Done automatically upon discovery
-    printf("Waiting for discovery of other devices...\n");
+    printf("INFO: Waiting for discovery of other devices...\n");
 #endif
 
     // Start timers
@@ -2404,7 +2403,7 @@ int main (void)
     while (1) {
 
         // For power measurements: Disable timers (timers_init()) and comment the lines below power_manage()
-        //printf("Going back go sleep...\r\n");
+        //printf("DEBUG: Going back go sleep...\r\n");
         power_manage();
 
         // I2C and data handling
@@ -2415,7 +2414,7 @@ int main (void)
 
         if (app.app_raw_response_buffer_updated) {
             // Received new data over I2C which we can expose over the BLE characteristics
-            //printf("Updating location...\r\n");
+            //printf("DEBUG: Updating location...\r\n");
             moduleDataUpdate();
         }
 
@@ -2440,7 +2439,7 @@ int main (void)
             err_code = module_start_calibration(app.calibration_index);
             if (err_code == NRF_SUCCESS) {
                 app.config.app_module_running = true;
-                printf("Started calibration with index %i\n", app.calibration_index);
+                printf("INFO: Started calibration with index %i\n", app.calibration_index);
             } else {
                 printf("ERROR: Failed to start calibration!\n");
             }
