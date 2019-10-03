@@ -34,7 +34,7 @@
 
 // Param for making sure the application doesn't deadlock.
 // This is the number of times we try to read the status/ID register on the
-// DW1000 before giving up and reseting the dw1000.
+// DW1000 before giving up and resetting the DW1000.
 #define DW1000_NUM_CONTACT_TRIES_BEFORE_RESET 15
 
 // Number of consecutive DW1000 interrupts we handle before resetting the chip.
@@ -208,6 +208,7 @@ uint64_t      dw1000_setdelayedtrxtime(uint32_t delay_time);
 uint64_t      dw1000_gettimestampoverflow();
 void      	  dw1000_calculatediagnostics();
 uint32_t 	  dw1000_get_status_register();
+void          dw1000_printCalibrationValues();
 
 // for main.c
 void          dw1000_interrupt_fired ();

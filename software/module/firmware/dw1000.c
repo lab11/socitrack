@@ -310,9 +310,11 @@ static void setup () {
 			}
 		}
 	} else {
-	    debug_msg("Successfully loaded calibration values with EUI ");
+	    debug_msg("INFO: Successfully loaded calibration values with EUI ");
 	    debug_msg_uint(_prog_values.eui[0]);
 	    debug_msg("\r\n");
+
+        //dw1000_printCalibrationValues();
 	}
 
 	// Mark that this function has run so we don't do it again.
@@ -1167,7 +1169,7 @@ void dw1000_calculatediagnostics(){
     dwt_readdiagnostics(&diagnostics);
 
     // Print variables
-    /*debug_msg("Printing diagnostics values:\r\n");
+    /*debug_msg("DEBUG: Printing diagnostics values:\r\n");
     debug_msg_uint(diagnostics.firstPathAmp1);
     debug_msg("\r\n");
     debug_msg_uint(diagnostics.firstPathAmp2);
@@ -1194,11 +1196,30 @@ void dw1000_calculatediagnostics(){
     //int fp_signal_dBm = (uint32_t)(10 * log10((double)fp_signal / N_squared)) - A_64MHz;
     //int rx_signal_dBm = (uint32_t)(10 * log10((double)rx_signal / N_squared)) - A_64MHz;
 
-    debug_msg("Estimated signal strength: First path - ");
+    debug_msg("DEBUG: Estimated signal strength: First path - ");
     debug_msg_uint(fp_signal / N_squared);
     //debug_msg_int(fp_signal_dBm);
     debug_msg(" ; Rx - ");
     debug_msg_uint(rx_signal / N_squared);
     //debug_msg_int(rx_signal_dBm);
     debug_msg("\r\n");
+}
+
+void dw1000_printCalibrationValues(){
+
+    uint16_t* calibration_values = (uint16_t*)dw1000_get_txrx_delay_raw();
+
+    const uint8_t nr_channels = 3;
+    const uint8_t nr_antennas = 3;
+    uint8_t i,j;
+
+    debug_msg("DEBUG: Calibration values are:\n");
+    for (i = 0; i < nr_channels; i++) {
+        debug_msg("DEBUG: ");
+        for (j = 0; j < nr_antennas; j++) {
+            debug_msg_int(_prog_values.calibration_values[i][j]);
+            debug_msg("\t\t");
+        }
+        debug_msg("\n");
+    }
 }
