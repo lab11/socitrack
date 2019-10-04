@@ -484,11 +484,24 @@ static void sd_card_init(void) {
 
     // Start file
     simple_logger_init(sd_filename, sd_permissions);
+}
 
-    // If no header, add it
+static void sd_card_init_file() {
+    uint8_t ret_val;
+
     struct timeval tv = { .tv_sec = app_get_current_time(), .tv_usec = 0};
     ab1815_time_t time = unix_to_ab1815(tv);
-    simple_logger_log_header("### HEADER for file \'%s\'; Date: 20%02u/%02u/%02u %02u:%02u:%02u\n", sd_filename, time.years, time.months, time.date, time.hours, time.minutes, time.seconds);
+
+    // If no header, add it
+    ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Date: 20%02u/%02u/%02u %02u:%02u:%02u\n", sd_filename, time.years, time.months, time.date, time.hours, time.minutes, time.seconds);
+
+    if (ret_val == SIMPLE_LOGGER_FILE_EXISTS) {
+        // Header exists, so we just note that we restarted measurements
+        ret_val = simple_logger_log("### Device booted at 20%02u/%02u/%02u %02u:%02u:%02u\n", time.years, time.months, time.date, time.hours, time.minutes, time.seconds);
+        if (ret_val) {
+            printf("WARNING: Received return code %i when trying to write to SD card!\n", ret_val);
+        }
+    }
 }
 
 
@@ -2347,11 +2360,14 @@ int main (void)
 
     // Peripherals -----------------------------------------------------------------------------------------------------
 
-    // Hardware services init - initialize SD before RTC
+    // Hardware services init - FIXME: SD card must be first to not disturb other SPI traffic (cause unknown)
     sd_card_init();
     rtc_external_init();
     //acc_init();
     //bat_monitor_init();
+
+    // Initialize logging to SD
+    sd_card_init_file();
 
     printf("INFO: Initialized hardware services\n");
 
