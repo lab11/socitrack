@@ -24,7 +24,7 @@ void ab1815_init(const nrf_drv_spi_t* instance) {
   spi_config.mosi_pin   = SPI_MOSI;
   spi_config.ss_pin     = RTC_CS;
   spi_config.frequency  = NRF_DRV_SPI_FREQ_2M;
-  spi_config.mode       = NRF_DRV_SPI_MODE_0;
+  spi_config.mode       = NRF_DRV_SPI_MODE_3;
   spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
 
   nrf_gpio_cfg_input(CARRIER_RTC_INT,  NRF_GPIO_PIN_NOPULL);
@@ -64,10 +64,13 @@ void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
   if (len > 256) return;
   uint8_t readreg = reg;
   uint8_t buf[257];
+  ret_code_t err_code;
 
   nrf_drv_spi_uninit(spi_instance);
-  nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
-  nrf_drv_spi_transfer(spi_instance, &readreg, 1, buf, len+1);
+  err_code = nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
+  APP_ERROR_CHECK(err_code);
+  err_code = nrf_drv_spi_transfer(spi_instance, &readreg, 1, buf, len+1);
+  APP_ERROR_CHECK(err_code);
 
   memcpy(read_buf, buf+1, len);
 }
@@ -75,12 +78,17 @@ void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
 void ab1815_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
   if (len > 256) return;
   uint8_t buf[257];
+  ret_code_t err_code;
+
+  // Write: first bit is 1
   buf[0] = 0x80 | reg;
   memcpy(buf+1, write_buf, len);
 
   nrf_drv_spi_uninit(spi_instance);
-  nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
-  nrf_drv_spi_transfer(spi_instance, buf, len+1, NULL, 0);
+  err_code = nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
+  APP_ERROR_CHECK(err_code);
+  err_code = nrf_drv_spi_transfer(spi_instance, buf, len+1, NULL, 0);
+  APP_ERROR_CHECK(err_code);
 }
 
 static void interrupt_handler(nrf_drv_gpiote_pin_t pin, nrf_gpiote_polarity_t action) {
@@ -199,8 +207,9 @@ void ab1815_set_time(ab1815_time_t time) {
   ab1815_write_reg(AB1815_HUND, write, 8);
 }
 
-void ab1815_get_time(ab1815_time_t* time) {
-  uint8_t read[10];
+ab1815_time_t ab1815_get_time(void) {
+  uint8_t read[10] = {0};
+  ab1815_time_t time;
 
   ab1815_read_reg(AB1815_HUND, read, 8);
 
@@ -215,10 +224,7 @@ void ab1815_get_time(ab1815_time_t* time) {
 }
 
 struct timeval ab1815_get_time_unix(void) {
-  ab1815_time_t time;
-
-  ab1815_get_time(&time);
-  return ab1815_to_unix(time);
+  return ab1815_to_unix(ab1815_get_time());
 }
 
 ab1815_time_t unix_to_ab1815(struct timeval tv) {

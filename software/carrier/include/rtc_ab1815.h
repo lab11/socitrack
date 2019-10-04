@@ -126,14 +126,14 @@ typedef struct {
 
 void ab1815_init(const nrf_drv_spi_t* instance);
 void ab1815_init_time(void);
-void ab1815_get_config(ab1815_control_t* config);
 void ab1815_set_config(ab1815_control_t config);
+void ab1815_get_config(ab1815_control_t* config);
 void ab1815_set_int_config(ab1815_int_config_t config);
 void ab1815_get_int_config(ab1815_int_config_t* config);
 ab1815_time_t unix_to_ab1815(struct timeval tv);
 struct timeval ab1815_to_unix(ab1815_time_t time);
 void ab1815_set_time(ab1815_time_t time);
-void ab1815_get_time(ab1815_time_t* time);
+ab1815_time_t ab1815_get_time(void);
 struct timeval ab1815_get_time_unix(void);
 void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback* cb);
 void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);

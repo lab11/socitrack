@@ -289,6 +289,10 @@ void spi_init(void) {
     nrf_gpio_pin_set(CARRIER_CS_RTC);
 #endif
 
+    // Make sure SPI line are valid - otherwise might float
+    nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
+    nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
+
     // Configure SPI lines
     nrf_drv_spi_config_t spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
     spi_config.sck_pin    = CARRIER_SPI_SCLK;
@@ -391,6 +395,11 @@ static void acc_init(void) {
 static void rtc_external_init(void) {
 
 #if (BOARD_V >= 0xF)
+    // Make sure other SPI devices are not interfering
+    nrf_gpio_pin_set(CARRIER_CS_SD);
+    nrf_gpio_pin_set(CARRIER_CS_ACC);
+    nrf_gpio_pin_clear(CARRIER_SD_ENABLE);
+
     // Startup RTC
     ab1815_init(&spi_instance);
 
@@ -423,12 +432,15 @@ static void rtc_external_init(void) {
     ab1815_init_time();
 
     // Set our own time on the NRF
-    struct timeval tv = ab1815_get_time_unix();
-    app.config.app_sync_time        = tv.tv_sec;
+    ab1815_time_t time              = ab1815_get_time();
+    app.config.app_sync_time        = ab1815_to_unix(time).tv_sec;
     app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
     app.config.app_sync_rtc_overflow_counter = 0;
     app.config.app_sync_rtc_overflown        = false;
-    ab1815_printTime(unix_to_ab1815(tv));
+    ab1815_printTime(time);
+
+    // Make sure that we once again disable the RTC
+    nrf_gpio_pin_set(CARRIER_CS_RTC);
 #else
     printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
 #endif
@@ -454,8 +466,8 @@ static void sd_card_init(void) {
 
     // Setup hardware
     nrf_gpio_cfg_input(CARRIER_SD_DETECT, NRF_GPIO_PIN_NOPULL);
-    nrf_gpio_cfg_output(CARRIER_SD_ENABLE);
 
+    // Prepare pins - enable SD card
     nrf_gpio_pin_set(CARRIER_SD_ENABLE);
     nrf_gpio_pin_set(CARRIER_CS_SD);
 
@@ -474,7 +486,9 @@ static void sd_card_init(void) {
     simple_logger_init(sd_filename, sd_permissions);
 
     // If no header, add it
-    simple_logger_log_header("### HEADER for file \'%s\', written on %s\n", sd_filename, "11/03/18");
+    struct timeval tv = { .tv_sec = app_get_current_time(), .tv_usec = 0};
+    ab1815_time_t time = unix_to_ab1815(tv);
+    simple_logger_log_header("### HEADER for file \'%s\'; Date: 20%02u/%02u/%02u %02u:%02u:%02u\n", sd_filename, time.years, time.months, time.date, time.hours, time.minutes, time.seconds);
 }
 
 
@@ -1410,7 +1424,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
             discovered_master_eui = advdata.p_data[3];
 
             if (discovered_master_eui > 0x00) {
-                printf("INFO: Network with master %i discovered\n", discovered_master_eui);
+                //printf("INFO: Network with master %i discovered\n", discovered_master_eui);
             } else {
                 printf("INFO: Discovered new node %i without network\n", p_adv_report->peer_addr.addr[0]);
             }
@@ -2333,7 +2347,7 @@ int main (void)
 
     // Peripherals -----------------------------------------------------------------------------------------------------
 
-    // Hardware services init
+    // Hardware services init - initialize SD before RTC
     sd_card_init();
     rtc_external_init();
     //acc_init();
