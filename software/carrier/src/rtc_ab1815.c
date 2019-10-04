@@ -204,6 +204,8 @@ void ab1815_set_time(ab1815_time_t time) {
 
   ab1815_form_time_buffer(time, write);
 
+  //printf("DEBUG: Packet Tx - %02x %02x %02x %02x %02x %02x %02x %02x\n", write[0], write[1], write[2], write[3], write[4], write[5], write[6], write[7]);
+
   ab1815_write_reg(AB1815_HUND, write, 8);
 }
 
@@ -213,14 +215,18 @@ ab1815_time_t ab1815_get_time(void) {
 
   ab1815_read_reg(AB1815_HUND, read, 8);
 
-  time->hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
-  time->seconds    = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
-  time->minutes    = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
-  time->hours      = 10 * ((read[3] & 0x30) >> 4) + (read[3] & 0xF);
-  time->date       = 10 * ((read[4] & 0x30) >> 4) + (read[4] & 0xF);
-  time->months     = 10 * ((read[5] & 0x10) >> 4) + (read[5] & 0xF);
-  time->years      = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
-  time->weekday    = read[7] & 0x7;
+  //printf("DEBUG: Packet Rx - %02x %02x %02x %02x %02x %02x %02x %02x\n", read[0], read[1], read[2], read[3], read[4], read[5], read[6], read[7]);
+
+  time.hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
+  time.seconds    = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
+  time.minutes    = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
+  time.hours      = 10 * ((read[3] & 0x30) >> 4) + (read[3] & 0xF);
+  time.date       = 10 * ((read[4] & 0x30) >> 4) + (read[4] & 0xF);
+  time.months     = 10 * ((read[5] & 0x10) >> 4) + (read[5] & 0xF);
+  time.years      = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
+  time.weekday    = read[7] & 0x7;
+
+  return time;
 }
 
 struct timeval ab1815_get_time_unix(void) {
