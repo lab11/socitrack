@@ -5,23 +5,13 @@ This firmware runs on the module and provides the basis
 for the ranging system. Ideally, each module will ship with
 this firmware already installed.
 
-The following steps demonstrate how to re-program them:
 
-1. Get the arm-gcc compiler for your platform: https://launchpad.net/gcc-arm-embedded
+Programming
+-----------
 
-2. In the `/firmware` folder, build the software:
+> For more detailed programming instructions, [see the Provisioning instructions](../../doc/Provisioning.md#programming-the-stm)
 
-        make
-
-3. Programming the STM32F091CC on the module requires a [JLink JTAG programmer](
-https://www.segger.com/jlink-general-info.html) and the [JLink programming software](
-https://www.segger.com/jlink-software.html). To connect them to the board, you further require a ARM JTAG to Tag-Connect
-adapter from either of two sources:
-
-- Lab11 version: https://github.com/lab11/jtag-tagconnect/tree/master/hardware/jlink_to_tag/rev_d
-- Off-the-shelf version: https://www.segger.com/jlink-6-pin-needle-adapter.html
-
-4. Program the STM32F091CC, and set the ID:
+1. Program the STM32F091CC, and set the ID:
 
         make flash ID=c0:98:e5:42:00:01
         
@@ -29,7 +19,7 @@ adapter from either of two sources:
     
         SEGGER_SERIAL=<segger id> make flash ID=c0:98:e5:42:00:01
 
-5. To output J-Link RTT packets, use the J-Link Commander `JLinkExe`:
+1. To output J-Link RTT packets, use the J-Link Commander `JLinkExe`:
     
         JLinkExe -Device STM32F091CC -if SWD -speed 4000
         
