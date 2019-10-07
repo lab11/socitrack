@@ -10,6 +10,8 @@ It is used for three primary use cases:
 
 Programming
 -----------
+    
+> For more detailed programming instructions, [see the Provisioning instructions](../../../../doc/Provisioning.md#programming-the-nrf)
 
     make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01
     
