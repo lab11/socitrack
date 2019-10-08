@@ -28,6 +28,9 @@ endif
 ifneq ($(APP_BLE_CALIBRATION), )
 CFLAGS += -DAPP_BLE_CALIBRATION
 endif
+ifneq ($(FORCE_RTC_RESET), )
+CFLAGS += -DFORCE_RTC_RESET
+endif
 
 # Source and header files
 APP_HEADER_PATHS += .

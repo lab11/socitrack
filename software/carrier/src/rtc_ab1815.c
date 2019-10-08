@@ -37,13 +37,17 @@ void ab1815_init_time(void) {
   // Check whether RTC is already running; if so, DONT overwrite
   struct timeval curr_time = ab1815_get_time_unix();
 
-  //printf("DEBUG: Unix time is %08llx\n", curr_time.tv_sec);
+    const char _date[] = __DATE__; // the format is "Jan  1 2000"
+    const char _time[] = __TIME__; // the format is "00:00:00"
+    //printf("DEBUG: Compile time %s, %s\n", _date, _time);
 
-  if (curr_time.tv_sec < TIMESTAMP_UNIX_PAST) {
-
-      char _date[] = __DATE__; // the format is "Jan  1 2000"
-      char _time[] = __TIME__; // the format is "00:00:00"
-      //printf("DEBUG: Compile time %s, %s\n", _time, _date);
+#ifdef FORCE_RTC_RESET
+    if(true) {
+      printf("DEBUG: Current unix time is 0x%08llx\n", curr_time.tv_sec);
+      printf("INFO: Forcing RTC reset to %s, %s\n", _date, _time);
+#else
+    if (curr_time.tv_sec < TIMESTAMP_UNIX_PAST) {
+#endif
 
       ab1815_time_t comp_time;
       comp_time.hundredths = 0;

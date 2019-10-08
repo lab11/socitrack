@@ -15,9 +15,20 @@ Programming
 
     make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01
     
-For easy debugging, you can circumvent the BLE user interface and directly programm a role:
+The RTC will automatically be configured when you flash the code. In case the RTC time should be incorrect (especially if it is set to a time in the future), you can force an RTC reset as shown below.
+**ATTENTION:** You *must* afterwards execute the same command once again *without* `FORCE_RTC_RESET=1`, as otherwise the RTC will be reset to the flash time every time the device is started:
 
-    make flash BYPASS_USER_INTERFACE=1 ROLE=INITIATOR GLOSSY_MASTER=1    
+    make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01 FORCE_RTC_RESET=1
+   
+    <--- device is flashed and RTC is set to correct date -->
+   
+    make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01
+    
+For easy debugging, you can circumvent the BLE user interface and directly program a role:
+
+    make flash BYPASS_USER_INTERFACE=1 ROLE=INITIATOR GLOSSY_MASTER=1
+    
+This automatically sets the given role as `Initiator` and configures the node as the master of the network.    
 
 LED color code
 --------------
