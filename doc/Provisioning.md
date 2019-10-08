@@ -15,6 +15,8 @@ a systemic absolute range offset of around half a meter.
 - [Programming the STM](#programming-the-stm)
 - [Pause to test basic operation](#pause-to-test-basic-operation)
 - [Calibration](#calibration)
+- [Re-programming](#re-programming)
+- [Debugging](#debugging)
 
 <!-- tocstop -->
 
@@ -180,7 +182,7 @@ achor, you can verify it succeeded using the debug bar:
 **STOP. Before beginning calibration, it is recommended to finish initial setup
 of all nodes. This will save on re-programming time later.**
 
-[Please follow the directions in the calibration documentation](../software/calibration/README#Detailed-Instructions)
+[Please follow the directions in the calibration documentation](../software/calibration/README.md#Detailed-Instructions)
 
 
 ## Re-programming
@@ -191,3 +193,57 @@ calibrating all nodes. It's usually faster this way.**
 Follow the initial programming steps again. You will need to reprogram the nRF
 to take it out of calibration mode and reprogram the STM to include new
 calibration data.
+
+
+# Debugging
+
+To verify that the nodes are working, you can connect two JLink programmers to the board, one for each programming header (see above).
+Then open up four terminal windows and enter the following to connect to the STM using the *first* JLink (replace `XXXXXXXXX` with the serial number of the JLink connected to the left header):
+
+    Terminal 1: $    JLinkExe -Device STM32F091CC -if SWD -speed 4000 -RTTTelnetPort 9200 -SelectEmuBySN XXXXXXXXX
+    
+    Terminal 2: $    telnet localhost 9200
+    
+Do the same thing now for the nRF, whereby you enter the serial number of the *second* JLink programmer for `XXXXXXXXX`:
+    
+    Terminal 3: $    JLinkExe -Device NRF52840_XXAA -if SWD -speed 4000 -RTTTelnetPort 9201-SelectEmuBySN XXXXXXXXX
+    
+    Terminal 4: $    telnet localhost 9201 
+    
+In a second step, you can now connect to the controllers and start producing output:
+
+    Terminal 1: $    J-Link>connect
+                     J-Link>r
+                     
+    Terminal 3: $    J-Link>connect
+                     J-Link>r          
+
+Now that you have successfully connected to both of the chips and reset them (using the second `r` command), it is time to execute the programs. To do so, **first start the STM and thereafter the nRF**; if you change the order, you will observe errors (white LED flashing) as the nRF tries to communicate with the STM during startup.
+To start the chips, simply enter:
+
+    Terminal 1: $    J-Link>g
+    
+    <-- AFTER starting the STM in Terminal 1, you can then execute the command below in Terminal 3 to start the nRF -->
+    
+    Terminal 3: $    J-Link>g
+    
+Now, you should observe the startup debug output in the corresponding terminals 2 and 4:
+
+    Terminal 2: $    ----------------------------------------------
+                     INFO: Initialized RTT...
+                     INFO: Successfully loaded calibration values with EUI XX
+                     INFO: Connecting to host interface...
+                     [...]
+    
+    Terminal 4: $    ----------------------------------------------
+                     INFO: Initializing nRF...
+                     INFO: Initialized software modules
+                     [...]
+
+In case you would like to restart the chips, simply enter `r` followed by `g` in the corresponding terminals 1 and 3. Make sure to **always first restart the STM before restarting the nRF**.
+
+To exit debugging, enter `qc` in terminals 1 and 3:
+
+    Terminal 1: $    J-Link>qc
+    
+    Terminal 3: $    J-Link>qc

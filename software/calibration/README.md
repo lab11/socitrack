@@ -42,7 +42,7 @@ Detailed Instructions
    error here will affect all future measurements with these tags.
 
 1. Make sure you have followed all of the Python and Noble steps in the
-   [Setup guide](../../doc/Setup#getting-python).
+   [Setup guide](../../doc/Setup.md#getting-python).
 
 1. Turn off neighbour discovery, as nodes will automatically start ranging
    otherwise.
@@ -138,5 +138,5 @@ The next time the STM firmware is flashed, the build system will read
 `module_calibration.data` for calibration constants and use those if they
 exist.
 
-[Return to Provisioning document](../../doc/Provisioning#Calibration)
+[Return to Provisioning document](../../doc/Provisioning.md#Calibration)
 
