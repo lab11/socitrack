@@ -179,6 +179,14 @@ void ab1815_get_int_config(ab1815_int_config_t* config) {
     config->xt1_en     = (read & 0x01);
 }
 
+void ab1815_get_status(void) {
+    uint8_t read;
+
+    ab1815_read_reg(AB1815_STATUS, &read, 1);
+
+    printf("DEBUG: RTC Status - 0x%02x\n", read);
+}
+
 inline uint8_t get_tens(uint8_t x) {
   return (x / 10) % 10;
 }

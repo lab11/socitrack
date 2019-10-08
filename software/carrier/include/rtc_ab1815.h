@@ -137,6 +137,7 @@ void ab1815_set_config(ab1815_control_t config);
 void ab1815_get_config(ab1815_control_t* config);
 void ab1815_set_int_config(ab1815_int_config_t config);
 void ab1815_get_int_config(ab1815_int_config_t* config);
+void ab1815_get_status(void);
 ab1815_time_t unix_to_ab1815(struct timeval tv);
 struct timeval ab1815_to_unix(ab1815_time_t time);
 void ab1815_set_time(ab1815_time_t time);
