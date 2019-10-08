@@ -23,6 +23,10 @@ The RTC will automatically be configured when you flash the code. In case the RT
     <--- device is flashed and RTC is set to correct date -->
    
     make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01
+  
+If you want to flash code onto an older board version which does not have the RTC yet (board revision D and E), compile for a legacy board using the option `BOARD_LEGACY=1`:
+
+    make flash SEGGER_SERIAL=xxxxxxxxx BLE_ADDRESS=c0:98:e5:42:00:01 BOARD_LEGACY=1
     
 For easy debugging, you can circumvent the BLE user interface and directly program a role:
 

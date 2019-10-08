@@ -489,6 +489,7 @@ static void sd_card_init(void) {
 static void sd_card_init_file() {
     uint8_t ret_val;
 
+#if (BOARD_V >= 0xF)
     struct timeval tv = { .tv_sec = app_get_current_time(), .tv_usec = 0};
     ab1815_time_t time = unix_to_ab1815(tv);
 
@@ -502,6 +503,18 @@ static void sd_card_init_file() {
             printf("WARNING: Received return code %i when trying to write to SD card!\n", ret_val);
         }
     }
+#else
+    // If no header, add it
+    ret_val = simple_logger_log_header("### HEADER for file \'%s\', written on %s\n", sd_filename, "2019/10/08");
+
+    if (ret_val == SIMPLE_LOGGER_FILE_EXISTS) {
+        // Header exists, so we just note that we restarted measurements
+        ret_val = simple_logger_log("### Device booted\n");
+        if (ret_val) {
+            printf("WARNING: Received return code %i when trying to write to SD card!\n", ret_val);
+        }
+    }
+#endif
 }
 
 

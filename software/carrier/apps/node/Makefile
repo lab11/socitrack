@@ -54,7 +54,11 @@ CFLAGS += $(CDBG)
 CFLAGS += -DMBEDTLS_CMAC_C
 
 # Include board Makefile (if any)
+ifneq ($(BOARD_LEGACY), )
+include ../../boards/TotTag_revD/Board.mk
+else
 include ../../boards/TotTag_revF/Board.mk
+endif
 
 # Path to base of nRF52-base repo
 NRF_BASE_DIR = ../../nrf5x-base
