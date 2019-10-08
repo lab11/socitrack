@@ -41,7 +41,14 @@
 // Oscillator registers
 #define AB1815_OSCILLATOR_CTRL    0x1C
 #define AB1815_OSCILLATOR_STATUS  0x1D
-#define AB1815_OSCILLATOR_KEY     0x1F
+// Miscellaneous registers
+#define AB1815_CONFIGURATION_KEY  0x1F
+#define AB1815_BATMODE            0x27
+
+// Configuration key
+#define AB1815_CONF_KEY_OSC       0xA1
+#define AB1815_CONF_KEY_SR        0x3C
+#define AB1815_CONF_KEY_REG       0x9D
 
 // Past timestamp of 2001/09/09
 #define TIMESTAMP_UNIX_PAST (1000*1000*1000)
@@ -139,4 +146,6 @@ void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_ala
 void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);
 void ab1815_tickle_watchdog(void);
 void ab1815_clear_watchdog(void);
+uint8_t ab1815_ready(void);
+uint8_t ab1815_wait_for_ready(uint16_t timeout_ms);
 void ab1815_printTime(ab1815_time_t time);

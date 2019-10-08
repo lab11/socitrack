@@ -1,3 +1,5 @@
+
+#include "nrf_delay.h"
 #include "nrf_drv_gpiote.h"
 #include "nrf_spi_mngr.h"
 
@@ -27,9 +29,9 @@ void ab1815_init(const nrf_drv_spi_t* instance) {
   spi_config.mode       = NRF_DRV_SPI_MODE_3;
   spi_config.bit_order  = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST;
 
-  nrf_gpio_cfg_input(CARRIER_RTC_INT,  NRF_GPIO_PIN_NOPULL);
-  nrf_gpio_cfg_output(RTC_WDI);
-  nrf_gpio_pin_set(RTC_WDI);
+  nrf_gpio_cfg_input(CARRIER_RTC_INT,  NRF_GPIO_PIN_PULLUP);
+  nrf_gpio_cfg_output(CARRIER_RTC_WDI);
+  nrf_gpio_pin_set(CARRIER_RTC_WDI);
 }
 
 void ab1815_init_time(void) {
@@ -70,6 +72,8 @@ void  ab1815_read_reg(uint8_t reg, uint8_t* read_buf, size_t len){
   uint8_t buf[257];
   ret_code_t err_code;
 
+  ab1815_wait_for_ready(1000);
+
   nrf_drv_spi_uninit(spi_instance);
   err_code = nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
   APP_ERROR_CHECK(err_code);
@@ -87,6 +91,8 @@ void ab1815_write_reg(uint8_t reg, uint8_t* write_buf, size_t len){
   // Write: first bit is 1
   buf[0] = 0x80 | reg;
   memcpy(buf+1, write_buf, len);
+
+  ab1815_wait_for_ready(1000);
 
   nrf_drv_spi_uninit(spi_instance);
   err_code = nrf_drv_spi_init(spi_instance, &spi_config, NULL, NULL);
@@ -119,6 +125,12 @@ void ab1815_set_config(ab1815_control_t config) {
   // Control2
   write =  config.psw_nirq2_function << 2 | config.fout_nirq_function;
   ab1815_write_reg(AB1815_CONTROL2, &write, 1);
+
+  // Batmode - needs to be enabled first
+  write = AB1815_CONF_KEY_REG;
+  ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1);
+  write = (1 << 7);
+  ab1815_write_reg(AB1815_BATMODE, &write, 1);
 
   // Store current configuration
   ctrl_config = config;
@@ -200,7 +212,7 @@ void ab1815_form_time_buffer(ab1815_time_t time, uint8_t* buf) {
 void ab1815_set_time(ab1815_time_t time) {
   uint8_t write[8];
 
-  // Ensure rtc write bit is enabled
+  // Ensure RTC write bit is enabled
   if (ctrl_config.write_rtc != 1) {
     ctrl_config.write_rtc = 1;
     ab1815_set_config(ctrl_config);
@@ -211,6 +223,12 @@ void ab1815_set_time(ab1815_time_t time) {
   //printf("DEBUG: Packet Tx - %02x %02x %02x %02x %02x %02x %02x %02x\n", write[0], write[1], write[2], write[3], write[4], write[5], write[6], write[7]);
 
   ab1815_write_reg(AB1815_HUND, write, 8);
+
+  // Ensure RTC write bit is disabled to prevent unintended access
+  if (ctrl_config.write_rtc != 0) {
+    ctrl_config.write_rtc = 0;
+    ab1815_set_config(ctrl_config);
+  }
 }
 
 ab1815_time_t ab1815_get_time(void) {
@@ -318,6 +336,28 @@ void ab1815_tickle_watchdog(void) {
 void ab1815_clear_watchdog(void) {
   uint8_t buf = 0;
   ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
+}
+
+uint8_t ab1815_ready(void) {
+    return nrf_gpio_pin_read(CARRIER_RTC_INT);
+}
+
+uint8_t ab1815_wait_for_ready(uint16_t timeout_ms) {
+
+    uint16_t counter   = 0;
+    uint16_t step_size = 10; // ms
+
+    while(!ab1815_ready() && (counter < timeout_ms)) {
+        nrf_delay_ms(step_size);
+        counter += step_size;
+    }
+
+    if (counter < timeout_ms) {
+        return 0;
+    } else {
+        printf("WARNING: RTC not ready yet, but timeout of %u ms expired!\n", timeout_ms);
+        return 1;
+    }
 }
 
 void ab1815_printTime(ab1815_time_t time) {
