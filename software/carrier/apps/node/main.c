@@ -407,7 +407,7 @@ static void rtc_external_init(void) {
             .stop      = 0,
             .hour_12   = 0,
             .OUTB      = 0,
-            .OUT       = 0,
+            .OUT       = 1,
             .rst_pol   = 0,
             .auto_rst  = 1,
             .write_rtc = 1,
@@ -424,9 +424,13 @@ static void rtc_external_init(void) {
             .xt1_en     = 0
     };
 
+    // Get current status
+    //ab1815_get_status();
+
     // Set configs
     ab1815_set_config(ctrl_config);
     ab1815_set_int_config(int_config);
+    ab1815_enable_trickle_charger();
 
     // Initialize time - only done once after first flash of code
     ab1815_init_time();

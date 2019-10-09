@@ -296,6 +296,16 @@ struct timeval ab1815_to_unix(ab1815_time_t time) {
   return unix_time;
 }
 
+void ab1815_enable_trickle_charger(void) {
+    uint8_t write;
+
+    // Trickle - needs to be enabled first
+    write = AB1815_CONF_KEY_REG;
+    ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1);
+    write = (0b1010 << 4) | (0b01 << 2) | (0b01);
+    ab1815_write_reg(AB1815_TRICKLE, &write, 1);
+}
+
 void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback* cb) {
   uint8_t buf[8] = {0};
   interrupt_callback = cb;
