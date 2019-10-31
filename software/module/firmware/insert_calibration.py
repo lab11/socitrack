@@ -45,6 +45,8 @@ with open(CALIBRATIONS_FNAME) as f:
 				calib_values[i] = int(calib_values[i])
 				if calib_values[i] == -1:
 					calib_values[i] = DEFAULT_CALIB
+					print('WARN: Using default valule for calibration entry', i, file=sys.stderr)
+			print('Found calibration data for', ID, file=sys.stderr)
 			break
 	else:
 		print('Did not find calibration values for {}'.format(ID), file=sys.stderr)
