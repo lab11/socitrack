@@ -1036,6 +1036,12 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 			// Re-enable rx for other signalling packets
 			dwt_rxenable(0);
 		}
+		else if (in_glossy_signal->message_type == MSG_TYPE_PP_GLOSSY_SYNC) {
+    		debug_msg("WARNING: Received schedule as Glossy master!\n");
+
+    		// As this will be resolved through BLE, let's just continue listening
+    		dwt_rxenable(0);
+		}
 		else {
 		    debug_msg("ERROR: Received unknown LWB packet as Glossy master!\n");
 		}
@@ -1108,6 +1114,10 @@ void glossy_process_rxcallback(uint64_t dw_timestamp, uint8_t *buf){
 					debug_msg(", but received from ");
 					debug_msg_uint(in_glossy_sync->header.sourceAddr[0]);
 					debug_msg("!\n");
+
+                    // As this will be resolved through BLE, let's just continue listening
+                    dwt_rxenable(0);
+
 					return;
 				}
 #endif

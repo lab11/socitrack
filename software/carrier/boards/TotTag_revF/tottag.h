@@ -75,7 +75,7 @@
 #define CARRIER_RTC_INT     NRF_GPIO_PIN_MAP(0,2)
 #define CARRIER_RTC_WDI     NRF_GPIO_PIN_MAP(0,31)
 
-// To use "rtc_ab1815", we define some additional matrocs
+// To use "rtc_ab1815", we define some additional macros
 #define RTC_CS              CARRIER_CS_RTC
 #define RTC_IRQ1            CARRIER_RTC_INT
 #define RTC_WDI             CARRIER_RTC_WDI
