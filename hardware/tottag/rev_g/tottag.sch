@@ -5600,19 +5600,19 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <sheet>
 <description>nRF8240</description>
 <plain>
-<text x="30.48" y="175.26" size="3.81" layer="98" align="bottom-center">nRF52840 BLE</text>
+<text x="35.56" y="177.8" size="6.4516" layer="98" align="bottom-center">nRF52840 BLE</text>
 <text x="109.22" y="182.88" size="1.778" layer="98">Do not use I2C pull-up
 (NRF has internal pull-up)</text>
 <wire x1="177.8" y1="190.5" x2="177.8" y2="165.1" width="0.1524" layer="98" style="longdash"/>
 <wire x1="177.8" y1="165.1" x2="254" y2="165.1" width="0.1524" layer="98" style="longdash"/>
 <wire x1="177.8" y1="165.1" x2="177.8" y2="129.54" width="0.1524" layer="98" style="longdash"/>
 <wire x1="177.8" y1="129.54" x2="254" y2="129.54" width="0.1524" layer="98" style="longdash"/>
-<text x="137.922" y="125.73" size="2.54" layer="98">RTC</text>
+<text x="140.462" y="80.01" size="3.81" layer="98">RTC</text>
 <wire x1="177.8" y1="129.54" x2="135.382" y2="129.54" width="0.1524" layer="98" style="longdash"/>
 <wire x1="135.382" y1="129.54" x2="135.382" y2="76.2" width="0.1524" layer="98" style="longdash"/>
 <wire x1="135.382" y1="76.2" x2="254" y2="76.2" width="0.1524" layer="98" style="longdash"/>
-<text x="180.34" y="160.02" size="2.54" layer="98">J-LINK</text>
-<text x="180.34" y="167.64" size="2.54" layer="98">LED</text>
+<text x="180.34" y="160.02" size="3.81" layer="98">J-LINK</text>
+<text x="180.34" y="167.64" size="3.81" layer="98">LED</text>
 <text x="188.722" y="126.238" size="1.778" layer="98">Pull-up nCS to prevent float</text>
 </plain>
 <instances>
