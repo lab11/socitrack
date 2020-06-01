@@ -6606,6 +6606,9 @@ for RTC</text>
 <text x="234.442" y="120.65" size="1.778" layer="98" align="bottom-center">VBAT ESR must be 1.5kOhm
 for optimal performance</text>
 <text x="222.758" y="140.97" size="1.778" layer="98" rot="R180" align="bottom-center">90 Ohm</text>
+<text x="160.782" y="181.61" size="1.778" layer="98">"Standard" battery is
+PKCELL LP803860
+1528-1857-ND</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
