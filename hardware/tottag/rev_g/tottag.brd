@@ -173,6 +173,7 @@
 <layer number="255" name="routoute" color="7" fill="1" visible="no" active="yes"/>
 </layers>
 <board>
+<fusionsync huburn="a.YnVzaW5lc3M6dWNzZDc1OA" projecturn="a.YnVzaW5lc3M6dWNzZDc1OCMyMDIwMDUzMDMwMzI4NTUyNg" f3durn="urn:adsk.wipprod:dm.lineage:rzUGj1kvRPCORpM7Y38XuQ" pcbguid="1a70377d-5c63-4985-bfd6-ae1eb533b67b" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="cca8e9f0-e40c-442c-97bf-ea21334c954c" lastsyncedrevisionid="cca8e9f0-e40c-442c-97bf-ea21334c954c" lastboardhashguid="4531dc47-a4df-2e38-95cf-17d41f91e382" lastpushedtime="2020-05-30T20:04:52Z" linktopcb3d="true"/>
 <plain>
 <hole x="25.146" y="5.207" drill="2.54"/>
 <hole x="-25.146" y="5.207" drill="2.54"/>
@@ -7129,6 +7130,11 @@ Quickturn PCB 4 Layer .DRU</description>
 Since Version 8.2, EAGLE supports online libraries. The ids
 of those online libraries will not be understood (or retained)
 with this version.
+</note>
+<note version="8.3" severity="warning">
+Since Version 8.3, EAGLE supports Fusion synchronisation.
+This feature will not be available in this version and saving
+the document will break the link to the Fusion PCB feature.
 </note>
 <note version="8.3" severity="warning">
 Since Version 8.3, EAGLE supports URNs for individual library
