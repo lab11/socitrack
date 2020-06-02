@@ -7527,7 +7527,7 @@ and STANDBY (WKUP4)</text>
 <text x="241.3" y="157.988" size="1.016" layer="98" rot="R90">Pull-down
 for (DEEP)SLEEP</text>
 <text x="12.7" y="58.42" size="2.032" layer="98" rot="R180">VDD/48</text>
-<text x="38.1" y="137.16" size="1.016" layer="97">For regularator caps, please
+<text x="38.1" y="139.7" size="1.016" layer="97">For regularator caps, please
 use B, X5R, and X7R grades in
 temperature characteristics</text>
 <text x="38.1" y="2.54" size="2.032" layer="98" rot="R180" align="center">2x Programming header (top/bot)</text>
