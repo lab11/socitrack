@@ -1464,12 +1464,6 @@ Chip Antenna</description>
 <wire x1="-5.08" y1="0" x2="5.08" y2="0" width="0" layer="107"/>
 <wire x1="-5.08" y1="0" x2="5.08" y2="0" width="0" layer="46"/>
 </package>
-<package name="BATTERY_HOLE">
-<text x="-1.5" y="1.25" size="1.27" layer="25" align="bottom-center">+</text>
-<text x="1.5" y="1.25" size="1.27" layer="25" align="bottom-center">-</text>
-<pad name="N" x="1.5" y="0" drill="1.1" diameter="2" shape="octagon"/>
-<pad name="P" x="-1.5" y="0" drill="1.1" diameter="2" shape="octagon"/>
-</package>
 <package name="TC2030-IDC-NL_NOSILK">
 <smd name="1" x="-1.27" y="-0.635" dx="0.7874" dy="0.7874" layer="1" roundness="100" cream="no"/>
 <smd name="3" x="0" y="-0.635" dx="0.7874" dy="0.7874" layer="1" roundness="100" cream="no"/>
@@ -1594,14 +1588,6 @@ Chip Antenna</description>
 <pin name="ID" x="-7.62" y="-2.54" visible="pin" length="middle" function="dot"/>
 <pin name="GND" x="-7.62" y="-5.08" visible="pin" length="middle" function="dot"/>
 </symbol>
-<symbol name="BAT">
-<wire x1="-5.08" y1="5.08" x2="-5.08" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="-5.08" y1="-5.08" x2="5.08" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="5.08" y1="-5.08" x2="5.08" y2="5.08" width="0.254" layer="94"/>
-<wire x1="5.08" y1="5.08" x2="-5.08" y2="5.08" width="0.254" layer="94"/>
-<pin name="+" x="10.16" y="2.54" length="middle" rot="R180"/>
-<pin name="-" x="10.16" y="-2.54" length="middle" rot="R180"/>
-</symbol>
 <symbol name="JLINK-SWD-TC">
 <pin name="SWDIO" x="12.7" y="5.08" visible="pin" length="short" rot="R180"/>
 <pin name="SWDCLK" x="12.7" y="2.54" visible="pin" length="short" rot="R180"/>
@@ -1709,22 +1695,6 @@ Bottom Mount</description>
 <attribute name="MOUSER" value="798-ZX62-B-5PA11" constant="no"/>
 <attribute name="NEWARK" value="86P8793" constant="no"/>
 </technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="BAT_HOLE">
-<gates>
-<gate name="G$1" symbol="BAT" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="BATTERY_HOLE">
-<connects>
-<connect gate="G$1" pin="+" pad="P"/>
-<connect gate="G$1" pin="-" pad="N"/>
-</connects>
-<technologies>
-<technology name=""/>
 </technologies>
 </device>
 </devices>
@@ -5271,6 +5241,140 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </deviceset>
 </devicesets>
 </library>
+<library name="SparkFun-Connectors" urn="urn:adsk.eagle:library:513">
+<description>&lt;h3&gt;SparkFun Connectors&lt;/h3&gt;
+This library contains electrically-functional connectors. 
+&lt;br&gt;
+&lt;br&gt;
+We've spent an enormous amount of time creating and checking these footprints and parts, but it is &lt;b&gt; the end user's responsibility&lt;/b&gt; to ensure correctness and suitablity for a given componet or application. 
+&lt;br&gt;
+&lt;br&gt;If you enjoy using this library, please buy one of our products at &lt;a href=" www.sparkfun.com"&gt;SparkFun.com&lt;/a&gt;.
+&lt;br&gt;
+&lt;br&gt;
+&lt;b&gt;Licensing:&lt;/b&gt; Creative Commons ShareAlike 4.0 International - https://creativecommons.org/licenses/by-sa/4.0/ 
+&lt;br&gt;
+&lt;br&gt;
+You are welcome to use this library for commercial purposes. For attribution, we ask that when you begin to sell your device using our footprint, you email us with a link to the product being sold. We want bragging rights that we helped (in a very small part) to create your 8th world wonder. We would like the opportunity to feature your device on our homepage.</description>
+<packages>
+<package name="JST-2-SMD" urn="urn:adsk.eagle:footprint:37657/1" library_version="1">
+<description>&lt;h3&gt;JST-Right Angle Male Header SMT&lt;/h3&gt;
+&lt;p&gt;Specifications:
+&lt;ul&gt;&lt;li&gt;Pin count: 2&lt;/li&gt;
+&lt;li&gt;Pin pitch: 2mm&lt;/li&gt;
+&lt;/ul&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=”http://www.4uconnector.com/online/object/4udrawing/20404.pdf”&gt;Datasheet referenced for footprint&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;Example device(s):
+&lt;ul&gt;&lt;li&gt;CONN_02&lt;/li&gt;
+&lt;li&gt;JST_2MM_MALE&lt;/li&gt;
+&lt;/ul&gt;&lt;/p&gt;</description>
+<wire x1="-4" y1="-1" x2="-4" y2="-4.5" width="0.2032" layer="21"/>
+<wire x1="-4" y1="-4.5" x2="-3.2" y2="-4.5" width="0.2032" layer="21"/>
+<wire x1="-3.2" y1="-4.5" x2="-3.2" y2="-2" width="0.2032" layer="21"/>
+<wire x1="-3.2" y1="-2" x2="-2" y2="-2" width="0.2032" layer="21"/>
+<wire x1="2" y1="-2" x2="3.2" y2="-2" width="0.2032" layer="21"/>
+<wire x1="3.2" y1="-2" x2="3.2" y2="-4.5" width="0.2032" layer="21"/>
+<wire x1="3.2" y1="-4.5" x2="4" y2="-4.5" width="0.2032" layer="21"/>
+<wire x1="4" y1="-4.5" x2="4" y2="-1" width="0.2032" layer="21"/>
+<wire x1="2" y1="3" x2="-2" y2="3" width="0.2032" layer="21"/>
+<smd name="1" x="-1" y="-3.7" dx="1" dy="4.6" layer="1"/>
+<smd name="2" x="1" y="-3.7" dx="1" dy="4.6" layer="1"/>
+<smd name="NC1" x="-3.4" y="1.5" dx="3.4" dy="1.6" layer="1" rot="R90"/>
+<smd name="NC2" x="3.4" y="1.5" dx="3.4" dy="1.6" layer="1" rot="R90"/>
+<text x="-1.397" y="1.778" size="0.6096" layer="25" font="vector" ratio="20">&gt;NAME</text>
+<text x="-1.651" y="0.635" size="0.6096" layer="27" font="vector" ratio="20">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="JST-2-SMD" urn="urn:adsk.eagle:package:38042/1" type="box" library_version="1">
+<description>JST-Right Angle Male Header SMT
+Specifications:
+Pin count: 2
+Pin pitch: 2mm
+
+Datasheet referenced for footprint
+Example device(s):
+CONN_02
+JST_2MM_MALE
+</description>
+<packageinstances>
+<packageinstance name="JST-2-SMD"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="JST_2MM_MALE" urn="urn:adsk.eagle:symbol:37934/1" library_version="1">
+<wire x1="-2.54" y1="-2.54" x2="-2.54" y2="1.778" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="1.778" x2="-2.54" y2="3.302" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="3.302" x2="-2.54" y2="5.08" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="5.08" x2="5.08" y2="5.08" width="0.254" layer="94"/>
+<wire x1="5.08" y1="5.08" x2="5.08" y2="3.302" width="0.254" layer="94"/>
+<wire x1="5.08" y1="3.302" x2="5.08" y2="1.778" width="0.254" layer="94"/>
+<wire x1="5.08" y1="1.778" x2="5.08" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="5.08" y1="-2.54" x2="4.064" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="4.064" y1="-2.54" x2="4.064" y2="0" width="0.254" layer="94"/>
+<wire x1="4.064" y1="0" x2="-1.524" y2="0" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="0" x2="-1.524" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="-2.54" x2="-1.524" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="1.778" x2="-1.778" y2="1.778" width="0.254" layer="94"/>
+<wire x1="-1.778" y1="1.778" x2="-1.778" y2="3.302" width="0.254" layer="94"/>
+<wire x1="-1.778" y1="3.302" x2="-2.54" y2="3.302" width="0.254" layer="94"/>
+<wire x1="5.08" y1="1.778" x2="4.318" y2="1.778" width="0.254" layer="94"/>
+<wire x1="4.318" y1="1.778" x2="4.318" y2="3.302" width="0.254" layer="94"/>
+<wire x1="4.318" y1="3.302" x2="5.08" y2="3.302" width="0.254" layer="94"/>
+<wire x1="2.032" y1="1.016" x2="3.048" y2="1.016" width="0.254" layer="94"/>
+<wire x1="2.54" y1="0.508" x2="2.54" y2="1.524" width="0.254" layer="94"/>
+<wire x1="0" y1="0.508" x2="0" y2="1.524" width="0.254" layer="94"/>
+<pin name="-" x="0" y="-5.08" visible="off" length="middle" rot="R90"/>
+<pin name="+" x="2.54" y="-5.08" visible="off" length="middle" rot="R90"/>
+<pin name="PAD2" x="5.08" y="2.54" visible="off" length="point" rot="R90"/>
+<pin name="PAD1" x="-2.54" y="2.54" visible="off" length="point" rot="R90"/>
+<text x="-2.54" y="5.842" size="1.778" layer="95">&gt;NAME</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="JST_2MM_MALE" urn="urn:adsk.eagle:component:38321/1" prefix="J" uservalue="yes" library_version="1">
+<description>&lt;h3&gt;JST 2MM MALE RA CONNECTOR&lt;/h3&gt;
+Two pin, compact surface mount connector. Commonly used as a battery input connection point. We really like the solid locking feeling and high current rating on these small connectors. We use these all the time as battery connectors. Mates to single-cell LiPo batteries.
+
+&lt;p&gt;&lt;/p&gt;
+&lt;b&gt;Here is the connector we sell at SparkFun:&lt;/b&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://www.sparkfun.com/products/8612"&gt;JST Right Angle Connector - White&lt;/a&gt; (PRT-08612)&lt;/li&gt;
+&lt;li&gt;&lt;a href="http://www.sparkfun.com/datasheets/Prototyping/Connectors/JST-Horizontal.pdf"&gt;Datasheet&lt;/a&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;/p&gt;
+&lt;b&gt;It was used on these SparkFun products:&lt;/b&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://www.sparkfun.com/products/11214"&gt;SparkFun MOSFET Power Controller&lt;/a&gt; (PRT-11214)&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.sparkfun.com/products/13777"&gt;SparkFun Battery Babysitter - LiPo Battery Manager&lt;/a&gt; (PRT-13777)&lt;/li&gt;
+&lt;li&gt;And many, many others that required a lipo battery connection.&lt;/li&gt;
+&lt;/ul&gt;</description>
+<gates>
+<gate name="G$1" symbol="JST_2MM_MALE" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="JST-2-SMD">
+<connects>
+<connect gate="G$1" pin="+" pad="2"/>
+<connect gate="G$1" pin="-" pad="1"/>
+<connect gate="G$1" pin="PAD1" pad="NC1"/>
+<connect gate="G$1" pin="PAD2" pad="NC2"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:38042/1"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="PROD_ID" value="CONN-11443"/>
+<attribute name="SF_ID" value="PRT-08612" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -5306,7 +5410,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="D1" library="SparkFun-LED" deviceset="LED" device="0603" value="GREEN"/>
 <part name="SUPPLY2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="J1" library="connector" deviceset="MICRO_USB_B_HIROSE_ZX62-B-5PA(11)" device=""/>
-<part name="J3" library="connector" deviceset="BAT_HOLE" device=""/>
 <part name="SUPPLY8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="TP2" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="TP1" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
@@ -5596,6 +5699,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="C71" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10uF"/>
 <part name="U4" library="regulators" deviceset="XCL206" device="B"/>
 <part name="GND2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="J6" library="SparkFun-Connectors" library_urn="urn:adsk.eagle:library:513" deviceset="JST_2MM_MALE" device="" package3d_urn="urn:adsk.eagle:package:38042/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -6606,7 +6710,7 @@ for RTC</text>
 <text x="234.442" y="120.65" size="1.778" layer="98" align="bottom-center">VBAT ESR must be 1.5kOhm
 for optimal performance</text>
 <text x="222.758" y="140.97" size="1.778" layer="98" rot="R180" align="bottom-center">90 Ohm</text>
-<text x="160.782" y="181.61" size="1.778" layer="98">"Standard" battery is
+<text x="112.522" y="179.07" size="1.778" layer="98" align="center-right">"Standard" battery is
 PKCELL LP803860
 1528-1857-ND</text>
 </plain>
@@ -6680,9 +6784,8 @@ PKCELL LP803860
 <attribute name="NAME" x="12.7" y="163.83" size="1.778" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="12.7" y="144.78" size="1.778" layer="95" rot="MR0"/>
 </instance>
-<instance part="J3" gate="G$1" x="152.4" y="177.8" smashed="yes" rot="MR0"/>
-<instance part="SUPPLY8" gate="1" x="139.7" y="167.64" smashed="yes">
-<attribute name="VALUE" x="137.16" y="165.1" size="1.778" layer="96"/>
+<instance part="SUPPLY8" gate="1" x="127" y="170.18" smashed="yes">
+<attribute name="VALUE" x="124.46" y="167.64" size="1.778" layer="96"/>
 </instance>
 <instance part="U5" gate="G$1" x="180.34" y="160.02" smashed="yes">
 <attribute name="NAME" x="170.18" y="165.608" size="1.778" layer="95" ratio="12"/>
@@ -6829,6 +6932,9 @@ PKCELL LP803860
 <attribute name="NAME" x="235.1786" y="158.75" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="230.378" y="158.75" size="1.778" layer="96" rot="R270"/>
 </instance>
+<instance part="J6" gate="G$1" x="121.92" y="177.8" smashed="yes" rot="R90">
+<attribute name="NAME" x="116.078" y="175.26" size="1.778" layer="95" rot="R90"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -6882,9 +6988,8 @@ PKCELL LP803860
 </segment>
 <segment>
 <pinref part="SUPPLY8" gate="1" pin="GND"/>
-<wire x1="139.7" y1="170.18" x2="139.7" y2="175.26" width="0.1524" layer="91"/>
-<pinref part="J3" gate="G$1" pin="-"/>
-<wire x1="139.7" y1="175.26" x2="142.24" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="127" y1="172.72" x2="127" y2="177.8" width="0.1524" layer="91"/>
+<pinref part="J6" gate="G$1" pin="-"/>
 </segment>
 <segment>
 <pinref part="C60" gate="G$1" pin="2"/>
@@ -7074,8 +7179,7 @@ PKCELL LP803860
 <junction x="132.08" y="162.56"/>
 <junction x="162.56" y="162.56"/>
 <wire x1="132.08" y1="180.34" x2="132.08" y2="162.56" width="0.1524" layer="91"/>
-<pinref part="J3" gate="G$1" pin="+"/>
-<wire x1="132.08" y1="180.34" x2="142.24" y2="180.34" width="0.1524" layer="91"/>
+<wire x1="132.08" y1="180.34" x2="127" y2="180.34" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="IN"/>
 <wire x1="162.56" y1="162.56" x2="167.64" y2="162.56" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="!SHDN"/>
@@ -7087,10 +7191,11 @@ PKCELL LP803860
 <wire x1="99.06" y1="160.02" x2="101.6" y2="160.02" width="0.1524" layer="91"/>
 <wire x1="101.6" y1="160.02" x2="101.6" y2="162.56" width="0.1524" layer="91"/>
 <junction x="101.6" y="162.56"/>
-<label x="132.08" y="180.34" size="1.778" layer="95" rot="MR0"/>
+<label x="131.826" y="180.848" size="1.778" layer="95" rot="MR0"/>
 <pinref part="C69" gate="G$1" pin="1"/>
 <wire x1="124.46" y1="162.56" x2="124.46" y2="149.86" width="0.1524" layer="91"/>
 <junction x="124.46" y="162.56"/>
+<pinref part="J6" gate="G$1" pin="+"/>
 </segment>
 </net>
 <net name="BATIN" class="0">
