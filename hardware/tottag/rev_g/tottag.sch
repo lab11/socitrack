@@ -5375,6 +5375,221 @@ Two pin, compact surface mount connector. Commonly used as a battery input conne
 </deviceset>
 </devicesets>
 </library>
+<library name="Wurth_Switch_WS-SLSU" urn="urn:adsk.eagle:library:18253886">
+<description>&lt;BR&gt;Wurth Elektronik - Switches - Slide Switches - WS-SLSU&lt;br&gt;&lt;Hr&gt;
+
+&lt;BR&gt;
+&lt;TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0&gt;
+&lt;TR&gt;   
+&lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;BR&gt;&lt;br&gt;
+      &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+&lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;br&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;
+      -----&lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+    &lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt; &lt;FONT FACE=ARIAL SIZE=3&gt;&lt;br&gt;
+      ---------------------------&lt;BR&gt;
+&lt;B&gt;&lt;I&gt;&lt;span style='font-size:26pt;
+  color:#FF6600;'&gt;WE &lt;/span&gt;&lt;/i&gt;&lt;/b&gt;
+&lt;BR&gt;
+      ---------------------------&lt;BR&gt;&lt;b&gt;Würth Elektronik&lt;/b&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+    &lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;br&gt;
+      ---------O---&lt;BR&gt;
+      ----O--------&lt;BR&gt;
+      ---------O---&lt;BR&gt;
+      ----O--------&lt;BR&gt;
+      ---------O---&lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+   
+&lt;TD BGCOLOR="#cccccc" ALIGN=CENTER&gt;&lt;FONT FACE=ARIAL SIZE=3&gt;&lt;BR&gt;
+      &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp; &amp;nbsp;&lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;
+       &lt;BR&gt;&lt;BR&gt;&lt;/FONT&gt;
+    &lt;/TD&gt;
+  &lt;/TR&gt;
+
+  &lt;TR&gt;
+    &lt;TD COLSPAN=7&gt;&amp;nbsp;
+    &lt;/TD&gt;
+  &lt;/TR&gt;
+  
+&lt;/TABLE&gt;
+&lt;B&gt;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;More than you expect&lt;BR&gt;&lt;BR&gt;&lt;BR&gt;&lt;/B&gt;
+
+&lt;HR&gt;&lt;BR&gt;
+&lt;b&gt;Würth Elektronik eiSos GmbH &amp; Co. KG&lt;/b&gt;&lt;br&gt;
+EMC &amp; Inductive Solutions&lt;br&gt;
+
+Max-Eyth-Str.1&lt;br&gt;
+D-74638 Waldenburg&lt;br&gt;
+&lt;br&gt;
+Tel: +49 (0)7942-945-0&lt;br&gt;
+Fax:+49 (0)7942-945-5000&lt;br&gt;
+&lt;br&gt;
+&lt;a href="http://www.we-online.com/web/en/electronic_components/produkte_pb/bauteilebibliotheken/eagle_4.php"&gt;www.we-online.com/eagle&lt;/a&gt;&lt;br&gt;
+&lt;a href="mailto:libraries@we-online.com"&gt;libraries@we-online.com&lt;/a&gt; &lt;BR&gt;&lt;BR&gt;
+&lt;br&gt;&lt;HR&gt;&lt;BR&gt;
+Neither Autodesk nor Würth Elektronik eiSos does warrant that this library is error-free or &lt;br&gt;
+that it meets your specific requirements.&lt;br&gt;&lt;BR&gt;
+Please contact us for more information.&lt;br&gt;
+&lt;HR&gt;
+&lt;br&gt;Eagle Version 9, Library Revision 2020b, 2020-03-24&lt;br&gt;
+&lt;HR&gt;
+Copyright: Würth Elektronik</description>
+<packages>
+<package name="450404015514" urn="urn:adsk.eagle:footprint:18253887/1" library_version="5">
+<description>&lt;B&gt;WS-SLSU&lt;/B&gt;&lt;BR&gt; Mini Slide Switch, Same Side Connection Side Push 6.7x2.7 mm</description>
+<smd name="1" x="2.25" y="-2.05" dx="1.1" dy="0.7" layer="1" rot="R90"/>
+<smd name="2" x="-0.75" y="-2.05" dx="1.1" dy="0.7" layer="1" rot="R90"/>
+<smd name="3" x="-2.25" y="-2.05" dx="1.1" dy="0.7" layer="1" rot="R90"/>
+<smd name="Z1" x="-3.75" y="1.15" dx="1" dy="0.8" layer="1"/>
+<smd name="Z2" x="3.75" y="1.15" dx="1" dy="0.8" layer="1"/>
+<smd name="Z3" x="3.75" y="-1.15" dx="1" dy="0.8" layer="1"/>
+<smd name="Z4" x="-3.75" y="-1.15" dx="1" dy="0.8" layer="1"/>
+<wire x1="3.35" y1="1.35" x2="3.35" y2="-1.35" width="0.1" layer="51"/>
+<wire x1="3.35" y1="-1.35" x2="-3.35" y2="-1.35" width="0.1" layer="51"/>
+<wire x1="-3.35" y1="-1.35" x2="-3.35" y2="1.35" width="0.1" layer="51"/>
+<wire x1="-3.35" y1="1.35" x2="0.09" y2="1.35" width="0.1" layer="51"/>
+<wire x1="0.09" y1="1.35" x2="1.39" y2="1.35" width="0.1" layer="51"/>
+<wire x1="1.39" y1="1.35" x2="3.35" y2="1.35" width="0.1" layer="51"/>
+<wire x1="0.09" y1="1.35" x2="0.09" y2="2.85" width="0.1" layer="51"/>
+<wire x1="0.09" y1="2.85" x2="1.39" y2="2.85" width="0.1" layer="51"/>
+<wire x1="1.39" y1="2.85" x2="1.39" y2="1.35" width="0.1" layer="51"/>
+<wire x1="-2.9" y1="1.45" x2="-0.01" y2="1.45" width="0.2" layer="21"/>
+<wire x1="-0.01" y1="1.45" x2="-0.01" y2="2.95" width="0.2" layer="21"/>
+<wire x1="-0.01" y1="2.95" x2="1.49" y2="2.95" width="0.2" layer="21"/>
+<wire x1="1.49" y1="2.95" x2="1.49" y2="1.45" width="0.2" layer="21"/>
+<wire x1="1.49" y1="1.45" x2="2.9" y2="1.45" width="0.2" layer="21"/>
+<wire x1="-3.45" y1="0.4" x2="-3.45" y2="-0.4" width="0.2" layer="21"/>
+<wire x1="3.45" y1="-0.4" x2="3.45" y2="0.4" width="0.2" layer="21"/>
+<wire x1="-0.1" y1="-1.45" x2="1.6" y2="-1.45" width="0.2" layer="21"/>
+<text x="-3.1" y="2.5" size="1.016" layer="25" align="bottom-center">&gt;NAME</text>
+<text x="-2.7" y="-4.3" size="1.016" layer="27">&gt;VALUE</text>
+<hole x="-1.5" y="0" drill="0.9"/>
+<hole x="1.5" y="0" drill="0.9"/>
+<circle x="1.7" y="-0.9" radius="0.1" width="0.2" layer="21"/>
+<polygon width="0.1" layer="39">
+<vertex x="-0.21" y="3.15"/>
+<vertex x="1.7" y="3.15"/>
+<vertex x="1.7" y="1.75"/>
+<vertex x="4.45" y="1.75"/>
+<vertex x="4.45" y="-1.75"/>
+<vertex x="2.8" y="-1.75"/>
+<vertex x="2.8" y="-2.8"/>
+<vertex x="-2.8" y="-2.8"/>
+<vertex x="-2.8" y="-1.75"/>
+<vertex x="-4.45" y="-1.75"/>
+<vertex x="-4.45" y="1.75"/>
+<vertex x="-0.21" y="1.75"/>
+</polygon>
+</package>
+</packages>
+<packages3d>
+<package3d name="450404015514" urn="urn:adsk.eagle:package:18253889/2" type="model" library_version="5">
+<description>&lt;B&gt;WS-SLSU&lt;/B&gt;&lt;BR&gt; Mini Slide Switch, Same Side Connection Side Push 6.7x2.7 mm</description>
+<packageinstances>
+<packageinstance name="450404015514"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="WS-SLSU" urn="urn:adsk.eagle:symbol:18253888/1" library_version="5">
+<description>WS-SLSU</description>
+<pin name="1" x="5.08" y="2.54" visible="pad" length="short" direction="pas" rot="R180"/>
+<pin name="2" x="-5.08" y="0" visible="pad" length="short" direction="pas"/>
+<pin name="3" x="5.08" y="-2.54" visible="pad" length="short" direction="pas" rot="R180"/>
+<text x="-2.41" y="-5.12" size="1.27" layer="96">&gt;VALUE</text>
+<text x="2.14" y="4.11" size="1.27" layer="95" align="bottom-center">&gt;NAME</text>
+<text x="-3.3" y="-1.8" size="1.27" layer="94">com</text>
+<circle x="1.905" y="-2.54" radius="0.508" width="0.254" layer="94"/>
+<circle x="1.905" y="2.54" radius="0.508" width="0.254" layer="94"/>
+<wire x1="-1.646" y1="0.5" x2="1.4" y2="2.7" width="0.254" layer="94"/>
+<polygon width="0.254" layer="94">
+<vertex x="-2.032" y="-0.508" curve="-90"/>
+<vertex x="-2.54" y="0" curve="-90"/>
+<vertex x="-2.032" y="0.508" curve="-90"/>
+<vertex x="-1.524" y="0" curve="-90"/>
+</polygon>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="450404015514" urn="urn:adsk.eagle:component:18253890/3" prefix="S" uservalue="yes" library_version="5">
+<description>&lt;b&gt;WS-SLSU Mini Slide Switch, Same Side Connection Side Push 6.7x2.7 mm&lt;/B&gt;&lt;BR&gt;&lt;BR&gt;
+
+&lt;B&gt;Properties&lt;/B&gt;&lt;BR&gt;
+&lt;BR&gt;Actuator Material:PA46
+&lt;BR&gt;Actuator Flammability Rating:UL94 HB
+&lt;BR&gt;Actuator Color:Black
+&lt;BR&gt;Frame Material:LCP
+&lt;BR&gt;Frame Flammability Rating:UL94 V-0
+&lt;BR&gt;Frame Color:Black
+&lt;BR&gt;Contact Material:Copper Alloy
+&lt;BR&gt;Contact Plating:Silver
+&lt;BR&gt;Terminal Material:Copper Alloy
+&lt;BR&gt;Terminal Plating:Silver
+&lt;BR&gt;Switching Function:On-On
+&lt;BR&gt;Schematic:SPDT
+&lt;BR&gt;Connection Type:Same Side Connection
+&lt;BR&gt;Qty.:3300
+&lt;BR&gt;
+&lt;BR&gt;
+&lt;B&gt;Material Properties&lt;/B&gt;
+&lt;BR&gt;Cover Material:Stainless Steel
+&lt;BR&gt;
+&lt;BR&gt;
+&lt;B&gt;General Information&lt;/B&gt;
+&lt;BR&gt;Operating Temperature:-40 up to +85 °C
+&lt;BR&gt;
+&lt;BR&gt;
+&lt;B&gt;Packaging Properties&lt;/B&gt;
+&lt;BR&gt;Packaging :Tape and Reel
+&lt;BR&gt;&lt;BR&gt;
+&lt;BR&gt;
+&lt;br&gt;&lt;a href="https://www.we-online.com/catalog/media/o76706v209%20Family_WS-SLSU_Gruppe.jpg" title="Enlarge picture"&gt;
+&lt;img src="https://www.we-online.com/catalog/media/o76706v209%20Family_WS-SLSU_Gruppe.jpg"  width="320"&gt;&lt;/a&gt;&lt;p&gt;
+
+&lt;/b&gt;&lt;br&gt;            
+Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_HORIZONTAL/"&gt;https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_HORIZONTAL/&lt;/a&gt;&lt;p&gt;
+&lt;br&gt;Updated by yingchun,Shan;2020-02-25
+&lt;br&gt;2020(C) Würth Elektronik</description>
+<gates>
+<gate name="G$1" symbol="WS-SLSU" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="450404015514">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+<connect gate="G$1" pin="3" pad="3"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:18253889/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET-URL" value="https://www.we-online.com/catalog/datasheet/450404015514.pdf" constant="no"/>
+<attribute name="IR" value="300mA" constant="no"/>
+<attribute name="PACKAGING" value="Tape and Reel " constant="no"/>
+<attribute name="PART-NUMBER" value="450404015514" constant="no"/>
+<attribute name="QTY" value=" 150 " constant="no"/>
+<attribute name="VR" value="5V(DC)" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -5706,6 +5921,7 @@ Two pin, compact surface mount connector. Commonly used as a battery input conne
 <part name="J7" library="connector" deviceset="TC2030-JLINK" device="-NL"/>
 <part name="+3V5" library="regulators" deviceset="+3V3" device=""/>
 <part name="SUPPLY30" library="regulators" deviceset="GND" device=""/>
+<part name="S1" library="Wurth_Switch_WS-SLSU" library_urn="urn:adsk.eagle:library:18253886" deviceset="450404015514" device="" package3d_urn="urn:adsk.eagle:package:18253889/2"/>
 </parts>
 <sheets>
 <sheet>
@@ -6742,9 +6958,13 @@ for RTC</text>
 <text x="234.442" y="120.65" size="1.778" layer="98" align="bottom-center">VBAT ESR must be 1.5kOhm
 for optimal performance</text>
 <text x="222.758" y="140.97" size="1.778" layer="98" rot="R180" align="bottom-center">90 Ohm</text>
-<text x="112.522" y="179.07" size="1.778" layer="98" align="center-right">"Standard" battery is
+<text x="104.902" y="184.15" size="1.778" layer="98" align="center-right">"Standard" battery is
 PKCELL LP803860
 1528-1857-ND</text>
+<text x="104.902" y="173.99" size="1.778" layer="98" align="center-right">New case battery:
+PKCELL LP103450
+</text>
+<text x="146.304" y="149.098" size="1.27" layer="98">To nRF ADC</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -6776,13 +6996,13 @@ PKCELL LP803860
 <instance part="P+1" gate="P1" x="205.74" y="170.18" smashed="yes">
 <attribute name="VALUE" x="203.2" y="165.1" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="R26" gate="G$1" x="132.08" y="154.94" smashed="yes" rot="R90">
-<attribute name="NAME" x="130.5814" y="151.13" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="135.382" y="151.13" size="1.778" layer="96" rot="R90"/>
+<instance part="R26" gate="G$1" x="134.62" y="154.94" smashed="yes" rot="R90">
+<attribute name="NAME" x="133.1214" y="151.13" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="137.922" y="151.13" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="R25" gate="G$1" x="132.08" y="139.7" smashed="yes" rot="R90">
-<attribute name="NAME" x="130.5814" y="135.89" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="135.382" y="135.89" size="1.778" layer="96" rot="R90"/>
+<instance part="R25" gate="G$1" x="134.62" y="139.7" smashed="yes" rot="R90">
+<attribute name="NAME" x="133.1214" y="135.89" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="137.922" y="135.89" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="C60" gate="G$1" x="162.56" y="152.4" smashed="yes">
 <attribute name="NAME" x="161.29" y="151.13" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
@@ -6792,18 +7012,18 @@ PKCELL LP803860
 <attribute name="NAME" x="204.47" y="151.13" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="207.01" y="151.13" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="C28" gate="G$1" x="139.7" y="139.7" smashed="yes" rot="R180">
-<attribute name="NAME" x="146.812" y="142.113" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="148.59" y="139.319" size="1.778" layer="96" rot="R180"/>
+<instance part="C28" gate="G$1" x="142.24" y="139.7" smashed="yes" rot="R180">
+<attribute name="NAME" x="149.352" y="142.113" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="151.13" y="139.319" size="1.778" layer="96" rot="R180"/>
 </instance>
 <instance part="SUPPLY3" gate="1" x="27.94" y="129.54" smashed="yes">
 <attribute name="VALUE" x="25.4" y="127" size="1.778" layer="96"/>
 </instance>
-<instance part="SUPPLY4" gate="1" x="132.08" y="129.54" smashed="yes">
-<attribute name="VALUE" x="129.54" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY4" gate="1" x="134.62" y="129.54" smashed="yes">
+<attribute name="VALUE" x="132.08" y="127" size="1.778" layer="96"/>
 </instance>
-<instance part="SUPPLY7" gate="1" x="139.7" y="129.54" smashed="yes">
-<attribute name="VALUE" x="137.16" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY7" gate="1" x="142.24" y="129.54" smashed="yes">
+<attribute name="VALUE" x="139.7" y="127" size="1.778" layer="96"/>
 </instance>
 <instance part="D1" gate="G$1" x="48.26" y="152.4" smashed="yes">
 <attribute name="NAME" x="44.831" y="147.828" size="1.778" layer="95" font="vector" rot="R90"/>
@@ -6816,8 +7036,8 @@ PKCELL LP803860
 <attribute name="NAME" x="12.7" y="163.83" size="1.778" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="12.7" y="144.78" size="1.778" layer="95" rot="MR0"/>
 </instance>
-<instance part="SUPPLY8" gate="1" x="127" y="170.18" smashed="yes">
-<attribute name="VALUE" x="124.46" y="167.64" size="1.778" layer="96"/>
+<instance part="SUPPLY8" gate="1" x="121.92" y="170.18" smashed="yes">
+<attribute name="VALUE" x="119.38" y="167.64" size="1.778" layer="96"/>
 </instance>
 <instance part="U5" gate="G$1" x="180.34" y="160.02" smashed="yes">
 <attribute name="NAME" x="170.18" y="165.608" size="1.778" layer="95" ratio="12"/>
@@ -6964,8 +7184,12 @@ PKCELL LP803860
 <attribute name="NAME" x="235.1786" y="158.75" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="230.378" y="158.75" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="J6" gate="G$1" x="121.92" y="177.8" smashed="yes" rot="R90">
-<attribute name="NAME" x="116.078" y="175.26" size="1.778" layer="95" rot="R90"/>
+<instance part="J6" gate="G$1" x="114.3" y="177.8" smashed="yes" rot="R90">
+<attribute name="NAME" x="108.458" y="175.26" size="1.778" layer="95" rot="R90"/>
+</instance>
+<instance part="S1" gate="G$1" x="137.16" y="180.34" smashed="yes">
+<attribute name="VALUE" x="134.75" y="175.22" size="1.27" layer="96"/>
+<attribute name="NAME" x="139.3" y="184.45" size="1.27" layer="95" align="bottom-center"/>
 </instance>
 </instances>
 <busses>
@@ -7002,12 +7226,12 @@ PKCELL LP803860
 <segment>
 <pinref part="R25" gate="G$1" pin="1"/>
 <pinref part="SUPPLY4" gate="1" pin="GND"/>
-<wire x1="132.08" y1="134.62" x2="132.08" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="134.62" x2="134.62" y2="132.08" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="C28" gate="G$1" pin="1"/>
 <pinref part="SUPPLY7" gate="1" pin="GND"/>
-<wire x1="139.7" y1="137.16" x2="139.7" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="142.24" y1="137.16" x2="142.24" y2="132.08" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="R12" gate="G$1" pin="1"/>
@@ -7020,7 +7244,8 @@ PKCELL LP803860
 </segment>
 <segment>
 <pinref part="SUPPLY8" gate="1" pin="GND"/>
-<wire x1="127" y1="172.72" x2="127" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="121.92" y1="172.72" x2="121.92" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="121.92" y1="177.8" x2="119.38" y2="177.8" width="0.1524" layer="91"/>
 <pinref part="J6" gate="G$1" pin="-"/>
 </segment>
 <segment>
@@ -7202,17 +7427,16 @@ PKCELL LP803860
 <segment>
 <pinref part="R26" gate="G$1" pin="2"/>
 <wire x1="101.6" y1="162.56" x2="124.46" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="124.46" y1="162.56" x2="132.08" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="162.56" x2="132.08" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="124.46" y1="162.56" x2="134.62" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="162.56" x2="134.62" y2="157.48" width="0.1524" layer="91"/>
 <pinref part="C60" gate="G$1" pin="1"/>
 <wire x1="162.56" y1="154.94" x2="162.56" y2="157.48" width="0.1524" layer="91"/>
 <wire x1="162.56" y1="157.48" x2="162.56" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="162.56" x2="162.56" y2="162.56" width="0.1524" layer="91"/>
-<junction x="132.08" y="162.56"/>
+<wire x1="134.62" y1="162.56" x2="149.86" y2="162.56" width="0.1524" layer="91"/>
+<junction x="134.62" y="162.56"/>
 <junction x="162.56" y="162.56"/>
-<wire x1="132.08" y1="180.34" x2="132.08" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="180.34" x2="127" y2="180.34" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="IN"/>
+<wire x1="149.86" y1="162.56" x2="162.56" y2="162.56" width="0.1524" layer="91"/>
 <wire x1="162.56" y1="162.56" x2="167.64" y2="162.56" width="0.1524" layer="91"/>
 <pinref part="U5" gate="G$1" pin="!SHDN"/>
 <wire x1="167.64" y1="157.48" x2="162.56" y2="157.48" width="0.1524" layer="91"/>
@@ -7223,26 +7447,29 @@ PKCELL LP803860
 <wire x1="99.06" y1="160.02" x2="101.6" y2="160.02" width="0.1524" layer="91"/>
 <wire x1="101.6" y1="160.02" x2="101.6" y2="162.56" width="0.1524" layer="91"/>
 <junction x="101.6" y="162.56"/>
-<label x="131.826" y="180.848" size="1.778" layer="95" rot="MR0"/>
+<label x="149.606" y="178.308" size="1.778" layer="95" rot="MR0"/>
 <pinref part="C69" gate="G$1" pin="1"/>
 <wire x1="124.46" y1="162.56" x2="124.46" y2="149.86" width="0.1524" layer="91"/>
 <junction x="124.46" y="162.56"/>
-<pinref part="J6" gate="G$1" pin="+"/>
+<pinref part="S1" gate="G$1" pin="3"/>
+<wire x1="142.24" y1="177.8" x2="149.86" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="149.86" y1="177.8" x2="149.86" y2="162.56" width="0.1524" layer="91"/>
+<junction x="149.86" y="162.56"/>
 </segment>
 </net>
 <net name="BATIN" class="0">
 <segment>
-<label x="142.24" y="147.32" size="1.27" layer="95" xref="yes"/>
+<label x="144.78" y="147.32" size="1.27" layer="95" xref="yes"/>
 <pinref part="C28" gate="G$1" pin="2"/>
 <pinref part="R26" gate="G$1" pin="1"/>
 <pinref part="R25" gate="G$1" pin="2"/>
-<wire x1="132.08" y1="142.24" x2="132.08" y2="147.32" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="147.32" x2="132.08" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="147.32" x2="139.7" y2="147.32" width="0.1524" layer="91"/>
-<wire x1="139.7" y1="147.32" x2="139.7" y2="144.78" width="0.1524" layer="91"/>
-<junction x="132.08" y="147.32"/>
-<wire x1="139.7" y1="147.32" x2="142.24" y2="147.32" width="0.1524" layer="91"/>
-<junction x="139.7" y="147.32"/>
+<wire x1="134.62" y1="142.24" x2="134.62" y2="147.32" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="147.32" x2="134.62" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="134.62" y1="147.32" x2="142.24" y2="147.32" width="0.1524" layer="91"/>
+<wire x1="142.24" y1="147.32" x2="142.24" y2="144.78" width="0.1524" layer="91"/>
+<junction x="134.62" y="147.32"/>
+<wire x1="142.24" y1="147.32" x2="144.78" y2="147.32" width="0.1524" layer="91"/>
+<junction x="142.24" y="147.32"/>
 </segment>
 </net>
 <net name="N$5" class="0">
@@ -7497,6 +7724,14 @@ PKCELL LP803860
 <pinref part="R11" gate="G$1" pin="2"/>
 <pinref part="B1" gate="G$1" pin="+"/>
 <wire x1="233.68" y1="152.4" x2="233.68" y2="147.32" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="VBAT_CONN" class="0">
+<segment>
+<pinref part="J6" gate="G$1" pin="+"/>
+<pinref part="S1" gate="G$1" pin="2"/>
+<wire x1="119.38" y1="180.34" x2="132.08" y2="180.34" width="0.1524" layer="91"/>
+<label x="120.142" y="180.848" size="1.27" layer="95"/>
 </segment>
 </net>
 </nets>
