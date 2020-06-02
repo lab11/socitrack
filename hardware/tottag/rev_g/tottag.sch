@@ -6958,13 +6958,13 @@ for RTC</text>
 <text x="234.442" y="120.65" size="1.778" layer="98" align="bottom-center">VBAT ESR must be 1.5kOhm
 for optimal performance</text>
 <text x="222.758" y="140.97" size="1.778" layer="98" rot="R180" align="bottom-center">90 Ohm</text>
-<text x="104.902" y="184.15" size="1.778" layer="98" align="center-right">"Standard" battery is
+<text x="99.822" y="184.15" size="1.778" layer="98" align="center-right">"Standard" battery is
 PKCELL LP803860
 1528-1857-ND</text>
-<text x="104.902" y="173.99" size="1.778" layer="98" align="center-right">New case battery:
+<text x="99.822" y="173.99" size="1.778" layer="98" align="center-right">New case battery:
 PKCELL LP103450
 </text>
-<text x="146.304" y="149.098" size="1.27" layer="98">To nRF ADC</text>
+<text x="141.224" y="149.098" size="1.27" layer="98">To nRF ADC</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -6975,17 +6975,17 @@ PKCELL LP103450
 <attribute name="TITLE" x="148.59" y="12.2428" size="3.175" layer="94" font="vector"/>
 <attribute name="AUTHOR" x="164.465" y="6.35" size="2.54" layer="94" font="vector"/>
 </instance>
-<instance part="R7" gate="G$1" x="48.26" y="162.56" smashed="yes" rot="R90">
-<attribute name="NAME" x="46.7614" y="158.75" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="51.562" y="158.75" size="1.778" layer="96" rot="R90"/>
+<instance part="R7" gate="G$1" x="48.26" y="167.64" smashed="yes" rot="R90">
+<attribute name="NAME" x="46.7614" y="163.83" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="51.562" y="163.83" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="C55" gate="G$1" x="30.48" y="157.48" smashed="yes">
-<attribute name="NAME" x="29.21" y="156.21" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="31.75" y="156.21" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C55" gate="G$1" x="30.48" y="162.56" smashed="yes">
+<attribute name="NAME" x="29.21" y="161.29" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="31.75" y="161.29" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="R12" gate="G$1" x="114.3" y="147.32" smashed="yes" rot="R90">
-<attribute name="NAME" x="112.8014" y="143.51" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="117.602" y="143.51" size="1.778" layer="96" rot="R90"/>
+<instance part="R12" gate="G$1" x="109.22" y="147.32" smashed="yes" rot="R90">
+<attribute name="NAME" x="107.7214" y="143.51" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="112.522" y="143.51" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="SUPPLY5" gate="1" x="101.6" y="142.24" smashed="yes">
 <attribute name="VALUE" x="99.06" y="139.7" size="1.778" layer="96"/>
@@ -6996,13 +6996,13 @@ PKCELL LP103450
 <instance part="P+1" gate="P1" x="205.74" y="170.18" smashed="yes">
 <attribute name="VALUE" x="203.2" y="165.1" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="R26" gate="G$1" x="134.62" y="154.94" smashed="yes" rot="R90">
-<attribute name="NAME" x="133.1214" y="151.13" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="137.922" y="151.13" size="1.778" layer="96" rot="R90"/>
+<instance part="R26" gate="G$1" x="129.54" y="154.94" smashed="yes" rot="R90">
+<attribute name="NAME" x="128.0414" y="151.13" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="132.842" y="151.13" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="R25" gate="G$1" x="134.62" y="139.7" smashed="yes" rot="R90">
-<attribute name="NAME" x="133.1214" y="135.89" size="1.778" layer="95" rot="R90"/>
-<attribute name="VALUE" x="137.922" y="135.89" size="1.778" layer="96" rot="R90"/>
+<instance part="R25" gate="G$1" x="129.54" y="139.7" smashed="yes" rot="R90">
+<attribute name="NAME" x="128.0414" y="135.89" size="1.778" layer="95" rot="R90"/>
+<attribute name="VALUE" x="132.842" y="135.89" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="C60" gate="G$1" x="162.56" y="152.4" smashed="yes">
 <attribute name="NAME" x="161.29" y="151.13" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
@@ -7012,32 +7012,32 @@ PKCELL LP103450
 <attribute name="NAME" x="204.47" y="151.13" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="207.01" y="151.13" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="C28" gate="G$1" x="142.24" y="139.7" smashed="yes" rot="R180">
-<attribute name="NAME" x="149.352" y="142.113" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="151.13" y="139.319" size="1.778" layer="96" rot="R180"/>
+<instance part="C28" gate="G$1" x="137.16" y="139.7" smashed="yes" rot="R180">
+<attribute name="NAME" x="144.272" y="142.113" size="1.778" layer="95" rot="R180"/>
+<attribute name="VALUE" x="146.05" y="139.319" size="1.778" layer="96" rot="R180"/>
 </instance>
-<instance part="SUPPLY3" gate="1" x="27.94" y="129.54" smashed="yes">
-<attribute name="VALUE" x="25.4" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY3" gate="1" x="27.94" y="142.24" smashed="yes">
+<attribute name="VALUE" x="25.4" y="139.7" size="1.778" layer="96"/>
 </instance>
-<instance part="SUPPLY4" gate="1" x="134.62" y="129.54" smashed="yes">
-<attribute name="VALUE" x="132.08" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY4" gate="1" x="129.54" y="129.54" smashed="yes">
+<attribute name="VALUE" x="127" y="127" size="1.778" layer="96"/>
 </instance>
-<instance part="SUPPLY7" gate="1" x="142.24" y="129.54" smashed="yes">
-<attribute name="VALUE" x="139.7" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY7" gate="1" x="137.16" y="129.54" smashed="yes">
+<attribute name="VALUE" x="134.62" y="127" size="1.778" layer="96"/>
 </instance>
-<instance part="D1" gate="G$1" x="48.26" y="152.4" smashed="yes">
-<attribute name="NAME" x="44.831" y="147.828" size="1.778" layer="95" font="vector" rot="R90"/>
-<attribute name="VALUE" x="50.165" y="147.828" size="1.778" layer="96" font="vector" rot="R90" align="top-left"/>
+<instance part="D1" gate="G$1" x="48.26" y="157.48" smashed="yes">
+<attribute name="NAME" x="44.831" y="152.908" size="1.778" layer="95" font="vector" rot="R90"/>
+<attribute name="VALUE" x="50.165" y="152.908" size="1.778" layer="96" font="vector" rot="R90" align="top-left"/>
 </instance>
-<instance part="SUPPLY2" gate="1" x="114.3" y="129.54" smashed="yes">
-<attribute name="VALUE" x="111.76" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY2" gate="1" x="109.22" y="129.54" smashed="yes">
+<attribute name="VALUE" x="106.68" y="127" size="1.778" layer="96"/>
 </instance>
 <instance part="J1" gate="G$1" x="7.62" y="154.94" smashed="yes" rot="MR0">
 <attribute name="NAME" x="12.7" y="163.83" size="1.778" layer="95" rot="MR0"/>
 <attribute name="VALUE" x="12.7" y="144.78" size="1.778" layer="95" rot="MR0"/>
 </instance>
-<instance part="SUPPLY8" gate="1" x="121.92" y="170.18" smashed="yes">
-<attribute name="VALUE" x="119.38" y="167.64" size="1.778" layer="96"/>
+<instance part="SUPPLY8" gate="1" x="116.84" y="170.18" smashed="yes">
+<attribute name="VALUE" x="114.3" y="167.64" size="1.778" layer="96"/>
 </instance>
 <instance part="U5" gate="G$1" x="180.34" y="160.02" smashed="yes">
 <attribute name="NAME" x="170.18" y="165.608" size="1.778" layer="95" ratio="12"/>
@@ -7160,16 +7160,16 @@ PKCELL LP103450
 <attribute name="NAME" x="227.33" y="95.4786" size="1.778" layer="95"/>
 <attribute name="VALUE" x="232.41" y="95.758" size="1.778" layer="96"/>
 </instance>
-<instance part="C68" gate="G$1" x="38.1" y="157.48" smashed="yes">
-<attribute name="NAME" x="36.83" y="156.21" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="39.37" y="156.21" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C68" gate="G$1" x="38.1" y="162.56" smashed="yes">
+<attribute name="NAME" x="36.83" y="161.29" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="39.37" y="161.29" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="C69" gate="G$1" x="124.46" y="147.32" smashed="yes">
-<attribute name="NAME" x="123.19" y="146.05" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="125.73" y="146.05" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C69" gate="G$1" x="116.84" y="147.32" smashed="yes">
+<attribute name="NAME" x="115.57" y="146.05" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="118.11" y="146.05" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="SUPPLY14" gate="1" x="38.1" y="129.54" smashed="yes">
-<attribute name="VALUE" x="35.56" y="127" size="1.778" layer="96"/>
+<instance part="SUPPLY14" gate="1" x="38.1" y="142.24" smashed="yes">
+<attribute name="VALUE" x="35.56" y="139.7" size="1.778" layer="96"/>
 </instance>
 <instance part="B1" gate="G$1" x="233.68" y="139.7" smashed="yes">
 <attribute name="NAME" x="228.6" y="147.32" size="1.778" layer="96" align="bottom-center"/>
@@ -7184,12 +7184,12 @@ PKCELL LP103450
 <attribute name="NAME" x="235.1786" y="158.75" size="1.778" layer="95" rot="R270"/>
 <attribute name="VALUE" x="230.378" y="158.75" size="1.778" layer="96" rot="R270"/>
 </instance>
-<instance part="J6" gate="G$1" x="114.3" y="177.8" smashed="yes" rot="R90">
-<attribute name="NAME" x="108.458" y="175.26" size="1.778" layer="95" rot="R90"/>
+<instance part="J6" gate="G$1" x="109.22" y="177.8" smashed="yes" rot="R90">
+<attribute name="NAME" x="103.378" y="175.26" size="1.778" layer="95" rot="R90"/>
 </instance>
-<instance part="S1" gate="G$1" x="137.16" y="180.34" smashed="yes">
-<attribute name="VALUE" x="134.75" y="175.22" size="1.27" layer="96"/>
-<attribute name="NAME" x="139.3" y="184.45" size="1.27" layer="95" align="bottom-center"/>
+<instance part="S1" gate="G$1" x="144.78" y="162.56" smashed="yes">
+<attribute name="VALUE" x="142.37" y="157.44" size="1.27" layer="96"/>
+<attribute name="NAME" x="146.92" y="166.67" size="1.27" layer="95" align="bottom-center"/>
 </instance>
 </instances>
 <busses>
@@ -7213,39 +7213,37 @@ PKCELL LP103450
 </segment>
 <segment>
 <pinref part="C55" gate="G$1" pin="2"/>
-<wire x1="30.48" y1="152.4" x2="30.48" y2="142.24" width="0.1524" layer="91"/>
-<wire x1="30.48" y1="142.24" x2="27.94" y2="142.24" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="157.48" x2="30.48" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="149.86" x2="27.94" y2="149.86" width="0.1524" layer="91"/>
 <pinref part="SUPPLY3" gate="1" pin="GND"/>
-<wire x1="27.94" y1="142.24" x2="27.94" y2="132.08" width="0.1524" layer="91"/>
-<wire x1="20.32" y1="149.86" x2="20.32" y2="142.24" width="0.1524" layer="91"/>
-<wire x1="20.32" y1="142.24" x2="27.94" y2="142.24" width="0.1524" layer="91"/>
-<junction x="27.94" y="142.24"/>
+<wire x1="27.94" y1="149.86" x2="27.94" y2="144.78" width="0.1524" layer="91"/>
+<wire x1="15.24" y1="149.86" x2="27.94" y2="149.86" width="0.1524" layer="91"/>
+<junction x="27.94" y="149.86"/>
 <pinref part="J1" gate="G$1" pin="GND"/>
-<wire x1="15.24" y1="149.86" x2="20.32" y2="149.86" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="R25" gate="G$1" pin="1"/>
 <pinref part="SUPPLY4" gate="1" pin="GND"/>
-<wire x1="134.62" y1="134.62" x2="134.62" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="129.54" y1="134.62" x2="129.54" y2="132.08" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="C28" gate="G$1" pin="1"/>
 <pinref part="SUPPLY7" gate="1" pin="GND"/>
-<wire x1="142.24" y1="137.16" x2="142.24" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="137.16" y1="137.16" x2="137.16" y2="132.08" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="R12" gate="G$1" pin="1"/>
 <pinref part="SUPPLY2" gate="1" pin="GND"/>
-<wire x1="114.3" y1="132.08" x2="114.3" y2="142.24" width="0.1524" layer="91"/>
+<wire x1="109.22" y1="132.08" x2="109.22" y2="142.24" width="0.1524" layer="91"/>
 <pinref part="C69" gate="G$1" pin="2"/>
-<wire x1="124.46" y1="142.24" x2="124.46" y2="132.08" width="0.1524" layer="91"/>
-<wire x1="124.46" y1="132.08" x2="114.3" y2="132.08" width="0.1524" layer="91"/>
-<junction x="114.3" y="132.08"/>
+<wire x1="116.84" y1="142.24" x2="116.84" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="116.84" y1="132.08" x2="109.22" y2="132.08" width="0.1524" layer="91"/>
+<junction x="109.22" y="132.08"/>
 </segment>
 <segment>
 <pinref part="SUPPLY8" gate="1" pin="GND"/>
-<wire x1="121.92" y1="172.72" x2="121.92" y2="177.8" width="0.1524" layer="91"/>
-<wire x1="121.92" y1="177.8" x2="119.38" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="116.84" y1="172.72" x2="116.84" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="116.84" y1="177.8" x2="114.3" y2="177.8" width="0.1524" layer="91"/>
 <pinref part="J6" gate="G$1" pin="-"/>
 </segment>
 <segment>
@@ -7330,7 +7328,7 @@ PKCELL LP103450
 </segment>
 <segment>
 <pinref part="C68" gate="G$1" pin="2"/>
-<wire x1="38.1" y1="152.4" x2="38.1" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="38.1" y1="157.48" x2="38.1" y2="144.78" width="0.1524" layer="91"/>
 <pinref part="SUPPLY14" gate="1" pin="GND"/>
 </segment>
 <segment>
@@ -7378,17 +7376,17 @@ PKCELL LP103450
 <net name="VUSB" class="0">
 <segment>
 <pinref part="C55" gate="G$1" pin="1"/>
-<wire x1="30.48" y1="170.18" x2="30.48" y2="160.02" width="0.1524" layer="91"/>
-<wire x1="20.32" y1="170.18" x2="30.48" y2="170.18" width="0.1524" layer="91"/>
-<junction x="30.48" y="170.18"/>
-<wire x1="60.96" y1="162.56" x2="60.96" y2="170.18" width="0.1524" layer="91"/>
-<wire x1="60.96" y1="170.18" x2="48.26" y2="170.18" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="172.72" x2="30.48" y2="165.1" width="0.1524" layer="91"/>
+<wire x1="20.32" y1="172.72" x2="30.48" y2="172.72" width="0.1524" layer="91"/>
+<junction x="30.48" y="172.72"/>
+<wire x1="60.96" y1="162.56" x2="60.96" y2="172.72" width="0.1524" layer="91"/>
+<wire x1="60.96" y1="172.72" x2="48.26" y2="172.72" width="0.1524" layer="91"/>
 <pinref part="R7" gate="G$1" pin="2"/>
-<wire x1="48.26" y1="170.18" x2="48.26" y2="165.1" width="0.1524" layer="91"/>
-<wire x1="30.48" y1="170.18" x2="38.1" y2="170.18" width="0.1524" layer="91"/>
-<junction x="48.26" y="170.18"/>
-<wire x1="38.1" y1="170.18" x2="48.26" y2="170.18" width="0.1524" layer="91"/>
-<wire x1="20.32" y1="170.18" x2="20.32" y2="160.02" width="0.1524" layer="91"/>
+<wire x1="48.26" y1="172.72" x2="48.26" y2="170.18" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="172.72" x2="38.1" y2="172.72" width="0.1524" layer="91"/>
+<junction x="48.26" y="172.72"/>
+<wire x1="38.1" y1="172.72" x2="48.26" y2="172.72" width="0.1524" layer="91"/>
+<wire x1="20.32" y1="172.72" x2="20.32" y2="160.02" width="0.1524" layer="91"/>
 <pinref part="J1" gate="G$1" pin="+5V"/>
 <wire x1="20.32" y1="160.02" x2="15.24" y2="160.02" width="0.1524" layer="91"/>
 <pinref part="U6" gate="U1" pin="VDD/2"/>
@@ -7397,10 +7395,10 @@ PKCELL LP103450
 <pinref part="U6" gate="U1" pin="VDD/1"/>
 <wire x1="63.5" y1="162.56" x2="60.96" y2="162.56" width="0.1524" layer="91"/>
 <junction x="60.96" y="162.56"/>
-<label x="38.1" y="170.18" size="1.778" layer="95"/>
+<label x="20.574" y="172.974" size="1.778" layer="95"/>
 <pinref part="C68" gate="G$1" pin="1"/>
-<wire x1="38.1" y1="170.18" x2="38.1" y2="160.02" width="0.1524" layer="91"/>
-<junction x="38.1" y="170.18"/>
+<wire x1="38.1" y1="172.72" x2="38.1" y2="165.1" width="0.1524" layer="91"/>
+<junction x="38.1" y="172.72"/>
 </segment>
 <segment>
 <pinref part="U2" gate="1" pin="VCC"/>
@@ -7411,74 +7409,64 @@ PKCELL LP103450
 <net name="!CHRG" class="0">
 <segment>
 <pinref part="R7" gate="G$1" pin="1"/>
-<wire x1="48.26" y1="154.94" x2="48.26" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="48.26" y1="160.02" x2="48.26" y2="162.56" width="0.1524" layer="91"/>
 <pinref part="D1" gate="G$1" pin="A"/>
 </segment>
 </net>
 <net name="N$13" class="0">
 <segment>
 <pinref part="R12" gate="G$1" pin="2"/>
-<wire x1="114.3" y1="149.86" x2="114.3" y2="154.94" width="0.1524" layer="91"/>
-<wire x1="114.3" y1="154.94" x2="99.06" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="109.22" y1="149.86" x2="109.22" y2="154.94" width="0.1524" layer="91"/>
+<wire x1="109.22" y1="154.94" x2="99.06" y2="154.94" width="0.1524" layer="91"/>
 <pinref part="U6" gate="U1" pin="PROG"/>
 </segment>
 </net>
 <net name="VBAT" class="0">
 <segment>
 <pinref part="R26" gate="G$1" pin="2"/>
-<wire x1="101.6" y1="162.56" x2="124.46" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="124.46" y1="162.56" x2="134.62" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="134.62" y1="162.56" x2="134.62" y2="157.48" width="0.1524" layer="91"/>
-<pinref part="C60" gate="G$1" pin="1"/>
-<wire x1="162.56" y1="154.94" x2="162.56" y2="157.48" width="0.1524" layer="91"/>
-<wire x1="162.56" y1="157.48" x2="162.56" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="134.62" y1="162.56" x2="149.86" y2="162.56" width="0.1524" layer="91"/>
-<junction x="134.62" y="162.56"/>
-<junction x="162.56" y="162.56"/>
-<pinref part="U5" gate="G$1" pin="IN"/>
-<wire x1="149.86" y1="162.56" x2="162.56" y2="162.56" width="0.1524" layer="91"/>
-<wire x1="162.56" y1="162.56" x2="167.64" y2="162.56" width="0.1524" layer="91"/>
-<pinref part="U5" gate="G$1" pin="!SHDN"/>
-<wire x1="167.64" y1="157.48" x2="162.56" y2="157.48" width="0.1524" layer="91"/>
-<junction x="162.56" y="157.48"/>
+<wire x1="101.6" y1="162.56" x2="116.84" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="116.84" y1="162.56" x2="121.92" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="121.92" y1="162.56" x2="129.54" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="129.54" y1="162.56" x2="129.54" y2="157.48" width="0.1524" layer="91"/>
 <pinref part="U6" gate="U1" pin="VBAT/3"/>
 <wire x1="99.06" y1="162.56" x2="101.6" y2="162.56" width="0.1524" layer="91"/>
 <pinref part="U6" gate="U1" pin="VBAT/4"/>
 <wire x1="99.06" y1="160.02" x2="101.6" y2="160.02" width="0.1524" layer="91"/>
 <wire x1="101.6" y1="160.02" x2="101.6" y2="162.56" width="0.1524" layer="91"/>
 <junction x="101.6" y="162.56"/>
-<label x="149.606" y="178.308" size="1.778" layer="95" rot="MR0"/>
 <pinref part="C69" gate="G$1" pin="1"/>
-<wire x1="124.46" y1="162.56" x2="124.46" y2="149.86" width="0.1524" layer="91"/>
-<junction x="124.46" y="162.56"/>
-<pinref part="S1" gate="G$1" pin="3"/>
-<wire x1="142.24" y1="177.8" x2="149.86" y2="177.8" width="0.1524" layer="91"/>
-<wire x1="149.86" y1="177.8" x2="149.86" y2="162.56" width="0.1524" layer="91"/>
-<junction x="149.86" y="162.56"/>
+<wire x1="116.84" y1="162.56" x2="116.84" y2="149.86" width="0.1524" layer="91"/>
+<junction x="116.84" y="162.56"/>
+<label x="114.554" y="180.594" size="1.778" layer="95"/>
+<pinref part="J6" gate="G$1" pin="+"/>
+<wire x1="114.3" y1="180.34" x2="121.92" y2="180.34" width="0.1524" layer="91"/>
+<wire x1="121.92" y1="180.34" x2="121.92" y2="162.56" width="0.1524" layer="91"/>
+<junction x="121.92" y="162.56"/>
+<pinref part="S1" gate="G$1" pin="2"/>
+<wire x1="139.7" y1="162.56" x2="129.54" y2="162.56" width="0.1524" layer="91"/>
+<junction x="129.54" y="162.56"/>
 </segment>
 </net>
 <net name="BATIN" class="0">
 <segment>
-<label x="144.78" y="147.32" size="1.27" layer="95" xref="yes"/>
+<label x="139.7" y="147.32" size="1.27" layer="95" xref="yes"/>
 <pinref part="C28" gate="G$1" pin="2"/>
 <pinref part="R26" gate="G$1" pin="1"/>
 <pinref part="R25" gate="G$1" pin="2"/>
-<wire x1="134.62" y1="142.24" x2="134.62" y2="147.32" width="0.1524" layer="91"/>
-<wire x1="134.62" y1="147.32" x2="134.62" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="134.62" y1="147.32" x2="142.24" y2="147.32" width="0.1524" layer="91"/>
-<wire x1="142.24" y1="147.32" x2="142.24" y2="144.78" width="0.1524" layer="91"/>
-<junction x="134.62" y="147.32"/>
-<wire x1="142.24" y1="147.32" x2="144.78" y2="147.32" width="0.1524" layer="91"/>
-<junction x="142.24" y="147.32"/>
+<wire x1="129.54" y1="142.24" x2="129.54" y2="147.32" width="0.1524" layer="91"/>
+<wire x1="129.54" y1="147.32" x2="129.54" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="129.54" y1="147.32" x2="137.16" y2="147.32" width="0.1524" layer="91"/>
+<wire x1="137.16" y1="147.32" x2="137.16" y2="144.78" width="0.1524" layer="91"/>
+<junction x="129.54" y="147.32"/>
+<wire x1="137.16" y1="147.32" x2="139.7" y2="147.32" width="0.1524" layer="91"/>
+<junction x="137.16" y="147.32"/>
 </segment>
 </net>
 <net name="N$5" class="0">
 <segment>
 <pinref part="D1" gate="G$1" pin="C"/>
-<wire x1="48.26" y1="147.32" x2="48.26" y2="144.78" width="0.1524" layer="91"/>
-<wire x1="48.26" y1="144.78" x2="55.88" y2="144.78" width="0.1524" layer="91"/>
-<wire x1="55.88" y1="144.78" x2="55.88" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="55.88" y1="149.86" x2="63.5" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="48.26" y1="152.4" x2="48.26" y2="149.86" width="0.1524" layer="91"/>
+<wire x1="48.26" y1="149.86" x2="63.5" y2="149.86" width="0.1524" layer="91"/>
 <pinref part="U6" gate="U1" pin="STAT"/>
 </segment>
 </net>
@@ -7726,12 +7714,21 @@ PKCELL LP103450
 <wire x1="233.68" y1="152.4" x2="233.68" y2="147.32" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="VBAT_CONN" class="0">
+<net name="VSUPPLY" class="0">
 <segment>
-<pinref part="J6" gate="G$1" pin="+"/>
-<pinref part="S1" gate="G$1" pin="2"/>
-<wire x1="119.38" y1="180.34" x2="132.08" y2="180.34" width="0.1524" layer="91"/>
-<label x="120.142" y="180.848" size="1.27" layer="95"/>
+<pinref part="U5" gate="G$1" pin="IN"/>
+<wire x1="162.56" y1="162.56" x2="167.64" y2="162.56" width="0.1524" layer="91"/>
+<wire x1="162.56" y1="157.48" x2="162.56" y2="162.56" width="0.1524" layer="91"/>
+<pinref part="U5" gate="G$1" pin="!SHDN"/>
+<wire x1="167.64" y1="157.48" x2="162.56" y2="157.48" width="0.1524" layer="91"/>
+<junction x="162.56" y="157.48"/>
+<pinref part="C60" gate="G$1" pin="1"/>
+<wire x1="162.56" y1="154.94" x2="162.56" y2="157.48" width="0.1524" layer="91"/>
+<wire x1="162.56" y1="162.56" x2="162.56" y2="165.1" width="0.1524" layer="91"/>
+<junction x="162.56" y="162.56"/>
+<pinref part="S1" gate="G$1" pin="1"/>
+<wire x1="162.56" y1="165.1" x2="149.86" y2="165.1" width="0.1524" layer="91"/>
+<label x="150.114" y="165.354" size="1.778" layer="95"/>
 </segment>
 </net>
 </nets>
@@ -9100,14 +9097,6 @@ temperature characteristics</text>
 <label x="33.02" y="20.828" size="1.27" layer="95"/>
 </segment>
 </net>
-<net name="STM_SWCLK" class="0">
-<segment>
-<pinref part="U10" gate="U1" pin="PA14"/>
-<wire x1="106.68" y1="106.68" x2="106.68" y2="109.22" width="0.1524" layer="91"/>
-<wire x1="106.68" y1="109.22" x2="111.76" y2="109.22" width="0.1524" layer="91"/>
-<label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="GPIO0" class="0">
 <segment>
 <pinref part="U10" gate="U1" pin="PB6"/>
@@ -9305,6 +9294,12 @@ temperature characteristics</text>
 <pinref part="J7" gate="G$1" pin="SWDCLK"/>
 <wire x1="33.02" y1="17.78" x2="43.18" y2="17.78" width="0.1524" layer="91"/>
 <label x="33.02" y="18.288" size="1.27" layer="95"/>
+</segment>
+<segment>
+<pinref part="U10" gate="U1" pin="PA14"/>
+<wire x1="106.68" y1="106.68" x2="106.68" y2="109.22" width="0.1524" layer="91"/>
+<wire x1="106.68" y1="109.22" x2="111.76" y2="109.22" width="0.1524" layer="91"/>
+<label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
