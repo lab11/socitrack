@@ -6555,7 +6555,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <label x="111.76" y="127" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
-<net name="N$6" class="0">
+<net name="NRF_DECAP1" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="DEC1"/>
 <wire x1="60.96" y1="124.46" x2="5.08" y2="124.46" width="0.1524" layer="91"/>
@@ -6563,7 +6563,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <wire x1="5.08" y1="124.46" x2="5.08" y2="114.3" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="N$9" class="0">
+<net name="NRF_DECAP46" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="DEC4"/>
 <pinref part="C57" gate="G$1" pin="1"/>
@@ -6584,7 +6584,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <pinref part="L2" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="N$10" class="0">
+<net name="NRF_DECAP3" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="DEC3"/>
 <wire x1="60.96" y1="119.38" x2="12.7" y2="119.38" width="0.1524" layer="91"/>
@@ -6675,7 +6675,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <label x="183.642" y="97.79" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="N$20" class="0">
+<net name="NRF_DCC" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="DCC"/>
 <wire x1="55.88" y1="129.54" x2="60.96" y2="129.54" width="0.1524" layer="91"/>
@@ -6757,7 +6757,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
-<net name="N$2" class="0">
+<net name="NRF_DECAP5" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="DEC5"/>
 <pinref part="C22" gate="G$1" pin="1"/>
