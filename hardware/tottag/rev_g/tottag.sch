@@ -7,7 +7,7 @@
 <setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -861,50 +861,50 @@ https://www.vishay.com/docs/72821/72821.pdf</description>
 <wire x1="-17.78" y1="-50.8" x2="17.78" y2="-50.8" width="0.762" layer="94"/>
 <wire x1="17.78" y1="-50.8" x2="17.78" y2="45.72" width="0.762" layer="94"/>
 <wire x1="17.78" y1="45.72" x2="-17.78" y2="45.72" width="0.762" layer="94"/>
-<pin name="XTAL1" x="-22.86" y="-22.86" visible="pin" length="middle" direction="in"/>
-<pin name="XTAL2" x="-22.86" y="-25.4" visible="pin" length="middle" direction="in"/>
-<pin name="VREF" x="-22.86" y="-38.1" visible="pin" length="middle"/>
-<pin name="VDDMS" x="-22.86" y="17.78" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDIF" x="-22.86" y="20.32" visible="pin" length="middle" direction="pwr"/>
-<pin name="CLKTUNE" x="22.86" y="10.16" visible="pin" length="middle" rot="R180"/>
-<pin name="VDDCLK" x="-22.86" y="22.86" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDSYN" x="-22.86" y="15.24" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDVCO" x="-22.86" y="12.7" visible="pin" length="middle" direction="pwr"/>
-<pin name="VCOTUNE" x="22.86" y="5.08" visible="pin" length="middle" rot="R180"/>
-<pin name="GPIO2" x="22.86" y="38.1" visible="pin" length="middle" rot="R180"/>
-<pin name="GPIO3" x="22.86" y="35.56" visible="pin" length="middle" rot="R180"/>
-<pin name="GPIO4" x="22.86" y="33.02" visible="pin" length="middle" rot="R180"/>
-<pin name="GPIO5" x="22.86" y="30.48" visible="pin" length="middle" rot="R180"/>
-<pin name="VSSIO/32" x="-22.86" y="-43.18" visible="pin" length="middle"/>
-<pin name="VDDIO/31" x="-22.86" y="5.08" visible="pin" length="middle" direction="pwr"/>
-<pin name="GPIO6" x="22.86" y="27.94" visible="pin" length="middle" rot="R180"/>
-<pin name="SYNC/GPIO7" x="22.86" y="25.4" visible="pin" length="middle" rot="R180"/>
-<pin name="VDDIOA" x="-22.86" y="40.64" visible="pin" length="middle" direction="pwr"/>
-<pin name="!RST" x="22.86" y="0" visible="pin" length="middle" rot="R180"/>
-<pin name="VDDLDOD" x="-22.86" y="25.4" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDAON" x="-22.86" y="38.1" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDLNA" x="-22.86" y="30.48" visible="pin" length="middle" direction="pwr"/>
-<pin name="RF_P" x="22.86" y="17.78" visible="pin" length="middle" rot="R180"/>
-<pin name="RF_N" x="22.86" y="15.24" visible="pin" length="middle" rot="R180"/>
-<pin name="VDDPA1" x="-22.86" y="35.56" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDPA2" x="-22.86" y="33.02" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDREG" x="-22.86" y="10.16" visible="pin" length="middle" direction="pwr"/>
-<pin name="EXTON" x="22.86" y="-10.16" visible="pin" length="middle" direction="out" rot="R180"/>
-<pin name="FORCEON" x="-22.86" y="-2.54" visible="pin" length="middle" direction="in"/>
-<pin name="WAKEUP" x="-22.86" y="-7.62" visible="pin" length="middle" direction="in"/>
-<pin name="!SPICS" x="-22.86" y="-12.7" visible="pin" length="middle" direction="in"/>
-<pin name="VDDLDOA" x="-22.86" y="27.94" visible="pin" length="middle" direction="pwr"/>
-<pin name="VDDBAT" x="-22.86" y="43.18" visible="pin" length="middle" direction="pwr"/>
-<pin name="TESTMODE" x="-22.86" y="-17.78" visible="pin" length="middle" direction="in"/>
-<pin name="IRQ/GPIO8" x="22.86" y="22.86" visible="pin" length="middle" rot="R180"/>
-<pin name="VDDDIG" x="-22.86" y="7.62" visible="pin" length="middle" direction="pwr"/>
-<pin name="VSSIO/43" x="-22.86" y="-45.72" visible="pin" length="middle"/>
-<pin name="VDDIO/42" x="-22.86" y="2.54" visible="pin" length="middle" direction="pwr"/>
-<pin name="SPICLK" x="-22.86" y="-33.02" visible="pin" length="middle" direction="in"/>
-<pin name="SPIMISO" x="22.86" y="-5.08" visible="pin" length="middle" direction="out" rot="R180"/>
-<pin name="SPIMOSI" x="-22.86" y="-30.48" visible="pin" length="middle" direction="in"/>
-<pin name="GPIO0" x="22.86" y="43.18" visible="pin" length="middle" rot="R180"/>
-<pin name="GPIO1" x="22.86" y="40.64" visible="pin" length="middle" rot="R180"/>
+<pin name="XTAL1" x="-22.86" y="-22.86" length="middle" direction="in"/>
+<pin name="XTAL2" x="-22.86" y="-25.4" length="middle" direction="in"/>
+<pin name="VREF" x="-22.86" y="-38.1" length="middle"/>
+<pin name="VDDMS" x="-22.86" y="17.78" length="middle" direction="pwr"/>
+<pin name="VDDIF" x="-22.86" y="20.32" length="middle" direction="pwr"/>
+<pin name="CLKTUNE" x="22.86" y="10.16" length="middle" rot="R180"/>
+<pin name="VDDCLK" x="-22.86" y="22.86" length="middle" direction="pwr"/>
+<pin name="VDDSYN" x="-22.86" y="15.24" length="middle" direction="pwr"/>
+<pin name="VDDVCO" x="-22.86" y="12.7" length="middle" direction="pwr"/>
+<pin name="VCOTUNE" x="22.86" y="5.08" length="middle" rot="R180"/>
+<pin name="GPIO2" x="22.86" y="38.1" length="middle" rot="R180"/>
+<pin name="GPIO3" x="22.86" y="35.56" length="middle" rot="R180"/>
+<pin name="GPIO4" x="22.86" y="33.02" length="middle" rot="R180"/>
+<pin name="GPIO5" x="22.86" y="30.48" length="middle" rot="R180"/>
+<pin name="VSSIO/32" x="-22.86" y="-43.18" length="middle"/>
+<pin name="VDDIO/31" x="-22.86" y="5.08" length="middle" direction="pwr"/>
+<pin name="GPIO6" x="22.86" y="27.94" length="middle" rot="R180"/>
+<pin name="SYNC/GPIO7" x="22.86" y="25.4" length="middle" rot="R180"/>
+<pin name="VDDIOA" x="-22.86" y="40.64" length="middle" direction="pwr"/>
+<pin name="!RST" x="22.86" y="0" length="middle" rot="R180"/>
+<pin name="VDDLDOD" x="-22.86" y="25.4" length="middle" direction="pwr"/>
+<pin name="VDDAON" x="-22.86" y="38.1" length="middle" direction="pwr"/>
+<pin name="VDDLNA" x="-22.86" y="30.48" length="middle" direction="pwr"/>
+<pin name="RF_P" x="22.86" y="17.78" length="middle" rot="R180"/>
+<pin name="RF_N" x="22.86" y="15.24" length="middle" rot="R180"/>
+<pin name="VDDPA1" x="-22.86" y="35.56" length="middle" direction="pwr"/>
+<pin name="VDDPA2" x="-22.86" y="33.02" length="middle" direction="pwr"/>
+<pin name="VDDREG" x="-22.86" y="10.16" length="middle" direction="pwr"/>
+<pin name="EXTON" x="22.86" y="-10.16" length="middle" direction="out" rot="R180"/>
+<pin name="FORCEON" x="-22.86" y="-2.54" length="middle" direction="in"/>
+<pin name="WAKEUP" x="-22.86" y="-7.62" length="middle" direction="in"/>
+<pin name="!SPICS" x="-22.86" y="-12.7" length="middle" direction="in"/>
+<pin name="VDDLDOA" x="-22.86" y="27.94" length="middle" direction="pwr"/>
+<pin name="VDDBAT" x="-22.86" y="43.18" length="middle" direction="pwr"/>
+<pin name="TESTMODE" x="-22.86" y="-17.78" length="middle" direction="in"/>
+<pin name="IRQ/GPIO8" x="22.86" y="22.86" length="middle" rot="R180"/>
+<pin name="VDDDIG" x="-22.86" y="7.62" length="middle" direction="pwr"/>
+<pin name="VSSIO/43" x="-22.86" y="-45.72" length="middle"/>
+<pin name="VDDIO/42" x="-22.86" y="2.54" length="middle" direction="pwr"/>
+<pin name="SPICLK" x="-22.86" y="-33.02" length="middle" direction="in"/>
+<pin name="SPIMISO" x="22.86" y="-5.08" length="middle" direction="out" rot="R180"/>
+<pin name="SPIMOSI" x="-22.86" y="-30.48" length="middle" direction="in"/>
+<pin name="GPIO0" x="22.86" y="43.18" length="middle" rot="R180"/>
+<pin name="GPIO1" x="22.86" y="40.64" length="middle" rot="R180"/>
 <text x="-17.78" y="46.99" size="2.54" layer="95">&gt;Name</text>
 <text x="-17.78" y="-54.61" size="2.54" layer="96">&gt;Value</text>
 <pin name="GND" x="-22.86" y="-48.26" visible="pin" length="middle" direction="pwr"/>
