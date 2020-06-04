@@ -7013,6 +7013,8 @@ PKCELL LP803860
 PKCELL LP103450
 </text>
 <text x="141.224" y="149.098" size="1.27" layer="98">To nRF ADC</text>
+<text x="99.822" y="171.45" size="0.762" layer="98" align="center-right">Battery testing report
+https://docs.particle.io/assets/pdfs/electron/battery/IEC62133.pdf</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
