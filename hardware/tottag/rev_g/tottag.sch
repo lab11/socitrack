@@ -1374,98 +1374,6 @@ Chip Antenna</description>
 <wire x1="-5.08" y1="0" x2="5.08" y2="0" width="0" layer="107"/>
 <wire x1="-5.08" y1="0" x2="5.08" y2="0" width="0" layer="46"/>
 </package>
-<package name="DM3AT-SF-PEJM5">
-<description>Micro SD card holder with push-to-eject feature.</description>
-<smd name="1" x="3.2" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="2" x="2.1" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="3" x="1" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="4" x="-0.1" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="5" x="-1.2" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="6" x="-2.3" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="7" x="-3.4" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="8" x="-4.5" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="B" x="-5.45" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
-<smd name="MOUNT0" x="4.75" y="-0.1" dx="1" dy="1.2" layer="1"/>
-<smd name="MOUNT1" x="-6.4" y="-4.4" dx="1" dy="1.2" layer="1"/>
-<smd name="A" x="-6.4" y="-10.6" dx="1" dy="0.8" layer="1"/>
-<smd name="MOUNT2" x="-6.4" y="-14.75" dx="1" dy="2.8" layer="1"/>
-<smd name="MOUNT3" x="7.1" y="-15.2" dx="1.3" dy="1.9" layer="1"/>
-<polygon width="0.127" layer="41" pour="hatch">
-<vertex x="3.35" y="-14.8"/>
-<vertex x="3.35" y="-16.15"/>
-<vertex x="5.6" y="-16.15"/>
-<vertex x="5.6" y="-14.8"/>
-</polygon>
-<polygon width="0.127" layer="41" pour="hatch">
-<vertex x="-5" y="-5.1"/>
-<vertex x="-5" y="-6.7"/>
-<vertex x="2.7" y="-6.7"/>
-<vertex x="2.7" y="-5.1"/>
-</polygon>
-<polygon width="0.127" layer="41" pour="hatch">
-<vertex x="-5.7" y="-6.4"/>
-<vertex x="-5.7" y="-14"/>
-<vertex x="-5" y="-14"/>
-<vertex x="-5" y="-6.4"/>
-</polygon>
-<polygon width="0.127" layer="41" pour="hatch">
-<vertex x="-6.8" y="-0.55"/>
-<vertex x="-6.8" y="-3.8"/>
-<vertex x="-6.05" y="-3.8"/>
-<vertex x="-6.05" y="-0.55"/>
-</polygon>
-<polygon width="0.127" layer="41" pour="hatch">
-<vertex x="-6.8" y="-5"/>
-<vertex x="-6.8" y="-8.6"/>
-<vertex x="-6.05" y="-8.6"/>
-<vertex x="-6.05" y="-5"/>
-</polygon>
-<wire x1="7.35" y1="0" x2="7.35" y2="-15.95" width="0.127" layer="21"/>
-<wire x1="7.35" y1="0" x2="-6.5" y2="0" width="0.127" layer="21"/>
-<wire x1="-6.5" y1="0" x2="-6.5" y2="-15.95" width="0.127" layer="21"/>
-<wire x1="-6.5" y1="-15.95" x2="7.35" y2="-15.95" width="0.127" layer="21"/>
-<wire x1="5" y1="-17.55" x2="-5" y2="-17.55" width="0.127" layer="51"/>
-<wire x1="5" y1="-17.55" x2="5.5" y2="-17.05" width="0.127" layer="51" curve="90"/>
-<wire x1="5.5" y1="-15.95" x2="5.5" y2="-17.05" width="0.127" layer="51"/>
-<wire x1="-5" y1="-17.55" x2="-5.5" y2="-17.05" width="0.127" layer="51" curve="-90"/>
-<wire x1="-5.5" y1="-15.95" x2="-5.5" y2="-17.05" width="0.127" layer="51"/>
-<text x="-2.8" y="0.7" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="4.2" y="0.7" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
-</package>
-<package name="ST12S010VBAR1800">
-<smd name="GND1" x="-9.45" y="-14.55" dx="1.7" dy="0.9" layer="1" rot="R90"/>
-<smd name="GND7" x="4.85" y="-14.55" dx="1.7" dy="0.9" layer="1" rot="R90"/>
-<smd name="GND4" x="4.85" y="-0.85" dx="1.7" dy="0.9" layer="1" rot="R90"/>
-<smd name="GND3" x="-9.45" y="-0.85" dx="1.7" dy="0.9" layer="1" rot="R90"/>
-<smd name="C10" x="-9.35" y="-12.325" dx="0.85" dy="1" layer="1" rot="R90"/>
-<smd name="DSW1" x="-9.35" y="-10.4" dx="0.85" dy="1" layer="1" rot="R90"/>
-<smd name="C9" x="4.675" y="-12.325" dx="0.85" dy="1" layer="1" rot="R90"/>
-<smd name="GND6" x="4.5875" y="-10.2" dx="0.825" dy="1.4" layer="1" rot="R180"/>
-<smd name="GND5" x="4.5875" y="-4.75" dx="0.825" dy="1.4" layer="1" rot="R180"/>
-<smd name="GND2" x="-9.35" y="-7.45" dx="0.95" dy="1.4" layer="1" rot="R180"/>
-<smd name="DSW2" x="-7.875" y="-0.5" dx="0.9" dy="1" layer="1" rot="R180"/>
-<smd name="C8" x="-6.3" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C7" x="-5.4" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C6" x="-4.5" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C5" x="-3.6" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C4" x="-2.7" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C3" x="-1.8" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C2" x="-0.9" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<smd name="C1" x="0" y="-0.5" dx="0.65" dy="1" layer="1" rot="R180"/>
-<wire x1="-9.15" y1="-0.3" x2="4.55" y2="-0.3" width="0.0508" layer="21"/>
-<wire x1="4.55" y1="-0.3" x2="4.55" y2="-15.6" width="0.0508" layer="21"/>
-<wire x1="4.55" y1="-15.6" x2="-9.15" y2="-15.6" width="0.0508" layer="21"/>
-<wire x1="-9.15" y1="-15.6" x2="-9.15" y2="-0.3" width="0.0508" layer="21"/>
-<polygon width="0.1524" layer="41">
-<vertex x="-8.75" y="-8.15"/>
-<vertex x="-8.3" y="-8.15"/>
-<vertex x="-8.3" y="-13.65"/>
-<vertex x="2.45" y="-13.65"/>
-<vertex x="2.45" y="-1.55"/>
-<vertex x="-8.75" y="-1.55"/>
-</polygon>
-<text x="-7.8" y="0.35" size="0.889" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-</package>
 </packages>
 <symbols>
 <symbol name="USB-B-MICRO">
@@ -1479,30 +1387,6 @@ Chip Antenna</description>
 <pin name="D+" x="-7.62" y="0" visible="pin" length="middle" function="dot"/>
 <pin name="ID" x="-7.62" y="-2.54" visible="pin" length="middle" function="dot"/>
 <pin name="GND" x="-7.62" y="-5.08" visible="pin" length="middle" function="dot"/>
-</symbol>
-<symbol name="SD-CARD_WITH-CARD-DETECT">
-<pin name="DATA0/MISO" x="15.24" y="5.08" length="middle" function="dot" rot="R180"/>
-<pin name="DATA1/RSV" x="15.24" y="2.54" length="middle" function="dot" rot="R180"/>
-<pin name="DATA2/NC" x="15.24" y="0" length="middle" function="dot" rot="R180"/>
-<pin name="DATA3-CD/CS_N" x="15.24" y="-2.54" length="middle" function="dot" rot="R180"/>
-<pin name="CMD/MOSI" x="15.24" y="-5.08" length="middle" function="dot" rot="R180"/>
-<pin name="CLK" x="15.24" y="-7.62" length="middle" function="dot" rot="R180"/>
-<pin name="VCC" x="15.24" y="7.62" length="middle" function="dot" rot="R180"/>
-<pin name="GND" x="15.24" y="-10.16" length="middle" function="dot" rot="R180"/>
-<wire x1="-12.7" y1="10.16" x2="15.24" y2="10.16" width="0.254" layer="94"/>
-<wire x1="15.24" y1="-20.32" x2="-12.7" y2="-20.32" width="0.254" layer="94"/>
-<wire x1="-12.7" y1="10.16" x2="-12.7" y2="-20.32" width="0.254" layer="94"/>
-<pin name="A" x="15.24" y="-15.24" visible="off" length="middle" function="dot" rot="R180"/>
-<text x="-12.7" y="12.7" size="1.27" layer="95">&gt;NAME</text>
-<text x="-12.7" y="-22.86" size="1.27" layer="96">&gt;VALUE</text>
-<pin name="B" x="15.24" y="-17.78" visible="off" length="middle" function="dot" rot="R180"/>
-<wire x1="11.176" y1="-15.24" x2="9.144" y2="-18.034" width="0.254" layer="94"/>
-<wire x1="9.906" y1="-17.018" x2="9.906" y2="-16.002" width="0.254" layer="94"/>
-<wire x1="9.906" y1="-16.002" x2="9.144" y2="-16.764" width="0.254" layer="94"/>
-<wire x1="9.144" y1="-16.764" x2="9.906" y2="-17.018" width="0.254" layer="94"/>
-<wire x1="9.398" y1="-16.256" x2="8.89" y2="-15.748" width="0.254" layer="94"/>
-<wire x1="8.89" y1="-15.748" x2="8.128" y2="-15.748" width="0.254" layer="94"/>
-<text x="7.874" y="-15.748" size="1.524" layer="97" ratio="12" align="center-right">CARD_INSERTED</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -1526,54 +1410,6 @@ Bottom Mount</description>
 <attribute name="DIGIKEY" value="H11634CT-ND" constant="no"/>
 <attribute name="MOUSER" value="798-ZX62-B-5PA11" constant="no"/>
 <attribute name="NEWARK" value="86P8793" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="CON_MICRO_SD" prefix="J">
-<description>CONN MICRO SD R/A PUSH-PUSH SMD</description>
-<gates>
-<gate name="G$1" symbol="SD-CARD_WITH-CARD-DETECT" x="0" y="0"/>
-</gates>
-<devices>
-<device name="DM3AT-SF-PEJM5" package="DM3AT-SF-PEJM5">
-<connects>
-<connect gate="G$1" pin="A" pad="A"/>
-<connect gate="G$1" pin="B" pad="B"/>
-<connect gate="G$1" pin="CLK" pad="5"/>
-<connect gate="G$1" pin="CMD/MOSI" pad="3"/>
-<connect gate="G$1" pin="DATA0/MISO" pad="7"/>
-<connect gate="G$1" pin="DATA1/RSV" pad="8"/>
-<connect gate="G$1" pin="DATA2/NC" pad="1"/>
-<connect gate="G$1" pin="DATA3-CD/CS_N" pad="2"/>
-<connect gate="G$1" pin="GND" pad="6 MOUNT0 MOUNT1 MOUNT2 MOUNT3"/>
-<connect gate="G$1" pin="VCC" pad="4"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="HR1964CT-ND"/>
-</technology>
-</technologies>
-</device>
-<device name="ST12S010VBAR1800" package="ST12S010VBAR1800">
-<connects>
-<connect gate="G$1" pin="A" pad="DSW1"/>
-<connect gate="G$1" pin="B" pad="DSW2"/>
-<connect gate="G$1" pin="CLK" pad="C5"/>
-<connect gate="G$1" pin="CMD/MOSI" pad="C3"/>
-<connect gate="G$1" pin="DATA0/MISO" pad="C7"/>
-<connect gate="G$1" pin="DATA1/RSV" pad="C8"/>
-<connect gate="G$1" pin="DATA2/NC" pad="C1"/>
-<connect gate="G$1" pin="DATA3-CD/CS_N" pad="C2"/>
-<connect gate="G$1" pin="GND" pad="C6 C9 C10 GND1 GND2 GND3 GND4 GND5 GND6 GND7" route="any"/>
-<connect gate="G$1" pin="VCC" pad="C4"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="670-3034-1-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="JAE Electronics" constant="no"/>
-<attribute name="MPN" value="ST12S010VBAR1800" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -5489,6 +5325,64 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <vertex x="-4.5" y="9"/>
 </polygon>
 </package>
+<package name="DM3AT-SF-PEJM5" urn="urn:adsk.eagle:footprint:20799138/1" library_version="7">
+<description>Micro SD card holder with push-to-eject feature.</description>
+<smd name="1" x="3.2" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="2" x="2.1" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="3" x="1" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="4" x="-0.1" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="5" x="-1.2" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="6" x="-2.3" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="7" x="-3.4" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="8" x="-4.5" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="B" x="-5.45" y="-0.1" dx="0.7" dy="1.2" layer="1"/>
+<smd name="MOUNT0" x="4.75" y="-0.1" dx="1" dy="1.2" layer="1"/>
+<smd name="MOUNT1" x="-6.4" y="-4.4" dx="1" dy="1.2" layer="1"/>
+<smd name="A" x="-6.4" y="-10.6" dx="1" dy="0.8" layer="1"/>
+<smd name="MOUNT2" x="-6.4" y="-14.75" dx="1" dy="2.8" layer="1"/>
+<smd name="MOUNT3" x="7.1" y="-15.2" dx="1.3" dy="1.9" layer="1"/>
+<polygon width="0.127" layer="41" pour="hatch">
+<vertex x="3.35" y="-14.8"/>
+<vertex x="3.35" y="-16.15"/>
+<vertex x="5.6" y="-16.15"/>
+<vertex x="5.6" y="-14.8"/>
+</polygon>
+<polygon width="0.127" layer="41" pour="hatch">
+<vertex x="-5" y="-5.1"/>
+<vertex x="-5" y="-6.7"/>
+<vertex x="2.7" y="-6.7"/>
+<vertex x="2.7" y="-5.1"/>
+</polygon>
+<polygon width="0.127" layer="41" pour="hatch">
+<vertex x="-5.7" y="-6.4"/>
+<vertex x="-5.7" y="-14"/>
+<vertex x="-5" y="-14"/>
+<vertex x="-5" y="-6.4"/>
+</polygon>
+<polygon width="0.127" layer="41" pour="hatch">
+<vertex x="-6.8" y="-0.55"/>
+<vertex x="-6.8" y="-3.8"/>
+<vertex x="-6.05" y="-3.8"/>
+<vertex x="-6.05" y="-0.55"/>
+</polygon>
+<polygon width="0.127" layer="41" pour="hatch">
+<vertex x="-6.8" y="-5"/>
+<vertex x="-6.8" y="-8.6"/>
+<vertex x="-6.05" y="-8.6"/>
+<vertex x="-6.05" y="-5"/>
+</polygon>
+<wire x1="7.35" y1="0" x2="7.35" y2="-15.95" width="0.127" layer="21"/>
+<wire x1="7.35" y1="0" x2="-6.5" y2="0" width="0.127" layer="21"/>
+<wire x1="-6.5" y1="0" x2="-6.5" y2="-15.95" width="0.127" layer="21"/>
+<wire x1="-6.5" y1="-15.95" x2="7.35" y2="-15.95" width="0.127" layer="21"/>
+<wire x1="5" y1="-17.55" x2="-5" y2="-17.55" width="0.127" layer="51"/>
+<wire x1="5" y1="-17.55" x2="5.5" y2="-17.05" width="0.127" layer="51" curve="90"/>
+<wire x1="5.5" y1="-15.95" x2="5.5" y2="-17.05" width="0.127" layer="51"/>
+<wire x1="-5" y1="-17.55" x2="-5.5" y2="-17.05" width="0.127" layer="51" curve="-90"/>
+<wire x1="-5.5" y1="-15.95" x2="-5.5" y2="-17.05" width="0.127" layer="51"/>
+<text x="-2.8" y="0.7" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="4.2" y="0.7" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
+</package>
 </packages>
 <packages3d>
 <package3d name="TC2030-IDC" urn="urn:adsk.eagle:package:20799211/1" type="box" library_version="4">
@@ -5531,6 +5425,12 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 &lt;/ul&gt;&lt;/p&gt;</description>
 <packageinstances>
 <packageinstance name="JST-2-SMD"/>
+</packageinstances>
+</package3d>
+<package3d name="DM3AT-SF-PEJM5" urn="urn:adsk.eagle:package:20799216/2" type="model" library_version="7">
+<description>Micro SD card holder with push-to-eject feature.</description>
+<packageinstances>
+<packageinstance name="DM3AT-SF-PEJM5"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -5576,6 +5476,30 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <pin name="PAD2" x="5.08" y="2.54" visible="off" length="point" rot="R90"/>
 <pin name="PAD1" x="-2.54" y="2.54" visible="off" length="point" rot="R90"/>
 <text x="-2.54" y="5.842" size="1.778" layer="95">&gt;NAME</text>
+</symbol>
+<symbol name="SD-CARD_WITH-CARD-DETECT" urn="urn:adsk.eagle:symbol:20799157/1" library_version="7">
+<pin name="DATA0/MISO" x="15.24" y="5.08" length="middle" function="dot" rot="R180"/>
+<pin name="DATA1/RSV" x="15.24" y="2.54" length="middle" function="dot" rot="R180"/>
+<pin name="DATA2/NC" x="15.24" y="0" length="middle" function="dot" rot="R180"/>
+<pin name="DATA3-CD/CS_N" x="15.24" y="-2.54" length="middle" function="dot" rot="R180"/>
+<pin name="CMD/MOSI" x="15.24" y="-5.08" length="middle" function="dot" rot="R180"/>
+<pin name="CLK" x="15.24" y="-7.62" length="middle" function="dot" rot="R180"/>
+<pin name="VCC" x="15.24" y="7.62" length="middle" function="dot" rot="R180"/>
+<pin name="GND" x="15.24" y="-10.16" length="middle" function="dot" rot="R180"/>
+<pin name="A" x="15.24" y="-15.24" visible="off" length="middle" function="dot" rot="R180"/>
+<pin name="B" x="15.24" y="-17.78" visible="off" length="middle" function="dot" rot="R180"/>
+<wire x1="-12.7" y1="10.16" x2="15.24" y2="10.16" width="0.254" layer="94"/>
+<wire x1="15.24" y1="-20.32" x2="-12.7" y2="-20.32" width="0.254" layer="94"/>
+<wire x1="-12.7" y1="10.16" x2="-12.7" y2="-20.32" width="0.254" layer="94"/>
+<wire x1="11.176" y1="-15.24" x2="9.144" y2="-18.034" width="0.254" layer="94"/>
+<wire x1="9.906" y1="-17.018" x2="9.906" y2="-16.002" width="0.254" layer="94"/>
+<wire x1="9.906" y1="-16.002" x2="9.144" y2="-16.764" width="0.254" layer="94"/>
+<wire x1="9.144" y1="-16.764" x2="9.906" y2="-17.018" width="0.254" layer="94"/>
+<wire x1="9.398" y1="-16.256" x2="8.89" y2="-15.748" width="0.254" layer="94"/>
+<wire x1="8.89" y1="-15.748" x2="8.128" y2="-15.748" width="0.254" layer="94"/>
+<text x="-12.7" y="12.7" size="1.27" layer="95">&gt;NAME</text>
+<text x="-12.7" y="-22.86" size="1.27" layer="96">&gt;VALUE</text>
+<text x="7.874" y="-15.748" size="1.524" layer="97" ratio="12" align="center-right">CARD_INSERTED</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -5692,6 +5616,39 @@ Two pin, compact surface mount connector. Commonly used as a battery input conne
 </device>
 </devices>
 </deviceset>
+<deviceset name="DM3AT-SF-PEJM5" urn="urn:adsk.eagle:component:20799255/2" prefix="J" library_version="7">
+<description>CONN MICRO SD R/A PUSH-PUSH SMD</description>
+<gates>
+<gate name="G$1" symbol="SD-CARD_WITH-CARD-DETECT" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="DM3AT-SF-PEJM5">
+<connects>
+<connect gate="G$1" pin="A" pad="A"/>
+<connect gate="G$1" pin="B" pad="B"/>
+<connect gate="G$1" pin="CLK" pad="5"/>
+<connect gate="G$1" pin="CMD/MOSI" pad="3"/>
+<connect gate="G$1" pin="DATA0/MISO" pad="7"/>
+<connect gate="G$1" pin="DATA1/RSV" pad="8"/>
+<connect gate="G$1" pin="DATA2/NC" pad="1"/>
+<connect gate="G$1" pin="DATA3-CD/CS_N" pad="2"/>
+<connect gate="G$1" pin="GND" pad="6 MOUNT0 MOUNT1 MOUNT2 MOUNT3"/>
+<connect gate="G$1" pin="VCC" pad="4"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20799216/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DESCRIPTION" value="CONN MICRO SD CARD PUSH-PUSH R/A" constant="no"/>
+<attribute name="DIGIKEY" value="HR1964CT-ND"/>
+<attribute name="MANUFACTURER" value="Hirose Electric Co Ltd" constant="no"/>
+<attribute name="MPN" value="DM3AT-SF-PEJM5" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
 </devicesets>
 </library>
 </libraries>
@@ -5765,7 +5722,7 @@ Two pin, compact surface mount connector. Commonly used as a battery input conne
 <attribute name="MPN" value="C1005X5R0J475K050BC"/>
 </part>
 <part name="GND18" library="umich" deviceset="GND" device=""/>
-<part name="J2" library="connector" deviceset="CON_MICRO_SD" device="DM3AT-SF-PEJM5"/>
+<part name="J2" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="DM3AT-SF-PEJM5" device="" package3d_urn="urn:adsk.eagle:package:20799216/2"/>
 <part name="P+10" library="regulators" deviceset="+3V3" device=""/>
 <part name="U8" library="chips" deviceset="SIP32510" device=""/>
 <part name="R18" library="passives" deviceset="RESISTOR" device="0402_RES" value="100k"/>
