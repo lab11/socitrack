@@ -4840,56 +4840,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </deviceset>
 </devicesets>
 </library>
-<library name="batteries">
-<description>Lab11  batteries library</description>
-<packages>
-<package name="MS518SE-FL35E">
-<circle x="0" y="0" radius="2.9" width="0.254" layer="21"/>
-<smd name="+" x="4.2" y="0.75" dx="1.8" dy="0.6" layer="1"/>
-<smd name="-" x="4.2" y="-0.75" dx="1.8" dy="0.6" layer="1"/>
-<wire x1="-1" y1="1" x2="3.508" y2="1" width="0.254" layer="21"/>
-<wire x1="3.508" y1="1" x2="3.508" y2="-1" width="0.254" layer="21"/>
-<wire x1="3.508" y1="-1" x2="-1" y2="-1" width="0.254" layer="21"/>
-<wire x1="-1" y1="-1" x2="-1" y2="1" width="0.254" layer="21"/>
-<text x="0" y="3.048" size="0.889" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-</package>
-</packages>
-<symbols>
-<symbol name="BAT-CELL">
-<wire x1="-7.62" y1="2.54" x2="7.62" y2="2.54" width="0.254" layer="94"/>
-<wire x1="-5.08" y1="0" x2="5.08" y2="0" width="0.254" layer="94"/>
-<pin name="-" x="0" y="-5.08" visible="pin" length="middle" rot="R90"/>
-<pin name="+" x="0" y="7.62" visible="pin" length="middle" rot="R270"/>
-<text x="-2.54" y="5.08" size="2.54" layer="94" ratio="12" align="bottom-center">+</text>
-<text x="-2.54" y="-2.54" size="2.54" layer="94" ratio="12" align="bottom-center">-</text>
-<text x="-5.08" y="7.62" size="1.778" layer="96" align="bottom-center">&gt;NAME</text>
-<text x="-5.08" y="-5.08" size="1.778" layer="96" align="bottom-center">&gt;VALUE</text>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="MS518SE" prefix="B" uservalue="yes">
-<description>A small, low leakage rechargeable battery for RTC backup</description>
-<gates>
-<gate name="G$1" symbol="BAT-CELL" x="0" y="-2.54"/>
-</gates>
-<devices>
-<device name="" package="MS518SE-FL35E">
-<connects>
-<connect gate="G$1" pin="+" pad="+"/>
-<connect gate="G$1" pin="-" pad="-"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="728-1054-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="Seiko" constant="no"/>
-<attribute name="MPN" value="MS518SE-FL35E" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="Wurth_Switch_WS-SLSU" urn="urn:adsk.eagle:library:18253886">
 <description>&lt;BR&gt;Wurth Elektronik - Switches - Slide Switches - WS-SLSU&lt;br&gt;&lt;Hr&gt;
 
@@ -5651,6 +5601,66 @@ Two pin, compact surface mount connector. Commonly used as a battery input conne
 </deviceset>
 </devicesets>
 </library>
+<library name="batteries" urn="urn:adsk.eagle:library:20875836">
+<description>Lab11  batteries library</description>
+<packages>
+<package name="MS518SE-FL35E" urn="urn:adsk.eagle:footprint:20875839/1" library_version="2">
+<circle x="0" y="0" radius="2.9" width="0.254" layer="21"/>
+<smd name="+" x="4.2" y="0.75" dx="1.8" dy="0.6" layer="1"/>
+<smd name="-" x="4.2" y="-0.75" dx="1.8" dy="0.6" layer="1"/>
+<wire x1="-1" y1="1" x2="3.508" y2="1" width="0.254" layer="21"/>
+<wire x1="3.508" y1="1" x2="3.508" y2="-1" width="0.254" layer="21"/>
+<wire x1="3.508" y1="-1" x2="-1" y2="-1" width="0.254" layer="21"/>
+<wire x1="-1" y1="-1" x2="-1" y2="1" width="0.254" layer="21"/>
+<text x="0" y="3.048" size="0.889" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="MS518SE-FL35E" urn="urn:adsk.eagle:package:20875857/2" type="model" library_version="2">
+<packageinstances>
+<packageinstance name="MS518SE-FL35E"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="BAT-CELL" urn="urn:adsk.eagle:symbol:20875852/1" library_version="2">
+<wire x1="-7.62" y1="2.54" x2="7.62" y2="2.54" width="0.254" layer="94"/>
+<wire x1="-5.08" y1="0" x2="5.08" y2="0" width="0.254" layer="94"/>
+<pin name="-" x="0" y="-5.08" visible="pin" length="middle" rot="R90"/>
+<pin name="+" x="0" y="7.62" visible="pin" length="middle" rot="R270"/>
+<text x="-2.54" y="5.08" size="2.54" layer="94" ratio="12" align="bottom-center">+</text>
+<text x="-2.54" y="-2.54" size="2.54" layer="94" ratio="12" align="bottom-center">-</text>
+<text x="-5.08" y="7.62" size="1.778" layer="96" align="bottom-center">&gt;NAME</text>
+<text x="-5.08" y="-5.08" size="1.778" layer="96" align="bottom-center">&gt;VALUE</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="MS518SE" urn="urn:adsk.eagle:component:20875873/2" prefix="B" uservalue="yes" library_version="2">
+<description>A small, low leakage rechargeable battery for RTC backup</description>
+<gates>
+<gate name="G$1" symbol="BAT-CELL" x="0" y="-2.54"/>
+</gates>
+<devices>
+<device name="" package="MS518SE-FL35E">
+<connects>
+<connect gate="G$1" pin="+" pad="+"/>
+<connect gate="G$1" pin="-" pad="-"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20875857/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="728-1054-ND" constant="no"/>
+<attribute name="MANUFACTURER" value="Seiko" constant="no"/>
+<attribute name="MPN" value="MS518SE-FL35E" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -5952,7 +5962,7 @@ Two pin, compact surface mount connector. Commonly used as a battery input conne
 <attribute name="DIGIKEY" value="311-10KJRCT-ND "/>
 <attribute name="MPN" value="RC0402JR-0710KL"/>
 </part>
-<part name="B1" library="batteries" deviceset="MS518SE" device=""/>
+<part name="B1" library="batteries" library_urn="urn:adsk.eagle:library:20875836" deviceset="MS518SE" device="" package3d_urn="urn:adsk.eagle:package:20875857/2"/>
 <part name="SUPPLY16" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R11" library="passives" deviceset="RESISTOR" device="0402_RES" value="1.41k">
 <attribute name="DIGIKEY" value="311-10KJRCT-ND "/>
