@@ -7629,7 +7629,7 @@ https://docs.particle.io/assets/pdfs/electron/battery/IEC62133.pdf</text>
 <pinref part="R19" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="N$55" class="0">
+<net name="VCC_SDCARD" class="0">
 <segment>
 <pinref part="C62" gate="G$1" pin="1"/>
 <pinref part="J2" gate="G$1" pin="VCC"/>
@@ -7657,6 +7657,7 @@ https://docs.particle.io/assets/pdfs/electron/battery/IEC62133.pdf</text>
 <pinref part="R20" gate="G$1" pin="2"/>
 <pinref part="R21" gate="G$1" pin="2"/>
 <pinref part="R22" gate="G$1" pin="2"/>
+<label x="46.228" y="46.736" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="SD_EN" class="0">
