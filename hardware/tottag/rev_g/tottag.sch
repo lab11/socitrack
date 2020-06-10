@@ -7455,25 +7455,25 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <junction x="172.72" y="124.46"/>
 </segment>
 </net>
-<net name="!CHG" class="0">
-<segment>
-<pinref part="U7" gate="G$1" pin="P0.21"/>
-<wire x1="55.88" y1="55.88" x2="60.96" y2="55.88" width="0.1524" layer="91"/>
-<label x="55.88" y="55.88" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="!PG" class="0">
-<segment>
-<pinref part="U7" gate="G$1" pin="P0.19"/>
-<wire x1="60.96" y1="60.96" x2="55.88" y2="60.96" width="0.1524" layer="91"/>
-<label x="55.88" y="60.96" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
 <net name="QI_TS_CTRL" class="0">
 <segment>
 <wire x1="106.68" y1="63.5" x2="109.22" y2="63.5" width="0.1524" layer="91"/>
 <label x="109.22" y="63.5" size="1.27" layer="95" xref="yes"/>
 <pinref part="U7" gate="G$1" pin="P0.25"/>
+</segment>
+</net>
+<net name="!CHG" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P1.02*"/>
+<wire x1="109.22" y1="104.14" x2="106.68" y2="104.14" width="0.1524" layer="91"/>
+<label x="109.22" y="104.14" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="!PG" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P1.03*"/>
+<wire x1="109.22" y1="101.6" x2="106.68" y2="101.6" width="0.1524" layer="91"/>
+<label x="109.22" y="101.6" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
@@ -8692,7 +8692,12 @@ easy shift is add 2kΩ, now low
 <label x="10.16" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="V_QI" class="0">
+<net name="VQI" class="0">
+<segment>
+<pinref part="Q1" gate="G$1" pin="D1"/>
+<wire x1="27.94" y1="83.82" x2="25.4" y2="83.82" width="0.1524" layer="91"/>
+<label x="27.94" y="83.82" size="1.27" layer="95" xref="yes"/>
+</segment>
 <segment>
 <pinref part="U6" gate="B" pin="OUT"/>
 <wire x1="187.96" y1="182.88" x2="190.5" y2="182.88" width="0.1524" layer="91"/>
@@ -8715,13 +8720,6 @@ easy shift is add 2kΩ, now low
 <junction x="43.18" y="99.06"/>
 <label x="43.18" y="101.6" size="1.27" layer="95" rot="R90" xref="yes"/>
 <pinref part="C75" gate="G$1" pin="1"/>
-</segment>
-</net>
-<net name="VQI" class="0">
-<segment>
-<pinref part="Q1" gate="G$1" pin="D1"/>
-<wire x1="27.94" y1="83.82" x2="25.4" y2="83.82" width="0.1524" layer="91"/>
-<label x="27.94" y="83.82" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="COIL_AC1" class="0">
