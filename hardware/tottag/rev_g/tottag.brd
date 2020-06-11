@@ -3950,7 +3950,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="DIGIKEY" value="728-1054-ND" x="28.5496" y="25.8064" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="Seiko" x="28.5496" y="25.8064" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="MS518SE-FL35E" x="28.5496" y="25.8064" size="1.778" layer="27" display="off"/>
-<attribute name="NAME" x="31.64413125" y="27.9159625" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
+<attribute name="NAME" x="31.44093125" y="23.0391625" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 </element>
 <element name="R11" library="passives" package="0402_RES" value="1.41k" x="24.6126" y="29.0576" smashed="yes">
 <attribute name="DIGIKEY" value="311-10KJRCT-ND " x="26.0096" y="29.0576" size="1.778" layer="27" display="off"/>
@@ -4249,7 +4249,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="DIGIKEY" value="296-40008-1-ND" x="32.512" y="29.0576" size="0.508" layer="27" font="vector" ratio="18" display="off"/>
 <attribute name="MANUFACTURER" value="TEXAS INSTRUMENTS" x="32.512" y="29.0576" size="0.508" layer="27" font="vector" ratio="18" display="off"/>
 <attribute name="MPN" value="CSD75207W15" x="32.512" y="29.0576" size="0.508" layer="27" font="vector" ratio="18" display="off"/>
-<attribute name="NAME" x="31.496" y="30.3276" size="0.508" layer="21" font="vector" ratio="18"/>
+<attribute name="NAME" x="32.1056" y="29.9212" size="0.508" layer="21" font="vector" ratio="18"/>
 </element>
 <element name="C90" library="passives" package="0402_CAP" value="1uF" x="30.4038" y="29.591" smashed="yes" rot="R180">
 <attribute name="DIGIKEY" value="490-7195-1-ND " x="30.4038" y="29.591" size="0.508" layer="27" font="vector" ratio="18" rot="R180" display="off"/>
