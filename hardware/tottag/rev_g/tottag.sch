@@ -487,20 +487,6 @@ Chip Antenna</description>
 </library>
 <library name="crystals">
 <packages>
-<package name="TXC-7V">
-<smd name="3" x="1.1" y="0.85" dx="1.4" dy="1.2" layer="1"/>
-<smd name="4" x="-1.1" y="0.85" dx="1.4" dy="1.2" layer="1"/>
-<smd name="1" x="-1.1" y="-0.85" dx="1.4" dy="1.2" layer="1"/>
-<smd name="2" x="1.1" y="-0.85" dx="1.4" dy="1.2" layer="1"/>
-<wire x1="-1.6" y1="1.25" x2="1.6" y2="1.25" width="0.127" layer="21"/>
-<wire x1="1.6" y1="1.25" x2="1.6" y2="-1.25" width="0.127" layer="21"/>
-<wire x1="1.6" y1="-1.25" x2="-1.6" y2="-1.25" width="0.127" layer="21"/>
-<wire x1="-1.6" y1="-1.25" x2="-1.6" y2="1.25" width="0.127" layer="21"/>
-<text x="0" y="2" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-3.175" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
-<wire x1="-0.762" y1="-1.778" x2="-2.159" y2="-1.778" width="0.127" layer="21"/>
-<wire x1="-2.159" y1="-1.778" x2="-2.159" y2="-0.508" width="0.127" layer="21"/>
-</package>
 <package name="ABS05">
 <smd name="B" x="0.55" y="0" dx="0.5" dy="1" layer="1"/>
 <smd name="A" x="-0.55" y="0" dx="0.5" dy="1" layer="1"/>
@@ -525,17 +511,6 @@ Chip Antenna</description>
 <circle x="-1.6" y="1.2" radius="0.14141875" width="0.127" layer="21"/>
 <text x="-1" y="1.6" size="0.5" layer="25">&gt;NAME</text>
 <text x="-1" y="-2.07" size="0.5" layer="27">&gt;VALUE</text>
-</package>
-<package name="2-SMD">
-<smd name="1" x="-1.2446" y="0" dx="1.0922" dy="1.905" layer="1"/>
-<smd name="2" x="1.2446" y="0" dx="1.0922" dy="1.905" layer="1"/>
-<wire x1="-1.6002" y1="0.7493" x2="-1.6002" y2="-0.7493" width="0.127" layer="21"/>
-<wire x1="-1.6002" y1="-0.7493" x2="1.6002" y2="-0.7493" width="0.127" layer="21"/>
-<wire x1="1.6002" y1="-0.7493" x2="1.6002" y2="0.7493" width="0.127" layer="21"/>
-<wire x1="1.6002" y1="0.7493" x2="-1.6002" y2="0.7493" width="0.127" layer="21"/>
-<wire x1="-1.397" y1="1.27" x2="-2.159" y2="1.27" width="0.127" layer="21"/>
-<wire x1="-2.159" y1="1.27" x2="-2.159" y2="0.508" width="0.127" layer="21"/>
-<text x="-2.032" y="1.651" size="1.016" layer="21" font="vector" ratio="12">&gt;NAME</text>
 </package>
 </packages>
 <symbols>
@@ -567,40 +542,6 @@ Chip Antenna</description>
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="7V" prefix="X">
-<description>TXC CRYSTAL SMD</description>
-<gates>
-<gate name="G$1" symbol="CRYSTAL-GND" x="0" y="0"/>
-</gates>
-<devices>
-<device name="-16.000MAAV-T" package="TXC-7V">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="3"/>
-<connect gate="G$1" pin="GND" pad="2 4"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="887-1799-1-ND" constant="no"/>
-</technology>
-</technologies>
-</device>
-<device name="-32.000MAHV-T" package="TXC-7V">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="3"/>
-<connect gate="G$1" pin="GND" pad="2 4"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="887-2568-1-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="TXC CORPORATION" constant="no"/>
-<attribute name="MPN" value="7M-32.000MAHV-T" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
 <deviceset name="ABS05-32.768KHZ" prefix="X">
 <description>32.768kHz Crystal</description>
 <gates>
@@ -651,27 +592,6 @@ Chip Antenna</description>
 <technology name="">
 <attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" constant="no"/>
 <attribute name="MANUFACTURER" value="EPSON" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="ABS07-32.768KHZ" prefix="X">
-<description>32.768kHz Crystal</description>
-<gates>
-<gate name="G$1" symbol="CRYSTAL" x="0" y="0"/>
-</gates>
-<devices>
-<device name="-7-T" package="2-SMD">
-<connects>
-<connect gate="G$1" pin="1" pad="1"/>
-<connect gate="G$1" pin="2" pad="2"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="535-9543-1-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="ABRACON" constant="no"/>
-<attribute name="MPN" value="ABS07-32.768KHZ-7-T " constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6067,12 +5987,49 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="-1" y="1.6" size="0.5" layer="25">&gt;NAME</text>
 <text x="-1" y="-2.07" size="0.5" layer="27">&gt;VALUE</text>
 </package>
+<package name="TXC-7V" urn="urn:adsk.eagle:footprint:20878563/1" library_version="4">
+<smd name="3" x="1.1" y="0.85" dx="1.4" dy="1.2" layer="1"/>
+<smd name="4" x="-1.1" y="0.85" dx="1.4" dy="1.2" layer="1"/>
+<smd name="1" x="-1.1" y="-0.85" dx="1.4" dy="1.2" layer="1"/>
+<smd name="2" x="1.1" y="-0.85" dx="1.4" dy="1.2" layer="1"/>
+<wire x1="-1.6" y1="1.25" x2="1.6" y2="1.25" width="0.127" layer="21"/>
+<wire x1="1.6" y1="1.25" x2="1.6" y2="-1.25" width="0.127" layer="21"/>
+<wire x1="1.6" y1="-1.25" x2="-1.6" y2="-1.25" width="0.127" layer="21"/>
+<wire x1="-1.6" y1="-1.25" x2="-1.6" y2="1.25" width="0.127" layer="21"/>
+<wire x1="-0.762" y1="-1.778" x2="-2.159" y2="-1.778" width="0.127" layer="21"/>
+<wire x1="-2.159" y1="-1.778" x2="-2.159" y2="-0.508" width="0.127" layer="21"/>
+<text x="0" y="2" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-3.175" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
+</package>
+<package name="ABS07" urn="urn:adsk.eagle:footprint:20878541/2" library_version="4">
+<smd name="1" x="-1.2446" y="0" dx="1.0922" dy="1.905" layer="1"/>
+<smd name="2" x="1.2446" y="0" dx="1.0922" dy="1.905" layer="1"/>
+<wire x1="-1.6002" y1="0.7493" x2="-1.6002" y2="-0.7493" width="0.127" layer="21"/>
+<wire x1="-1.6002" y1="-0.7493" x2="1.6002" y2="-0.7493" width="0.127" layer="21"/>
+<wire x1="1.6002" y1="-0.7493" x2="1.6002" y2="0.7493" width="0.127" layer="21"/>
+<wire x1="1.6002" y1="0.7493" x2="-1.6002" y2="0.7493" width="0.127" layer="21"/>
+<wire x1="-1.397" y1="1.27" x2="-2.159" y2="1.27" width="0.127" layer="21"/>
+<wire x1="-2.159" y1="1.27" x2="-2.159" y2="0.508" width="0.127" layer="21"/>
+<text x="-2.032" y="1.651" size="1.016" layer="21" font="vector" ratio="12">&gt;NAME</text>
+</package>
 </packages>
 <packages3d>
 <package3d name="FA-20H" urn="urn:adsk.eagle:package:20878577/2" type="model" library_version="2">
 <description>FA-20H 2.5x2.0mm</description>
 <packageinstances>
 <packageinstance name="FA-20H"/>
+</packageinstances>
+</package3d>
+<package3d name="TXC-7V" urn="urn:adsk.eagle:package:20878602/2" type="model" library_version="4">
+<description>Oscillator Corner Concave, 3.20 X 2.50 X 0.80 mm body
+&lt;p&gt;Oscillator Corner Concave package with body size 3.20 X 2.50 X 0.80 mm&lt;/p&gt;</description>
+<packageinstances>
+<packageinstance name="TXC-7V"/>
+</packageinstances>
+</package3d>
+<package3d name="2-SMD" urn="urn:adsk.eagle:package:20878581/3" type="model" library_version="4">
+<packageinstances>
+<packageinstance name="ABS07"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -6090,6 +6047,18 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="-2.54" y="7.62" size="1.27" layer="95">&gt;NAME</text>
 <text x="-2.54" y="5.08" size="1.27" layer="96">&gt;VALUE</text>
 <text x="0" y="-2.54" size="0.762" layer="95" ratio="12" align="bottom-center">GND</text>
+</symbol>
+<symbol name="CRYSTAL" urn="urn:adsk.eagle:symbol:20878570/1" library_version="4">
+<pin name="1" x="-5.08" y="0" visible="pad" length="short"/>
+<pin name="2" x="5.08" y="0" visible="pad" length="short" rot="R180"/>
+<wire x1="-2.54" y1="2.54" x2="-2.54" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="2.54" y1="2.54" x2="2.54" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-1.27" y1="3.81" x2="-1.27" y2="-3.81" width="0.254" layer="94"/>
+<wire x1="-1.27" y1="-3.81" x2="1.27" y2="-3.81" width="0.254" layer="94"/>
+<wire x1="1.27" y1="-3.81" x2="1.27" y2="3.81" width="0.254" layer="94"/>
+<wire x1="1.27" y1="3.81" x2="-1.27" y2="3.81" width="0.254" layer="94"/>
+<text x="-2.54" y="7.62" size="1.27" layer="95">&gt;NAME</text>
+<text x="-2.54" y="5.08" size="1.27" layer="96">&gt;VALUE</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -6112,6 +6081,70 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <technology name="">
 <attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" constant="no"/>
 <attribute name="MANUFACTURER" value="EPSON" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="7V" urn="urn:adsk.eagle:component:20878637/2" prefix="X" library_version="4">
+<description>TXC CRYSTAL SMD</description>
+<gates>
+<gate name="G$1" symbol="CRYSTAL-GND" x="0" y="0"/>
+</gates>
+<devices>
+<device name="-16.000MAAV-T" package="TXC-7V">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="3"/>
+<connect gate="G$1" pin="GND" pad="2 4"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878602/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="887-1799-1-ND" constant="no"/>
+</technology>
+</technologies>
+</device>
+<device name="-32.000MAHV-T" package="TXC-7V">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="3"/>
+<connect gate="G$1" pin="GND" pad="2 4"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878602/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="887-2568-1-ND" constant="no"/>
+<attribute name="MANUFACTURER" value="TXC CORPORATION" constant="no"/>
+<attribute name="MPN" value="7M-32.000MAHV-T" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="ABS07-32.768KHZ" urn="urn:adsk.eagle:component:20878616/3" prefix="X" library_version="4">
+<description>32.768kHz Crystal</description>
+<gates>
+<gate name="G$1" symbol="CRYSTAL" x="0" y="0"/>
+</gates>
+<devices>
+<device name="-7-T" package="ABS07">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878581/3"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="535-9543-1-ND" constant="no"/>
+<attribute name="MANUFACTURER" value="ABRACON" constant="no"/>
+<attribute name="MPN" value="ABS07-32.768KHZ-7-T " constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6318,7 +6351,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="AISC-0402-3N9G-TCT-ND "/>
 <attribute name="MPN" value="AISC-0402-3N9G-T "/>
 </part>
-<part name="X3" library="crystals" deviceset="7V" device="-32.000MAHV-T" value="32MHz"/>
+<part name="X3" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="7V" device="-32.000MAHV-T" package3d_urn="urn:adsk.eagle:package:20878602/2" value="32MHz"/>
 <part name="C57" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
 <attribute name="DIGIKEY" value="490-7195-1-ND "/>
 <attribute name="MPN" value="GRM155R70G105KA12D "/>
@@ -6472,7 +6505,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </part>
 <part name="GND13" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="GND14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="X5" library="crystals" deviceset="ABS07-32.768KHZ" device="-7-T" value="ABS07-32.768KHZ-7-T"/>
+<part name="X5" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="ABS07-32.768KHZ" device="-7-T" package3d_urn="urn:adsk.eagle:package:20878581/3" value="ABS07-32.768KHZ-7-T"/>
 <part name="C59" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
 <attribute name="DIGIKEY" value="490-7195-1-ND "/>
 <attribute name="MPN" value="GRM155R70G105KA12D "/>
@@ -6674,6 +6707,19 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="490-7195-1-ND "/>
 <attribute name="MPN" value="GRM155R70G105KA12D "/>
 </part>
+<part name="C91" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF">
+<attribute name="DESCRIPTION" value="CAP CER 4.7UF 6.3V X5R 0402"/>
+<attribute name="DIGIKEY" value="445-5947-1-ND"/>
+<attribute name="MANUFACTURER" value="TDK"/>
+<attribute name="MPN" value="C1005X5R0J475K050BC"/>
+</part>
+<part name="C92" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="4.7uF">
+<attribute name="DESCRIPTION" value="CAP CER 4.7UF 6.3V X5R 0402"/>
+<attribute name="DIGIKEY" value="445-5947-1-ND"/>
+<attribute name="MANUFACTURER" value="TDK"/>
+<attribute name="MPN" value="C1005X5R0J475K050BC"/>
+</part>
+<part name="GND8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -6696,6 +6742,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="198.12" y="160.02" size="1.778" layer="98">x2 (top/bottom)</text>
 <text x="231.14" y="66.04" size="3.81" layer="98">Buzzer</text>
 <wire x1="201.93" y1="22.86" x2="201.93" y2="73.66" width="0.1524" layer="98" style="longdash"/>
+<wire x1="25.4" y1="91.44" x2="45.72" y2="104.14" width="0.1524" layer="98" style="dashdot"/>
 </plain>
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -6970,6 +7017,19 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="NAME" x="209.55" y="36.83" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="212.09" y="36.83" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
+<instance part="C91" gate="G$1" x="22.86" y="83.82" smashed="yes">
+<attribute name="DIGIKEY" x="22.86" y="83.82" size="1.27" layer="96" align="bottom-center" display="off"/>
+<attribute name="NAME" x="21.59" y="82.55" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="24.13" y="82.55" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+</instance>
+<instance part="C92" gate="G$1" x="15.24" y="83.82" smashed="yes">
+<attribute name="DIGIKEY" x="15.24" y="83.82" size="1.27" layer="96" align="bottom-center" display="off"/>
+<attribute name="NAME" x="13.97" y="82.55" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="16.51" y="82.55" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+</instance>
+<instance part="GND8" gate="1" x="15.24" y="71.12" smashed="yes">
+<attribute name="VALUE" x="12.7" y="68.58" size="1.778" layer="96"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -7040,8 +7100,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <junction x="12.7" y="104.14"/>
 <wire x1="12.7" y1="104.14" x2="12.7" y2="101.6" width="0.1524" layer="91"/>
 <pinref part="GND7" gate="1" pin="GND"/>
-<pinref part="U7" gate="G$1" pin="VBUS"/>
-<wire x1="60.96" y1="104.14" x2="35.56" y2="104.14" width="0.1524" layer="91"/>
 <junction x="20.32" y="104.14"/>
 <pinref part="C27" gate="G$1" pin="2"/>
 <wire x1="35.56" y1="104.14" x2="27.94" y2="104.14" width="0.1524" layer="91"/>
@@ -7050,7 +7108,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <junction x="27.94" y="104.14"/>
 <pinref part="C22" gate="G$1" pin="2"/>
 <wire x1="35.56" y1="106.68" x2="35.56" y2="104.14" width="0.1524" layer="91"/>
-<junction x="35.56" y="104.14"/>
 </segment>
 <segment>
 <pinref part="GND10" gate="1" pin="GND"/>
@@ -7116,6 +7173,16 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="210.82" y1="33.02" x2="210.82" y2="27.94" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="27.94" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
 <junction x="218.44" y="27.94"/>
+</segment>
+<segment>
+<pinref part="C92" gate="G$1" pin="2"/>
+<pinref part="GND8" gate="1" pin="GND"/>
+<wire x1="15.24" y1="78.74" x2="15.24" y2="76.2" width="0.1524" layer="91"/>
+<pinref part="C91" gate="G$1" pin="2"/>
+<wire x1="15.24" y1="76.2" x2="15.24" y2="73.66" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="78.74" x2="22.86" y2="76.2" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="76.2" x2="15.24" y2="76.2" width="0.1524" layer="91"/>
+<junction x="15.24" y="76.2"/>
 </segment>
 </net>
 <net name="+3V3" class="0">
@@ -7706,6 +7773,46 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="U7" gate="G$1" pin="P1.15*"/>
 <wire x1="106.68" y1="71.12" x2="109.22" y2="71.12" width="0.1524" layer="91"/>
 <label x="109.22" y="71.12" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="D-" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="D-"/>
+<wire x1="60.96" y1="101.6" x2="58.42" y2="101.6" width="0.1524" layer="91"/>
+<label x="58.42" y="101.6" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="D+" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="D+"/>
+<wire x1="60.96" y1="99.06" x2="58.42" y2="99.06" width="0.1524" layer="91"/>
+<label x="58.42" y="99.06" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="NRF_DECUSB" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="DECUSB"/>
+<wire x1="58.42" y1="106.68" x2="60.96" y2="106.68" width="0.1524" layer="91"/>
+<label x="58.42" y="106.68" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="C91" gate="G$1" pin="1"/>
+<wire x1="22.86" y1="86.36" x2="22.86" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="91.44" x2="20.32" y2="91.44" width="0.1524" layer="91"/>
+<label x="20.32" y="91.44" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="VUSB" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="VBUS"/>
+<wire x1="58.42" y1="104.14" x2="60.96" y2="104.14" width="0.1524" layer="91"/>
+<label x="58.42" y="104.14" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="C92" gate="G$1" pin="1"/>
+<wire x1="15.24" y1="86.36" x2="15.24" y2="88.9" width="0.1524" layer="91"/>
+<wire x1="15.24" y1="88.9" x2="12.7" y2="88.9" width="0.1524" layer="91"/>
+<label x="12.7" y="88.9" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
@@ -8782,12 +8889,22 @@ easy shift is add 2kΩ, now low
 <label x="17.78" y="165.1" size="1.27" layer="95" rot="R180" xref="yes"/>
 <pinref part="J1" gate="G$1" pin="DP1"/>
 </segment>
+<segment>
+<wire x1="58.42" y1="165.1" x2="55.88" y2="165.1" width="0.1524" layer="91"/>
+<label x="58.42" y="165.1" size="1.27" layer="95" xref="yes"/>
+<pinref part="J1" gate="G$1" pin="DP2"/>
+</segment>
 </net>
 <net name="D-" class="0">
 <segment>
 <wire x1="17.78" y1="162.56" x2="20.32" y2="162.56" width="0.1524" layer="91"/>
 <label x="17.78" y="162.56" size="1.27" layer="95" rot="R180" xref="yes"/>
 <pinref part="J1" gate="G$1" pin="DN1"/>
+</segment>
+<segment>
+<wire x1="58.42" y1="162.56" x2="55.88" y2="162.56" width="0.1524" layer="91"/>
+<label x="58.42" y="162.56" size="1.27" layer="95" xref="yes"/>
+<pinref part="J1" gate="G$1" pin="DN2"/>
 </segment>
 </net>
 <net name="VUSB" class="0">
@@ -8870,20 +8987,6 @@ easy shift is add 2kΩ, now low
 <pinref part="U2" gate="B" pin="!PG"/>
 <wire x1="101.6" y1="91.44" x2="104.14" y2="91.44" width="0.1524" layer="91"/>
 <label x="104.14" y="91.44" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
-<net name="N$43" class="0">
-<segment>
-<wire x1="58.42" y1="165.1" x2="55.88" y2="165.1" width="0.1524" layer="91"/>
-<label x="58.42" y="165.1" size="1.27" layer="95" xref="yes"/>
-<pinref part="J1" gate="G$1" pin="DP2"/>
-</segment>
-</net>
-<net name="N$48" class="0">
-<segment>
-<wire x1="58.42" y1="162.56" x2="55.88" y2="162.56" width="0.1524" layer="91"/>
-<label x="58.42" y="162.56" size="1.27" layer="95" xref="yes"/>
-<pinref part="J1" gate="G$1" pin="DN2"/>
 </segment>
 </net>
 <net name="BQ_BOOT1" class="0">
