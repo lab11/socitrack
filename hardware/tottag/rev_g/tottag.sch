@@ -6050,6 +6050,75 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </deviceset>
 </devicesets>
 </library>
+<library name="crystals" urn="urn:adsk.eagle:library:20878509">
+<description>&lt;b&gt;LAB11&lt;/b&gt; - Crystals of various frequencies.</description>
+<packages>
+<package name="FA-20H" urn="urn:adsk.eagle:footprint:20878537/1" library_version="2">
+<description>FA-20H 2.5x2.0mm</description>
+<smd name="2" x="-0.7" y="-0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<smd name="3" x="0.7" y="-0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<smd name="1" x="-0.7" y="0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<smd name="4" x="0.7" y="0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
+<wire x1="-1" y1="1.25" x2="-1" y2="-1.25" width="0.127" layer="21"/>
+<wire x1="-1" y1="-1.25" x2="1" y2="-1.25" width="0.127" layer="21"/>
+<wire x1="1" y1="-1.25" x2="1" y2="1.25" width="0.127" layer="21"/>
+<wire x1="1" y1="1.25" x2="-1" y2="1.25" width="0.127" layer="21"/>
+<circle x="-1.6" y="1.2" radius="0.14141875" width="0.127" layer="21"/>
+<text x="-1" y="1.6" size="0.5" layer="25">&gt;NAME</text>
+<text x="-1" y="-2.07" size="0.5" layer="27">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="FA-20H" urn="urn:adsk.eagle:package:20878577/2" type="model" library_version="2">
+<description>FA-20H 2.5x2.0mm</description>
+<packageinstances>
+<packageinstance name="FA-20H"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="CRYSTAL-GND" urn="urn:adsk.eagle:symbol:20878568/1" library_version="2">
+<pin name="1" x="-5.08" y="0" visible="pad" length="short"/>
+<pin name="2" x="5.08" y="0" visible="pad" length="short" rot="R180"/>
+<pin name="GND" x="0" y="-5.08" visible="off" length="short" rot="R90"/>
+<wire x1="-2.54" y1="2.54" x2="-2.54" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="2.54" y1="2.54" x2="2.54" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-1.27" y1="3.81" x2="-1.27" y2="-3.81" width="0.254" layer="94"/>
+<wire x1="-1.27" y1="-3.81" x2="1.27" y2="-3.81" width="0.254" layer="94"/>
+<wire x1="1.27" y1="-3.81" x2="1.27" y2="3.81" width="0.254" layer="94"/>
+<wire x1="1.27" y1="3.81" x2="-1.27" y2="3.81" width="0.254" layer="94"/>
+<text x="-2.54" y="7.62" size="1.27" layer="95">&gt;NAME</text>
+<text x="-2.54" y="5.08" size="1.27" layer="96">&gt;VALUE</text>
+<text x="0" y="-2.54" size="0.762" layer="95" ratio="12" align="bottom-center">GND</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="FA-20H" urn="urn:adsk.eagle:component:20878612/2" prefix="X" library_version="2">
+<description>&lt;b&gt;Description:&lt;/b&gt; Oscillator by EPSON from 12MHz to 54 MHz</description>
+<gates>
+<gate name="X1" symbol="CRYSTAL-GND" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="FA-20H">
+<connects>
+<connect gate="X1" pin="1" pad="1"/>
+<connect gate="X1" pin="2" pad="3"/>
+<connect gate="X1" pin="GND" pad="2 4"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878577/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" constant="no"/>
+<attribute name="MANUFACTURER" value="EPSON" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -6262,7 +6331,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="+3V1" library="regulators" deviceset="+3V3" device=""/>
 <part name="C14" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF"/>
 <part name="C15" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF"/>
-<part name="X4" library="crystals" deviceset="FA-20H" device="" value="38.4MHz">
+<part name="X4" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="FA-20H" device="" package3d_urn="urn:adsk.eagle:package:20878577/2" value="38.4MHz">
 <attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead"/>
 <attribute name="DIGIKEY" value="SER3631CT-ND"/>
 </part>
