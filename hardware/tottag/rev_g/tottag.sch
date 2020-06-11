@@ -6119,6 +6119,90 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </deviceset>
 </devicesets>
 </library>
+<library name="audio" urn="urn:adsk.eagle:library:20947603">
+<packages>
+<package name="CUI_CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:footprint:20947604/1" library_version="2">
+<wire x1="-4.85" y1="4.85" x2="4.85" y2="4.85" width="0.127" layer="51"/>
+<wire x1="4.85" y1="4.85" x2="4.85" y2="-4.85" width="0.127" layer="51"/>
+<wire x1="4.85" y1="-4.85" x2="-2.65" y2="-4.85" width="0.127" layer="51"/>
+<wire x1="-4.85" y1="4.85" x2="-4.85" y2="-2.65" width="0.127" layer="51"/>
+<wire x1="-4.85" y1="-2.65" x2="-2.65" y2="-4.85" width="0.127" layer="51"/>
+<wire x1="-1.35" y1="4.85" x2="-4.85" y2="4.85" width="0.127" layer="21"/>
+<wire x1="-4.85" y1="4.85" x2="-4.85" y2="-2.65" width="0.127" layer="21"/>
+<wire x1="-4.85" y1="-2.65" x2="-2.65" y2="-4.85" width="0.127" layer="21"/>
+<wire x1="-2.65" y1="-4.85" x2="-1.35" y2="-4.85" width="0.127" layer="21"/>
+<wire x1="1.35" y1="-4.85" x2="4.85" y2="-4.85" width="0.127" layer="21"/>
+<wire x1="4.85" y1="-4.85" x2="4.85" y2="4.85" width="0.127" layer="21"/>
+<wire x1="4.85" y1="4.85" x2="1.34" y2="4.85" width="0.127" layer="21"/>
+<wire x1="-5.1" y1="5.95" x2="5.1" y2="5.95" width="0.05" layer="39"/>
+<wire x1="5.1" y1="5.95" x2="5.1" y2="-5.95" width="0.05" layer="39"/>
+<wire x1="5.1" y1="-5.95" x2="-5.1" y2="-5.95" width="0.05" layer="39"/>
+<wire x1="-5.1" y1="-5.95" x2="-5.1" y2="5.95" width="0.05" layer="39"/>
+<text x="-5.1" y="6.3" size="1.27" layer="25">&gt;NAME</text>
+<text x="-5.1" y="-7.5" size="1.27" layer="27">&gt;VALUE</text>
+<text x="1.8" y="5.8" size="1.27" layer="21">+</text>
+<text x="1.8" y="5.8" size="1.27" layer="51">+</text>
+<text x="2" y="-6.3" size="1.27" layer="51">-</text>
+<text x="2" y="-6.3" size="1.27" layer="21">-</text>
+<smd name="N" x="0" y="-4.95" dx="1.7" dy="1.5" layer="1"/>
+<smd name="P" x="0" y="4.95" dx="1.7" dy="1.5" layer="1"/>
+</package>
+</packages>
+<packages3d>
+<package3d name="CUI_CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:package:20947606/2" type="model" library_version="2">
+<packageinstances>
+<packageinstance name="CUI_CMI-9705-0380-SMT-TR"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:symbol:20947605/1" library_version="2">
+<wire x1="-3.175" y1="1.905" x2="-3.175" y2="-1.905" width="0.254" layer="94"/>
+<wire x1="-3.175" y1="-1.905" x2="-2.54" y2="-1.905" width="0.254" layer="94"/>
+<wire x1="0" y1="-1.905" x2="0" y2="1.905" width="0.254" layer="94"/>
+<wire x1="-3.175" y1="1.905" x2="-2.54" y2="1.905" width="0.254" layer="94"/>
+<wire x1="0" y1="-1.905" x2="2.54" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="2.54" y1="-5.08" x2="2.54" y2="5.08" width="0.254" layer="94"/>
+<wire x1="0" y1="1.905" x2="2.54" y2="5.08" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="-2.54" x2="-2.54" y2="-1.905" width="0.1524" layer="94"/>
+<wire x1="-2.54" y1="-1.905" x2="0" y2="-1.905" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="2.54" x2="-2.54" y2="1.905" width="0.1524" layer="94"/>
+<wire x1="-2.54" y1="1.905" x2="0" y2="1.905" width="0.254" layer="94"/>
+<text x="-1.27" y="6.35" size="1.778" layer="95">&gt;NAME</text>
+<text x="-1.27" y="-8.255" size="1.778" layer="96">&gt;VALUE</text>
+<text x="-4.318" y="3.302" size="1.27" layer="94">+</text>
+<text x="-4.318" y="-3.556" size="1.27" layer="94">-</text>
+<pin name="N" x="-2.54" y="-5.08" visible="off" length="short" direction="pas" rot="R90"/>
+<pin name="P" x="-2.54" y="5.08" visible="off" length="short" direction="pas" rot="R270"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:component:20947607/2" prefix="LS" library_version="2">
+<gates>
+<gate name="G$1" symbol="CMI-9705-0380-SMT-TR" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="CUI_CMI-9705-0380-SMT-TR">
+<connects>
+<connect gate="G$1" pin="N" pad="N"/>
+<connect gate="G$1" pin="P" pad="P"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20947606/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="MANUFACTURER" value="CUI Inc."/>
+<attribute name="MAXIMUM_PACKAGE_HEIGHT" value="5.2mm"/>
+<attribute name="PARTREV" value="1.0"/>
+<attribute name="STANDARD" value="Manufacturer Recommendations"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -6582,6 +6666,14 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY39" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R37" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="R38" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
+<part name="LS1" library="audio" library_urn="urn:adsk.eagle:library:20947603" deviceset="CMI-9705-0380-SMT-TR" device="" package3d_urn="urn:adsk.eagle:package:20947606/2"/>
+<part name="Q4" library="fets" library_urn="urn:adsk.eagle:library:20879112" deviceset="CSD75207W15" device="" package3d_urn="urn:adsk.eagle:package:20879163/2"/>
+<part name="GND6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="P+2" library="regulators" deviceset="+3V3" device=""/>
+<part name="C90" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
+<attribute name="DIGIKEY" value="490-7195-1-ND "/>
+<attribute name="MPN" value="GRM155R70G105KA12D "/>
+</part>
 </parts>
 <sheets>
 <sheet>
@@ -6602,6 +6694,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="180.34" y="167.64" size="3.81" layer="98">LED</text>
 <text x="190.5" y="124.968" size="1.778" layer="98">Pull-up nCS to prevent float</text>
 <text x="198.12" y="160.02" size="1.778" layer="98">x2 (top/bottom)</text>
+<text x="231.14" y="66.04" size="3.81" layer="98">Buzzer</text>
+<wire x1="201.93" y1="22.86" x2="201.93" y2="73.66" width="0.1524" layer="98" style="longdash"/>
 </plain>
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -6856,6 +6950,26 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="NAME" x="205.74" y="152.654" size="1.778" layer="95" ratio="12"/>
 <attribute name="VALUE" x="205.74" y="134.874" size="1.778" layer="96" ratio="12"/>
 </instance>
+<instance part="LS1" gate="G$1" x="220.98" y="35.56" smashed="yes">
+<attribute name="NAME" x="219.71" y="41.91" size="1.778" layer="95"/>
+<attribute name="VALUE" x="219.71" y="27.305" size="1.778" layer="96"/>
+</instance>
+<instance part="Q4" gate="G$1" x="220.98" y="55.88" smashed="yes">
+<attribute name="VALUE" x="212.598" y="60.96" size="1.778" layer="96" rot="MR270"/>
+<attribute name="NAME" x="228.6" y="45.72" size="1.778" layer="95" rot="MR0"/>
+</instance>
+<instance part="GND6" gate="1" x="218.44" y="22.86" smashed="yes">
+<attribute name="VALUE" x="215.9" y="20.32" size="1.778" layer="96"/>
+</instance>
+<instance part="P+2" gate="P1" x="215.9" y="71.12" smashed="yes">
+<attribute name="VALUE" x="213.36" y="66.04" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="C90" gate="G$1" x="210.82" y="38.1" smashed="yes">
+<attribute name="DIGIKEY" x="210.82" y="38.1" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="210.82" y="38.1" size="1.778" layer="96" display="off"/>
+<attribute name="NAME" x="209.55" y="36.83" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="212.09" y="36.83" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -6993,6 +7107,16 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="U11" gate="G$1" pin="EXTI"/>
 <wire x1="220.98" y1="116.84" x2="248.92" y2="116.84" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="LS1" gate="G$1" pin="N"/>
+<pinref part="GND6" gate="1" pin="GND"/>
+<wire x1="218.44" y1="30.48" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
+<pinref part="C90" gate="G$1" pin="2"/>
+<wire x1="218.44" y1="27.94" x2="218.44" y2="25.4" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="33.02" x2="210.82" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="27.94" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
+<junction x="218.44" y="27.94"/>
+</segment>
 </net>
 <net name="+3V3" class="0">
 <segment>
@@ -7049,6 +7173,16 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="144.78" y1="121.92" x2="144.78" y2="116.84" width="0.1524" layer="91"/>
 <junction x="144.78" y="116.84"/>
 <pinref part="P+3" gate="P1" pin="+3V3"/>
+</segment>
+<segment>
+<pinref part="P+2" gate="P1" pin="+3V3"/>
+<pinref part="Q4" gate="G$1" pin="D2"/>
+<wire x1="215.9" y1="68.58" x2="215.9" y2="66.04" width="0.1524" layer="91"/>
+<pinref part="Q4" gate="G$1" pin="D1"/>
+<wire x1="215.9" y1="66.04" x2="215.9" y2="63.5" width="0.1524" layer="91"/>
+<wire x1="223.52" y1="63.5" x2="223.52" y2="66.04" width="0.1524" layer="91"/>
+<wire x1="223.52" y1="66.04" x2="215.9" y2="66.04" width="0.1524" layer="91"/>
+<junction x="215.9" y="66.04"/>
 </segment>
 </net>
 <net name="EXT_I2C_SDA" class="0">
@@ -7543,6 +7677,35 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="U7" gate="G$1" pin="P1.03*"/>
 <wire x1="109.22" y1="101.6" x2="106.68" y2="101.6" width="0.1524" layer="91"/>
 <label x="109.22" y="101.6" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="N$5" class="0">
+<segment>
+<pinref part="Q4" gate="G$1" pin="S"/>
+<pinref part="LS1" gate="G$1" pin="P"/>
+<wire x1="218.44" y1="45.72" x2="218.44" y2="43.18" width="0.1524" layer="91"/>
+<pinref part="C90" gate="G$1" pin="1"/>
+<wire x1="218.44" y1="43.18" x2="218.44" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="40.64" x2="210.82" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="43.18" x2="218.44" y2="43.18" width="0.1524" layer="91"/>
+<junction x="218.44" y="43.18"/>
+</segment>
+</net>
+<net name="BUZZER_GATE" class="0">
+<segment>
+<pinref part="Q4" gate="G$1" pin="G2"/>
+<wire x1="231.14" y1="50.8" x2="233.68" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="233.68" y1="50.8" x2="233.68" y2="55.88" width="0.1524" layer="91"/>
+<pinref part="Q4" gate="G$1" pin="G1"/>
+<wire x1="233.68" y1="55.88" x2="231.14" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="233.68" y1="55.88" x2="236.22" y2="55.88" width="0.1524" layer="91"/>
+<junction x="233.68" y="55.88"/>
+<label x="236.22" y="55.88" size="1.27" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U7" gate="G$1" pin="P1.15*"/>
+<wire x1="106.68" y1="71.12" x2="109.22" y2="71.12" width="0.1524" layer="91"/>
+<label x="109.22" y="71.12" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
