@@ -5890,7 +5890,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </package3d>
 </packages3d>
 <symbols>
-<symbol name="DUAL_P_MOSFET" urn="urn:adsk.eagle:symbol:20879153/1" library_version="2">
+<symbol name="DUAL_P_MOSFET" urn="urn:adsk.eagle:symbol:20879153/2" library_version="3">
 <wire x1="-3.556" y1="0" x2="-5.08" y2="0" width="0.1524" layer="94"/>
 <wire x1="-3.556" y1="-2.159" x2="-5.08" y2="-2.159" width="0.1524" layer="94"/>
 <wire x1="-2.54" y1="-2.54" x2="-2.54" y2="0" width="0.1524" layer="94"/>
@@ -5934,11 +5934,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <rectangle x1="-3.556" y1="1.397" x2="-3.048" y2="2.921" layer="94" rot="R180"/>
 <rectangle x1="-3.556" y1="-0.762" x2="-3.048" y2="0.762" layer="94" rot="R180"/>
 <rectangle x1="-3.556" y1="-2.921" x2="-3.048" y2="-1.397" layer="94" rot="R180"/>
-<rectangle x1="-7.112" y1="0.762" x2="-5.842" y2="0.889" layer="94" rot="R180"/>
+<rectangle x1="-7.112" y1="-0.254" x2="-5.842" y2="-0.127" layer="94" rot="R180"/>
 <rectangle x1="4.064" y1="1.397" x2="4.572" y2="2.921" layer="94" rot="R180"/>
 <rectangle x1="4.064" y1="-0.762" x2="4.572" y2="0.762" layer="94" rot="R180"/>
 <rectangle x1="4.064" y1="-2.921" x2="4.572" y2="-1.397" layer="94" rot="R180"/>
-<rectangle x1="0.508" y1="0.762" x2="1.778" y2="0.889" layer="94" rot="R180"/>
+<rectangle x1="0.508" y1="-0.254" x2="1.778" y2="-0.127" layer="94" rot="R180"/>
 <pin name="D2" x="-5.08" y="7.62" visible="off" length="short" rot="R270"/>
 <pin name="S" x="-2.54" y="-10.16" visible="off" length="short" rot="R90"/>
 <pin name="G2" x="10.16" y="-5.08" visible="off" length="short" direction="in" rot="R180"/>
@@ -5950,9 +5950,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <vertex x="-3.81" y="-0.635"/>
 </polygon>
 <polygon width="0.1016" layer="94">
-<vertex x="-6.477" y="0.762"/>
-<vertex x="-7.112" y="-0.254"/>
-<vertex x="-5.842" y="-0.254"/>
+<vertex x="-6.477" y="-0.254"/>
+<vertex x="-7.112" y="0.762"/>
+<vertex x="-5.842" y="0.762"/>
 </polygon>
 <polygon width="0.1016" layer="94">
 <vertex x="2.794" y="0"/>
@@ -5960,14 +5960,14 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <vertex x="3.81" y="-0.635"/>
 </polygon>
 <polygon width="0.1016" layer="94">
-<vertex x="1.143" y="0.762"/>
-<vertex x="0.508" y="-0.254"/>
-<vertex x="1.778" y="-0.254"/>
+<vertex x="1.143" y="-0.254"/>
+<vertex x="0.508" y="0.762"/>
+<vertex x="1.778" y="0.762"/>
 </polygon>
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="CSD75207W15" urn="urn:adsk.eagle:component:20879179/2" prefix="Q" library_version="2">
+<deviceset name="CSD75207W15" urn="urn:adsk.eagle:component:20879179/3" prefix="Q" library_version="3">
 <description>low on resistance, gate charge dual p-channel nexfet</description>
 <gates>
 <gate name="G$1" symbol="DUAL_P_MOSFET" x="0" y="0"/>
@@ -7972,6 +7972,7 @@ Battery pack has
 ---
 That matches the B of first few
 103AT datasheets; must be a thing</text>
+<text x="5.842" y="89.662" size="1.27" layer="98" align="top-center">NC</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
