@@ -3632,7 +3632,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <packageinstance name="MOLEX-PICO-SPOX-3_SIDE"/>
 </packageinstances>
 </package3d>
-<package3d name="GCT_USB4110-GF-A" urn="urn:adsk.eagle:package:20910683/3" type="model" library_version="14">
+<package3d name="GCT_USB4110-GF-A" urn="urn:adsk.eagle:package:20910683/4" type="model" library_version="15">
 <packageinstances>
 <packageinstance name="GCT_USB4110-GF-A"/>
 </packageinstances>
@@ -3857,7 +3857,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="USB4110-GF-A" urn="urn:adsk.eagle:component:20910684/3" prefix="J" library_version="14">
+<deviceset name="USB4110-GF-A" urn="urn:adsk.eagle:component:20910684/4" prefix="J" library_version="15">
 <description>CONN USB 2.0 TYPE-C R/A SMT</description>
 <gates>
 <gate name="G$1" symbol="USB4110-GF-A" x="0" y="0"/>
@@ -3877,7 +3877,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <connect gate="G$1" pin="VBUS" pad="A4/B9 B4/A9"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20910683/3"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20910683/4"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -4287,7 +4287,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <circle x="-2" y="2.5" radius="0.5" width="0" layer="21"/>
 <text x="0" y="5" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 </package>
-<package name="DSQ0010A" urn="urn:adsk.eagle:footprint:20913203/2" locally_modified="yes" library_version="5" library_locally_modified="yes">
+<package name="DSQ0010A" urn="urn:adsk.eagle:footprint:20913203/3" library_version="12">
 <description>10-SON (DFN), 0.40 mm pitch, 2.00 X 2.00 X 0.80 mm body, 1.50 X 0.90 mm thermal pad
 &lt;p&gt;10-pin SON (DFN) package with 0.40 mm pitch with body size 2.00 X 2.00 X 0.80 mm and thermal pad size 1.50 X 0.90 mm&lt;/p&gt;</description>
 <circle x="-1.554" y="1.414" radius="0.25" width="0" layer="21"/>
@@ -4421,24 +4421,26 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </package>
 </packages>
 <packages3d>
-<package3d name="QFN-48-DW1000" urn="urn:adsk.eagle:package:20878825/1" type="box" library_version="1">
+<package3d name="QFN-48-DW1000" urn="urn:adsk.eagle:package:20878825/2" type="model" library_version="12">
 <description>&lt;b&gt;Description:&lt;/b&gt; Footprint for the DW1000, designed based on the previous version of TriPoint available on &lt;a href='https://github.com/lab11/polypoint/tree/master/pcb/tripoint/v2p0'&gt;Github&lt;/a&gt;.</description>
 <packageinstances>
 <packageinstance name="QFN-48-DW1000"/>
 </packageinstances>
 </package3d>
-<package3d name="UFQFPN-48" urn="urn:adsk.eagle:package:20878823/1" type="box" library_version="1">
+<package3d name="UFQFPN-48" urn="urn:adsk.eagle:package:20878823/2" type="model" library_version="12">
 <description>&lt;b&gt;Description:&lt;/b&gt; Footprint by STMicroelectronics for the &lt;a href='https://www.st.com/resource/en/datasheet/stm32f091cc.pdf'&gt;&lt;i&gt;STM32F091CC&lt;/i&gt;&lt;/a&gt;</description>
 <packageinstances>
 <packageinstance name="UFQFPN-48"/>
 </packageinstances>
 </package3d>
-<package3d name="QFN-16-3MM" urn="urn:adsk.eagle:package:20878799/1" type="box" library_version="1">
+<package3d name="QFN-16-3MM" urn="urn:adsk.eagle:package:20878799/2" type="model" library_version="12">
+<description>16-QFN, 0.50 mm pitch, 3.00 X 3.00 X 0.85 mm body
+&lt;p&gt;16-pin QFN package with 0.50 mm pitch with body size 3.00 X 3.00 X 0.85 mm&lt;/p&gt;</description>
 <packageinstances>
 <packageinstance name="QFN-16-3MM"/>
 </packageinstances>
 </package3d>
-<package3d name="AQFN73" urn="urn:adsk.eagle:package:20878797/1" type="box" library_version="1">
+<package3d name="AQFN73" urn="urn:adsk.eagle:package:20878797/2" type="box" library_version="12">
 <description>AQFN73 7x7mm</description>
 <packageinstances>
 <packageinstance name="AQFN73"/>
@@ -4449,14 +4451,14 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <packageinstance name="TAIYO-YUDEN-AH086M"/>
 </packageinstances>
 </package3d>
-<package3d name="SON40P200X200X80-11T90X150N" urn="urn:adsk.eagle:package:20913188/2" type="model" library_version="5" library_locally_modified="yes">
+<package3d name="SON40P200X200X80-11T90X150N" urn="urn:adsk.eagle:package:20913188/3" type="model" library_version="12">
 <description>10-SON (DFN), 0.40 mm pitch, 2.00 X 2.00 X 0.80 mm body, 1.50 X 0.90 mm thermal pad
 &lt;p&gt;10-pin SON (DFN) package with 0.40 mm pitch with body size 2.00 X 2.00 X 0.80 mm and thermal pad size 1.50 X 0.90 mm&lt;/p&gt;</description>
 <packageinstances>
 <packageinstance name="DSQ0010A"/>
 </packageinstances>
 </package3d>
-<package3d name="RHL0020A" urn="urn:adsk.eagle:package:20914322/2" type="model" library_version="7" library_locally_modified="yes">
+<package3d name="RHL0020A" urn="urn:adsk.eagle:package:20914322/3" type="model" library_version="12">
 <description>A TI variant of a VQFN with PAD connected to some package pins.</description>
 <packageinstances>
 <packageinstance name="RHL0020A"/>
@@ -4741,7 +4743,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="DW1000" urn="urn:adsk.eagle:component:20879121/1" prefix="U" library_version="1">
+<deviceset name="DW1000" urn="urn:adsk.eagle:component:20879121/2" prefix="U" library_version="12">
 <description>&lt;b&gt;Description:&lt;/b&gt; The &lt;a href='https://www.decawave.com/sites/default/files/resources/dw1000-datasheet-v2.13.pdf'&gt;&lt;i&gt;DecaWave DW1000&lt;/i&gt;&lt;/a&gt; chip, used for UWB two-way ranging.</description>
 <gates>
 <gate name="U1" symbol="DW1000" x="0" y="0"/>
@@ -4796,7 +4798,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <connect gate="U1" pin="XTAL2" pad="4"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20878825/1"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878825/2"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -4810,7 +4812,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="STM32F091CC" urn="urn:adsk.eagle:component:20879120/1" prefix="U" library_version="1">
+<deviceset name="STM32F091CC" urn="urn:adsk.eagle:component:20879120/2" prefix="U" library_version="12">
 <description>&lt;b&gt;Description:&lt;/b&gt; &lt;a href='https://www.st.com/resource/en/datasheet/stm32f091cc.pdf'&gt;&lt;i&gt;STM32F091CC&lt;/i&gt;&lt;/a&gt; from STMicroelectronics, an ARM-based 32-bit MCU with 256 kB Flash, 32kB of SRAM and a Cortex M0</description>
 <gates>
 <gate name="U1" symbol="STM32F091CC" x="0" y="0"/>
@@ -4869,7 +4871,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <connect gate="U1" pin="VSSA" pad="8"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20878823/1"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878823/2"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -4884,7 +4886,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="AB1815-T3" urn="urn:adsk.eagle:component:20879101/1" prefix="U" library_version="1">
+<deviceset name="AB1815-T3" urn="urn:adsk.eagle:component:20879101/2" prefix="U" library_version="12">
 <description>Ultra-low current RTC. 55nA quiescent @ 3V. 1.5-3.6V input.</description>
 <gates>
 <gate name="G$1" symbol="AB1815-T3" x="0" y="0"/>
@@ -4911,7 +4913,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <connect gate="G$1" pin="XO" pad="15"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20878799/1"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878799/2"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -4923,7 +4925,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="NRF52840" urn="urn:adsk.eagle:component:20879100/1" prefix="U" library_version="1">
+<deviceset name="NRF52840" urn="urn:adsk.eagle:component:20879100/2" prefix="U" library_version="12">
 <description>ultra-low power 2.4 GHz wireless system on chip (SoC) integrating a multiprotocol 2.4 GHz transceiver, an ARM® Cortex®-M4F CPU.</description>
 <gates>
 <gate name="G$1" symbol="NRF52840" x="0" y="17.78"/>
@@ -5002,7 +5004,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <connect gate="G$1" pin="XC2" pad="A23"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20878797/1"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878797/2"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -5014,7 +5016,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:component:20878978/1" locally_modified="yes" prefix="A" library_version="1" library_locally_modified="yes">
+<deviceset name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:component:20878978/2" prefix="A" library_version="12">
 <description>UWB Antenna - 3.1-8GHz</description>
 <gates>
 <gate name="G$1" symbol="ANTENNA" x="0" y="2.54"/>
@@ -5035,7 +5037,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="BQ24040" urn="urn:adsk.eagle:component:20913465/1" locally_modified="yes" prefix="U" library_version="5" library_locally_modified="yes">
+<deviceset name="BQ24040" urn="urn:adsk.eagle:component:20913465/2" prefix="U" library_version="12">
 <description>Simple Li Ion / Li Poly charger.</description>
 <gates>
 <gate name="B" symbol="BQ24040" x="0" y="-5.08"/>
@@ -5054,7 +5056,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <connect gate="B" pin="VSS" pad="3 PAD"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20913188/2"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20913188/3"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -5065,7 +5067,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="BQ51013B" urn="urn:adsk.eagle:component:20914323/5" prefix="U" library_version="11">
+<deviceset name="BQ51013B" urn="urn:adsk.eagle:component:20914323/6" prefix="U" library_version="12">
 <description>bq51013B 
 
 Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</description>
@@ -5096,7 +5098,7 @@ Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</descri
 <connect gate="B" pin="TS/CTRL" pad="13"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20914322/2"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20914322/3"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -6310,7 +6312,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R4" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
 <part name="R5" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
 <part name="R6" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
-<part name="U7" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="NRF52840" device="" package3d_urn="urn:adsk.eagle:package:20878797/1"/>
+<part name="U7" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="NRF52840" device="" package3d_urn="urn:adsk.eagle:package:20878797/2"/>
 <part name="C56" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
 <attribute name="DIGIKEY" value=""/>
 <attribute name="MPN" value=""/>
@@ -6401,7 +6403,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="TP13" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP14" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="FRAME3" library="lab11-frames" deviceset="LETTER_L_BLANK" device=""/>
-<part name="U10" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="STM32F091CC" device="" package3d_urn="urn:adsk.eagle:package:20878823/1"/>
+<part name="U10" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="STM32F091CC" device="" package3d_urn="urn:adsk.eagle:package:20878823/2"/>
 <part name="U9" library="switches" deviceset="SKY13317" device=""/>
 <part name="T1" library="rf" deviceset="HHM1595A1" device=""/>
 <part name="SUPPLY1" library="regulators" deviceset="GND" device=""/>
@@ -6438,7 +6440,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="C47" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C48" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C49" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
-<part name="U1" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="DW1000" device="" package3d_urn="urn:adsk.eagle:package:20878825/1"/>
+<part name="U1" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="DW1000" device="" package3d_urn="urn:adsk.eagle:package:20878825/2"/>
 <part name="R3" library="passives" deviceset="RESISTOR" device="0402_RES" value="270"/>
 <part name="R17" library="passives" deviceset="RESISTOR" device="0402_RES" value="16k"/>
 <part name="R15" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k 1%"/>
@@ -6506,7 +6508,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value=""/>
 </part>
 <part name="JP1" library="SparkFun-Jumpers" deviceset="JUMPER-SMT_2_NO" device="_NO-SILK"/>
-<part name="U11" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="AB1815-T3" device="" package3d_urn="urn:adsk.eagle:package:20878799/1"/>
+<part name="U11" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="AB1815-T3" device="" package3d_urn="urn:adsk.eagle:package:20878799/2"/>
 <part name="C18" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="47pF">
 <attribute name="DIGIKEY" value="490-5942-1-ND"/>
 <attribute name="MPN" value="GRM1555C1H470JA01D "/>
@@ -6577,7 +6579,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="RMCF0402FT5K10CT-ND"/>
 <attribute name="MPN" value="RMCF0402FT5K10"/>
 </part>
-<part name="U2" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="BQ24040" device="" package3d_urn="urn:adsk.eagle:package:20913188/2"/>
+<part name="U2" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="BQ24040" device="" package3d_urn="urn:adsk.eagle:package:20913188/3"/>
 <part name="SUPPLY2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="SUPPLY14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R1" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="2.2k">
@@ -6596,8 +6598,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </part>
 <part name="SUPPLY31" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R28" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="DNP"/>
-<part name="J1" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="USB4110-GF-A" device="" package3d_urn="urn:adsk.eagle:package:20910683/3"/>
-<part name="U6" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="BQ51013B" device="" package3d_urn="urn:adsk.eagle:package:20914322/2"/>
+<part name="J1" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="USB4110-GF-A" device="" package3d_urn="urn:adsk.eagle:package:20910683/4"/>
+<part name="U6" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="BQ51013B" device="" package3d_urn="urn:adsk.eagle:package:20914322/3"/>
 <part name="SUPPLY32" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="C77" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
 <attribute name="DIGIKEY" value=""/>
