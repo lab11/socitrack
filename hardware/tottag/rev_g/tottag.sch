@@ -8466,16 +8466,6 @@ That matches the B of first few
 <wire x1="215.9" y1="27.94" x2="215.9" y2="30.48" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="C30" gate="G$1" pin="2"/>
-<wire x1="167.64" y1="45.72" x2="165.1" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="165.1" y1="45.72" x2="165.1" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="167.64" y1="53.34" x2="165.1" y2="53.34" width="0.1524" layer="91"/>
-<wire x1="165.1" y1="53.34" x2="165.1" y2="27.94" width="0.1524" layer="91"/>
-<pinref part="GND17" gate="1" pin="GND"/>
-<junction x="165.1" y="45.72"/>
-<pinref part="C71" gate="G$1" pin="2"/>
-</segment>
-<segment>
 <pinref part="C62" gate="G$1" pin="2"/>
 <pinref part="GND18" gate="1" pin="GND"/>
 <pinref part="J2" gate="G$1" pin="B"/>
@@ -8623,6 +8613,16 @@ That matches the B of first few
 <wire x1="213.36" y1="127" x2="213.36" y2="128.27" width="0.1524" layer="91"/>
 <junction x="213.36" y="127"/>
 <junction x="213.36" y="128.27"/>
+</segment>
+<segment>
+<pinref part="C30" gate="G$1" pin="2"/>
+<pinref part="GND17" gate="1" pin="GND"/>
+<wire x1="167.64" y1="45.72" x2="165.1" y2="45.72" width="0.1524" layer="91"/>
+<wire x1="165.1" y1="45.72" x2="165.1" y2="27.94" width="0.1524" layer="91"/>
+<pinref part="C71" gate="G$1" pin="2"/>
+<wire x1="167.64" y1="53.34" x2="165.1" y2="53.34" width="0.1524" layer="91"/>
+<wire x1="165.1" y1="53.34" x2="165.1" y2="45.72" width="0.1524" layer="91"/>
+<junction x="165.1" y="45.72"/>
 </segment>
 </net>
 <net name="+3V3" class="0">
@@ -10962,29 +10962,15 @@ Furthermore, try to keep them as short and straight as possible</text>
 </sheet>
 </sheets>
 <errors>
-<approved hash="104,2,63.5,162.56,U6,VDD/1,VUSB,,,"/>
-<approved hash="104,2,63.5,160.02,U6,VDD/2,VUSB,,,"/>
-<approved hash="104,2,99.06,162.56,U6,VBAT/3,VBAT,,,"/>
-<approved hash="104,2,99.06,160.02,U6,VBAT/4,VBAT,,,"/>
-<approved hash="104,2,99.06,149.86,U6,VSS,GND,,,"/>
-<approved hash="104,2,193.04,101.6,U2,VCC,VUSB,,,"/>
-<approved hash="202,2,193.04,88.9,U2,OSCI,,,,"/>
-<approved hash="202,2,220.98,93.98,U2,!CTS,,,,"/>
-<approved hash="202,2,220.98,88.9,U2,!DSR,,,,"/>
-<approved hash="202,2,220.98,86.36,U2,!DCD,,,,"/>
-<approved hash="202,2,220.98,83.82,U2,!RI,,,,"/>
-<approved hash="104,2,193.04,99.06,U2,VCCIO,N$1,,,"/>
-<approved hash="104,3,27.94,101.6,U10,VBAT,+3V3,,,"/>
-<approved hash="104,3,27.94,58.42,U10,VSSA,GND,,,"/>
-<approved hash="104,3,27.94,96.52,U10,VDDA,+3V3,,,"/>
-<approved hash="104,3,27.94,55.88,U10,VSS/23,GND,,,"/>
-<approved hash="104,3,27.94,91.44,U10,VDD/24,+3V3,,,"/>
-<approved hash="104,3,27.94,93.98,U10,VDDIO2,+3V3,,,"/>
-<approved hash="104,3,27.94,53.34,U10,VSS/35,GND,,,"/>
-<approved hash="104,3,27.94,50.8,U10,VSS/47,GND,,,"/>
-<approved hash="104,3,27.94,88.9,U10,VDD/48,+3V3,,,"/>
-<approved hash="104,3,30.48,152.4,U4,VIN,+3V3,,,"/>
-<approved hash="104,3,60.96,152.4,U4,VOUT,+1V8,,,"/>
+<approved hash="104,3,50.8,99.06,U10,VBAT,+3V3,,,"/>
+<approved hash="104,3,50.8,55.88,U10,VSSA,GND,,,"/>
+<approved hash="104,3,50.8,93.98,U10,VDDA,+3V3,,,"/>
+<approved hash="104,3,50.8,53.34,U10,VSS/23,GND,,,"/>
+<approved hash="104,3,50.8,88.9,U10,VDD/24,+3V3,,,"/>
+<approved hash="104,3,50.8,91.44,U10,VDDIO2,+3V3,,,"/>
+<approved hash="104,3,50.8,50.8,U10,VSS/35,GND,,,"/>
+<approved hash="104,3,50.8,48.26,U10,VSS/47,GND,,,"/>
+<approved hash="104,3,50.8,86.36,U10,VDD/48,+3V3,,,"/>
 <approved hash="104,3,162.56,139.7,U1,VDDIO/31,VDDIO,,,"/>
 <approved hash="104,3,162.56,175.26,U1,VDDIOA,+3V3,,,"/>
 <approved hash="104,3,162.56,160.02,U1,VDDLDOD,+1V8,,,"/>
@@ -10996,8 +10982,11 @@ Furthermore, try to keep them as short and straight as possible</text>
 <approved hash="104,3,162.56,162.56,U1,VDDLDOA,+1V8,,,"/>
 <approved hash="104,3,162.56,177.8,U1,VDDBAT,+3V3,,,"/>
 <approved hash="104,3,162.56,137.16,U1,VDDIO/42,VDDIO,,,"/>
+<approved hash="104,2,55.88,172.72,J1,VBUS,VUSB,,,"/>
 <approved hash="106,3,208.28,160.02,DW_SYNC,,,,,"/>
-<approved hash="113,2,233.68,140.97,B1,,,,,"/>
+<approved hash="113,2,243.84,107.95,B1,,,,,"/>
+<approved hash="113,3,45.72,153.871,U4,,,,,"/>
+<approved hash="113,2,147.32,94.7396,S1,,,,,"/>
 </errors>
 </schematic>
 </drawing>
