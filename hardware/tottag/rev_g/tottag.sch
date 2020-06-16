@@ -6777,7 +6777,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </part>
 <part name="GND8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="LS1" library="audio" library_urn="urn:adsk.eagle:library:20947603" deviceset="PUI_SMT-0440-T-2-R" device="" package3d_urn="urn:adsk.eagle:package:21033088/3"/>
-<part name="D4" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="DIODE" device="0402" package3d_urn="urn:adsk.eagle:package:20904648/2"/>
+<part name="D4" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="DIODE" device="0402" package3d_urn="urn:adsk.eagle:package:20904648/2">
+<attribute name="DIGIKEY" value="641-2087-1-ND"/>
+<attribute name="MPN" value="CDSQR400B-HF"/>
+</part>
 </parts>
 <sheets>
 <sheet>
@@ -7090,6 +7093,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </instance>
 <instance part="D4" gate="G$1" x="215.9" y="35.56" smashed="yes" rot="R90">
 <attribute name="NAME" x="214.376" y="35.56" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="DIGIKEY" x="215.9" y="35.56" size="1.27" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="215.9" y="35.56" size="1.27" layer="96" rot="R90" display="off"/>
 </instance>
 </instances>
 <busses>
