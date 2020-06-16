@@ -7,7 +7,7 @@
 <setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -5276,6 +5276,23 @@ Source: https://www.ibselectronics.com/pdf/pa/walsin/smt_notes.pdf</description>
 <smd name="2" x="2.2985" y="0" dx="1.0108" dy="3.6078" layer="1"/>
 <text x="0" y="2.7529" size="1.27" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 </package>
+<package name="0402_DIODE" urn="urn:adsk.eagle:footprint:20904613/1" library_version="6">
+<smd name="CATHODE" x="0.43306875" y="0" dx="0.535940625" dy="0.5461" layer="1"/>
+<smd name="ANODE" x="-0.43306875" y="0" dx="0.535940625" dy="0.5461" layer="1"/>
+<text x="0" y="0.381" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<wire x1="-0.1016" y1="0.254" x2="0.1016" y2="0" width="0.127" layer="21"/>
+<wire x1="0.1016" y1="0" x2="-0.1016" y2="-0.254" width="0.127" layer="21"/>
+<wire x1="0.1016" y1="0.254" x2="0.1016" y2="-0.2794" width="0.127" layer="21"/>
+</package>
+<package name="0805_DIODE" urn="urn:adsk.eagle:footprint:20904626/1" library_version="6">
+<wire x1="0.3" y1="0.6" x2="0.3" y2="0" width="0.1524" layer="21"/>
+<wire x1="0.3" y1="0" x2="0.3" y2="-0.6" width="0.1524" layer="21"/>
+<wire x1="-0.3" y1="0.6" x2="0.3" y2="0" width="0.1524" layer="21"/>
+<wire x1="0.3" y1="0" x2="-0.3" y2="-0.6" width="0.1524" layer="21"/>
+<smd name="ANODE" x="-0.9" y="0" dx="0.8" dy="1.2" layer="1"/>
+<smd name="CATHODE" x="0.9" y="0" dx="0.8" dy="1.2" layer="1"/>
+<text x="0" y="1" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+</package>
 </packages>
 <packages3d>
 <package3d name="0402_CAP" urn="urn:adsk.eagle:package:20904654/3" type="model" library_version="1" library_locally_modified="yes">
@@ -5353,6 +5370,18 @@ Source: https://www.ibselectronics.com/pdf/pa/walsin/smt_notes.pdf</description>
 <packageinstance name="0805_CAP"/>
 </packageinstances>
 </package3d>
+<package3d name="0402_DIODE" urn="urn:adsk.eagle:package:20904648/2" type="model" library_version="6">
+<description>Chip, 1.00 X 0.50 X 0.32 mm body
+&lt;p&gt;Chip package with body size 1.00 X 0.50 X 0.32 mm&lt;/p&gt;</description>
+<packageinstances>
+<packageinstance name="0402_DIODE"/>
+</packageinstances>
+</package3d>
+<package3d name="0805_DIODE" urn="urn:adsk.eagle:package:20904674/1" type="box" library_version="6">
+<packageinstances>
+<packageinstance name="0805_DIODE"/>
+</packageinstances>
+</package3d>
 </packages3d>
 <symbols>
 <symbol name="CAPACITOR" urn="urn:adsk.eagle:symbol:20904610/1" library_version="1" library_locally_modified="yes">
@@ -5403,6 +5432,19 @@ Temperature-controller resistor.</description>
 <text x="-3.81" y="-3.302" size="1.778" layer="96">&gt;VALUE</text>
 <pin name="2" x="2.54" y="0" visible="off" length="point" direction="pas" swaplevel="1" rot="R180"/>
 <pin name="1" x="-5.08" y="0" visible="off" length="point" direction="pas" swaplevel="1"/>
+</symbol>
+<symbol name="DIODE" urn="urn:adsk.eagle:symbol:20904606/2" library_version="6">
+<pin name="ANODE" x="-2.54" y="0" visible="off" length="point"/>
+<pin name="CATHODE" x="2.54" y="0" visible="off" length="point" rot="R180"/>
+<wire x1="-0.762" y1="0.762" x2="-0.762" y2="0" width="0.254" layer="94"/>
+<wire x1="-0.762" y1="0" x2="-0.762" y2="-0.762" width="0.254" layer="94"/>
+<wire x1="-0.762" y1="-0.762" x2="0.508" y2="0" width="0.254" layer="94"/>
+<wire x1="0.508" y1="0" x2="-0.762" y2="0.762" width="0.254" layer="94"/>
+<wire x1="0.508" y1="0.762" x2="0.508" y2="0" width="0.254" layer="94"/>
+<wire x1="0.508" y1="0" x2="0.508" y2="-0.762" width="0.254" layer="94"/>
+<wire x1="-2.54" y1="0" x2="-0.762" y2="0" width="0.1524" layer="94"/>
+<wire x1="2.54" y1="0" x2="0.508" y2="0" width="0.1524" layer="94"/>
+<text x="0" y="1.524" size="1.778" layer="95" ratio="12" align="bottom-center">&gt;NAME</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -5618,6 +5660,37 @@ Temperature-controller resistor.</description>
 </connects>
 <package3dinstances>
 <package3dinstance package3d_urn="urn:adsk.eagle:package:20904670/2"/>
+</package3dinstances>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="DIODE" urn="urn:adsk.eagle:component:20904696/2" prefix="D" library_version="6">
+<gates>
+<gate name="G$1" symbol="DIODE" x="0" y="0"/>
+</gates>
+<devices>
+<device name="0402" package="0402_DIODE">
+<connects>
+<connect gate="G$1" pin="ANODE" pad="ANODE"/>
+<connect gate="G$1" pin="CATHODE" pad="CATHODE"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20904648/2"/>
+</package3dinstances>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+<device name="" package="0805_DIODE">
+<connects>
+<connect gate="G$1" pin="ANODE" pad="ANODE"/>
+<connect gate="G$1" pin="CATHODE" pad="CATHODE"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20904674/1"/>
 </package3dinstances>
 <technologies>
 <technology name=""/>
@@ -6154,42 +6227,28 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </library>
 <library name="audio" urn="urn:adsk.eagle:library:20947603">
 <packages>
-<package name="CUI_CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:footprint:20947604/1" library_version="2">
-<wire x1="-4.85" y1="4.85" x2="4.85" y2="4.85" width="0.127" layer="51"/>
-<wire x1="4.85" y1="4.85" x2="4.85" y2="-4.85" width="0.127" layer="51"/>
-<wire x1="4.85" y1="-4.85" x2="-2.65" y2="-4.85" width="0.127" layer="51"/>
-<wire x1="-4.85" y1="4.85" x2="-4.85" y2="-2.65" width="0.127" layer="51"/>
-<wire x1="-4.85" y1="-2.65" x2="-2.65" y2="-4.85" width="0.127" layer="51"/>
-<wire x1="-1.35" y1="4.85" x2="-4.85" y2="4.85" width="0.127" layer="21"/>
-<wire x1="-4.85" y1="4.85" x2="-4.85" y2="-2.65" width="0.127" layer="21"/>
-<wire x1="-4.85" y1="-2.65" x2="-2.65" y2="-4.85" width="0.127" layer="21"/>
-<wire x1="-2.65" y1="-4.85" x2="-1.35" y2="-4.85" width="0.127" layer="21"/>
-<wire x1="1.35" y1="-4.85" x2="4.85" y2="-4.85" width="0.127" layer="21"/>
-<wire x1="4.85" y1="-4.85" x2="4.85" y2="4.85" width="0.127" layer="21"/>
-<wire x1="4.85" y1="4.85" x2="1.34" y2="4.85" width="0.127" layer="21"/>
-<wire x1="-5.1" y1="5.95" x2="5.1" y2="5.95" width="0.05" layer="39"/>
-<wire x1="5.1" y1="5.95" x2="5.1" y2="-5.95" width="0.05" layer="39"/>
-<wire x1="5.1" y1="-5.95" x2="-5.1" y2="-5.95" width="0.05" layer="39"/>
-<wire x1="-5.1" y1="-5.95" x2="-5.1" y2="5.95" width="0.05" layer="39"/>
-<text x="-5.1" y="6.3" size="1.27" layer="25">&gt;NAME</text>
-<text x="-5.1" y="-7.5" size="1.27" layer="27">&gt;VALUE</text>
-<text x="1.8" y="5.8" size="1.27" layer="21">+</text>
-<text x="1.8" y="5.8" size="1.27" layer="51">+</text>
-<text x="2" y="-6.3" size="1.27" layer="51">-</text>
-<text x="2" y="-6.3" size="1.27" layer="21">-</text>
-<smd name="N" x="0" y="-4.95" dx="1.7" dy="1.5" layer="1"/>
-<smd name="P" x="0" y="4.95" dx="1.7" dy="1.5" layer="1"/>
+<package name="SMT-0440-T-2-R" urn="urn:adsk.eagle:footprint:21033087/2" library_version="4">
+<smd name="-" x="-1.75" y="0" dx="0.9" dy="1.8" layer="1"/>
+<smd name="+" x="1.75" y="0" dx="0.9" dy="1.8" layer="1"/>
+<wire x1="-2" y1="2" x2="2" y2="2" width="0.127" layer="21"/>
+<wire x1="2" y1="2" x2="2" y2="-2" width="0.127" layer="21"/>
+<wire x1="2" y1="-2" x2="-2" y2="-2" width="0.127" layer="21"/>
+<wire x1="-2" y1="-2" x2="-2" y2="2" width="0.127" layer="21"/>
+<wire x1="3" y1="-0.5" x2="3" y2="0.5" width="0.127" layer="21"/>
+<wire x1="2.5" y1="0" x2="3.5" y2="0" width="0.127" layer="21"/>
+<text x="0" y="2.286" size="0.8128" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-2.286" size="0.8128" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center">&gt;VALUE</text>
 </package>
 </packages>
 <packages3d>
-<package3d name="CUI_CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:package:20947606/2" type="model" library_version="2">
+<package3d name="SMT-0440-T-2-R" urn="urn:adsk.eagle:package:21033088/3" type="model" library_version="4">
 <packageinstances>
-<packageinstance name="CUI_CMI-9705-0380-SMT-TR"/>
+<packageinstance name="SMT-0440-T-2-R"/>
 </packageinstances>
 </package3d>
 </packages3d>
 <symbols>
-<symbol name="CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:symbol:20947605/1" library_version="2">
+<symbol name="TRANSDUCER_POL" urn="urn:adsk.eagle:symbol:20947605/2" library_version="4">
 <wire x1="-3.175" y1="1.905" x2="-3.175" y2="-1.905" width="0.254" layer="94"/>
 <wire x1="-3.175" y1="-1.905" x2="-2.54" y2="-1.905" width="0.254" layer="94"/>
 <wire x1="0" y1="-1.905" x2="0" y2="1.905" width="0.254" layer="94"/>
@@ -6210,25 +6269,23 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="CMI-9705-0380-SMT-TR" urn="urn:adsk.eagle:component:20947607/2" prefix="LS" library_version="2">
+<deviceset name="PUI_SMT-0440-T-2-R" urn="urn:adsk.eagle:component:21033089/3" prefix="LS" library_version="5">
 <gates>
-<gate name="G$1" symbol="CMI-9705-0380-SMT-TR" x="0" y="0"/>
+<gate name="G$1" symbol="TRANSDUCER_POL" x="0" y="0"/>
 </gates>
 <devices>
-<device name="" package="CUI_CMI-9705-0380-SMT-TR">
+<device name="" package="SMT-0440-T-2-R">
 <connects>
-<connect gate="G$1" pin="N" pad="N"/>
-<connect gate="G$1" pin="P" pad="P"/>
+<connect gate="G$1" pin="N" pad="-"/>
+<connect gate="G$1" pin="P" pad="+"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20947606/2"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:21033088/3"/>
 </package3dinstances>
 <technologies>
 <technology name="">
-<attribute name="MANUFACTURER" value="CUI Inc."/>
-<attribute name="MAXIMUM_PACKAGE_HEIGHT" value="5.2mm"/>
-<attribute name="PARTREV" value="1.0"/>
-<attribute name="STANDARD" value="Manufacturer Recommendations"/>
+<attribute name="DIGIKEY" value="668-SMT-0440-T-2-RTR-ND" constant="no"/>
+<attribute name="MPN" value="SMT-0440-T-2-R" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6699,7 +6756,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY39" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R37" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="R38" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
-<part name="LS1" library="audio" library_urn="urn:adsk.eagle:library:20947603" deviceset="CMI-9705-0380-SMT-TR" device="" package3d_urn="urn:adsk.eagle:package:20947606/2"/>
 <part name="Q4" library="fets" library_urn="urn:adsk.eagle:library:20879112" deviceset="CSD75207W15" device="" package3d_urn="urn:adsk.eagle:package:20879163/2"/>
 <part name="GND6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="P+2" library="regulators" deviceset="+3V3" device=""/>
@@ -6720,6 +6776,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value="C1005X5R0J475K050BC"/>
 </part>
 <part name="GND8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
+<part name="LS1" library="audio" library_urn="urn:adsk.eagle:library:20947603" deviceset="PUI_SMT-0440-T-2-R" device="" package3d_urn="urn:adsk.eagle:package:21033088/3"/>
+<part name="D4" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="DIODE" device="0402" package3d_urn="urn:adsk.eagle:package:20904648/2"/>
 </parts>
 <sheets>
 <sheet>
@@ -6997,10 +7055,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="NAME" x="205.74" y="152.654" size="1.778" layer="95" ratio="12"/>
 <attribute name="VALUE" x="205.74" y="134.874" size="1.778" layer="96" ratio="12"/>
 </instance>
-<instance part="LS1" gate="G$1" x="220.98" y="35.56" smashed="yes">
-<attribute name="NAME" x="219.71" y="41.91" size="1.778" layer="95"/>
-<attribute name="VALUE" x="219.71" y="27.305" size="1.778" layer="96"/>
-</instance>
 <instance part="Q4" gate="G$1" x="220.98" y="55.88" smashed="yes">
 <attribute name="VALUE" x="212.598" y="60.96" size="1.778" layer="96" rot="MR270"/>
 <attribute name="NAME" x="228.6" y="45.72" size="1.778" layer="95" rot="MR0"/>
@@ -7011,11 +7065,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="P+2" gate="P1" x="215.9" y="71.12" smashed="yes">
 <attribute name="VALUE" x="213.36" y="66.04" size="1.778" layer="96" rot="R90"/>
 </instance>
-<instance part="C90" gate="G$1" x="210.82" y="38.1" smashed="yes">
-<attribute name="DIGIKEY" x="210.82" y="38.1" size="1.778" layer="96" display="off"/>
-<attribute name="MPN" x="210.82" y="38.1" size="1.778" layer="96" display="off"/>
-<attribute name="NAME" x="209.55" y="36.83" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="212.09" y="36.83" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C90" gate="G$1" x="208.28" y="38.1" smashed="yes">
+<attribute name="DIGIKEY" x="208.28" y="38.1" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="208.28" y="38.1" size="1.778" layer="96" display="off"/>
+<attribute name="NAME" x="207.01" y="36.83" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="209.55" y="36.83" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
 <instance part="C91" gate="G$1" x="22.86" y="83.82" smashed="yes">
 <attribute name="DIGIKEY" x="22.86" y="83.82" size="1.27" layer="96" align="bottom-center" display="off"/>
@@ -7029,6 +7083,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </instance>
 <instance part="GND8" gate="1" x="15.24" y="71.12" smashed="yes">
 <attribute name="VALUE" x="12.7" y="68.58" size="1.778" layer="96"/>
+</instance>
+<instance part="LS1" gate="G$1" x="223.52" y="35.56" smashed="yes">
+<attribute name="NAME" x="222.25" y="41.91" size="1.778" layer="95"/>
+<attribute name="VALUE" x="222.25" y="27.305" size="1.778" layer="96"/>
+</instance>
+<instance part="D4" gate="G$1" x="215.9" y="35.56" smashed="yes" rot="R90">
+<attribute name="NAME" x="214.376" y="35.56" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 </instance>
 </instances>
 <busses>
@@ -7165,14 +7226,19 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="220.98" y1="116.84" x2="248.92" y2="116.84" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="LS1" gate="G$1" pin="N"/>
 <pinref part="GND6" gate="1" pin="GND"/>
-<wire x1="218.44" y1="30.48" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="220.98" y1="30.48" x2="220.98" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="220.98" y1="27.94" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
 <pinref part="C90" gate="G$1" pin="2"/>
 <wire x1="218.44" y1="27.94" x2="218.44" y2="25.4" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="33.02" x2="210.82" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="27.94" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="208.28" y1="33.02" x2="208.28" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="208.28" y1="27.94" x2="215.9" y2="27.94" width="0.1524" layer="91"/>
 <junction x="218.44" y="27.94"/>
+<pinref part="LS1" gate="G$1" pin="N"/>
+<pinref part="D4" gate="G$1" pin="ANODE"/>
+<wire x1="215.9" y1="27.94" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="215.9" y1="33.02" x2="215.9" y2="27.94" width="0.1524" layer="91"/>
+<junction x="215.9" y="27.94"/>
 </segment>
 <segment>
 <pinref part="C92" gate="G$1" pin="2"/>
@@ -7250,6 +7316,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="223.52" y1="63.5" x2="223.52" y2="66.04" width="0.1524" layer="91"/>
 <wire x1="223.52" y1="66.04" x2="215.9" y2="66.04" width="0.1524" layer="91"/>
 <junction x="215.9" y="66.04"/>
+<wire x1="215.9" y1="66.04" x2="208.28" y2="66.04" width="0.1524" layer="91"/>
+<pinref part="C90" gate="G$1" pin="1"/>
+<wire x1="208.28" y1="66.04" x2="208.28" y2="40.64" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="EXT_I2C_SDA" class="0">
@@ -7749,13 +7818,14 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <net name="N$5" class="0">
 <segment>
 <pinref part="Q4" gate="G$1" pin="S"/>
-<pinref part="LS1" gate="G$1" pin="P"/>
 <wire x1="218.44" y1="45.72" x2="218.44" y2="43.18" width="0.1524" layer="91"/>
-<pinref part="C90" gate="G$1" pin="1"/>
-<wire x1="218.44" y1="43.18" x2="218.44" y2="40.64" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="40.64" x2="210.82" y2="43.18" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="43.18" x2="218.44" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="218.44" y1="43.18" x2="220.98" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="220.98" y1="43.18" x2="220.98" y2="40.64" width="0.1524" layer="91"/>
 <junction x="218.44" y="43.18"/>
+<pinref part="LS1" gate="G$1" pin="P"/>
+<pinref part="D4" gate="G$1" pin="CATHODE"/>
+<wire x1="215.9" y1="43.18" x2="218.44" y2="43.18" width="0.1524" layer="91"/>
+<wire x1="215.9" y1="38.1" x2="215.9" y2="43.18" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="BUZZER_GATE" class="0">
