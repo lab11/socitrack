@@ -482,20 +482,6 @@ https://www.vishay.com/docs/72821/72821.pdf</description>
 <text x="0" y="0.7" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-1.7" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
 </package>
-<package name="FA-20H">
-<description>FA-20H 2.5x2.0mm</description>
-<smd name="2" x="-0.7" y="-0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
-<smd name="3" x="0.7" y="-0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
-<smd name="1" x="-0.7" y="0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
-<smd name="4" x="0.7" y="0.85" dx="1.2" dy="1.1" layer="1" rot="R90"/>
-<wire x1="-1" y1="1.25" x2="-1" y2="-1.25" width="0.127" layer="21"/>
-<wire x1="-1" y1="-1.25" x2="1" y2="-1.25" width="0.127" layer="21"/>
-<wire x1="1" y1="-1.25" x2="1" y2="1.25" width="0.127" layer="21"/>
-<wire x1="1" y1="1.25" x2="-1" y2="1.25" width="0.127" layer="21"/>
-<circle x="-1.6" y="1.2" radius="0.14141875" width="0.127" layer="21"/>
-<text x="-1" y="1.6" size="0.5" layer="25">&gt;NAME</text>
-<text x="-1" y="-2.07" size="0.5" layer="27">&gt;VALUE</text>
-</package>
 </packages>
 </library>
 <library name="passives">
@@ -5821,7 +5807,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="-11.3124" y="17.475" size="0.508" layer="25" font="vector" ratio="18"/>
 <attribute name="VALUE" x="-10.8586" y="15.9672" size="0.508" layer="27" font="vector" ratio="18" rot="R90"/>
 </element>
-<element name="X2" library="crystals" package="FA-20H" value="16MHz" x="6.0452" y="16.4084" smashed="yes" rot="R270">
+<element name="X2" library="crystals" library_urn="urn:adsk.eagle:library:20878509" package="FA-20H" package3d_urn="urn:adsk.eagle:package:20878577/2" value="16MHz" x="6.0452" y="16.4084" smashed="yes" rot="R270">
 <attribute name="DATASHEET" value="https://support.epson.biz/td/api/doc_check.php?dl=brief_FA-20H_en.pdf" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DIGIKEY" value="SER3913CT-ND" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
