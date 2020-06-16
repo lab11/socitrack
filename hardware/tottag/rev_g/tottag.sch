@@ -7936,9 +7936,9 @@ proven necessary.
 Default is
 10% TERM
 20% PRE.</text>
-<wire x1="76.2" y1="81.28" x2="114.3" y2="81.28" width="0.127" layer="98" style="shortdash"/>
-<wire x1="76.2" y1="53.34" x2="114.3" y2="53.34" width="0.127" layer="98" style="shortdash"/>
-<wire x1="76.2" y1="53.34" x2="76.2" y2="81.28" width="0.127" layer="98" style="shortdash"/>
+<wire x1="73.66" y1="81.28" x2="114.3" y2="81.28" width="0.127" layer="98" style="shortdash"/>
+<wire x1="73.66" y1="53.34" x2="114.3" y2="53.34" width="0.127" layer="98" style="shortdash"/>
+<wire x1="73.66" y1="53.34" x2="73.66" y2="81.28" width="0.127" layer="98" style="shortdash"/>
 <wire x1="114.3" y1="53.34" x2="114.3" y2="81.28" width="0.127" layer="98" style="shortdash"/>
 <text x="162.56" y="125.984" size="0.3048" layer="98" align="top-left">EN1 -&gt; GND, EN2 -&gt; GND [00 case]
 Wireless enabled unless AD &gt; V_AD_Present</text>
@@ -8003,6 +8003,17 @@ easy shift is add 2kΩ, now low
 </text>
 <wire x1="76.2" y1="147.32" x2="129.54" y2="147.32" width="0.127" layer="98" style="shortdash"/>
 <wire x1="129.54" y1="116.84" x2="129.54" y2="147.32" width="0.127" layer="98" style="shortdash"/>
+<text x="74.93" y="68.58" size="0.8128" layer="98" align="top-left">Datasheet wants
+"103AT" NTC
+---
+103 = 10k
+AT = "High-precision" (1% tol?)
+---
+Battery pack has
+10k NTC with B=3435k
+---
+That matches the B of first few
+103AT datasheets; must be a thing</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
