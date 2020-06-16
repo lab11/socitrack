@@ -7,7 +7,7 @@
 <setting keepoldvectorfont="yes"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.05" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -7366,9 +7366,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="R4" gate="G$1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.05/AIN3"/>
-<wire x1="106.68" y1="124.46" x2="111.76" y2="124.46" width="0.1524" layer="91"/>
-<label x="111.76" y="124.46" size="1.27" layer="95" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P1.04*"/>
+<wire x1="106.68" y1="99.06" x2="111.76" y2="99.06" width="0.1524" layer="91"/>
+<label x="111.76" y="99.06" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="LED_NRF_GREEN" class="0">
@@ -7378,9 +7378,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="R5" gate="G$1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.06"/>
-<wire x1="60.96" y1="86.36" x2="55.88" y2="86.36" width="0.1524" layer="91"/>
-<label x="55.88" y="86.36" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P1.05*"/>
+<wire x1="106.68" y1="96.52" x2="111.76" y2="96.52" width="0.1524" layer="91"/>
+<label x="111.76" y="96.52" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="LED_NRF_BLUE" class="0">
@@ -7390,9 +7390,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="R6" gate="G$1" pin="2"/>
 </segment>
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.04/AIN2"/>
-<wire x1="106.68" y1="127" x2="111.76" y2="127" width="0.1524" layer="91"/>
-<label x="111.76" y="127" size="1.27" layer="95" xref="yes"/>
+<wire x1="106.68" y1="91.44" x2="111.76" y2="91.44" width="0.1524" layer="91"/>
+<label x="111.76" y="91.44" size="1.27" layer="95" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P1.07*"/>
 </segment>
 </net>
 <net name="NRF_DECAP1" class="0">
@@ -7735,15 +7735,15 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <net name="!CHG" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="P1.02*"/>
-<wire x1="109.22" y1="104.14" x2="106.68" y2="104.14" width="0.1524" layer="91"/>
-<label x="109.22" y="104.14" size="1.27" layer="95" xref="yes"/>
+<wire x1="111.76" y1="104.14" x2="106.68" y2="104.14" width="0.1524" layer="91"/>
+<label x="111.76" y="104.14" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="!PG" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="P1.03*"/>
-<wire x1="109.22" y1="101.6" x2="106.68" y2="101.6" width="0.1524" layer="91"/>
-<label x="109.22" y="101.6" size="1.27" layer="95" xref="yes"/>
+<wire x1="111.76" y1="101.6" x2="106.68" y2="101.6" width="0.1524" layer="91"/>
+<label x="111.76" y="101.6" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="N$5" class="0">
