@@ -407,17 +407,6 @@ http://infocenter.nordicsemi.com/pdf/nRF52840-QIAA_Ref_Layout_v1.0.zip</text>
 <wire x1="-1.5" y1="-0.75" x2="-1.5" y2="0.75" width="0.127" layer="21"/>
 <text x="0" y="1.905" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 </package>
-<package name="ANT3216A063R2400A">
-<description>Footprint for ANT3216A063R2400A 2.4GHz chip antenna</description>
-<smd name="S1" x="-1.325" y="0" dx="0.6" dy="1.8" layer="1"/>
-<smd name="S2" x="1.325" y="0" dx="0.6" dy="1.8" layer="1"/>
-<wire x1="-1.525" y1="0.775" x2="1.525" y2="0.775" width="0.127" layer="21"/>
-<wire x1="1.525" y1="0.775" x2="1.525" y2="-0.775" width="0.127" layer="21"/>
-<wire x1="1.525" y1="-0.775" x2="-1.525" y2="-0.775" width="0.127" layer="21"/>
-<wire x1="-1.525" y1="-0.775" x2="-1.525" y2="0.775" width="0.127" layer="21"/>
-<circle x="-0.5" y="0" radius="0.12725" width="0.127" layer="21"/>
-<text x="-1.5" y="1.25" size="1.016" layer="21" font="vector" ratio="12">&gt;NAME</text>
-</package>
 <package name="LGA-12">
 <rectangle x1="-0.475" y1="0.5125" x2="-0.025" y2="0.9875" layer="29"/>
 <smd name="12" x="-0.25" y="0.75" dx="0.35" dy="0.375" layer="1" rot="R180" stop="no"/>
@@ -596,30 +585,6 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 <packages>
 <package name="PAD.03X.03">
 <smd name="P$1" x="0" y="0" dx="0.762" dy="0.762" layer="1" roundness="100" cream="no"/>
-</package>
-</packages>
-</library>
-<library name="switches">
-<description>&lt;b&gt;LAB11&lt;/b&gt; - Switches.</description>
-<packages>
-<package name="MLPQ-UT-8">
-<description>MLP 8-pin 1.5 x 1.5mm</description>
-<smd name="GND" x="0" y="0" dx="1.2" dy="0.7" layer="1" rot="R90"/>
-<smd name="4" x="-0.725" y="-0.6" dx="0.35" dy="0.2" layer="1"/>
-<smd name="2" x="-0.725" y="0.2" dx="0.35" dy="0.2" layer="1"/>
-<smd name="1" x="-0.725" y="0.6" dx="0.35" dy="0.2" layer="1"/>
-<smd name="3" x="-0.725" y="-0.2" dx="0.35" dy="0.2" layer="1"/>
-<smd name="8" x="0.725" y="0.6" dx="0.35" dy="0.2" layer="1"/>
-<smd name="6" x="0.725" y="-0.2" dx="0.35" dy="0.2" layer="1"/>
-<smd name="5" x="0.725" y="-0.6" dx="0.35" dy="0.2" layer="1"/>
-<smd name="7" x="0.725" y="0.2" dx="0.35" dy="0.2" layer="1"/>
-<wire x1="-0.75" y1="0.75" x2="-0.75" y2="-0.75" width="0.127" layer="21"/>
-<wire x1="-0.75" y1="-0.75" x2="0.75" y2="-0.75" width="0.127" layer="21"/>
-<wire x1="0.75" y1="-0.75" x2="0.75" y2="0.75" width="0.127" layer="21"/>
-<wire x1="0.75" y1="0.75" x2="-0.75" y2="0.75" width="0.127" layer="21"/>
-<circle x="-1" y="1" radius="0.14141875" width="0.127" layer="21"/>
-<text x="-0.7" y="1" size="0.5" layer="25">&gt;NAME</text>
-<text x="-0.7" y="-1.5" size="0.5" layer="27">&gt;VALUE</text>
 </package>
 </packages>
 </library>
@@ -4049,36 +4014,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </package>
 </packages>
 </library>
-<library name="regulators">
-<description>LAB11 - Regulators.</description>
-<packages>
-<package name="XCL20X">
-<smd name="6" x="-0.55" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
-<smd name="5" x="0" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
-<smd name="4" x="0.55" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
-<smd name="1" x="-0.55" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
-<smd name="2" x="0" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
-<smd name="3" x="0.55" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
-<smd name="PAD" x="0" y="0" dx="1.5" dy="0.9" layer="1"/>
-<smd name="7" x="-1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
-<smd name="8" x="1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
-<polygon width="0.0762" layer="1">
-<vertex x="-0.75" y="-0.4"/>
-<vertex x="-0.6" y="-0.55"/>
-<vertex x="0.75" y="-0.55"/>
-<vertex x="0.75" y="0.55"/>
-<vertex x="-0.75" y="0.55"/>
-</polygon>
-<wire x1="-1.25" y1="1" x2="1.25" y2="1" width="0.127" layer="51"/>
-<wire x1="1.25" y1="1" x2="1.25" y2="-1" width="0.127" layer="51"/>
-<wire x1="1.25" y1="-1" x2="-1.25" y2="-1" width="0.127" layer="51"/>
-<wire x1="-1.25" y1="-1" x2="-1.25" y2="1" width="0.127" layer="51"/>
-<circle x="-1.2" y="-1.4" radius="0.1" width="0.127" layer="21"/>
-<text x="-1.778" y="-1.27" size="1.016" layer="25" font="vector" ratio="12" rot="R90">&gt;NAME</text>
-<text x="1.778" y="-1.27" size="1.016" layer="27" font="vector" ratio="12" rot="R90" align="top-left">&gt;VALUE</text>
-</package>
-</packages>
-</library>
 <library name="Wurth_Switch_WS-SLSU" urn="urn:adsk.eagle:library:18253886">
 <description>&lt;BR&gt;Wurth Elektronik - Switches - Slide Switches - WS-SLSU&lt;br&gt;&lt;Hr&gt;
 
@@ -4918,6 +4853,17 @@ Copyright: Würth Elektronik</description>
 <text x="0" y="2.667" size="0.8128" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-2.667" size="0.8128" layer="27" font="vector" ratio="12" align="top-center">&gt;VALUE</text>
 </package>
+<package name="ANT3216A063R2400A" urn="urn:adsk.eagle:footprint:20878664/1" library_version="14">
+<description>Footprint for ANT3216A063R2400A 2.4GHz chip antenna</description>
+<smd name="S1" x="-1.325" y="0" dx="0.6" dy="1.8" layer="1"/>
+<smd name="S2" x="1.325" y="0" dx="0.6" dy="1.8" layer="1"/>
+<wire x1="-1.525" y1="0.775" x2="1.525" y2="0.775" width="0.127" layer="21"/>
+<wire x1="1.525" y1="0.775" x2="1.525" y2="-0.775" width="0.127" layer="21"/>
+<wire x1="1.525" y1="-0.775" x2="-1.525" y2="-0.775" width="0.127" layer="21"/>
+<wire x1="-1.525" y1="-0.775" x2="-1.525" y2="0.775" width="0.127" layer="21"/>
+<circle x="-0.5" y="0" radius="0.12725" width="0.127" layer="21"/>
+<text x="-1.5" y="1.25" size="1.016" layer="21" font="vector" ratio="12">&gt;NAME</text>
+</package>
 </packages>
 <packages3d>
 <package3d name="QFN-48-DW1000" urn="urn:adsk.eagle:package:20878825/2" type="model" library_version="12">
@@ -4939,13 +4885,13 @@ Copyright: Würth Elektronik</description>
 <packageinstance name="QFN-16-3MM"/>
 </packageinstances>
 </package3d>
-<package3d name="AQFN73" urn="urn:adsk.eagle:package:20878797/2" type="box" library_version="12">
+<package3d name="AQFN73" urn="urn:adsk.eagle:package:20878797/3" type="model" library_version="15">
 <description>AQFN73 7x7mm</description>
 <packageinstances>
 <packageinstance name="AQFN73"/>
 </packageinstances>
 </package3d>
-<package3d name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:package:20878740/2" type="box" library_version="1" library_locally_modified="yes">
+<package3d name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:package:20878740/3" type="model" library_version="15">
 <packageinstances>
 <packageinstance name="TAIYO-YUDEN-AH086M"/>
 </packageinstances>
@@ -4961,6 +4907,12 @@ Copyright: Würth Elektronik</description>
 <description>A TI variant of a VQFN with PAD connected to some package pins.</description>
 <packageinstances>
 <packageinstance name="RHL0020A"/>
+</packageinstances>
+</package3d>
+<package3d name="ANT3216A063R2400A" urn="urn:adsk.eagle:package:20878807/2" type="model" library_version="14">
+<description>Footprint for ANT3216A063R2400A 2.4GHz chip antenna</description>
+<packageinstances>
+<packageinstance name="ANT3216A063R2400A"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -5260,6 +5212,77 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <description>PIN HEADER</description>
 <packageinstances>
 <packageinstance name="1X03"/>
+</packageinstances>
+</package3d>
+</packages3d>
+</library>
+<library name="regulators" urn="urn:adsk.eagle:library:20878889">
+<description>LAB11 - Regulators.</description>
+<packages>
+<package name="XCL20X" urn="urn:adsk.eagle:footprint:20878937/1" library_version="2">
+<smd name="6" x="-0.55" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="5" x="0" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="4" x="0.55" y="0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="1" x="-0.55" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="2" x="0" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="3" x="0.55" y="-0.9375" dx="0.35" dy="0.375" layer="1"/>
+<smd name="PAD" x="0" y="0" dx="1.5" dy="0.9" layer="1"/>
+<smd name="7" x="-1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
+<smd name="8" x="1.275" y="0" dx="0.35" dy="2.1" layer="1"/>
+<polygon width="0.0762" layer="1">
+<vertex x="-0.75" y="-0.4"/>
+<vertex x="-0.6" y="-0.55"/>
+<vertex x="0.75" y="-0.55"/>
+<vertex x="0.75" y="0.55"/>
+<vertex x="-0.75" y="0.55"/>
+</polygon>
+<wire x1="-1.25" y1="1" x2="1.25" y2="1" width="0.127" layer="51"/>
+<wire x1="1.25" y1="1" x2="1.25" y2="-1" width="0.127" layer="51"/>
+<wire x1="1.25" y1="-1" x2="-1.25" y2="-1" width="0.127" layer="51"/>
+<wire x1="-1.25" y1="-1" x2="-1.25" y2="1" width="0.127" layer="51"/>
+<circle x="-1.2" y="-1.4" radius="0.1" width="0.127" layer="21"/>
+<text x="-1.778" y="-1.27" size="1.016" layer="25" font="vector" ratio="12" rot="R90">&gt;NAME</text>
+<text x="1.778" y="-1.27" size="1.016" layer="27" font="vector" ratio="12" rot="R90" align="top-left">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="XCL20X" urn="urn:adsk.eagle:package:20878971/3" type="model" library_version="2">
+<description>6-SON (DFN), 0.55 mm pitch, 2.50 X 2.00 X 1.04 mm body
+&lt;p&gt;6-pin SON (DFN) package with 0.55 mm pitch with body size 2.50 X 2.00 X 1.04 mm&lt;/p&gt;</description>
+<packageinstances>
+<packageinstance name="XCL20X"/>
+</packageinstances>
+</package3d>
+</packages3d>
+</library>
+<library name="switches" urn="urn:adsk.eagle:library:20878764">
+<description>&lt;b&gt;LAB11&lt;/b&gt; - Switches.</description>
+<packages>
+<package name="MLPQ-UT-8" urn="urn:adsk.eagle:footprint:20878883/1" library_version="2">
+<description>MLP 8-pin 1.5 x 1.5mm</description>
+<smd name="GND" x="0" y="0" dx="1.2" dy="0.7" layer="1" rot="R90"/>
+<smd name="4" x="-0.725" y="-0.6" dx="0.35" dy="0.2" layer="1"/>
+<smd name="2" x="-0.725" y="0.2" dx="0.35" dy="0.2" layer="1"/>
+<smd name="1" x="-0.725" y="0.6" dx="0.35" dy="0.2" layer="1"/>
+<smd name="3" x="-0.725" y="-0.2" dx="0.35" dy="0.2" layer="1"/>
+<smd name="8" x="0.725" y="0.6" dx="0.35" dy="0.2" layer="1"/>
+<smd name="6" x="0.725" y="-0.2" dx="0.35" dy="0.2" layer="1"/>
+<smd name="5" x="0.725" y="-0.6" dx="0.35" dy="0.2" layer="1"/>
+<smd name="7" x="0.725" y="0.2" dx="0.35" dy="0.2" layer="1"/>
+<wire x1="-0.75" y1="0.75" x2="-0.75" y2="-0.75" width="0.127" layer="21"/>
+<wire x1="-0.75" y1="-0.75" x2="0.75" y2="-0.75" width="0.127" layer="21"/>
+<wire x1="0.75" y1="-0.75" x2="0.75" y2="0.75" width="0.127" layer="21"/>
+<wire x1="0.75" y1="0.75" x2="-0.75" y2="0.75" width="0.127" layer="21"/>
+<circle x="-1" y="1" radius="0.14141875" width="0.127" layer="21"/>
+<text x="-0.7" y="1" size="0.5" layer="25">&gt;NAME</text>
+<text x="-0.7" y="-1.5" size="0.5" layer="27">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="MLPQ-UT-8" urn="urn:adsk.eagle:package:20878967/2" type="model" library_version="2">
+<description>MLP 8-pin 1.5 x 1.5mm</description>
+<packageinstances>
+<packageinstance name="MLPQ-UT-8"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -5570,7 +5593,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="22.3774" y="18.7452" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="24.0792" y="18.7452" size="0.508" layer="27" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 </element>
-<element name="U7" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="AQFN73" package3d_urn="urn:adsk.eagle:package:20878797/2" value="NRF52840" x="13.589" y="20.3454" smashed="yes">
+<element name="U7" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="AQFN73" package3d_urn="urn:adsk.eagle:package:20878797/3" value="NRF52840" x="13.589" y="20.3454" smashed="yes">
 <attribute name="DIGIKEY" value="1490-1071-1-ND" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="NORIDIC SEMICONDUCTOR" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="NRF52840" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
@@ -5680,21 +5703,21 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="MPN" value="GRM1555C1H120GA01D " x="-17.145" y="-12.9286" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="7.112" y="23.0378" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 </element>
-<element name="A4" library="chips" package="ANT3216A063R2400A" value="ANT3216A063R2400A" x="30.4292" y="20.2438" smashed="yes">
+<element name="A4" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="ANT3216A063R2400A" package3d_urn="urn:adsk.eagle:package:20878807/2" value="ANT3216A063R2400A" x="30.4292" y="20.2438" smashed="yes">
 <attribute name="DIGIKEY" value="311-1542-1-ND" x="15.8242" y="-21.79319375" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="YAGEO" x="15.8242" y="-21.79319375" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="ANT3216A063R2400A" x="15.8242" y="-21.79319375" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="28.83939375" y="18.70991875" size="0.508" layer="21" font="vector" ratio="18"/>
 </element>
-<element name="A3" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="TAIYO-YUDEN-AH086M" package3d_urn="urn:adsk.eagle:package:20878740/2" value="TAIYO-YUDEN-AH086M" x="0" y="25.4" smashed="yes">
+<element name="A3" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="TAIYO-YUDEN-AH086M" package3d_urn="urn:adsk.eagle:package:20878740/3" value="TAIYO-YUDEN-AH086M" x="0" y="25.4" smashed="yes">
 <attribute name="DIGIKEY" value="587-2204-1-ND" x="-6.223" y="36.576" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="0" y="29.9682" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 </element>
-<element name="A2" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="TAIYO-YUDEN-AH086M" package3d_urn="urn:adsk.eagle:package:20878740/2" value="TAIYO-YUDEN-AH086M" x="20.32" y="1.27" smashed="yes" rot="R240">
+<element name="A2" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="TAIYO-YUDEN-AH086M" package3d_urn="urn:adsk.eagle:package:20878740/3" value="TAIYO-YUDEN-AH086M" x="20.32" y="1.27" smashed="yes" rot="R240">
 <attribute name="DIGIKEY" value="587-2204-1-ND" x="39.333196875" y="11.849825" size="1.778" layer="27" rot="R240" display="off"/>
 <attribute name="NAME" x="24.396125" y="-0.976" size="0.508" layer="25" font="vector" ratio="18" rot="R240" align="bottom-center"/>
 </element>
-<element name="A1" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="TAIYO-YUDEN-AH086M" package3d_urn="urn:adsk.eagle:package:20878740/2" value="TAIYO-YUDEN-AH086M" x="-20.32" y="1.27" smashed="yes" rot="R120">
+<element name="A1" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="TAIYO-YUDEN-AH086M" package3d_urn="urn:adsk.eagle:package:20878740/3" value="TAIYO-YUDEN-AH086M" x="-20.32" y="1.27" smashed="yes" rot="R120">
 <attribute name="DIGIKEY" value="587-2204-1-ND" x="-30.23290625" y="-26.010325" size="1.778" layer="27" rot="R120" display="off"/>
 <attribute name="NAME" x="-24.269125" y="-1.102996875" size="0.508" layer="25" font="vector" ratio="18" rot="R120" align="bottom-center"/>
 </element>
@@ -5715,7 +5738,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="7.422" y="14.3548" size="0.508" layer="25" font="vector" ratio="18"/>
 <attribute name="VALUE" x="1.333" y="14.041" size="0.508" layer="27" font="vector" ratio="18" rot="R270"/>
 </element>
-<element name="U9" library="switches" package="MLPQ-UT-8" value="SKY13317" x="-0.762" y="4.953" smashed="yes">
+<element name="U9" library="switches" library_urn="urn:adsk.eagle:library:20878764" package="MLPQ-UT-8" package3d_urn="urn:adsk.eagle:package:20878967/2" value="SKY13317" x="-0.762" y="4.953" smashed="yes">
 <attribute name="DATASHEET" value="http://www.skyworksinc.com/uploads/documents/SKY13317_373LF_200914K.pdf" x="-0.762" y="4.953" size="1.778" layer="27" display="off"/>
 <attribute name="DESCRIPTION" value="IC SWITCH RF SP3T 8-MLP" x="-0.762" y="4.953" size="1.778" layer="27" display="off"/>
 <attribute name="DIGIKEY" value="863-1056-1-ND" x="-0.762" y="4.953" size="1.778" layer="27" display="off"/>
@@ -6022,7 +6045,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <element name="C70" library="passives" package="0402_CAP" value="4.7uF" x="-20.701" y="10.7696" smashed="yes" rot="R90">
 <attribute name="NAME" x="-20.828" y="11.5824" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 </element>
-<element name="U4" library="regulators" package="XCL20X" value="" x="-18.2626" y="10.795" smashed="yes" rot="R90">
+<element name="U4" library="regulators" library_urn="urn:adsk.eagle:library:20878889" package="XCL20X" package3d_urn="urn:adsk.eagle:package:20878971/3" value="" x="-18.2626" y="10.795" smashed="yes" rot="R90">
 <attribute name="DIGIKEY" value="893-1406-2-ND" x="-18.2626" y="10.795" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MPN" value="XCL206B183CR-G" x="-18.2626" y="10.795" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="NAME" x="-16.9926" y="9.017" size="0.508" layer="25" font="vector" ratio="18" rot="R180"/>
@@ -9675,9 +9698,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <vertex x="-8.0518" y="10.5918"/>
 </polygon>
 </signal>
-<signal name="N$40">
-<wire x1="30.861" y1="22.225" x2="30.861" y2="21.082" width="0.15" layer="1"/>
-</signal>
 <signal name="BATT_THERM">
 <contactref element="J5" pad="2"/>
 <contactref element="J5" pad="2SUPP"/>
@@ -10477,8 +10497,8 @@ Quickturn PCB 4 Layer .DRU</description>
 <approved hash="7,39,148a67f83a7a6d48"/>
 <approved hash="7,39,3aa4a182d0f0b18d"/>
 <approved hash="7,39,2a9e21497dc78c4b"/>
-<approved hash="6,1,6b7f8299bc4f0ead"/>
 <approved hash="6,1,07caf415c578765e"/>
+<approved hash="6,1,0ead6b7f8299bc4f"/>
 </errors>
 </board>
 </drawing>
