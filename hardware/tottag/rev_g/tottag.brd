@@ -565,28 +565,6 @@ new: Attribute TP_SIGNAL_NAME&lt;br&gt;
 </package3d>
 </packages3d>
 </library>
-<library name="leds">
-<description>&lt;b&gt;LAB11&lt;/b&gt; - LEDs.</description>
-<packages>
-<package name="1MM_SQ_4PAD">
-<smd name="1" x="0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<smd name="2" x="0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<smd name="3" x="-0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<smd name="4" x="-0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<wire x1="-0.508" y1="-0.508" x2="0.508" y2="-0.508" width="0.127" layer="21"/>
-<wire x1="0.508" y1="-0.508" x2="0.508" y2="0.508" width="0.127" layer="21"/>
-<wire x1="0.508" y1="0.508" x2="-0.508" y2="0.508" width="0.127" layer="21"/>
-<wire x1="-0.508" y1="0.508" x2="-0.508" y2="-0.508" width="0.127" layer="21"/>
-<wire x1="-0.1" y1="0.1" x2="0.1" y2="-0.1" width="0.127" layer="21"/>
-<wire x1="0.1" y1="-0.1" x2="0.1" y2="0.1" width="0.127" layer="21"/>
-<wire x1="0.1" y1="0.1" x2="-0.1" y2="0.1" width="0.127" layer="21"/>
-<text x="0" y="0.9" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-1.8" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
-<wire x1="0.75" y1="0.55" x2="0.75" y2="0.75" width="0.127" layer="21"/>
-<wire x1="0.75" y1="0.75" x2="0.55" y2="0.75" width="0.127" layer="21"/>
-</package>
-</packages>
-</library>
 <library name="headers">
 <description>&lt;b&gt;LAB11&lt;/b&gt; - Headers for pins and wires.</description>
 <packages>
@@ -5294,6 +5272,35 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </package3d>
 </packages3d>
 </library>
+<library name="leds" urn="urn:adsk.eagle:library:20822224">
+<description>&lt;b&gt;LAB11&lt;/b&gt; - LEDs.</description>
+<packages>
+<package name="1MM_SQ_4PAD" urn="urn:adsk.eagle:footprint:20822231/1" library_version="2">
+<smd name="1" x="0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<smd name="2" x="0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<smd name="3" x="-0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<smd name="4" x="-0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<wire x1="-0.508" y1="-0.508" x2="0.508" y2="-0.508" width="0.127" layer="21"/>
+<wire x1="0.508" y1="-0.508" x2="0.508" y2="0.508" width="0.127" layer="21"/>
+<wire x1="0.508" y1="0.508" x2="-0.508" y2="0.508" width="0.127" layer="21"/>
+<wire x1="-0.508" y1="0.508" x2="-0.508" y2="-0.508" width="0.127" layer="21"/>
+<wire x1="-0.1" y1="0.1" x2="0.1" y2="-0.1" width="0.127" layer="21"/>
+<wire x1="0.1" y1="-0.1" x2="0.1" y2="0.1" width="0.127" layer="21"/>
+<wire x1="0.1" y1="0.1" x2="-0.1" y2="0.1" width="0.127" layer="21"/>
+<wire x1="0.75" y1="0.55" x2="0.75" y2="0.75" width="0.127" layer="21"/>
+<wire x1="0.75" y1="0.75" x2="0.55" y2="0.75" width="0.127" layer="21"/>
+<text x="0" y="0.9" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.8" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="1MM_SQ_4PAD" urn="urn:adsk.eagle:package:20822241/2" type="model" library_version="2">
+<packageinstances>
+<packageinstance name="1MM_SQ_4PAD"/>
+</packageinstances>
+</package3d>
+</packages3d>
+</library>
 </libraries>
 <attributes>
 </attributes>
@@ -5581,7 +5588,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="-12.9794" y="29.591" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="-12.9794" y="28.4988" size="0.508" layer="27" font="vector" ratio="18" align="bottom-center"/>
 </element>
-<element name="D2" library="leds" package="1MM_SQ_4PAD" value="SML-LX0404SIUPGUSB" x="29.3624" y="-1.1176" smashed="yes" rot="MR90">
+<element name="D2" library="leds" library_urn="urn:adsk.eagle:library:20822224" package="1MM_SQ_4PAD" package3d_urn="urn:adsk.eagle:package:20822241/2" value="SML-LX0404SIUPGUSB" x="29.3624" y="-1.1176" smashed="yes" rot="MR90">
 <attribute name="DIGIKEY" value="67-2125-1-ND" x="29.3624" y="-6.4516" size="1.778" layer="28" rot="MR90" display="off"/>
 <attribute name="MANUFACTURER" value="Lumex Opto" x="29.3624" y="-6.4516" size="1.778" layer="28" rot="MR90" display="off"/>
 <attribute name="MPN" value="SML-LX0404SIUPGUSB" x="29.3624" y="-6.4516" size="1.778" layer="28" rot="MR90" display="off"/>
@@ -5930,7 +5937,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="12.6746" y="10.1092" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="11.3792" y="11.2522" size="0.508" layer="27" font="vector" ratio="18" rot="R180" align="bottom-center"/>
 </element>
-<element name="D3" library="leds" package="1MM_SQ_4PAD" value="SML-LX0404SIUPGUSB" x="14.3256" y="9.6266" smashed="yes">
+<element name="D3" library="leds" library_urn="urn:adsk.eagle:library:20822224" package="1MM_SQ_4PAD" package3d_urn="urn:adsk.eagle:package:20822241/2" value="SML-LX0404SIUPGUSB" x="14.3256" y="9.6266" smashed="yes">
 <attribute name="DIGIKEY" value="67-2125-1-ND" x="14.3256" y="9.6266" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="Lumex Opto" x="14.3256" y="9.6266" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="SML-LX0404SIUPGUSB" x="14.3256" y="9.6266" size="1.778" layer="27" display="off"/>

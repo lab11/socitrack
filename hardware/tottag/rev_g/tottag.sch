@@ -2427,110 +2427,6 @@ To use, set global attributes TITLE, AUTHOR and REV in your schematic.</descript
 </deviceset>
 </devicesets>
 </library>
-<library name="leds">
-<description>&lt;b&gt;LAB11&lt;/b&gt; - LEDs.</description>
-<packages>
-<package name="1MM_SQ_4PAD">
-<smd name="1" x="0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<smd name="2" x="0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<smd name="3" x="-0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<smd name="4" x="-0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
-<wire x1="-0.508" y1="-0.508" x2="0.508" y2="-0.508" width="0.127" layer="21"/>
-<wire x1="0.508" y1="-0.508" x2="0.508" y2="0.508" width="0.127" layer="21"/>
-<wire x1="0.508" y1="0.508" x2="-0.508" y2="0.508" width="0.127" layer="21"/>
-<wire x1="-0.508" y1="0.508" x2="-0.508" y2="-0.508" width="0.127" layer="21"/>
-<wire x1="-0.1" y1="0.1" x2="0.1" y2="-0.1" width="0.127" layer="21"/>
-<wire x1="0.1" y1="-0.1" x2="0.1" y2="0.1" width="0.127" layer="21"/>
-<wire x1="0.1" y1="0.1" x2="-0.1" y2="0.1" width="0.127" layer="21"/>
-<text x="0" y="0.9" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-1.8" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
-<wire x1="0.75" y1="0.55" x2="0.75" y2="0.75" width="0.127" layer="21"/>
-<wire x1="0.75" y1="0.75" x2="0.55" y2="0.75" width="0.127" layer="21"/>
-</package>
-</packages>
-<symbols>
-<symbol name="LED_TRICOLOR">
-<wire x1="-1.524" y1="2.54" x2="-1.524" y2="1.524" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="0" x2="-1.524" y2="1.016" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="1.016" x2="-0.508" y2="0" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="0" x2="-1.524" y2="-1.016" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="-1.016" x2="-1.524" y2="0" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="1.524" x2="-0.508" y2="2.54" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="2.54" x2="-1.524" y2="3.556" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="3.556" x2="-1.524" y2="2.54" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="-2.54" x2="-1.524" y2="-1.524" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="-1.524" x2="-0.508" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="-2.54" x2="-1.524" y2="-3.556" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="-3.556" x2="-1.524" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="-0.762" y1="-1.778" x2="-0.254" y2="-0.762" width="0.127" layer="94"/>
-<wire x1="-0.254" y1="-0.762" x2="-0.254" y2="-1.524" width="0.127" layer="94"/>
-<wire x1="-0.254" y1="-1.524" x2="0.254" y2="-0.254" width="0.127" layer="94"/>
-<wire x1="-0.0508" y1="-0.508" x2="0.254" y2="-0.254" width="0.127" layer="94"/>
-<wire x1="0.254" y1="-0.254" x2="0.3302" y2="-0.6096" width="0.127" layer="94"/>
-<wire x1="-0.762" y1="0.762" x2="-0.254" y2="1.778" width="0.127" layer="94"/>
-<wire x1="-0.254" y1="1.778" x2="-0.254" y2="1.016" width="0.127" layer="94"/>
-<wire x1="-0.254" y1="1.016" x2="0.254" y2="2.286" width="0.127" layer="94"/>
-<wire x1="-0.0508" y1="2.032" x2="0.254" y2="2.286" width="0.127" layer="94"/>
-<wire x1="0.254" y1="2.286" x2="0.3302" y2="1.9304" width="0.127" layer="94"/>
-<wire x1="-0.762" y1="3.302" x2="-0.254" y2="4.318" width="0.127" layer="94"/>
-<wire x1="-0.254" y1="4.318" x2="-0.254" y2="3.556" width="0.127" layer="94"/>
-<wire x1="-0.254" y1="3.556" x2="0.254" y2="4.826" width="0.127" layer="94"/>
-<wire x1="-0.0508" y1="4.572" x2="0.254" y2="4.826" width="0.127" layer="94"/>
-<wire x1="0.254" y1="4.826" x2="0.3302" y2="4.4704" width="0.127" layer="94"/>
-<wire x1="-5.08" y1="2.54" x2="-5.08" y2="5.08" width="0.254" layer="94"/>
-<wire x1="-5.08" y1="5.08" x2="5.08" y2="5.08" width="0.254" layer="94"/>
-<wire x1="5.08" y1="5.08" x2="5.08" y2="2.54" width="0.254" layer="94"/>
-<wire x1="5.08" y1="2.54" x2="5.08" y2="0" width="0.254" layer="94"/>
-<wire x1="5.08" y1="0" x2="5.08" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="5.08" y1="-2.54" x2="5.08" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="5.08" y1="-5.08" x2="-5.08" y2="-5.08" width="0.254" layer="94"/>
-<wire x1="-5.08" y1="-5.08" x2="-5.08" y2="2.54" width="0.254" layer="94"/>
-<text x="-2.794" y="5.334" size="1.016" layer="95" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="-2.54" y="-6.35" size="1.016" layer="96" ratio="12" align="bottom-center">&gt;VALUE</text>
-<pin name="VDD" x="-10.16" y="0" visible="pad" length="middle"/>
-<pin name="R" x="10.16" y="2.54" visible="pin" length="middle" direction="out" rot="R180"/>
-<pin name="G" x="10.16" y="0" visible="pin" length="middle" direction="out" rot="R180"/>
-<pin name="B" x="10.16" y="-2.54" visible="pin" length="middle" direction="out" rot="R180"/>
-<wire x1="-5.08" y1="2.54" x2="-1.524" y2="2.54" width="0.254" layer="94"/>
-<wire x1="-1.524" y1="0" x2="-5.08" y2="0" width="0.254" layer="94"/>
-<wire x1="-5.08" y1="-2.54" x2="-1.524" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="-2.54" x2="1.016" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="-0.254" y1="0" x2="1.016" y2="0" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="2.54" x2="1.016" y2="2.54" width="0.254" layer="94"/>
-<wire x1="2.794" y1="2.54" x2="5.08" y2="2.54" width="0.254" layer="94"/>
-<wire x1="2.794" y1="0" x2="5.08" y2="0" width="0.254" layer="94"/>
-<wire x1="5.08" y1="-2.54" x2="2.794" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="2.032" x2="-0.508" y2="3.048" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="-0.508" x2="-0.508" y2="0.508" width="0.254" layer="94"/>
-<wire x1="-0.508" y1="-3.302" x2="-0.508" y2="-2.032" width="0.254" layer="94"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="SML-LX0404SIUPGUSB" prefix="D">
-<description>1mm^2 RGB LED</description>
-<gates>
-<gate name="G$1" symbol="LED_TRICOLOR" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="1MM_SQ_4PAD">
-<connects>
-<connect gate="G$1" pin="B" pad="3"/>
-<connect gate="G$1" pin="G" pad="4"/>
-<connect gate="G$1" pin="R" pad="2"/>
-<connect gate="G$1" pin="VDD" pad="1"/>
-</connects>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="67-2125-1-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="Lumex Opto" constant="no"/>
-<attribute name="MPN" value="SML-LX0404SIUPGUSB" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="umich">
 <packages>
 </packages>
@@ -6420,6 +6316,120 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </deviceset>
 </devicesets>
 </library>
+<library name="leds" urn="urn:adsk.eagle:library:20822224">
+<description>&lt;b&gt;LAB11&lt;/b&gt; - LEDs.</description>
+<packages>
+<package name="1MM_SQ_4PAD" urn="urn:adsk.eagle:footprint:20822231/1" library_version="2">
+<smd name="1" x="0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<smd name="2" x="0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<smd name="3" x="-0.4318" y="-0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<smd name="4" x="-0.4318" y="0.4318" dx="0.4572" dy="0.4572" layer="1"/>
+<wire x1="-0.508" y1="-0.508" x2="0.508" y2="-0.508" width="0.127" layer="21"/>
+<wire x1="0.508" y1="-0.508" x2="0.508" y2="0.508" width="0.127" layer="21"/>
+<wire x1="0.508" y1="0.508" x2="-0.508" y2="0.508" width="0.127" layer="21"/>
+<wire x1="-0.508" y1="0.508" x2="-0.508" y2="-0.508" width="0.127" layer="21"/>
+<wire x1="-0.1" y1="0.1" x2="0.1" y2="-0.1" width="0.127" layer="21"/>
+<wire x1="0.1" y1="-0.1" x2="0.1" y2="0.1" width="0.127" layer="21"/>
+<wire x1="0.1" y1="0.1" x2="-0.1" y2="0.1" width="0.127" layer="21"/>
+<wire x1="0.75" y1="0.55" x2="0.75" y2="0.75" width="0.127" layer="21"/>
+<wire x1="0.75" y1="0.75" x2="0.55" y2="0.75" width="0.127" layer="21"/>
+<text x="0" y="0.9" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.8" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="1MM_SQ_4PAD" urn="urn:adsk.eagle:package:20822241/2" type="model" library_version="2">
+<packageinstances>
+<packageinstance name="1MM_SQ_4PAD"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="LED_TRICOLOR" urn="urn:adsk.eagle:symbol:20822234/1" library_version="2">
+<wire x1="-1.524" y1="2.54" x2="-1.524" y2="1.524" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="0" x2="-1.524" y2="1.016" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="1.016" x2="-0.508" y2="0" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="0" x2="-1.524" y2="-1.016" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="-1.016" x2="-1.524" y2="0" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="1.524" x2="-0.508" y2="2.54" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="2.54" x2="-1.524" y2="3.556" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="3.556" x2="-1.524" y2="2.54" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="-2.54" x2="-1.524" y2="-1.524" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="-1.524" x2="-0.508" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="-2.54" x2="-1.524" y2="-3.556" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="-3.556" x2="-1.524" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-0.762" y1="-1.778" x2="-0.254" y2="-0.762" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="-0.762" x2="-0.254" y2="-1.524" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="-1.524" x2="0.254" y2="-0.254" width="0.127" layer="94"/>
+<wire x1="-0.0508" y1="-0.508" x2="0.254" y2="-0.254" width="0.127" layer="94"/>
+<wire x1="0.254" y1="-0.254" x2="0.3302" y2="-0.6096" width="0.127" layer="94"/>
+<wire x1="-0.762" y1="0.762" x2="-0.254" y2="1.778" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="1.778" x2="-0.254" y2="1.016" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="1.016" x2="0.254" y2="2.286" width="0.127" layer="94"/>
+<wire x1="-0.0508" y1="2.032" x2="0.254" y2="2.286" width="0.127" layer="94"/>
+<wire x1="0.254" y1="2.286" x2="0.3302" y2="1.9304" width="0.127" layer="94"/>
+<wire x1="-0.762" y1="3.302" x2="-0.254" y2="4.318" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="4.318" x2="-0.254" y2="3.556" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="3.556" x2="0.254" y2="4.826" width="0.127" layer="94"/>
+<wire x1="-0.0508" y1="4.572" x2="0.254" y2="4.826" width="0.127" layer="94"/>
+<wire x1="0.254" y1="4.826" x2="0.3302" y2="4.4704" width="0.127" layer="94"/>
+<wire x1="-5.08" y1="2.54" x2="-5.08" y2="5.08" width="0.254" layer="94"/>
+<wire x1="-5.08" y1="5.08" x2="5.08" y2="5.08" width="0.254" layer="94"/>
+<wire x1="5.08" y1="5.08" x2="5.08" y2="2.54" width="0.254" layer="94"/>
+<wire x1="5.08" y1="2.54" x2="5.08" y2="0" width="0.254" layer="94"/>
+<wire x1="5.08" y1="0" x2="5.08" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="5.08" y1="-2.54" x2="5.08" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="5.08" y1="-5.08" x2="-5.08" y2="-5.08" width="0.254" layer="94"/>
+<wire x1="-5.08" y1="-5.08" x2="-5.08" y2="2.54" width="0.254" layer="94"/>
+<wire x1="-5.08" y1="2.54" x2="-1.524" y2="2.54" width="0.254" layer="94"/>
+<wire x1="-1.524" y1="0" x2="-5.08" y2="0" width="0.254" layer="94"/>
+<wire x1="-5.08" y1="-2.54" x2="-1.524" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="-2.54" x2="1.016" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-0.254" y1="0" x2="1.016" y2="0" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="2.54" x2="1.016" y2="2.54" width="0.254" layer="94"/>
+<wire x1="2.794" y1="2.54" x2="5.08" y2="2.54" width="0.254" layer="94"/>
+<wire x1="2.794" y1="0" x2="5.08" y2="0" width="0.254" layer="94"/>
+<wire x1="5.08" y1="-2.54" x2="2.794" y2="-2.54" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="2.032" x2="-0.508" y2="3.048" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="-0.508" x2="-0.508" y2="0.508" width="0.254" layer="94"/>
+<wire x1="-0.508" y1="-3.302" x2="-0.508" y2="-2.032" width="0.254" layer="94"/>
+<text x="-2.794" y="5.334" size="1.016" layer="95" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="-2.54" y="-6.35" size="1.016" layer="96" ratio="12" align="bottom-center">&gt;VALUE</text>
+<pin name="VDD" x="-10.16" y="0" visible="pad" length="middle"/>
+<pin name="R" x="10.16" y="2.54" length="middle" direction="out" rot="R180"/>
+<pin name="G" x="10.16" y="0" length="middle" direction="out" rot="R180"/>
+<pin name="B" x="10.16" y="-2.54" length="middle" direction="out" rot="R180"/>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="SML-LX0404SIUPGUSB" urn="urn:adsk.eagle:component:20822247/2" prefix="D" library_version="2">
+<description>1mm^2 RGB LED</description>
+<gates>
+<gate name="G$1" symbol="LED_TRICOLOR" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="1MM_SQ_4PAD">
+<connects>
+<connect gate="G$1" pin="B" pad="3"/>
+<connect gate="G$1" pin="G" pad="4"/>
+<connect gate="G$1" pin="R" pad="2"/>
+<connect gate="G$1" pin="VDD" pad="1"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20822241/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="67-2125-1-ND" constant="no"/>
+<attribute name="MANUFACTURER" value="Lumex Opto" constant="no"/>
+<attribute name="MPN" value="SML-LX0404SIUPGUSB" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -6481,7 +6491,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R20" library="passives" deviceset="RESISTOR" device="0402_RES" value="100k"/>
 <part name="R21" library="passives" deviceset="RESISTOR" device="0402_RES" value="100k"/>
 <part name="R22" library="passives" deviceset="RESISTOR" device="0402_RES" value="100k"/>
-<part name="D2" library="leds" deviceset="SML-LX0404SIUPGUSB" device=""/>
+<part name="D2" library="leds" library_urn="urn:adsk.eagle:library:20822224" deviceset="SML-LX0404SIUPGUSB" device="" package3d_urn="urn:adsk.eagle:package:20822241/2"/>
 <part name="P+11" library="regulators" deviceset="+3V3" device=""/>
 <part name="R4" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
 <part name="R5" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
@@ -6654,7 +6664,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY29" library="regulators" deviceset="GND" device=""/>
 <part name="R8" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="R9" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
-<part name="D3" library="leds" deviceset="SML-LX0404SIUPGUSB" device=""/>
+<part name="D3" library="leds" library_urn="urn:adsk.eagle:library:20822224" deviceset="SML-LX0404SIUPGUSB" device="" package3d_urn="urn:adsk.eagle:package:20822241/2"/>
 <part name="R10" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="GPIO0" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="GPIO1" library="headers" deviceset="TEST-POINT" device=""/>
