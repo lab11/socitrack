@@ -8109,7 +8109,7 @@ LED</text>
 <wire x1="135.89" y1="158.75" x2="120.65" y2="158.75" width="0.127" layer="98" style="shortdash"/>
 <wire x1="135.89" y1="173.99" x2="135.89" y2="158.75" width="0.127" layer="98" style="shortdash"/>
 <text x="130.048" y="173.228" size="1.016" layer="98" align="top-center">"C2" in ref design</text>
-<text x="201.93" y="136.144" size="0.8128" layer="98" align="top-right">Set to 196Ω
+<text x="197.358" y="137.668" size="0.8128" layer="98" align="top-right">Set to 196Ω
 per EVM rec.
 Do with two R's
 to allow trim.</text>
@@ -8426,8 +8426,8 @@ Switch</text>
 <attribute name="NAME" x="160.782" y="185.928" size="1.27" layer="95" font="vector" ratio="12"/>
 <attribute name="VALUE" x="160.528" y="123.698" size="1.27" layer="96" font="vector" ratio="12" align="top-left"/>
 </instance>
-<instance part="SUPPLY32" gate="1" x="213.36" y="121.92" smashed="yes">
-<attribute name="VALUE" x="210.82" y="119.38" size="1.778" layer="96"/>
+<instance part="SUPPLY32" gate="1" x="198.12" y="121.92" smashed="yes">
+<attribute name="VALUE" x="195.58" y="119.38" size="1.778" layer="96"/>
 </instance>
 <instance part="C77" gate="G$1" x="205.74" y="172.72" smashed="yes" rot="R270">
 <attribute name="DIGIKEY" x="205.74" y="172.72" size="1.778" layer="96" rot="R270" display="off"/>
@@ -8493,17 +8493,17 @@ Switch</text>
 <instance part="SUPPLY34" gate="1" x="210.82" y="167.64" smashed="yes">
 <attribute name="VALUE" x="208.28" y="165.1" size="1.778" layer="96"/>
 </instance>
-<instance part="R31" gate="G$1" x="212.09" y="134.62" smashed="yes" rot="R90">
-<attribute name="NAME" x="210.82" y="135.6614" size="1.778" layer="95" rot="R180"/>
-<attribute name="VALUE" x="210.82" y="132.842" size="1.778" layer="96" rot="R180"/>
-<attribute name="DIGIKEY" x="212.09" y="134.62" size="1.27" layer="96" rot="R90" align="top-left" display="off"/>
-<attribute name="MPN" x="212.09" y="134.62" size="1.27" layer="96" rot="R90" align="top-left" display="off"/>
+<instance part="R31" gate="G$1" x="203.2" y="134.62" smashed="yes" rot="R180">
+<attribute name="NAME" x="202.438" y="135.8646" size="1.778" layer="95"/>
+<attribute name="VALUE" x="201.93" y="131.826" size="1.778" layer="96"/>
+<attribute name="DIGIKEY" x="203.2" y="134.62" size="1.27" layer="96" rot="R180" align="top-left" display="off"/>
+<attribute name="MPN" x="203.2" y="134.62" size="1.27" layer="96" rot="R180" align="top-left" display="off"/>
 </instance>
-<instance part="R32" gate="G$1" x="214.63" y="134.62" smashed="yes" rot="R90">
-<attribute name="NAME" x="215.9" y="133.5786" size="1.778" layer="95"/>
-<attribute name="VALUE" x="215.9" y="131.318" size="1.778" layer="96"/>
-<attribute name="DIGIKEY" x="214.63" y="134.62" size="1.27" layer="96" rot="R90" align="top-left" display="off"/>
-<attribute name="MPN" x="214.63" y="134.62" size="1.27" layer="96" rot="R90" align="top-left" display="off"/>
+<instance part="R32" gate="G$1" x="213.36" y="134.62" smashed="yes" rot="R180">
+<attribute name="NAME" x="211.836" y="135.8646" size="1.778" layer="95"/>
+<attribute name="VALUE" x="211.836" y="131.826" size="1.778" layer="96"/>
+<attribute name="DIGIKEY" x="213.36" y="134.62" size="1.27" layer="96" rot="R180" align="top-left" display="off"/>
+<attribute name="MPN" x="213.36" y="134.62" size="1.27" layer="96" rot="R180" align="top-left" display="off"/>
 </instance>
 <instance part="R33" gate="G$1" x="198.12" y="147.32" smashed="yes">
 <attribute name="NAME" x="194.31" y="148.8186" size="1.778" layer="95"/>
@@ -8792,17 +8792,12 @@ Switch</text>
 <segment>
 <pinref part="U6" gate="B" pin="PGND"/>
 <pinref part="SUPPLY32" gate="1" pin="GND"/>
-<wire x1="187.96" y1="127" x2="213.36" y2="127" width="0.1524" layer="91"/>
-<wire x1="213.36" y1="127" x2="213.36" y2="124.46" width="0.1524" layer="91"/>
-<pinref part="R31" gate="G$1" pin="1"/>
-<wire x1="212.09" y1="129.54" x2="212.09" y2="128.27" width="0.1524" layer="91"/>
-<pinref part="R32" gate="G$1" pin="1"/>
-<wire x1="212.09" y1="128.27" x2="213.36" y2="128.27" width="0.1524" layer="91"/>
-<wire x1="213.36" y1="128.27" x2="214.63" y2="128.27" width="0.1524" layer="91"/>
-<wire x1="214.63" y1="128.27" x2="214.63" y2="129.54" width="0.1524" layer="91"/>
-<wire x1="213.36" y1="127" x2="213.36" y2="128.27" width="0.1524" layer="91"/>
-<junction x="213.36" y="127"/>
-<junction x="213.36" y="128.27"/>
+<wire x1="187.96" y1="127" x2="198.12" y2="127" width="0.1524" layer="91"/>
+<wire x1="198.12" y1="127" x2="198.12" y2="124.46" width="0.1524" layer="91"/>
+<pinref part="R31" gate="G$1" pin="2"/>
+<wire x1="200.66" y1="134.62" x2="198.12" y2="134.62" width="0.1524" layer="91"/>
+<wire x1="198.12" y1="134.62" x2="198.12" y2="127" width="0.1524" layer="91"/>
+<junction x="198.12" y="127"/>
 </segment>
 <segment>
 <pinref part="C30" gate="G$1" pin="2"/>
@@ -9415,24 +9410,20 @@ Switch</text>
 </net>
 <net name="BQ_FOD" class="0">
 <segment>
-<pinref part="R31" gate="G$1" pin="2"/>
-<wire x1="212.09" y1="137.16" x2="212.09" y2="138.43" width="0.1524" layer="91"/>
-<pinref part="R32" gate="G$1" pin="2"/>
-<wire x1="212.09" y1="138.43" x2="213.36" y2="138.43" width="0.1524" layer="91"/>
-<wire x1="213.36" y1="138.43" x2="214.63" y2="138.43" width="0.1524" layer="91"/>
-<wire x1="214.63" y1="138.43" x2="214.63" y2="137.16" width="0.1524" layer="91"/>
-<wire x1="213.36" y1="138.43" x2="213.36" y2="139.7" width="0.1524" layer="91"/>
-<junction x="213.36" y="138.43"/>
 <pinref part="U6" gate="B" pin="FOD"/>
 <wire x1="187.96" y1="139.7" x2="213.36" y2="139.7" width="0.1524" layer="91"/>
 <pinref part="R30" gate="G$1" pin="2"/>
 <wire x1="210.82" y1="154.94" x2="213.36" y2="154.94" width="0.1524" layer="91"/>
 <wire x1="213.36" y1="154.94" x2="213.36" y2="147.32" width="0.1524" layer="91"/>
-<junction x="213.36" y="139.7"/>
 <wire x1="213.36" y1="147.32" x2="213.36" y2="139.7" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="147.32" x2="213.36" y2="147.32" width="0.1524" layer="91"/>
 <junction x="213.36" y="147.32"/>
 <pinref part="R34" gate="G$1" pin="2"/>
+<pinref part="R32" gate="G$1" pin="1"/>
+<wire x1="218.44" y1="134.62" x2="220.98" y2="134.62" width="0.1524" layer="91"/>
+<wire x1="220.98" y1="134.62" x2="220.98" y2="139.7" width="0.1524" layer="91"/>
+<wire x1="220.98" y1="139.7" x2="213.36" y2="139.7" width="0.1524" layer="91"/>
+<junction x="213.36" y="139.7"/>
 </segment>
 </net>
 <net name="BQ_RECT" class="0">
@@ -9523,6 +9514,13 @@ Switch</text>
 <pinref part="R37" gate="G$1" pin="1"/>
 <pinref part="R38" gate="G$1" pin="2"/>
 <wire x1="91.44" y1="124.46" x2="88.9" y2="124.46" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="N$28" class="0">
+<segment>
+<pinref part="R31" gate="G$1" pin="1"/>
+<pinref part="R32" gate="G$1" pin="2"/>
+<wire x1="208.28" y1="134.62" x2="210.82" y2="134.62" width="0.1524" layer="91"/>
 </segment>
 </net>
 </nets>
