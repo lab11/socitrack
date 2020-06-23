@@ -6290,7 +6290,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="1.778" y="-5.4864" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 <attribute name="VALUE" x="1.7526" y="-4.3942" size="0.508" layer="27" font="vector" ratio="18" rot="R180" align="bottom-center"/>
 </element>
-<element name="R36" library="passives" library_urn="urn:adsk.eagle:library:20904581" package="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="10k@25C" x="0.9144" y="-3.0734" smashed="yes" rot="R270">
+<element name="RT1" library="passives" library_urn="urn:adsk.eagle:library:20904581" package="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="10k@25C" x="0.9144" y="-3.0734" smashed="yes" rot="R270">
 <attribute name="NAME" x="1.2954" y="-3.0734" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
 <attribute name="VALUE" x="-0.4826" y="-3.0734" size="0.508" layer="27" font="vector" ratio="18" rot="R270" align="bottom-center"/>
 </element>
@@ -10382,7 +10382,7 @@ Quickturn PCB 4 Layer .DRU</description>
 </signal>
 <signal name="N$68">
 <contactref element="JP3" pad="3"/>
-<contactref element="R36" pad="2"/>
+<contactref element="RT1" pad="2"/>
 <wire x1="1.4224" y1="-3.4544" x2="1.4224" y2="-3.2512" width="0.2032" layer="16"/>
 <wire x1="1.4224" y1="-3.2512" x2="1.9304" y2="-2.7432" width="0.2032" layer="16"/>
 <via x="1.9304" y="-2.7432" extent="1-16" drill="0.2032"/>
@@ -10390,7 +10390,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="1.16713125" y1="-3.50646875" x2="0.9144" y2="-3.50646875" width="0.2032" layer="1"/>
 </signal>
 <signal name="N$69">
-<contactref element="R36" pad="1"/>
+<contactref element="RT1" pad="1"/>
 <contactref element="R37" pad="2"/>
 <wire x1="0.9144" y1="-2.64033125" x2="0.9144" y2="-1.65226875" width="0.2032" layer="1"/>
 </signal>

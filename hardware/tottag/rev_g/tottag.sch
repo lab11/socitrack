@@ -5129,23 +5129,23 @@ Source: https://www.ibselectronics.com/pdf/pa/walsin/smt_notes.pdf</description>
 <pin name="2" x="2.54" y="0" visible="off" length="point" direction="pas" swaplevel="1" rot="R180"/>
 <pin name="1" x="-5.08" y="0" visible="off" length="point" direction="pas" swaplevel="1"/>
 </symbol>
-<symbol name="THERMISTOR" urn="urn:adsk.eagle:symbol:20925161/1" library_version="5">
+<symbol name="THERMISTOR" urn="urn:adsk.eagle:symbol:20925161/2" library_version="7">
 <description>Thermistor.
 
 Temperature-controller resistor.</description>
-<wire x1="-3.81" y1="0" x2="-3.429" y2="1.016" width="0.1524" layer="94"/>
-<wire x1="-3.429" y1="1.016" x2="-2.794" y2="-1.016" width="0.1524" layer="94"/>
-<wire x1="-2.794" y1="-1.016" x2="-2.159" y2="1.016" width="0.1524" layer="94"/>
-<wire x1="-2.159" y1="1.016" x2="-1.524" y2="-1.016" width="0.1524" layer="94"/>
-<wire x1="-1.524" y1="-1.016" x2="-0.889" y2="1.016" width="0.1524" layer="94"/>
-<wire x1="-0.889" y1="1.016" x2="-0.254" y2="-1.016" width="0.1524" layer="94"/>
-<wire x1="-0.254" y1="-1.016" x2="0.381" y2="1.016" width="0.1524" layer="94"/>
-<wire x1="0.381" y1="1.016" x2="1.016" y2="-1.016" width="0.1524" layer="94"/>
-<wire x1="1.016" y1="-1.016" x2="1.27" y2="0" width="0.1524" layer="94"/>
+<wire x1="-3.81" y1="0" x2="-3.429" y2="1.016" width="0.127" layer="94"/>
+<wire x1="-3.429" y1="1.016" x2="-2.794" y2="-1.016" width="0.127" layer="94"/>
+<wire x1="-2.794" y1="-1.016" x2="-2.159" y2="1.016" width="0.127" layer="94"/>
+<wire x1="-2.159" y1="1.016" x2="-1.524" y2="-1.016" width="0.127" layer="94"/>
+<wire x1="-1.524" y1="-1.016" x2="-0.889" y2="1.016" width="0.127" layer="94"/>
+<wire x1="-0.889" y1="1.016" x2="-0.254" y2="-1.016" width="0.127" layer="94"/>
+<wire x1="-0.254" y1="-1.016" x2="0.381" y2="1.016" width="0.127" layer="94"/>
+<wire x1="0.381" y1="1.016" x2="1.016" y2="-1.016" width="0.127" layer="94"/>
+<wire x1="1.016" y1="-1.016" x2="1.27" y2="0" width="0.127" layer="94"/>
 <wire x1="-5.08" y1="0" x2="-3.81" y2="0" width="0.127" layer="94"/>
 <wire x1="2.54" y1="0" x2="1.27" y2="0" width="0.127" layer="94"/>
-<wire x1="-4.191" y1="-1.397" x2="-1.143" y2="-1.397" width="0.127" layer="94"/>
-<wire x1="-1.143" y1="-1.397" x2="-0.254" y2="1.524" width="0.127" layer="94"/>
+<wire x1="-4.191" y1="-1.397" x2="-2.667" y2="-1.397" width="0.1778" layer="94"/>
+<wire x1="-2.667" y1="-1.397" x2="0.254" y2="1.524" width="0.1778" layer="94"/>
 <text x="-3.81" y="1.4986" size="1.778" layer="95">&gt;NAME</text>
 <text x="-3.81" y="-3.302" size="1.778" layer="96">&gt;VALUE</text>
 <pin name="2" x="2.54" y="0" visible="off" length="point" direction="pas" swaplevel="1" rot="R180"/>
@@ -5327,7 +5327,7 @@ Basic schematic elements and footprints for 0201, 0402, 0603, 1206, and PTH resi
 </device>
 </devices>
 </deviceset>
-<deviceset name="THERMISTOR" urn="urn:adsk.eagle:component:20925162/2" prefix="R" uservalue="yes" library_version="5">
+<deviceset name="THERMISTOR" urn="urn:adsk.eagle:component:20925162/3" prefix="RT" uservalue="yes" library_version="7">
 <description>Thermistor.
 
 Temperature-controller resistor.</description>
@@ -6867,7 +6867,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value="RC0402JR-0710KL"/>
 </part>
 <part name="SUPPLY37" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="R36" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="THERMISTOR" device="0402" package3d_urn="urn:adsk.eagle:package:20904668/2" value="10k@25C"/>
+<part name="RT1" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="THERMISTOR" device="0402" package3d_urn="urn:adsk.eagle:package:20904668/2" value="10k@25C"/>
 <part name="SUPPLY38" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="C89" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF">
 <attribute name="DIGIKEY" value="490-6328-1-ND"/>
@@ -8571,7 +8571,7 @@ Switch</text>
 <instance part="SUPPLY37" gate="1" x="116.84" y="121.92" smashed="yes">
 <attribute name="VALUE" x="114.3" y="119.38" size="1.778" layer="96"/>
 </instance>
-<instance part="R36" gate="B" x="101.6" y="132.08" smashed="yes" rot="R90">
+<instance part="RT1" gate="B" x="101.6" y="132.08" smashed="yes" rot="R90">
 <attribute name="NAME" x="100.1014" y="128.27" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="104.902" y="124.46" size="1.778" layer="96" rot="R90"/>
 </instance>
@@ -9505,14 +9505,14 @@ Switch</text>
 <net name="N$68" class="0">
 <segment>
 <pinref part="JP3" gate="G$1" pin="3"/>
-<pinref part="R36" gate="B" pin="2"/>
+<pinref part="RT1" gate="B" pin="2"/>
 <wire x1="104.14" y1="137.16" x2="101.6" y2="137.16" width="0.1524" layer="91"/>
 <wire x1="101.6" y1="137.16" x2="101.6" y2="134.62" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$69" class="0">
 <segment>
-<pinref part="R36" gate="B" pin="1"/>
+<pinref part="RT1" gate="B" pin="1"/>
 <pinref part="R37" gate="G$1" pin="2"/>
 <wire x1="101.6" y1="127" x2="101.6" y2="124.46" width="0.1524" layer="91"/>
 <wire x1="101.6" y1="124.46" x2="99.06" y2="124.46" width="0.1524" layer="91"/>
