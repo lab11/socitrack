@@ -8187,6 +8187,29 @@ filter</text>
 <wire x1="82.55" y1="128.27" x2="82.55" y2="120.65" width="0.127" layer="98" style="shortdash"/>
 <wire x1="97.79" y1="128.27" x2="97.79" y2="120.65" width="0.127" layer="98" style="shortdash"/>
 <wire x1="97.79" y1="120.65" x2="82.55" y2="120.65" width="0.127" layer="98" style="shortdash"/>
+<text x="39.37" y="63.5" size="0.8128" layer="98" align="top-left">ISET controls constant charge current
+Battery wants 0.2C * 1200 mAh = 240 mA
+
+§9.2.1.2.1.1 Eqn
+R_ISET = [540AΩ/0.24A] = 2.25kΩ</text>
+<text x="233.68" y="159.004" size="0.8128" layer="98">Current control is a bit redundant
+here as VQI feeds directly to BQ24040,
+which also limits current.
+(Note that the BQ24040 is the more
+important limiter, as it limits from
+both USB and this source).
+
+Battery charge configured to max of
+240 mA charge * 1.2 preterm = 288 mA.
+
+---
+
+For simplicity, configure this to match
+the current limit of USB: 500 mA.
+
+This is comfortably more than the
+downstream limit.</text>
+<wire x1="233.172" y1="158.75" x2="181.61" y2="147.574" width="0.0508" layer="98" style="shortdash"/>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
