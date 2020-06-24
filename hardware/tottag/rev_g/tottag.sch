@@ -8093,9 +8093,9 @@ Assemble size: 6.4*34.5*52 mm max. in T*W*L
 Over-charge voltage: 4.28V 
 Over- discharge voltage: 3.0V 
 Continuous charge rate: 0.2C 
-Peck charge rate:1C 
+Peak charge rate:1C 
 Continuous discharge rate: 0.2C 
-Peck discharge rate:1C, for 2-3ms 
+Peak discharge rate:1C, for 2-3ms 
 NTC, 10K B=3435 
 Wire: UL1571-28AWG#, 100mm, from left 
 Connector: MOLEX87439-3P, positive 
