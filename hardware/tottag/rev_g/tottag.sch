@@ -7579,7 +7579,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <junction x="132.08" y="40.64"/>
 </segment>
 </net>
-<net name="N$17" class="0">
+<net name="BLE_ANT" class="0">
 <segment>
 <pinref part="L1" gate="G$1" pin="1"/>
 <pinref part="C2" gate="G$1" pin="1"/>
