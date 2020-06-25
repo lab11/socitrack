@@ -7975,7 +7975,11 @@ Battery</text>
 be 1.5kΩ for
 optimal performance</text>
 <text x="232.918" y="107.95" size="1.778" layer="98" rot="R180" align="bottom-center">90 Ohm</text>
-<text x="141.224" y="83.058" size="1.27" layer="98">To nRF ADC</text>
+<text x="141.224" y="83.058" size="1.27" layer="98">To nRF ADC
+
+BATT   BATIN
+4.2       3.158
+3.0       2.256</text>
 <text x="74.93" y="182.88" size="0.8128" layer="98" align="top-left">WR222230-26M8 Ls = 27 uH (datasheet)
 No measurement rig for L's, est as 40 uH
 
