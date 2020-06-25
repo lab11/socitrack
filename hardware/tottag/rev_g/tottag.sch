@@ -4126,17 +4126,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <text x="0" y="2.667" size="0.8128" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-2.667" size="0.8128" layer="27" font="vector" ratio="12" align="top-center">&gt;VALUE</text>
 </package>
-<package name="ANT3216A063R2400A" urn="urn:adsk.eagle:footprint:20878664/1" library_version="14">
-<description>Footprint for ANT3216A063R2400A 2.4GHz chip antenna</description>
-<smd name="S1" x="-1.325" y="0" dx="0.6" dy="1.8" layer="1"/>
-<smd name="S2" x="1.325" y="0" dx="0.6" dy="1.8" layer="1"/>
-<wire x1="-1.525" y1="0.775" x2="1.525" y2="0.775" width="0.127" layer="21"/>
-<wire x1="1.525" y1="0.775" x2="1.525" y2="-0.775" width="0.127" layer="21"/>
-<wire x1="1.525" y1="-0.775" x2="-1.525" y2="-0.775" width="0.127" layer="21"/>
-<wire x1="-1.525" y1="-0.775" x2="-1.525" y2="0.775" width="0.127" layer="21"/>
-<circle x="-0.5" y="0" radius="0.12725" width="0.127" layer="21"/>
-<text x="-1.5" y="1.25" size="1.016" layer="21" font="vector" ratio="12">&gt;NAME</text>
-</package>
 </packages>
 <packages3d>
 <package3d name="QFN-48-DW1000" urn="urn:adsk.eagle:package:20878825/2" type="model" library_version="12">
@@ -4180,12 +4169,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <description>A TI variant of a VQFN with PAD connected to some package pins.</description>
 <packageinstances>
 <packageinstance name="RHL0020A"/>
-</packageinstances>
-</package3d>
-<package3d name="ANT3216A063R2400A" urn="urn:adsk.eagle:package:20878807/2" type="model" library_version="14">
-<description>Footprint for ANT3216A063R2400A 2.4GHz chip antenna</description>
-<packageinstances>
-<packageinstance name="ANT3216A063R2400A"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -4464,21 +4447,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <wire x1="-12.065" y1="43.18" x2="-12.7" y2="42.545" width="0.254" layer="94" curve="90"/>
 <text x="-11.938" y="43.688" size="1.27" layer="95" font="vector" ratio="12">&gt;NAME</text>
 <text x="-12.192" y="-18.542" size="1.27" layer="96" font="vector" ratio="12" align="top-left">&gt;VALUE</text>
-</symbol>
-<symbol name="ANTENNA-GND" urn="urn:adsk.eagle:symbol:20878478/1" library_version="14">
-<description>Simple Antenna symbol</description>
-<wire x1="-3.81" y1="5.08" x2="0" y2="5.08" width="0.254" layer="94"/>
-<wire x1="0" y1="5.08" x2="3.81" y2="5.08" width="0.254" layer="94"/>
-<wire x1="3.81" y1="5.08" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="-3.81" y2="5.08" width="0.254" layer="94"/>
-<wire x1="0" y1="-2.54" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="0" y2="5.08" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="5.08" y2="0" width="0.254" layer="94"/>
-<wire x1="5.08" y1="0" x2="5.08" y2="-2.54" width="0.254" layer="94"/>
-<pin name="ANTENNA" x="0" y="-5.08" visible="off" length="short" rot="R90"/>
-<pin name="GND" x="5.08" y="-5.08" length="short" rot="R90"/>
-<text x="-3.81" y="5.842" size="1.016" layer="95" font="vector" ratio="12">&gt;NAME</text>
-<text x="-1.524" y="5.842" size="1.016" layer="96" font="vector" ratio="12">&gt;VALUE</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -4843,32 +4811,6 @@ Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</descri
 <technology name="">
 <attribute name="DIGIKEY" value="296-38885-1-ND" constant="no"/>
 <attribute name="MPN" value="BQ51013B" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="ANT3216A063R2400A" urn="urn:adsk.eagle:component:20879108/2" prefix="A" library_version="14">
-<description>Yageo 2.4GHz
-WiFi/Bluetooth/Zigbee/ISM
-Chip Antenna</description>
-<gates>
-<gate name="G$1" symbol="ANTENNA-GND" x="0" y="0"/>
-</gates>
-<devices>
-<device name="" package="ANT3216A063R2400A">
-<connects>
-<connect gate="G$1" pin="ANTENNA" pad="S1"/>
-<connect gate="G$1" pin="GND" pad="S2"/>
-</connects>
-<package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20878807/2"/>
-</package3dinstances>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="311-1542-1-ND" constant="no"/>
-<attribute name="MANUFACTURER" value="YAGEO" constant="no"/>
-<attribute name="MPN" value="ANT3216A063R2400A" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6360,6 +6302,74 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </deviceset>
 </devicesets>
 </library>
+<library name="antennas" urn="urn:adsk.eagle:library:21218934">
+<packages>
+<package name="AMCA72-2R470G-S1F-T" urn="urn:adsk.eagle:footprint:21218935/1" library_version="2">
+<smd name="NC" x="0" y="3.75" dx="2" dy="1.5" layer="1"/>
+<smd name="S1" x="0" y="-3.5" dx="2" dy="1" layer="1"/>
+<wire x1="-1" y1="3.5" x2="-1" y2="-3.5" width="0.2" layer="21"/>
+<wire x1="-1" y1="-3.5" x2="1" y2="-3.5" width="0.2" layer="21"/>
+<wire x1="1" y1="-3.5" x2="1" y2="3.5" width="0.2" layer="21"/>
+<wire x1="1" y1="3.5" x2="-1" y2="3.5" width="0.2" layer="21"/>
+<polygon width="0.2" layer="21">
+<vertex x="-0.4" y="-1"/>
+<vertex x="0.4" y="-1"/>
+<vertex x="0.4" y="-1.8"/>
+<vertex x="-0.4" y="-1.8"/>
+</polygon>
+<text x="-1.524" y="0" size="0.8128" layer="21" font="vector" ratio="12" rot="R90" align="bottom-center">&gt;NAME</text>
+</package>
+</packages>
+<packages3d>
+<package3d name="AMCA72-2R470G-S1F-T" urn="urn:adsk.eagle:package:21218938/2" type="model" library_version="2">
+<packageinstances>
+<packageinstance name="AMCA72-2R470G-S1F-T"/>
+</packageinstances>
+</package3d>
+</packages3d>
+<symbols>
+<symbol name="ANTENNA" urn="urn:adsk.eagle:symbol:21218936/1" library_version="2">
+<description>Simple Antenna symbol</description>
+<wire x1="-3.81" y1="5.08" x2="0" y2="5.08" width="0.254" layer="94"/>
+<wire x1="0" y1="5.08" x2="3.81" y2="5.08" width="0.254" layer="94"/>
+<wire x1="3.81" y1="5.08" x2="0" y2="0" width="0.254" layer="94"/>
+<wire x1="0" y1="0" x2="-3.81" y2="5.08" width="0.254" layer="94"/>
+<wire x1="0" y1="-2.54" x2="0" y2="5.08" width="0.254" layer="94"/>
+<pin name="ANTENNA" x="0" y="-5.08" visible="off" length="short" rot="R90"/>
+<text x="-3.81" y="5.842" size="1.016" layer="95" font="vector" ratio="12">&gt;NAME</text>
+<text x="-1.524" y="5.842" size="1.016" layer="96" font="vector" ratio="12">&gt;VALUE</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="AMCA72-2R47G-S1F-T" urn="urn:adsk.eagle:component:21218939/2" prefix="A" library_version="2">
+<description>WiFi/Bluetooth/ZigBee, ISM Atenna
+
+&lt;p&gt;
+&lt;a href="https://abracon.com/parametric/antennas/AMCA72-2R470G-S1F-T"&gt;Abracon Page&lt;/a&gt;
+&lt;/p&gt;</description>
+<gates>
+<gate name="G$1" symbol="ANTENNA" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="AMCA72-2R470G-S1F-T">
+<connects>
+<connect gate="G$1" pin="ANTENNA" pad="S1"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:21218938/2"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DESCRIPTION" value="RF ANT 2.4GHZ CHIP SOLDER SMD" constant="no"/>
+<attribute name="DIGIKEY" value="535-14108-1-ND" constant="no"/>
+<attribute name="MPN" value="AMCA72-2R470G-S1F-T4" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
@@ -6466,17 +6476,17 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="490-6197-1-ND"/>
 <attribute name="MPN" value="GRM1555C1H120GA01D "/>
 </part>
-<part name="C1" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1pF">
-<attribute name="DIGIKEY" value="490-3083-1-ND"/>
-<attribute name="MPN" value="GJM1555C1H1R0CB01D "/>
+<part name="C1" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.8pF">
+<attribute name="DIGIKEY" value="490-11253-1-ND"/>
+<attribute name="MPN" value="GJM1555C1HR80WB01D"/>
 </part>
-<part name="C2" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1pF">
-<attribute name="DIGIKEY" value="490-3083-1-ND"/>
-<attribute name="MPN" value="GJM1555C1H1R0CB01D"/>
+<part name="C2" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.5pF">
+<attribute name="DIGIKEY" value="490-11250-1-ND"/>
+<attribute name="MPN" value="GJM1555C1HR50WB01D"/>
 </part>
-<part name="L1" library="passives" deviceset="INDUCTOR" device="0402" value="3.9nH">
-<attribute name="DIGIKEY" value="AISC-0402-3N9G-TCT-ND "/>
-<attribute name="MPN" value="AISC-0402-3N9G-T "/>
+<part name="L1" library="passives" deviceset="INDUCTOR" device="0402" value="4.7nH">
+<attribute name="DIGIKEY" value="490-15482-1-ND"/>
+<attribute name="MPN" value="LQW15AN4N7G8ZD"/>
 </part>
 <part name="X3" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="7V" device="-32.000MAHV-T" package3d_urn="urn:adsk.eagle:package:20878602/2" value="32MHz"/>
 <part name="C57" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
@@ -6509,7 +6519,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value="GRM1555C1H120GA01D "/>
 </part>
 <part name="GND10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="A4" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="ANT3216A063R2400A" device="" package3d_urn="urn:adsk.eagle:package:20878807/2"/>
 <part name="A3" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
 <part name="A2" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
 <part name="A1" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
@@ -6846,6 +6855,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="J6" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X1" device="" package3d_urn="urn:adsk.eagle:package:22485/2"/>
 <part name="J7" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X1" device="" package3d_urn="urn:adsk.eagle:package:22485/2"/>
 <part name="J8" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X1" device="" package3d_urn="urn:adsk.eagle:package:22485/2"/>
+<part name="A4" library="antennas" library_urn="urn:adsk.eagle:library:21218934" deviceset="AMCA72-2R47G-S1F-T" device="" package3d_urn="urn:adsk.eagle:package:21218938/2"/>
 </parts>
 <sheets>
 <sheet>
@@ -6869,6 +6879,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="205.74" y="68.58" size="3.81" layer="98">Buzzer</text>
 <wire x1="201.93" y1="22.86" x2="201.93" y2="73.66" width="0.1524" layer="98" style="longdash"/>
 <wire x1="25.4" y1="91.44" x2="45.72" y2="104.14" width="0.1524" layer="98" style="dashdot"/>
+<text x="143.256" y="27.178" size="1.016" layer="98" align="top-left">Matching network from datasheet.
+Note v1.1 datasheet updated values.</text>
 </plain>
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -6978,11 +6990,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="NAME" x="143.51" y="57.15" size="1.778" layer="95" ratio="12" align="bottom-center"/>
 <attribute name="VALUE" x="143.51" y="54.61" size="1.778" layer="96" ratio="12" rot="R180" align="bottom-center"/>
 </instance>
-<instance part="C1" gate="G$1" x="132.08" y="35.56" smashed="yes">
-<attribute name="DIGIKEY" x="132.08" y="35.56" size="1.778" layer="96" display="off"/>
-<attribute name="MPN" x="132.08" y="35.56" size="1.778" layer="96" display="off"/>
-<attribute name="NAME" x="130.81" y="34.29" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="133.35" y="34.29" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C1" gate="G$1" x="142.24" y="35.56" smashed="yes">
+<attribute name="DIGIKEY" x="142.24" y="35.56" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="142.24" y="35.56" size="1.778" layer="96" display="off"/>
+<attribute name="NAME" x="140.97" y="34.29" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="143.51" y="34.29" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
 <instance part="C2" gate="G$1" x="162.56" y="35.56" smashed="yes">
 <attribute name="DIGIKEY" x="162.56" y="35.56" size="1.778" layer="96" display="off"/>
@@ -6990,11 +7002,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="NAME" x="161.29" y="34.29" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="163.83" y="34.29" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="L1" gate="G$1" x="147.32" y="40.64" smashed="yes" rot="R270">
-<attribute name="DIGIKEY" x="147.32" y="40.64" size="1.778" layer="96" rot="R270" display="off"/>
-<attribute name="MPN" x="147.32" y="40.64" size="1.778" layer="96" rot="R270" display="off"/>
-<attribute name="NAME" x="144.78" y="41.148" size="1.778" layer="95" ratio="12"/>
-<attribute name="VALUE" x="144.78" y="37.592" size="1.778" layer="96" ratio="12"/>
+<instance part="L1" gate="G$1" x="152.4" y="40.64" smashed="yes" rot="R270">
+<attribute name="DIGIKEY" x="152.4" y="40.64" size="1.778" layer="96" rot="R270" display="off"/>
+<attribute name="MPN" x="152.4" y="40.64" size="1.778" layer="96" rot="R270" display="off"/>
+<attribute name="NAME" x="149.86" y="41.148" size="1.778" layer="95" ratio="12"/>
+<attribute name="VALUE" x="149.86" y="37.592" size="1.778" layer="96" ratio="12"/>
 </instance>
 <instance part="X3" gate="G$1" x="137.16" y="63.5" smashed="yes" rot="R90">
 <attribute name="NAME" x="129.54" y="60.96" size="1.27" layer="95" rot="R90"/>
@@ -7054,10 +7066,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </instance>
 <instance part="GND10" gate="1" x="175.26" y="45.72" smashed="yes">
 <attribute name="VALUE" x="172.72" y="43.18" size="1.778" layer="96"/>
-</instance>
-<instance part="A4" gate="G$1" x="185.42" y="48.26" smashed="yes">
-<attribute name="NAME" x="181.61" y="54.102" size="1.016" layer="95" font="vector" ratio="12"/>
-<attribute name="VALUE" x="183.896" y="54.102" size="1.016" layer="96" font="vector" ratio="12"/>
 </instance>
 <instance part="C22" gate="G$1" x="35.56" y="111.76" smashed="yes">
 <attribute name="DIGIKEY" x="35.56" y="111.76" size="1.778" layer="96" display="off"/>
@@ -7159,6 +7167,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="NAME" x="176.53" y="125.9586" size="1.778" layer="95"/>
 <attribute name="VALUE" x="176.53" y="121.158" size="1.778" layer="96"/>
 </instance>
+<instance part="A4" gate="G$1" x="185.42" y="48.26" smashed="yes">
+<attribute name="NAME" x="181.61" y="54.102" size="1.016" layer="95" font="vector" ratio="12"/>
+<attribute name="VALUE" x="183.896" y="54.102" size="1.016" layer="96" font="vector" ratio="12"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -7200,19 +7212,15 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="86.36" y1="33.02" x2="86.36" y2="27.94" width="0.1524" layer="91"/>
 <pinref part="C1" gate="G$1" pin="2"/>
 <wire x1="86.36" y1="27.94" x2="109.22" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="109.22" y1="27.94" x2="132.08" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="27.94" x2="132.08" y2="30.48" width="0.1524" layer="91"/>
+<wire x1="109.22" y1="27.94" x2="142.24" y2="27.94" width="0.1524" layer="91"/>
+<wire x1="142.24" y1="27.94" x2="142.24" y2="30.48" width="0.1524" layer="91"/>
 <wire x1="86.36" y1="27.94" x2="83.82" y2="27.94" width="0.1524" layer="91"/>
 <junction x="86.36" y="27.94"/>
 <junction x="83.82" y="27.94"/>
 <pinref part="C2" gate="G$1" pin="2"/>
 <wire x1="162.56" y1="27.94" x2="162.56" y2="30.48" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="27.94" x2="162.56" y2="27.94" width="0.1524" layer="91"/>
-<junction x="132.08" y="27.94"/>
-<pinref part="A4" gate="G$1" pin="GND"/>
-<wire x1="190.5" y1="43.18" x2="190.5" y2="27.94" width="0.1524" layer="91"/>
-<wire x1="190.5" y1="27.94" x2="162.56" y2="27.94" width="0.1524" layer="91"/>
-<junction x="162.56" y="27.94"/>
+<wire x1="142.24" y1="27.94" x2="162.56" y2="27.94" width="0.1524" layer="91"/>
+<junction x="142.24" y="27.94"/>
 <pinref part="TP4" gate="G$1" pin="TP"/>
 <wire x1="109.22" y1="30.48" x2="109.22" y2="27.94" width="0.1524" layer="91" style="longdash"/>
 <junction x="109.22" y="27.94"/>
@@ -7575,23 +7583,23 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <segment>
 <pinref part="U7" gate="G$1" pin="ANT"/>
 <pinref part="L1" gate="G$1" pin="2"/>
-<wire x1="106.68" y1="40.64" x2="132.08" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="106.68" y1="40.64" x2="142.24" y2="40.64" width="0.1524" layer="91"/>
 <pinref part="C1" gate="G$1" pin="1"/>
-<wire x1="132.08" y1="40.64" x2="139.7" y2="40.64" width="0.1524" layer="91"/>
-<wire x1="132.08" y1="38.1" x2="132.08" y2="40.64" width="0.1524" layer="91"/>
-<junction x="132.08" y="40.64"/>
+<wire x1="142.24" y1="40.64" x2="144.78" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="142.24" y1="38.1" x2="142.24" y2="40.64" width="0.1524" layer="91"/>
+<junction x="142.24" y="40.64"/>
 </segment>
 </net>
 <net name="BLE_ANT" class="0">
 <segment>
 <pinref part="L1" gate="G$1" pin="1"/>
 <pinref part="C2" gate="G$1" pin="1"/>
-<wire x1="154.94" y1="40.64" x2="162.56" y2="40.64" width="0.1524" layer="91"/>
+<wire x1="160.02" y1="40.64" x2="162.56" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="162.56" y1="40.64" x2="162.56" y2="38.1" width="0.1524" layer="91"/>
 <junction x="162.56" y="40.64"/>
 <wire x1="162.56" y1="40.64" x2="185.42" y2="40.64" width="0.1524" layer="91"/>
-<pinref part="A4" gate="G$1" pin="ANTENNA"/>
 <wire x1="185.42" y1="40.64" x2="185.42" y2="43.18" width="0.1524" layer="91"/>
+<pinref part="A4" gate="G$1" pin="ANTENNA"/>
 </segment>
 </net>
 <net name="N$18" class="0">
