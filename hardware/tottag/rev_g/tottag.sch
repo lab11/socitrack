@@ -4018,7 +4018,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <text x="0" y="1.791" size="0.8128" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-1.478" size="0.8128" layer="27" font="vector" ratio="12" align="top-center">&gt;VALUE</text>
 </package>
-<package name="RHL0020A" urn="urn:adsk.eagle:footprint:20914321/1" library_version="7" library_locally_modified="yes">
+<package name="RHL0020A" urn="urn:adsk.eagle:footprint:20914321/2" library_version="19">
 <description>A TI variant of a VQFN with PAD connected to some package pins.</description>
 <smd name="5" x="-1.65" y="0.25" dx="0.6" dy="0.24" layer="1" roundness="50"/>
 <smd name="4" x="-1.65" y="0.75" dx="0.6" dy="0.24" layer="1" roundness="50"/>
@@ -4125,6 +4125,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <wire x1="-1.75" y1="-2.25" x2="-1.75" y2="2.25" width="0.127" layer="21"/>
 <text x="0" y="2.667" size="0.8128" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-2.667" size="0.8128" layer="27" font="vector" ratio="12" align="top-center">&gt;VALUE</text>
+<circle x="-2.159" y="2.54" radius="0.179603125" width="0.127" layer="21"/>
 </package>
 </packages>
 <packages3d>
@@ -4165,7 +4166,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <packageinstance name="DSQ0010A"/>
 </packageinstances>
 </package3d>
-<package3d name="RHL0020A" urn="urn:adsk.eagle:package:20914322/3" type="model" library_version="12">
+<package3d name="RHL0020A" urn="urn:adsk.eagle:package:20914322/4" type="model" library_version="19">
 <description>A TI variant of a VQFN with PAD connected to some package pins.</description>
 <packageinstances>
 <packageinstance name="RHL0020A"/>
@@ -4774,7 +4775,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="BQ51013B" urn="urn:adsk.eagle:component:20914323/6" prefix="U" library_version="12">
+<deviceset name="BQ51013B" urn="urn:adsk.eagle:component:20914323/7" prefix="U" library_version="19">
 <description>bq51013B 
 
 Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</description>
@@ -4805,7 +4806,7 @@ Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</descri
 <connect gate="B" pin="TS/CTRL" pad="13"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20914322/3"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20914322/4"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -6716,7 +6717,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY31" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R28" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="DNP"/>
 <part name="J1" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="USB4110-GF-A" device="" package3d_urn="urn:adsk.eagle:package:20910683/4"/>
-<part name="U6" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="BQ51013B" device="" package3d_urn="urn:adsk.eagle:package:20914322/3"/>
+<part name="U6" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="BQ51013B" device="" package3d_urn="urn:adsk.eagle:package:20914322/4"/>
 <part name="SUPPLY32" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="C77" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
 <attribute name="DIGIKEY" value=""/>
