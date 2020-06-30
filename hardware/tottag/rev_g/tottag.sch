@@ -7752,13 +7752,6 @@ Note v1.1 datasheet updated values.</text>
 <label x="55.88" y="48.26" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="!SD_DETECT" class="0">
-<segment>
-<pinref part="U7" gate="G$1" pin="P1.00"/>
-<wire x1="106.68" y1="109.22" x2="111.76" y2="109.22" width="0.1524" layer="91"/>
-<label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="NRF_DECAP5" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="DEC5"/>
@@ -7997,6 +7990,13 @@ Note v1.1 datasheet updated values.</text>
 <pinref part="U7" gate="G$1" pin="VBUS"/>
 <wire x1="58.42" y1="104.14" x2="60.96" y2="104.14" width="0.1524" layer="91"/>
 <label x="58.42" y="104.14" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="!SD_DETECT" class="0">
+<segment>
+<wire x1="55.88" y1="78.74" x2="60.96" y2="78.74" width="0.1524" layer="91"/>
+<label x="55.88" y="78.74" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P0.11"/>
 </segment>
 </net>
 </nets>
