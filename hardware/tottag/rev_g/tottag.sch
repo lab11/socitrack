@@ -8194,6 +8194,9 @@ the current limit of USB: 500 mA.
 This is comfortably more than the
 downstream limit.</text>
 <wire x1="233.172" y1="158.75" x2="181.61" y2="147.574" width="0.0508" layer="98" style="shortdash"/>
+<text x="63.246" y="133.35" size="0.8128" layer="98" align="top-center">Just a three pin header
+Made of three 1-pins
+for layout reasons</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -8635,15 +8638,15 @@ downstream limit.</text>
 <attribute name="VALUE" x="120.65" y="92.71" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
 <instance part="J6" gate="G$1" x="66.04" y="142.24" smashed="yes">
-<attribute name="NAME" x="59.69" y="145.415" size="1.778" layer="95"/>
+<attribute name="NAME" x="68.326" y="141.859" size="1.778" layer="95"/>
 <attribute name="VALUE" x="59.69" y="137.16" size="1.778" layer="96"/>
 </instance>
 <instance part="J7" gate="G$1" x="66.04" y="139.7" smashed="yes">
-<attribute name="NAME" x="59.69" y="142.875" size="1.778" layer="95"/>
+<attribute name="NAME" x="68.326" y="139.573" size="1.778" layer="95"/>
 <attribute name="VALUE" x="59.69" y="134.62" size="1.778" layer="96"/>
 </instance>
 <instance part="J8" gate="G$1" x="66.04" y="137.16" smashed="yes">
-<attribute name="NAME" x="59.69" y="140.335" size="1.778" layer="95"/>
+<attribute name="NAME" x="68.326" y="137.287" size="1.778" layer="95"/>
 <attribute name="VALUE" x="59.69" y="132.08" size="1.778" layer="96"/>
 </instance>
 </instances>
@@ -11216,8 +11219,10 @@ Furthermore, try to keep them as short and straight as possible</text>
 <approved hash="104,2,55.88,172.72,J1,VBUS,VUSB,,,"/>
 <approved hash="106,3,208.28,160.02,DW_SYNC,,,,,"/>
 <approved hash="113,2,243.84,107.95,B1,,,,,"/>
-<approved hash="113,3,45.72,153.871,U4,,,,,"/>
-<approved hash="113,2,147.32,94.7396,S1,,,,,"/>
+<approved hash="113,2,160.02,94.7396,S1,,,,,"/>
+<approved hash="113,2,63.7371,143.736,J6,,,,,"/>
+<approved hash="113,2,63.7371,141.196,J7,,,,,"/>
+<approved hash="113,2,63.7371,138.656,J8,,,,,"/>
 </errors>
 </schematic>
 </drawing>
