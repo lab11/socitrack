@@ -6856,6 +6856,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="J7" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X1" device="" package3d_urn="urn:adsk.eagle:package:22485/2"/>
 <part name="J8" library="pinhead" library_urn="urn:adsk.eagle:library:325" deviceset="PINHD-1X1" device="" package3d_urn="urn:adsk.eagle:package:22485/2"/>
 <part name="A4" library="antennas" library_urn="urn:adsk.eagle:library:21218934" deviceset="AMCA72-2R47G-S1F-T" device="" package3d_urn="urn:adsk.eagle:package:21218938/2"/>
+<part name="R26" library="passives" deviceset="RESISTOR" device="0402_RES" value="4.7">
+<attribute name="DIGIKEY" value="RMCF0402FT4R70CT-ND"/>
+<attribute name="MPN" value="RMCF0402FT4R70"/>
+</part>
 </parts>
 <sheets>
 <sheet>
@@ -6878,7 +6882,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <text x="198.12" y="160.02" size="1.778" layer="98">x2 (top/bottom)</text>
 <text x="205.74" y="68.58" size="3.81" layer="98">Buzzer</text>
 <wire x1="201.93" y1="22.86" x2="201.93" y2="73.66" width="0.1524" layer="98" style="longdash"/>
-<wire x1="25.4" y1="91.44" x2="45.72" y2="104.14" width="0.1524" layer="98" style="dashdot"/>
+<wire x1="31.242" y1="92.456" x2="45.72" y2="104.14" width="0.1524" layer="98" style="dashdot"/>
 <text x="143.256" y="27.178" size="1.016" layer="98" align="top-left">Matching network from datasheet.
 Note v1.1 datasheet updated values.</text>
 </plain>
@@ -7141,18 +7145,18 @@ Note v1.1 datasheet updated values.</text>
 <attribute name="NAME" x="207.01" y="59.69" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="209.55" y="59.69" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="C91" gate="G$1" x="22.86" y="83.82" smashed="yes">
-<attribute name="DIGIKEY" x="22.86" y="83.82" size="1.27" layer="96" align="bottom-center" display="off"/>
-<attribute name="NAME" x="21.59" y="82.55" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="24.13" y="82.55" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C91" gate="G$1" x="30.48" y="81.28" smashed="yes">
+<attribute name="DIGIKEY" x="30.48" y="81.28" size="1.27" layer="96" align="bottom-center" display="off"/>
+<attribute name="NAME" x="29.21" y="80.01" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="31.75" y="80.01" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="C92" gate="G$1" x="15.24" y="83.82" smashed="yes">
-<attribute name="DIGIKEY" x="15.24" y="83.82" size="1.27" layer="96" align="bottom-center" display="off"/>
-<attribute name="NAME" x="13.97" y="82.55" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
-<attribute name="VALUE" x="16.51" y="82.55" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<instance part="C92" gate="G$1" x="22.86" y="81.28" smashed="yes">
+<attribute name="DIGIKEY" x="22.86" y="81.28" size="1.27" layer="96" align="bottom-center" display="off"/>
+<attribute name="NAME" x="21.59" y="80.01" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
+<attribute name="VALUE" x="24.13" y="80.01" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="GND8" gate="1" x="15.24" y="71.12" smashed="yes">
-<attribute name="VALUE" x="12.7" y="68.58" size="1.778" layer="96"/>
+<instance part="GND8" gate="1" x="22.86" y="68.58" smashed="yes">
+<attribute name="VALUE" x="20.32" y="66.04" size="1.778" layer="96"/>
 </instance>
 <instance part="LS1" gate="G$1" x="246.38" y="58.42" smashed="yes">
 <attribute name="NAME" x="245.11" y="64.77" size="1.778" layer="95"/>
@@ -7170,6 +7174,12 @@ Note v1.1 datasheet updated values.</text>
 <instance part="A4" gate="G$1" x="185.42" y="48.26" smashed="yes">
 <attribute name="NAME" x="181.61" y="54.102" size="1.016" layer="95" font="vector" ratio="12"/>
 <attribute name="VALUE" x="183.896" y="54.102" size="1.016" layer="96" font="vector" ratio="12"/>
+</instance>
+<instance part="R26" gate="G$1" x="12.7" y="86.36" smashed="yes">
+<attribute name="NAME" x="8.89" y="87.8586" size="1.778" layer="95"/>
+<attribute name="VALUE" x="8.89" y="83.058" size="1.778" layer="96"/>
+<attribute name="DIGIKEY" x="12.7" y="86.36" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="12.7" y="86.36" size="1.778" layer="96" display="off"/>
 </instance>
 </instances>
 <busses>
@@ -7319,12 +7329,12 @@ Note v1.1 datasheet updated values.</text>
 <segment>
 <pinref part="C92" gate="G$1" pin="2"/>
 <pinref part="GND8" gate="1" pin="GND"/>
-<wire x1="15.24" y1="78.74" x2="15.24" y2="76.2" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="76.2" x2="22.86" y2="73.66" width="0.1524" layer="91"/>
 <pinref part="C91" gate="G$1" pin="2"/>
-<wire x1="15.24" y1="76.2" x2="15.24" y2="73.66" width="0.1524" layer="91"/>
-<wire x1="22.86" y1="78.74" x2="22.86" y2="76.2" width="0.1524" layer="91"/>
-<wire x1="22.86" y1="76.2" x2="15.24" y2="76.2" width="0.1524" layer="91"/>
-<junction x="15.24" y="76.2"/>
+<wire x1="22.86" y1="73.66" x2="22.86" y2="71.12" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="76.2" x2="30.48" y2="73.66" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="73.66" x2="22.86" y2="73.66" width="0.1524" layer="91"/>
+<junction x="22.86" y="73.66"/>
 </segment>
 </net>
 <net name="+3V3" class="0">
@@ -7932,22 +7942,16 @@ Note v1.1 datasheet updated values.</text>
 </segment>
 <segment>
 <pinref part="C91" gate="G$1" pin="1"/>
-<wire x1="22.86" y1="86.36" x2="22.86" y2="91.44" width="0.1524" layer="91"/>
-<wire x1="22.86" y1="91.44" x2="20.32" y2="91.44" width="0.1524" layer="91"/>
-<label x="20.32" y="91.44" size="1.27" layer="95" rot="R180" xref="yes"/>
+<wire x1="30.48" y1="83.82" x2="30.48" y2="91.44" width="0.1524" layer="91"/>
+<wire x1="30.48" y1="91.44" x2="27.94" y2="91.44" width="0.1524" layer="91"/>
+<label x="27.94" y="91.44" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="VUSB" class="0">
 <segment>
-<pinref part="U7" gate="G$1" pin="VBUS"/>
-<wire x1="58.42" y1="104.14" x2="60.96" y2="104.14" width="0.1524" layer="91"/>
-<label x="58.42" y="104.14" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-<segment>
-<pinref part="C92" gate="G$1" pin="1"/>
-<wire x1="15.24" y1="86.36" x2="15.24" y2="88.9" width="0.1524" layer="91"/>
-<wire x1="15.24" y1="88.9" x2="12.7" y2="88.9" width="0.1524" layer="91"/>
-<label x="12.7" y="88.9" size="1.27" layer="95" rot="R180" xref="yes"/>
+<wire x1="7.62" y1="86.36" x2="5.08" y2="86.36" width="0.1524" layer="91"/>
+<label x="5.08" y="86.36" size="1.27" layer="95" rot="R90" xref="yes"/>
+<pinref part="R26" gate="G$1" pin="1"/>
 </segment>
 </net>
 <net name="N$2" class="0">
@@ -7960,6 +7964,20 @@ Note v1.1 datasheet updated values.</text>
 <wire x1="243.84" y1="50.8" x2="238.76" y2="50.8" width="0.1524" layer="91"/>
 <wire x1="238.76" y1="50.8" x2="238.76" y2="55.88" width="0.1524" layer="91"/>
 <junction x="243.84" y="50.8"/>
+</segment>
+</net>
+<net name="VUSB_NRF" class="0">
+<segment>
+<pinref part="R26" gate="G$1" pin="2"/>
+<pinref part="C92" gate="G$1" pin="1"/>
+<wire x1="15.24" y1="86.36" x2="22.86" y2="86.36" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="86.36" x2="22.86" y2="83.82" width="0.1524" layer="91"/>
+<label x="15.494" y="86.614" size="1.27" layer="95"/>
+</segment>
+<segment>
+<pinref part="U7" gate="G$1" pin="VBUS"/>
+<wire x1="58.42" y1="104.14" x2="60.96" y2="104.14" width="0.1524" layer="91"/>
+<label x="58.42" y="104.14" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
