@@ -5217,7 +5217,7 @@ Temperature-controller resistor.</description>
 </library>
 <library name="ac" urn="urn:adsk.eagle:library:20878999">
 <packages>
-<package name="WR222230-26M8-G" urn="urn:adsk.eagle:footprint:20906929/1" library_version="3">
+<package name="WR222230-26M8-G" urn="urn:adsk.eagle:footprint:20906929/2" library_version="4">
 <pad name="P$1" x="0" y="0.762" drill="0.6"/>
 <pad name="P$2" x="0" y="-0.762" drill="0.6"/>
 <wire x1="-1.27" y1="0.635" x2="0" y2="1.905" width="0.127" layer="21" curve="-90"/>
@@ -5226,11 +5226,18 @@ Temperature-controller resistor.</description>
 <wire x1="1.27" y1="-0.635" x2="0" y2="-1.905" width="0.127" layer="21" curve="-90"/>
 <wire x1="0" y1="-1.905" x2="-1.27" y2="-0.635" width="0.127" layer="21" curve="-90"/>
 <wire x1="-1.27" y1="-0.635" x2="-1.27" y2="0.635" width="0.127" layer="21"/>
-<text x="-1.651" y="0" size="0.8128" layer="21" font="vector" ratio="12" rot="R90" align="bottom-center">&gt;NAME</text>
+<wire x1="-1.27" y1="0.635" x2="0" y2="1.905" width="0.127" layer="22" curve="-90"/>
+<wire x1="0" y1="1.905" x2="1.27" y2="0.635" width="0.127" layer="22" curve="-90"/>
+<wire x1="1.27" y1="0.635" x2="1.27" y2="-0.635" width="0.127" layer="22"/>
+<wire x1="1.27" y1="-0.635" x2="0" y2="-1.905" width="0.127" layer="22" curve="-90"/>
+<wire x1="0" y1="-1.905" x2="-1.27" y2="-0.635" width="0.127" layer="22" curve="-90"/>
+<wire x1="-1.27" y1="-0.635" x2="-1.27" y2="0.635" width="0.127" layer="22"/>
+<text x="-1.651" y="0" size="0.8128" layer="25" font="vector" ratio="12" rot="R90" align="bottom-center">&gt;NAME</text>
+<text x="-1.651" y="0" size="0.8128" layer="26" font="vector" ratio="12" rot="MR270" align="bottom-center">&gt;NAME</text>
 </package>
 </packages>
 <packages3d>
-<package3d name="WR222230-26M8-G" urn="urn:adsk.eagle:package:20906931/2" type="model" library_version="3">
+<package3d name="WR222230-26M8-G" urn="urn:adsk.eagle:package:20906931/3" type="model" library_version="4">
 <packageinstances>
 <packageinstance name="WR222230-26M8-G"/>
 </packageinstances>
@@ -5265,7 +5272,7 @@ Temperature-controller resistor.</description>
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="WR222230-26M8-G" urn="urn:adsk.eagle:component:20906932/2" prefix="L" library_version="3">
+<deviceset name="WR222230-26M8-G" urn="urn:adsk.eagle:component:20906932/3" prefix="L" library_version="4">
 <description>Small Rx Coil for Wireless Power Transfer.
 
 TDK WR222230-26M8-G.
@@ -5281,7 +5288,7 @@ TDK WR222230-26M8-G.
 <connect gate="G$1" pin="2" pad="P$2"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20906931/2"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20906931/3"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -6702,7 +6709,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MANUFACTURER" value="Murata"/>
 <attribute name="MFN" value="GRM1555C1H471JA01J"/>
 </part>
-<part name="L4" library="ac" library_urn="urn:adsk.eagle:library:20878999" deviceset="WR222230-26M8-G" device="" package3d_urn="urn:adsk.eagle:package:20906931/2"/>
+<part name="L4" library="ac" library_urn="urn:adsk.eagle:library:20878999" deviceset="WR222230-26M8-G" device="" package3d_urn="urn:adsk.eagle:package:20906931/3"/>
 <part name="R2" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="5.1k">
 <attribute name="DIGIKEY" value="RMCF0402FT5K10CT-ND"/>
 <attribute name="MPN" value="RMCF0402FT5K10"/>
