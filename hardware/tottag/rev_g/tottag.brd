@@ -7724,11 +7724,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="-14.0208" y1="2.9464" x2="-14.0208" y2="5.2832" width="0.2032" layer="16"/>
 <wire x1="-14.0208" y1="5.2832" x2="-17.0942" y2="8.3566" width="0.2032" layer="16"/>
 <wire x1="-15.3416" y1="-3.1496" x2="-12.9032" y2="-0.7112" width="0.2032" layer="16"/>
-<wire x1="-11.0649375" y1="22.1488" x2="-7.59586875" y2="22.1488" width="0.2032" layer="16"/>
 <contactref element="C76" pad="1"/>
-<wire x1="-6.9088" y1="22.83586875" x2="-6.9088" y2="23.2511625" width="0.2032" layer="16"/>
-<via x="-6.9088" y="23.2511625" extent="1-16" drill="0.2032"/>
-<wire x1="-7.59586875" y1="22.1488" x2="-6.9088" y2="22.83586875" width="0.2032" layer="16"/>
 <contactref element="J6" pad="1"/>
 <wire x1="-25.0444" y1="8.9916" x2="-25.1968" y2="8.8392" width="0.8128" layer="15"/>
 <wire x1="-25.0444" y1="13.1318" x2="-25.0444" y2="8.9916" width="0.8128" layer="15"/>
@@ -7737,8 +7733,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="-24.7142" y1="8.3566" x2="-25.1968" y2="8.8392" width="0.2032" layer="16"/>
 <wire x1="-17.0942" y1="8.3566" x2="-24.7142" y2="8.3566" width="0.2032" layer="16"/>
 <contactref element="R24" pad="2"/>
-<wire x1="-6.9596" y1="22.58186875" x2="-6.9596" y2="23.2003625" width="0.2032" layer="1"/>
-<wire x1="-6.9596" y1="23.2003625" x2="-6.9088" y2="23.2511625" width="0.2032" layer="1"/>
 <polygon width="0.0508" layer="1" thermals="no">
 <vertex x="-21.0312" y="15.748"/>
 <vertex x="-23.1648" y="15.748"/>
@@ -7786,6 +7780,8 @@ Quickturn PCB 4 Layer .DRU</description>
 <vertex x="-22.0472" y="21.336"/>
 </polygon>
 <via x="-11.0649375" y="22.1488" extent="1-16" drill="0.2032"/>
+<wire x1="-11.0649375" y1="22.1488" x2="-7.39266875" y2="22.1488" width="0.2032" layer="1"/>
+<wire x1="-7.39266875" y1="22.1488" x2="-6.9596" y2="22.58186875" width="0.2032" layer="1"/>
 </signal>
 <signal name="BATIN">
 <contactref element="C28" pad="2"/>
@@ -11038,8 +11034,8 @@ Quickturn PCB 4 Layer .DRU</description>
 <approved hash="6,1,2b10c2f6fc2fcecc"/>
 <approved hash="19,1,743125a58b9fb6f8"/>
 <approved hash="19,1,8519383a86708c95"/>
-<approved hash="7,39,148a67f83a7a6d48"/>
 <approved hash="19,1,63a76294fdeafcd9"/>
+<approved hash="7,39,77fa9be18ad0428b"/>
 </errors>
 </board>
 </drawing>
