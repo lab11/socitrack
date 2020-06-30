@@ -7647,6 +7647,30 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="10.97333125" y="1.72666875" extent="1-16" drill="0.2032"/>
 <wire x1="10.97333125" y1="1.72666875" x2="12.24226875" y2="1.72666875" width="0.3048" layer="1"/>
 <wire x1="12.24226875" y1="1.72666875" x2="12.3444" y2="1.8288" width="0.3048" layer="1"/>
+<polygon width="0.0254" layer="16" pour="cutout">
+<vertex x="0.8128" y="-4.8768"/>
+<vertex x="0.8128" y="-5.08"/>
+<vertex x="2.032" y="-5.08"/>
+<vertex x="2.032" y="-4.8768"/>
+</polygon>
+<polygon width="0.0254" layer="16" pour="cutout">
+<vertex x="0.8128" y="-3.8608"/>
+<vertex x="0.8128" y="-4.064"/>
+<vertex x="2.032" y="-4.064"/>
+<vertex x="2.032" y="-3.8608"/>
+</polygon>
+<polygon width="0.0254" layer="16" pour="cutout">
+<vertex x="-24.1808" y="16.5608"/>
+<vertex x="-23.9776" y="16.5608"/>
+<vertex x="-23.9776" y="17.78"/>
+<vertex x="-24.1808" y="17.78"/>
+</polygon>
+<polygon width="0.0254" layer="16" pour="cutout">
+<vertex x="-25.1968" y="16.5608"/>
+<vertex x="-24.9936" y="16.5608"/>
+<vertex x="-24.9936" y="17.78"/>
+<vertex x="-25.1968" y="17.78"/>
+</polygon>
 </signal>
 <signal name="VUSB">
 <contactref element="J1" pad="A4/B9"/>
@@ -10754,7 +10778,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="3.4544" y1="-3.7592" x2="3.1496" y2="-4.064" width="0.2032" layer="16"/>
 <via x="2.3622" y="-4.064" extent="1-16" drill="0.2032"/>
 <wire x1="3.1496" y1="-4.064" x2="2.3622" y2="-4.064" width="0.2032" layer="16"/>
-<wire x1="1.4224" y1="-4.4704" x2="1.9558" y2="-4.4704" width="0.2032" layer="16"/>
 <via x="15.589" y="17.5954" extent="1-16" drill="0.2032"/>
 <wire x1="15.589" y1="17.5954" x2="15.589" y2="17.7226" width="0.2032" layer="16"/>
 <wire x1="15.9512" y1="18.0848" x2="16.4592" y2="18.0848" width="0.2032" layer="16"/>
@@ -10778,9 +10801,8 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="0.87503125" y1="-4.572" x2="0.87503125" y2="-4.30656875" width="0.2032" layer="1"/>
 <wire x1="0.87503125" y1="-4.30656875" x2="1.1176" y2="-4.064" width="0.2032" layer="1"/>
 <wire x1="1.1176" y1="-4.064" x2="2.3622" y2="-4.064" width="0.2032" layer="1"/>
-<wire x1="1.4224" y1="-4.4704" x2="1.9304" y2="-4.4704" width="0.2032" layer="16"/>
-<wire x1="2.3368" y1="-4.064" x2="1.9304" y2="-4.4704" width="0.2032" layer="16"/>
-<wire x1="2.3368" y1="-4.064" x2="2.3622" y2="-4.064" width="0.2032" layer="16"/>
+<wire x1="1.4224" y1="-4.4704" x2="1.9558" y2="-4.4704" width="0.2032" layer="16"/>
+<wire x1="1.9558" y1="-4.4704" x2="2.3622" y2="-4.064" width="0.2032" layer="16"/>
 </signal>
 <signal name="N$67">
 <contactref element="R24" pad="2"/>
