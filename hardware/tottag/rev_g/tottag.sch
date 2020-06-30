@@ -6588,7 +6588,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="U1" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="DW1000" device="" package3d_urn="urn:adsk.eagle:package:20878825/2"/>
 <part name="R3" library="passives" deviceset="RESISTOR" device="0402_RES" value="270"/>
 <part name="R17" library="passives" deviceset="RESISTOR" device="0402_RES" value="16k"/>
-<part name="R15" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k 1%"/>
+<part name="R15" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k"/>
 <part name="C23" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF"/>
 <part name="C17" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="27pF"/>
 <part name="C3" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1.2pF"/>
@@ -9595,6 +9595,7 @@ for (DEEP)SLEEP</text>
 use B, X5R, and X7R grades in
 temperature characteristics</text>
 <text x="38.1" y="2.54" size="2.032" layer="98" rot="R180" align="center">2x Programming header (top/bot)</text>
+<text x="151.13" y="87.63" size="1.27" layer="98" rot="R90">1% tol</text>
 </plain>
 <instances>
 <instance part="FRAME3" gate="G$1" x="0" y="0" smashed="yes"/>

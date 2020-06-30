@@ -5910,7 +5910,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="-14.6812" y="12.6746" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 <attribute name="VALUE" x="-14.732" y="13.7922" size="0.508" layer="27" font="vector" ratio="18" rot="R180" align="bottom-center"/>
 </element>
-<element name="R15" library="passives" package="0402_RES" value="11k 1%" x="-15.3162" y="13.9192" smashed="yes" rot="R90">
+<element name="R15" library="passives" package="0402_RES" value="11k" x="-15.3162" y="13.9192" smashed="yes" rot="R90">
 <attribute name="NAME" x="-15.3416" y="14.6558" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 <attribute name="VALUE" x="-13.9192" y="13.9192" size="0.508" layer="27" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 </element>
