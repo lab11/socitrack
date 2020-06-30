@@ -7306,7 +7306,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <vertex x="7.2136" y="-1.6256"/>
 <vertex x="7.112" y="-1.7272"/>
 </polygon>
-<wire x1="10.3632" y1="1.95453125" x2="10.44066875" y2="1.95453125" width="0.254" layer="1"/>
 <via x="12.3444" y="1.8288" extent="1-16" drill="0.2032"/>
 <wire x1="12.9944" y1="2.5654" x2="12.9944" y2="2.4788" width="0.254" layer="1"/>
 <wire x1="12.9944" y1="2.4788" x2="12.3444" y2="1.8288" width="0.254" layer="1"/>
@@ -10779,7 +10778,9 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="0.87503125" y1="-4.572" x2="0.87503125" y2="-4.30656875" width="0.2032" layer="1"/>
 <wire x1="0.87503125" y1="-4.30656875" x2="1.1176" y2="-4.064" width="0.2032" layer="1"/>
 <wire x1="1.1176" y1="-4.064" x2="2.3622" y2="-4.064" width="0.2032" layer="1"/>
-<wire x1="0.87503125" y1="-4.572" x2="1.4224" y2="-4.4704" width="0" layer="19" extent="1-16"/>
+<wire x1="1.4224" y1="-4.4704" x2="1.9304" y2="-4.4704" width="0.2032" layer="16"/>
+<wire x1="2.3368" y1="-4.064" x2="1.9304" y2="-4.4704" width="0.2032" layer="16"/>
+<wire x1="2.3368" y1="-4.064" x2="2.3622" y2="-4.064" width="0.2032" layer="16"/>
 </signal>
 <signal name="N$67">
 <contactref element="R24" pad="2"/>
@@ -11045,7 +11046,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <approved hash="19,1,743125a58b9fb6f8"/>
 <approved hash="19,1,8519383a86708c95"/>
 <approved hash="19,1,63a76294fdeafcd9"/>
-<approved hash="7,39,77fa9be18ad0428b"/>
+<approved hash="7,39,148a67f83a7a6d48"/>
 </errors>
 </board>
 </drawing>

@@ -11221,9 +11221,9 @@ Furthermore, try to keep them as short and straight as possible</text>
 <approved hash="106,3,208.28,160.02,DW_SYNC,,,,,"/>
 <approved hash="113,2,243.84,107.95,B1,,,,,"/>
 <approved hash="113,2,160.02,94.7396,S1,,,,,"/>
-<approved hash="113,2,63.7371,143.736,J6,,,,,"/>
-<approved hash="113,2,63.7371,141.196,J7,,,,,"/>
-<approved hash="113,2,63.7371,138.656,J8,,,,,"/>
+<approved hash="113,2,65.3937,142.24,J6,,,,,"/>
+<approved hash="113,2,65.3937,139.7,J7,,,,,"/>
+<approved hash="113,2,65.3937,137.16,J8,,,,,"/>
 </errors>
 </schematic>
 </drawing>
