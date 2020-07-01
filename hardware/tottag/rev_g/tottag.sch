@@ -6879,6 +6879,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="RMCF0402FT4R70CT-ND"/>
 <attribute name="MPN" value="RMCF0402FT4R70"/>
 </part>
+<part name="TP16" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP17" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP18" library="headers" deviceset="TEST-POINT" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -6896,7 +6899,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="134.62" y1="129.54" x2="134.62" y2="74.93" width="0.1524" layer="98" style="longdash"/>
 <wire x1="134.62" y1="74.93" x2="254" y2="74.93" width="0.1524" layer="98" style="longdash"/>
 <text x="180.34" y="160.02" size="3.81" layer="98">J-LINK</text>
-<text x="180.34" y="167.64" size="3.81" layer="98">LED</text>
+<text x="178.816" y="166.37" size="3.81" layer="98">LED</text>
 <text x="190.5" y="124.968" size="1.778" layer="98">Pull-up nCS to prevent float</text>
 <text x="198.12" y="160.02" size="1.778" layer="98">x2 (top/bottom)</text>
 <text x="205.74" y="68.58" size="3.81" layer="98">Buzzer</text>
@@ -6936,12 +6939,12 @@ Note v1.1 datasheet updated values.</text>
 <attribute name="NAME" x="107.95" y="34.29" size="1.778" layer="95"/>
 <attribute name="TP_SIGNAL_NAME" x="110.49" y="31.75" size="1.778" layer="97"/>
 </instance>
-<instance part="D2" gate="G$1" x="203.2" y="177.8" smashed="yes">
-<attribute name="NAME" x="200.406" y="183.134" size="1.016" layer="95" ratio="12" align="bottom-center"/>
-<attribute name="VALUE" x="200.66" y="171.45" size="1.016" layer="96" ratio="12" align="bottom-center"/>
+<instance part="D2" gate="G$1" x="195.58" y="177.8" smashed="yes">
+<attribute name="NAME" x="192.786" y="183.134" size="1.016" layer="95" ratio="12" align="bottom-center"/>
+<attribute name="VALUE" x="193.04" y="171.45" size="1.016" layer="96" ratio="12" align="bottom-center"/>
 </instance>
-<instance part="P+11" gate="P1" x="187.96" y="185.42" smashed="yes">
-<attribute name="VALUE" x="185.42" y="180.34" size="1.778" layer="96" rot="R90"/>
+<instance part="P+11" gate="P1" x="182.88" y="187.96" smashed="yes">
+<attribute name="VALUE" x="180.34" y="182.88" size="1.778" layer="96" rot="R90"/>
 </instance>
 <instance part="R7" gate="G$1" x="226.06" y="185.42" smashed="yes">
 <attribute name="NAME" x="222.25" y="186.9186" size="1.778" layer="95"/>
@@ -7200,6 +7203,15 @@ Note v1.1 datasheet updated values.</text>
 <attribute name="DIGIKEY" x="12.7" y="86.36" size="1.778" layer="96" display="off"/>
 <attribute name="MPN" x="12.7" y="86.36" size="1.778" layer="96" display="off"/>
 </instance>
+<instance part="TP16" gate="G$1" x="208.28" y="170.18" smashed="yes" rot="R90">
+<attribute name="NAME" x="208.28" y="169.545" size="1.016" layer="95" ratio="12" rot="R90" align="center-right"/>
+</instance>
+<instance part="TP17" gate="G$1" x="210.82" y="170.18" smashed="yes" rot="R90">
+<attribute name="NAME" x="210.82" y="169.545" size="1.016" layer="95" ratio="12" rot="R90" align="center-right"/>
+</instance>
+<instance part="TP18" gate="G$1" x="213.36" y="170.18" smashed="yes" rot="R90">
+<attribute name="NAME" x="213.36" y="169.545" size="1.016" layer="95" ratio="12" rot="R90" align="center-right"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -7365,9 +7377,9 @@ Note v1.1 datasheet updated values.</text>
 </segment>
 <segment>
 <pinref part="D2" gate="G$1" pin="VDD"/>
-<wire x1="193.04" y1="177.8" x2="187.96" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="185.42" y1="177.8" x2="182.88" y2="177.8" width="0.1524" layer="91"/>
 <pinref part="P+11" gate="P1" pin="+3V3"/>
-<wire x1="187.96" y1="182.88" x2="187.96" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="182.88" y1="185.42" x2="182.88" y2="177.8" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="C68" gate="G$1" pin="1"/>
@@ -7513,26 +7525,38 @@ Note v1.1 datasheet updated values.</text>
 <net name="N$59" class="0">
 <segment>
 <pinref part="D2" gate="G$1" pin="R"/>
-<wire x1="213.36" y1="180.34" x2="215.9" y2="180.34" width="0.1524" layer="91"/>
-<wire x1="215.9" y1="180.34" x2="215.9" y2="185.42" width="0.1524" layer="91"/>
-<wire x1="215.9" y1="185.42" x2="220.98" y2="185.42" width="0.1524" layer="91"/>
+<wire x1="205.74" y1="180.34" x2="208.28" y2="180.34" width="0.1524" layer="91"/>
+<wire x1="208.28" y1="180.34" x2="218.44" y2="180.34" width="0.1524" layer="91"/>
+<wire x1="218.44" y1="180.34" x2="218.44" y2="185.42" width="0.1524" layer="91"/>
+<wire x1="218.44" y1="185.42" x2="220.98" y2="185.42" width="0.1524" layer="91"/>
 <pinref part="R7" gate="G$1" pin="1"/>
+<pinref part="TP16" gate="G$1" pin="TESTPOINT"/>
+<wire x1="208.28" y1="172.72" x2="208.28" y2="180.34" width="0.1524" layer="91"/>
+<junction x="208.28" y="180.34"/>
 </segment>
 </net>
 <net name="N$60" class="0">
 <segment>
 <pinref part="D2" gate="G$1" pin="G"/>
-<wire x1="213.36" y1="177.8" x2="220.98" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="205.74" y1="177.8" x2="210.82" y2="177.8" width="0.1524" layer="91"/>
 <pinref part="R8" gate="G$1" pin="1"/>
+<pinref part="TP17" gate="G$1" pin="TESTPOINT"/>
+<wire x1="210.82" y1="177.8" x2="220.98" y2="177.8" width="0.1524" layer="91"/>
+<wire x1="210.82" y1="172.72" x2="210.82" y2="177.8" width="0.1524" layer="91"/>
+<junction x="210.82" y="177.8"/>
 </segment>
 </net>
 <net name="N$61" class="0">
 <segment>
 <pinref part="D2" gate="G$1" pin="B"/>
-<wire x1="213.36" y1="175.26" x2="215.9" y2="175.26" width="0.1524" layer="91"/>
-<wire x1="215.9" y1="175.26" x2="215.9" y2="170.18" width="0.1524" layer="91"/>
-<wire x1="215.9" y1="170.18" x2="220.98" y2="170.18" width="0.1524" layer="91"/>
+<wire x1="205.74" y1="175.26" x2="213.36" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="213.36" y1="175.26" x2="218.44" y2="175.26" width="0.1524" layer="91"/>
+<wire x1="218.44" y1="175.26" x2="218.44" y2="170.18" width="0.1524" layer="91"/>
+<wire x1="218.44" y1="170.18" x2="220.98" y2="170.18" width="0.1524" layer="91"/>
 <pinref part="R9" gate="G$1" pin="1"/>
+<pinref part="TP18" gate="G$1" pin="TESTPOINT"/>
+<wire x1="213.36" y1="172.72" x2="213.36" y2="175.26" width="0.1524" layer="91"/>
+<junction x="213.36" y="175.26"/>
 </segment>
 </net>
 <net name="LED_NRF_RED" class="0">
