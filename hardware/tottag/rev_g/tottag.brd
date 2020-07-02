@@ -5584,6 +5584,8 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="VALUE" x="-8.3565875" y="24.256996875" size="0.508" layer="27" font="vector" ratio="18" rot="R270" align="bottom-center"/>
 </element>
 <element name="D1" library="SparkFun-LED" package="LED-0603" value="GREEN" x="-14.3764" y="-5.5372" smashed="yes">
+<attribute name="DIGIKEY" value="160-1446-1-ND" x="-14.3764" y="-5.5372" size="1.778" layer="27" display="off"/>
+<attribute name="MPN" value="LTST-C191KGKT" x="-14.3764" y="-5.5372" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="-12.4965125" y="-5.519046875" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="top-center"/>
 <attribute name="VALUE" x="-13.296896875" y="-6.553196875" size="0.508" layer="27" font="vector" ratio="18" rot="R90"/>
 </element>
@@ -5936,6 +5938,8 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="VALUE" x="-9.62" y="9.37" size="0.508" layer="27" font="vector" ratio="18"/>
 </element>
 <element name="R6" library="passives" package="0402_RES" value="270" x="-11.5824" y="8.509" smashed="yes" rot="R270">
+<attribute name="DIGIKEY" value="RMCF0402FT270RCT-ND" x="-11.5824" y="8.509" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MPN" value="RMCF0402FT270R" x="-11.5824" y="8.509" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="NAME" x="-11.8364" y="7.2898" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
 <attribute name="VALUE" x="-12.9794" y="8.509" size="0.508" layer="27" font="vector" ratio="18" rot="R270" align="bottom-center"/>
 </element>

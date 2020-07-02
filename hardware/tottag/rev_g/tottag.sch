@@ -6409,7 +6409,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY7" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="P+4" library="regulators" deviceset="+3V3" device=""/>
 <part name="GND5" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="D1" library="SparkFun-LED" deviceset="LED" device="0603" value="GREEN"/>
+<part name="D1" library="SparkFun-LED" deviceset="LED" device="0603" value="GREEN">
+<attribute name="DIGIKEY" value="160-1446-1-ND"/>
+<attribute name="MPN" value="LTST-C191KGKT"/>
+</part>
 <part name="SUPPLY8" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="TP2" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="TP1" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
@@ -6594,7 +6597,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="C56" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C57" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="U1" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="DW1000" device="" package3d_urn="urn:adsk.eagle:package:20878825/2"/>
-<part name="R6" library="passives" deviceset="RESISTOR" device="0402_RES" value="270"/>
+<part name="R6" library="passives" deviceset="RESISTOR" device="0402_RES" value="270">
+<attribute name="DIGIKEY" value="RMCF0402FT270RCT-ND"/>
+<attribute name="MPN" value="RMCF0402FT270R"/>
+</part>
 <part name="R27" library="passives" deviceset="RESISTOR" device="0402_RES" value="16k"/>
 <part name="R25" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k"/>
 <part name="C25" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF">
@@ -8304,6 +8310,8 @@ for layout reasons</text>
 <instance part="D1" gate="G$1" x="40.64" y="121.92" smashed="yes" rot="R90">
 <attribute name="NAME" x="40.132" y="121.031" size="1.778" layer="95" font="vector" rot="R180"/>
 <attribute name="VALUE" x="45.212" y="123.825" size="1.778" layer="96" font="vector" rot="R180" align="top-left"/>
+<attribute name="DIGIKEY" x="40.64" y="121.92" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="40.64" y="121.92" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="SUPPLY8" gate="1" x="43.18" y="129.54" smashed="yes">
 <attribute name="VALUE" x="40.64" y="127" size="1.778" layer="96"/>
@@ -9818,6 +9826,8 @@ temperature characteristics</text>
 <instance part="R6" gate="G$1" x="233.68" y="127" smashed="yes">
 <attribute name="NAME" x="229.87" y="128.4986" size="1.778" layer="95"/>
 <attribute name="VALUE" x="229.87" y="123.698" size="1.778" layer="96"/>
+<attribute name="DIGIKEY" x="233.68" y="127" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="233.68" y="127" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="R27" gate="G$1" x="233.68" y="144.78" smashed="yes">
 <attribute name="NAME" x="229.87" y="146.2786" size="1.778" layer="95"/>
