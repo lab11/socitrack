@@ -8158,7 +8158,7 @@ Monitoring</text>
 when Qi charging IC allows</text>
 <text x="38.1" y="180.34" size="1.778" layer="98" align="top-center">Physical I/O for Power</text>
 <text x="1.016" y="162.56" size="1.778" layer="98" rot="R90" align="top-center">USB Header</text>
-<text x="1.016" y="137.16" size="1.778" layer="98" rot="R90" align="top-center">Battery
+<text x="1.016" y="139.7" size="1.778" layer="98" rot="R90" align="top-center">Battery
 Header</text>
 <text x="1.016" y="121.92" size="1.778" layer="98" rot="R90" align="top-center">Charging
 LED</text>
@@ -8281,6 +8281,10 @@ downstream limit.</text>
 <text x="63.246" y="133.35" size="0.8128" layer="98" align="top-center">Just a three pin header
 Made of three 1-pins
 for layout reasons</text>
+<text x="13.462" y="143.002" size="0.8128" layer="98">"Positive Polarity" from manufacturer
+means that if looking "top-down", "through"
+the connector (metal contacts of the connector
+not visible), the wires from L to R are [-, NTC, +]</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -8758,11 +8762,12 @@ for layout reasons</text>
 <segment>
 <pinref part="SUPPLY8" gate="1" pin="GND"/>
 <wire x1="43.18" y1="132.08" x2="43.18" y2="137.16" width="0.1524" layer="91"/>
-<wire x1="43.18" y1="137.16" x2="17.78" y2="137.16" width="0.1524" layer="91"/>
-<pinref part="J5" gate="G$1" pin="3"/>
 <wire x1="63.5" y1="137.16" x2="43.18" y2="137.16" width="0.1524" layer="91"/>
-<junction x="43.18" y="137.16"/>
 <pinref part="J8" gate="G$1" pin="1"/>
+<pinref part="J5" gate="G$1" pin="1"/>
+<wire x1="17.78" y1="142.24" x2="43.18" y2="142.24" width="0.1524" layer="91"/>
+<wire x1="43.18" y1="142.24" x2="43.18" y2="137.16" width="0.1524" layer="91"/>
+<junction x="43.18" y="137.16"/>
 </segment>
 <segment>
 <pinref part="C76" gate="G$1" pin="2"/>
@@ -8977,9 +8982,9 @@ for layout reasons</text>
 </net>
 <net name="VBAT" class="0">
 <segment>
-<wire x1="17.78" y1="142.24" x2="20.32" y2="142.24" width="0.1524" layer="91"/>
-<pinref part="J5" gate="G$1" pin="1"/>
-<label x="20.32" y="142.24" size="1.27" layer="95" xref="yes"/>
+<label x="20.32" y="137.16" size="1.27" layer="95" xref="yes"/>
+<wire x1="20.32" y1="137.16" x2="17.78" y2="137.16" width="0.1524" layer="91"/>
+<pinref part="J5" gate="G$1" pin="3"/>
 </segment>
 <segment>
 <pinref part="S1" gate="G$1" pin="2"/>
