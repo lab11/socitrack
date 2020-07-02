@@ -212,7 +212,7 @@
 <wire x1="21.5646" y1="10.5156" x2="21.5646" y2="11.2776" width="0.127" layer="21"/>
 <text x="7.493" y="27.813" size="1.016" layer="21" font="vector" ratio="12" align="center">G</text>
 <text x="11.781" y="29.8002" size="0.635" layer="21" font="vector" ratio="15" align="center-left">Andreas Biri, Pat Pannuto</text>
-<text x="11.746" y="29.0256" size="0.508" layer="21" font="vector" ratio="18" align="center-left">2020-06-30</text>
+<text x="11.746" y="29.0256" size="0.508" layer="21" font="vector" ratio="18" align="center-left">2020-07-02</text>
 <polygon width="0.1524" layer="39">
 <vertex x="-14.732" y="5.207"/>
 <vertex x="-1.778" y="5.207"/>
@@ -7812,13 +7812,12 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="-7.18946875" y1="21.9456" x2="-6.9596" y2="21.71573125" width="0.2032" layer="1"/>
 <contactref element="J5" pad="3"/>
 <contactref element="J5" pad="3SUPP"/>
-<polygon width="0.0508" layer="15">
+<polygon width="0.0508" layer="15" rank="4">
 <vertex x="-34.3408" y="-0.1016"/>
-<vertex x="-34.3408" y="9.7536"/>
-<vertex x="-31.0896" y="9.7536"/>
-<vertex x="-25.8064" y="15.0368"/>
-<vertex x="-24.5872" y="15.0368"/>
-<vertex x="-24.5872" y="-0.1016"/>
+<vertex x="-34.3408" y="8.9408"/>
+<vertex x="-21.9456" y="21.336"/>
+<vertex x="-20.1168" y="21.336"/>
+<vertex x="-20.1168" y="-0.1016"/>
 </polygon>
 <wire x1="-32.3102" y1="7.89" x2="-32.3102" y2="7.3138" width="0.3048" layer="16"/>
 <wire x1="-32.3102" y1="7.3138" x2="-32.512" y2="7.112" width="0.3048" layer="16"/>
@@ -8846,10 +8845,9 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="-6.62" y1="10.21010625" x2="-6.62" y2="10.2776" width="0.2032" layer="16"/>
 <wire x1="-6.62" y1="10.2776" x2="-8.0264" y2="11.684" width="0.2032" layer="16"/>
 <wire x1="-8.0264" y1="11.684" x2="-9.7536" y2="11.684" width="0.2032" layer="16"/>
-<wire x1="-9.7536" y1="11.684" x2="-10.5664" y2="10.8712" width="0.2032" layer="16"/>
-<via x="-10.5664" y="10.8712" extent="1-16" drill="0.2032"/>
+<wire x1="-9.7536" y1="11.684" x2="-10.7696" y2="10.668" width="0.2032" layer="16"/>
+<via x="-10.7696" y="10.668" extent="1-16" drill="0.2032"/>
 <via x="-22.1488" y="11.3792" extent="1-16" drill="0.2032"/>
-<wire x1="-10.5664" y1="10.8712" x2="-10.7696" y2="10.668" width="0.2032" layer="15"/>
 <wire x1="-19.5072" y1="10.668" x2="-10.7696" y2="10.668" width="0.2032" layer="15"/>
 <wire x1="-21.3337" y1="11.0402" x2="-21.8098" y2="11.0402" width="0.2032" layer="1"/>
 <wire x1="-21.8098" y1="11.0402" x2="-22.1488" y2="11.3792" width="0.2032" layer="1"/>
@@ -9350,11 +9348,11 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="22.9616" y="10.1346" extent="1-16" drill="0.2032"/>
 <wire x1="22.9616" y1="10.1346" x2="22.9616" y2="10.8966" width="0.381" layer="1"/>
 <polygon width="0.1016" layer="15" rank="2">
-<vertex x="-17.8816" y="21.2344"/>
-<vertex x="-24.4856" y="14.6304"/>
-<vertex x="-24.4856" y="8.636"/>
-<vertex x="-11.0744" y="8.636"/>
-<vertex x="-11.0744" y="6.858"/>
+<vertex x="-20.0152" y="21.2344"/>
+<vertex x="-20.0152" y="14.5288"/>
+<vertex x="-23.6728" y="14.5288"/>
+<vertex x="-23.6728" y="8.636"/>
+<vertex x="-21.8948" y="6.858"/>
 <vertex x="-1.016" y="6.858"/>
 <vertex x="-1.016" y="7.7978"/>
 <vertex x="1.016" y="7.7978"/>
@@ -10294,7 +10292,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <vertex x="-25.908" y="22.4536"/>
 <vertex x="-28.1432" y="22.4536"/>
 </polygon>
-<polygon width="0.0508" layer="15" rank="4">
+<polygon width="0.0508" layer="15" rank="3">
 <vertex x="-28.1432" y="20.2184"/>
 <vertex x="-23.1648" y="20.2184"/>
 <vertex x="-21.7424" y="21.6408"/>
