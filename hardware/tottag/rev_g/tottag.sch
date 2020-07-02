@@ -6733,7 +6733,9 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="SUPPLY17" library="regulators" deviceset="GND" device=""/>
 <part name="+3V4" library="regulators" deviceset="+3V3" device=""/>
-<part name="S1" library="Wurth_Switch_WS-SLSU" library_urn="urn:adsk.eagle:library:18253886" deviceset="450404015514" device="" package3d_urn="urn:adsk.eagle:package:18253889/2"/>
+<part name="S1" library="Wurth_Switch_WS-SLSU" library_urn="urn:adsk.eagle:library:18253886" deviceset="450404015514" device="" package3d_urn="urn:adsk.eagle:package:18253889/2">
+<attribute name="DIGIKEY" value="732-13665-1-ND"/>
+</part>
 <part name="P+3" library="regulators" deviceset="+3V3" device=""/>
 <part name="J3" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="TC2030-JLINK" device="-NL-2SIDE" package3d_urn="urn:adsk.eagle:package:20800164/2"/>
 <part name="J4" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="TC2030-JLINK" device="-NL-2SIDE" package3d_urn="urn:adsk.eagle:package:20800164/2"/>
@@ -6881,7 +6883,10 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value="RC0402JR-0710KL"/>
 </part>
 <part name="SUPPLY37" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="RT1" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="THERMISTOR" device="0402" package3d_urn="urn:adsk.eagle:package:20904668/2" value="10k@25C"/>
+<part name="RT1" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="THERMISTOR" device="0402" package3d_urn="urn:adsk.eagle:package:20904668/2" value="10k@25C">
+<attribute name="DIGIKEY" value="490-18149-1-ND"/>
+<attribute name="MPN" value="NCU15XH103F60RC"/>
+</part>
 <part name="SUPPLY38" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="C65" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF">
 <attribute name="DIGIKEY" value="490-6328-1-ND"/>
@@ -8438,6 +8443,7 @@ for layout reasons</text>
 <instance part="S1" gate="G$1" x="160.02" y="93.98" smashed="yes">
 <attribute name="VALUE" x="157.61" y="88.86" size="1.27" layer="96"/>
 <attribute name="NAME" x="162.16" y="98.09" size="1.27" layer="95" align="bottom-center"/>
+<attribute name="DIGIKEY" x="160.02" y="93.98" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="J5" gate="G$1" x="12.7" y="139.7" smashed="yes">
 <attribute name="NAME" x="10.16" y="145.288" size="1.778" layer="95" align="bottom-center"/>
@@ -8687,6 +8693,8 @@ for layout reasons</text>
 <instance part="RT1" gate="B" x="106.68" y="132.08" smashed="yes" rot="R90">
 <attribute name="NAME" x="105.1814" y="128.27" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="109.982" y="124.46" size="1.778" layer="96" rot="R90"/>
+<attribute name="DIGIKEY" x="106.68" y="132.08" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="106.68" y="132.08" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="SUPPLY38" gate="1" x="78.74" y="119.38" smashed="yes">
 <attribute name="VALUE" x="76.2" y="116.84" size="1.778" layer="96"/>
