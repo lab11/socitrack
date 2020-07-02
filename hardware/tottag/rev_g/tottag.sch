@@ -6448,9 +6448,12 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R32" library="passives" deviceset="RESISTOR" device="0402_RES" value="100k"/>
 <part name="D2" library="leds" library_urn="urn:adsk.eagle:library:20822224" deviceset="SML-LX0404SIUPGUSB" device="" package3d_urn="urn:adsk.eagle:package:20822241/2"/>
 <part name="P+11" library="regulators" deviceset="+3V3" device=""/>
-<part name="R7" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
-<part name="R8" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
-<part name="R9" library="passives" deviceset="RESISTOR" device="0402_RES" value="470"/>
+<part name="R7" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k">
+<attribute name="DIGIKEY" value="RMCF0402FT1K00CT-ND"/>
+<attribute name="MPN" value="RMCF0402FT1K00"/>
+</part>
+<part name="R8" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
+<part name="R9" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="U7" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="NRF52840" device="" package3d_urn="urn:adsk.eagle:package:20878797/3"/>
 <part name="C68" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
 <attribute name="DIGIKEY" value=""/>
@@ -6987,6 +6990,8 @@ Note v1.1 datasheet updated values.</text>
 <instance part="R7" gate="G$1" x="226.06" y="185.42" smashed="yes">
 <attribute name="NAME" x="222.25" y="186.9186" size="1.778" layer="95"/>
 <attribute name="VALUE" x="222.25" y="182.118" size="1.778" layer="96"/>
+<attribute name="DIGIKEY" x="226.06" y="185.42" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="226.06" y="185.42" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="R8" gate="G$1" x="226.06" y="177.8" smashed="yes">
 <attribute name="NAME" x="222.25" y="179.2986" size="1.778" layer="95"/>

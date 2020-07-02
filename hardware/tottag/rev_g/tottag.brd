@@ -5674,15 +5674,17 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="NAME" x="29.3878" y="-0.3954" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 <attribute name="VALUE" x="31.1878" y="-1.143" size="0.508" layer="27" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 </element>
-<element name="R7" library="passives" package="0402_RES" value="470" x="22.8854" y="18.7452" smashed="yes" rot="R90">
+<element name="R7" library="passives" package="0402_RES" value="1k" x="22.8854" y="18.7452" smashed="yes" rot="R90">
+<attribute name="DIGIKEY" value="RMCF0402FT1K00CT-ND" x="22.8854" y="18.7452" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MPN" value="RMCF0402FT1K00" x="22.8854" y="18.7452" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="NAME" x="22.5806" y="18.7452" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="24.2824" y="18.7452" size="0.508" layer="27" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 </element>
-<element name="R8" library="passives" package="0402_RES" value="470" x="21.717" y="18.7452" smashed="yes" rot="R90">
+<element name="R8" library="passives" package="0402_RES" value="1k" x="21.717" y="18.7452" smashed="yes" rot="R90">
 <attribute name="NAME" x="21.4122" y="18.7452" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="23.114" y="18.7452" size="0.508" layer="27" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 </element>
-<element name="R9" library="passives" package="0402_RES" value="470" x="20.5486" y="18.7452" smashed="yes" rot="R90">
+<element name="R9" library="passives" package="0402_RES" value="1k" x="20.5486" y="18.7452" smashed="yes" rot="R90">
 <attribute name="NAME" x="20.2438" y="18.7452" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="21.9456" y="18.7452" size="0.508" layer="27" font="vector" ratio="18" rot="R90" align="bottom-center"/>
 </element>
