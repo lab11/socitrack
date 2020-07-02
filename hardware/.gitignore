@@ -31,3 +31,10 @@
 _autosave-*.kicad_pcb
 kicad.pretty
 $*.sch
+*.BSK
+*.BSP
+*.OLN
+*.SMB
+*.SMT
+*.TSK
+*.TSP
