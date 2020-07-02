@@ -3833,21 +3833,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <rectangle x1="-1.125" y1="-1.125" x2="-0.125" y2="-0.125" layer="31"/>
 <rectangle x1="-2.325" y1="-1.125" x2="-1.325" y2="-0.125" layer="31"/>
 </package>
-<package name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:footprint:20878573/1" library_version="1" library_locally_modified="yes">
-<smd name="A" x="0" y="-3.95" dx="1.1" dy="1.1" layer="1"/>
-<smd name="NC3" x="1.8" y="-3.95" dx="1.1" dy="1.1" layer="1"/>
-<smd name="NC4" x="-1.8" y="-3.95" dx="1.1" dy="1.1" layer="1"/>
-<smd name="NC2" x="1.8" y="3.95" dx="1.1" dy="1.1" layer="1"/>
-<smd name="NC1" x="0" y="3.95" dx="1.1" dy="1.1" layer="1"/>
-<smd name="NC0" x="-1.8" y="3.95" dx="1.1" dy="1.1" layer="1"/>
-<wire x1="-3" y1="4" x2="3" y2="4" width="0.127" layer="21"/>
-<wire x1="3" y1="4" x2="3" y2="-4" width="0.127" layer="21"/>
-<wire x1="3" y1="-4" x2="-3" y2="-4" width="0.127" layer="21"/>
-<wire x1="-3" y1="-4" x2="-3" y2="4" width="0.127" layer="21"/>
-<rectangle x1="-0.5" y1="-3" x2="0.5" y2="-2" layer="21"/>
-<circle x="-2" y="2.5" radius="0.5" width="0" layer="21"/>
-<text x="0" y="5" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-</package>
 <package name="DSQ0010A" urn="urn:adsk.eagle:footprint:20913203/3" library_version="12">
 <description>10-SON (DFN), 0.40 mm pitch, 2.00 X 2.00 X 0.80 mm body, 1.50 X 0.90 mm thermal pad
 &lt;p&gt;10-pin SON (DFN) package with 0.40 mm pitch with body size 2.00 X 2.00 X 0.80 mm and thermal pad size 1.50 X 0.90 mm&lt;/p&gt;</description>
@@ -4006,11 +3991,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <description>AQFN73 7x7mm</description>
 <packageinstances>
 <packageinstance name="AQFN73"/>
-</packageinstances>
-</package3d>
-<package3d name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:package:20878740/3" type="model" library_version="15">
-<packageinstances>
-<packageinstance name="TAIYO-YUDEN-AH086M"/>
 </packageinstances>
 </package3d>
 <package3d name="SON40P200X200X80-11T90X150N" urn="urn:adsk.eagle:package:20913188/3" type="model" library_version="12">
@@ -4243,17 +4223,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <text x="0" y="101.6" size="1.778" layer="95">&gt;NAME</text>
 <text x="30.48" y="101.6" size="1.778" layer="95">&gt;VALUE</text>
 <text x="27.94" y="-5.08" size="1.778" layer="97">* denotes standard drive/low frequency GPIO</text>
-</symbol>
-<symbol name="ANTENNA" urn="urn:adsk.eagle:symbol:20878375/1" library_version="1" library_locally_modified="yes">
-<description>Simple Antenna symbol</description>
-<wire x1="-3.81" y1="5.08" x2="0" y2="5.08" width="0.254" layer="94"/>
-<wire x1="0" y1="5.08" x2="3.81" y2="5.08" width="0.254" layer="94"/>
-<wire x1="3.81" y1="5.08" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="-3.81" y2="5.08" width="0.254" layer="94"/>
-<wire x1="0" y1="-2.54" x2="0" y2="5.08" width="0.254" layer="94"/>
-<pin name="ANTENNA" x="0" y="-5.08" visible="off" length="short" rot="R90"/>
-<text x="-3.81" y="5.842" size="1.016" layer="95" font="vector" ratio="12">&gt;NAME</text>
-<text x="-1.524" y="5.842" size="1.016" layer="96" font="vector" ratio="12">&gt;VALUE</text>
 </symbol>
 <symbol name="BQ24040" urn="urn:adsk.eagle:symbol:20913464/1" library_version="5" library_locally_modified="yes">
 <pin name="IN" x="-15.24" y="12.7" length="middle"/>
@@ -4573,27 +4542,6 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <attribute name="DIGIKEY" value="1490-1071-1-ND" constant="no"/>
 <attribute name="MANUFACTURER" value="NORIDIC SEMICONDUCTOR" constant="no"/>
 <attribute name="MPN" value="NRF52840" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-<deviceset name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:component:20878978/3" prefix="A" library_version="15">
-<description>UWB Antenna - 3.1-8GHz</description>
-<gates>
-<gate name="G$1" symbol="ANTENNA" x="0" y="2.54"/>
-</gates>
-<devices>
-<device name="" package="TAIYO-YUDEN-AH086M">
-<connects>
-<connect gate="G$1" pin="ANTENNA" pad="A"/>
-</connects>
-<package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20878740/3"/>
-</package3dinstances>
-<technologies>
-<technology name="">
-<attribute name="DIGIKEY" value="587-2204-1-ND" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6338,11 +6286,31 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </polygon>
 <text x="-1.524" y="0" size="0.8128" layer="21" font="vector" ratio="12" rot="R90" align="bottom-center">&gt;NAME</text>
 </package>
+<package name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:footprint:20878573/1" library_version="3">
+<smd name="A" x="0" y="-3.95" dx="1.1" dy="1.1" layer="1"/>
+<smd name="NC3" x="1.8" y="-3.95" dx="1.1" dy="1.1" layer="1"/>
+<smd name="NC4" x="-1.8" y="-3.95" dx="1.1" dy="1.1" layer="1"/>
+<smd name="NC2" x="1.8" y="3.95" dx="1.1" dy="1.1" layer="1"/>
+<smd name="NC1" x="0" y="3.95" dx="1.1" dy="1.1" layer="1"/>
+<smd name="NC0" x="-1.8" y="3.95" dx="1.1" dy="1.1" layer="1"/>
+<wire x1="-3" y1="4" x2="3" y2="4" width="0.127" layer="21"/>
+<wire x1="3" y1="4" x2="3" y2="-4" width="0.127" layer="21"/>
+<wire x1="3" y1="-4" x2="-3" y2="-4" width="0.127" layer="21"/>
+<wire x1="-3" y1="-4" x2="-3" y2="4" width="0.127" layer="21"/>
+<rectangle x1="-0.5" y1="-3" x2="0.5" y2="-2" layer="21"/>
+<circle x="-2" y="2.5" radius="0.5" width="0" layer="21"/>
+<text x="0" y="5" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+</package>
 </packages>
 <packages3d>
 <package3d name="AMCA72-2R470G-S1F-T" urn="urn:adsk.eagle:package:21218938/2" type="model" library_version="2">
 <packageinstances>
 <packageinstance name="AMCA72-2R470G-S1F-T"/>
+</packageinstances>
+</package3d>
+<package3d name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:package:20878740/3" type="model" library_version="3">
+<packageinstances>
+<packageinstance name="TAIYO-YUDEN-AH086M"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -6382,6 +6350,28 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DESCRIPTION" value="RF ANT 2.4GHZ CHIP SOLDER SMD" constant="no"/>
 <attribute name="DIGIKEY" value="535-14108-1-ND" constant="no"/>
 <attribute name="MPN" value="AMCA72-2R470G-S1F-T4" constant="no"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="TAIYO-YUDEN-AH086M" urn="urn:adsk.eagle:component:21218940/2" prefix="A" library_version="3">
+<description>UWB Antenna - 3.1-8GHz</description>
+<gates>
+<gate name="G$1" symbol="ANTENNA" x="0" y="2.54"/>
+</gates>
+<devices>
+<device name="" package="TAIYO-YUDEN-AH086M">
+<connects>
+<connect gate="G$1" pin="ANTENNA" pad="A"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20878740/3"/>
+</package3dinstances>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="587-2204-1-ND" constant="no"/>
+<attribute name="MPN" value="AH086M555003-T" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6488,12 +6478,12 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value="GRM1555C1H101JA01D "/>
 </part>
 <part name="C8" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
-<attribute name="DIGIKEY" value="490-6197-1-ND"/>
-<attribute name="MPN" value="GRM1555C1H120GA01D "/>
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
 </part>
 <part name="C9" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
-<attribute name="DIGIKEY" value="490-6197-1-ND"/>
-<attribute name="MPN" value="GRM1555C1H120GA01D "/>
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
 </part>
 <part name="C2" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.8pF">
 <attribute name="DIGIKEY" value="490-11253-1-ND"/>
@@ -6530,20 +6520,20 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </part>
 <part name="X1" library="crystals" deviceset="ABS05-32.768KHZ" device="-9-T" value="32.768kHz"/>
 <part name="C10" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
-<attribute name="DIGIKEY" value="490-6197-1-ND"/>
-<attribute name="MPN" value="GRM1555C1H120GA01D "/>
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
 </part>
 <part name="C11" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
-<attribute name="DIGIKEY" value="490-6197-1-ND"/>
-<attribute name="MPN" value="GRM1555C1H120GA01D "/>
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
 </part>
 <part name="GND10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="A3" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
-<part name="A2" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
-<part name="A1" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
+<part name="A3" library="antennas" library_urn="urn:adsk.eagle:library:21218934" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
+<part name="A2" library="antennas" library_urn="urn:adsk.eagle:library:21218934" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
+<part name="A1" library="antennas" library_urn="urn:adsk.eagle:library:21218934" deviceset="TAIYO-YUDEN-AH086M" device="" package3d_urn="urn:adsk.eagle:package:20878740/3"/>
 <part name="C24" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF">
-<attribute name="DIGIKEY" value="1276-6989-1-ND"/>
-<attribute name="MPN" value="CL05C821JB5NFNC"/>
+<attribute name="DIGIKEY" value="399-11129-2-ND"/>
+<attribute name="MPN" value="C0402C821J5GACTU"/>
 </part>
 <part name="TP13" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP14" library="headers" deviceset="TEST-POINT" device=""/>
@@ -6553,8 +6543,14 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="T1" library="rf" deviceset="HHM1595A1" device=""/>
 <part name="SUPPLY1" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY12" library="regulators" deviceset="GND" device=""/>
-<part name="C6" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF"/>
-<part name="C7" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF"/>
+<part name="C6" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF">
+<attribute name="DIGIKEY" value="399-8604-2-ND"/>
+<attribute name="MPN" value="CBR02C120F3GAC"/>
+</part>
+<part name="C7" library="passives" deviceset="CAPACITOR" device="0201_CAP" value="12pF">
+<attribute name="DIGIKEY" value="399-8604-2-ND"/>
+<attribute name="MPN" value="CBR02C120F3GAC"/>
+</part>
 <part name="SUPPLY13" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY15" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY18" library="regulators" deviceset="GND" device=""/>
@@ -6575,10 +6571,22 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="C50" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C51" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C52" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
-<part name="C4" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10pF"/>
-<part name="C5" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10pF"/>
-<part name="C20" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="330pF"/>
-<part name="C21" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="330pF"/>
+<part name="C4" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10pF">
+<attribute name="DIGIKEY" value="732-12054-1-ND"/>
+<attribute name="MPN" value="885012005074"/>
+</part>
+<part name="C5" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10pF">
+<attribute name="DIGIKEY" value="732-12054-1-ND"/>
+<attribute name="MPN" value="885012005074"/>
+</part>
+<part name="C20" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="330pF">
+<attribute name="DIGIKEY" value="311-3768-1-ND"/>
+<attribute name="MPN" value="CC0402JRX7R9BB331"/>
+</part>
+<part name="C21" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="330pF">
+<attribute name="DIGIKEY" value="311-3768-1-ND"/>
+<attribute name="MPN" value="CC0402JRX7R9BB331"/>
+</part>
 <part name="C27" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="10nF"/>
 <part name="C53" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C54" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
@@ -6589,20 +6597,44 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="R6" library="passives" deviceset="RESISTOR" device="0402_RES" value="270"/>
 <part name="R27" library="passives" deviceset="RESISTOR" device="0402_RES" value="16k"/>
 <part name="R25" library="passives" deviceset="RESISTOR" device="0402_RES" value="11k"/>
-<part name="C25" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF"/>
-<part name="C17" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="27pF"/>
-<part name="C3" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1.2pF"/>
-<part name="C16" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="18pF"/>
+<part name="C25" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="820pF">
+<attribute name="DIGIKEY" value="399-11129-2-ND"/>
+<attribute name="MPN" value="C0402C821J5GACTU"/>
+</part>
+<part name="C17" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="27pF">
+<attribute name="DIGIKEY" value="490-16380-1-ND"/>
+<attribute name="MPN" value="GJM1555C1H270FB01D"/>
+</part>
+<part name="C3" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1.2pF">
+<attribute name="DIGIKEY" value="490-3085-1-ND"/>
+<attribute name="MPN" value="GJM1555C1H1R2CB01D"/>
+</part>
+<part name="C16" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="18pF">
+<attribute name="DIGIKEY" value="399-8828-1-ND"/>
+<attribute name="MPN" value="CBR04C180F5GAC"/>
+</part>
 <part name="SUPPLY22" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY23" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY24" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY25" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY26" library="regulators" deviceset="GND" device=""/>
-<part name="C12" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF"/>
-<part name="C13" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF"/>
+<part name="C12" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
+</part>
+<part name="C13" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
+</part>
 <part name="+3V1" library="regulators" deviceset="+3V3" device=""/>
-<part name="C14" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF"/>
-<part name="C15" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF"/>
+<part name="C14" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
+</part>
+<part name="C15" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="12pF">
+<attribute name="DIGIKEY" value="399-8815-2-ND"/>
+<attribute name="MPN" value="CBR04C120F5GAC"/>
+</part>
 <part name="X4" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="FA-20H" device="" package3d_urn="urn:adsk.eagle:package:20878577/2" value="38.4MHz">
 <attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead"/>
 <attribute name="DIGIKEY" value="SER3631CT-ND"/>
@@ -6649,8 +6681,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="MOSI" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="+1V8" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 <part name="C92" library="passives" deviceset="CAPACITOR" device="0603_CAP" value="47uF">
-<attribute name="DIGIKEY" value=""/>
-<attribute name="MPN" value=""/>
+<attribute name="DIGIKEY" value="490-13247-1-ND"/>
+<attribute name="MPN" value="GRM188R60J476ME15D"/>
 </part>
 <part name="JP1" library="SparkFun-Jumpers" library_urn="urn:adsk.eagle:library:528" deviceset="JUMPER-SMT_2_NO" device="_SILK" package3d_urn="urn:adsk.eagle:package:39279/1"/>
 <part name="U11" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="AB1815-T3" device="" package3d_urn="urn:adsk.eagle:package:20878799/2"/>
@@ -6687,27 +6719,27 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="J5" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="MOLEX-PICO-SPOX-3" device="SIDE" package3d_urn="urn:adsk.eagle:package:20886543/3"/>
 <part name="C31" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="22nF">
 <attribute name="DIGIKEY" value="490-10699-2-ND"/>
-<attribute name="MFN" value="GRM155R71E223JA61D"/>
+<attribute name="MPN" value="GRM155R71E223JA61D"/>
 </part>
 <part name="C32" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="22nF">
 <attribute name="DIGIKEY" value="490-10699-2-ND"/>
-<attribute name="MFN" value="GRM155R71E223JA61D"/>
+<attribute name="MPN" value="GRM155R71E223JA61D"/>
 </part>
 <part name="C33" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="22nF">
 <attribute name="DIGIKEY" value="490-10699-2-ND"/>
-<attribute name="MFN" value="GRM155R71E223JA61D"/>
+<attribute name="MPN" value="GRM155R71E223JA61D"/>
 </part>
 <part name="C22" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="470pF">
 <attribute name="DESCRIPTION" value="CAP CER 470PF 50V C0G/NP0 0402"/>
 <attribute name="DIGIKEY" value="490-6242-1-ND"/>
 <attribute name="MANUFACTURER" value="Murata"/>
-<attribute name="MFN" value="GRM1555C1H471JA01J"/>
+<attribute name="MPN" value="GRM1555C1H471JA01J"/>
 </part>
 <part name="C23" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="470pF">
 <attribute name="DESCRIPTION" value="CAP CER 470PF 50V C0G/NP0 0402"/>
 <attribute name="DIGIKEY" value="490-6242-1-ND"/>
 <attribute name="MANUFACTURER" value="Murata"/>
-<attribute name="MFN" value="GRM1555C1H471JA01J"/>
+<attribute name="MPN" value="GRM1555C1H471JA01J"/>
 </part>
 <part name="L4" library="ac" library_urn="urn:adsk.eagle:library:20878999" deviceset="WR222230-26M8-G" device="" package3d_urn="urn:adsk.eagle:package:20906931/3"/>
 <part name="R18" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="5.1k">
@@ -6837,7 +6869,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="SUPPLY39" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R14" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
 <part name="R15" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
-<part name="Q4" library="fets" library_urn="urn:adsk.eagle:library:20879112" deviceset="CSD75207W15" device="" package3d_urn="urn:adsk.eagle:package:20879163/2"/>
+<part name="Q2" library="fets" library_urn="urn:adsk.eagle:library:20879112" deviceset="CSD75207W15" device="" package3d_urn="urn:adsk.eagle:package:20879163/2"/>
 <part name="GND6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="P+2" library="regulators" deviceset="+3V3" device=""/>
 <part name="C73" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="1uF">
@@ -7151,7 +7183,7 @@ Note v1.1 datasheet updated values.</text>
 <attribute name="NAME" x="205.74" y="152.654" size="1.778" layer="95" ratio="12"/>
 <attribute name="VALUE" x="205.74" y="134.874" size="1.778" layer="96" ratio="12"/>
 </instance>
-<instance part="Q4" gate="G$1" x="241.3" y="38.1" smashed="yes" rot="R180">
+<instance part="Q2" gate="G$1" x="241.3" y="38.1" smashed="yes" rot="R180">
 <attribute name="VALUE" x="249.682" y="30.48" size="1.778" layer="96" rot="MR90"/>
 <attribute name="NAME" x="233.68" y="48.26" size="1.778" layer="95" rot="MR180"/>
 </instance>
@@ -7349,10 +7381,10 @@ Note v1.1 datasheet updated values.</text>
 <wire x1="208.28" y1="55.88" x2="208.28" y2="27.94" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="27.94" x2="218.44" y2="27.94" width="0.1524" layer="91"/>
 <junction x="218.44" y="27.94"/>
-<pinref part="Q4" gate="G$1" pin="D1"/>
+<pinref part="Q2" gate="G$1" pin="D1"/>
 <wire x1="218.44" y1="27.94" x2="238.76" y2="27.94" width="0.1524" layer="91"/>
 <wire x1="238.76" y1="27.94" x2="238.76" y2="30.48" width="0.1524" layer="91"/>
-<pinref part="Q4" gate="G$1" pin="D2"/>
+<pinref part="Q2" gate="G$1" pin="D2"/>
 <wire x1="238.76" y1="27.94" x2="246.38" y2="27.94" width="0.1524" layer="91"/>
 <wire x1="246.38" y1="27.94" x2="246.38" y2="30.48" width="0.1524" layer="91"/>
 <junction x="238.76" y="27.94"/>
@@ -7941,10 +7973,10 @@ Note v1.1 datasheet updated values.</text>
 </net>
 <net name="BUZZER_GATE" class="0">
 <segment>
-<pinref part="Q4" gate="G$1" pin="G2"/>
+<pinref part="Q2" gate="G$1" pin="G2"/>
 <wire x1="231.14" y1="43.18" x2="228.6" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="228.6" y1="43.18" x2="228.6" y2="38.1" width="0.1524" layer="91"/>
-<pinref part="Q4" gate="G$1" pin="G1"/>
+<pinref part="Q2" gate="G$1" pin="G1"/>
 <wire x1="228.6" y1="38.1" x2="231.14" y2="38.1" width="0.1524" layer="91"/>
 <wire x1="228.6" y1="38.1" x2="226.06" y2="38.1" width="0.1524" layer="91"/>
 <junction x="228.6" y="38.1"/>
@@ -7992,7 +8024,7 @@ Note v1.1 datasheet updated values.</text>
 </net>
 <net name="N$2" class="0">
 <segment>
-<pinref part="Q4" gate="G$1" pin="S"/>
+<pinref part="Q2" gate="G$1" pin="S"/>
 <pinref part="LS1" gate="G$1" pin="N"/>
 <wire x1="243.84" y1="53.34" x2="243.84" y2="50.8" width="0.1524" layer="91"/>
 <pinref part="D4" gate="G$1" pin="ANODE"/>
@@ -8388,25 +8420,25 @@ for layout reasons</text>
 <attribute name="NAME" x="110.49" y="172.72" size="1.778" layer="95" ratio="12" align="bottom-center"/>
 <attribute name="VALUE" x="110.49" y="170.18" size="1.778" layer="96" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="DIGIKEY" x="111.76" y="171.45" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
-<attribute name="MFN" x="111.76" y="171.45" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
+<attribute name="MPN" x="111.76" y="171.45" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
 </instance>
 <instance part="C32" gate="G$1" x="111.76" y="177.8" smashed="yes" rot="R270">
 <attribute name="NAME" x="110.49" y="179.07" size="1.778" layer="95" ratio="12" align="bottom-center"/>
 <attribute name="VALUE" x="110.49" y="176.53" size="1.778" layer="96" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="DIGIKEY" x="111.76" y="177.8" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
-<attribute name="MFN" x="111.76" y="177.8" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
+<attribute name="MPN" x="111.76" y="177.8" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
 </instance>
 <instance part="C33" gate="G$1" x="111.76" y="165.1" smashed="yes" rot="R270">
 <attribute name="NAME" x="110.49" y="166.37" size="1.778" layer="95" ratio="12" align="bottom-center"/>
 <attribute name="VALUE" x="110.49" y="163.83" size="1.778" layer="96" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="DIGIKEY" x="111.76" y="165.1" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
-<attribute name="MFN" x="111.76" y="165.1" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
+<attribute name="MPN" x="111.76" y="165.1" size="1.27" layer="96" rot="R270" align="top-left" display="off"/>
 </instance>
 <instance part="C22" gate="G$1" x="132.08" y="167.64" smashed="yes">
 <attribute name="NAME" x="130.81" y="166.37" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="133.35" y="166.37" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 <attribute name="DIGIKEY" x="132.08" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
-<attribute name="MFN" x="132.08" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
+<attribute name="MPN" x="132.08" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
 <attribute name="DESCRIPTION" x="132.08" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
 <attribute name="MANUFACTURER" x="132.08" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
 </instance>
@@ -8414,7 +8446,7 @@ for layout reasons</text>
 <attribute name="NAME" x="123.19" y="166.37" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="125.73" y="166.37" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 <attribute name="DIGIKEY" x="124.46" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
-<attribute name="MFN" x="124.46" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
+<attribute name="MPN" x="124.46" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
 <attribute name="DESCRIPTION" x="124.46" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
 <attribute name="MANUFACTURER" x="124.46" y="167.64" size="1.27" layer="96" align="top-left" display="off"/>
 </instance>
@@ -9651,10 +9683,14 @@ temperature characteristics</text>
 <instance part="C6" gate="G$1" x="17.78" y="180.34" smashed="yes" rot="R90">
 <attribute name="NAME" x="19.05" y="179.07" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="19.05" y="181.61" size="1.778" layer="96" ratio="12" align="bottom-center"/>
+<attribute name="DIGIKEY" x="17.78" y="180.34" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="17.78" y="180.34" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="C7" gate="G$1" x="17.78" y="172.72" smashed="yes" rot="R90">
 <attribute name="NAME" x="19.05" y="171.45" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="19.05" y="173.99" size="1.778" layer="96" ratio="12" align="bottom-center"/>
+<attribute name="DIGIKEY" x="17.78" y="172.72" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="17.78" y="172.72" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="SUPPLY13" gate="G1" x="63.5" y="139.7" smashed="yes">
 <attribute name="VALUE" x="60.96" y="137.16" size="1.778" layer="96"/>
@@ -9730,18 +9766,26 @@ temperature characteristics</text>
 <instance part="C4" gate="G$1" x="162.56" y="66.04" smashed="yes">
 <attribute name="NAME" x="161.29" y="64.77" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="163.83" y="64.77" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="DIGIKEY" x="162.56" y="66.04" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="162.56" y="66.04" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C5" gate="G$1" x="170.18" y="66.04" smashed="yes">
 <attribute name="NAME" x="168.91" y="64.77" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="171.45" y="64.77" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="DIGIKEY" x="170.18" y="66.04" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="170.18" y="66.04" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C20" gate="G$1" x="177.8" y="66.04" smashed="yes">
 <attribute name="NAME" x="176.53" y="64.77" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="179.07" y="64.77" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="DIGIKEY" x="177.8" y="66.04" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="177.8" y="66.04" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C21" gate="G$1" x="185.42" y="66.04" smashed="yes">
 <attribute name="NAME" x="184.15" y="64.77" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="186.69" y="64.77" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="DIGIKEY" x="185.42" y="66.04" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="185.42" y="66.04" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C27" gate="G$1" x="193.04" y="66.04" smashed="yes">
 <attribute name="NAME" x="191.77" y="64.77" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
@@ -9786,18 +9830,26 @@ temperature characteristics</text>
 <instance part="C25" gate="G$1" x="241.3" y="127" smashed="yes" rot="R90">
 <attribute name="NAME" x="242.57" y="125.73" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="242.57" y="128.27" size="1.778" layer="96" ratio="12" align="bottom-center"/>
+<attribute name="DIGIKEY" x="241.3" y="127" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="241.3" y="127" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="C17" gate="G$1" x="241.3" y="144.78" smashed="yes" rot="R90">
 <attribute name="NAME" x="242.57" y="143.51" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="242.57" y="146.05" size="1.778" layer="96" ratio="12" align="bottom-center"/>
+<attribute name="DIGIKEY" x="241.3" y="144.78" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="241.3" y="144.78" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="C3" gate="G$1" x="241.3" y="152.4" smashed="yes" rot="R90">
 <attribute name="NAME" x="242.57" y="151.13" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="242.57" y="153.67" size="1.778" layer="96" ratio="12" align="bottom-center"/>
+<attribute name="DIGIKEY" x="241.3" y="152.4" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="241.3" y="152.4" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="C16" gate="G$1" x="241.3" y="119.38" smashed="yes" rot="R90">
 <attribute name="NAME" x="242.57" y="118.11" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="242.57" y="120.65" size="1.778" layer="96" ratio="12" align="bottom-center"/>
+<attribute name="DIGIKEY" x="241.3" y="119.38" size="1.778" layer="96" rot="R90" display="off"/>
+<attribute name="MPN" x="241.3" y="119.38" size="1.778" layer="96" rot="R90" display="off"/>
 </instance>
 <instance part="SUPPLY22" gate="G1" x="157.48" y="132.08" smashed="yes" rot="R270">
 <attribute name="VALUE" x="154.94" y="134.62" size="1.778" layer="96" rot="R270"/>
@@ -9817,10 +9869,14 @@ temperature characteristics</text>
 <instance part="C12" gate="G$1" x="226.06" y="91.44" smashed="yes">
 <attribute name="NAME" x="224.79" y="90.17" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="227.33" y="90.17" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="DIGIKEY" x="226.06" y="91.44" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="226.06" y="91.44" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C13" gate="G$1" x="241.3" y="91.44" smashed="yes">
 <attribute name="NAME" x="240.03" y="90.17" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="242.57" y="90.17" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="DIGIKEY" x="241.3" y="91.44" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="241.3" y="91.44" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="+3V1" gate="P1" x="45.72" y="109.22" smashed="yes">
 <attribute name="VALUE" x="43.18" y="104.14" size="1.778" layer="96" rot="R90"/>
@@ -9828,10 +9884,14 @@ temperature characteristics</text>
 <instance part="C14" gate="G$1" x="15.24" y="116.84" smashed="yes">
 <attribute name="NAME" x="13.97" y="115.57" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="16.51" y="115.57" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="MPN" x="15.24" y="116.84" size="1.778" layer="96" display="off"/>
+<attribute name="DIGIKEY" x="15.24" y="116.84" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C15" gate="G$1" x="30.48" y="116.84" smashed="yes">
 <attribute name="NAME" x="29.21" y="115.57" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="31.75" y="115.57" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
+<attribute name="MPN" x="30.48" y="116.84" size="1.778" layer="96" display="off"/>
+<attribute name="DIGIKEY" x="30.48" y="116.84" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="X4" gate="X1" x="233.68" y="96.52" smashed="yes">
 <attribute name="DIGIKEY" x="233.68" y="96.52" size="1.778" layer="96" display="off"/>
