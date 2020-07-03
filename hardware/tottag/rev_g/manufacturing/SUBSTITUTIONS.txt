@@ -1,0 +1,21 @@
+Original		Substitution				Confirm Ok?
+--------		------------				-----------
+
+RMCF0402FT1K40		substitution ERJ-2RKF1401X		OKAY
+RMCF0402FT10M0		substitution AC0402FR-0710ML		OKAY
+BQ24040			substitution BQ24040DSQR		OKAY
+MAX8887EZK33+TCT-ND	substitution MAX8887EZK33+T		OKAY
+BQ51013B		substitution BQ51013BRHLR		OKAY
+NRF52840		substitution NRF52840-QIAA-R		OKAY
+SER3913CT-ND		substitution FA-20H 16.0000MF10Z-AJ3	OKAY
+SER3631CT-ND		substitution FA-20H 38.4000MF10Z-AS3	OKAY
+
+---
+
+the following part is not included at quote due to no qty
+SIP32510DT-T1-GE3
+
+Please substitute with part  SIP32509DT-T1-GE3
+This is okay substitution for this application.
+
+---
