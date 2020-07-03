@@ -5693,7 +5693,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <element name="U7" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="AQFN73" package3d_urn="urn:adsk.eagle:package:20878797/3" value="NRF52840" x="13.589" y="20.3454" smashed="yes">
 <attribute name="DIGIKEY" value="1490-1071-1-ND" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
 <attribute name="MANUFACTURER" value="NORIDIC SEMICONDUCTOR" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
-<attribute name="MPN" value="NRF52840" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
+<attribute name="MPN" value="NRF52840-QIAA-R" x="5.842" y="29.1084" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="10.2318" y="24.07" size="0.508" layer="25" font="vector" ratio="18"/>
 </element>
 <element name="C68" library="passives" package="0402_CAP" value="1uF" x="16.7386" y="28.6766" smashed="yes" rot="R90">
@@ -6248,7 +6248,7 @@ Quickturn PCB 4 Layer .DRU</description>
 </element>
 <element name="U2" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="DSQ0010A" package3d_urn="urn:adsk.eagle:package:20913188/3" value="BQ24040" x="-20.32" y="16.3576" smashed="yes" rot="R180">
 <attribute name="DIGIKEY" value="296-37142-1-ND" x="-20.32" y="16.3576" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="MPN" value="BQ24040" x="-20.32" y="16.3576" size="1.778" layer="27" rot="R180" display="off"/>
+<attribute name="MPN" value="BQ24040DSQR" x="-20.32" y="16.3576" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="NAME" x="-21.0312" y="14.973" size="0.508" layer="25" font="vector" ratio="18" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="-20.32" y="17.8356" size="0.508" layer="27" font="vector" ratio="18" rot="R180" align="top-center"/>
 </element>
@@ -6283,7 +6283,7 @@ Quickturn PCB 4 Layer .DRU</description>
 </element>
 <element name="U6" library="chips" library_urn="urn:adsk.eagle:library:20878352" package="RHL0020A" package3d_urn="urn:adsk.eagle:package:20914322/4" value="BQ51013B" x="4.6736" y="-1.2192" smashed="yes" rot="R270">
 <attribute name="DIGIKEY" value="296-38885-1-ND" x="4.6736" y="-1.2192" size="1.778" layer="27" rot="R270" display="off"/>
-<attribute name="MPN" value="BQ51013B" x="4.6736" y="-1.2192" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MPN" value="BQ51013BRHLR" x="4.6736" y="-1.2192" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="NAME" x="7.3406" y="-1.2192" size="0.508" layer="25" font="vector" ratio="18" rot="R270" align="bottom-center"/>
 <attribute name="VALUE" x="2.0066" y="-1.2192" size="0.508" layer="27" font="vector" ratio="18" rot="R270" align="top-center"/>
 </element>

@@ -4456,7 +4456,7 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 </device>
 </devices>
 </deviceset>
-<deviceset name="NRF52840" urn="urn:adsk.eagle:component:20879100/3" prefix="U" library_version="15">
+<deviceset name="NRF52840" urn="urn:adsk.eagle:component:20879100/4" prefix="U" library_version="20">
 <description>ultra-low power 2.4 GHz wireless system on chip (SoC) integrating a multiprotocol 2.4 GHz transceiver, an ARM® Cortex®-M4F CPU.</description>
 <gates>
 <gate name="G$1" symbol="NRF52840" x="0" y="17.78"/>
@@ -4541,13 +4541,13 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <technology name="">
 <attribute name="DIGIKEY" value="1490-1071-1-ND" constant="no"/>
 <attribute name="MANUFACTURER" value="NORIDIC SEMICONDUCTOR" constant="no"/>
-<attribute name="MPN" value="NRF52840" constant="no"/>
+<attribute name="MPN" value="NRF52840-QIAA-R" constant="no"/>
 </technology>
 </technologies>
 </device>
 </devices>
 </deviceset>
-<deviceset name="BQ24040" urn="urn:adsk.eagle:component:20913465/2" prefix="U" library_version="12">
+<deviceset name="BQ24040" urn="urn:adsk.eagle:component:20913465/3" prefix="U" library_version="20">
 <description>Simple Li Ion / Li Poly charger.</description>
 <gates>
 <gate name="B" symbol="BQ24040" x="0" y="-5.08"/>
@@ -4571,13 +4571,13 @@ Default connector of Shenzhen LiPo + Thermistor suppliers ca. 2020.</description
 <technologies>
 <technology name="">
 <attribute name="DIGIKEY" value="296-37142-1-ND" constant="no"/>
-<attribute name="MPN" value="BQ24040" constant="no"/>
+<attribute name="MPN" value="BQ24040DSQR" constant="no"/>
 </technology>
 </technologies>
 </device>
 </devices>
 </deviceset>
-<deviceset name="BQ51013B" urn="urn:adsk.eagle:component:20914323/7" prefix="U" library_version="19">
+<deviceset name="BQ51013B" urn="urn:adsk.eagle:component:20914323/8" prefix="U" library_version="20">
 <description>bq51013B 
 
 Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</description>
@@ -4613,7 +4613,7 @@ Highly Integrated Wireless Receiver Qi (WPC v1.2) Compliant Power Supply</descri
 <technologies>
 <technology name="">
 <attribute name="DIGIKEY" value="296-38885-1-ND" constant="no"/>
-<attribute name="MPN" value="BQ51013B" constant="no"/>
+<attribute name="MPN" value="BQ51013BRHLR" constant="no"/>
 </technology>
 </technologies>
 </device>
