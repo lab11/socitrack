@@ -6656,10 +6656,12 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="X4" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="FA-20H" device="" package3d_urn="urn:adsk.eagle:package:20878577/2" value="38.4MHz">
 <attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead"/>
 <attribute name="DIGIKEY" value="SER3631CT-ND"/>
+<attribute name="MPN" value="FA-20H 38.4000MF10Z-AS3"/>
 </part>
 <part name="X2" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="FA-20H" device="" package3d_urn="urn:adsk.eagle:package:20878577/2" value="16MHz">
 <attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead"/>
 <attribute name="DIGIKEY" value="SER3913CT-ND"/>
+<attribute name="MPN" value="FA-20H 16.0000MF10Z-AJ3"/>
 </part>
 <part name="C58" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
 <part name="C59" library="passives" deviceset="CAPACITOR" device="0402_CAP" value="0.1uF"/>
@@ -9944,12 +9946,14 @@ temperature characteristics</text>
 <attribute name="DESCRIPTION" x="233.68" y="96.52" size="1.778" layer="96" display="off"/>
 <attribute name="NAME" x="231.14" y="104.14" size="1.27" layer="95"/>
 <attribute name="VALUE" x="231.14" y="101.6" size="1.27" layer="96"/>
+<attribute name="MPN" x="233.68" y="96.52" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="X2" gate="X1" x="22.86" y="121.92" smashed="yes">
 <attribute name="DIGIKEY" x="22.86" y="121.92" size="1.778" layer="96" display="off"/>
 <attribute name="DESCRIPTION" x="22.86" y="121.92" size="1.778" layer="96" display="off"/>
 <attribute name="NAME" x="19.304" y="127" size="1.27" layer="95"/>
 <attribute name="VALUE" x="22.86" y="127" size="1.27" layer="96"/>
+<attribute name="MPN" x="22.86" y="121.92" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="C58" gate="G$1" x="20.32" y="35.56" smashed="yes" rot="R90">
 <attribute name="NAME" x="21.59" y="34.29" size="1.778" layer="95" ratio="12" rot="R180" align="bottom-center"/>

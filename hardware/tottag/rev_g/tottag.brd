@@ -6004,6 +6004,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="DESCRIPTION" value="38.4MHz ±10ppm Crystal 8.5pF 40 Ohms 4-SMD, No Lead" x="-12.9286" y="16.9672" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="DIGIKEY" value="SER3631CT-ND" x="-12.9286" y="16.9672" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MANUFACTURER" value="EPSON" x="-12.9286" y="16.9672" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MPN" value="FA-20H 38.4000MF10Z-AS3" x="-12.9286" y="16.9672" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="NAME" x="-11.3124" y="17.475" size="0.508" layer="25" font="vector" ratio="18"/>
 <attribute name="VALUE" x="-10.8586" y="15.9672" size="0.508" layer="27" font="vector" ratio="18" rot="R90"/>
 </element>
@@ -6012,6 +6013,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <attribute name="DESCRIPTION" value="16MHz ±10ppm Crystal 8pF 80 Ohms 4-SMD, No Lead" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="DIGIKEY" value="SER3913CT-ND" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="MANUFACTURER" value="EPSON" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
+<attribute name="MPN" value="FA-20H 16.0000MF10Z-AJ3" x="6.0452" y="16.4084" size="1.778" layer="27" rot="R270" display="off"/>
 <attribute name="NAME" x="7.5598" y="15.3922" size="0.508" layer="25" font="vector" ratio="18"/>
 <attribute name="VALUE" x="3.9752" y="17.4084" size="0.508" layer="27" font="vector" ratio="18" rot="R270"/>
 </element>
