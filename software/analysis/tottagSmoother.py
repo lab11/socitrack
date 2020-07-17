@@ -1,7 +1,6 @@
 import os
 import sys
 
-
 #class to handle the moving average.
 #works kind of like a queue, keeping smoothVal values stored
 class SmoothedGroup:
@@ -20,7 +19,7 @@ class SmoothedGroup:
         self.stamps.insert(0, time)
         self.data.insert(0, val)
         self.lastTime = time
-        if (len(self.data) >= 5):
+        if (len(self.data) >= self.size):
             self.average()
 
     def clear(self):
@@ -50,7 +49,7 @@ smoothVal = int(sys.argv[1])
 logfile_date = None
 
 for i in logs:
-    outFile = "smoothed" + i[0:2] + ".log"
+    outFile = "smoothed" + i[8:10] + ".log"
     s = open(outFile, "w+")
     first = {}
     classDict = {}
