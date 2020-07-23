@@ -17,6 +17,7 @@
 #define CARRIER_BLE_CHAR_ENABLE      0x3155
 #define CARRIER_BLE_CHAR_STATUS      0x3156
 #define CARRIER_BLE_CHAR_CALIBRATION 0x3157
+#define CARRIER_BLE_CHAR_MASTER      0x3158
 
 // Information
 #define APP_COMPANY_IDENTIFIER 0x02E0
@@ -45,7 +46,7 @@
 
 // Protocol configuration ----------------------------------------------------------------------------------------------
 
-//#define PROTOCOL_JOIN_ON_CONNECT
+#define PROTOCOL_JOIN_ON_CONNECT
 
 // Calibration setup
 
@@ -84,8 +85,9 @@ typedef struct {
 typedef struct ble_app_s {
     app_config_t config;
     uint32_t     timer_counter;
-    bool         module_inited;       // Whether or not we successfully got through to the module and got it configured properly.
-    bool         network_discovered;  // Whether we know there are other devices in our proximity
+    bool         module_inited;        // Whether or not we successfully got through to the module and got it configured properly.
+    bool         network_discovered;   // Whether we know there are other devices in our proximity
+    bool         initiated_connection; // Whether this node started a connection attempt
     uint8_t      master_eui[EUI_LEN];
     uint8_t      calibration_index;
     uint8_t      current_location[6]; // Value of num characteristic

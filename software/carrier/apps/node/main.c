@@ -81,6 +81,7 @@ static void write_to_sd(char * data, uint16_t length);
 
 static void carrier_start_module(uint8_t role);
 static void advertising_init();
+static void standard_decide_on_new_master(uint8_t discovered_adv_eui, uint8_t discovered_master_eui);
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report);
 
 /*******************************************************************************
@@ -112,6 +113,7 @@ static ble_gatts_char_handles_t carrier_ble_char_config_handle      = {.value_ha
 static ble_gatts_char_handles_t carrier_ble_char_enable_handle      = {.value_handle = CARRIER_BLE_CHAR_ENABLE};
 static ble_gatts_char_handles_t carrier_ble_char_status_handle      = {.value_handle = CARRIER_BLE_CHAR_STATUS};
 static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = {.value_handle = CARRIER_BLE_CHAR_CALIBRATION};
+static ble_gatts_char_handles_t carrier_ble_char_master_handle      = {.value_handle = CARRIER_BLE_CHAR_MASTER};
 static uint16_t                 carrier_ble_service_handle          = 0;
 static uint16_t                 carrier_ble_conn_handle             = BLE_CONN_HANDLE_INVALID;
 
@@ -964,6 +966,21 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
+// Function for writing to a characteristic
+uint32_t ble_write(const uint8_t* buf, uint8_t len, uint16_t handle)
+{
+    ble_gattc_write_params_t const write_params =
+            {
+                    .write_op = BLE_GATT_OP_WRITE_CMD,
+                    .handle   = handle,
+                    .offset   = 0,
+                    .len      = len,
+                    .p_value  = buf
+            };
+
+    return sd_ble_gattc_write(carrier_ble_conn_handle, &write_params);
+}
+
 // Function for handling the WRITE CHARACTERISTIC BLE event.
 void on_ble_write(const ble_evt_t* p_ble_evt)
 {
@@ -1101,6 +1118,20 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Calibration will be triggered in the main loop
 
+    } else if (p_evt_write->handle == carrier_ble_char_master_handle.value_handle) {
+
+        // Handle a write to the characteristic that overwrites the Master setting
+        uint8_t discovered_adv_eui    = p_evt_write->data[0];
+        uint8_t discovered_master_eui = p_evt_write->data[1];
+        printf("INFO: Received MASTER evt: Master ID %x from Node ID %x\n", discovered_master_eui, discovered_adv_eui);
+
+        // Decide on new Master
+        standard_decide_on_new_master(discovered_adv_eui, discovered_master_eui);
+
+        // Disconnect again; this direct disconnect can cause NRF_ERROR_INVALID_STATE for the sd_ble_gatts_exchange_mtu_reply() function, as it does not exchange in time
+        ret_code_t err_code = sd_ble_gap_disconnect(carrier_ble_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+        APP_ERROR_CHECK(err_code);
+
     } else {
         printf("ERROR: Unknown handle: %i\n", p_evt_write->handle);
     }
@@ -1160,16 +1191,18 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             err_code = sd_ble_gatts_sys_attr_set(carrier_ble_conn_handle, NULL, 0, 0);
             APP_ERROR_CHECK(err_code);
 
-            // Check whether another tag; if yes, start module
+            // Check whether we connected to another tag; if yes, start module
             if (addr_in_whitelist(&p_ble_evt->evt.gap_evt.params.connected.peer_addr)) {
-                if (!app.network_discovered) {
-                    printf("INFO: Discovered other device in proximity\n");
-                    app.network_discovered = true;
-                }
 
-                // Disconnect again; this direct disconnect can cause NRF_ERROR_INVALID_STATE for the sd_ble_gatts_exchange_mtu_reply() function, as it does not exchange in time
-                err_code = sd_ble_gap_disconnect(carrier_ble_conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-                APP_ERROR_CHECK(err_code);
+                printf("INFO: Discovered other device in proximity with ID %i\n", p_ble_evt->evt.gap_evt.params.connected.peer_addr.addr[0]);
+
+                if (app.initiated_connection) {
+                    // Write to MASTER characteristic; upon successful write, other node will disconnect
+                    uint8_t buf[2] = {app.config.my_eui[0], app.master_eui[0]};
+
+                    err_code = ble_write(buf, 2, CARRIER_BLE_CHAR_CALIBRATION);
+                    APP_ERROR_CHECK(err_code);
+                }
             }
 
             break;
@@ -1180,6 +1213,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             led_on(CARRIER_LED_BLUE);
             led_off(CARRIER_LED_GREEN);
 #endif
+            // Prepare state for next discovery
+            app.initiated_connection = false;
+
             NRF_LOG_INFO("Disconnected.");
             carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 
@@ -1319,40 +1355,6 @@ static uint32_t adv_report_parse(uint8_t type, const ble_data_t * p_advdata, ble
     return NRF_ERROR_NOT_FOUND;
 }
 
-static void on_device_discovery(ble_gap_addr_t const * peer_addr)
-{
-    ret_code_t err_code;
-
-    printf("DEBUG: Discovered address: %02x:%02x:%02x:%02x:%02x:%02x\n", peer_addr->addr[5],
-                                                                         peer_addr->addr[4],
-                                                                         peer_addr->addr[3],
-                                                                         peer_addr->addr[2],
-                                                                         peer_addr->addr[1],
-                                                                         peer_addr->addr[0]);
-
-    if(app.network_discovered) {
-        // We already know that we are in the network
-        return;
-    } else {
-        // Init module ourselves in the main loop
-        app.network_discovered = true;
-    }
-
-    // Connect to device
-    // TODO: Enable this again and communicate the Master EUI to the other device; until this is possible, we only enable networking upon advertisement discovery
-#ifdef PROTOCOL_JOIN_ON_CONNECT
-    err_code = sd_ble_gap_connect(peer_addr, &m_scan_params, &m_connection_param, APP_BLE_CONN_CFG_TAG);
-    APP_ERROR_CHECK(err_code);
-#else
-    // Re-enable scanning
-    err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
-    APP_ERROR_CHECK(err_code);
-#endif
-
-    // Disconnect again in event handler
-
-}
-
 static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
 
     if (app.master_eui[0] == discovered_master_eui[0]) {
@@ -1403,6 +1405,69 @@ static void standard_reconfigure_module(uint8_t discovered_master_eui) {
     app.config.app_module_running = false;
 }
 
+static void standard_decide_on_connect(ble_gap_addr_t const * peer_addr, uint8_t discovered_master_eui)
+{
+    ret_code_t err_code;
+
+    // Does other node need to be informed
+    if(discovered_master_eui > app.master_eui[0])
+    {
+        // Node does not need to be informed, as it is already part of a network and its Master has a higher ID than ours
+
+        // Re-enable scanning
+        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        APP_ERROR_CHECK(err_code);
+    } else {
+        /* Node does need to be informed, as:
+           1. Node is part of a network and its Master has a lower ID (so they should join ours)
+           2. Node is not part of the network (i.e. its Master ID is 0x00); notice that it doesnt matter who has the higher ID, as it must be notified in either case */
+
+        // Connect to device
+#ifdef PROTOCOL_JOIN_ON_CONNECT
+        // Save that we were the one who started the connection and want to write to the characteristic of the other node
+        app.initiated_connection = true;
+
+        err_code = sd_ble_gap_connect(peer_addr, &m_scan_params, &m_connection_param, APP_BLE_CONN_CFG_TAG);
+        APP_ERROR_CHECK(err_code);
+
+        // Disconnect again in event handler
+#else
+        // Re-enable scanning
+        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        APP_ERROR_CHECK(err_code);
+#endif
+    }
+}
+
+static void standard_decide_on_new_master(uint8_t discovered_adv_eui, uint8_t discovered_master_eui)
+{
+    if (!app.network_discovered) {
+        // Not connected to a network yet
+
+        // Decide who is going to be a Master
+        if (discovered_master_eui > 0x00) {
+            // Advertising node is already part of an existing network, so join
+            standard_reconfigure_module(discovered_master_eui);
+        } else if (app.config.my_eui[0] > discovered_adv_eui) {
+            // Become the Glossy Master of the new network ourselves
+            standard_reconfigure_module(app.config.my_eui[0]);
+        } else {
+            // Join the network which will be started by the other node
+            standard_reconfigure_module(discovered_adv_eui);
+        }
+
+        // Init module ourselves in the main loop
+        app.network_discovered = true;
+    }
+    else {
+
+        // Switch if new Master of an existing network found with a higher EUI than the current one
+        if (app.master_eui[0] < discovered_master_eui) {
+            standard_reconfigure_module(discovered_master_eui);
+        }
+    }
+}
+
 // Handles advertising reports
 static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 {
@@ -1424,6 +1489,10 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     // If it is a scan response, we dont need to analyse it
     if (p_adv_report->type.scan_response) {
         // Could extract full name here
+
+        // Restart scanning
+        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        APP_ERROR_CHECK(err_code);
 
     } // If device is in our whitelist, we just discovered it
     else if (addr_in_whitelist(&p_adv_report->peer_addr)) {
@@ -1454,7 +1523,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
             discovered_master_eui = advdata.p_data[3];
 
             if (discovered_master_eui > 0x00) {
-                //printf("INFO: Network with master %i discovered\n", discovered_master_eui);
+                printf("INFO: Network with master %i discovered through node %i\n", discovered_master_eui, p_adv_report->peer_addr.addr[0]);
             } else {
                 printf("INFO: Discovered new node %i without network\n", p_adv_report->peer_addr.addr[0]);
             }
@@ -1463,39 +1532,13 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
             printf("WARNING: Found no Master EUI in advertisement!\n");
         }
 
-        if (!app.network_discovered) {
-            // Not connected to a network yet
-            on_device_discovery(&p_adv_report->peer_addr);
+        // Decide whether we should contact the other node
+        standard_decide_on_connect(&p_adv_report->peer_addr, discovered_master_eui);
 
-            uint8_t discovered_adv_eui = p_adv_report->peer_addr.addr[0];
-
-            // Decide who is going to be a Master
-            if (discovered_master_eui > 0x00) {
-                // Advertising node is already part of an existing network, so join
-                standard_reconfigure_module(discovered_master_eui);
-            } else {
-                // Start a new network
-                if (app.config.my_eui[0] > discovered_adv_eui) {
-                    // Become the Glossy Master of the new network ourselves
-                    standard_reconfigure_module(app.config.my_eui[0]);
-                } else {
-                    // Join the network which will be started by the other node
-                    standard_reconfigure_module(discovered_adv_eui);
-                }
-            }
-
-        } else {
-
-            // Switch if new Master of an existing network found with a higher EUI than the current one
-            if (app.master_eui[0] < discovered_master_eui) {
-                standard_reconfigure_module(discovered_master_eui);
-            }
-        }
+        // Decide on our own Master
+        uint8_t discovered_adv_eui = p_adv_report->peer_addr.addr[0];
+        standard_decide_on_new_master(discovered_adv_eui, discovered_master_eui);
     }
-
-    // Restart scanning
-    err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
-    APP_ERROR_CHECK(err_code);
 }
 
 // Function for handling Queued Write Module errors
@@ -2135,6 +2178,7 @@ void app_init(void) {
     app.module_inited           = false;
     app.module_interrupt_thrown = false;
     app.network_discovered      = false;
+    app.initiated_connection    = false;
 
     memset(app.master_eui, 0, sizeof(app.master_eui));
 
