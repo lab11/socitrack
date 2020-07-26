@@ -1772,20 +1772,14 @@ static void epoch_handler (void* p_context)
 {
     uint32_t err_code;
 
-    if (carrier_ble_conn_handle == BLE_CONN_HANDLE_INVALID) {
-        // Send connectable advertisements, as not connected
-        m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
-    }
-    else {
-        // Send unconnectable advertisements, as connected
-        m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
-    }
-
-    // Notice that ble_advertising_start() IGNORES some input parameters and sets them to defaults
-    err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+    // Stop advertisements (in case another event such as a Master change has enabled it in the mean-time)
+    err_code = sd_ble_gap_adv_stop(m_advertising.adv_handle);
     if (err_code != NRF_ERROR_INVALID_STATE) {
         APP_ERROR_CHECK(err_code);
     }
+
+    // No changes to parameters required
+
     err_code = sd_ble_gap_adv_start(m_advertising.adv_handle, m_advertising.conn_cfg_tag);
     if (err_code != NRF_ERROR_INVALID_STATE) {
         APP_ERROR_CHECK(err_code);
@@ -2016,7 +2010,9 @@ static void advertising_init(void)
 
 #ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
     // Create timeout so we only advertise for half an epoch - timeout / duration in multiples of 10ms
-    adv_init.config.ble_adv_fast_timeout  = APP_SCAN_INTERVAL_MS / (2 * 10);
+    // BUG FIX: Divide by additional empirical factor, as timeout was always twice as long as intended
+    uint8_t correction_factor_empirical = 2;
+    adv_init.config.ble_adv_fast_timeout  = APP_SCAN_INTERVAL_MS / (correction_factor_empirical * 2 * 10);
 #endif
 #else
     // Increase number of advertisements so the scanner finds all of them simultaneously
