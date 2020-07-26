@@ -160,6 +160,11 @@ static ble_advdata_service_data_t service_data;
 // GP Timer. Used to retry initializing the module.
 APP_TIMER_DEF(watchdog_timer);
 
+#ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
+// Epoch Timer. Used to re-start advertisements.
+APP_TIMER_DEF(epoch_timer);
+#endif
+
 // GATT module instance
 NRF_BLE_GATT_DEF(m_gatt);
 
@@ -1279,7 +1284,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             break;
         }
         case BLE_GAP_EVT_TIMEOUT: {
-            // We have not specified a timeout for scanning, so only connection attemps can timeout.
+            // We have not specified a timeout for scanning, so only connection attempts can timeout.
             if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN) {
                 printf("WARNING: Connection attempts timed out\n");
             }
@@ -1301,6 +1306,12 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             APP_ERROR_CHECK(err_code);
             break;
         }
+        case BLE_GAP_EVT_ADV_SET_TERMINATED: {
+#ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
+            // Is dealt with in on_adv_evt
+#endif
+            break;
+        }
         default:
             // No implementation needed.
             break;
@@ -1318,7 +1329,16 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             break;
         }
         case BLE_ADV_EVT_IDLE: {
-            NRF_LOG_INFO("Application is idle.");
+
+#ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
+            // Active half of the epoch is over
+            printf("DEBUG: Disabling advertisements for %u milliseconds\n", APP_SCAN_INTERVAL_MS / 2);
+
+            // Start the epoch timer
+            err_code = app_timer_start(epoch_timer, APP_TIMER_TICKS(APP_SCAN_INTERVAL_MS / 2), NULL);
+            APP_ERROR_CHECK(err_code);
+#else
+            printf("DEBUG: Application is idle\n");
 
             // Start advertisements
             err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
@@ -1329,6 +1349,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             if (err_code != NRF_ERROR_INVALID_STATE) {
                 APP_ERROR_CHECK(err_code);
             }
+#endif
             break;
         }
         default:
@@ -1746,6 +1767,33 @@ static void watchdog_handler (void* p_context)
 
 }
 
+// This function is triggered every BLE epoch
+static void epoch_handler (void* p_context)
+{
+    uint32_t err_code;
+
+    if (carrier_ble_conn_handle == BLE_CONN_HANDLE_INVALID) {
+        // Send connectable advertisements, as not connected
+        m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+    }
+    else {
+        // Send unconnectable advertisements, as connected
+        m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
+    }
+
+    // Notice that ble_advertising_start() IGNORES some input parameters and sets them to defaults
+    err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+    if (err_code != NRF_ERROR_INVALID_STATE) {
+        APP_ERROR_CHECK(err_code);
+    }
+    err_code = sd_ble_gap_adv_start(m_advertising.adv_handle, m_advertising.conn_cfg_tag);
+    if (err_code != NRF_ERROR_INVALID_STATE) {
+        APP_ERROR_CHECK(err_code);
+    }
+
+    printf("DEBUG: Restarted advertising for %u milliseconds\n", APP_SCAN_INTERVAL_MS / 2);
+}
+
 // If no pending operation, sleep until the next event occurs
 static void power_manage(void)
 {
@@ -1965,11 +2013,15 @@ static void advertising_init(void)
     adv_init.config.ble_adv_fast_enabled  = true;
 #ifndef APP_BLE_CALIBRATION
     adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
+
+#ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
+    // Create timeout so we only advertise for half an epoch - timeout / duration in multiples of 10ms
+    adv_init.config.ble_adv_fast_timeout  = APP_SCAN_INTERVAL_MS / (2 * 10);
+#endif
 #else
     // Increase number of advertisements so the scanner finds all of them simultaneously
     adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
 #endif
-    //adv_init.config.ble_adv_fast_timeout  = APP_ADV_DURATION;
 
     // Define Event handler
     adv_init.evt_handler = on_adv_evt;
@@ -2229,6 +2281,11 @@ static void timers_init (void)
     err_code = app_timer_create(&watchdog_timer, APP_TIMER_MODE_REPEATED, watchdog_handler);
     APP_ERROR_CHECK(err_code);
 
+#ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
+    // Create epoch timer
+    err_code = app_timer_create(&epoch_timer, APP_TIMER_MODE_SINGLE_SHOT, epoch_handler);
+    APP_ERROR_CHECK(err_code);
+#endif
 }
 
 static void timers_start (void)

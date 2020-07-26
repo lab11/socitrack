@@ -47,6 +47,7 @@
 // Protocol configuration ----------------------------------------------------------------------------------------------
 
 #define PROTOCOL_JOIN_ON_CONNECT
+#define PROTOCOL_REDUCE_ADVERTISEMENTS
 
 // Calibration setup
 
