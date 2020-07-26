@@ -118,7 +118,6 @@ static uint16_t                 carrier_ble_service_handle          = 0;
 static uint16_t                 carrier_ble_conn_handle             = BLE_CONN_HANDLE_INVALID;
 
 static uint8_t  carrier_ble_address[6];
-static uint16_t carrier_ble_device_id;
 
 static ble_gap_scan_params_t const m_scan_params =
 {
@@ -1292,7 +1291,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         }
         case BLE_GATTC_EVT_TIMEOUT: {
             // Disconnect on GATT Client timeout event.
-            NRF_LOG_DEBUG("GATT Client Timeout.");
+            printf("DEBUG: GATT Client Timeout\n");
             err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
@@ -1300,7 +1299,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         }
         case BLE_GATTS_EVT_TIMEOUT: {
             // Disconnect on GATT Server timeout event.
-            NRF_LOG_DEBUG("GATT Server Timeout.");
+            printf("DEBUG: GATT Server Timeout\n");
             err_code = sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle,
                                              BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
             APP_ERROR_CHECK(err_code);
@@ -1325,14 +1324,14 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 
     switch (ble_adv_evt) {
         case BLE_ADV_EVT_FAST: {
-            //NRF_LOG_INFO("Fast advertising.");
+            //printf("DEBUG: Fast advertising\n");
             break;
         }
         case BLE_ADV_EVT_IDLE: {
 
 #ifdef PROTOCOL_REDUCE_ADVERTISEMENTS
             // Active half of the epoch is over
-            printf("DEBUG: Disabling advertisements for %u milliseconds\n", APP_SCAN_INTERVAL_MS / 2);
+            //printf("DEBUG: Disabling advertisements for %u milliseconds\n", APP_SCAN_INTERVAL_MS / 2);
 
             // Start the epoch timer
             err_code = app_timer_start(epoch_timer, APP_TIMER_TICKS(APP_SCAN_INTERVAL_MS / 2), NULL);
@@ -1648,7 +1647,7 @@ void updateData (uint8_t * data, uint32_t len)
             app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
             app.config.app_sync_rtc_overflow_counter = 0;
             app.config.app_sync_rtc_overflown        = false;
-            printf("INFO: Updated current epoch time: %li\n", epoch);
+            printf("INFO: Updated current epoch time: %lu\n", epoch);
         }
 
         // Trigger moduleDataUpdate from main loop
@@ -1692,7 +1691,7 @@ void updateData (uint8_t * data, uint32_t len)
             app.config.app_sync_rtc_counter = rtc_to_s(nrfx_rtc_counter_get(&rtc_instance));
             app.config.app_sync_rtc_overflow_counter = 0;
             app.config.app_sync_rtc_overflown        = false;
-            printf("INFO: Updated current epoch time: %li\n", epoch);
+            printf("INFO: Updated current epoch time: %lu\n", epoch);
         }
 
 	    app.app_raw_response_buffer_updated = true;
@@ -1785,7 +1784,7 @@ static void epoch_handler (void* p_context)
         APP_ERROR_CHECK(err_code);
     }
 
-    printf("DEBUG: Restarted advertising for %u milliseconds\n", APP_SCAN_INTERVAL_MS / 2);
+    //printf("DEBUG: Restarted advertising for %u milliseconds\n", APP_SCAN_INTERVAL_MS / 2);
 }
 
 // If no pending operation, sleep until the next event occurs
@@ -1961,7 +1960,6 @@ static void advertising_init(void)
     // adv_init.advdata.name_type               = BLE_ADVDATA_FULL_NAME;
     // For shorter names, adjust as follows. The full name will still be displayed in connections
     adv_init.advdata.name_type               = BLE_ADVDATA_NO_NAME;
-    //adv_init.advdata.short_name_len          = 4; // Advertise the first X letters of the name
 
     // Physical Web data
     const char* url_str = PHYSWEB_URL;
@@ -1971,7 +1969,7 @@ static void advertising_init(void)
     m_url_frame[0] = PHYSWEB_URL_TYPE;
     m_url_frame[1] = PHYSWEB_TX_POWER;
     m_url_frame[2] = PHYSWEB_URLSCHEME_HTTPS;
-    for (uint8_t i=0; i<strlen((char*)url_str); i++) {
+    for (uint8_t i=0; i < strlen((char*)url_str); i++) {
         m_url_frame[i+3] = url_str[i];
     }
 

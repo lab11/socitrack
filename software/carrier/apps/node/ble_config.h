@@ -116,7 +116,7 @@ typedef struct ble_app_s {
 #define APP_BLE_ADDR_NR         (APP_BLE_ADDR_MAX - APP_BLE_ADDR_MIN + 1)
 
 // Peripheral
-#define APP_ADV_INTERVAL_MS     500
+#define APP_ADV_INTERVAL_MS     250
 #define APP_ADV_INTERVAL_CAL_MS 50
 
 // Central
