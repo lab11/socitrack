@@ -1040,6 +1040,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
             default:
                 printf("INFO: Setting node to DEFAULT\n");
 
+                break;
         }
 
         // TIME: Setup time
@@ -1112,6 +1113,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         const char expected_response_calib[] = "Calibration: ";
         const uint8_t expected_response_calib_offset = 13;
+        const uint8_t calibration_length = 1;
 
         uint8_t response = ascii_to_i(p_evt_write->data[expected_response_calib_offset]);
 
@@ -1122,9 +1124,9 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
     } else if (p_evt_write->handle == carrier_ble_char_master_handle.value_handle) {
 
         // Handle a write to the characteristic that overwrites the Master setting
-        uint8_t discovered_adv_eui    = p_evt_write->data[0];
+        uint8_t discovered_adv_eui    = 0; // Sender EUI is unimportant, as the Master EUI already contains all the necessary information and should be taken over
         uint8_t discovered_master_eui = p_evt_write->data[1];
-        printf("INFO: Received MASTER evt: Master ID %x from Node ID %x\n", discovered_master_eui, discovered_adv_eui);
+        printf("INFO: Received MASTER evt: Master ID %x\n", discovered_master_eui);
 
         // Decide on new Master
         standard_decide_on_new_master(discovered_adv_eui, discovered_master_eui);
@@ -1148,6 +1150,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
         case BLE_GATTS_EVT_WRITE: {
             // Decide which characteristics is used
             on_ble_write(p_ble_evt);
+            break;
         }
         /*case BLE_GAP_EVT_SEC_PARAMS_REQUEST: {
             // Pairing not supported
@@ -1199,9 +1202,9 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
                 if (app.initiated_connection) {
                     // Write to MASTER characteristic; upon successful write, other node will disconnect
-                    uint8_t buf[2] = {app.config.my_eui[0], app.master_eui[0]};
+                    uint8_t buf[1] = {app.master_eui[0]};
 
-                    err_code = ble_write(buf, 2, CARRIER_BLE_CHAR_MASTER);
+                    err_code = ble_write(buf, 1, CARRIER_BLE_CHAR_MASTER);
                     APP_ERROR_CHECK(err_code);
                 }
             }
@@ -2060,27 +2063,32 @@ static void services_init(void)
                            CARRIER_BLE_CHAR_LOCATION,
                            &carrier_ble_char_location_handle);
 
+    // "Role: X; Time: XXXXXXXXXX"
     ble_characteristic_add(1, 1, 0, 0,
-                           28, (uint8_t*) &app.config,
+                           25, (uint8_t*) &app.config,
                            CARRIER_BLE_CHAR_CONFIG,
                            &carrier_ble_char_config_handle);
 
+    // "Ranging: X"
     ble_characteristic_add(1, 1, 0, 0,
                            10, (uint8_t*) &app.config.app_module_enabled,
                            CARRIER_BLE_CHAR_ENABLE,
                            &carrier_ble_char_enable_handle);
 
+    // "Backup: X"
     ble_characteristic_add(1, 1, 0, 0,
                            9, (uint8_t*) &app.module_inited,
                            CARRIER_BLE_CHAR_STATUS,
                            &carrier_ble_char_status_handle);
 
+    // "Calibration: X"
     ble_characteristic_add(1, 1, 0, 0,
                            14, &app.calibration_index,
                            CARRIER_BLE_CHAR_CALIBRATION,
                            &carrier_ble_char_calibration_handle);
 
-    ble_characteristic_add(0, 1, 0, 0,
+    // "X"
+    ble_characteristic_add(1, 1, 0, 0,
                            1, &app.master_eui[0],
                            CARRIER_BLE_CHAR_MASTER,
                            &carrier_ble_char_master_handle);
