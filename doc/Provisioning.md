@@ -58,7 +58,7 @@ README](../software/carrier).
 1. You will need the JLink serial number (`S/N` on the back of the JLink) and
    the TotTag Device ID (sticker on the back of the tag):
 
-        make flash SEGGER_SERIAL=269305781 BLE_ADDRESS=c0:98:e5:42:f0:00
+        make flash SEGGER_SERIAL=269305781 BLE_ADDRESS=c0:98:e5:42:00:01
 
    It is important to watch the end of the output. A lot of text will fly by,
    but near the end you should see:
@@ -116,7 +116,7 @@ Note these steps are very similar to programming the nRF. Key differences have b
    the TotTag Device ID (sticker on the back of the tag):
 
         # Note this is ID= now, instead of BLE_ADDRESS=
-        make flash SEGGER_SERIAL=269305781 ID=c0:98:e5:42:f0:00
+        make flash SEGGER_SERIAL=269305781 ID=c0:98:e5:42:00:01
 
    It is important to watch the end of the output. A lot of text will fly by,
    but near the end you should see:

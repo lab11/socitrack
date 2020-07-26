@@ -978,6 +978,7 @@ uint32_t ble_write(const uint8_t* buf, uint8_t len, uint16_t handle)
                     .p_value  = buf
             };
 
+    printf("DEBUG: Writing to characteristic %u of connected node\n", handle);
     return sd_ble_gattc_write(carrier_ble_conn_handle, &write_params);
 }
 
@@ -1168,7 +1169,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             led_on(CARRIER_LED_GREEN);
             led_off(CARRIER_LED_BLUE);
 #endif
-            NRF_LOG_INFO("Connected.");
+            printf("INFO: Connected\n");
 
             carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
             err_code = nrf_ble_qwr_conn_handle_assign(&m_qwr, carrier_ble_conn_handle);
@@ -1200,7 +1201,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
                     // Write to MASTER characteristic; upon successful write, other node will disconnect
                     uint8_t buf[2] = {app.config.my_eui[0], app.master_eui[0]};
 
-                    err_code = ble_write(buf, 2, CARRIER_BLE_CHAR_CALIBRATION);
+                    err_code = ble_write(buf, 2, CARRIER_BLE_CHAR_MASTER);
                     APP_ERROR_CHECK(err_code);
                 }
             }
@@ -1216,7 +1217,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             // Prepare state for next discovery
             app.initiated_connection = false;
 
-            NRF_LOG_INFO("Disconnected.");
+            printf("INFO: Disconnected\n");
             carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 
             // Go back to advertising connectably
@@ -1484,7 +1485,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     return;
 #endif
 
-    //printf("DEBUG: Received advertisement from %i\n", p_adv_report->peer_addr.addr[0]);
+    //printf("DEBUG: Received advertisement from Device %i\n", p_adv_report->peer_addr.addr[0]);
 
     // If it is a scan response, we dont need to analyse it
     if (p_adv_report->type.scan_response) {
@@ -1496,6 +1497,8 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
 
     } // If device is in our whitelist, we just discovered it
     else if (addr_in_whitelist(&p_adv_report->peer_addr)) {
+
+        printf("DEBUG: Received advertisement from Node %i\n", p_adv_report->peer_addr.addr[0]);
 
         // Find Master EUI
         uint8_t discovered_master_eui = 0;
@@ -1538,6 +1541,11 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
         // Decide on our own Master
         uint8_t discovered_adv_eui = p_adv_report->peer_addr.addr[0];
         standard_decide_on_new_master(discovered_adv_eui, discovered_master_eui);
+    }
+    else {
+        // Advertisement from another device that is not a TotTag - Restart scanning
+        err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
+        APP_ERROR_CHECK(err_code);
     }
 }
 
@@ -2071,6 +2079,11 @@ static void services_init(void)
                            14, &app.calibration_index,
                            CARRIER_BLE_CHAR_CALIBRATION,
                            &carrier_ble_char_calibration_handle);
+
+    ble_characteristic_add(0, 1, 0, 0,
+                           1, &app.master_eui[0],
+                           CARRIER_BLE_CHAR_MASTER,
+                           &carrier_ble_char_master_handle);
 }
 
 // Setup role as CENTRAL for scanning
