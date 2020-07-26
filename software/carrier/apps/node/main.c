@@ -967,18 +967,19 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 }
 
 // Function for writing to a characteristic
-uint32_t ble_write(const uint8_t* buf, uint8_t len, uint16_t handle)
+uint32_t ble_write(const uint8_t* buf, uint8_t len, ble_gatts_char_handles_t handle)
 {
     ble_gattc_write_params_t const write_params =
             {
                     .write_op = BLE_GATT_OP_WRITE_CMD,
-                    .handle   = handle,
+                    .flags    = BLE_GATT_EXEC_WRITE_FLAG_PREPARED_WRITE,
+                    .handle   = handle.value_handle,
                     .offset   = 0,
                     .len      = len,
                     .p_value  = buf
             };
 
-    printf("DEBUG: Writing to characteristic %u of connected node\n", handle);
+    printf("DEBUG: Writing to characteristic %u of connected node\n", handle.value_handle);
     return sd_ble_gattc_write(carrier_ble_conn_handle, &write_params);
 }
 
@@ -1125,7 +1126,7 @@ void on_ble_write(const ble_evt_t* p_ble_evt)
 
         // Handle a write to the characteristic that overwrites the Master setting
         uint8_t discovered_adv_eui    = 0; // Sender EUI is unimportant, as the Master EUI already contains all the necessary information and should be taken over
-        uint8_t discovered_master_eui = p_evt_write->data[1];
+        uint8_t discovered_master_eui = p_evt_write->data[0];
         printf("INFO: Received MASTER evt: Master ID %x\n", discovered_master_eui);
 
         // Decide on new Master
@@ -1202,9 +1203,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
 
                 if (app.initiated_connection) {
                     // Write to MASTER characteristic; upon successful write, other node will disconnect
-                    uint8_t buf[1] = {app.master_eui[0]};
-
-                    err_code = ble_write(buf, 1, CARRIER_BLE_CHAR_MASTER);
+                    err_code = ble_write(&app.master_eui[0], 1, carrier_ble_char_master_handle);
                     APP_ERROR_CHECK(err_code);
                 }
             }
@@ -2026,8 +2025,9 @@ void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t
     attr_char_value.p_attr_md   = &attr_md;
 
     // Set characteristic length in number of bytes
-    attr_char_value.max_len     = data_len;
     attr_char_value.init_len    = 0;
+    attr_char_value.init_offs   = 0;
+    attr_char_value.max_len     = data_len;
     attr_char_value.p_value     = data;
 
     // Add our new characteristics to the service
