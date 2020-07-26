@@ -1187,7 +1187,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
 
             // Notice that ble_advertising_start() IGNORES some input parameters and sets them to defaults
-            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, NULL);
             if (err_code != NRF_ERROR_INVALID_STATE) {
                 APP_ERROR_CHECK(err_code);
             }
@@ -1230,7 +1230,7 @@ static void ble_evt_handler(ble_evt_t const * p_ble_evt, void * p_context)
             m_advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
 
             // Restart advertisements
-            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+            err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, NULL);
             if (err_code != NRF_ERROR_INVALID_STATE) {
                 APP_ERROR_CHECK(err_code);
             }
@@ -1406,7 +1406,7 @@ static void standard_reconfigure_master_eui(uint8_t* discovered_master_eui) {
     APP_ERROR_CHECK(err_code);
 
     // Restart advertisements
-    err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, &m_advertising.adv_params);
+    err_code = sd_ble_gap_adv_set_configure(&m_advertising.adv_handle, m_advertising.p_adv_data, NULL);
     if (err_code != NRF_ERROR_INVALID_STATE) {
         APP_ERROR_CHECK(err_code);
     }
@@ -1433,9 +1433,9 @@ static void standard_decide_on_connect(ble_gap_addr_t const * peer_addr, uint8_t
     ret_code_t err_code;
 
     // Does other node need to be informed
-    if(discovered_master_eui > app.master_eui[0])
+    if(discovered_master_eui >= app.master_eui[0])
     {
-        // Node does not need to be informed, as it is already part of a network and its Master has a higher ID than ours
+        // Node does not need to be informed, as it is already part of a network and its Master has a higher / equal ID than ours
 
         // Re-enable scanning
         err_code = sd_ble_gap_scan_start(NULL, &m_scan_buffer);
@@ -1520,7 +1520,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
     } // If device is in our whitelist, we just discovered it
     else if (addr_in_whitelist(&p_adv_report->peer_addr)) {
 
-        printf("DEBUG: Received advertisement from Node %i\n", p_adv_report->peer_addr.addr[0]);
+        //printf("DEBUG: Received advertisement from Node %i\n", p_adv_report->peer_addr.addr[0]);
 
         // Find Master EUI
         uint8_t discovered_master_eui = 0;
@@ -1548,7 +1548,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const * p_adv_report)
             discovered_master_eui = advdata.p_data[3];
 
             if (discovered_master_eui > 0x00) {
-                printf("INFO: Network with master %i discovered through node %i\n", discovered_master_eui, p_adv_report->peer_addr.addr[0]);
+                //printf("INFO: Network with master %i discovered through node %i\n", discovered_master_eui, p_adv_report->peer_addr.addr[0]);
             } else {
                 printf("INFO: Discovered new node %i without network\n", p_adv_report->peer_addr.addr[0]);
             }
@@ -1983,7 +1983,7 @@ static void advertising_init(void)
     //printf("DEBUG: Advertising Eddystone address %s with total length %i\n", url_str, url_frame_length);
 
     adv_init.advdata.include_appearance      = false;
-    adv_init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
+    adv_init.advdata.flags                   = BLE_GAP_ADV_FLAGS_LE_ONLY_LIMITED_DISC_MODE;
     adv_init.advdata.uuids_complete.uuid_cnt = sizeof(m_adv_uuids) / sizeof(m_adv_uuids[0]);
     adv_init.advdata.uuids_complete.p_uuids  = m_adv_uuids;
 

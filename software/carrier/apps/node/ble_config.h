@@ -191,7 +191,7 @@ typedef struct ble_app_s {
 #define MIN_CONN_ADV_INTERVAL                               (20)                        //!< Minimum connection interval (in ms).
 #define MIN_NON_CONN_ADV_INTERVAL                           (100)                       //!< Minimum advertisement interval for non-connectable advertisements (in ms).
 
-#define CENTRAL_LINK_COUNT                                  0                           //!< Number of central links used by the application. When changing this number, remember to adjust the RAM settings.
+#define CENTRAL_LINK_COUNT                                  1                           //!< Number of central links used by the application. When changing this number, remember to adjust the RAM settings.
 #define PERIPHERAL_LINK_COUNT                               1                           //!< Number of peripheral links used by the application. When changing this number, remember to adjust the RAM settings.
 
 #define APP_CFG_NON_CONN_ADV_TIMEOUT                        0                           //!< Time for which the device must be advertising in non-connectable mode (in seconds). 0 disables the time-out.
