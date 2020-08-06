@@ -5,7 +5,7 @@ SociTrack
 It incorporates the *SquarePoint* module, containing the DecaWave DW1000 for UWB packet transmission and timestamping.
 The module provides node-to-node ranges over an I2C interface which can then be sent further on using the radio on the mother board.
 
-
+- If you would be interested in incorporating the Socitrack system or TotTag devices into your future research, please fill out this interest form: https://forms.gle/SqWca9DrKpcx9rBL6
 
 Hardware
 --------
