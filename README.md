@@ -91,6 +91,16 @@ across the BLE interface. It uses the Summon app ([Google Play](https://play.goo
 
 This project requires the [GNU ARM Embedded Toolchain](https://developer.arm.com/open-source/gnu-toolchain/gnu-rm). Please be aware that the recent Ubuntu 18.04 (`bionic`) ships with an old version ([6.3.1](https://launchpad.net/ubuntu/bionic/+source/gcc-arm-none-eabi)) and will cause compile errors ('conflicting CPU Architecture'). We therefore strongly encourage you to either remain on Ubuntu 17.10 (`artful`) or directly install the newest version from the developers.
 
+Related publications
+--------------------
+
+- Andreas Biri, Neal Jackson, Lothar Thiele, Prabal Dutta, and Pat Pannuto. 2020. *SociTrack: Infrastructure-Free Interaction Tracking through Mobile
+Sensor Networks.* In The 26th Annual International Conference on Mobile Computing and Networking (MobiCom ’20), September 21–25, 2020, London, United Kingdom. ACM, New York, NY, USA, 14 pages. https://doi.org/10.1145/3372224.3419190
+
+- Benjamin Kempke, Pat Pannuto, Bradford Campbell, and Prabal Dutta. 2016. *Surepoint: Exploiting ultra wideband flooding and diversity to provide robust, scalable, high-fidelity indoor localization.* In Proceedings of the 14th ACM Conference on Embedded Network Sensor Systems (SenSys ’16), November 14-16, 2016, Stanford, CA, USA.  ACM, New York, NY, USA, 13 pages. https://doi.org/10.1145/2994551.2994570
+
+- Benjamin Kempke, Pat Pannuto, and Prabal Dutta. 2015. *Polypoint: Guiding indoor quadrotors with ultra-wideband localization.* In Proceedings of the 2nd International Workshop on Hot Topics in Wireless (HotWireless ’15), September 11, 2015, Paris, France. ACM, New York, NY, USA, 5 pages. https://doi.org/10.1145/2799650.2799651
+
 
 Name
 ----
