@@ -94,8 +94,10 @@ This project requires the [GNU ARM Embedded Toolchain](https://developer.arm.com
 Related publications
 --------------------
 
-- Andreas Biri, Neal Jackson, Lothar Thiele, Prabal Dutta, and Pat Pannuto. 2020. *SociTrack: Infrastructure-Free Interaction Tracking through Mobile
+- Andreas Biri, Neal Jackson, Lothar Thiele, Pat Pannuto, and Prabal Dutta. 2020. *SociTrack: Infrastructure-Free Interaction Tracking through Mobile
 Sensor Networks.* In The 26th Annual International Conference on Mobile Computing and Networking (MobiCom ’20), September 21–25, 2020, London, United Kingdom. ACM, New York, NY, USA, 14 pages. https://doi.org/10.1145/3372224.3419190
+
+- Andreas Biri, Pat Pannuto, and Prabal Dutta. 2019. *Demo Abstract: Tot-Ternary - A Wearable Platform for Social Interaction Tracking.* In The 18th International Conference on Information Processing in Sensor Networks (co-located with CPS-IoT Week 2019) (IPSN ’19), April 16-18, 2019, Montreal, QC, Canada. ACM, New York, NY, USA, 2 pages. https://doi.org/10.1145/3302506.3312486
 
 - Benjamin Kempke, Pat Pannuto, Bradford Campbell, and Prabal Dutta. 2016. *Surepoint: Exploiting ultra wideband flooding and diversity to provide robust, scalable, high-fidelity indoor localization.* In Proceedings of the 14th ACM Conference on Embedded Network Sensor Systems (SenSys ’16), November 14-16, 2016, Stanford, CA, USA.  ACM, New York, NY, USA, 13 pages. https://doi.org/10.1145/2994551.2994570
 
