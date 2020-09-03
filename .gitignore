@@ -8,6 +8,12 @@ __pycache__/
 # Editor swap files
 *.sw*
 
+# IDE project files
+.cproject
+.project
+.settings
+.settings/
+
 # Distribution / packaging
 .Python
 env/
@@ -30,6 +36,12 @@ var/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+
+# JLink
+*.jlink
+
+# Build files
+_build
 
 # Installer logs
 pip-log.txt

@@ -1,19 +1,18 @@
-TotTernary Software
-===================
+SquarePoint Software
+====================
 
 Stable
 ------
 
- - [calibration](calibration/) - Tools to run calibration and database of calibration data
- - [carrier](carrier/) - Firmware for the nRF52 BLE chip
- - [module](module/) - Firmware for the STM32F chip, which controls the UWB radio and executes the ranging protocols
- - [phone](phone/) - Phone app to interface with TotTag hardware
+- [squarepoint](squarepoint/) - SquarePoint ranging firmware for the STM32F microcontroller
+- [tottag](tottag/firmware/) - TotTag firmware for the nRF52 BLE-enabled microcontroller
+- [calibration](tottag/calibration/) - SquarePoint calibration tools for a specific TotTag board revision
 
 
 In Development or Unpolished
 ----------------------------
 
- - [analysis](analysis/) - scripts to do data analysis on tottag output
- - [configuration](configuration/) - Tools to predict system lifetime and configure protocol parameters
- - [debug](debug/) - Short scripts to test basic operations
- - [visualization](visualization/) - Simple demos to show system operation
+- [analysis](analysis/) - Scripts to perform data analysis on TotTag output
+- [modeling](modeling/) - Tools to predict system lifetime and configure protocol parameters
+- [mobile_app](tottag/mobile_app/) - Mobile app to interface with TotTag devices
+- [visualization](tottag/visualization/) - Simple demos to showcase system operation

@@ -1,73 +1,78 @@
 Machine Setup
 =============
 
-This document describes how to set up a machine for working with TotTags.
+This document describes how to set up a machine and programming environment for
+working with TotTags.
 
-It may be easiest to use a cheap, dedicated laptop for this so that you don't
-have to keep setting things up.
-
-> **Reminder:** If while you are working you find that there was anything that
-> was unclear, or any extra steps you had to take to get things working, _please
-> update this document!_ If you are viewing this online, there should be a small
-> pencil-looking icon in the top right that will let you propose edits.
-
----
-
-<!-- npm i -g markdown-toc; markdown-toc -i Setup.md -->
-
-<!-- toc -->
-
-- [Linux and/or A Virtual Machine](#linux-andor-a-virtual-machine)
-- [Working in a Terminal](#working-in-a-terminal)
-- [Source Control Tools](#source-control-tools)
-- [Getting the Code](#getting-the-code)
-  * [Updating the Code](#updating-the-code)
-- [Getting the Compiler](#getting-the-compiler)
-  * [Bonus: Verify you can build firmware](#bonus-verify-you-can-build-firmware)
-- [Getting Python](#getting-python)
-- [Getting Node](#getting-node)
-  * [Getting Noble](#getting-noble)
-    + [Getting older node](#getting-older-node)
-    + [Installing noble](#installing-noble)
-    + [Giving node/noble permission to do things](#giving-nodenoble-permission-to-do-things)
-    + [Testing noble](#testing-noble)
-    + [Debugging noble](#debugging-noble)
-    + [Testing for TotTags](#testing-for-tottags)
-- [All done!](#all-done)
-
-<!-- tocstop -->
+> **Reminder:** If while you are working, you find that there was anything that
+> was unclear, or there were any extra steps you had to take to get things
+> working, _please update this document!_ If you are viewing this online, there
+> should be a small pencil-looking icon in the top right corner that will let
+> you propose edits.
 
 ---
 
-## Linux and/or A Virtual Machine
+* [Operating System](#operating-system)
+* [Working in a Terminal](#working-in-a-terminal)
+* [Source Control Tools](#source-control-tools)
+* [Getting the Code](#getting-the-source-code)
+    * [Updating the Code](#updating-the-code)
+* [Getting the Compiler](#getting-the-compiler)
+    * [Verify you can build firmware](#verify-you-can-build-firmware)
+* [Getting Python](#getting-python)
+* [Getting Node](#getting-node)
+    * [Getting Noble](#getting-noble)
+    * [Testing Noble](#testing-noble)
+    * [Debugging Noble](#debugging-noble)
+    * [Testing for TotTags](#testing-for-tottags)
+* [All done!](#all-done)
 
-The development environment assumes you have access to a Unix-like machine.
-For software and development, a Mac will work fine as well, however Bluetooth
-access and reliability on Mac is quite poor in practice, so you will need
-access to a Linux machine to test Bluetooth and to calibrate nodes.
+---
 
-This guide will assume you assume you are using [Ubuntu](https://ubuntu.com/).
-Other Linuxes should work, but you are on your own for debugging.
+## Operating System
+
+The TotTag development environment assumes you have access to a Linux, Mac, or
+Windows machine. Bluetooth access and reliability on Windows and Mac is quite
+poor, so you may need access to a Linux machine to test Bluetooth capabilities
+and to calibrate devices.
+
+For Linux, this guide will assume you assume you are using
+[Ubuntu](https://ubuntu.com/); however, other Linux distros will work just as
+well.
 
 If you want to use a virtual machine, it's most reliable to buy a
-[cheap Bluetooth dongle ($12 at time of writing)](https://www.amazon.com/Kinivo-USB-Bluetooth-4-0-Compatible/dp/B007Q45EF4/)
-and pass it through to the guest OS. This also fixes the problem of cheap
-laptop that doesn't come with Bluetooth (rarer).
+[cheap Bluetooth dongle](https://www.amazon.com/Kinivo-USB-Bluetooth-4-0-Compatible/dp/B007Q45EF4/)
+and pass it through to the guest OS. This also fixes the problem of using a
+cheap laptop that doesn't come with Bluetooth 4.0 built-in.
+
+Finally, to facilitate ease of use, we provide an
+[Ubuntu 18.04 LTS virtual machine](https://people.ee.ethz.ch/~abiri/projects/totternary/totternary.ova)
+which has all of the necessary tools pre-installed.
+
+Installation instructions:
+
+1. [Download VirtualBox](https://www.virtualbox.org/wiki/Downloads).
+2. Install it *with* the USB driver (will be required to connect to the SEGGER JLink).
+3. Import the virtual machine.
+4. Log in: **Username** *tot*, **Password** *lab11totternary*.
+5. Use the 'Terminal' (left side of the screen, black box icon) to enter commands.
 
 
 ## Working in a Terminal
 
-There is a program called `terminal` built in to Ubuntu. This lets you type
-commands for the computer to execute. We'll do all of our work in the terminal.
+There is a program called `terminal` built into most operating systems (`cmd` on
+Windows). It lets you type commands for the computer to execute. We will do all
+of our work in the terminal.
 
-If you've never used a terminal before, [here's a decent starter guide](https://medium.com/@grace.m.nolan/terminal-for-beginners-e492ba10902a).
-It's a lot (lot, lot) faster to develop software for terminal use, at the
-expense of that software being a bit harder to use.
+If you've never used a terminal before,
+[here's a decent starter guide](https://medium.com/@grace.m.nolan/terminal-for-beginners-e492ba10902a).
+It's a lot faster to develop software for use in a terminal, at the expense of
+that software being a bit less user-friendly.
 
 
 ## Source Control Tools
 
-We use [git](https://git-scm.com/) to manage code. You will need to install git:
+We use [Git](https://git-scm.com/) to manage code:
 
 ```bash
 # For Ubuntu
@@ -75,29 +80,29 @@ sudo apt install git
 ```
 
 
-## Getting the Code
+## Getting the Source Code
 
 All of the TotTag materials, including firmware, documentation, and calibration
-live in a [repository](https://github.com/lab11/totternary). While you can
-browse this online, you'll need a copy on your machine. You will `clone` the
-repository to do this:
+data live in a [repository](https://github.com/lab11/socitrack). While you can
+browse this online, you'll also need a local copy on your machine. You will
+`clone` the repository to obtain this:
 
 ```bash
-# This command will create a folder called "totternary"
-git clone --recursive https://github.com/lab11/totternary
+# This command will create a folder called "socitrack"
+git clone --recursive https://github.com/lab11/socitrack
 ```
 
-That `--recursive` bit is important, we use some other software libraries, and
-this will pull those in.
+That `--recursive` bit is important. We use some other external software
+libraries, and this will pull those in.
 
 
 ### Updating the Code
 
-Occasionally you will need to update the code, from inside the totternary folder
-that you cloned, run:
+Occasionally you will need to update the code to obtain any changes in the
+repository. From the `socitrack` folder that you cloned, run:
 
 ```bash
-# Remember you must be inside the totternary folder for this to work
+# Remember you must be inside the socitrack folder for this to work
 git pull --recurse-submodules
 ```
 
@@ -105,8 +110,9 @@ git pull --recurse-submodules
 ## Getting the Compiler
 
 You will need a special compiler to build code for the TotTags. Full directions
-are available from [ARM's website][arm-gcc], however these are the basic
-directions:
+are available from
+[ARM's website](https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads),
+however these are the basic directions for Linux and/or Mac:
 
 ```bash
 # Go to your home directory
@@ -114,7 +120,7 @@ cd ~
 
 # Download the toolchain
 # This is reasonably large (~100 MB) and may take a moment
-wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/8-2019q3/RC1.1/gcc-arm-none-eabi-8-2019-q3-update-linux.tar.bz2
+wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2020q2/gcc-arm-none-eabi-9-2020-q2-update-x86_64-linux.tar.bz2
 
 # Decompress the toolchain (.tar.bz2 is similar to a .zip, just different format)
 # You can make life easier with "tab completion", just type "tar -xf gcc<tab>"
@@ -126,53 +132,57 @@ nano .bashrc
 
 # At the bottom of the file, add this line
 # Be careful to add this exactly, no extra spaces, and don't miss quotes
-PATH="$PATH:$HOME/gcc-arm-none-eabi-8-2019-q3-update/bin/"
+PATH="$PATH:$HOME/gcc-arm-none-eabi-9-2020-q2-update/bin/"
 
 # Press Ctrl-X to exit nano, type Y for yes to save, and enter to accept the
 # file name.
 ```
 
+There is also a Windows version of the compiler available from the same site.
+It comes with an installer that can be used in place of the above commands.
+After installation, everything works exactly the same regardless of the
+Operating System.
+
 Now, **open a new terminal**, and verify that the compiler is set up correctly
 by trying to run the compiler. Here's the result on my machine:
 
     ppannuto@ubuntu:~$ arm-none-eabi-gcc --version
-    arm-none-eabi-gcc (GNU Tools for Arm Embedded Processors 8-2019-q3-update) 8.3.1 20190703 (release) [gcc-8-branch revision 273027]
-    Copyright (C) 2018 Free Software Foundation, Inc.
+    arm-none-eabi-gcc (GNU Tools for Arm Embedded Processors 9-2019-q4-major) 9.2.1 20191025 (release) [ARM/arm-9-branch revision 277599]
+    Copyright (C) 2019 Free Software Foundation, Inc.
     This is free software; see the source for copying conditions.  There is NO
     warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-[arm-gcc]: https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
 
-### Bonus: Verify you can build firmware
+### Verify you can build firmware
 
 ```bash
-cd totternary/software/module/firmware
-make
+cd socitrack/software/squarepoint
+make ID=c0:98:e5:42:00:FF
 # ... hopefully lots of output, ending something like this:
-arm-none-eabi-objcopy -Obinary _build/firmware.elf _build/firmware.bin
-arm-none-eabi-size _build/firmware.elf
+arm-none-eabi-objcopy -Obinary _build/squarepoint.elf _build/squarepoint.bin
+arm-none-eabi-size _build/squarepoint.elf
    text	   data	    bss	    dec	    hex	filename
-  46568	    304	   6856	  53728	   d1e0	_build/firmware.elf
+  44076	    344	   9728	  54148	   d384	_build/squarepoint.elf
 # it's fine if the exact numbers vary a little
 ```
 
 
 ## Getting Python
 
-_Note: Python is only used during calibration. If you won't need to calibrate
-any nodes, you can skip this._
+_Note: Python is only used during calibration. If you won't need to calibrate any nodes, you can skip this._
 
-If you have a brand new machine, you'll need to install Python:
+If you have a brand new machine, you'll need to install Python. Windows versions
+of Python can be downloaded and installed from the
+[Python website](https://www.python.org/downloads/). Linux users can install
+Python using the following:
 
 ```bash
-sudo apt install python python3
+sudo apt install python3
 ```
 
 And verify it's installed:
 
 ```bash
-pannuto@ubuntu:~$ python --version
-Python 2.7.16
 pannuto@ubuntu:~$ python3 --version
 Python 3.7.3
 # Exact versions may vary
@@ -181,69 +191,53 @@ Python 3.7.3
 
 ### Getting Python Dependencies
 
-The package manager for python does not come with the Python install, so need to
-grab that as well:
+The package manager for Python does not come with the Python installation on
+Linux machines, so you may need to install that as well:
 
-    sudo apt install python-pip python3-pip
+    sudo apt install python3-pip
 
-Then we need to use `pip3` to install some python packages that tools will use:
+Then we need to use `pip3` to install some python packages that tools will use
+on all Operating Systems:
 
-    pip3 install dataprint numpy
-
-> Don't lose the `3` on the end of this command!
+    pip3 install dataprint numpy matplotlib future
 
 
 ## Getting Node
 
 Node is a program that runs JavaScript code as programs. We recommend installing
-node using [`nvm`](http://nvm.sh), the "node version manager":
+the latest Long-Term Support release of node (v12.18.3) using [NVM](http://nvm.sh),
+the "Node Version Manager":
 
-```bash
-wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
-nvm install node
+```
+wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+nvm install v12.18.3
+```
+
+On Windows, you can install NVM from this
+[link](https://github.com/coreybutler/nvm-windows/releases/download/1.1.7/nvm-setup.zip),
+after which you should open a terminal and enter:
+
+```
+nvm install 12.18.3
+nvm use 12.18.3
 ```
 
 If everything worked, you should be able to run:
 
     ppannuto@ubuntu:~$ node --version
-    v12.10.0
+    v12.18.3
     # It is okay if this is a different version
 
 
-### Getting Noble
+#### Getting Noble
 
-Noble is a library used to talk to Bluetooth devices. Noble, unfortunately, is a
-bit of a fragile library, but there's also nothing better out there right now.
+At this point you can try installing Noble, a Node library that enables us to 
+communicate with Bluetooth LE devices. Head to the calibration folder:
 
-
-#### Getting older node
-
-The most reliable way I've found to get noble working is to go back in time a bit
-and use an older version of node (this is where `nvm` is quite useful).
-
-    nvm install v8
-
-This will install node version 8. For me, this specifically chose `v8.16.1`,
-using the latest version of node version 8 is probably the best bet.
-
-If you are only using this machine for TotTag development, we recommend setting
-node version 8 to be your default:
-
-    nvm alias default v8
-
-Otherwise, **every time you open a new terminal** you must remember to run
-
-    nvm use v8
-
-
-#### Installing noble
-
-At this point you can try installing noble. Head over to the debug folder:
-
-    cd totternary/software/debug
+    cd software/tottag/calibration
     npm install
 
-This will spew a lot of text, hopefully none of it says `ERR!` anywhere:
+This will produce a lot of text, hopefully none of it says `ERR!` anywhere:
 
     gyp ERR! build error
 
@@ -251,22 +245,19 @@ Warnings are fine:
 
     npm WARN notsup SKIPPING OPTIONAL DEPENDENCY: Unsupported platform for xpc-connection@0.1.4: wanted {"os":"darwin","arch":"any"} (current: {"os":"linux","arch":"x64"})
 
-If noble doesn't install, you have some debug work to do. This is a good point
-to reach out for more help -- it's the most fragile part of the whole system.
-
-
-#### Giving node/noble permission to do things
+If Noble doesn't install, you have some debug work to do. This is a good point
+to reach out for more help.
 
 As Bluetooth can interact with the outside world, it's treated as a potential
-security risk. You need to give node permission to use Bluetooth. You should
-only need to do this once:
+security risk. On Linux or Mac, you need to give Node permission to use Bluetooth.
+You should only need to do this once:
 
     sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
 
 
-#### Testing noble
+#### Testing Noble
 
-We're finally there! Let's try a test. Still in the debug folder:
+Still in the debug folder:
 
     ppannuto@ubuntu:~/totternary/software/debug$ node test_noble.js 
     ** TotTag -- Noble test
@@ -285,27 +276,27 @@ We're finally there! Let's try a test. Still in the debug folder:
 
 It usually takes a few seconds for the first device to show up. While it's
 possibly that there are no Bluetooth devices around, it's pretty unlikely
-nowadays, so _something_ should print.
+nowadays, so something should print.
 
 
-#### Debugging noble
+#### Debugging Noble
 
-Bluetooth is unfortunately kind of finicky, so here's some issues:
+Bluetooth is unfortunately kind of finicky, so here are some issues:
 
 ##### Powered Off
 
-Occasionally, noble will print a message about being powered off, like this:
+Occasionally, Noble will print a message about being powered off, like this:
 
-    ppannuto@ubuntu:~/totternary/software/debug$ ./test_tags_visible.js
+    ppannuto@ubuntu:~/totternary/software/debug$ node test_tags_visible.js
     ** TotTag -- Bluetooth test
     **
     ** Each TotTag seen via Bluetooth will print. Press Ctrl-C to exit at any time
 
     Scanning...
-    Found TotTag: c098e5420025
+    Found TotTag: c0:98:e5:42:00:25
     WARNING: Tried to start scanning, got: poweredOff
 
-If this happens, simply kill the script that was running and start it again.
+If this happens, simply kill the script and start it again.
 
 ##### Permissions
 
@@ -315,25 +306,26 @@ If at any point you see this message
                    or see README for information on running without root/sudo:
                    https://github.com/sandeepmistry/noble#running-on-linux
 
-It means you need to run the permission step above.
+It means you need to run the permission step:
+
+    sudo setcap cap_net_raw+eip $(eval readlink -f `which node`)
 
 
 #### Testing for TotTags
 
-If you happen to have an already programmed TotTag around, you can try looking
-for just that:
+If you happen to have a programmed TotTag around, you can try looking
+for just that device:
 
-    ppannuto@ubuntu:~/totternary/software/debug$ ./test_tags_visible.js
+    ppannuto@ubuntu:~/totternary/software/debug$ node test_tags_visible.js
     ** TotTag -- Bluetooth test
     **
     ** Each TotTag seen via Bluetooth will print. Press Ctrl-C to exit at any time
 
     Scanning...
-    Found TotTag: c098e542f006
+    Found TotTag: c0:98:e5:42:f0:06
 
-Each tag will print only once. The ID printed should match the sticker on the
-back of the TotTag. (Currently, all tags begin "c098e542f0", only the last two
-digits will change.)
+Each TotTag will print only once. The ID printed should match the sticker on the
+back of the device.
 
 ---
 
@@ -341,4 +333,4 @@ digits will change.)
 
 This should be everything you need to install.
 
-[The next step is Provisioning!](Provisioning.md)
+The next step is [Provisioning!](Provisioning.md)

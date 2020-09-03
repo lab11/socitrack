@@ -1,0 +1,23 @@
+{
+  "name": "tottag-calibration",
+  "version": "1.0.0",
+  "description": "Calibrate a TotTag board revision",
+  "main": "calibration_log.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lab11/socitrack"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/lab11/socitrack/issues"
+  },
+  "dependencies": {
+    "long": "latest",
+    "@abandonware/noble": "latest",
+    "strftime": "latest"
+  }
+}

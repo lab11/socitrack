@@ -1,0 +1,29 @@
+{
+  "name": "totternary-visualization",
+  "version": "1.0.0",
+  "description": "Demos for the TotTernary platform",
+  "main": "measurement_visualize.js",
+  "dependencies": {
+    "chartist": "^0.11.0",
+    "debug": "^4.1.1",
+    "long": "^4.0.0",
+    "mime": "^2.4.0",
+    "noble": "^1.9.1",
+    "socket.io": "^2.2.0",
+    "strftime": "^0.10.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lab11/totternary.git"
+  },
+  "author": "Andreas Biri",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lab11/totternary/issues"
+  },
+  "homepage": "https://github.com/lab11/totternary#readme"
+}

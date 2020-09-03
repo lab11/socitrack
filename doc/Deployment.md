@@ -5,8 +5,6 @@ Basic case deployment
 
 _Outline_
 
- - Pre'reqs: calibrated nodes (how to know?)
-
  - SD Card protocol
 
  - TODO: RTC protocol
@@ -17,6 +15,7 @@ _Outline_
 
    - (LED good/bad/okay documentation)
 
-   - Summon expected behavior
-
  - When it comes back (SD expected behavior)
+ 
+ - See `software/analysis/README.md` for description of how to manage
+ and work with SD Card and log files
