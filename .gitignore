@@ -4,6 +4,8 @@ __pycache__/
 
 # C extensions
 *.so
+*.d
+*.o
 
 # Editor swap files
 *.sw*
@@ -18,6 +20,7 @@ __pycache__/
 .Python
 env/
 build/
+_build/
 develop-eggs/
 dist/
 downloads/
@@ -39,9 +42,6 @@ var/
 
 # JLink
 *.jlink
-
-# Build files
-_build
 
 # Installer logs
 pip-log.txt
@@ -69,10 +69,6 @@ docs/_build/
 
 # PyBuilder
 target/
-
 node_modules
 /.idea/
-/software/carrier/apps/blink/_build/
-/software/carrier/apps/node/_build/
-/software/carrier/cmake-build-debug/
-/software/cmake-build-debug/
+cmake-build-debug/
