@@ -1,16 +1,17 @@
 #ifndef __LED_HEADER_H
 #define __LED_HEADER_H
 
-// Header inclusions ---------------------------------------------------------------------------------------------------
+// LED Color typedefs --------------------------------------------------------------------------------------------------
 
-#include <stdint.h>
+typedef enum { RED, BLUE, GREEN, ORANGE, PURPLE } led_color_t;
 
 
 // LED functionality ---------------------------------------------------------------------------------------------------
 
-void led_init(uint32_t pin_number);
-void led_on(uint32_t pin_number);
-void led_off(uint32_t pin_number);
-void led_toggle(uint32_t pin_number);
+void leds_init(void);
+void leds_disable(void);
+void leds_enable(void);
+void led_on(led_color_t color);
+void led_off(void);
 
 #endif // #ifndef __LED_HEADER_H

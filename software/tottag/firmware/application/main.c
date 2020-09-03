@@ -90,14 +90,8 @@ static void hardware_init(void)
 {
    // Initialize the GPIO subsystem and the LEDs
    initialize_gpio();
-   led_init(CARRIER_LED_RED);
-   led_init(CARRIER_LED_BLUE);
-   led_init(CARRIER_LED_GREEN);
-
-   // Signal that hardware initialization is beginning
-   led_on(CARRIER_LED_RED);
-   led_off(CARRIER_LED_BLUE);
-   led_off(CARRIER_LED_GREEN);
+   leds_init();
+   led_on(RED);
 
    // Initialize the RTT library
    printf("\n----------------------------------------------\n");
@@ -144,41 +138,22 @@ static void hardware_init(void)
    accelerometer_init(&_spi_instance, &_app_flags.accelerometer_data_ready);
    battery_monitor_init(&_app_flags.battery_status_changed);
    sd_card_create_log(rtc_get_current_time());
+   led_off();
    printf("INFO: Initialized supplementary hardware and software services\n");
 }
 
 static void update_leds(uint32_t app_running, uint32_t network_discovered)
 {
    if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))          // RED = SD card not inserted
-   {
-      led_off(CARRIER_LED_GREEN);
-      led_off(CARRIER_LED_BLUE);
-      led_on(CARRIER_LED_RED);
-   }
+      led_on(RED);
    else if (!nrfx_atomic_flag_fetch(&_app_flags.squarepoint_inited))   // PURPLE = Cannot communicate with SquarePoint
-   {
-      led_off(CARRIER_LED_GREEN);
-      led_on(CARRIER_LED_BLUE);
-      led_on(CARRIER_LED_RED);
-   }
+      led_on(PURPLE);
    else if (app_running)                                               // GREEN = App running
-   {
-      led_on(CARRIER_LED_GREEN);
-      led_off(CARRIER_LED_BLUE);
-      led_off(CARRIER_LED_RED);
-   }
+      led_on(GREEN);
    else if (network_discovered)                                        // ORANGE = Network discovered, app not running
-   {
-      led_on(CARRIER_LED_GREEN);
-      led_off(CARRIER_LED_BLUE);
-      led_on(CARRIER_LED_RED);
-   }
+      led_on(ORANGE);
    else                                                                // BLUE = No network discovered
-   {
-      led_off(CARRIER_LED_GREEN);
-      led_on(CARRIER_LED_BLUE);
-      led_off(CARRIER_LED_RED);
-   }
+      led_on(BLUE);
 }
 
 static nrfx_err_t start_squarepoint(void)
@@ -481,12 +456,18 @@ int main(void)
          usb_change_power_status(is_plugged_in);
          charger_plugged_in = is_plugged_in;
 
-         // Disable SquarePoint if charging or plugged in
+         // Disable SquarePoint and LEDs if charging or plugged in
 #ifdef STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
          if (is_plugged_in || is_charging)
+         {
+            leds_disable();
             nrfx_atomic_flag_clear(&_app_flags.squarepoint_enabled);
+         }
          else
+         {
+            leds_enable();
             nrfx_atomic_flag_set(&_app_flags.squarepoint_enabled);
+         }
 #endif
       }
 

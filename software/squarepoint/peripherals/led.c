@@ -22,7 +22,6 @@ void led_on(led_color_t color)
          GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, LED_OFF);
          GPIO_WriteBit(STM_LED_GREEN_PORT, STM_LED_GREEN_PIN, LED_ON);
          break;
-      case YELLOW:
       case ORANGE:
          GPIO_WriteBit(STM_LED_RED_PORT, STM_LED_RED_PIN, LED_ON);
          GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, LED_OFF);
