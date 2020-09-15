@@ -48,13 +48,13 @@
 // Protocol adaptation -------------------------------------------------------------------------------------------------
 
 // Disable LEDs to save power (and reduce distraction)
-//#define STM_DISABLE_LEDS 1
+#define STM_ENABLE_LEDS TRUE
 
 // Do not attempt to wait for the host to send instructions
-//#define BYPASS_HOST_INTERFACE 1
+//#define BYPASS_HOST_INTERFACE TRUE
 
 // Adjust Tx parameters
-#define DW1000_MAXIMIZE_TX_POWER 1
+#define DW1000_MAXIMIZE_TX_POWER TRUE
 
 // Re-transmit received Glossy flood packets
 #define ENABLE_GLOSSY_FLOOD_ON_RECEPTION FALSE

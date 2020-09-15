@@ -166,11 +166,7 @@ bool hw_restart_chip(void)
 {
    // Indicate that the chip is re-enabled by turning on the LED
    debug_msg("INFO: Chip has been re-enabled!\n");
-#if (BOARD_V == SQUAREPOINT)
-#ifndef STM_DISABLE_LEDS
-   GPIO_WriteBit(STM_LED_BLUE_PORT, STM_LED_BLUE_PIN, LED_ON);
-#endif
-#endif
+   led_on(BLUE);
 
    // Re-initalize the system clocks and PLL
    SystemInit();

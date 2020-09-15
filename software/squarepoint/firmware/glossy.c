@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stddef.h>
+#include "configuration.h"
 #include "deca_device_api.h"
 #include "deca_regs.h"
 #include "dw1000.h"
