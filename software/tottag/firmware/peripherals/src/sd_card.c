@@ -183,9 +183,11 @@ void sd_card_write(const char *data, uint16_t length, bool flush)
 
 bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuation)
 {
-   simple_logger_power_on();
+   if (!continuation)
+      simple_logger_power_on();
    uint8_t ret_val = simple_logger_list_files(file_name, file_size, continuation);
-   simple_logger_power_off();
+   if (!ret_val)
+      simple_logger_power_off();
    return ret_val;
 }
 
