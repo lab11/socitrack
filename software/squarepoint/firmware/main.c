@@ -172,6 +172,7 @@ int main(void)
 #endif // BYPASS_HOST_INTERFACE
 
    // Signal normal operation by turning LED BLUE
+   led_off();
    led_on(BLUE);
 
    // Main loop
