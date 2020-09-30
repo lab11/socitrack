@@ -16,7 +16,7 @@ logfile_date = None
 #TODO Message Pat my Github info
 
 for i in logs:
-    outFile = "averaged" + i[0:2] + ".log"
+    outFile = i[:-4] + "-averaged.log"
     s = open(outFile,"w+")
     with open(i) as f:
         tag = f.readline()

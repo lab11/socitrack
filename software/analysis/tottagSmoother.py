@@ -49,7 +49,7 @@ smoothVal = int(sys.argv[1])
 logfile_date = None
 
 for i in logs:
-    outFile = "smoothed" + i[8:10] + ".log"
+    outFile = i[:-4] + "-smoothed.log"
     s = open(outFile, "w+")
     first = {}
     classDict = {}
