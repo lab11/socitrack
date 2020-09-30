@@ -59,7 +59,7 @@ timestamp from its companion TotTag. The script can be run like so:
 
 Next, run the `tottagSmoother.py` script, which takes at least 2 arguments:
 the number of data points over which to smooth, followed by a list of every log
-file you would like to smooth. The smoother woks by taking a moving average with
+file you would like to smooth. The smoother works by taking a moving average with
 a width of SMOOTHING_VAL. When it encounters a gap in the data greater than the
 aforementioned value, the smoothing buffer is cleared and it starts over after
 the gap. To run the script, enter:

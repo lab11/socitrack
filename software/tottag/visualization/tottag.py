@@ -10,7 +10,7 @@ from datetime import datetime, tzinfo, timedelta
 
 # User-defined constants
 MAX_PLOT_FEET = 50
-#PLOT_START_TIME = '08:18:00'
+#PLOT_START_TIME = '19:55:00'
 #PLOT_END_TIME = '08:25:00'
 
 # Algorithm-defined constants
@@ -88,7 +88,7 @@ with open(logfile) as f:
          last_timestamp = timestamp
 
       # Handle an informational logfile line containing a timestamp
-      elif line.find('Timestamp: ') != -1:
+      elif (line.find('HEADER') != -1) and (line.find('Timestamp: ') != -1):
 
          # Take a guess at the time the device was powered off
          if line.find('Device: ') != -1:
