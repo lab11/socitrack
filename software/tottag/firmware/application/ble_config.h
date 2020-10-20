@@ -45,6 +45,7 @@
 #define APP_BATTERY_CHECK_TIMEOUT_SEC           300
 #define APP_LACK_OF_MOTION_TIMEOUT_SEC          2
 #define APP_RUNNING_RESPONSE_TIMEOUT_SEC        2
+#define SQUAREPOINT_ERROR_NOTIFY_COUNT          5
 #define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   3
 
 // Storage / Buffers
@@ -87,6 +88,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t device_in_motion;
    nrfx_atomic_flag_t bluetooth_is_advertising;
    nrfx_atomic_flag_t bluetooth_is_scanning;
+   nrfx_atomic_u32_t squarepoint_comms_error_count;
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;
    nrfx_atomic_u32_t calibration_index;

@@ -181,7 +181,6 @@ static nrfx_err_t start_squarepoint(void)
    {
       printf("ERROR: Unable to communicate with the SquarePoint module\n");
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_inited);
-      buzzer_indicate_error();
       return err_code;
    }
 
@@ -226,7 +225,6 @@ static nrfx_err_t start_squarepoint_calibration(void)
    {
       printf("ERROR: Unable to communicate with the SquarePoint module\n");
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_inited);
-      buzzer_indicate_error();
       return err_code;
    }
 
@@ -274,10 +272,14 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
       if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
       {
          nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
+         nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
          printf("INFO: SquarePoint module connection successful\n");
       }
-      else
+      else if (nrfx_atomic_u32_fetch_add(&_app_flags.squarepoint_comms_error_count, 1) >= SQUAREPOINT_ERROR_NOTIFY_COUNT)
+      {
          buzzer_indicate_error();
+         nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
+      }
    }
 
    // Determine if the SquarePoint module has frozen
