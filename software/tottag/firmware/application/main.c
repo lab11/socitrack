@@ -133,8 +133,19 @@ static void hardware_init(void)
       nrf_delay_ms(2500);
    }
 
-   // Initialize supplementary hardware components
+   // Enable the external Real-Time Clock and ensure that the fetched timestamp is valid
    rtc_external_init(&_spi_instance);
+   uint32_t current_timestamp = rtc_get_current_time();
+   while ((current_timestamp < 1588291200) || (current_timestamp > 2534976000))
+   {
+      printf("ERROR: External RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
+      rtc_external_init(&_spi_instance);
+      buzzer_indicate_error();
+      nrf_delay_ms(1000);
+      current_timestamp = rtc_get_current_time();
+   }
+
+   // Initialize supplementary hardware components
    accelerometer_init(&_spi_instance, &_app_flags.accelerometer_data_ready);
    battery_monitor_init(&_app_flags.battery_status_changed);
    sd_card_create_log(rtc_get_current_time());

@@ -26,7 +26,7 @@ void rtc_init(void)
 {
    // Initialize the RTC instance
    nrfx_rtc_config_t rtc_config = NRFX_RTC_DEFAULT_CONFIG;
-   rtc_config.prescaler = 4095;  // Approximately 8 Hz; PRESCALER is 12bit register (2^12 - 1 = 4095)
+   rtc_config.prescaler = 4095;  // Ticks at 8 Hz; PRESCALER is 12bit register (2^12 - 1 = 4095)
    nrfx_err_t err_code = nrfx_rtc_init(&_rtc_instance, &rtc_config, rtc_handler);
    APP_ERROR_CHECK(err_code);
    nrfx_rtc_enable(&_rtc_instance);
