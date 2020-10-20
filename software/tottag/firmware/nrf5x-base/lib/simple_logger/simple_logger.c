@@ -60,23 +60,27 @@ static uint8_t logger_init(uint8_t force_complete_init)
          {
             case FR_NOT_READY:
                // No disk found; check "Card Detected" signal before calling this function
+               printf("ERROR: Unable to access SD card!\n");
                return res;
             case FR_NO_FILESYSTEM:
                // No existing file system
                res = f_mkfs("", 0, work, sizeof(work));
                if (res != FR_OK)
                {
-                  printf("Failed to make a new filesystem: %d\n", res);
+                  printf("ERROR: Failed to create a new SD card filesystem: %d\n", res);
                   return res;
                }
 
                // Retry mounting now
                res = f_mount(&simple_logger_fs, "", 1);
                if (res != FR_OK)
+               {
+                  printf("ERROR: Unable to mount SD card filesystem: %d\n", res);
                   return res;
+               }
                break;
             default:
-               printf("Unexpected error while mounting SD card: %d\n", res);
+               printf("ERROR: Unexpected error while mounting SD card: %d\n", res);
                return res;
          }
       }
@@ -88,13 +92,9 @@ static uint8_t logger_init(uint8_t force_complete_init)
    FIL temp;
    res = f_open(&temp, file, FA_READ | FA_OPEN_EXISTING);
    if (res == FR_NO_FILE)
-   {
-      // The file doesn't exist
       simple_logger_file_exists = 0;
-   }
    else if (res == FR_OK)
    {
-      // The file does exist
       simple_logger_file_exists = 1;
       res = f_close(&temp);
    }

@@ -16,7 +16,7 @@
 
 static const nrfx_spim_t* _spi_instance = NULL;
 static uint32_t _next_day_timestamp = 0;
-static uint16_t _sd_card_buffer_length = 0;
+static volatile uint16_t _sd_card_buffer_length = 0;
 static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
 static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH] = { 0 };
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _log_info_buf[128] = { 0 };
@@ -34,8 +34,12 @@ static void flush_sd_buffer(void)
    if (!_sd_card_buffer_length)
       return;
 
-   // Enable and select the SD card
-   simple_logger_power_on();
+   // Power ON the SD card
+   if (simple_logger_power_on())
+   {
+      simple_logger_power_off();
+      return;
+   }
 
    // Ensure that the SD card is present
    if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
@@ -50,15 +54,6 @@ static void flush_sd_buffer(void)
    }
    else
       nrfx_atomic_flag_set(_sd_card_inserted);
-
-   // Append a string terminator
-   if (_sd_card_buffer_length < APP_SDCARD_BUFFER_LENGTH)
-      _sd_card_buffer[_sd_card_buffer_length] = '\0';
-   else
-   {
-      _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH - 1] = '\0';
-      printf("WARNING: Overwriting buffer data!\n");
-   }
 
    // Send data in chunks of 254 bytes, as this is the maximum which the nRF DMA can handle
    uint8_t nr_writes = (_sd_card_buffer_length / APP_LOG_CHUNK_SIZE) + ((_sd_card_buffer_length % APP_LOG_CHUNK_SIZE) ? 1 : 0);
@@ -76,7 +71,7 @@ static void flush_sd_buffer(void)
          memcpy(_sd_write_buf, _sd_card_buffer + (i * APP_LOG_CHUNK_SIZE), APP_LOG_CHUNK_SIZE);
          _sd_write_buf[APP_LOG_CHUNK_SIZE] = '\0';
       }
-      simple_logger_log("%s", _sd_write_buf);
+      simple_logger_log_string(_sd_write_buf);
    }
 
    // Reset the buffer and turn off power to the SD card
@@ -101,7 +96,8 @@ bool sd_card_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* sd_card_i
    nrfx_gpiote_out_set(CARRIER_SD_ENABLE);
 
    // Initialize SD card logger
-   simple_logger_init();
+   if (simple_logger_init())
+      return false;
 
    // Clean up any unexpected SD card files
    uint32_t file_size = 0;
@@ -173,7 +169,7 @@ void sd_card_create_log(uint32_t current_time)
 void sd_card_write(const char *data, uint16_t length, bool flush)
 {
    // Flush the buffer if requested or necessary
-   if (flush || ((APP_SDCARD_BUFFER_LENGTH - _sd_card_buffer_length - 1) < length))
+   if (flush || ((APP_SDCARD_BUFFER_LENGTH - _sd_card_buffer_length - 1) <= length))
       flush_sd_buffer();
 
    // Append data to the buffer
