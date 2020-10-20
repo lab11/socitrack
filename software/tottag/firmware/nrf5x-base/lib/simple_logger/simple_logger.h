@@ -47,6 +47,7 @@ uint8_t simple_logger_ready(void);
 void simple_logger_update(void);
 uint8_t simple_logger_power_on(void);
 void simple_logger_power_off(void);
+uint8_t simple_logger_log_string(const char *str);
 uint8_t simple_logger_log(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 uint8_t simple_logger_log_header(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
 uint8_t simple_logger_read(uint8_t* buf, uint8_t buf_len);

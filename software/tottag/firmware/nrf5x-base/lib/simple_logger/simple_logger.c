@@ -178,13 +178,35 @@ uint8_t simple_logger_power_on()
    disk_enable();
 
    // Re-initialize
-   return logger_init(1);
+   uint8_t res = logger_init(1), num_retries = 10;
+   while (--num_retries && (res != FR_OK))
+      res = logger_init(1);
+   return res;
 }
 
 void simple_logger_power_off()
 {
-   // Disable SD card
+   // Flush any open files and disable the SD card
+   f_close(&simple_logger_fpointer);
    disk_disable();
+}
+
+uint8_t simple_logger_log_string(const char *str)
+{
+   f_puts(str, &simple_logger_fpointer);
+   FRESULT res = f_sync(&simple_logger_fpointer);
+   if (res != FR_OK)
+   {
+      res = logger_init(1);
+      if (res == FR_OK)
+      {
+         f_puts(str, &simple_logger_fpointer);
+         res = f_sync(&simple_logger_fpointer);
+      }
+      else
+         error();
+   }
+   return res;
 }
 
 uint8_t simple_logger_log_header(const char *format, ...)
@@ -223,21 +245,7 @@ uint8_t simple_logger_log(const char *format, ...)
    va_start(argptr, format);
    vsnprintf(buffer, buffer_size, format, argptr);
    va_end(argptr);
-
-   f_puts(buffer, &simple_logger_fpointer);
-   FRESULT res = f_sync(&simple_logger_fpointer);
-   if (res != FR_OK)
-   {
-      res = logger_init(1);
-      if (res == FR_OK)
-      {
-         f_puts(buffer, &simple_logger_fpointer);
-         res = f_sync(&simple_logger_fpointer);
-      }
-      else
-         error();
-   }
-   return res;
+   return simple_logger_log_string(buffer);
 }
 
 // Read data
