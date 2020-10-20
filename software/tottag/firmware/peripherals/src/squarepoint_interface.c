@@ -138,7 +138,7 @@ static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version)
 
 // Public SquarePoint Interface API ------------------------------------------------------------------------------------
 
-nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_interface_data_callback callback)
+nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_interface_data_callback callback, const uint8_t* eui)
 {
    // Ensure that the TWI peripheral hardware is initialized
    if (!_twi_initialized && twi_hw_init())
@@ -156,8 +156,11 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
       twi_hw_uninit();
       return NRFX_ERROR_INTERNAL;
    }
-   if (id != SQUAREPOINT_ID)
+   if ((*(uint8_t*)&id != eui[1]) || (*(((uint8_t*)&id) + 1) != eui[0]))
+   {
+      printf("ERROR: SquarePoint and TotTag module EUIs do not match!\n");
       return NRFX_ERROR_INVALID_STATE;
+   }
    return NRFX_SUCCESS;
 }
 

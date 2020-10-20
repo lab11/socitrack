@@ -174,13 +174,14 @@ static nrfx_err_t start_squarepoint(void)
    squarepoint_wakeup_module();
 
    // Initialize the SquarePoint module and communications
-   nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler);
+   nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui());
    if (err_code == NRFX_SUCCESS)
       nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
    else
    {
       printf("ERROR: Unable to communicate with the SquarePoint module\n");
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_inited);
+      buzzer_indicate_error();
       return err_code;
    }
 
@@ -210,6 +211,7 @@ static nrfx_err_t start_squarepoint(void)
    return NRFX_SUCCESS;
 }
 
+#ifdef BLE_CALIBRATION
 static nrfx_err_t start_squarepoint_calibration(void)
 {
    // Wake up the SquarePoint module
@@ -217,13 +219,14 @@ static nrfx_err_t start_squarepoint_calibration(void)
    squarepoint_wakeup_module();
 
    // Initialize the SquarePoint module and communications
-   nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler);
+   nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui());
    if (err_code == NRFX_SUCCESS)
       nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
    else
    {
       printf("ERROR: Unable to communicate with the SquarePoint module\n");
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_inited);
+      buzzer_indicate_error();
       return err_code;
    }
 
@@ -244,6 +247,7 @@ static nrfx_err_t start_squarepoint_calibration(void)
    }
    return NRFX_SUCCESS;
 }
+#endif
 
 
 // Callbacks and data handlers -----------------------------------------------------------------------------------------
@@ -267,11 +271,13 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
       // Wake up and initialize the SquarePoint module
       printf("INFO: Connecting to the SquarePoint module...\n");
       squarepoint_wakeup_module();
-      if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler) == NRFX_SUCCESS)
+      if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
       {
          nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
          printf("INFO: SquarePoint module connection successful\n");
       }
+      else
+         buzzer_indicate_error();
    }
 
    // Determine if the SquarePoint module has frozen
@@ -489,8 +495,10 @@ int main(void)
          start_squarepoint();
       else if (!app_enabled && app_running)
          squarepoint_stop();
+#ifdef BLE_CALIBRATION
       else if (!app_running && (nrfx_atomic_u32_fetch(&_app_flags.calibration_index) != BLE_CALIBRATION_INDEX_INVALID))
          start_squarepoint_calibration();
+#endif
 
       // Update the BLE advertising and scanning states
       if (!app_enabled)

@@ -24,7 +24,7 @@ static CPAL_TransferTypeDef rxStructure = { 0 };
 static CPAL_TransferTypeDef txStructure = { 0 };
 
 // INFO response packets, last byte is the version
-static uint8_t INFO_PKT[3] = { 0xb0, 0x1a, 1 };
+static uint8_t INFO_PKT[3] = { 0x00, 0x00, 1 };
 static uint8_t NULL_PKT[3] = { 0xaa, 0xaa, 0 };
 
 
@@ -34,6 +34,11 @@ uint32_t host_interface_init(void)
 {
    // Reset the acknowledgment flag
    atomic_clear(&tx_needs_ack);
+
+   // Read the device EUI
+   uint8_t full_eui[EUI_LEN] = { 0 };
+   dw1000_read_eui(full_eui);
+   memcpy(INFO_PKT, full_eui, 2);
 
    // Enable the Interrupt pin
    GPIO_InitTypeDef GPIO_InitStructure;
