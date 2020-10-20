@@ -154,29 +154,29 @@ typedef struct
 // Public AB1815 RTC API -----------------------------------------------------------------------------------------------
 
 void ab1815_init(void);
-void ab1815_init_time(void);
-void ab1815_set_config(ab1815_control_t config);
-void ab1815_get_config(ab1815_control_t *config);
-void ab1815_set_int_config(ab1815_int_config_t config);
-void ab1815_get_int_config(ab1815_int_config_t *config);
-void ab1815_use_xt_oscillator(void);
-void ab1815_get_status(void);
+uint8_t ab1815_init_time(void);
+uint8_t ab1815_set_config(ab1815_control_t config);
+uint8_t ab1815_get_config(ab1815_control_t *config);
+uint8_t ab1815_set_int_config(ab1815_int_config_t config);
+uint8_t ab1815_get_int_config(ab1815_int_config_t *config);
+uint8_t ab1815_use_xt_oscillator(void);
+uint8_t ab1815_get_status(void);
 ab1815_time_t unix_to_ab1815(struct timeval tv);
 ab1815_time_t tm_to_ab1815(struct tm *t);
 struct timeval ab1815_to_unix(ab1815_time_t time);
-void ab1815_set_time(ab1815_time_t time);
-ab1815_time_t ab1815_get_time(void);
+uint8_t ab1815_set_time(ab1815_time_t time);
+uint8_t ab1815_get_time(ab1815_time_t *time);
 struct timeval ab1815_get_time_unix(void);
-void ab1815_enable_trickle_charger(void);
-void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback *cb);
-void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);
+uint8_t ab1815_enable_trickle_charger(void);
+uint8_t ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback *cb);
+uint8_t ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);
 void ab1815_tickle_watchdog(void);
-void ab1815_clear_watchdog(void);
+uint8_t ab1815_clear_watchdog(void);
 uint8_t ab1815_ready(void);
 uint8_t ab1815_wait_for_ready(uint16_t timeout_ms);
 void ab1815_printTime(ab1815_time_t time);
 
 // Public initialization function
-void rtc_external_init(const nrfx_spim_t* spi_instance);
+uint8_t rtc_external_init(const nrfx_spim_t* spi_instance);
 
 #endif // #ifndef __RTC_EXTERNAL_HEADER_H

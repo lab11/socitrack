@@ -75,7 +75,7 @@ void ab1815_init(void)
    APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
 }
 
-void ab1815_init_time(void)
+uint8_t ab1815_init_time(void)
 {
 #ifdef FORCE_RTC_RESET
 #pragma GCC diagnostic push
@@ -95,50 +95,58 @@ void ab1815_init_time(void)
    comp_time.years = ascii_to_i(_date[9]) * 10 + ascii_to_i(_date[10]);
    comp_time.weekday = 0;  // default
 
-   ab1815_set_time(comp_time);
+   return ab1815_set_time(comp_time);
 #pragma GCC diagnostic pop
+#else
+   return 1;
 #endif
 }
 
-static void ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
+static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
 {
    // Ensure that the requested read length is less than the buffer size
    uint8_t readreg = reg, buf[257];
    if (len > (sizeof(buf) - 1))
-      return;
+      return 0;
 
    // Initialize the SPI interface to communicate with the RTC
-   ab1815_wait_for_ready(1000);
+   if (!ab1815_wait_for_ready(1000))
+      return 0;
    nrfx_spim_uninit(_spi_instance);
    APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-   ab1815_wait_for_ready(1000);
+   if (!ab1815_wait_for_ready(1000))
+      return 0;
 
    // Read from the requested register
    nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(&readreg, 1, buf, sizeof(buf));
    APP_ERROR_CHECK(nrfx_spim_xfer(_spi_instance, &xfer_desc, 0));
    memcpy(read_buf, buf + 1, len);
+   return 1;
 }
 
-static void ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
+static uint8_t ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
 {
    // Ensure that the requested write length is less than the buffer size
    uint8_t buf[257];
    if (len > (sizeof(buf) - 1))
-      return;
+      return 0;
 
    // Write: First bit is 1
    buf[0] = 0x80 | reg;
    memcpy(buf + 1, write_buf, len);
 
    // Initialize the SPI interface to communicate with the RTC
-   ab1815_wait_for_ready(1000);
+   if (!ab1815_wait_for_ready(1000))
+      return 0;
    nrfx_spim_uninit(_spi_instance);
    APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-   ab1815_wait_for_ready(1000);
+   if (!ab1815_wait_for_ready(1000))
+      return 0;
 
    // Write to the requested register
    nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TX(buf, len + 1);
    APP_ERROR_CHECK(nrfx_spim_xfer(_spi_instance, &xfer_desc, 0));
+   return 1;
 }
 
 static void interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
@@ -153,30 +161,34 @@ static void interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t actio
    }
 }
 
-void ab1815_set_config(ab1815_control_t config)
+uint8_t ab1815_set_config(ab1815_control_t config)
 {
    // Store current configuration
    _ctrl_config = config;
 
    // Control1
    uint8_t write = config.stop << 7 | config.hour_12 << 6 | config.OUTB << 5 | config.OUT << 4 | config.rst_pol << 3 | config.auto_rst << 2 | 0x2 | config.write_rtc;
-   ab1815_write_reg(AB1815_CONTROL1, &write, 1);
+   if (!ab1815_write_reg(AB1815_CONTROL1, &write, 1))
+      return 0;
 
    // Control2
    write = config.psw_nirq2_function << 2 | config.fout_nirq_function;
-   ab1815_write_reg(AB1815_CONTROL2, &write, 1);
+   if (!ab1815_write_reg(AB1815_CONTROL2, &write, 1))
+      return 0;
 
    // Batmode - needs to be enabled first
    write = AB1815_CONF_KEY_REG;
-   ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1);
+   if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
+      return 0;
    write = (1 << 7);
-   ab1815_write_reg(AB1815_BATMODE, &write, 1);
+   return ab1815_write_reg(AB1815_BATMODE, &write, 1);
 }
 
-void ab1815_get_config(ab1815_control_t *config)
+uint8_t ab1815_get_config(ab1815_control_t *config)
 {
    uint8_t read = 0;
-   ab1815_read_reg(AB1815_CONTROL1, &read, 1);
+   if (!ab1815_read_reg(AB1815_CONTROL1, &read, 1))
+      return 0;
 
    config->stop = (read & 0x80) >> 7;
    config->hour_12 = (read & 0x40) >> 6;
@@ -186,23 +198,26 @@ void ab1815_get_config(ab1815_control_t *config)
    config->auto_rst = (read & 0x04) >> 2;
    config->write_rtc = read & 0x01;
 
-   ab1815_read_reg(AB1815_CONTROL2, &read, 1);
+   if (!ab1815_read_reg(AB1815_CONTROL2, &read, 1))
+      return 0;
 
    config->psw_nirq2_function = (read & 0x4C) >> 2;
    config->fout_nirq_function = (read & 0x03);
+   return 1;
 }
 
-void ab1815_set_int_config(ab1815_int_config_t config)
+uint8_t ab1815_set_int_config(ab1815_int_config_t config)
 {
    _int_config = config;
    uint8_t write = config.century_en << 7 | config.int_mode << 5 | config.bat_low_en << 4 | config.timer_en << 3 | config.alarm_en << 2 | config.xt2_en << 1 | config.xt1_en;
-   ab1815_write_reg(AB1815_INT_MASK, &write, 1);
+   return ab1815_write_reg(AB1815_INT_MASK, &write, 1);
 }
 
-void ab1815_get_int_config(ab1815_int_config_t *config)
+uint8_t ab1815_get_int_config(ab1815_int_config_t *config)
 {
    uint8_t read = 0;
-   ab1815_read_reg(AB1815_INT_MASK, &read, 1);
+   if (!ab1815_read_reg(AB1815_INT_MASK, &read, 1))
+      return 0;
 
    config->century_en = (read & 0x80) >> 7;
    config->int_mode = (read & 0x60) >> 5;
@@ -211,33 +226,38 @@ void ab1815_get_int_config(ab1815_int_config_t *config)
    config->alarm_en = (read & 0x04) >> 2;
    config->xt2_en = (read & 0x02) >> 2;
    config->xt1_en = (read & 0x01);
+   return 1;
 }
 
-void ab1815_use_xt_oscillator(void)
+uint8_t ab1815_use_xt_oscillator(void)
 {
    // Clear all current status bits
    uint8_t write = 0;
-   ab1815_write_reg(AB1815_OSCILLATOR_STATUS, &write, 1);
-   ab1815_write_reg(AB1815_CALIB_XT, &write, 1);
+   if (!ab1815_write_reg(AB1815_OSCILLATOR_STATUS, &write, 1))
+      return 0;
+   if (!ab1815_write_reg(AB1815_CALIB_XT, &write, 1))
+      return 0;
 
    // Enable writing to the Autocalibration Filter Register and enable the AF filter
    write = AB1815_CONF_KEY_REG;
-   ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1);
+   if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
+      return 0;
    write = 0xA0;
-   ab1815_write_reg(AB1815_AFCTRL, &write, 1);
+   if (!ab1815_write_reg(AB1815_AFCTRL, &write, 1))
+      return 0;
 
    // Enable writing to the Oscillator Control Register, enable XT oscillator, and enable failover to RC oscillator
    write = AB1815_CONF_KEY_OSC;
-   ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1);
+   if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
+      return 0;
    write = 0x48;
-   ab1815_write_reg(AB1815_OSCILLATOR_CTRL, &write, 1);
+   return ab1815_write_reg(AB1815_OSCILLATOR_CTRL, &write, 1);
 }
 
-void ab1815_get_status(void)
+uint8_t ab1815_get_status(void)
 {
    uint8_t read = 0;
-   ab1815_read_reg(AB1815_STATUS, &read, 1);
-   printf("DEBUG: RTC Status - 0x%02x\n", read);
+   return ab1815_read_reg(AB1815_STATUS, &read, 1);
 }
 
 inline uint8_t get_tens(uint8_t x)
@@ -275,53 +295,60 @@ static void ab1815_form_time_buffer(ab1815_time_t time, uint8_t *buf)
    buf[7] = time.weekday & 0x7;
 }
 
-void ab1815_set_time(ab1815_time_t time)
+uint8_t ab1815_set_time(ab1815_time_t time)
 {
    // Ensure RTC write bit is enabled
    uint8_t write[8] = { 0 };
    if (_ctrl_config.write_rtc != 1)
    {
       _ctrl_config.write_rtc = 1;
-      ab1815_set_config(_ctrl_config);
+      if (!ab1815_set_config(_ctrl_config))
+         return 0;
    }
 
    ab1815_form_time_buffer(time, write);
 
    //printf("DEBUG: Packet Tx - %02x %02x %02x %02x %02x %02x %02x %02x\n", write[0], write[1], write[2], write[3], write[4], write[5], write[6], write[7]);
 
-   ab1815_write_reg(AB1815_HUND, write, 8);
+   if (!ab1815_write_reg(AB1815_HUND, write, 8))
+      return 0;
 
    // Ensure RTC write bit is disabled to prevent unintended access
    if (_ctrl_config.write_rtc != 0)
    {
       _ctrl_config.write_rtc = 0;
-      ab1815_set_config(_ctrl_config);
+      if (!ab1815_set_config(_ctrl_config))
+         return 0;
    }
+   return 1;
 }
 
-ab1815_time_t ab1815_get_time(void)
+uint8_t ab1815_get_time(ab1815_time_t *time)
 {
    uint8_t read[10] = { 0 };
-   ab1815_read_reg(AB1815_HUND, read, 8);
+   if (!ab1815_read_reg(AB1815_HUND, read, 8))
+      return 0;
 
    //printf("DEBUG: Packet Rx - %02x %02x %02x %02x %02x %02x %02x %02x\n", read[0], read[1], read[2], read[3], read[4], read[5], read[6], read[7]);
 
-   ab1815_time_t time;
-   time.hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
-   time.seconds = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
-   time.minutes = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
-   time.hours = 10 * ((read[3] & 0x30) >> 4) + (read[3] & 0xF);
-   time.date = 10 * ((read[4] & 0x30) >> 4) + (read[4] & 0xF);
-   time.months = 10 * ((read[5] & 0x10) >> 4) + (read[5] & 0xF);
-   time.years = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
-   time.weekday = read[7] & 0x7;
-
-   return time;
+   time->hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
+   time->seconds = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
+   time->minutes = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
+   time->hours = 10 * ((read[3] & 0x30) >> 4) + (read[3] & 0xF);
+   time->date = 10 * ((read[4] & 0x30) >> 4) + (read[4] & 0xF);
+   time->months = 10 * ((read[5] & 0x10) >> 4) + (read[5] & 0xF);
+   time->years = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
+   time->weekday = read[7] & 0x7;
+   return 1;
 }
 
 struct timeval ab1815_get_time_unix(void)
 {
-   return ab1815_to_unix(ab1815_get_time());
+   struct timeval tv = { 0 };
+   ab1815_time_t time = { 0 };
+   if (ab1815_get_time(&time))
+      tv = ab1815_to_unix(time);
+   return tv;
 }
 
 ab1815_time_t unix_to_ab1815(struct timeval tv)
@@ -371,22 +398,24 @@ struct timeval ab1815_to_unix(ab1815_time_t time)
    return unix_time;
 }
 
-void ab1815_enable_trickle_charger(void)
+uint8_t ab1815_enable_trickle_charger(void)
 {
    // Trickle - needs to be enabled first
    uint8_t write = AB1815_CONF_KEY_REG;
-   ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1);
+   if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
+      return 0;
    write = (0b1010 << 4) | (0b01 << 2) | (0b01);
-   ab1815_write_reg(AB1815_TRICKLE, &write, 1);
+   return ab1815_write_reg(AB1815_TRICKLE, &write, 1);
 }
 
-void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback *cb)
+uint8_t ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback *cb)
 {
    uint8_t buf[8] = { 0 };
    _interrupt_callback = cb;
 
    // Clear status
-   ab1815_read_reg(AB1815_STATUS, buf, 1);
+   if (!ab1815_read_reg(AB1815_STATUS, buf, 1))
+      return 0;
 
    // GPIOTE listen to IRQ1 pin
    nrfx_gpiote_in_config_t gpio_config = NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_HITOLO(0);
@@ -397,19 +426,23 @@ void ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_ala
 
    // Configure alarm time and frequency
    ab1815_form_time_buffer(time, buf);
-   ab1815_write_reg(AB1815_ALARM_HUND, buf, 8);
-   ab1815_read_reg(AB1815_COUNTDOWN_CTRL, buf, 1);
+   if (!ab1815_write_reg(AB1815_ALARM_HUND, buf, 8))
+      return 0;
+   if (!ab1815_read_reg(AB1815_COUNTDOWN_CTRL, buf, 1))
+      return 0;
    buf[0] &= 0xE3;
    buf[0] |= repeat << 2;
-   ab1815_write_reg(AB1815_COUNTDOWN_CTRL, buf, 1);
+   if (!ab1815_write_reg(AB1815_COUNTDOWN_CTRL, buf, 1))
+      return 0;
 
    // Enable alarm interrupt
-   ab1815_read_reg(AB1815_INT_MASK, buf, 1);
+   if (!ab1815_read_reg(AB1815_INT_MASK, buf, 1))
+      return 0;
    buf[0] |= 0x4;
-   ab1815_write_reg(AB1815_INT_MASK, buf, 1);
+   return ab1815_write_reg(AB1815_INT_MASK, buf, 1);
 }
 
-void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency)
+uint8_t ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency)
 {
    uint8_t buf = 0;
 
@@ -417,7 +450,7 @@ void ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequen
    buf |= (clock_cycles << 2) & 0x7C;
    buf |= reset << 7;
 
-   ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
+   return ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
 }
 
 void ab1815_tickle_watchdog(void)
@@ -426,10 +459,10 @@ void ab1815_tickle_watchdog(void)
    nrfx_gpiote_out_toggle(CARRIER_RTC_WDI);
 }
 
-void ab1815_clear_watchdog(void)
+uint8_t ab1815_clear_watchdog(void)
 {
    uint8_t buf = 0;
-   ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
+   return ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
 }
 
 uint8_t ab1815_ready(void)
@@ -449,11 +482,11 @@ uint8_t ab1815_wait_for_ready(uint16_t timeout_ms)
    }
 
    if (counter < timeout_ms)
-      return 0;
+      return 1;
    else
    {
       printf("WARNING: RTC not ready yet, but timeout of %u ms expired!\n", timeout_ms);
-      return 1;
+      return 0;
    }
 }
 
@@ -463,7 +496,7 @@ void ab1815_printTime(ab1815_time_t time)
 }
 #endif  // #if (BOARD_V >= 0x0F)
 
-void rtc_external_init(const nrfx_spim_t* spi_instance)
+uint8_t rtc_external_init(const nrfx_spim_t* spi_instance)
 {
    // Make sure other SPI devices are not interfering
 #if (BOARD_V >= 0x0F)
@@ -497,16 +530,23 @@ void rtc_external_init(const nrfx_spim_t* spi_instance)
    };
 
    // Set configurations
-   ab1815_set_config(ctrl_config);
-   ab1815_set_int_config(int_config);
-   ab1815_enable_trickle_charger();
-   ab1815_use_xt_oscillator();
+   if (!ab1815_set_config(ctrl_config))
+      return 0;
+   if (!ab1815_set_int_config(int_config))
+      return 0;
+   if (!ab1815_enable_trickle_charger())
+      return 0;
+   if (!ab1815_use_xt_oscillator())
+      return 0;
 
    // Initialize time
-   ab1815_init_time();
+   if (!ab1815_init_time())
+      return 0;
 
    // Set nRF time from the RTC
-   ab1815_time_t time = ab1815_get_time();
+   ab1815_time_t time = { 0 };
+   if (!ab1815_get_time(&time))
+      return 0;
    rtc_set_current_time(ab1815_to_unix(time).tv_sec);
    ab1815_printTime(time);
 
@@ -515,4 +555,5 @@ void rtc_external_init(const nrfx_spim_t* spi_instance)
 #else
    printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
 #endif
+   return 1;
 }
