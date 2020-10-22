@@ -5,6 +5,7 @@
 #include "simple_logger.h"
 #include "chanfs/ff.h"
 #include "chanfs/diskio.h"
+#include "nrf_delay.h"
 
 static uint8_t simple_logger_inited = 0;
 static uint8_t simple_logger_file_exists = 0;
@@ -188,6 +189,7 @@ void simple_logger_power_off()
 {
    // Flush any open files and disable the SD card
    f_close(&simple_logger_fpointer);
+   nrf_delay_ms(250);
    disk_disable();
 }
 
