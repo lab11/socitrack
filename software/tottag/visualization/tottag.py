@@ -63,12 +63,15 @@ with open(logfile) as f:
       if line[0] != '#':
 
          # Parse the individual reading parts
-         tokens = line.split('\t')
-         timestamp = int(tokens[0])
-         measurement = int(tokens[2].rstrip('\n'))
-         range_feet = OUT_OF_RANGE_VALUE if (measurement == OUT_OF_RANGE_CODE) else ((measurement / 25.4) / 12.0)
-         data = range_data.setdefault(tokens[1], {'timestamps': [], 'feet': [], 'last_datum': OUT_OF_RANGE_VALUE,
-                                      'last_timestamp': 0, 'valid_count': 0})
+         try:
+            tokens = line.split('\t')
+            timestamp = int(tokens[0])
+            measurement = int(tokens[2].rstrip('\n'))
+            range_feet = OUT_OF_RANGE_VALUE if (measurement == OUT_OF_RANGE_CODE) else ((measurement / 25.4) / 12.0)
+            data = range_data.setdefault(tokens[1], {'timestamps': [], 'feet': [], 'last_datum': OUT_OF_RANGE_VALUE,
+                                         'last_timestamp': 0, 'valid_count': 0})
+         except:
+            continue
 
          # Fill in any timestamp gaps with OUT_OF_RANGE values
          for i in range(timestamp - (timestamp if (data['last_timestamp'] == 0) else (data['last_timestamp'] + 1))):
