@@ -4,6 +4,7 @@
 #include "ble_config.h"
 #include "ble_gap.h"
 #include "boards.h"
+#include "nrf_delay.h"
 #include "rtc_external.h"
 #include "sd_card.h"
 #include "simple_logger.h"
@@ -77,6 +78,7 @@ static void flush_sd_buffer(void)
    // Reset the buffer and turn off power to the SD card
    _sd_card_buffer_length = 0;
    memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
+   nrf_delay_ms(100);
    simple_logger_power_off();
 }
 

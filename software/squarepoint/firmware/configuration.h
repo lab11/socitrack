@@ -48,7 +48,7 @@
 // Protocol adaptation -------------------------------------------------------------------------------------------------
 
 // Disable LEDs to save power (and reduce distraction)
-#define STM_ENABLE_LEDS TRUE
+#define STM_ENABLE_LEDS FALSE
 
 // Do not attempt to wait for the host to send instructions
 //#define BYPASS_HOST_INTERFACE TRUE
