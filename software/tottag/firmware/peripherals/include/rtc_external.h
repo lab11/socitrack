@@ -83,8 +83,6 @@
 
 // RTC typedefs and definitions ----------------------------------------------------------------------------------------
 
-#define TIMESTAMP_UNIX_PAST (1000*1000*1000)                // Past timestamp of 2001/09/09
-
 typedef void ab1815_alarm_callback(void);
 
 typedef enum { _16HZ = 0, _4HZ, _1HZ, _1_4HZ } ab1815_watch_clock_freq;
@@ -153,8 +151,9 @@ typedef struct
 
 // Public AB1815 RTC API -----------------------------------------------------------------------------------------------
 
-void ab1815_init(void);
+uint8_t ab1815_init(void);
 uint8_t ab1815_init_time(void);
+void ab1815_reset(void);
 uint8_t ab1815_set_config(ab1815_control_t config);
 uint8_t ab1815_get_config(ab1815_control_t *config);
 uint8_t ab1815_set_int_config(ab1815_int_config_t config);

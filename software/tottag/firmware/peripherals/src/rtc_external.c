@@ -54,7 +54,7 @@ static uint8_t month_to_i(const char *c)
 }
 #endif // #ifdef FORCE_RTC_RESET
 
-void ab1815_init(void)
+uint8_t ab1815_init(void)
 {
    // Setup SPI parameters
    _spi_config.sck_pin = CARRIER_SPI_SCLK;
@@ -70,9 +70,21 @@ void ab1815_init(void)
    nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_init(CARRIER_RTC_WDI, &rtc_wdi_pin_config);
 
+   // Wait until the chip becomes available
+   bool success = ab1815_wait_for_ready(1000);
+   if (!success)
+   {
+      // Attempt to perform a software reset on the chip
+      nrfx_gpiote_out_clear(CARRIER_RTC_WDI);
+      ab1815_reset();
+      nrfx_gpiote_out_set(CARRIER_RTC_WDI);
+      success = ab1815_wait_for_ready(1000);
+   }
+
    // Initialize SPI for the RTC
    nrfx_spim_uninit(_spi_instance);
    APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
+   return success;
 }
 
 uint8_t ab1815_init_time(void)
@@ -100,6 +112,17 @@ uint8_t ab1815_init_time(void)
 #else
    return 1;
 #endif
+}
+
+void ab1815_reset(void)
+{
+   // Write a software reset request to the configuration register
+   uint8_t buf[2] = { 0x80 | AB1815_CONFIGURATION_KEY, AB1815_CONF_KEY_SR };
+   nrfx_spim_uninit(_spi_instance);
+   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
+   ab1815_wait_for_ready(1000);
+   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TX(buf, 2);
+   APP_ERROR_CHECK(nrfx_spim_xfer(_spi_instance, &xfer_desc, 0));
 }
 
 static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
@@ -473,12 +496,12 @@ uint8_t ab1815_ready(void)
 uint8_t ab1815_wait_for_ready(uint16_t timeout_ms)
 {
    uint16_t counter = 0;
-   uint16_t step_size = 10;  // ms
+   uint16_t step_size_ms = 10;
 
    while (!ab1815_ready() && (counter < timeout_ms))
    {
-      nrf_delay_ms(step_size);
-      counter += step_size;
+      nrf_delay_ms(step_size_ms);
+      counter += step_size_ms;
    }
 
    if (counter < timeout_ms)
@@ -506,8 +529,11 @@ uint8_t rtc_external_init(const nrfx_spim_t* spi_instance)
    nrfx_gpiote_out_set(CARRIER_CS_RTC);
    nrfx_gpiote_out_clear(CARRIER_SD_ENABLE);
 
+   // Initialize the chip
+   if (!ab1815_init())
+      return 0;
+
    // Startup RTC
-   ab1815_init();
    static ab1815_control_t ctrl_config = {
          .stop      = 0,
          .hour_12   = 0,
