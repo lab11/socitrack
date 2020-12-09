@@ -1099,7 +1099,7 @@ static void perform_scheduled_slot_task(void)
 void scheduler_set_timestamp(uint32_t timestamp)
 {
    // Update the Unix epoch timestamp as long as it is within a year of the time we currently think it is
-   if ((timestamp > 1590796800) && ((_schedule_packet.epoch_time_unix < 1590796800) || (abs((int32_t)(timestamp - _schedule_packet.epoch_time_unix)) <= SECONDS_PER_YEAR)))
+   if ((timestamp > 1590796800) && (timestamp < 2534976000) && ((_schedule_packet.epoch_time_unix < 1590796800) || (abs((int32_t)(timestamp - _schedule_packet.epoch_time_unix)) <= SECONDS_PER_YEAR)))
    {
       _schedule_packet.epoch_time_unix = timestamp;
       debug_msg("INFO: Setting clock to Unix timestamp ");
