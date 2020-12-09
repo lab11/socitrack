@@ -318,11 +318,17 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 
          // Update the application epoch
          memcpy(&epoch, data + packet_overhead + (num_ranges * APP_LOG_RANGE_LENGTH), sizeof(epoch));
-         if (epoch > 0)
+         if ((epoch > 1588291200) && (epoch < 2534976000))
          {
             rtc_set_current_time(epoch);
             printf("INFO:     Updated current epoch time: %lu\n", epoch);
          }
+         else
+         {
+            epoch = rtc_get_current_time();
+            memcpy(data + packet_overhead + (num_ranges * APP_LOG_RANGE_LENGTH), &epoch, sizeof(epoch));
+         }
+
 
          // Update the scheduler EUI
          ble_set_scheduler_eui(data + 2, SQUAREPOINT_EUI_LEN);
