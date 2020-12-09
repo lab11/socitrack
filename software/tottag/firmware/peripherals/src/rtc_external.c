@@ -10,6 +10,7 @@
 
 // Real-time clock state variables -------------------------------------------------------------------------------------
 
+static int ab1815_num_init_retries = 0;
 static const nrfx_spim_t *_spi_instance = NULL;
 static ab1815_control_t _ctrl_config = { 0 };
 static ab1815_int_config_t _int_config = { 0 };
@@ -67,19 +68,20 @@ uint8_t ab1815_init(void)
 
    // Setup interrupt pins
    nrf_gpio_cfg_input(CARRIER_RTC_INT, NRF_GPIO_PIN_PULLUP);
-   nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
+   nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_init(CARRIER_RTC_WDI, &rtc_wdi_pin_config);
 
    // Wait until the chip becomes available
    bool success = ab1815_wait_for_ready(1000);
-   if (!success)
+   if (!success && (++ab1815_num_init_retries == 3))
    {
       // Attempt to perform a software reset on the chip
-      nrfx_gpiote_out_clear(CARRIER_RTC_WDI);
       ab1815_reset();
-      nrfx_gpiote_out_set(CARRIER_RTC_WDI);
+      ab1815_num_init_retries = 0;
+      ab1815_set_watchdog(1, 2, 0);
       success = ab1815_wait_for_ready(1000);
    }
+   ab1815_clear_watchdog();
 
    // Initialize SPI for the RTC
    nrfx_spim_uninit(_spi_instance);
@@ -199,11 +201,19 @@ uint8_t ab1815_set_config(ab1815_control_t config)
    if (!ab1815_write_reg(AB1815_CONTROL2, &write, 1))
       return 0;
 
-   // Batmode - needs to be enabled first
+   // Output Control
    write = AB1815_CONF_KEY_REG;
    if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
       return 0;
-   write = (1 << 7);
+   write = (0x1 << 5) | (0x1 << 4);
+   if (!ab1815_write_reg(AB1815_OUTPUT_CTRL, &write, 1))
+      return 0;
+
+   // Batmode - disable IO if main battery is removed
+   write = AB1815_CONF_KEY_REG;
+   if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
+      return 0;
+   write = 0;
    return ab1815_write_reg(AB1815_BATMODE, &write, 1);
 }
 
@@ -478,7 +488,6 @@ uint8_t ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_freq
 
 void ab1815_tickle_watchdog(void)
 {
-   nrfx_gpiote_out_toggle(CARRIER_RTC_WDI);
    nrfx_gpiote_out_toggle(CARRIER_RTC_WDI);
 }
 

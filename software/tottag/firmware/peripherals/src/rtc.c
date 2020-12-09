@@ -52,9 +52,7 @@ uint32_t rtc_get_current_time(void)
    }
 
    // Include RTC overflow and return time
-   if (_rtc_sync_rtc_overflow_counter)
-      time += _rtc_sync_rtc_overflow_counter * rtc_to_s(0x00FFFFFF);
-   return time;
+   return time + (_rtc_sync_rtc_overflow_counter * rtc_to_s(0x00FFFFFF));
 }
 
 void rtc_set_current_time(uint32_t epoch)

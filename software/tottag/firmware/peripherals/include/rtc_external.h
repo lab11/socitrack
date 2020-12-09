@@ -72,6 +72,7 @@
 #define AB1815_TRICKLE            0x20
 #define AB1815_AFCTRL             0x26
 #define AB1815_BATMODE            0x27
+#define AB1815_OUTPUT_CTRL        0x30
 
 
 // Configuration key ---------------------------------------------------------------------------------------------------
