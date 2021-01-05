@@ -4,6 +4,7 @@
 #include "ble_config.h"
 #include "ble_gap.h"
 #include "boards.h"
+#include "nrf_delay.h"
 #include "rtc_external.h"
 #include "sd_card.h"
 #include "simple_logger.h"
@@ -121,6 +122,10 @@ bool sd_card_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* sd_card_i
 
 void sd_card_create_log(uint32_t current_time)
 {
+   // Flush any data waiting to be written to the SD card
+   flush_sd_buffer();
+   nrf_delay_ms(250);
+
    // Power ON the SD card
    simple_logger_power_on();
 
@@ -277,12 +282,26 @@ void log_ranges(const uint8_t *data, uint16_t length)
 
 void log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush)
 {
+   // Start a new log file if it is a new day
+   if (_next_day_timestamp && (current_time >= _next_day_timestamp))
+   {
+      printf("INFO: Starting new SD card log file...new day detected\n");
+      sd_card_create_log(current_time);
+   }
+
    uint16_t bytes_written = (uint16_t)snprintf(_log_info_buf, sizeof(_log_info_buf), "### BATTERY VOLTAGE: %hu mV; Timestamp: %lu\n", battery_millivolts, current_time);
    sd_card_write(_log_info_buf, bytes_written, flush);
 }
 
 void log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool flush)
 {
+   // Start a new log file if it is a new day
+   if (_next_day_timestamp && (current_time >= _next_day_timestamp))
+   {
+      printf("INFO: Starting new SD card log file...new day detected\n");
+      sd_card_create_log(current_time);
+   }
+
    printf("INFO: Device is%s PLUGGED IN and%s CHARGING!\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT");
    uint16_t bytes_written = (uint16_t)snprintf(_log_info_buf, sizeof(_log_info_buf),
          "### CHARGING STATUS:%s PLUGGED IN and%s CHARGING; Timestamp: %lu\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT", current_time);
@@ -291,6 +310,13 @@ void log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool
 
 void log_motion(bool in_motion, uint32_t current_time, bool flush)
 {
+   // Start a new log file if it is a new day
+   if (_next_day_timestamp && (current_time >= _next_day_timestamp))
+   {
+      printf("INFO: Starting new SD card log file...new day detected\n");
+      sd_card_create_log(current_time);
+   }
+
    printf("INFO: Device is now %s\n", in_motion ? "IN MOTION" : "STATIONARY");
    uint16_t bytes_written = (uint16_t)snprintf(_log_info_buf, sizeof(_log_info_buf), "### MOTION CHANGE: %s; Timestamp: %lu\n", in_motion ? "IN MOTION" : "STATIONARY", current_time);
    sd_card_write(_log_info_buf, bytes_written, flush);
