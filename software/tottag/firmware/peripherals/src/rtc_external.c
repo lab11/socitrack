@@ -10,7 +10,6 @@
 
 // Real-time clock state variables -------------------------------------------------------------------------------------
 
-static int ab1815_num_init_retries = 0;
 static const nrfx_spim_t *_spi_instance = NULL;
 static ab1815_control_t _ctrl_config = { 0 };
 static ab1815_int_config_t _int_config = { 0 };
@@ -21,6 +20,7 @@ static ab1815_alarm_callback *_interrupt_callback = NULL;
 // Helper functions ----------------------------------------------------------------------------------------------------
 
 #ifdef FORCE_RTC_RESET
+static int ab1815_num_init_retries = 0;
 static uint8_t ascii_to_i(char c) { return (c == ' ') ? 0 : (uint8_t)(c - '0'); }
 static uint8_t month_to_i(const char *c)
 {
@@ -73,6 +73,7 @@ uint8_t ab1815_init(void)
 
    // Wait until the chip becomes available
    bool success = ab1815_wait_for_ready(1000);
+#ifdef FORCE_RTC_RESET
    if (!success && (++ab1815_num_init_retries == 3))
    {
       // Attempt to perform a software reset on the chip
@@ -81,6 +82,7 @@ uint8_t ab1815_init(void)
       ab1815_set_watchdog(1, 2, 0);
       success = ab1815_wait_for_ready(1000);
    }
+#endif
    ab1815_clear_watchdog();
 
    // Initialize SPI for the RTC

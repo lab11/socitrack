@@ -138,7 +138,7 @@ static void hardware_init(void)
    uint32_t current_timestamp = rtc_get_current_time();
    while ((current_timestamp < 1588291200) || (current_timestamp > 2534976000))
    {
-      printf("ERROR: External RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
+      printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
       rtc_external_init(&_spi_instance);
       buzzer_indicate_error();
       nrf_delay_ms(1000);
