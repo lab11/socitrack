@@ -136,7 +136,7 @@ void sd_card_create_log(uint32_t current_time)
    EUI_string[(3 * EUI_LEN) - 1] = '\0';
 
    // Initialize differently based on the board revision
-#if (BOARD_V >= 0x0F)
+#if !defined(DISABLE_RTC_TIME_CHECK) && (BOARD_V >= 0x0F)
 
     // Calculate the current local and UTC time and the timestamp of midnight local time
     time_t curr_time = (time_t)current_time;

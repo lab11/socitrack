@@ -135,6 +135,7 @@ static void hardware_init(void)
 
    // Enable the external Real-Time Clock and ensure that the fetched timestamp is valid
    rtc_external_init(&_spi_instance);
+#ifndef DISABLE_RTC_TIME_CHECK
    uint32_t current_timestamp = rtc_get_current_time();
    while ((current_timestamp < 1588291200) || (current_timestamp > 2534976000))
    {
@@ -144,6 +145,7 @@ static void hardware_init(void)
       nrf_delay_ms(1000);
       current_timestamp = rtc_get_current_time();
    }
+#endif
 
    // Initialize supplementary hardware components
    accelerometer_init(&_spi_instance, &_app_flags.accelerometer_data_ready);
