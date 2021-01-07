@@ -28,7 +28,7 @@
 //	#define SIMPLE_LOGGER_BUFFER_SIZE N
 ////////////////////////////////////
 
-enum {
+enum SIMPLE_LOGGER_ERROR {
 	SIMPLE_LOGGER_SUCCESS = 0,
 	SIMPLE_LOGGER_BUSY,
 	SIMPLE_LOGGER_BAD_FPOINTER,
@@ -39,7 +39,7 @@ enum {
 	SIMPLE_LOGGER_FILE_ERROR,
 	SIMPLE_LOGGER_ALREADY_INITIALIZED,
 	SIMPLE_LOGGER_BAD_PERMISSIONS
-} SIMPLE_LOGGER_ERROR; 
+};
 
 uint8_t simple_logger_init(void);
 uint8_t simple_logger_reinit(const char *filename, const char *permissions);
