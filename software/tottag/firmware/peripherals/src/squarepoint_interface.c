@@ -158,7 +158,8 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
    }
    if ((*(uint8_t*)&id != eui[1]) || (*(((uint8_t*)&id) + 1) != eui[0]))
    {
-      printf("ERROR: SquarePoint and TotTag module EUIs do not match!\n");
+      printf("ERROR: SquarePoint [%02x:%02x] and TotTag module [%02x:%02x] EUIs do not match!\n",
+            *((uint8_t*)&id+1), *((uint8_t*)&id), eui[1], eui[0]);
       return NRFX_ERROR_INVALID_STATE;
    }
    return NRFX_SUCCESS;
