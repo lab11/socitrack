@@ -72,3 +72,6 @@ target/
 node_modules
 /.idea/
 cmake-build-debug/
+
+# MacOS file system
+.DS_Store
