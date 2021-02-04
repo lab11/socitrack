@@ -81,7 +81,7 @@ def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_le
         return windows
 
 
-def label_events(windows: list[TotTagData], diary: list[DiaryEvent], event_labels: list) -> list[EventLabel]:
+def label_events(windows: list[TotTagData], diary: list[DiaryEvent], event_labels: list[EventLabel]) -> list[EventLabel]:
     """Given windows of timeseries data, labels each one by the most common event during that period, and returns the list of labels."""
     labels = []
 
