@@ -134,17 +134,19 @@ def plot(tags: dict[Device, TotTagData]):
         print("Plotting data for", tag)
         x_axis, y_axis = zip(*data)
 
-        plt.scatter(x_axis, y_axis)
+        plt.plot(x_axis, y_axis, 'c', label='Original')
         plt.title('TotTag data for device ' + tag)
         plt.xlabel('Timestamp')
         plt.ylabel('Distance in mm')
 
         smoothed_y_axis = savgol_filter(y_axis, window_length=9, polyorder=3)
 
-        plt.scatter(x_axis, smoothed_y_axis)
-        plt.title('Savitzky-Golay Filtered TotTag data for device ' + tag)
-        plt.xlabel('Timestamp')
-        plt.ylabel('Distance in mm')
+        plt.plot(x_axis, smoothed_y_axis, 'k', label='Smoothed')
+        # plt.title('Savitzky-Golay Filtered TotTag data for device ' + tag)
+        # plt.xlabel('Timestamp')
+        # plt.ylabel('Distance in mm')
+
+        plt.legend(['Original', 'Smoothed'])
         plt.show()
 
 
