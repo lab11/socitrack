@@ -91,7 +91,7 @@ $(error Must set an ID for the target device when compiling (e.g. ID=c0:98:e5:42
 endif
 
 # This creates a .bin file for loading the calibration values into the flash of the module.
-USER_FLASH_COMMANDS = $(shell python insert_calibration.py $(ID))
+USER_FLASH_COMMANDS = $(shell python3 insert_calibration.py $(ID))
 
 # Set correct port for GDB server
 GDB_PORT_NUMBER = 2331
