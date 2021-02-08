@@ -77,7 +77,7 @@ the [TotTag README](../software/tottag/firmware).
    environment, append the flag `DEBUG_MODE=1` to the make command to enable
    certain debugging tasks and device checks:
 
-      make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 DEBUG_MODE=1 flash
+        make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 DEBUG_MODE=1 flash
 
    Having problems? Check the [JLink FAQs.](./Glossary.md#miscellaneous)
 
