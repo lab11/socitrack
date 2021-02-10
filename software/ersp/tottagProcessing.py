@@ -5,6 +5,7 @@ from scipy.signal import savgol_filter
 from knn import train_knn
 from forest import train_forest
 
+# Type definitions
 Timestamp = int
 Distance = int
 TotTagData = list[tuple[Timestamp,Distance]]
@@ -13,6 +14,7 @@ EventLabel = int
 DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
 
 
+# Exceptions
 class ReverseTimeError(Exception):
     def __init__(self, message, tenlines, pre_skip, post_skip):
         super().__init__(message)
@@ -25,6 +27,11 @@ class ReverseTimeError(Exception):
         print('Please check your log file at this location.')
         print("="*80)
         print("="*80)
+
+
+class EndOfLogException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
 
 
 def parse_args() -> list[str]:
@@ -101,21 +108,22 @@ def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryE
 def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,int]:
     """Fills buffer with first valid window starting at index 'start', and returns a tuple containing the filled buffer and actual start index."""
     buf = []
-    try:
-        while len(buf) < buf_size:
-            for i in range(0, buf_size):
-                if start+i < len(data):
-                    buf.append(data[start+i])
-                    print(len(buf), start+i, buf[-1], i)
-                    if len(buf) > 1 and buf[i-1][0] != buf[i][0] - 1:
-                        start += i
-                        buf.clear()
-                        break
-                else:
-                    raise EOFError
-        return (buf, start)
-    except IndexError:
-        raise ReverseTimeError('INVALID LOG FILE!!!', data[start-5:start+5], data[start-1], data[start])
+    while len(buf) < buf_size:
+        for i in range(0, buf_size):
+            if start+i < len(data):
+                buf.append(data[start+i])
+                print(len(buf), start+i, buf[-1], i)
+                prev_time = buf[i-1][0]
+                curr_time = buf[i][0]
+                if prev_time > curr_time:
+                    raise ReverseTimeError('INVALID LOG FILE!!!', data[start-5:start+5], data[start-1], data[start])
+                if len(buf) > 1 and prev_time + 1 != curr_time:
+                    start += i
+                    buf.clear()
+                    break
+            else:
+                raise EndOfLogException("Failed to fill sliding window buffer")
+    return (buf, start)
 
 
 def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_length: int, window_shift: int) -> list[TotTagData]:
@@ -129,7 +137,7 @@ def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_le
                 curr_window, index = fill_buf(data[tag], window_length, index)
                 index += window_shift
                 windows.append(curr_window)
-            except EOFError:
+            except EndOfLogException:
                 break
 
         return windows
@@ -204,6 +212,31 @@ def plot(tags: dict[Device, TotTagData]) -> None:
         plt.show()
 
 
+def demo_sliding_window(windows: list[TotTagData]):
+    """Divides the provided data into windows and plots each window in an alternating pattern, with vertical bars marking start/ends of windows."""    
+    half1 = windows[::2]
+    half2 = windows[1::2]
+    data1 = []
+    data2 = []
+    for window in half1:
+        data1.extend(window)
+    for window in half2:
+        data2.extend(window)
+    
+    x_1, y_1 = zip(*data1)
+    x_2, y_2 = zip(*data2)
+
+    plt.title('TotTag sliding window demo')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Distance in mm')
+    plt.scatter(x_1, y_1)
+
+    plt.scatter(x_2, y_2)
+
+    for i in range(windows[0][0][0], windows[-1][-1][0], 30):
+        plt.axvline(x=i)
+
+    plt.show()
 
 
 if __name__ == "__main__":
@@ -235,34 +268,4 @@ if __name__ == "__main__":
     train_knn(stripped_windows, labels)
     train_forest(stripped_windows, labels)
 
-
-
-# Misc. Testing Code (IGNORE ALL BELOW)
-
-# def demo_sliding_window(tags: dict):
-#     """Divides the provided data into windows and plots each window in an alternating pattern, with vertical bars marking start/ends of windows."""
-#     windows = generate_sliding_windows(tags, '41', 30, 30)
-    
-#     half1 = windows[::2]
-#     half2 = windows[1::2]
-#     data1 = []
-#     data2 = []
-#     for window in half1:
-#         data1.extend(window)
-#     for window in half2:
-#         data2.extend(window)
-    
-#     x_1, y_1 = zip(*data1)
-#     x_2, y_2 = zip(*data2)
-
-#     plt.title('TotTag sliding window demo')
-#     plt.xlabel('Timestamp')
-#     plt.ylabel('Distance in mm')
-#     plt.scatter(x_1, y_1)
-
-#     plt.scatter(x_2, y_2)
-
-#     for i in range(windows[0][0][0], windows[-1][-1][0], 30):
-#         plt.axvline(x=i)
-
-#     plt.show()
+    demo_sliding_window(windows)
