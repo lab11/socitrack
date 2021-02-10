@@ -27,39 +27,39 @@ microcontroller. If you are doing development work, there is more information in
 the [TotTag README](../software/tottag/firmware).
 
 1. Connect the JLink programmer to the nRF programming header:
-   
+
    ![Programmer plugged into nRF side](media/tottag_nrf_connection.jpeg)
-   
+
    Do not worry about the LEDs at this stage, they will be random as the boards
    are not yet programmed.
-   
+
 2. Navigate to the [SociTrack root folder](..):
-        
+
         cd socitrack
-    
+
 3. Ensure the repository is up to date with latest software:
-        
+
         git pull --recurse-submodules
         git status
         # On branch master
         # Your branch is up to date with 'origin/master'.
-    
+
 4. Go to the [TotTag folder](../software/tottag):
-        
+
         cd socitrack/software/tottag
-    
+
 5. Clean up any old build artifacts:
-        
+
         make clean
-    
+
 6. Build the TotTag firmware. You will need the JLink serial number (`S/N` on
    the back of the JLink) and the TotTag Device ID (sticker on the back of the tag):
-        
+
         make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash
-    
+
    It is important to watch the end of the output. A lot of text will fly by,
    but near the end you should see:
-    
+
         Downloading file [_build/node_sdk15_s140.hex]...
         Comparing flash   [100%] Done.
         Erasing flash     [100%] Done.
@@ -72,6 +72,12 @@ the [TotTag README](../software/tottag/firmware).
         Comparing flash   [100%] Done.
 
    The second case will happen if the device was already programmed correctly.
+
+   If you are flashing the firmware for use in a debugging or development
+   environment, append the flag `DEBUG_MODE=1` to the make command to enable
+   certain debugging tasks and device checks:
+
+        make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 DEBUG_MODE=1 flash
 
    Having problems? Check the [JLink FAQs.](./Glossary.md#miscellaneous)
 
@@ -87,48 +93,48 @@ differences have been highlighted.
 
    Do not worry about the LEDs at this stage, they will be random as the boards
    are not yet programmed.
-   
+
 2. Navigate to the [SociTrack root folder](..):
-        
+
         cd socitrack
-    
+
 3. Ensure the repository is up to date with latest software:
-        
+
         git pull --recurse-submodules
         git status
         # On branch master
         # Your branch is up to date with 'origin/master'.
-    
+
 4. Go to the [SquarePointer folder](../software/squarepoint):
-        
+
         cd socitrack/software/squarepoint
-    
+
 5. Clean up any old build artifacts:
-        
+
         make clean
-    
+
 6. Build the SquarePoint firmware. You will need the JLink serial number (`S/N`
    on the back of the JLink) and the TotTag Device ID (sticker on the back of
    the tag):
-        
+
         make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash
-    
+
    It is important to watch the end of the output. A lot of text will fly by,
    but near the end you should see:
-    
+
         Downloading file [_build/squarepoint.bin]...
         Comparing flash   [100%] Done.
         Erasing flash     [100%] Done.
         Programming flash [100%] Done.
         Verifying flash   [100%] Done.
-    
+
    Or possibly just:
-    
+
         Downloading file [_build/squarepoint.bin]...
         Comparing flash   [100%] Done.
-    
+
    The second case will happen if the device was already programmed correctly.
-    
+
    Having problems? Check the [JLink FAQs.](./Glossary.md#miscellaneous)
 
 
@@ -161,40 +167,40 @@ calibration data.
 
 To verify that the nodes are working, you can connect two JLink programmers to
 the board, one for each programming header (see above). Then, open up four
-terminal windows, and enter the following commands *in order*. First, you will 
+terminal windows, and enter the following commands *in order*. First, you will
 connect to the STM microcontroller by entering the following (replace
 `XXXXXXXXX` with the serial number of the JLink connected to the STM header,
 and replace the `JLinkExe` command with `JLink` on Windows):
 
     Terminal 1: $    JLinkExe -Device STM32F091CC -if SWD -speed 4000 -RTTTelnetPort 9200 -SelectEmuBySN XXXXXXXXX
-    
+
     Terminal 2: $    telnet localhost 9200
-    
+
 Do the same thing now for the nRF, whereby you enter the serial number of the
 *second* JLink programmer for `XXXXXXXXX`:
-    
+
     Terminal 3: $    JLinkExe -Device NRF52840_XXAA -if SWD -speed 4000 -RTTTelnetPort 9201 -SelectEmuBySN XXXXXXXXX
-    
-    Terminal 4: $    telnet localhost 9201 
-    
+
+    Terminal 4: $    telnet localhost 9201
+
 You can now connect to the microcontrollers and start producing output:
 
     Terminal 1: $    J-Link>connect
                      J-Link>r
-                     
+
     Terminal 3: $    J-Link>connect
-                     J-Link>r          
+                     J-Link>r
 
 Now that you have successfully connected to both of the chips and reset them
 (using the second `r` command), it is time to execute the programs. To do so,
 **first start the STM and thereafter the nRF**:
 
     Terminal 1: $    J-Link>g
-    
+
     <-- AFTER starting the STM in Terminal 1, you can then execute the command below in Terminal 3 to start the nRF -->
-    
+
     Terminal 3: $    J-Link>g
-    
+
 Now, you should observe the startup debug output in the corresponding terminals
 2 and 4:
 
@@ -203,7 +209,7 @@ Now, you should observe the startup debug output in the corresponding terminals
                      INFO: Successfully loaded calibration values with EUI XX
                      INFO: Connecting to host interface...
                      [...]
-    
+
     Terminal 4: $    ----------------------------------------------
                      INFO: Initializing nRF...
                      INFO: Initialized software modules
@@ -215,5 +221,5 @@ in the corresponding terminals 1 and 3. Make sure to **always first restart the 
 To exit debugging, enter `qc` in terminals 1 and 3:
 
     Terminal 1: $    J-Link>qc
-    
+
     Terminal 3: $    J-Link>qc

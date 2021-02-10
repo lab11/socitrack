@@ -21,6 +21,9 @@ endif
 ifneq ($(FORCE_RTC_RESET), )
 CFLAGS += -DFORCE_RTC_RESET
 endif
+ifneq ($(DEBUG_MODE), )
+CFLAGS += -DDEBUG_MODE
+endif
 
 # Source and header files
 APP_HEADER_PATHS += .

@@ -21,6 +21,12 @@ ID for the target:
 
 > `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash`
 
+If you are flashing the board for use in a non-production debugging environment,
+append `DEBUG_MODE=1` to the flash command to allow certain debugging tasks
+and device checks to run:
+
+> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 DEBUG_MODE=1 flash`
+
 To display any J-Link debugging messages, enter the following commands in order
 (note that the `JLinkExe` command may be shortened to `JLink` on a
 Windows-based PC):
