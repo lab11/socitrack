@@ -3,9 +3,10 @@ import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from classifiers import *
 from exceptions import *
-from typing import NewType
 
-# Type definitions
+###
+###     Type definitions
+###
 Timestamp = int
 Distance = int
 TotTagData = list[tuple[Timestamp,Distance]]
@@ -14,10 +15,13 @@ EventLabel = int
 DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
 
 
+### 
+###     File Processing
+###
 def parse_args() -> list[str]:
     """Parses command-line arguments to ensure proper format and returns the provided filename."""
     if len(sys.argv) != 4:
-        print('USAGE: python3 FILE_NAME.py LOG_FILE_PATH DIARY_FILE_PATH EVENT_MAPPING_FILE_PATH')
+        print('USAGE: python3 FILE_NAME.py LOG_FILE_PATH DIARY_FILE_PATH EVENT_MAP_FILE_PATH')
         sys.exit(1)
     filepaths = sys.argv[1:4]
     return filepaths
@@ -50,18 +54,19 @@ def load_log(log_filepath: str) -> dict[Device,TotTagData]:
 
 
 def load_event_map(event_map_filepath: str) -> dict[str,int]:
-    """Loads event mapping from a specified filepath, and returns a dictionary containing the mapping."""
-    mapping = {}
+    """Loads event map from a specified filepath, and returns a dictionary containing the map."""
+    map = {}
+    index = 0
 
     with open(event_map_filepath) as f:
-        for line in f:
-            string_label, int_label = line.split(",")
-            mapping[string_label] = int(int_label)
+        for string_label in f:
+            map[string_label.strip()] = index
+            index += 1
 
-    return mapping
+    return map
 
 
-def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryEvent]:
+def load_diary(diary_filepath: str, event_map: dict[str,int]) -> list[DiaryEvent]:
     """Loads diary data from a specified filepath, and returns a list containing the events in the diary."""
     diary = []
 
@@ -73,13 +78,16 @@ def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryE
 
             event_label, start, end = line.split(",")
 
-            encoded_label = event_mapping[event_label]
+            encoded_label = event_map[event_label]
 
             diary.append((encoded_label, int(start), int(end)))
     
     return diary
 
 
+###
+###     Window Generation
+###
 def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,int]:
     """Fills buffer with first valid window starting at index 'start', and returns a tuple containing the filled buffer and actual start index."""
     buf = []
@@ -119,6 +127,9 @@ def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_le
         return windows
 
 
+###
+###     Window Processing
+###
 def label_events(windows: list[TotTagData], diary: list[DiaryEvent], event_labels: list[EventLabel]) -> list[int]:
     """Given windows of timeseries data, labels each one by the most common event during that period, and returns the list of labels."""
     labels = []
@@ -160,6 +171,9 @@ def strip_timestamps(windows: list[TotTagData]) -> list[list[Distance]]:
     return stripped_windows
 
 
+###
+###     Miscellaneous
+###
 def print_window_times_and_labels(windows: list[TotTagData], labels: list[str]) -> None:
     """Prints the start and end timestamps and event label of each window in the list."""
     for i in range(len(windows)):
@@ -216,7 +230,7 @@ def demo_sliding_window(windows: list[TotTagData]) -> None:
 
 
 if __name__ == "__main__":
-    # Test the code here! :)
+    ### Test the code here! :)
 
     # Load command-line arguments
     log_filepath, diary_filepath, event_map_filepath = parse_args()
@@ -240,10 +254,12 @@ if __name__ == "__main__":
     string_labels = [reverse_event_map[label] for label in labels]
     print_window_times_and_labels(windows, string_labels)
     
-    # Remove timestamps from windows; they are in order anyways
+    # Remove timestamps from windows; they are in order anyways, and would affect training if included
     stripped_windows = strip_timestamps(windows)
 
+    # Train models on the processed data
     train_knn(stripped_windows, labels)
     train_forest(stripped_windows, labels)
 
+    # Plot the windows, allowing user to compare labels with those printed by debug step 
     demo_sliding_window(windows)
