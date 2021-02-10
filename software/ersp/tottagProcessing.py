@@ -1,3 +1,4 @@
+from os import kill
 import sys
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
@@ -10,6 +11,20 @@ TotTagData = list[tuple[Timestamp,Distance]]
 Device = str
 EventLabel = int
 DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
+
+
+class ReverseTimeError(Exception):
+    def __init__(self, message, tenlines, pre_skip, post_skip):
+        super().__init__(message)
+        # Display the errors
+        print("="*80)
+        print("="*80)
+        print('Reverse time skip detected in')
+        print(tenlines)
+        print('\nSpecifically, from', pre_skip, 'to', post_skip)
+        print('Please check your log file at this location.')
+        print("="*80)
+        print("="*80)
 
 
 def parse_args() -> list[str]:
@@ -47,7 +62,7 @@ def load_log(log_filepath: str) -> dict[Device,TotTagData]:
     return tags
 
 
-def load_event_mapping(event_map_filepath: str) -> dict[str,int]:
+def load_event_map(event_map_filepath: str) -> dict[str,int]:
     """Loads event mapping from a specified filepath, and returns a dictionary containing the mapping."""
     mapping = {}
 
@@ -64,7 +79,7 @@ def encode_event(event_label: str, event_mapping: dict[str,int]) -> int:
     return event_mapping[event_label]
 
 
-def load_diary(diary_filepath: str) -> list[DiaryEvent]:
+def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryEvent]:
     """Loads diary data from a specified filepath, and returns a list containing the events in the diary."""
     diary = []
 
@@ -76,7 +91,7 @@ def load_diary(diary_filepath: str) -> list[DiaryEvent]:
 
             event_label, start, end = line.split(",")
 
-            encoded_label = encode_event(event_label)
+            encoded_label = encode_event(event_label, event_mapping)
 
             diary.append((encoded_label, start, end))
     
@@ -85,7 +100,6 @@ def load_diary(diary_filepath: str) -> list[DiaryEvent]:
 
 def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,int]:
     """Fills buffer with first valid window starting at index 'start', and returns a tuple containing the filled buffer and actual start index."""
-    old_start = start
     buf = []
     try:
         while len(buf) < buf_size:
@@ -96,10 +110,8 @@ def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,in
                     buf.clear()
                     break
         return (buf, start)
-
     except IndexError:
-        print("Could not find valid window of length", buf_size, "starting at", old_start, "->", start)
-        print("This should NOT show up; notify Colin if it does and send the log file you ran this script on.")
+        raise ReverseTimeError('INVALID LOG FILE!!!', data[start-5:start+5], data[start-1], data[start])
 
 
 def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_length: int, window_shift: int) -> list[TotTagData]:
@@ -188,27 +200,29 @@ def plot(tags: dict[Device, TotTagData]) -> None:
 
 
 if __name__ == "__main__":
-    # Test the code here!
+    # Test the code here! :)
 
+    # Load command-line arguments
     log_filepath, diary_filepath, event_map_filepath = parse_args()
 
+    # Load log and diary files
     tags = load_log(log_filepath)
+    event_map = load_event_map(event_map_filepath)
+    diary = load_diary(diary_filepath, event_map)
 
-    windows = generate_sliding_windows(tags, '41', 30, 30)
+    # Create sliding windows
+    window_length = 30
+    window_shift = 30
+    windows = generate_sliding_windows(tags, list(tags.keys())[0], window_length, window_shift)
 
-    diary = [
-        # (event_label, start_time, end_time)
-        (0, 0, 120),
-        (1, 120, 240),
-        (0, 240, 550)
-    ]
-
-    event_labels = [0, 1]
-
+    # Label the windows
+    event_labels = event_map.values()
     labels = label_events(windows, diary, event_labels)
 
+    # Debug step (self-explanatory from function name)
     print_window_times_and_labels(windows)
     
+    # Remove timestamps from windows; they are in order anyways
     stripped_windows = strip_timestamps(windows)
 
     train_knn(stripped_windows, labels)
