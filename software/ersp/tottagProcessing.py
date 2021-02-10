@@ -1,9 +1,9 @@
-from os import kill
 import sys
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
-from knn import train_knn
-from forest import train_forest
+from classifiers import *
+from exceptions import *
+from typing import NewType
 
 # Type definitions
 Timestamp = int
@@ -12,26 +12,6 @@ TotTagData = list[tuple[Timestamp,Distance]]
 Device = str
 EventLabel = int
 DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
-
-
-# Exceptions
-class ReverseTimeError(Exception):
-    def __init__(self, message, tenlines, pre_skip, post_skip):
-        super().__init__(message)
-        # Display the errors
-        print("="*80)
-        print("="*80)
-        print('Reverse time skip detected in')
-        print(tenlines)
-        print('\nSpecifically, from', pre_skip, 'to', post_skip)
-        print('Please check your log file at this location.')
-        print("="*80)
-        print("="*80)
-
-
-class EndOfLogException(Exception):
-    def __init__(self, message):
-        super().__init__(message)
 
 
 def parse_args() -> list[str]:
@@ -81,11 +61,6 @@ def load_event_map(event_map_filepath: str) -> dict[str,int]:
     return mapping
 
 
-def encode_event(event_label: str, event_mapping: dict[str,int]) -> int:
-    """Converts an event label from string to integer format"""
-    return event_mapping[event_label]
-
-
 def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryEvent]:
     """Loads diary data from a specified filepath, and returns a list containing the events in the diary."""
     diary = []
@@ -98,7 +73,7 @@ def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryE
 
             event_label, start, end = line.split(",")
 
-            encoded_label = encode_event(event_label, event_mapping)
+            encoded_label = event_mapping[event_label]
 
             diary.append((encoded_label, int(start), int(end)))
     
@@ -110,19 +85,20 @@ def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,in
     buf = []
     while len(buf) < buf_size:
         for i in range(0, buf_size):
-            if start+i < len(data):
-                buf.append(data[start+i])
-                print(len(buf), start+i, buf[-1], i)
+            curr_index = start+i
+            if curr_index < len(data):
+                buf.append(data[curr_index])
+                # print(len(buf), curr_index, buf[-1], i)   # uncomment for fill_buf debug
                 prev_time = buf[i-1][0]
                 curr_time = buf[i][0]
                 if prev_time > curr_time:
-                    raise ReverseTimeError('INVALID LOG FILE!!!', data[start-5:start+5], data[start-1], data[start])
+                    raise ReverseTimeError('Invalid log file.', data[curr_index-3:curr_index+3], data[curr_index-1], data[curr_index])
                 if len(buf) > 1 and prev_time + 1 != curr_time:
                     start += i
                     buf.clear()
                     break
             else:
-                raise EndOfLogException("Failed to fill sliding window buffer")
+                raise EOFError("Failed to fill sliding window buffer")
     return (buf, start)
 
 
@@ -135,21 +111,21 @@ def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_le
         while index + window_length - 1 < len(data[tag]):
             try:
                 curr_window, index = fill_buf(data[tag], window_length, index)
-                index += window_shift
-                windows.append(curr_window)
-            except EndOfLogException:
+            except EOFError:
                 break
+            index += window_shift
+            windows.append(curr_window)
 
         return windows
 
 
-def label_events(windows: list[TotTagData], diary: list[DiaryEvent], event_labels: list[EventLabel]) -> list[EventLabel]:
+def label_events(windows: list[TotTagData], diary: list[DiaryEvent], event_labels: list[EventLabel]) -> list[int]:
     """Given windows of timeseries data, labels each one by the most common event during that period, and returns the list of labels."""
     labels = []
 
     for window in windows:
         voting = []
-        for event in event_labels:
+        for _ in event_labels:
             voting.append(0)
         
         for event in diary:
@@ -184,7 +160,7 @@ def strip_timestamps(windows: list[TotTagData]) -> list[list[Distance]]:
     return stripped_windows
 
 
-def print_window_times_and_labels(windows: list[TotTagData]) -> None:
+def print_window_times_and_labels(windows: list[TotTagData], labels: list[str]) -> None:
     """Prints the start and end timestamps and event label of each window in the list."""
     for i in range(len(windows)):
         print("Window " + str(i) + ":", windows[i][0][0], windows[i][-1][0], labels[i])
@@ -212,7 +188,7 @@ def plot(tags: dict[Device, TotTagData]) -> None:
         plt.show()
 
 
-def demo_sliding_window(windows: list[TotTagData]):
+def demo_sliding_window(windows: list[TotTagData]) -> None:
     """Divides the provided data into windows and plots each window in an alternating pattern, with vertical bars marking start/ends of windows."""    
     half1 = windows[::2]
     half2 = windows[1::2]
@@ -259,8 +235,10 @@ if __name__ == "__main__":
     event_labels = event_map.values()
     labels = label_events(windows, diary, event_labels)
 
-    # Debug step (self-explanatory from function name)
-    print_window_times_and_labels(windows)
+    # Print a summary for each window we've labeled (debug step; unnecessary)
+    reverse_event_map = {v: k for k, v in event_map.items()}
+    string_labels = [reverse_event_map[label] for label in labels]
+    print_window_times_and_labels(windows, string_labels)
     
     # Remove timestamps from windows; they are in order anyways
     stripped_windows = strip_timestamps(windows)
