@@ -69,7 +69,7 @@ def load_event_map(event_map_filepath: str) -> dict[str,int]:
     with open(event_map_filepath) as f:
         for line in f:
             string_label, int_label = line.split(",")
-            mapping[string_label] = int_label
+            mapping[string_label] = int(int_label)
 
     return mapping
 
@@ -93,7 +93,7 @@ def load_diary(diary_filepath: str, event_mapping: dict[str,int]) -> list[DiaryE
 
             encoded_label = encode_event(event_label, event_mapping)
 
-            diary.append((encoded_label, start, end))
+            diary.append((encoded_label, int(start), int(end)))
     
     return diary
 
@@ -104,11 +104,15 @@ def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,in
     try:
         while len(buf) < buf_size:
             for i in range(0, buf_size):
-                buf.append(data[start+i])
-                if len(buf) > 1 and buf[i-1][0] != buf[i][0] - 1:
-                    start += i
-                    buf.clear()
-                    break
+                if start+i < len(data):
+                    buf.append(data[start+i])
+                    print(len(buf), start+i, buf[-1], i)
+                    if len(buf) > 1 and buf[i-1][0] != buf[i][0] - 1:
+                        start += i
+                        buf.clear()
+                        break
+                else:
+                    raise EOFError
         return (buf, start)
     except IndexError:
         raise ReverseTimeError('INVALID LOG FILE!!!', data[start-5:start+5], data[start-1], data[start])
@@ -121,9 +125,12 @@ def generate_sliding_windows(data: dict[Device, TotTagData], tag: str, window_le
         windows = []
 
         while index + window_length - 1 < len(data[tag]):
-            curr_window, index = fill_buf(data[tag], window_length, index)
-            index += window_shift
-            windows.append(curr_window)
+            try:
+                curr_window, index = fill_buf(data[tag], window_length, index)
+                index += window_shift
+                windows.append(curr_window)
+            except EOFError:
+                break
 
         return windows
 
@@ -172,7 +179,7 @@ def strip_timestamps(windows: list[TotTagData]) -> list[list[Distance]]:
 def print_window_times_and_labels(windows: list[TotTagData]) -> None:
     """Prints the start and end timestamps and event label of each window in the list."""
     for i in range(len(windows)):
-        print("Event" + str(i) + ":", windows[i][0][0], windows[i][-1][0], labels[i])
+        print("Window " + str(i) + ":", windows[i][0][0], windows[i][-1][0], labels[i])
 
 
 def plot(tags: dict[Device, TotTagData]) -> None:
