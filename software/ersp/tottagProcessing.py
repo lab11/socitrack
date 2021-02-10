@@ -12,13 +12,13 @@ EventLabel = int
 DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
 
 
-def parse_args() -> str:
+def parse_args() -> list[str]:
     """Parses command-line arguments to ensure proper format and returns the provided filename."""
-    if len(sys.argv) != 2:
-        print('USAGE: python3 FILE_NAME.py LOG_FILE_PATH')
+    if len(sys.argv) != 4:
+        print('USAGE: python3 FILE_NAME.py LOG_FILE_PATH DIARY_FILE_PATH EVENT_MAPPING_FILE_PATH')
         sys.exit(1)
-    log_filepath = sys.argv[1]
-    return log_filepath
+    filepaths = sys.argv[1:4]
+    return filepaths
 
 
 def load_log(log_filepath: str) -> dict[Device,TotTagData]:
@@ -39,13 +39,48 @@ def load_log(log_filepath: str) -> dict[Device,TotTagData]:
             timestamp = int(timestamp)
             tag_id = tag_id.split(':')[-1]
             distance = int(distance)
-            #distance = int(round(distance / 100))
 
             if tag_id not in tags:
                 tags[tag_id] = []
             tags[tag_id].append((timestamp,distance))
 
     return tags
+
+
+def load_event_mapping(event_map_filepath: str) -> dict[str,int]:
+    """Loads event mapping from a specified filepath, and returns a dictionary containing the mapping."""
+    mapping = {}
+
+    with open(event_map_filepath) as f:
+        for line in f:
+            string_label, int_label = line.split(",")
+            mapping[string_label] = int_label
+
+    return mapping
+
+
+def encode_event(event_label: str, event_mapping: dict[str,int]) -> int:
+    """Converts an event label from string to integer format"""
+    return event_mapping[event_label]
+
+
+def load_diary(diary_filepath: str) -> list[DiaryEvent]:
+    """Loads diary data from a specified filepath, and returns a list containing the events in the diary."""
+    diary = []
+
+    with open(diary_filepath) as f:
+        for line in f:
+
+            if line[0] == '#':
+                continue
+
+            event_label, start, end = line.split(",")
+
+            encoded_label = encode_event(event_label)
+
+            diary.append((encoded_label, start, end))
+    
+    return diary
 
 
 def fill_buf(data: TotTagData, buf_size: int, start: int) -> tuple[TotTagData,int]:
@@ -128,7 +163,7 @@ def print_window_times_and_labels(windows: list[TotTagData]) -> None:
         print("Event" + str(i) + ":", windows[i][0][0], windows[i][-1][0], labels[i])
 
 
-def plot(tags: dict[Device, TotTagData]):
+def plot(tags: dict[Device, TotTagData]) -> None:
     """Plots the provided TotTag data in both its original form and an experimental smoothed form."""
     for tag, data in tags.items():
         print("Plotting data for", tag)
@@ -150,10 +185,13 @@ def plot(tags: dict[Device, TotTagData]):
         plt.show()
 
 
+
+
 if __name__ == "__main__":
     # Test the code here!
 
-    log_filepath = parse_args()
+    log_filepath, diary_filepath, event_map_filepath = parse_args()
+
     tags = load_log(log_filepath)
 
     windows = generate_sliding_windows(tags, '41', 30, 30)
