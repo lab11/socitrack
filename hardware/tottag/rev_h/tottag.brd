@@ -210,7 +210,7 @@
 <wire x1="20.8026" y1="11.2776" x2="20.8026" y2="10.5156" width="0.127" layer="21"/>
 <wire x1="20.8026" y1="10.5156" x2="21.5646" y2="10.5156" width="0.127" layer="21"/>
 <wire x1="21.5646" y1="10.5156" x2="21.5646" y2="11.2776" width="0.127" layer="21"/>
-<text x="7.493" y="27.813" size="1.016" layer="21" font="vector" ratio="12" align="center">G</text>
+<text x="7.493" y="27.813" size="1.016" layer="21" font="vector" ratio="12" align="center">H</text>
 <text x="11.781" y="29.8002" size="0.635" layer="21" font="vector" ratio="15" align="center-left">Andreas Biri, Pat Pannuto</text>
 <text x="11.746" y="29.0256" size="0.508" layer="21" font="vector" ratio="18" align="center-left">2020-07-02</text>
 <polygon width="0.1524" layer="39">

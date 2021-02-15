@@ -6382,7 +6382,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Andreas Biri &amp; Pat Pannuto"/>
-<attribute name="REV" value="G"/>
+<attribute name="REV" value="H"/>
 <attribute name="TITLE" value="TotTag"/>
 </attributes>
 <variantdefs>
