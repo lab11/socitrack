@@ -5165,29 +5165,29 @@ Temperature-controller resistor.</description>
 </library>
 <library name="ac" urn="urn:adsk.eagle:library:20878999">
 <packages>
-<package name="WR222230-26M8-G" urn="urn:adsk.eagle:footprint:20906929/2" library_version="4">
-<pad name="P$1" x="0" y="0.762" drill="0.6"/>
-<pad name="P$2" x="0" y="-0.762" drill="0.6"/>
-<wire x1="-1.27" y1="0.635" x2="0" y2="1.905" width="0.127" layer="21" curve="-90"/>
-<wire x1="0" y1="1.905" x2="1.27" y2="0.635" width="0.127" layer="21" curve="-90"/>
-<wire x1="1.27" y1="0.635" x2="1.27" y2="-0.635" width="0.127" layer="21"/>
-<wire x1="1.27" y1="-0.635" x2="0" y2="-1.905" width="0.127" layer="21" curve="-90"/>
-<wire x1="0" y1="-1.905" x2="-1.27" y2="-0.635" width="0.127" layer="21" curve="-90"/>
-<wire x1="-1.27" y1="-0.635" x2="-1.27" y2="0.635" width="0.127" layer="21"/>
-<wire x1="-1.27" y1="0.635" x2="0" y2="1.905" width="0.127" layer="22" curve="-90"/>
-<wire x1="0" y1="1.905" x2="1.27" y2="0.635" width="0.127" layer="22" curve="-90"/>
-<wire x1="1.27" y1="0.635" x2="1.27" y2="-0.635" width="0.127" layer="22"/>
-<wire x1="1.27" y1="-0.635" x2="0" y2="-1.905" width="0.127" layer="22" curve="-90"/>
-<wire x1="0" y1="-1.905" x2="-1.27" y2="-0.635" width="0.127" layer="22" curve="-90"/>
-<wire x1="-1.27" y1="-0.635" x2="-1.27" y2="0.635" width="0.127" layer="22"/>
+<package name="WURTH_COIL_760308103204" urn="urn:adsk.eagle:footprint:26902694/1" library_version="5">
+<pad name="P$1" x="0" y="1" drill="1"/>
+<pad name="P$2" x="0" y="-1" drill="1"/>
+<wire x1="-1.27" y1="0.889" x2="0" y2="2.159" width="0.127" layer="21" curve="-90"/>
+<wire x1="0" y1="2.159" x2="1.27" y2="0.889" width="0.127" layer="21" curve="-90"/>
+<wire x1="1.27" y1="0.889" x2="1.27" y2="-0.889" width="0.127" layer="21"/>
+<wire x1="1.27" y1="-0.889" x2="0" y2="-2.159" width="0.127" layer="21" curve="-90"/>
+<wire x1="0" y1="-2.159" x2="-1.27" y2="-0.889" width="0.127" layer="21" curve="-90"/>
+<wire x1="-1.27" y1="-0.889" x2="-1.27" y2="0.889" width="0.127" layer="21"/>
+<wire x1="-1.27" y1="0.889" x2="0" y2="2.159" width="0.127" layer="22" curve="-90"/>
+<wire x1="0" y1="2.159" x2="1.27" y2="0.889" width="0.127" layer="22" curve="-90"/>
+<wire x1="1.27" y1="0.889" x2="1.27" y2="-0.889" width="0.127" layer="22"/>
+<wire x1="1.27" y1="-0.889" x2="0" y2="-2.159" width="0.127" layer="22" curve="-90"/>
+<wire x1="0" y1="-2.159" x2="-1.27" y2="-0.889" width="0.127" layer="22" curve="-90"/>
+<wire x1="-1.27" y1="-0.889" x2="-1.27" y2="0.889" width="0.127" layer="22"/>
 <text x="-1.651" y="0" size="0.8128" layer="25" font="vector" ratio="12" rot="R90" align="bottom-center">&gt;NAME</text>
 <text x="-1.651" y="0" size="0.8128" layer="26" font="vector" ratio="12" rot="MR270" align="bottom-center">&gt;NAME</text>
 </package>
 </packages>
 <packages3d>
-<package3d name="WR222230-26M8-G" urn="urn:adsk.eagle:package:20906931/3" type="model" library_version="4">
+<package3d name="WURTH_COIL_760308103204" urn="urn:adsk.eagle:package:26902695/1" type="box" library_version="5">
 <packageinstances>
-<packageinstance name="WR222230-26M8-G"/>
+<packageinstance name="WURTH_COIL_760308103204"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -5220,28 +5220,24 @@ Temperature-controller resistor.</description>
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="WR222230-26M8-G" urn="urn:adsk.eagle:component:20906932/3" prefix="L" library_version="4">
-<description>Small Rx Coil for Wireless Power Transfer.
-
-TDK WR222230-26M8-G.
-
-22mm dia, 0.87mm tall, 27 uH @ 100 kHz, 1.1 Ω DC</description>
+<deviceset name="WURTH_COIL_760308103204" urn="urn:adsk.eagle:component:26902697/1" library_version="5">
 <gates>
-<gate name="G$1" symbol="COIL_LOOP" x="0" y="0"/>
+<gate name="G$1" symbol="COIL_LOOP" x="2.54" y="0"/>
 </gates>
 <devices>
-<device name="" package="WR222230-26M8-G">
+<device name="" package="WURTH_COIL_760308103204">
 <connects>
 <connect gate="G$1" pin="1" pad="P$1"/>
 <connect gate="G$1" pin="2" pad="P$2"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20906931/3"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:26902695/1"/>
 </package3dinstances>
 <technologies>
 <technology name="">
-<attribute name="DIGIKEY" value="445-173093-ND" constant="no"/>
-<attribute name="MPN" value="WR222230-26M8-G" constant="no"/>
+<attribute name="DIGIKEY" value="732-5258-ND" constant="no"/>
+<attribute name="MANUFACTURER" value="Würth Elektronik" constant="no"/>
+<attribute name="MPN" value="760308103204" constant="no"/>
 </technology>
 </technologies>
 </device>
@@ -6766,7 +6762,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MANUFACTURER" value="Murata"/>
 <attribute name="MPN" value="GRM1555C1H471JA01J"/>
 </part>
-<part name="L4" library="ac" library_urn="urn:adsk.eagle:library:20878999" deviceset="WR222230-26M8-G" device="" package3d_urn="urn:adsk.eagle:package:20906931/3"/>
+<part name="L4" library="ac" library_urn="urn:adsk.eagle:library:20878999" deviceset="WURTH_COIL_760308103204" device="" package3d_urn="urn:adsk.eagle:package:26902695/1"/>
 <part name="R18" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="5.1k">
 <attribute name="DIGIKEY" value="RMCF0402FT5K10CT-ND"/>
 <attribute name="MPN" value="RMCF0402FT5K10"/>
@@ -7741,40 +7737,40 @@ Note v1.1 datasheet updated values.</text>
 <junction x="137.16" y="55.88"/>
 </segment>
 </net>
-<net name="NRF_MISO" class="0">
-<segment>
-<pinref part="U7" gate="G$1" pin="P0.15"/>
-<wire x1="60.96" y1="68.58" x2="55.88" y2="68.58" width="0.1524" layer="91"/>
-<label x="55.88" y="68.58" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
+<net name="NRF_SPI2_MISO" class="0">
 <segment>
 <pinref part="U11" gate="G$1" pin="SDO"/>
 <wire x1="187.96" y1="93.98" x2="182.88" y2="93.98" width="0.1524" layer="91"/>
 <label x="182.88" y="93.98" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
-</net>
-<net name="NRF_MOSI" class="0">
 <segment>
-<label x="55.88" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
-<pinref part="U7" gate="G$1" pin="P0.13"/>
-<wire x1="60.96" y1="73.66" x2="55.88" y2="73.66" width="0.1524" layer="91"/>
+<label x="111.76" y="124.46" size="1.27" layer="95" xref="yes"/>
+<wire x1="111.76" y1="124.46" x2="106.68" y2="124.46" width="0.1524" layer="91"/>
+<pinref part="U7" gate="G$1" pin="P0.05/AIN3"/>
 </segment>
+</net>
+<net name="NRF_SPI2_MOSI" class="0">
 <segment>
 <pinref part="U11" gate="G$1" pin="SDI"/>
 <wire x1="187.96" y1="91.44" x2="182.88" y2="91.44" width="0.1524" layer="91"/>
 <label x="182.88" y="91.44" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
-</net>
-<net name="NRF_SCK" class="0">
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.17"/>
-<wire x1="60.96" y1="63.5" x2="55.88" y2="63.5" width="0.1524" layer="91"/>
-<label x="55.88" y="63.5" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P0.07"/>
+<wire x1="55.88" y1="83.82" x2="60.96" y2="83.82" width="0.1524" layer="91"/>
+<label x="55.88" y="83.82" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
+</net>
+<net name="NRF_SPI2_SCLK" class="0">
 <segment>
 <pinref part="U11" gate="G$1" pin="SCL"/>
 <wire x1="187.96" y1="96.52" x2="182.88" y2="96.52" width="0.1524" layer="91"/>
 <label x="182.88" y="96.52" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.06"/>
+<wire x1="55.88" y1="86.36" x2="60.96" y2="86.36" width="0.1524" layer="91"/>
+<label x="55.88" y="86.36" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_DCC" class="0">
@@ -7891,9 +7887,9 @@ Note v1.1 datasheet updated values.</text>
 </net>
 <net name="BATIN" class="0">
 <segment>
-<pinref part="U7" gate="G$1" pin="P0.30*/AIN6"/>
-<wire x1="106.68" y1="116.84" x2="111.76" y2="116.84" width="0.1524" layer="91"/>
-<label x="111.76" y="116.84" size="1.27" layer="95" xref="yes"/>
+<label x="111.76" y="127" size="1.27" layer="95" xref="yes"/>
+<pinref part="U7" gate="G$1" pin="P0.04/AIN2"/>
+<wire x1="106.68" y1="127" x2="111.76" y2="127" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$35" class="0">
@@ -8083,6 +8079,27 @@ Note v1.1 datasheet updated values.</text>
 <wire x1="55.88" y1="78.74" x2="60.96" y2="78.74" width="0.1524" layer="91"/>
 <label x="55.88" y="78.74" size="1.27" layer="95" rot="R180" xref="yes"/>
 <pinref part="U7" gate="G$1" pin="P0.11"/>
+</segment>
+</net>
+<net name="NRF_SPI0_SCLK" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.17"/>
+<wire x1="55.88" y1="63.5" x2="60.96" y2="63.5" width="0.1524" layer="91"/>
+<label x="55.88" y="63.5" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="NRF_SPI0_MOSI" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.13"/>
+<wire x1="55.88" y1="73.66" x2="60.96" y2="73.66" width="0.1524" layer="91"/>
+<label x="55.88" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="NRF_SPI0_MISO" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.15"/>
+<wire x1="55.88" y1="68.58" x2="60.96" y2="68.58" width="0.1524" layer="91"/>
+<label x="55.88" y="68.58" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
@@ -9114,12 +9131,7 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <pinref part="R28" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="NRF_MOSI" class="0">
-<segment>
-<pinref part="U3" gate="G$1" pin="MOSI/SDA"/>
-<wire x1="195.58" y1="35.56" x2="193.04" y2="35.56" width="0.1524" layer="91"/>
-<label x="193.04" y="35.56" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
+<net name="NRF_SPI2_MOSI" class="0">
 <segment>
 <pinref part="J2" gate="G$1" pin="CMD/MOSI"/>
 <wire x1="109.22" y1="22.86" x2="78.74" y2="22.86" width="0.1524" layer="91"/>
@@ -9128,12 +9140,7 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <pinref part="R30" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="NRF_MISO" class="0">
-<segment>
-<pinref part="U3" gate="G$1" pin="MISO/SA0"/>
-<wire x1="195.58" y1="38.1" x2="193.04" y2="38.1" width="0.1524" layer="91"/>
-<label x="193.04" y="38.1" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
+<net name="NRF_SPI2_MISO" class="0">
 <segment>
 <pinref part="J2" gate="G$1" pin="DATA0/MISO"/>
 <wire x1="101.6" y1="33.02" x2="101.6" y2="35.56" width="0.1524" layer="91"/>
@@ -9142,12 +9149,7 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <pinref part="R32" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="NRF_SCK" class="0">
-<segment>
-<pinref part="U3" gate="G$1" pin="SCL/SPC"/>
-<wire x1="195.58" y1="43.18" x2="193.04" y2="43.18" width="0.1524" layer="91"/>
-<label x="193.04" y="43.18" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
+<net name="NRF_SPI2_SCLK" class="0">
 <segment>
 <pinref part="J2" gate="G$1" pin="CLK"/>
 <wire x1="109.22" y1="20.32" x2="106.68" y2="20.32" width="0.1524" layer="91"/>
@@ -9659,6 +9661,27 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <pinref part="R2" gate="G$1" pin="1"/>
 <pinref part="R3" gate="G$1" pin="2"/>
 <wire x1="208.28" y1="134.62" x2="210.82" y2="134.62" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="NRF_SPI0_SCLK" class="0">
+<segment>
+<pinref part="U3" gate="G$1" pin="SCL/SPC"/>
+<wire x1="193.04" y1="43.18" x2="195.58" y2="43.18" width="0.1524" layer="91"/>
+<label x="193.04" y="43.18" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="NRF_SPI0_MISO" class="0">
+<segment>
+<pinref part="U3" gate="G$1" pin="MISO/SA0"/>
+<wire x1="193.04" y1="38.1" x2="195.58" y2="38.1" width="0.1524" layer="91"/>
+<label x="193.04" y="38.1" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="NRF_SPI0_MOSI" class="0">
+<segment>
+<pinref part="U3" gate="G$1" pin="MOSI/SDA"/>
+<wire x1="193.04" y1="35.56" x2="195.58" y2="35.56" width="0.1524" layer="91"/>
+<label x="193.04" y="35.56" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
