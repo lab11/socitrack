@@ -6947,6 +6947,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="TP16" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP17" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP18" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="P+6" library="regulators" deviceset="+3V3" device=""/>
+<part name="GND9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -6972,6 +6974,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="31.242" y1="92.456" x2="45.72" y2="104.14" width="0.1524" layer="98" style="dashdot"/>
 <text x="143.256" y="27.178" size="1.016" layer="98" align="top-left">Matching network from datasheet.
 Note v1.1 datasheet updated values.</text>
+<text x="11.176" y="34.798" size="1.016" layer="98" align="top-center">Board Revision ID Pins
+Rev H = 001
+</text>
+<wire x1="2.54" y1="30.48" x2="2.54" y2="58.42" width="0.1524" layer="98" style="longdash"/>
+<wire x1="19.304" y1="30.48" x2="19.304" y2="58.42" width="0.1524" layer="98" style="longdash"/>
+<wire x1="19.304" y1="30.48" x2="2.54" y2="30.48" width="0.1524" layer="98" style="longdash"/>
+<wire x1="19.304" y1="58.42" x2="2.54" y2="58.42" width="0.1524" layer="98" style="longdash"/>
 </plain>
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -7279,6 +7288,12 @@ Note v1.1 datasheet updated values.</text>
 <instance part="TP18" gate="G$1" x="213.36" y="170.18" smashed="yes" rot="R90">
 <attribute name="NAME" x="213.36" y="169.545" size="1.016" layer="95" ratio="12" rot="R90" align="center-right"/>
 </instance>
+<instance part="P+6" gate="P1" x="12.7" y="55.88" smashed="yes">
+<attribute name="VALUE" x="10.16" y="50.8" size="1.778" layer="96" rot="R90"/>
+</instance>
+<instance part="GND9" gate="1" x="12.7" y="40.64" smashed="yes">
+<attribute name="VALUE" x="10.16" y="38.1" size="1.778" layer="96"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -7434,6 +7449,20 @@ Note v1.1 datasheet updated values.</text>
 <wire x1="30.48" y1="73.66" x2="22.86" y2="73.66" width="0.1524" layer="91"/>
 <junction x="22.86" y="73.66"/>
 </segment>
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.23"/>
+<wire x1="60.96" y1="50.8" x2="27.94" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="50.8" x2="27.94" y2="45.72" width="0.1524" layer="91"/>
+<wire x1="27.94" y1="45.72" x2="12.7" y2="45.72" width="0.1524" layer="91"/>
+<pinref part="GND9" gate="1" pin="GND"/>
+<wire x1="12.7" y1="45.72" x2="12.7" y2="43.18" width="0.1524" layer="91"/>
+<pinref part="U7" gate="G$1" pin="P0.21"/>
+<wire x1="60.96" y1="55.88" x2="25.4" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="55.88" x2="25.4" y2="48.26" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="48.26" x2="12.7" y2="48.26" width="0.1524" layer="91"/>
+<wire x1="12.7" y1="48.26" x2="12.7" y2="45.72" width="0.1524" layer="91"/>
+<junction x="12.7" y="45.72"/>
+</segment>
 </net>
 <net name="+3V3" class="0">
 <segment>
@@ -7505,6 +7534,14 @@ Note v1.1 datasheet updated values.</text>
 <wire x1="238.76" y1="66.04" x2="236.22" y2="66.04" width="0.1524" layer="91"/>
 <junction x="238.76" y="66.04"/>
 <junction x="236.22" y="66.04"/>
+</segment>
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.19"/>
+<wire x1="60.96" y1="60.96" x2="22.86" y2="60.96" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="60.96" x2="22.86" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="22.86" y1="50.8" x2="12.7" y2="50.8" width="0.1524" layer="91"/>
+<pinref part="P+6" gate="P1" pin="+3V3"/>
+<wire x1="12.7" y1="50.8" x2="12.7" y2="53.34" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="EXT_I2C_SDA" class="0">
