@@ -2940,7 +2940,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 </polygon>
 <circle x="-1.27" y="-0.635" radius="0.635" width="0.127" layer="21"/>
 </package>
-<package name="TC2030-IDC-NL-2SIDE" urn="urn:adsk.eagle:footprint:20800163/1" library_version="4">
+<package name="TC2030-IDC-NL-2SIDE" urn="urn:adsk.eagle:footprint:20800163/2" library_version="16">
 <description>The TC2030-IDC-NL is our "No Legs" 6-pin Plug-of-Nails Cable</description>
 <smd name="1" x="-1.27" y="-0.635" dx="0.7874" dy="0.7874" layer="1" roundness="100" cream="no"/>
 <smd name="3" x="0" y="-0.635" dx="0.7874" dy="0.7874" layer="1" roundness="100" cream="no"/>
@@ -2973,6 +2973,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <text x="0" y="-3.4925" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
 <text x="0" y="2.54" size="1.016" layer="26" font="vector" ratio="12" rot="MR0" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-3.4925" size="1.016" layer="28" font="vector" ratio="12" rot="MR0" align="bottom-center">&gt;VALUE</text>
+<text x="0" y="-2.286" size="0.2032" layer="49" align="center">Ref is main shaft; need this much lateral clearance vertically</text>
 <circle x="-1.27" y="-0.635" radius="0.635" width="0.127" layer="21"/>
 <circle x="-1.27" y="0.635" radius="0.635" width="0.127" layer="22"/>
 <wire x1="2.286" y1="-2.0447" x2="-0.979178125" y2="-2.0447" width="0.127" layer="21"/>
@@ -2999,6 +3000,14 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <wire x1="2.286" y1="2.0447" x2="3.556" y2="0.7747" width="0.127" layer="22" curve="-90"/>
 <wire x1="3.556" y1="0.7747" x2="3.556" y2="-0.7747" width="0.127" layer="22"/>
 <wire x1="3.556" y1="-0.7747" x2="2.286" y2="-2.0447" width="0.127" layer="22" curve="-90"/>
+<wire x1="-3.937" y1="3.048" x2="3.937" y2="3.048" width="0.127" layer="49"/>
+<wire x1="3.937" y1="3.048" x2="4.953" y2="2.032" width="0.127" layer="49" curve="-90"/>
+<wire x1="4.953" y1="2.032" x2="4.953" y2="-2.032" width="0.127" layer="49"/>
+<wire x1="4.953" y1="-2.032" x2="3.937" y2="-3.048" width="0.127" layer="49" curve="-90"/>
+<wire x1="3.937" y1="-3.048" x2="-3.937" y2="-3.048" width="0.127" layer="49"/>
+<wire x1="-3.937" y1="-3.048" x2="-4.953" y2="-2.032" width="0.127" layer="49" curve="-90"/>
+<wire x1="-4.953" y1="-2.032" x2="-4.953" y2="2.032" width="0.127" layer="49"/>
+<wire x1="-4.953" y1="2.032" x2="-3.937" y2="3.048" width="0.127" layer="49" curve="-90"/>
 </package>
 <package name="DM3AT-SF-PEJM5" urn="urn:adsk.eagle:footprint:20799138/1" library_version="7">
 <description>Micro SD card holder with push-to-eject feature.</description>
@@ -3168,7 +3177,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <packageinstance name="TC2030-IDC-NL_NOSILK"/>
 </packageinstances>
 </package3d>
-<package3d name="TC2030-IDC-NL-2SIDE" urn="urn:adsk.eagle:package:20800164/2" type="model" library_version="4">
+<package3d name="TC2030-IDC-NL-2SIDE" urn="urn:adsk.eagle:package:20800164/3" type="model" library_version="16">
 <description>The TC2030-IDC-NL is our "No Legs" 6-pin Plug-of-Nails Cable</description>
 <packageinstances>
 <packageinstance name="TC2030-IDC-NL-2SIDE"/>
@@ -3270,7 +3279,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 </symbol>
 </symbols>
 <devicesets>
-<deviceset name="TC2030-JLINK" urn="urn:adsk.eagle:component:20799244/4" prefix="J" library_version="4">
+<deviceset name="TC2030-JLINK" urn="urn:adsk.eagle:component:20799244/5" prefix="J" library_version="16">
 <gates>
 <gate name="G$1" symbol="JLINK-SWD-TC" x="0" y="0"/>
 </gates>
@@ -3333,7 +3342,7 @@ Details see: &lt;a href="https://www.we-online.com/catalog/en/SLSU_6_7X_2_7_SMD_
 <connect gate="G$1" pin="VCC" pad="1 B1"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:20800164/2"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:20800164/3"/>
 </package3dinstances>
 <technologies>
 <technology name=""/>
@@ -6735,8 +6744,8 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="DIGIKEY" value="732-13665-1-ND"/>
 </part>
 <part name="P+3" library="regulators" deviceset="+3V3" device=""/>
-<part name="J3" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="TC2030-JLINK" device="-NL-2SIDE" package3d_urn="urn:adsk.eagle:package:20800164/2"/>
-<part name="J4" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="TC2030-JLINK" device="-NL-2SIDE" package3d_urn="urn:adsk.eagle:package:20800164/2"/>
+<part name="J3" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="TC2030-JLINK" device="-NL-2SIDE" package3d_urn="urn:adsk.eagle:package:20800164/3"/>
+<part name="J4" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="TC2030-JLINK" device="-NL-2SIDE" package3d_urn="urn:adsk.eagle:package:20800164/3"/>
 <part name="J5" library="connector" library_urn="urn:adsk.eagle:library:20799129" deviceset="MOLEX-PICO-SPOX-3" device="SIDE" package3d_urn="urn:adsk.eagle:package:20886543/3"/>
 <part name="C31" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="22nF">
 <attribute name="DIGIKEY" value="490-10699-2-ND"/>
