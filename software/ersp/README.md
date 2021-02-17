@@ -12,7 +12,7 @@ Usage
 
 To simply plot a log file, run `python3 plot.py LOG_FILE_PATH`. This will open a PyPlot window displaying the raw log data overlayed by a smoothed version. 
 
-![Example plot](https://www.dropbox.com/s/8m98i1jxuozu928/Figure_1.png?dl=0)
+![Example plot](https://www.dropbox.com/s/8m98i1jxuozu928/Figure_1.png?raw=1)
 
 ### Classifying
 
