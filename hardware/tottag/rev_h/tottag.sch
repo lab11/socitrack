@@ -6550,7 +6550,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <attribute name="MPN" value="C0402C821J5GACTU"/>
 </part>
 <part name="TP13" library="headers" deviceset="TEST-POINT" device=""/>
-<part name="TP14" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="FRAME3" library="lab11-frames" deviceset="LETTER_L_BLANK" device=""/>
 <part name="U10" library="chips" library_urn="urn:adsk.eagle:library:20878352" deviceset="STM32F091CC" device="" package3d_urn="urn:adsk.eagle:package:20878823/2"/>
 <part name="U9" library="switches" library_urn="urn:adsk.eagle:library:20878764" deviceset="SKY13317" device="" package3d_urn="urn:adsk.eagle:package:20878967/2"/>
@@ -7185,11 +7184,8 @@ Rev H = 001
 <attribute name="NAME" x="34.29" y="110.49" size="1.778" layer="95" ratio="12" rot="R90" align="bottom-center"/>
 <attribute name="VALUE" x="36.83" y="110.49" size="1.778" layer="96" ratio="12" rot="R270" align="bottom-center"/>
 </instance>
-<instance part="TP13" gate="G$1" x="121.92" y="68.58" smashed="yes" rot="R180">
-<attribute name="NAME" x="125.095" y="68.58" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
-</instance>
-<instance part="TP14" gate="G$1" x="121.92" y="66.04" smashed="yes" rot="R180">
-<attribute name="NAME" x="125.095" y="66.04" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
+<instance part="TP13" gate="G$1" x="127" y="71.12" smashed="yes" rot="R270">
+<attribute name="NAME" x="127" y="74.295" size="1.016" layer="95" ratio="12" rot="R270" align="center-right"/>
 </instance>
 <instance part="TP15" gate="G$1" x="96.52" y="144.78" smashed="yes" rot="R180">
 <attribute name="NAME" x="97.79" y="143.51" size="1.778" layer="95" rot="R180"/>
@@ -7938,21 +7934,11 @@ Rev H = 001
 <label x="55.88" y="71.12" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="NRF_GPIO_1" class="0">
-<segment>
-<pinref part="U7" gate="G$1" pin="P0.26"/>
-<wire x1="106.68" y1="66.04" x2="111.76" y2="66.04" width="0.1524" layer="91"/>
-<pinref part="TP14" gate="G$1" pin="TESTPOINT"/>
-<wire x1="111.76" y1="66.04" x2="119.38" y2="66.04" width="0.1524" layer="91"/>
-<label x="109.22" y="66.04" size="1.27" layer="95"/>
-</segment>
-</net>
 <net name="NRF_GPIO_0" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="P0.27"/>
-<wire x1="106.68" y1="68.58" x2="111.76" y2="68.58" width="0.1524" layer="91"/>
 <pinref part="TP13" gate="G$1" pin="TESTPOINT"/>
-<wire x1="111.76" y1="68.58" x2="119.38" y2="68.58" width="0.1524" layer="91"/>
+<wire x1="106.68" y1="68.58" x2="127" y2="68.58" width="0.1524" layer="91"/>
 <label x="109.22" y="68.58" size="1.27" layer="95"/>
 </segment>
 </net>
@@ -8210,6 +8196,13 @@ Rev H = 001
 <pinref part="TP21" gate="G$1" pin="TESTPOINT"/>
 <wire x1="12.7" y1="15.24" x2="10.16" y2="15.24" width="0.1524" layer="91"/>
 <label x="12.7" y="15.24" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="STM_WKUP1" class="0">
+<segment>
+<pinref part="U7" gate="G$1" pin="P0.26"/>
+<wire x1="109.22" y1="66.04" x2="106.68" y2="66.04" width="0.1524" layer="91"/>
+<label x="109.22" y="66.04" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
@@ -9827,6 +9820,7 @@ use B, X5R, and X7R grades in
 temperature characteristics</text>
 <text x="38.1" y="2.54" size="2.032" layer="98" rot="R180" align="center">2x Programming header (top/bot)</text>
 <text x="151.13" y="87.63" size="1.27" layer="98" rot="R90">1% tol</text>
+<text x="71.12" y="132.334" size="0.762" layer="98">Only PA0 can wake from STANDBY mode</text>
 </plain>
 <instances>
 <instance part="FRAME3" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -11379,6 +11373,14 @@ temperature characteristics</text>
 <wire x1="106.68" y1="106.68" x2="106.68" y2="109.22" width="0.1524" layer="91"/>
 <wire x1="106.68" y1="109.22" x2="111.76" y2="109.22" width="0.1524" layer="91"/>
 <label x="111.76" y="109.22" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="STM_WKUP1" class="0">
+<segment>
+<pinref part="U10" gate="U1" pin="PA0"/>
+<wire x1="71.12" y1="106.68" x2="71.12" y2="132.08" width="0.1524" layer="91"/>
+<wire x1="71.12" y1="132.08" x2="111.76" y2="132.08" width="0.1524" layer="91"/>
+<label x="111.76" y="132.08" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
