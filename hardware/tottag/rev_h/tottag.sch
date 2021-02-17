@@ -6958,6 +6958,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="TP25" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP26" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP27" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="P+8" library="regulators" deviceset="+3V3" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -8407,6 +8408,12 @@ for layout reasons</text>
 means that if looking "top-down", "through"
 the connector (metal contacts of the connector
 not visible), the wires from L to R are [-, NTC, +]</text>
+<text x="24.384" y="124.206" size="0.8128" layer="98" align="top-right">Caution: The !CHG network
+connects to a GPIO pin on the
+nRF, which can leak power
+through the ESD pins when the
+nRF is not energized (i.e. don't
+drive this LED from VBAT!)</text>
 </plain>
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -8866,6 +8873,9 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <attribute name="NAME" x="68.326" y="137.287" size="1.778" layer="95"/>
 <attribute name="VALUE" x="59.69" y="132.08" size="1.778" layer="96"/>
 </instance>
+<instance part="P+8" gate="P1" x="25.4" y="127" smashed="yes">
+<attribute name="VALUE" x="23.876" y="127.254" size="1.778" layer="96" rot="R180"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -9101,6 +9111,12 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <wire x1="15.24" y1="35.56" x2="15.24" y2="33.02" width="0.1524" layer="91"/>
 <wire x1="20.32" y1="33.02" x2="15.24" y2="33.02" width="0.1524" layer="91"/>
 </segment>
+<segment>
+<pinref part="R10" gate="G$1" pin="1"/>
+<wire x1="27.94" y1="121.92" x2="25.4" y2="121.92" width="0.1524" layer="91"/>
+<wire x1="25.4" y1="121.92" x2="25.4" y2="124.46" width="0.1524" layer="91"/>
+<pinref part="P+8" gate="P1" pin="+3V3"/>
+</segment>
 </net>
 <net name="VBAT" class="0">
 <segment>
@@ -9125,11 +9141,6 @@ not visible), the wires from L to R are [-, NTC, +]</text>
 <wire x1="119.38" y1="96.52" x2="119.38" y2="99.06" width="0.1524" layer="91"/>
 <junction x="119.38" y="99.06"/>
 <pinref part="C75" gate="G$1" pin="1"/>
-</segment>
-<segment>
-<pinref part="R10" gate="G$1" pin="1"/>
-<wire x1="25.4" y1="121.92" x2="27.94" y2="121.92" width="0.1524" layer="91"/>
-<label x="25.4" y="121.92" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 <segment>
 <wire x1="63.5" y1="142.24" x2="58.42" y2="142.24" width="0.1524" layer="91"/>
