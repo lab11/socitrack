@@ -23,7 +23,7 @@ def parse_args() -> list[str]:
     if len(sys.argv) != 4:
         print('USAGE: python3 FILE_NAME.py LOG_FILE_PATH DIARY_FILE_PATH EVENT_MAP_FILE_PATH')
         sys.exit(1)
-    filepaths = sys.argv[1:4]
+    filepaths = ["example_inputs/" + x for x in sys.argv[1:4]]
     return filepaths
 
 
@@ -186,10 +186,12 @@ def plot(tags: dict[Device, TotTagData]) -> None:
         print("Plotting data for", tag)
         x_axis, y_axis = zip(*data)
 
+        y_axis = tuple(map(lambda x : x/304.8, y_axis))
+
         plt.plot(x_axis, y_axis, 'c', label='Original')
         plt.title('TotTag data for device ' + tag)
         plt.xlabel('Timestamp')
-        plt.ylabel('Distance in mm')
+        plt.ylabel('Distance in ft')
 
         smoothed_y_axis = savgol_filter(y_axis, window_length=9, polyorder=3)
 
