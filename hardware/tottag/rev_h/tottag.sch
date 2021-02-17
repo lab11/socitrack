@@ -6950,6 +6950,15 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="P+6" library="regulators" deviceset="+3V3" device=""/>
 <part name="GND9" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="P+7" library="regulators" deviceset="+3V3" device=""/>
+<part name="TP19" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP20" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP21" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP22" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP23" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP24" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP25" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP26" library="headers" deviceset="TEST-POINT" device=""/>
+<part name="TP27" library="headers" deviceset="TEST-POINT" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -6998,17 +7007,17 @@ Rev H = 001
 <instance part="GND5" gate="1" x="200.66" y="134.62" smashed="yes">
 <attribute name="VALUE" x="198.12" y="132.08" size="1.778" layer="96"/>
 </instance>
-<instance part="TP2" gate="G$1" x="134.62" y="157.48" smashed="yes" rot="R180">
-<attribute name="NAME" x="135.89" y="156.21" size="1.778" layer="95" rot="R180"/>
-<attribute name="TP_SIGNAL_NAME" x="133.35" y="158.75" size="1.778" layer="97" rot="R180"/>
+<instance part="TP2" gate="G$1" x="7.62" y="27.94" smashed="yes" rot="R90">
+<attribute name="NAME" x="6.35" y="29.21" size="1.778" layer="95" rot="R180"/>
+<attribute name="TP_SIGNAL_NAME" x="8.89" y="29.21" size="1.778" layer="97" rot="R90"/>
 </instance>
-<instance part="TP1" gate="G$1" x="129.54" y="157.48" smashed="yes" rot="R180">
-<attribute name="NAME" x="130.81" y="156.21" size="1.778" layer="95" rot="R180"/>
-<attribute name="TP_SIGNAL_NAME" x="128.27" y="158.75" size="1.778" layer="97" rot="R180"/>
+<instance part="TP1" gate="G$1" x="7.62" y="30.48" smashed="yes" rot="R90">
+<attribute name="NAME" x="6.35" y="31.75" size="1.778" layer="95" rot="R180"/>
+<attribute name="TP_SIGNAL_NAME" x="8.89" y="31.75" size="1.778" layer="97" rot="R90"/>
 </instance>
-<instance part="TP3" gate="G$1" x="139.7" y="157.48" smashed="yes" rot="R180">
-<attribute name="NAME" x="140.97" y="156.21" size="1.778" layer="95" rot="R180"/>
-<attribute name="TP_SIGNAL_NAME" x="138.43" y="158.75" size="1.778" layer="97" rot="R180"/>
+<instance part="TP3" gate="G$1" x="7.62" y="25.4" smashed="yes" rot="R90">
+<attribute name="NAME" x="6.35" y="26.67" size="1.778" layer="95" rot="R180"/>
+<attribute name="TP_SIGNAL_NAME" x="8.89" y="26.67" size="1.778" layer="97" rot="R90"/>
 </instance>
 <instance part="TP4" gate="G$1" x="109.22" y="33.02" smashed="yes">
 <attribute name="NAME" x="107.95" y="34.29" size="1.778" layer="95"/>
@@ -7298,6 +7307,33 @@ Rev H = 001
 <instance part="P+7" gate="P1" x="172.72" y="83.82" smashed="yes">
 <attribute name="VALUE" x="170.18" y="78.74" size="1.778" layer="96" rot="R90"/>
 </instance>
+<instance part="TP19" gate="G$1" x="7.62" y="20.32" smashed="yes">
+<attribute name="NAME" x="6.985" y="20.32" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP20" gate="G$1" x="7.62" y="17.78" smashed="yes">
+<attribute name="NAME" x="6.985" y="17.78" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP21" gate="G$1" x="7.62" y="15.24" smashed="yes">
+<attribute name="NAME" x="6.985" y="15.24" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP22" gate="G$1" x="7.62" y="12.7" smashed="yes">
+<attribute name="NAME" x="6.985" y="12.7" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP23" gate="G$1" x="40.64" y="20.32" smashed="yes">
+<attribute name="NAME" x="40.005" y="20.32" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP24" gate="G$1" x="40.64" y="17.78" smashed="yes">
+<attribute name="NAME" x="40.005" y="17.78" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP25" gate="G$1" x="40.64" y="15.24" smashed="yes">
+<attribute name="NAME" x="40.005" y="15.24" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP26" gate="G$1" x="40.64" y="12.7" smashed="yes">
+<attribute name="NAME" x="40.005" y="12.7" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
+<instance part="TP27" gate="G$1" x="40.64" y="10.16" smashed="yes">
+<attribute name="NAME" x="40.005" y="10.16" size="1.016" layer="95" ratio="12" align="center-right"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -7556,18 +7592,9 @@ Rev H = 001
 </net>
 <net name="EXT_I2C_SDA" class="0">
 <segment>
-<label x="116.84" y="170.18" size="1.27" layer="95" rot="R180" xref="yes"/>
-<wire x1="119.38" y1="177.8" x2="116.84" y2="177.8" width="0.1524" layer="91"/>
-<label x="116.84" y="177.8" size="1.27" layer="95" rot="R180" xref="yes"/>
-<wire x1="116.84" y1="170.18" x2="119.38" y2="170.18" width="0.1524" layer="91"/>
-<wire x1="119.38" y1="170.18" x2="134.62" y2="170.18" width="0.1524" layer="91"/>
-<wire x1="134.62" y1="170.18" x2="144.78" y2="170.18" width="0.1524" layer="91"/>
-<wire x1="119.38" y1="177.8" x2="119.38" y2="170.18" width="0.1524" layer="91"/>
-<junction x="119.38" y="170.18"/>
+<wire x1="10.16" y1="27.94" x2="12.7" y2="27.94" width="0.1524" layer="91"/>
 <pinref part="TP2" gate="G$1" pin="TP"/>
-<wire x1="134.62" y1="160.02" x2="134.62" y2="170.18" width="0.1524" layer="91"/>
-<junction x="134.62" y="170.18"/>
-<label x="144.78" y="170.18" size="1.27" layer="95" xref="yes"/>
+<label x="12.7" y="27.94" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
 <pinref part="U7" gate="G$1" pin="P0.12"/>
@@ -7577,18 +7604,9 @@ Rev H = 001
 </net>
 <net name="EXT_I2C_SCL" class="0">
 <segment>
-<label x="116.84" y="172.72" size="1.27" layer="95" rot="R180" xref="yes"/>
-<wire x1="127" y1="177.8" x2="129.54" y2="177.8" width="0.1524" layer="91"/>
-<label x="129.54" y="177.8" size="1.27" layer="95" xref="yes"/>
-<wire x1="144.78" y1="172.72" x2="129.54" y2="172.72" width="0.1524" layer="91"/>
-<wire x1="129.54" y1="172.72" x2="127" y2="172.72" width="0.1524" layer="91"/>
-<wire x1="127" y1="172.72" x2="116.84" y2="172.72" width="0.1524" layer="91"/>
-<wire x1="127" y1="177.8" x2="127" y2="172.72" width="0.1524" layer="91"/>
-<junction x="127" y="172.72"/>
+<wire x1="12.7" y1="30.48" x2="10.16" y2="30.48" width="0.1524" layer="91"/>
 <pinref part="TP1" gate="G$1" pin="TP"/>
-<wire x1="129.54" y1="160.02" x2="129.54" y2="172.72" width="0.1524" layer="91"/>
-<junction x="129.54" y="172.72"/>
-<label x="144.78" y="172.72" size="1.27" layer="95" xref="yes"/>
+<label x="12.7" y="30.48" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
 <pinref part="U7" gate="G$1" pin="P1.09"/>
@@ -7622,13 +7640,9 @@ Rev H = 001
 </net>
 <net name="STM_INTERRUPT" class="0">
 <segment>
-<wire x1="144.78" y1="167.64" x2="139.7" y2="167.64" width="0.1524" layer="91"/>
-<wire x1="139.7" y1="167.64" x2="116.84" y2="167.64" width="0.1524" layer="91"/>
 <pinref part="TP3" gate="G$1" pin="TP"/>
-<wire x1="139.7" y1="160.02" x2="139.7" y2="167.64" width="0.1524" layer="91"/>
-<junction x="139.7" y="167.64"/>
-<label x="144.78" y="167.64" size="1.27" layer="95" xref="yes"/>
-<label x="116.84" y="167.64" size="1.27" layer="95" rot="R180" xref="yes"/>
+<wire x1="10.16" y1="25.4" x2="12.7" y2="25.4" width="0.1524" layer="91"/>
+<label x="12.7" y="25.4" size="1.27" layer="95" xref="yes"/>
 </segment>
 <segment>
 <pinref part="U7" gate="G$1" pin="P0.08"/>
@@ -7804,6 +7818,11 @@ Rev H = 001
 <wire x1="111.76" y1="124.46" x2="106.68" y2="124.46" width="0.1524" layer="91"/>
 <pinref part="U7" gate="G$1" pin="P0.05/AIN3"/>
 </segment>
+<segment>
+<pinref part="TP25" gate="G$1" pin="TESTPOINT"/>
+<wire x1="45.72" y1="15.24" x2="43.18" y2="15.24" width="0.1524" layer="91"/>
+<label x="45.72" y="15.24" size="1.27" layer="95" xref="yes"/>
+</segment>
 </net>
 <net name="NRF_SPI2_MOSI" class="0">
 <segment>
@@ -7816,6 +7835,11 @@ Rev H = 001
 <wire x1="55.88" y1="83.82" x2="60.96" y2="83.82" width="0.1524" layer="91"/>
 <label x="55.88" y="83.82" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
+<segment>
+<pinref part="TP24" gate="G$1" pin="TESTPOINT"/>
+<wire x1="45.72" y1="17.78" x2="43.18" y2="17.78" width="0.1524" layer="91"/>
+<label x="45.72" y="17.78" size="1.27" layer="95" xref="yes"/>
+</segment>
 </net>
 <net name="NRF_SPI2_SCLK" class="0">
 <segment>
@@ -7827,6 +7851,11 @@ Rev H = 001
 <pinref part="U7" gate="G$1" pin="P0.06"/>
 <wire x1="55.88" y1="86.36" x2="60.96" y2="86.36" width="0.1524" layer="91"/>
 <label x="55.88" y="86.36" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="TP23" gate="G$1" pin="TESTPOINT"/>
+<wire x1="45.72" y1="20.32" x2="43.18" y2="20.32" width="0.1524" layer="91"/>
+<label x="45.72" y="20.32" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_DCC" class="0">
@@ -7874,6 +7903,11 @@ Rev H = 001
 <pinref part="U7" gate="G$1" pin="P0.16"/>
 <wire x1="60.96" y1="66.04" x2="55.88" y2="66.04" width="0.1524" layer="91"/>
 <label x="55.88" y="66.04" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="TP22" gate="G$1" pin="TESTPOINT"/>
+<wire x1="12.7" y1="12.7" x2="10.16" y2="12.7" width="0.1524" layer="91"/>
+<label x="12.7" y="12.7" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="NRF_IMU_INT1" class="0">
@@ -7927,6 +7961,11 @@ Rev H = 001
 <pinref part="U7" gate="G$1" pin="P0.20"/>
 <wire x1="60.96" y1="58.42" x2="55.88" y2="58.42" width="0.1524" layer="91"/>
 <label x="55.88" y="58.42" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="TP26" gate="G$1" pin="TESTPOINT"/>
+<wire x1="45.72" y1="12.7" x2="43.18" y2="12.7" width="0.1524" layer="91"/>
+<label x="45.72" y="12.7" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="!NRF_RST" class="0">
@@ -8018,6 +8057,11 @@ Rev H = 001
 <pinref part="U7" gate="G$1" pin="P0.29*/AIN5"/>
 <wire x1="106.68" y1="119.38" x2="111.76" y2="119.38" width="0.1524" layer="91"/>
 <label x="111.76" y="119.38" size="1.27" layer="95" xref="yes"/>
+</segment>
+<segment>
+<pinref part="TP27" gate="G$1" pin="TESTPOINT"/>
+<wire x1="45.72" y1="10.16" x2="43.18" y2="10.16" width="0.1524" layer="91"/>
+<label x="45.72" y="10.16" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="VBAT_RTC" class="0">
@@ -8138,6 +8182,11 @@ Rev H = 001
 <wire x1="55.88" y1="63.5" x2="60.96" y2="63.5" width="0.1524" layer="91"/>
 <label x="55.88" y="63.5" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
+<segment>
+<pinref part="TP19" gate="G$1" pin="TESTPOINT"/>
+<wire x1="12.7" y1="20.32" x2="10.16" y2="20.32" width="0.1524" layer="91"/>
+<label x="12.7" y="20.32" size="1.27" layer="95" xref="yes"/>
+</segment>
 </net>
 <net name="NRF_SPI0_MOSI" class="0">
 <segment>
@@ -8145,12 +8194,22 @@ Rev H = 001
 <wire x1="55.88" y1="73.66" x2="60.96" y2="73.66" width="0.1524" layer="91"/>
 <label x="55.88" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
+<segment>
+<pinref part="TP20" gate="G$1" pin="TESTPOINT"/>
+<wire x1="12.7" y1="17.78" x2="10.16" y2="17.78" width="0.1524" layer="91"/>
+<label x="12.7" y="17.78" size="1.27" layer="95" xref="yes"/>
+</segment>
 </net>
 <net name="NRF_SPI0_MISO" class="0">
 <segment>
 <pinref part="U7" gate="G$1" pin="P0.15"/>
 <wire x1="55.88" y1="68.58" x2="60.96" y2="68.58" width="0.1524" layer="91"/>
 <label x="55.88" y="68.58" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+<segment>
+<pinref part="TP21" gate="G$1" pin="TESTPOINT"/>
+<wire x1="12.7" y1="15.24" x2="10.16" y2="15.24" width="0.1524" layer="91"/>
+<label x="12.7" y="15.24" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
