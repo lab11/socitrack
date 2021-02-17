@@ -1,4 +1,5 @@
 import sys
+from typing import no_type_check
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from classifiers import *
@@ -20,10 +21,10 @@ DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
 ###
 def parse_args() -> list[str]:
     """Parses command-line arguments to ensure proper format and returns the provided filename."""
-    if len(sys.argv) != 4:
-        print('USAGE: python3 FILE_NAME.py LOG_FILE_PATH DIARY_FILE_PATH EVENT_MAP_FILE_PATH')
+    if len(sys.argv) != 3:
+        print('USAGE: python3 FILE_NAME.py LOG_FILE DIARY_FILE')
         sys.exit(1)
-    filepaths = ["example_inputs/" + x for x in sys.argv[1:4]]
+    filepaths = sys.argv[1:3]
     return filepaths
 
 
@@ -53,22 +54,11 @@ def load_log(log_filepath: str) -> dict[Device,TotTagData]:
     return tags
 
 
-def load_event_map(event_map_filepath: str) -> dict[str,int]:
-    """Loads event map from a specified filepath, and returns a dictionary containing the map."""
-    map = {}
-    index = 0
-
-    with open(event_map_filepath) as f:
-        for string_label in f:
-            map[string_label.strip()] = index
-            index += 1
-
-    return map
-
-
-def load_diary(diary_filepath: str, event_map: dict[str,int]) -> list[DiaryEvent]:
+def load_diary(diary_filepath: str) -> tuple[list[DiaryEvent],dict[str,int]]:
     """Loads diary data from a specified filepath, and returns a list containing the events in the diary."""
     diary = []
+    event_map = {}
+    encoding_index = 0
 
     with open(diary_filepath) as f:
         for line in f:
@@ -76,13 +66,17 @@ def load_diary(diary_filepath: str, event_map: dict[str,int]) -> list[DiaryEvent
             if line[0] == '#':
                 continue
 
-            event_label, start, end = line.split(",")
+            label_string, start, end = line.split(",")
 
-            encoded_label = event_map[event_label]
+            if label_string not in event_map:
+                event_map[label_string] = encoding_index
+                encoding_index += 1
+
+            encoded_label = event_map[label_string]
 
             diary.append((encoded_label, int(start), int(end)))
     
-    return diary
+    return diary, event_map
 
 
 ###
@@ -174,10 +168,12 @@ def strip_timestamps(windows: list[TotTagData]) -> list[list[Distance]]:
 ###
 ###     Miscellaneous
 ###
-def print_window_times_and_labels(windows: list[TotTagData], labels: list[str]) -> None:
+def print_window_times_and_labels(windows: list[TotTagData], labels: list[EventLabel], reverse_event_map: dict[int,str]) -> None:
     """Prints the start and end timestamps and event label of each window in the list."""
+    print("Training Data:\t|\tStart\t End\t Label")
+    print("="*50)
     for i in range(len(windows)):
-        print("Window " + str(i) + ":", windows[i][0][0], windows[i][-1][0], labels[i])
+        print(f"Window {i+1}:\t|\t{windows[i][0][0]} \t {windows[i][-1][0]} \t {reverse_event_map[labels[i]]}")
 
 
 def plot(tags: dict[Device, TotTagData]) -> None:
@@ -186,7 +182,7 @@ def plot(tags: dict[Device, TotTagData]) -> None:
         print("Plotting data for", tag)
         x_axis, y_axis = zip(*data)
 
-        y_axis = tuple(map(lambda x : x/304.8, y_axis))
+        y_axis = tuple(map(lambda x : x/304.8, y_axis)) 
 
         plt.plot(x_axis, y_axis, 'c', label='Original')
         plt.title('TotTag data for device ' + tag)
@@ -235,12 +231,11 @@ if __name__ == "__main__":
     ### Test the code here! :)
 
     # Load command-line arguments
-    log_filepath, diary_filepath, event_map_filepath = parse_args()
+    log_filepath, diary_filepath = parse_args()
 
     # Load log and diary files
     tags = load_log(log_filepath)
-    event_map = load_event_map(event_map_filepath)
-    diary = load_diary(diary_filepath, event_map)
+    diary, event_map = load_diary(diary_filepath)
 
     # Create sliding windows
     window_length = 30
@@ -248,13 +243,11 @@ if __name__ == "__main__":
     windows = generate_sliding_windows(tags, list(tags.keys())[0], window_length, window_shift)
 
     # Label the windows
-    event_labels = event_map.values()
-    labels = label_events(windows, diary, event_labels)
+    labels = label_events(windows, diary, event_map.values())
 
     # Print a summary for each window we've labeled (debug step; unnecessary)
     reverse_event_map = {v: k for k, v in event_map.items()}
-    string_labels = [reverse_event_map[label] for label in labels]
-    print_window_times_and_labels(windows, string_labels)
+    print_window_times_and_labels(windows, labels, reverse_event_map)
     
     # Remove timestamps from windows; they are in order anyways, and would affect training if included
     stripped_windows = strip_timestamps(windows)
@@ -264,4 +257,5 @@ if __name__ == "__main__":
     train_forest(stripped_windows, labels)
 
     # Plot the windows, allowing user to compare labels with those printed by debug step 
-    demo_sliding_window(windows)
+    plot(tags)
+    # demo_sliding_window(windows)
