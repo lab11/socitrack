@@ -21,11 +21,21 @@ DiaryEvent = tuple[EventLabel,Timestamp,Timestamp]
 ###
 def parse_args() -> list[str]:
     """Parses command-line arguments to ensure proper format and returns the provided filename."""
-    if len(sys.argv) != 3:
-        print('USAGE: python3 FILE_NAME.py LOG_FILE DIARY_FILE')
-        sys.exit(1)
-    filepaths = sys.argv[1:3]
-    return filepaths
+    # Plot
+    if sys.argv[0] == 'plot.py':
+        if len(sys.argv) == 2:
+            return [sys.argv[1]]
+        else:
+            print('USAGE: python3 plot.py LOG_FILE')
+            sys.exit(1)
+
+    # Train
+    elif sys.argv[0] == 'tottagProcessing.py':
+        if len(sys.argv) == 3:
+            return sys.argv[1:3]
+        else:
+            print('USAGE: python3 tottagProcessing.py LOG_FILE DIARY_FILE')
+            sys.exit(1)
 
 
 def load_log(log_filepath: str) -> dict[Device,TotTagData]:
