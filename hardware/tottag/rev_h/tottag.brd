@@ -7037,7 +7037,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="19.685" y="25.5016" extent="1-16" drill="0.2032"/>
 <via x="9.906" y="29.972" extent="1-16" drill="0.2032"/>
 <via x="19.6596" y="27.8892" extent="1-16" drill="0.2032"/>
-<via x="18.4658" y="29.9212" extent="1-16" drill="0.2032"/>
+<via x="18.415" y="29.972" extent="1-16" drill="0.2032"/>
 <via x="13.97" y="29.972" extent="1-16" drill="0.2032"/>
 <via x="11.43" y="29.972" extent="1-16" drill="0.2032"/>
 <via x="24.5618" y="23.0378" extent="1-16" drill="0.2032"/>
@@ -9574,6 +9574,10 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="28.9052" y1="1.8796" x2="29.6672" y2="2.6416" width="0.3048" layer="15"/>
 <contactref element="U7" pad="AC15"/>
 <wire x1="13.839" y1="17.0954" x2="14.089" y2="17.5954" width="0.1524" layer="1"/>
+<contactref element="R34" pad="1"/>
+<wire x1="18.82266875" y1="29.0576" x2="18.82266875" y2="29.59226875" width="0.2032" layer="1"/>
+<wire x1="18.82266875" y1="29.59226875" x2="18.8976" y2="29.6672" width="0.2032" layer="1"/>
+<via x="18.8976" y="29.6672" extent="1-16" drill="0.2032"/>
 </signal>
 <signal name="N$22">
 <contactref element="U10" pad="44"/>
@@ -10096,18 +10100,15 @@ Quickturn PCB 4 Layer .DRU</description>
 <signal name="VBAT_RTC">
 <contactref element="U11" pad="5"/>
 <contactref element="R16" pad="1"/>
-<wire x1="21.94433125" y1="29.1592" x2="21.2344" y2="29.1592" width="0.4064" layer="1"/>
-<wire x1="21.2344" y1="29.1592" x2="20.6248" y2="29.7688" width="0.4064" layer="1"/>
-<wire x1="19.812" y1="29.7688" x2="20.6248" y2="29.7688" width="0.4064" layer="1"/>
-<wire x1="18.5928" y1="27.6352" x2="18.5928" y2="27.2288" width="0.3302" layer="1"/>
-<wire x1="18.5928" y1="27.2288" x2="18.5928" y2="26.6042" width="0.254" layer="1"/>
+<wire x1="21.94433125" y1="29.1592" x2="21.2344" y2="29.1592" width="0.2032" layer="1"/>
+<wire x1="21.2344" y1="29.1592" x2="20.6248" y2="29.7688" width="0.2032" layer="1"/>
+<wire x1="19.812" y1="29.7688" x2="20.6248" y2="29.7688" width="0.2032" layer="1"/>
+<wire x1="18.5928" y1="27.6352" x2="18.5928" y2="27.2288" width="0.2032" layer="1"/>
+<wire x1="18.5928" y1="27.2288" x2="18.5928" y2="26.6042" width="0.2032" layer="1"/>
 <wire x1="18.5928" y1="26.6042" x2="18.6406" y2="26.5564" width="0.254" layer="1"/>
-<wire x1="18.5928" y1="27.6352" x2="19.5072" y2="28.5496" width="0.4064" layer="1"/>
-<wire x1="19.5072" y1="28.5496" x2="19.5072" y2="29.464" width="0.4064" layer="1"/>
-<wire x1="19.5072" y1="29.464" x2="19.812" y2="29.7688" width="0.4064" layer="1"/>
-<contactref element="R34" pad="1"/>
-<wire x1="18.82266875" y1="29.0576" x2="18.5928" y2="28.82773125" width="0.2032" layer="1"/>
-<wire x1="18.5928" y1="28.82773125" x2="18.5928" y2="27.6352" width="0.2032" layer="1"/>
+<wire x1="18.5928" y1="27.6352" x2="19.5072" y2="28.5496" width="0.2032" layer="1"/>
+<wire x1="19.5072" y1="28.5496" x2="19.5072" y2="29.464" width="0.2032" layer="1"/>
+<wire x1="19.5072" y1="29.464" x2="19.812" y2="29.7688" width="0.2032" layer="1"/>
 </signal>
 <signal name="N$45">
 <contactref element="R16" pad="2"/>
