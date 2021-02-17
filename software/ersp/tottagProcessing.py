@@ -1,5 +1,4 @@
 import sys
-from typing import no_type_check
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 from classifiers import *
