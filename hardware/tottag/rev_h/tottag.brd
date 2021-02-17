@@ -30,13 +30,13 @@
 <layer number="19" name="Unrouted" color="13" fill="1" visible="yes" active="yes"/>
 <layer number="20" name="Dimension" color="48" fill="1" visible="yes" active="yes"/>
 <layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="22" name="bPlace" color="31" fill="1" visible="no" active="yes"/>
+<layer number="22" name="bPlace" color="31" fill="1" visible="yes" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
 <layer number="24" name="bOrigins" color="31" fill="1" visible="yes" active="yes"/>
 <layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="26" name="bNames" color="31" fill="1" visible="yes" active="yes"/>
-<layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
+<layer number="27" name="tValues" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="28" name="bValues" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
 <layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
 <layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
@@ -59,7 +59,7 @@
 <layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
 <layer number="49" name="Reference" color="13" fill="1" visible="yes" active="yes"/>
 <layer number="50" name="dxf" color="7" fill="1" visible="no" active="no"/>
-<layer number="51" name="tDocu" color="6" fill="1" visible="yes" active="yes"/>
+<layer number="51" name="tDocu" color="6" fill="1" visible="no" active="yes"/>
 <layer number="52" name="bDocu" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="53" name="tGND_GNDA" color="7" fill="9" visible="no" active="no"/>
 <layer number="54" name="bGND_GNDA" color="1" fill="9" visible="no" active="no"/>
@@ -480,13 +480,15 @@ Trace width calc's for coplanar wave:
 <text x="-26.67" y="30.48" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">MISO</text>
 <text x="-28.575" y="30.48" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">nCS</text>
 <text x="18.796" y="28.6766" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">nCS</text>
-<text x="16.002" y="12.319" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">SCLK</text>
-<text x="19.812" y="11.2776" size="0.508" layer="22" font="vector" ratio="18" rot="MR0" align="top-center">MOSI</text>
-<text x="18.542" y="12.2936" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">MISO</text>
-<text x="17.272" y="11.2776" size="0.508" layer="22" font="vector" ratio="18" rot="MR0" align="top-center">nCS</text>
+<text x="20.2184" y="11.303" size="0.508" layer="22" font="vector" ratio="18" rot="MR0" align="top-center">SCLK</text>
+<text x="16.4592" y="12.573" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">MOSI</text>
+<text x="20.193" y="12.065" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">MISO</text>
+<text x="16.51" y="10.922" size="0.508" layer="22" font="vector" ratio="18" rot="MR0" align="top-center">nCS</text>
 <text x="22.9108" y="9.271" size="0.508" layer="21" font="vector" ratio="18" align="center">R</text>
 <text x="22.9108" y="10.5918" size="0.508" layer="21" font="vector" ratio="18" align="center">B</text>
 <text x="22.9108" y="11.9126" size="0.508" layer="21" font="vector" ratio="18" align="center">G</text>
+<text x="17.7546" y="13.4874" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">SCL</text>
+<text x="17.7546" y="14.8082" size="0.508" layer="22" font="vector" ratio="18" rot="MR180" align="top-center">SDA</text>
 </plain>
 <libraries>
 <library name="chips">
