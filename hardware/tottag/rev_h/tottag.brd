@@ -7110,7 +7110,6 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="25.6794" y="4.445" extent="1-16" drill="0.2032"/>
 <via x="12.8778" y="18.4658" extent="1-16" drill="0.2032"/>
 <via x="14.1478" y="18.4658" extent="1-16" drill="0.2032"/>
-<via x="15.4178" y="18.4658" extent="1-16" drill="0.2032"/>
 <via x="24.6888" y="27.051" extent="1-16" drill="0.2032"/>
 <via x="25.3492" y="25.654" extent="1-16" drill="0.2032"/>
 <via x="24.5618" y="21.8948" extent="1-16" drill="0.2032"/>
@@ -7690,11 +7689,11 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="32.1056" y="0.6096" extent="1-16" drill="0.5"/>
 <wire x1="32.1056" y1="0.6096" x2="30.3276" y2="-1.1684" width="0.6096" layer="16"/>
 <wire x1="30.3276" y1="-1.1684" x2="30.3276" y2="-2.0574" width="0.6096" layer="16"/>
-<contactref element="U7" pad="AC19"/>
-<contactref element="U7" pad="AC17"/>
-<wire x1="15.089" y1="17.5954" x2="15.089" y2="18.137" width="0.1524" layer="1"/>
-<wire x1="15.089" y1="18.137" x2="15.4178" y2="18.4658" width="0.1524" layer="1"/>
-<wire x1="15.089" y1="17.5954" x2="14.589" y2="17.5954" width="0.1524" layer="1"/>
+<contactref element="U7" pad="B19" route="any" routetag="G$1.P1.11*"/>
+<contactref element="U7" pad="B17"/>
+<wire x1="14.589" y1="23.0954" x2="15.089" y2="23.0954" width="0.1524" layer="1"/>
+<wire x1="13.589" y1="20.3454" x2="15.089" y2="21.8454" width="0.1524" layer="1"/>
+<wire x1="15.089" y1="21.8454" x2="15.089" y2="23.0954" width="0.1524" layer="1"/>
 </signal>
 <signal name="VUSB">
 <contactref element="J1" pad="A4/B9"/>
@@ -9572,12 +9571,12 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="28.9052" y="1.8288" extent="1-16" drill="0.2032"/>
 <wire x1="28.9052" y1="1.8288" x2="28.9052" y2="1.8796" width="0.3048" layer="15"/>
 <wire x1="28.9052" y1="1.8796" x2="29.6672" y2="2.6416" width="0.3048" layer="15"/>
-<contactref element="U7" pad="AC15"/>
-<wire x1="13.839" y1="17.0954" x2="14.089" y2="17.5954" width="0.1524" layer="1"/>
 <contactref element="R34" pad="1"/>
 <wire x1="18.82266875" y1="29.0576" x2="18.82266875" y2="29.59226875" width="0.2032" layer="1"/>
 <wire x1="18.82266875" y1="29.59226875" x2="18.8976" y2="29.6672" width="0.2032" layer="1"/>
 <via x="18.8976" y="29.6672" extent="1-16" drill="0.2032"/>
+<contactref element="U7" pad="A20"/>
+<wire x1="15.339" y1="23.5954" x2="15.839" y2="23.5954" width="0.1524" layer="1"/>
 </signal>
 <signal name="N$22">
 <contactref element="U10" pad="44"/>
