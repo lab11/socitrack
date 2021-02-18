@@ -5804,6 +5804,40 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </polygon>
 <circle x="0" y="0" radius="1.74625" width="0.2032" layer="21"/>
 </package>
+<package name="SMT-JUMPER_2_NC_TRACE_NO-SILK" urn="urn:adsk.eagle:footprint:39257/1" library_version="1">
+<smd name="1" x="-0.508" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="2" x="0.508" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<text x="0" y="1.143" size="0.6096" layer="25" font="vector" ratio="20" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.143" size="0.6096" layer="27" font="vector" ratio="20" align="top-center">&gt;VALUE</text>
+<wire x1="-0.508" y1="0" x2="0.508" y2="0" width="0.254" layer="1"/>
+<polygon width="0.127" layer="29">
+<vertex x="-0.1905" y="0.127"/>
+<vertex x="0.1905" y="0.127"/>
+<vertex x="0.1905" y="-0.127"/>
+<vertex x="-0.1905" y="-0.127"/>
+</polygon>
+</package>
+<package name="SMT-JUMPER_2_NC_TRACE_SILK" urn="urn:adsk.eagle:footprint:39258/1" library_version="1">
+<wire x1="0.762" y1="-1.016" x2="-0.762" y2="-1.016" width="0.1524" layer="21"/>
+<wire x1="0.762" y1="1.016" x2="1.2192" y2="0.5588" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.2192" y1="0.5588" x2="-0.762" y2="1.016" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.2192" y1="-0.5588" x2="-0.762" y2="-1.016" width="0.1524" layer="21" curve="90"/>
+<wire x1="0.762" y1="-1.016" x2="1.2192" y2="-0.5588" width="0.1524" layer="21" curve="90"/>
+<wire x1="1.2192" y1="-0.5588" x2="1.2192" y2="0.5588" width="0.1524" layer="21"/>
+<wire x1="-1.2192" y1="-0.5588" x2="-1.2192" y2="0.5588" width="0.1524" layer="21"/>
+<wire x1="-0.762" y1="1.016" x2="0.762" y2="1.016" width="0.1524" layer="21"/>
+<wire x1="-0.508" y1="0" x2="0.508" y2="0" width="0.254" layer="1"/>
+<smd name="1" x="-0.508" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="2" x="0.508" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<text x="0" y="1.143" size="0.6096" layer="25" font="vector" ratio="20" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.143" size="0.6096" layer="27" font="vector" ratio="20" align="top-center">&gt;VALUE</text>
+<polygon width="0.127" layer="29">
+<vertex x="-0.1905" y="0.127"/>
+<vertex x="0.1905" y="0.127"/>
+<vertex x="0.1905" y="-0.127"/>
+<vertex x="-0.1905" y="-0.127"/>
+</polygon>
+</package>
 </packages>
 <packages3d>
 <package3d name="SMT-JUMPER_3_1-NC_TRACE_SILK" urn="urn:adsk.eagle:package:39288/1" type="box" library_version="1">
@@ -5836,6 +5870,16 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <packageinstance name="SMT-JUMPER_2_NO_SILK_ROUND"/>
 </packageinstances>
 </package3d>
+<package3d name="SMT-JUMPER_2_NC_TRACE_NO-SILK" urn="urn:adsk.eagle:package:39286/1" type="box" library_version="1">
+<packageinstances>
+<packageinstance name="SMT-JUMPER_2_NC_TRACE_NO-SILK"/>
+</packageinstances>
+</package3d>
+<package3d name="SMT-JUMPER_2_NC_TRACE_SILK" urn="urn:adsk.eagle:package:39281/1" type="box" library_version="1">
+<packageinstances>
+<packageinstance name="SMT-JUMPER_2_NC_TRACE_SILK"/>
+</packageinstances>
+</package3d>
 </packages3d>
 <symbols>
 <symbol name="SMT-JUMPER_3_1-NC_TRACE" urn="urn:adsk.eagle:symbol:39265/1" library_version="1">
@@ -5860,6 +5904,18 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="-0.381" y1="-0.635" x2="-0.381" y2="0.635" width="1.27" layer="94" curve="-180" cap="flat"/>
 <wire x1="2.54" y1="0" x2="1.651" y2="0" width="0.1524" layer="94"/>
 <wire x1="-2.54" y1="0" x2="-1.651" y2="0" width="0.1524" layer="94"/>
+<text x="-2.54" y="2.54" size="1.778" layer="95" font="vector">&gt;NAME</text>
+<text x="-2.54" y="-2.54" size="1.778" layer="96" font="vector" align="top-left">&gt;VALUE</text>
+<pin name="2" x="5.08" y="0" visible="off" length="short" direction="pas" swaplevel="1" rot="R180"/>
+<pin name="1" x="-5.08" y="0" visible="off" length="short" direction="pas" swaplevel="1"/>
+</symbol>
+<symbol name="SMT-JUMPER_2_NC_TRACE" urn="urn:adsk.eagle:symbol:39256/1" library_version="1">
+<wire x1="0.381" y1="0.635" x2="1.016" y2="0" width="1.27" layer="94" curve="-90" cap="flat"/>
+<wire x1="1.016" y1="0" x2="0.381" y2="-0.635" width="1.27" layer="94" curve="-90" cap="flat"/>
+<wire x1="-0.381" y1="-0.635" x2="-0.381" y2="0.635" width="1.27" layer="94" curve="-180" cap="flat"/>
+<wire x1="2.54" y1="0" x2="1.651" y2="0" width="0.1524" layer="94"/>
+<wire x1="-2.54" y1="0" x2="-1.651" y2="0" width="0.1524" layer="94"/>
+<wire x1="-0.762" y1="0" x2="1.016" y2="0" width="0.254" layer="94"/>
 <text x="-2.54" y="2.54" size="1.778" layer="95" font="vector">&gt;NAME</text>
 <text x="-2.54" y="-2.54" size="1.778" layer="96" font="vector" align="top-left">&gt;VALUE</text>
 <pin name="2" x="5.08" y="0" visible="off" length="short" direction="pas" swaplevel="1" rot="R180"/>
@@ -5963,6 +6019,45 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </connects>
 <package3dinstances>
 <package3dinstance package3d_urn="urn:adsk.eagle:package:39280/1"/>
+</package3dinstances>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+</devices>
+</deviceset>
+<deviceset name="JUMPER-SMT_2_NC_TRACE" urn="urn:adsk.eagle:component:39295/1" prefix="JP" library_version="1">
+<description>&lt;h3&gt;Normally closed trace jumper&lt;/h3&gt;
+&lt;p&gt;This jumper has a trace between two pads so it's normally closed (NC). Use a razor knife to open the connection. For best results follow the IPC guidelines for cutting traces:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Cutout at least 0.063 mm (0.005 in).&lt;/li&gt;
+&lt;li&gt;Remove all loose material to clean up the cut area.&lt;/li&gt;
+&lt;li&gt;Seal the cut with an approved epoxy.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Reapply solder to reclose the connection.&lt;/p&gt;</description>
+<gates>
+<gate name="G$1" symbol="SMT-JUMPER_2_NC_TRACE" x="0" y="0"/>
+</gates>
+<devices>
+<device name="_NO-SILK" package="SMT-JUMPER_2_NC_TRACE_NO-SILK">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:39286/1"/>
+</package3dinstances>
+<technologies>
+<technology name=""/>
+</technologies>
+</device>
+<device name="_SILK" package="SMT-JUMPER_2_NC_TRACE_SILK">
+<connects>
+<connect gate="G$1" pin="1" pad="1"/>
+<connect gate="G$1" pin="2" pad="2"/>
+</connects>
+<package3dinstances>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:39281/1"/>
 </package3dinstances>
 <technologies>
 <technology name=""/>
@@ -7422,6 +7517,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="TP28" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="TP29" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="P+15" library="regulators" deviceset="+3V3" device=""/>
+<part name="JP4" library="SparkFun-Jumpers" library_urn="urn:adsk.eagle:library:528" deviceset="JUMPER-SMT_2_NC_TRACE" device="_SILK" package3d_urn="urn:adsk.eagle:package:39281/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -10026,6 +10122,10 @@ drive this LED from VBAT!)</text>
 <text x="8.636" y="105.664" size="3.81" layer="98">Accelerometer + Gyro</text>
 <wire x1="251.46" y1="134.62" x2="0" y2="134.62" width="0.254" layer="98" style="shortdash"/>
 <text x="44.196" y="52.324" size="3.81" layer="98">Magnetometer</text>
+<text x="116.84" y="22.606" size="1.27" layer="98" align="top-center">In Mode 2, INT2 pin is also the
+"I2C master exteranal sync signal"
+aka MDRDY. But make this easy to
+cut, just in case.</text>
 </plain>
 <instances>
 <instance part="FRAME5" gate="G$1" x="0" y="0" smashed="yes"/>
@@ -10110,17 +10210,17 @@ drive this LED from VBAT!)</text>
 <attribute name="NAME" x="48.26" y="46.482" size="1.778" layer="95"/>
 <attribute name="VALUE" x="48.26" y="20.32" size="1.778" layer="95"/>
 </instance>
-<instance part="R25" gate="G$1" x="106.68" y="38.1" smashed="yes">
-<attribute name="DIGIKEY" x="106.68" y="38.1" size="1.778" layer="96" display="off"/>
-<attribute name="MPN" x="106.68" y="38.1" size="1.778" layer="96" display="off"/>
-<attribute name="NAME" x="102.87" y="39.5986" size="1.778" layer="95"/>
-<attribute name="VALUE" x="102.87" y="34.798" size="1.778" layer="96"/>
+<instance part="R25" gate="G$1" x="114.3" y="38.1" smashed="yes">
+<attribute name="DIGIKEY" x="114.3" y="38.1" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="114.3" y="38.1" size="1.778" layer="96" display="off"/>
+<attribute name="NAME" x="110.49" y="39.5986" size="1.778" layer="95"/>
+<attribute name="VALUE" x="110.49" y="34.798" size="1.778" layer="96"/>
 </instance>
-<instance part="R26" gate="G$1" x="106.68" y="45.72" smashed="yes">
-<attribute name="DIGIKEY" x="106.68" y="45.72" size="1.778" layer="96" display="off"/>
-<attribute name="MPN" x="106.68" y="45.72" size="1.778" layer="96" display="off"/>
-<attribute name="NAME" x="102.87" y="47.2186" size="1.778" layer="95"/>
-<attribute name="VALUE" x="102.87" y="42.418" size="1.778" layer="96"/>
+<instance part="R26" gate="G$1" x="114.3" y="45.72" smashed="yes">
+<attribute name="DIGIKEY" x="114.3" y="45.72" size="1.778" layer="96" display="off"/>
+<attribute name="MPN" x="114.3" y="45.72" size="1.778" layer="96" display="off"/>
+<attribute name="NAME" x="110.49" y="47.2186" size="1.778" layer="95"/>
+<attribute name="VALUE" x="110.49" y="42.418" size="1.778" layer="96"/>
 </instance>
 <instance part="C79" gate="G$1" x="27.94" y="50.8" smashed="yes" rot="R270">
 <attribute name="DIGIKEY" x="27.94" y="50.8" size="1.778" layer="96" rot="R270" display="off"/>
@@ -10155,14 +10255,18 @@ drive this LED from VBAT!)</text>
 <instance part="GND19" gate="1" x="43.18" y="15.24" smashed="yes">
 <attribute name="VALUE" x="40.64" y="12.7" size="1.778" layer="96"/>
 </instance>
-<instance part="TP28" gate="G$1" x="111.76" y="50.8" smashed="yes" rot="R270">
-<attribute name="NAME" x="111.76" y="51.435" size="1.016" layer="95" ratio="12" rot="R270" align="center-right"/>
+<instance part="TP28" gate="G$1" x="119.38" y="50.8" smashed="yes" rot="R270">
+<attribute name="NAME" x="119.38" y="51.435" size="1.016" layer="95" ratio="12" rot="R270" align="center-right"/>
 </instance>
-<instance part="TP29" gate="G$1" x="114.3" y="50.8" smashed="yes" rot="R270">
-<attribute name="NAME" x="114.3" y="51.435" size="1.016" layer="95" ratio="12" rot="R270" align="center-right"/>
+<instance part="TP29" gate="G$1" x="121.92" y="50.8" smashed="yes" rot="R270">
+<attribute name="NAME" x="121.92" y="51.435" size="1.016" layer="95" ratio="12" rot="R270" align="center-right"/>
 </instance>
-<instance part="P+15" gate="P1" x="99.06" y="53.34" smashed="yes">
-<attribute name="VALUE" x="101.346" y="56.134" size="1.778" layer="96" rot="R180"/>
+<instance part="P+15" gate="P1" x="106.68" y="53.34" smashed="yes">
+<attribute name="VALUE" x="108.966" y="56.134" size="1.778" layer="96" rot="R180"/>
+</instance>
+<instance part="JP4" gate="G$1" x="116.84" y="27.94" smashed="yes">
+<attribute name="NAME" x="114.3" y="30.48" size="1.778" layer="95" font="vector"/>
+<attribute name="VALUE" x="114.3" y="25.4" size="1.778" layer="96" font="vector" align="top-left"/>
 </instance>
 </instances>
 <busses>
@@ -10290,12 +10394,12 @@ drive this LED from VBAT!)</text>
 <segment>
 <pinref part="R26" gate="G$1" pin="1"/>
 <pinref part="P+15" gate="P1" pin="+3V3"/>
-<wire x1="101.6" y1="45.72" x2="99.06" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="99.06" y1="45.72" x2="99.06" y2="50.8" width="0.1524" layer="91"/>
+<wire x1="109.22" y1="45.72" x2="106.68" y2="45.72" width="0.1524" layer="91"/>
+<wire x1="106.68" y1="45.72" x2="106.68" y2="50.8" width="0.1524" layer="91"/>
 <pinref part="R25" gate="G$1" pin="1"/>
-<wire x1="101.6" y1="38.1" x2="99.06" y2="38.1" width="0.1524" layer="91"/>
-<wire x1="99.06" y1="38.1" x2="99.06" y2="45.72" width="0.1524" layer="91"/>
-<junction x="99.06" y="45.72"/>
+<wire x1="109.22" y1="38.1" x2="106.68" y2="38.1" width="0.1524" layer="91"/>
+<wire x1="106.68" y1="38.1" x2="106.68" y2="45.72" width="0.1524" layer="91"/>
+<junction x="106.68" y="45.72"/>
 </segment>
 </net>
 <net name="!NRF_CS_SD" class="0">
@@ -10396,6 +10500,11 @@ drive this LED from VBAT!)</text>
 <label x="88.9" y="83.82" size="1.27" layer="95" xref="yes"/>
 <pinref part="U3" gate="A" pin="INT2"/>
 </segment>
+<segment>
+<wire x1="121.92" y1="27.94" x2="124.46" y2="27.94" width="0.1524" layer="91"/>
+<label x="124.46" y="27.94" size="1.27" layer="95" xref="yes"/>
+<pinref part="JP4" gate="G$1" pin="2"/>
+</segment>
 </net>
 <net name="NRF_SPI0_MISO" class="0">
 <segment>
@@ -10438,12 +10547,12 @@ drive this LED from VBAT!)</text>
 </segment>
 <segment>
 <pinref part="R25" gate="G$1" pin="2"/>
-<wire x1="109.22" y1="38.1" x2="114.3" y2="38.1" width="0.1524" layer="91"/>
-<label x="116.84" y="38.1" size="1.27" layer="95" xref="yes"/>
+<wire x1="116.84" y1="38.1" x2="121.92" y2="38.1" width="0.1524" layer="91"/>
+<label x="124.46" y="38.1" size="1.27" layer="95" xref="yes"/>
 <pinref part="TP29" gate="G$1" pin="TESTPOINT"/>
-<wire x1="114.3" y1="38.1" x2="116.84" y2="38.1" width="0.1524" layer="91"/>
-<wire x1="114.3" y1="38.1" x2="114.3" y2="48.26" width="0.1524" layer="91"/>
-<junction x="114.3" y="38.1"/>
+<wire x1="121.92" y1="38.1" x2="124.46" y2="38.1" width="0.1524" layer="91"/>
+<wire x1="121.92" y1="38.1" x2="121.92" y2="48.26" width="0.1524" layer="91"/>
+<junction x="121.92" y="38.1"/>
 </segment>
 </net>
 <net name="LSM_SENSEHUB_SCL" class="0">
@@ -10459,12 +10568,12 @@ drive this LED from VBAT!)</text>
 </segment>
 <segment>
 <pinref part="R26" gate="G$1" pin="2"/>
-<wire x1="109.22" y1="45.72" x2="111.76" y2="45.72" width="0.1524" layer="91"/>
-<label x="116.84" y="45.72" size="1.27" layer="95" xref="yes"/>
+<wire x1="116.84" y1="45.72" x2="119.38" y2="45.72" width="0.1524" layer="91"/>
+<label x="124.46" y="45.72" size="1.27" layer="95" xref="yes"/>
 <pinref part="TP28" gate="G$1" pin="TESTPOINT"/>
-<wire x1="111.76" y1="45.72" x2="116.84" y2="45.72" width="0.1524" layer="91"/>
-<wire x1="111.76" y1="45.72" x2="111.76" y2="48.26" width="0.1524" layer="91"/>
-<junction x="111.76" y="45.72"/>
+<wire x1="119.38" y1="45.72" x2="124.46" y2="45.72" width="0.1524" layer="91"/>
+<wire x1="119.38" y1="45.72" x2="119.38" y2="48.26" width="0.1524" layer="91"/>
+<junction x="119.38" y="45.72"/>
 </segment>
 </net>
 <net name="N$33" class="0">
@@ -10486,6 +10595,11 @@ drive this LED from VBAT!)</text>
 <pinref part="U12" gate="G$1" pin="DRDY"/>
 <wire x1="78.74" y1="38.1" x2="76.2" y2="38.1" width="0.1524" layer="91"/>
 <label x="78.74" y="38.1" size="1.27" layer="95" xref="yes"/>
+</segment>
+<segment>
+<wire x1="111.76" y1="27.94" x2="109.22" y2="27.94" width="0.1524" layer="91"/>
+<label x="109.22" y="27.94" size="1.27" layer="95" rot="R180" xref="yes"/>
+<pinref part="JP4" gate="G$1" pin="1"/>
 </segment>
 </net>
 </nets>

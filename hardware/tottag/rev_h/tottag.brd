@@ -189,7 +189,7 @@
 <layer number="255" name="routoute" color="7" fill="1" visible="no" active="yes"/>
 </layers>
 <board>
-<fusionsync huburn="a.YnVzaW5lc3M6dWNzZDc1OA" projecturn="a.YnVzaW5lc3M6dWNzZDc1OCMyMDIwMDUzMDMwMzI4NTUyNg" f3durn="urn:adsk.wipprod:dm.lineage:rzUGj1kvRPCORpM7Y38XuQ" pcbguid="" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="75524250-0e8d-4369-9e0b-1fb55c241ce6" lastsyncedrevisionid="75524250-0e8d-4369-9e0b-1fb55c241ce6" lastboardhashguid="853535db-d5ca-ae5b-083e-0a8cd8f7d9ee" lastpushedtime="2021-02-16T20:55:19Z" linktopcb3d="true"/>
+<fusionsync huburn="a.YnVzaW5lc3M6dWNzZDc1OA" projecturn="a.YnVzaW5lc3M6dWNzZDc1OCMyMDIwMDUzMDMwMzI4NTUyNg" f3durn="urn:adsk.wipprod:dm.lineage:rzUGj1kvRPCORpM7Y38XuQ" pcbguid="" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="46348900-6281-48db-9099-0236c059d8c9" lastsyncedrevisionid="46348900-6281-48db-9099-0236c059d8c9" lastboardhashguid="a03f274f-d729-ae65-c9cb-e0d60f56228a" lastpushedtime="2021-02-18T14:12:14Z" linktopcb3d="true"/>
 <plain>
 <text x="32.1564" y="2.032" size="1.016" layer="21" font="vector" ratio="12" align="top-center">nRF</text>
 <text x="25.1968" y="-3.175" size="1.016" layer="21" font="vector" ratio="12" rot="R270" align="top-center">STM</text>
@@ -5199,6 +5199,27 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <smd name="1" x="-0.4064" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
 <smd name="2" x="0.4064" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
 </package>
+<package name="SMT-JUMPER_2_NC_TRACE_SILK" urn="urn:adsk.eagle:footprint:39258/1" library_version="1">
+<wire x1="0.762" y1="-1.016" x2="-0.762" y2="-1.016" width="0.1524" layer="21"/>
+<wire x1="0.762" y1="1.016" x2="1.2192" y2="0.5588" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.2192" y1="0.5588" x2="-0.762" y2="1.016" width="0.1524" layer="21" curve="-90"/>
+<wire x1="-1.2192" y1="-0.5588" x2="-0.762" y2="-1.016" width="0.1524" layer="21" curve="90"/>
+<wire x1="0.762" y1="-1.016" x2="1.2192" y2="-0.5588" width="0.1524" layer="21" curve="90"/>
+<wire x1="1.2192" y1="-0.5588" x2="1.2192" y2="0.5588" width="0.1524" layer="21"/>
+<wire x1="-1.2192" y1="-0.5588" x2="-1.2192" y2="0.5588" width="0.1524" layer="21"/>
+<wire x1="-0.762" y1="1.016" x2="0.762" y2="1.016" width="0.1524" layer="21"/>
+<wire x1="-0.508" y1="0" x2="0.508" y2="0" width="0.254" layer="1"/>
+<smd name="1" x="-0.508" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<smd name="2" x="0.508" y="0" dx="0.635" dy="1.27" layer="1" cream="no"/>
+<text x="0" y="1.143" size="0.6096" layer="25" font="vector" ratio="20" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.143" size="0.6096" layer="27" font="vector" ratio="20" align="top-center">&gt;VALUE</text>
+<polygon width="0.127" layer="29">
+<vertex x="-0.1905" y="0.127"/>
+<vertex x="0.1905" y="0.127"/>
+<vertex x="0.1905" y="-0.127"/>
+<vertex x="-0.1905" y="-0.127"/>
+</polygon>
+</package>
 </packages>
 <packages3d>
 <package3d name="SMT-JUMPER_3_1-NC_TRACE_SILK" urn="urn:adsk.eagle:package:39288/1" type="box" library_version="1">
@@ -5209,6 +5230,11 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <package3d name="SMT-JUMPER_2_NO_SILK" urn="urn:adsk.eagle:package:39279/1" type="box" library_version="1">
 <packageinstances>
 <packageinstance name="SMT-JUMPER_2_NO_SILK"/>
+</packageinstances>
+</package3d>
+<package3d name="SMT-JUMPER_2_NC_TRACE_SILK" urn="urn:adsk.eagle:package:39281/1" type="box" library_version="1">
+<packageinstances>
+<packageinstance name="SMT-JUMPER_2_NC_TRACE_SILK"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -6681,6 +6707,10 @@ Quickturn PCB 4 Layer .DRU</description>
 </element>
 <element name="TP28" library="headers" package="PAD.03X.03" value="TEST-POINT" x="18.923" y="13.716" smashed="yes" rot="MR0"/>
 <element name="TP29" library="headers" package="PAD.03X.03" value="TEST-POINT" x="18.923" y="14.986" smashed="yes" rot="MR0"/>
+<element name="JP4" library="SparkFun-Jumpers" library_urn="urn:adsk.eagle:library:528" package="SMT-JUMPER_2_NC_TRACE_SILK" package3d_urn="urn:adsk.eagle:package:39281/1" value="JUMPER-SMT_2_NC_TRACE_SILK" x="22.352" y="11.176" smashed="yes" rot="MR270">
+<attribute name="NAME" x="22.352" y="9.8298" size="0.6096" layer="26" font="vector" ratio="20" rot="MR180" align="bottom-center"/>
+<attribute name="VALUE" x="23.495" y="11.176" size="0.6096" layer="28" font="vector" ratio="20" rot="MR270" align="top-center"/>
+</element>
 </elements>
 <signals>
 <signal name="GND">
@@ -7077,7 +7107,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <via x="-10.8204" y="20.4724" extent="1-16" drill="0.2032"/>
 <via x="-13.4874" y="19.7104" extent="1-16" drill="0.2032"/>
 <via x="-14.097" y="9.0932" extent="1-16" drill="0.2032"/>
-<via x="19.2532" y="14.3256" extent="1-16" drill="0.2032"/>
+<via x="19.2024" y="14.351" extent="1-16" drill="0.2032"/>
 <via x="13.6906" y="10.7442" extent="1-16" drill="0.2032"/>
 <via x="13.7414" y="11.3792" extent="1-16" drill="0.2032"/>
 <via x="17.7546" y="16.129" extent="1-16" drill="0.2032"/>
@@ -7854,7 +7884,7 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="22.5298" y1="16.4592" x2="22.7584" y2="16.6878" width="0.3048" layer="1"/>
 <via x="19.7612" y="15.5956" extent="1-16" drill="0.2032"/>
 <via x="15.4432" y="9.4996" extent="1-16" drill="0.2032"/>
-<via x="18.8976" y="10.3124" extent="1-16" drill="0.2032"/>
+<via x="19.5072" y="10.0076" extent="1-16" drill="0.2032"/>
 <via x="23.9776" y="15.621" extent="1-16" drill="0.2032"/>
 <via x="15.3162" y="10.8458" extent="1-16" drill="0.2032"/>
 </signal>
@@ -8642,6 +8672,12 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="16.4592" y1="11.176" x2="16.4592" y2="11.3792" width="0.2032" layer="16"/>
 <wire x1="16.4592" y1="11.3792" x2="15.17176875" y2="12.66663125" width="0.2032" layer="16"/>
 <wire x1="15.17176875" y1="12.66663125" x2="15.17176875" y2="12.86983125" width="0.2032" layer="16"/>
+<contactref element="JP4" pad="2"/>
+<wire x1="22.352" y1="10.668" x2="19.4056" y2="10.668" width="0.2032" layer="16"/>
+<wire x1="19.4056" y1="10.668" x2="19.2024" y2="10.4648" width="0.2032" layer="16"/>
+<wire x1="17.0688" y1="10.4648" x2="16.4592" y2="11.0744" width="0.2032" layer="16"/>
+<wire x1="16.4592" y1="11.0744" x2="16.4592" y2="11.176" width="0.2032" layer="16"/>
+<wire x1="19.2024" y1="10.4648" x2="17.0688" y2="10.4648" width="0.2032" layer="16"/>
 </signal>
 <signal name="STM_INTERRUPT">
 <contactref element="TP3" pad="TP"/>
@@ -9786,8 +9822,9 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="18.2492" y1="16.5996" x2="18.1864" y2="16.6624" width="0.2032" layer="1"/>
 <via x="18.1864" y="16.6624" extent="1-16" drill="0.2032"/>
 <wire x1="19.1008" y1="11.35253125" x2="20.32" y2="11.35253125" width="0.2032" layer="1"/>
-<wire x1="20.32" y1="11.35253125" x2="20.32" y2="10.7696" width="0.2032" layer="1"/>
-<via x="20.32" y="10.7696" extent="1-16" drill="0.2032"/>
+<wire x1="20.32" y1="11.35253125" x2="20.39493125" y2="11.2776" width="0.2032" layer="1"/>
+<wire x1="20.9296" y1="11.2776" x2="20.39493125" y2="11.2776" width="0.2032" layer="1"/>
+<via x="20.9296" y="11.2776" extent="1-16" drill="0.2032"/>
 <wire x1="16.28013125" y1="15.9512" x2="16.28013125" y2="15.82546875" width="0.2032" layer="1"/>
 <wire x1="16.764" y1="15.3416" x2="16.28013125" y2="15.82546875" width="0.2032" layer="1"/>
 <wire x1="16.764" y1="15.3416" x2="16.8656" y2="15.3416" width="0.2032" layer="1"/>
@@ -11375,6 +11412,26 @@ Quickturn PCB 4 Layer .DRU</description>
 <wire x1="17.888825" y1="17.145" x2="19.5072" y2="17.145" width="0.2032" layer="1"/>
 <wire x1="19.5072" y1="17.145" x2="19.7572" y2="16.895" width="0.2032" layer="1"/>
 <wire x1="19.7572" y1="16.895" x2="19.7572" y2="16.5996" width="0.2032" layer="1"/>
+<contactref element="JP4" pad="1"/>
+<wire x1="19.7572" y1="16.5996" x2="19.7572" y2="16.1076" width="0.2032" layer="1"/>
+<wire x1="19.7572" y1="16.1076" x2="19.7612" y2="16.1036" width="0.2032" layer="1"/>
+<via x="19.7612" y="16.1036" extent="1-16" drill="0.2032"/>
+<wire x1="19.9295375" y1="16.002" x2="20.1676" y2="15.7639375" width="0.2032" layer="16"/>
+<wire x1="20.1676" y1="15.7639375" x2="20.1676" y2="15.4272625" width="0.2032" layer="16"/>
+<wire x1="19.7612" y1="16.1036" x2="19.8628" y2="16.002" width="0.2032" layer="16"/>
+<wire x1="19.8628" y1="16.002" x2="19.9295375" y2="16.002" width="0.2032" layer="16"/>
+<wire x1="20.1676" y1="15.4272625" x2="19.6088" y2="14.8684625" width="0.2032" layer="16"/>
+<wire x1="19.6088" y1="12.3952" x2="20.32" y2="11.684" width="0.2032" layer="16"/>
+<wire x1="19.6088" y1="14.8684625" x2="19.6088" y2="12.3952" width="0.2032" layer="16"/>
+<wire x1="20.32" y1="11.684" x2="22.352" y2="11.684" width="0.2032" layer="16"/>
+</signal>
+<signal name="N$23">
+<polygon width="0.2032" layer="15" pour="cutout">
+<vertex x="21.6408" y="11.3792"/>
+<vertex x="21.6408" y="10.9728"/>
+<vertex x="23.0632" y="10.9728"/>
+<vertex x="23.0632" y="11.3792"/>
+</polygon>
 </signal>
 </signals>
 <mfgpreviewcolors>
@@ -11518,6 +11575,11 @@ Quickturn PCB 4 Layer .DRU</description>
 <approved hash="19,1,e163e190eeeeee1d"/>
 <approved hash="23,15,ff5903030705ffb3"/>
 <approved hash="7,39,77fa9be18ad0428b"/>
+<approved hash="19,16,4f92c120705b991b"/>
+<approved hash="19,16,93fba8a9595105f1"/>
+<approved hash="19,16,36b43174197c1ebc"/>
+<approved hash="19,16,d39c701721617b39"/>
+<approved hash="19,16,93143cea848adc5f"/>
 </errors>
 </board>
 </drawing>
