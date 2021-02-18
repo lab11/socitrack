@@ -7518,6 +7518,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="TP29" library="headers" deviceset="TEST-POINT" device=""/>
 <part name="P+15" library="regulators" deviceset="+3V3" device=""/>
 <part name="JP4" library="SparkFun-Jumpers" library_urn="urn:adsk.eagle:library:528" deviceset="JUMPER-SMT_2_NC_TRACE" device="_SILK" package3d_urn="urn:adsk.eagle:package:39281/1"/>
+<part name="DW_SPI_CS" library="testpad" library_urn="urn:adsk.eagle:library:385" deviceset="TP" device="TP06SQ" package3d_urn="urn:adsk.eagle:package:27952/1"/>
 </parts>
 <sheets>
 <sheet>
@@ -11049,6 +11050,10 @@ temperature characteristics</text>
 <attribute name="DIGIKEY" x="76.2" y="149.86" size="1.27" layer="96" align="top-left" display="off"/>
 <attribute name="MPN" x="76.2" y="149.86" size="1.27" layer="96" align="top-left" display="off"/>
 </instance>
+<instance part="DW_SPI_CS" gate="G$1" x="132.08" y="129.54" smashed="yes">
+<attribute name="NAME" x="132.08" y="130.302" size="1.27" layer="95"/>
+<attribute name="TP_SIGNAL_NAME" x="133.35" y="128.27" size="1.778" layer="97"/>
+</instance>
 </instances>
 <busses>
 </busses>
@@ -11995,8 +12000,8 @@ temperature characteristics</text>
 </net>
 <net name="STM_INTERRUPT" class="0">
 <segment>
-<wire x1="76.2" y1="129.54" x2="111.76" y2="129.54" width="0.1524" layer="91"/>
-<label x="111.76" y="129.54" size="1.27" layer="95" xref="yes"/>
+<wire x1="76.2" y1="129.54" x2="109.22" y2="129.54" width="0.1524" layer="91"/>
+<label x="109.22" y="129.54" size="1.27" layer="95" xref="yes"/>
 <pinref part="U10" gate="U1" pin="PA2"/>
 <wire x1="76.2" y1="106.68" x2="76.2" y2="129.54" width="0.1524" layer="91"/>
 </segment>
@@ -12030,8 +12035,9 @@ temperature characteristics</text>
 <segment>
 <pinref part="U10" gate="U1" pin="PA4"/>
 <wire x1="81.28" y1="106.68" x2="81.28" y2="127" width="0.1524" layer="91"/>
-<wire x1="81.28" y1="127" x2="111.76" y2="127" width="0.1524" layer="91"/>
-<label x="111.76" y="127" size="1.27" layer="95" xref="yes"/>
+<wire x1="81.28" y1="127" x2="132.08" y2="127" width="0.1524" layer="91"/>
+<label x="111.76" y="127" size="1.27" layer="95"/>
+<pinref part="DW_SPI_CS" gate="G$1" pin="TP"/>
 </segment>
 <segment>
 <pinref part="U1" gate="U1" pin="!SPICS"/>
@@ -12173,8 +12179,8 @@ temperature characteristics</text>
 <segment>
 <pinref part="U10" gate="U1" pin="PA0"/>
 <wire x1="71.12" y1="106.68" x2="71.12" y2="132.08" width="0.1524" layer="91"/>
-<wire x1="71.12" y1="132.08" x2="111.76" y2="132.08" width="0.1524" layer="91"/>
-<label x="111.76" y="132.08" size="1.27" layer="95" xref="yes"/>
+<wire x1="71.12" y1="132.08" x2="109.22" y2="132.08" width="0.1524" layer="91"/>
+<label x="109.22" y="132.08" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
