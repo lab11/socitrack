@@ -22,7 +22,7 @@ def train_knn(X, Y):
     clf.fit(x_train, y_train)
 
     y_pred = clf.predict(x_test)
-    print(accuracy_score(y_test, y_pred))
+    print(f"K-Neighbors Accuracy: {accuracy_score(y_test, y_pred) * 100}%")
 
     return clf
 
@@ -44,6 +44,6 @@ def train_forest(X, Y):
     clf.fit(x_train, y_train)
 
     y_pred = clf.predict(x_test)
-    print(accuracy_score(y_test, y_pred))
+    print(f"Random Forest Accuracy: {accuracy_score(y_test, y_pred) * 100}%")
 
     return clf
