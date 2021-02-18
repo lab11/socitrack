@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2021-02-18T15:35:00Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.6.2"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.5324,
+        "LayerNumber": 4,
+        "Name": {
+            "ProjectId": "tottag"
+        },
+        "Owner": "Pat Pannuto <ppannuto@ucsd.edu>",
+        "Size": {
+            "X": 68.136,
+            "Y": 39.6494
+        }
+    }
+}
