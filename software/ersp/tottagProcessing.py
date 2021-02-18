@@ -75,7 +75,7 @@ def load_diary(diary_filepath: str) -> tuple[list[DiaryEvent],dict[str,int]]:
             if line[0] == '#':
                 continue
 
-            label_string, start, end = line.split(",")
+            label_string, start, end = line.split(",")[0:3]
 
             if label_string not in event_map:
                 event_map[label_string] = encoding_index
@@ -183,6 +183,7 @@ def print_window_times_and_labels(windows: list[TotTagData], labels: list[EventL
     print("="*50)
     for i in range(len(windows)):
         print(f"Window {i+1}:\t|\t{windows[i][0][0]} \t {windows[i][-1][0]} \t {reverse_event_map[labels[i]]}")
+    print("="*50)
 
 
 def plot(tags: dict[Device, TotTagData]) -> None:
@@ -264,6 +265,8 @@ if __name__ == "__main__":
     # Train models on the processed data
     train_knn(stripped_windows, labels)
     train_forest(stripped_windows, labels)
+
+    print("="*50)
 
     # Plot the windows, allowing user to compare labels with those printed by debug step 
     plot(tags)
