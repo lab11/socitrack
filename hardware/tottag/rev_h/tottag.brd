@@ -212,7 +212,7 @@
 <wire x1="25.3238" y1="7.5692" x2="25.3238" y2="8.3312" width="0.127" layer="21"/>
 <text x="7.493" y="27.813" size="1.016" layer="21" font="vector" ratio="12" align="center">H</text>
 <text x="11.781" y="29.8002" size="0.635" layer="21" font="vector" ratio="15" align="center-left">Andreas Biri, Pat Pannuto</text>
-<text x="11.746" y="29.0256" size="0.508" layer="21" font="vector" ratio="18" align="center-left">2020-07-02</text>
+<text x="11.746" y="29.0256" size="0.508" layer="21" font="vector" ratio="18" align="center-left">2021-02-15</text>
 <polygon width="0.1524" layer="39">
 <vertex x="-14.732" y="5.207"/>
 <vertex x="-1.778" y="5.207"/>
