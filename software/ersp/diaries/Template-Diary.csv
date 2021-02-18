@@ -1,0 +1,4 @@
+#Label,Unix Start,Unix End,Real Start,Real End
+close,0,120,12/31/69 4:00:00 PM,12/31/69 4:02:00 PM
+far,100,220,12/31/69 4:01:40 PM,12/31/69 4:03:40 PM
+close,220,550,12/31/69 4:03:40 PM,12/31/69 4:09:10 PM
