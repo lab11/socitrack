@@ -12,10 +12,10 @@ For detailed programming instructions, refer to the
 [Provisioning Documentation](../../doc/Provisioning.md).
 
 To program the microcontroller, connect a SEGGER J-Link Programmer to the board
-via USB, then enter the following command, making sure to set the correct Device
-ID for the target:
+via USB, then enter the following command, replacing `<segger_id>` with the 
+9-digit serial number of your J-Link Programmer:
 
-> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash`
+> `make SEGGER_SERIAL=<segger_id> flash`
 
 To display any J-Link debugging messages, enter the following commands in order
 (note that the `JLinkExe` command may be shortened to `JLink` on a

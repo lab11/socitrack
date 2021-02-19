@@ -202,11 +202,17 @@ static void accelerometer_fifo_full_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
 
 void accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
 {
+   // Configure the magnetometer input pins as INPUT ANALOG no-ops
+#if (BOARD_V >= 0x11)
+   nrf_gpio_cfg_default(MAGNETOMETER_INT);
+   nrf_gpio_cfg_default(MAGNETOMETER_DRDY);
+#endif
+
    // Setup SPI parameters
    _spi_instance = spi_instance;
-   _spi_config.sck_pin = CARRIER_SPI_SCLK;
-   _spi_config.miso_pin = CARRIER_SPI_MISO;
-   _spi_config.mosi_pin = CARRIER_SPI_MOSI;
+   _spi_config.sck_pin = ACCEL_SPI_SCLK;
+   _spi_config.miso_pin = ACCEL_SPI_MISO;
+   _spi_config.mosi_pin = ACCEL_SPI_MOSI;
    _spi_config.ss_pin = CARRIER_CS_ACC;
    _spi_config.frequency = NRF_SPIM_FREQ_4M;
    _spi_config.mode = NRF_SPIM_MODE_3;

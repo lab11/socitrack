@@ -166,6 +166,7 @@ ab1815_time_t tm_to_ab1815(struct tm *t);
 struct timeval ab1815_to_unix(ab1815_time_t time);
 uint8_t ab1815_set_time(ab1815_time_t time);
 uint8_t ab1815_get_time(ab1815_time_t *time);
+uint8_t ab1815_set_timestamp(uint32_t unix_timestamp);
 struct timeval ab1815_get_time_unix(void);
 uint8_t ab1815_enable_trickle_charger(void);
 uint8_t ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback *cb);

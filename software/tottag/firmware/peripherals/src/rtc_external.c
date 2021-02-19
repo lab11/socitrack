@@ -58,9 +58,9 @@ static uint8_t month_to_i(const char *c)
 uint8_t ab1815_init(void)
 {
    // Setup SPI parameters
-   _spi_config.sck_pin = CARRIER_SPI_SCLK;
-   _spi_config.miso_pin = CARRIER_SPI_MISO;
-   _spi_config.mosi_pin = CARRIER_SPI_MOSI;
+   _spi_config.sck_pin = RTC_SD_SPI_SCLK;
+   _spi_config.miso_pin = RTC_SD_SPI_MISO;
+   _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
    _spi_config.ss_pin = CARRIER_CS_RTC;
    _spi_config.frequency = NRF_SPIM_FREQ_1M;
    _spi_config.mode = NRF_SPIM_MODE_3;
@@ -375,6 +375,13 @@ uint8_t ab1815_get_time(ab1815_time_t *time)
    time->years = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
    time->weekday = read[7] & 0x7;
    return 1;
+}
+
+uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
+{
+   struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
+   ab1815_time_t new_time = unix_to_ab1815(tv);
+   return ab1815_set_time(new_time);
 }
 
 struct timeval ab1815_get_time_unix(void)

@@ -64,7 +64,7 @@ static void twi_bus_clear(void)
 static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
    // Verify that the interrupt is from the SquarePoint module
-   if (pin != CARRIER_INTERRUPT_MODULE)
+   if (pin != STM_INTERRUPT)
       return;
 
    // Read the length of the incoming packet and ensure that it is valid
@@ -99,10 +99,10 @@ static nrfx_err_t twi_hw_init(void)
 
    // Setup an interrupt handler to detect when SquarePoint has data to send
    nrfx_gpiote_in_config_t int_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
-   nrfx_err_t err_code = nrfx_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &int_config, squarepoint_interrupt_handler);
+   nrfx_err_t err_code = nrfx_gpiote_in_init(STM_INTERRUPT, &int_config, squarepoint_interrupt_handler);
    if (err_code == NRFX_SUCCESS)
    {
-      nrfx_gpiote_in_event_enable(CARRIER_INTERRUPT_MODULE, true);
+      nrfx_gpiote_in_event_enable(STM_INTERRUPT, true);
       _twi_initialized = true;
    }
    else
@@ -113,7 +113,7 @@ static nrfx_err_t twi_hw_init(void)
 static void twi_hw_uninit(void)
 {
    // Uninitialize the interrupt handler and the TWI Master peripheral
-   nrfx_gpiote_in_uninit(CARRIER_INTERRUPT_MODULE);
+   nrfx_gpiote_in_uninit(STM_INTERRUPT);
    nrfx_twi_uninit(&_twi_instance);
    _twi_initialized = false;
 }
@@ -213,12 +213,12 @@ nrfx_err_t squarepoint_wakeup_module(void)
 
    // Reverse the direction of the module interrupt to wake up SquarePoint
    _twi_initialized = false;
-   nrfx_gpiote_in_uninit(CARRIER_INTERRUPT_MODULE);
+   nrfx_gpiote_in_uninit(STM_INTERRUPT);
    nrfx_gpiote_out_config_t out_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_err_t err_code = nrfx_gpiote_out_init(CARRIER_INTERRUPT_MODULE, &out_config);
+   nrfx_err_t err_code = nrfx_gpiote_out_init(STM_INTERRUPT, &out_config);
    if (err_code == NRFX_SUCCESS)
-      nrfx_gpiote_out_set(CARRIER_INTERRUPT_MODULE);
-   nrfx_gpiote_out_uninit(CARRIER_INTERRUPT_MODULE);
+      nrfx_gpiote_out_set(STM_INTERRUPT);
+   nrfx_gpiote_out_uninit(STM_INTERRUPT);
    nrfx_twi_uninit(&_twi_instance);
    err_code = twi_hw_init();
 
