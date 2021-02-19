@@ -58,9 +58,9 @@ static uint8_t month_to_i(const char *c)
 uint8_t ab1815_init(void)
 {
    // Setup SPI parameters
-   _spi_config.sck_pin = CARRIER_SPI_SCLK;
-   _spi_config.miso_pin = CARRIER_SPI_MISO;
-   _spi_config.mosi_pin = CARRIER_SPI_MOSI;
+   _spi_config.sck_pin = RTC_SD_SPI_SCLK;
+   _spi_config.miso_pin = RTC_SD_SPI_MISO;
+   _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
    _spi_config.ss_pin = CARRIER_CS_RTC;
    _spi_config.frequency = NRF_SPIM_FREQ_1M;
    _spi_config.mode = NRF_SPIM_MODE_3;

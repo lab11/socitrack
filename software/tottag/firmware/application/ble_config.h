@@ -61,6 +61,8 @@
 #define APP_RUNNING_RESPONSE_TIMEOUT_SEC        2
 #define SQUAREPOINT_ERROR_NOTIFY_COUNT          5
 #define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   3
+#define MINIMUM_VALID_TIMESTAMP                 1612810414
+#define MAXIMUM_VALID_TIMESTAMP                 2000000000
 
 // Storage / Buffers
 #define APP_BLE_BUFFER_LENGTH                   256
@@ -95,6 +97,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
    nrfx_atomic_flag_t squarepoint_needs_reset;
    nrfx_atomic_flag_t sd_card_inserted;
+   nrfx_atomic_flag_t rtc_time_valid;
    nrfx_atomic_flag_t battery_check_time;
    nrfx_atomic_flag_t accelerometer_data_ready;
    nrfx_atomic_flag_t battery_status_changed;
