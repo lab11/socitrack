@@ -60,10 +60,10 @@ static void spi_init(void)
    nrfx_gpiote_out_init(RTC_SD_SPI_SCLK, &spi_sclk_pin_config);
 #if (BOARD_V >= 0x11)
    nrf_gpio_cfg_input(ACCEL_SPI_MISO, NRF_GPIO_PIN_PULLUP);
-   nrfx_gpiote_out_config_t spi_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_config_t spi_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(ACCEL_SPI_MOSI, &spi_mosi_pin_config);
-   nrfx_gpiote_out_init(ACCEL_SPI_SCLK, &spi_sclk_pin_config);
+   nrfx_gpiote_out_config_t spi_accel_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_config_t spi_accel_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_init(ACCEL_SPI_MOSI, &spi_accel_mosi_pin_config);
+   nrfx_gpiote_out_init(ACCEL_SPI_SCLK, &spi_accel_sclk_pin_config);
 #endif
 
    // Setup Chip Selects (CS)
