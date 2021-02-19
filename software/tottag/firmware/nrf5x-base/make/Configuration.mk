@@ -71,8 +71,8 @@ ifdef NRF_IC
     RAM_KB ?= 256
     FLASH_KB ?= 1024
     FULL_IC = nrf52840_xxaa
-    CONFIGURATION_VARS += ID_FLASH_LOCATION=0xFFFF8
-    ID_FLASH_LOCATION=0xFFFF8
+    CONFIGURATION_VARS += ID_FLASH_LOCATION=0x10001080
+    ID_FLASH_LOCATION=10001080
   endif
 else
   $(error NRF_IC unspecified. Add it to app Makefile!)
