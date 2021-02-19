@@ -78,6 +78,7 @@
 #define APP_BLE_ADVDATA_LENGTH                  APP_BLE_ADV_SCHED_EUI_LENGTH
 
 // nRF hardware definitions
+#define DEVICE_ID_MEMORY                        0x10001080
 #define DEAD_BEEF                               0xDEADBEEF
 #define APP_LOG_CHUNK_SIZE                      254
 

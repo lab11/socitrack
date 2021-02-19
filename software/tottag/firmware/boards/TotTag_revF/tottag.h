@@ -13,11 +13,6 @@
 #define DEVICE_NAME "TotTag"
 #endif
 
-// BLE Address used to advertise
-#ifndef BLE_ADDRESS
-#error "Did not specify a BLE address...cannot continue"
-#endif
-
 // Battery monitor
 #define CARRIER_BATTERY_MONITOR NRF_GPIO_PIN_MAP(0,30)
 #define CARRIER_BATTERY_PIN     NRF_SAADC_INPUT_AIN6

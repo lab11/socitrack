@@ -70,9 +70,6 @@ static uint8_t ascii_to_i(uint8_t number)
 
 // Bluetooth initialization --------------------------------------------------------------------------------------------
 
-#define XID_STR(ID) ID_STR(ID)
-#define ID_STR(ID) #ID
-
 static void ble_stack_init(void)
 {
    // Initialize the BLE stack, including the SoftDevice and the BLE event interrupt
@@ -131,9 +128,7 @@ static void gap_params_init(void)
 
    // Set BLE address
    ble_gap_addr_t gap_addr = { .addr_type = BLE_GAP_ADDR_TYPE_PUBLIC };
-   const char ble_address_string[] = XID_STR(BLE_ADDRESS);
-   for (int i = 0; i < BLE_GAP_ADDR_LEN; ++i)
-      _carrier_ble_address[(BLE_GAP_ADDR_LEN - 1) - i] = (uint8_t)strtoul(&ble_address_string[3 * i], NULL, 16);
+   memcpy(_carrier_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
    printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
    memcpy(gap_addr.addr, _carrier_ble_address, BLE_GAP_ADDR_LEN);
    memcpy(_scratch_eui, _carrier_ble_address, sizeof(_scratch_eui));
