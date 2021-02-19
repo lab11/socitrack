@@ -124,7 +124,12 @@ static void hardware_init(void)
    usb_init();
 
    // Initialize the Bluetooth stack via a SoftDevice
-   ble_init(&_app_flags.squarepoint_enabled, &_app_flags.squarepoint_running, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index);
+   if (ble_init(&_app_flags.squarepoint_enabled, &_app_flags.squarepoint_running, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
+      while (true)
+      {
+         buzzer_indicate_error();
+         nrf_delay_ms(2500);
+      }
 
    // Tell the SoftDevice to use the DC/DC regulator and low-power mode
    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);

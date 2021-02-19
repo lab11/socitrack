@@ -118,7 +118,7 @@ static void ble_stack_init(void)
    NRF_SDH_BLE_OBSERVER(_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 }
 
-static void gap_params_init(void)
+static uint8_t gap_params_init(void)
 {
    // Set up all necessary GAP (Generic Access Profile) parameters of the device, permissions, and appearance
    ble_gap_conn_sec_mode_t sec_mode;
@@ -129,6 +129,8 @@ static void gap_params_init(void)
    // Set BLE address
    ble_gap_addr_t gap_addr = { .addr_type = BLE_GAP_ADDR_TYPE_PUBLIC };
    memcpy(_carrier_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
+   if ((_carrier_ble_address[5] != 0xc0) || (_carrier_ble_address[4] != 0x98))
+      return 0;
    printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
    memcpy(gap_addr.addr, _carrier_ble_address, BLE_GAP_ADDR_LEN);
    memcpy(_scratch_eui, _carrier_ble_address, sizeof(_scratch_eui));
@@ -136,6 +138,7 @@ static void gap_params_init(void)
 
    // Setup connection parameters
    APP_ERROR_CHECK(sd_ble_gap_ppcp_set(&_connection_params));
+   return 1;
 }
 
 static void gatt_init(void)
@@ -501,19 +504,21 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
 // Public Bluetooth API ------------------------------------------------------------------------------------------------
 
-void ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* squarepoint_running_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
+nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* squarepoint_running_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
 {
    _squarepoint_enabled_flag = squarepoint_enabled_flag;
    _squarepoint_running_flag = squarepoint_running_flag;
    _ble_scanning_flag = ble_is_scanning_flag;
    _calibration_index = calibration_index;
    ble_stack_init();
-   gap_params_init();
+   if (!gap_params_init())
+      return NRF_ERROR_INVALID_STATE;
    gatt_init();
    services_init();
    advertising_init();
    central_init();
    conn_params_init();
+   return NRF_SUCCESS;
 }
 uint8_t ble_get_device_role(void) { return _device_role; }
 const uint8_t* ble_get_eui(void) { return _carrier_ble_address; }
