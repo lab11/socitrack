@@ -19,12 +19,15 @@ static volatile uint32_t tx_needs_ack = 0;
 static uint8_t rxBuffer[32] = { 0 };
 static uint8_t txBuffer[256] = { 0 };
 
+// Device EUI storage
+uint8_t full_eui[EUI_LEN] = { 0 };
+
 // CPAL local transfer structures
 static CPAL_TransferTypeDef rxStructure = { 0 };
 static CPAL_TransferTypeDef txStructure = { 0 };
 
 // INFO response packets, last byte is the version
-static uint8_t INFO_PKT[3] = { 0x00, 0x00, 1 };
+static uint8_t INFO_PKT[3] = { 0xb0, 0x1a, 1 };
 static uint8_t NULL_PKT[3] = { 0xaa, 0xaa, 0 };
 
 
@@ -34,11 +37,6 @@ uint32_t host_interface_init(void)
 {
    // Reset the acknowledgment flag
    atomic_clear(&tx_needs_ack);
-
-   // Read the device EUI
-   uint8_t full_eui[EUI_LEN] = { 0 };
-   dw1000_read_eui(full_eui);
-   memcpy(INFO_PKT, full_eui, 2);
 
    // Enable the Interrupt pin
    GPIO_InitTypeDef GPIO_InitStructure;
@@ -363,6 +361,13 @@ void CPAL_I2C_RXTC_UserCallback(CPAL_InitTypeDef *pDevInitStruct)
          txStructure.pbBuffer = module_ready() ? INFO_PKT : NULL_PKT;
          txStructure.wNumData = sizeof(INFO_PKT);
          CPAL_I2C_Write(&I2C1_DevStructure);
+         full_eui[7] = rxBuffer[6];
+         full_eui[6] = rxBuffer[5];
+         full_eui[3] = rxBuffer[4];
+         full_eui[2] = rxBuffer[3];
+         full_eui[1] = rxBuffer[2];
+         full_eui[0] = rxBuffer[1];
+         dw1000_update_runtime_eui(full_eui);
          break;
       }
 

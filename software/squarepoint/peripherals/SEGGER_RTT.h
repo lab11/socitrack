@@ -85,6 +85,7 @@ void debug_msg_uint(uint32_t i);
 void debug_msg_uint64(uint64_t i);
 void debug_msg_hex(int i);
 void debug_msg_eui(PROTOCOL_EUI_TYPE eui);
+void debug_msg_eui_full(uint8_t* eui);
 
 /*********************************************************************
  *

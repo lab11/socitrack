@@ -118,11 +118,11 @@ static void twi_hw_uninit(void)
    _twi_initialized = false;
 }
 
-static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version)
+static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version, const uint8_t *eui)
 {
    // Requesting a device info string from the SquarePoint module
-   uint8_t cmd = SQUAREPOINT_CMD_INFO, resp[3] = { 0 };
-   nrfx_err_t err_code = nrfx_twi_tx(&_twi_instance, SQUAREPOINT_ADDRESS, &cmd, sizeof(cmd), false);
+   uint8_t cmd[7] = { SQUAREPOINT_CMD_INFO, eui[0], eui[1], eui[2], eui[3], eui[4], eui[5] }, resp[3] = { 0 };
+   nrfx_err_t err_code = nrfx_twi_tx(&_twi_instance, SQUAREPOINT_ADDRESS, cmd, sizeof(cmd), false);
    if (err_code == NRFX_SUCCESS)
       err_code = nrfx_twi_rx(&_twi_instance, SQUAREPOINT_ADDRESS, resp, sizeof(resp));
    if (err_code == NRFX_SUCCESS)
@@ -151,15 +151,14 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
    // Try to read information from SquarePoint to validate the TWI connection
    uint16_t id = 0;
    uint8_t version = 0;
-   if (squarepoint_get_info(&id, &version) != NRFX_SUCCESS)
+   if (squarepoint_get_info(&id, &version, eui) != NRFX_SUCCESS)
    {
       twi_hw_uninit();
       return NRFX_ERROR_INTERNAL;
    }
-   if ((*(uint8_t*)&id != eui[1]) || (*(((uint8_t*)&id) + 1) != eui[0]))
+   if (id != SQUAREPOINT_ID)
    {
-      printf("ERROR: SquarePoint [%02x:%02x] and TotTag module [%02x:%02x] EUIs do not match!\n",
-            *((uint8_t*)&id+1), *((uint8_t*)&id), eui[1], eui[0]);
+      printf("ERROR: SquarePoint module is not reporting the expected ID [Expected = %uh Reported = %uh]\n", SQUAREPOINT_ID, id);
       return NRFX_ERROR_INVALID_STATE;
    }
    return NRFX_SUCCESS;

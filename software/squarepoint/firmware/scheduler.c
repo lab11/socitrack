@@ -127,7 +127,8 @@ static void initialize_new_round(void)
    _error_correction_phase_slot_start = _results_phase_slot_start + _num_results_scheduled;
 
    // Increment the epoch timestamp
-   ++_schedule_packet.epoch_time_unix;
+   if (_schedule_packet.epoch_time_unix)
+      ++_schedule_packet.epoch_time_unix;
 }
 
 static bool switch_backup_scheduler(PROTOCOL_EUI_TYPE current_backup_eui)
@@ -440,7 +441,7 @@ static void receive_schedule(const schedule_packet_t* schedule, bool is_master_s
       }
 
       // Update the Unix epoch timestamp as long as it is within a year of the time we currently think it is
-      if ((schedule->epoch_time_unix > 1585526400) && ((_schedule_packet.epoch_time_unix < 1585526400) || (abs((int32_t)(schedule->epoch_time_unix - _schedule_packet.epoch_time_unix)) <= SECONDS_PER_YEAR)))
+      if ((schedule->epoch_time_unix > 1612810414) && ((_schedule_packet.epoch_time_unix < 1612810414) || (abs((int32_t)(schedule->epoch_time_unix - _schedule_packet.epoch_time_unix)) <= SECONDS_PER_YEAR)))
          _schedule_packet.epoch_time_unix = schedule->epoch_time_unix;
       else
       {
@@ -1099,7 +1100,7 @@ static void perform_scheduled_slot_task(void)
 void scheduler_set_timestamp(uint32_t timestamp)
 {
    // Update the Unix epoch timestamp as long as it is within a year of the time we currently think it is
-   if ((timestamp > 1590796800) && (timestamp < 2534976000) && ((_schedule_packet.epoch_time_unix < 1590796800) || (abs((int32_t)(timestamp - _schedule_packet.epoch_time_unix)) <= SECONDS_PER_YEAR)))
+   if ((timestamp > 1612810414) && (timestamp < 2000000000) && ((_schedule_packet.epoch_time_unix < 1612810414) || (abs((int32_t)(timestamp - _schedule_packet.epoch_time_unix)) <= SECONDS_PER_YEAR)))
    {
       _schedule_packet.epoch_time_unix = timestamp;
       debug_msg("INFO: Setting clock to Unix timestamp ");
@@ -1130,7 +1131,7 @@ bool scheduler_configure(app_config_t *config)
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
       .message_type = SCHEDULE_PACKET, .epoch_time_unix = 0, .scheduler_eui = 0, .backup_scheduler_eui = 0,
       .request_schedule_length = 0, .hybrid_schedule_length = 0, .response_schedule_length = 0, .footer = { { 0 } } };
-   _schedule_packet.epoch_time_unix = (_config.startup_timestamp > 1590796800) ? _config.startup_timestamp : 0;
+   _schedule_packet.epoch_time_unix = (_config.startup_timestamp > 1612810414) ? _config.startup_timestamp : 0;
    memset(_schedule_packet.eui_array, 0, sizeof(_schedule_packet.eui_array));
 
    // Initialize the control packet
@@ -1152,6 +1153,9 @@ bool scheduler_configure(app_config_t *config)
    memcpy(_control_packet.header.sourceAddr, _schedule_packet.header.sourceAddr, EUI_LEN);
    memcpy(_results_packet.header.sourceAddr, _schedule_packet.header.sourceAddr, EUI_LEN);
    memcpy(&_config.EUI, _schedule_packet.header.sourceAddr, PROTOCOL_EUI_SIZE);
+   debug_msg("INFO: Device EUI: ");
+   debug_msg_eui_full(_schedule_packet.header.sourceAddr);
+   debug_msg("\n");
 
    // Initialize the random number generator and the Glossy packet flooding protocol
    raninit(&_prng_state, dwt_readsystimestamphi32());

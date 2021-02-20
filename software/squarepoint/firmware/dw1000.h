@@ -184,6 +184,7 @@ void dw1000_spi_slow(void);
 void dw1000_reset_hard(bool reinit);
 void dw1000_choose_antenna(uint8_t antenna_number);
 void dw1000_read_eui(uint8_t *eui_buf);
+void dw1000_update_runtime_eui(uint8_t *eui_buf);
 bool dw1000_radio_disable(void);
 bool dw1000_rxenable(int mode, uint8_t channel, uint8_t antenna);
 uint64_t dw1000_get_tx_delay(uint8_t channel_index, uint8_t antenna_index);
