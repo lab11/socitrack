@@ -1,4 +1,5 @@
 PROJECT_NAME = $(shell basename "$(realpath ./)")
+CFLAGS += -D_DATETIME="\"$(shell date -u)\""
 CDBG :=
 
 # Configuration
@@ -22,7 +23,6 @@ endif
 APP_HEADER_PATHS += .
 APP_SOURCE_PATHS += .
 APP_SOURCES = $(notdir $(wildcard ./*.c))
-
 
 # Optimize for size
 CFLAGS += -Os -s
