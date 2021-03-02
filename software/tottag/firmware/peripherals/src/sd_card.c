@@ -22,7 +22,7 @@ static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
 static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH] = { 0 };
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _log_info_buf[128] = { 0 };
 static char _sd_write_buf[APP_LOG_CHUNK_SIZE + 1] = { 0 };
-static char _sd_filename[16] = { 'd', 'a', 't', 'a', '.', 'l', 'o', 'g', '\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0' };
+static char _sd_filename[16] = { 0 };
 static const char _sd_permissions[] = "a,r";
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
 
@@ -136,34 +136,50 @@ void sd_card_create_log(uint32_t current_time)
    EUI_string[(3 * EUI_LEN) - 1] = '\0';
 
    // Initialize differently based on the board revision
-#if !defined(DISABLE_RTC_TIME_CHECK) && (BOARD_V >= 0x0F)
+#if (BOARD_V >= 0x0F)
 
-    // Calculate the current local and UTC time and the timestamp of midnight local time
-    time_t curr_time = (time_t)current_time;
-    struct tm *t = gmtime(&curr_time);
-    ab1815_time_t time = tm_to_ab1815(t);
-    t->tm_sec = t->tm_min = t->tm_hour = 0;
-    t->tm_mday += 1;
-    _next_day_timestamp = mktime(t);
+   // Name the log file based on the date if the current time is valid
+   if (current_time)
+   {
+      // Calculate the current local and UTC time and the timestamp of midnight local time
+      time_t curr_time = (time_t)current_time;
+      struct tm *t = gmtime(&curr_time);
+      ab1815_time_t time = tm_to_ab1815(t);
+      t->tm_sec = t->tm_min = t->tm_hour = 0;
+      t->tm_mday += 1;
+      _next_day_timestamp = mktime(t);
 
-    // Create a log file name based on the current date
-    snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%02u-%02u.log", _full_eui[0], time.months, time.date);
-    simple_logger_reinit(_sd_filename, _sd_permissions);
+      // Create a log file name based on the current date
+      snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%02u-%02u.log", _full_eui[0], time.months, time.date);
+      simple_logger_reinit(_sd_filename, _sd_permissions);
 
-    // If no header, add it
-    uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s, Date: 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", _sd_filename, EUI_string, time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
-    if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
-        ret_val = simple_logger_log("### Device booted at 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
+      // If no header, add it
+      uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s, Date: 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", _sd_filename, EUI_string, time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
+      if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
+         ret_val = simple_logger_log("### Device booted at 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
+   }
+   else
+   {
+      // Create a log file with a generic name
+      snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
+      simple_logger_reinit(_sd_filename, _sd_permissions);
+
+      // If no header, add it
+      uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s\n", _sd_filename, EUI_string);
+      if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
+         ret_val = simple_logger_log("### Device rebooted\n");
+   }
 
 #else
 
-   // Create a log file
+   // Create a log file with a generic name
+   snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
    simple_logger_reinit(_sd_filename, _sd_permissions);
 
    // If no header, add it
    uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s\n", _sd_filename, EUI_string);
    if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
-      ret_val = simple_logger_log("### Device booted\n");
+      ret_val = simple_logger_log("### Device rebooted\n");
 
 #endif
 

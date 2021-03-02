@@ -11,15 +11,12 @@
 // User configurable definitions ---------------------------------------------------------------------------------------
 
 //#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
-#define ENABLE_LEDS
-//#define DISABLE_RTC_TIME_CHECK
+//#define ENABLE_LEDS
+
 
 // Forced definitions for "Deployment Mode" ----------------------------------------------------------------------------
 
 #ifndef DEBUG_MODE
-#ifndef DISABLE_RTC_TIME_CHECK
-#define DISABLE_RTC_TIME_CHECK
-#endif
 #ifdef ENABLE_LEDS
 #undef ENABLE_LEDS
 #endif
@@ -27,6 +24,7 @@
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #endif
 #endif
+
 
 // Constants -----------------------------------------------------------------------------------------------------------
 
