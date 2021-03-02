@@ -1,13 +1,13 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include <string.h>
-#include "accelerometer.h"
 #include "battery.h"
 #include "ble_config.h"
 #include "ble_gap.h"
 #include "bluetooth.h"
 #include "boards.h"
 #include "buzzer.h"
+#include "imu.h"
 #include "led.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
@@ -28,11 +28,9 @@
 
 static app_flags_t _app_flags = { 0 };
 static nrfx_spim_t _rtc_sd_spi_instance = RTC_SD_SPI_BUS;
-static nrfx_spim_t _accel_spi_instance = ACCEL_SPI_BUS;
+static nrfx_spim_t _imu_spi_instance = IMU_SPI_BUS;
 static uint8_t _range_buffer[APP_BLE_BUFFER_LENGTH] = { 0 };
 static uint16_t _range_buffer_length = 0;
-static float _acc_x[ACC_NUM_RESULTS_PER_READ] = { 0 }, _acc_y[ACC_NUM_RESULTS_PER_READ] = { 0 };
-static float _acc_z[ACC_NUM_RESULTS_PER_READ] = { 0 };
 
 
 // Helper functions ----------------------------------------------------------------------------------------------------
@@ -59,18 +57,18 @@ static void spi_init(void)
    nrfx_gpiote_out_init(RTC_SD_SPI_MOSI, &spi_mosi_pin_config);
    nrfx_gpiote_out_init(RTC_SD_SPI_SCLK, &spi_sclk_pin_config);
 #if (BOARD_V >= 0x11)
-   nrf_gpio_cfg_input(ACCEL_SPI_MISO, NRF_GPIO_PIN_PULLUP);
-   nrfx_gpiote_out_config_t spi_accel_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_config_t spi_accel_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(ACCEL_SPI_MOSI, &spi_accel_mosi_pin_config);
-   nrfx_gpiote_out_init(ACCEL_SPI_SCLK, &spi_accel_sclk_pin_config);
+   nrf_gpio_cfg_input(IMU_SPI_MISO, NRF_GPIO_PIN_PULLUP);
+   nrfx_gpiote_out_config_t spi_imu_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_config_t spi_imu_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_init(IMU_SPI_MOSI, &spi_imu_mosi_pin_config);
+   nrfx_gpiote_out_init(IMU_SPI_SCLK, &spi_imu_sclk_pin_config);
 #endif
 
    // Setup Chip Selects (CS)
    nrfx_gpiote_out_config_t cs_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
-   nrfx_gpiote_out_config_t cs_acc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
+   nrfx_gpiote_out_config_t cs_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_init(CARRIER_CS_SD, &cs_sd_pin_config);
-   nrfx_gpiote_out_init(CARRIER_CS_ACC, &cs_acc_pin_config);
+   nrfx_gpiote_out_init(CARRIER_CS_IMU, &cs_imu_pin_config);
 #if (BOARD_V >= 0xF)
    nrfx_gpiote_out_config_t cs_rtc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_init(CARRIER_CS_RTC, &cs_rtc_pin_config);
@@ -164,7 +162,7 @@ static void hardware_init(void)
 #endif
 
    // Initialize supplementary hardware components
-   accelerometer_init(&_accel_spi_instance, &_app_flags.accelerometer_data_ready);
+   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready);
    battery_monitor_init(&_app_flags.battery_status_changed);
    sd_card_create_log(rtc_get_current_time());
    led_off();
@@ -411,15 +409,11 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
    }
 }
 
-static void accelerometer_data_handler(void)
+static void imu_data_handler(void)
 {
    // Read data from the accelerometer
-   if (accelerometer_read_data(_acc_x, _acc_y, _acc_z) == NRFX_SUCCESS)
+   if (imu_read_accelerometer_data(NULL, NULL, NULL) == NRFX_SUCCESS)
    {
-      // TODO: Do something with the accelerometer data
-      //for (int i = 0; i < ACC_NUM_RESULTS_PER_READ; ++i)
-      //   printf("DEBUG: x = %d, y = %d, z = %d\n", (int)_acc_x[i], (int)_acc_y[i], (int)_acc_z[i]);
-
       // Log a change in motion
       if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
          log_motion(true, rtc_get_current_time(), false);
@@ -454,9 +448,9 @@ int main(void)
       // Handle USB communications
       usb_handle_comms();
 
-      // Check if accelerometer data is ready to be read
-      if (nrfx_atomic_flag_clear_fetch(&_app_flags.accelerometer_data_ready))
-         accelerometer_data_handler();
+      // Check if IMU data is ready to be read
+      if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
+         imu_data_handler();
 
       // Check if new ranging data was received
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))

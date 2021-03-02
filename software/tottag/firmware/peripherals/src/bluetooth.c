@@ -306,7 +306,6 @@ static void on_scheduler_eui(const uint8_t* scheduler_eui, bool force_update)
    ble_advertising_conn_cfg_tag_set(&_advertising, APP_BLE_CONN_CFG_TAG);
    if (should_reenable)
       ble_start_advertising();
-   // TODO: IS THIS OKAY OR DO WE NEED WHAT'S IN THE ORIGINAL
 }
 
 static uint32_t adv_report_parse(uint8_t type, const ble_data_t* p_advdata, ble_data_t* p_typedata)
