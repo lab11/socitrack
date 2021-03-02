@@ -172,19 +172,6 @@ static void lis2dw12_fifo_reset(void)
    lis2dw12_fifo_config(fifo_config);
 }
 
-static void lis2dw12_off(void)
-{
-   lis2dw12_odr_t odr_power_down = lis2dw12_odr_power_down;
-   uint8_t off_byte = odr_power_down << 4 | (_accelerometer_config.mode & 0x3) << 2 | (_accelerometer_config.lp_mode & 0x3);
-   lis2dw12_write_reg(LIS2DW12_CTRL1, &off_byte, 1);
-}
-
-static void lis2dw12_on(void)
-{
-   uint8_t on_byte = _accelerometer_config.odr << 4 | (_accelerometer_config.mode & 0x3) << 2 | (_accelerometer_config.lp_mode & 0x3);
-   lis2dw12_write_reg(LIS2DW12_CTRL1, &on_byte, 1);
-}
-
 static bool lis2dw12_is_stationary(void)
 {
    uint8_t status_byte;
