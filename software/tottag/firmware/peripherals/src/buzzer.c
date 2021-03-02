@@ -120,6 +120,52 @@ void buzzer_indicate_plugged_status(bool plugged_in)
       buzzer_indicate_unplugged();
 }
 
+void buzzer_indicate_invalid_rtc_time(void)
+{
+   // Tone Frequency = base_clock / top_value
+#if (BOARD_V >= 0x10)
+   uint32_t duration_ms = 100;
+   uint32_t tone_frequency_hz = 1047;
+   nrfx_pwm_uninit(&pwm_instance);
+   pwm_config.top_value = BUZZER_CLOCK_HZ / tone_frequency_hz;
+   nrfx_pwm_init(&pwm_instance, &pwm_config, NULL);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   duration_ms = 200;
+   nrf_delay_ms(duration_ms);
+   nrfx_pwm_uninit(&pwm_instance);
+   pwm_config.top_value = BUZZER_CLOCK_HZ / tone_frequency_hz;
+   nrfx_pwm_init(&pwm_instance, &pwm_config, NULL);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   nrf_delay_ms(duration_ms);
+   duration_ms = 100;
+   tone_frequency_hz = 830;
+   nrfx_pwm_uninit(&pwm_instance);
+   pwm_config.top_value = BUZZER_CLOCK_HZ / tone_frequency_hz;
+   nrfx_pwm_init(&pwm_instance, &pwm_config, NULL);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   duration_ms = 200;
+   nrf_delay_ms(duration_ms);
+   tone_frequency_hz = 880;
+   nrfx_pwm_uninit(&pwm_instance);
+   pwm_config.top_value = BUZZER_CLOCK_HZ / tone_frequency_hz;
+   nrfx_pwm_init(&pwm_instance, &pwm_config, NULL);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   nrf_delay_ms(duration_ms);
+   tone_frequency_hz = 698;
+   nrfx_pwm_uninit(&pwm_instance);
+   pwm_config.top_value = BUZZER_CLOCK_HZ / tone_frequency_hz;
+   nrfx_pwm_init(&pwm_instance, &pwm_config, NULL);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   nrf_delay_ms(duration_ms * 2);
+   nrfx_gpiote_out_set(BUZZER_DRIVER);
+#endif
+}
+
 void buzzer_indicate_error(void)
 {
    // Tone Frequency = base_clock / top_value

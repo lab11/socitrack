@@ -151,7 +151,7 @@ static void hardware_init(void)
    {
       printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
       rtc_external_init(&_rtc_sd_spi_instance);
-      buzzer_indicate_error();
+      buzzer_indicate_invalid_rtc_time();
       nrf_delay_ms(1000);
       current_timestamp = rtc_get_current_time();
    }
