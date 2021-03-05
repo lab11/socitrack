@@ -8,6 +8,7 @@
 
 // SquarePoint access details ------------------------------------------------------------------------------------------
 
+#define SQUAREPOINT_ID                                  0xB01A
 #define SQUAREPOINT_ADDRESS                             0x65
 #define SQUAREPOINT_EUI_LEN                             1
 

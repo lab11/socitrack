@@ -8,7 +8,7 @@
 
 // Public Bluetooth API ------------------------------------------------------------------------------------------------
 
-void ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* squarepoint_running_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index);
+nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* squarepoint_running_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index);
 uint8_t ble_get_device_role(void);
 const uint8_t* ble_get_eui(void);
 const uint8_t* ble_get_empty_eui(void);

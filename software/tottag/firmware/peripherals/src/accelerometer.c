@@ -8,6 +8,8 @@
 
 // Static accelerometer state variables --------------------------------------------------------------------------------
 
+#if (BOARD_V < 0x11)
+
 static const nrfx_spim_t* _spi_instance = NULL;
 static nrfx_spim_config_t _spi_config = NRFX_SPIM_DEFAULT_CONFIG;
 static lis2dw12_config_t _accelerometer_config = { .odr = lis2dw12_odr_200, .mode = lis2dw12_low_power,
@@ -170,19 +172,6 @@ static void lis2dw12_fifo_reset(void)
    lis2dw12_fifo_config(fifo_config);
 }
 
-static void lis2dw12_off(void)
-{
-   lis2dw12_odr_t odr_power_down = lis2dw12_odr_power_down;
-   uint8_t off_byte = odr_power_down << 4 | (_accelerometer_config.mode & 0x3) << 2 | (_accelerometer_config.lp_mode & 0x3);
-   lis2dw12_write_reg(LIS2DW12_CTRL1, &off_byte, 1);
-}
-
-static void lis2dw12_on(void)
-{
-   uint8_t on_byte = _accelerometer_config.odr << 4 | (_accelerometer_config.mode & 0x3) << 2 | (_accelerometer_config.lp_mode & 0x3);
-   lis2dw12_write_reg(LIS2DW12_CTRL1, &on_byte, 1);
-}
-
 static bool lis2dw12_is_stationary(void)
 {
    uint8_t status_byte;
@@ -190,24 +179,28 @@ static bool lis2dw12_is_stationary(void)
    return ((status_byte >> 5) & 0x1);
 }
 
-
-// Public Accelerometer API functions ----------------------------------------------------------------------------------
-
 static void accelerometer_fifo_full_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
    // Set the "data ready" flag for the accelerometer
-   if (pin == CARRIER_ACC_INT2)
+   if (pin == CARRIER_IMU_INT2)
       nrfx_atomic_flag_set(_accelerometer_data_ready);
 }
 
-void accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
+#endif  // #if (BOARD_V < 0x11)
+
+
+// Public Accelerometer API functions ----------------------------------------------------------------------------------
+
+bool accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
 {
+#if (BOARD_V < 0x11)
+
    // Setup SPI parameters
    _spi_instance = spi_instance;
-   _spi_config.sck_pin = CARRIER_SPI_SCLK;
-   _spi_config.miso_pin = CARRIER_SPI_MISO;
-   _spi_config.mosi_pin = CARRIER_SPI_MOSI;
-   _spi_config.ss_pin = CARRIER_CS_ACC;
+   _spi_config.sck_pin = IMU_SPI_SCLK;
+   _spi_config.miso_pin = IMU_SPI_MISO;
+   _spi_config.mosi_pin = IMU_SPI_MOSI;
+   _spi_config.ss_pin = CARRIER_CS_IMU;
    _spi_config.frequency = NRF_SPIM_FREQ_4M;
    _spi_config.mode = NRF_SPIM_MODE_3;
    _spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
@@ -227,16 +220,23 @@ void accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* dat
    // Initialize the accelerometer interrupt pin
    _accelerometer_data_ready = data_ready;
    nrfx_gpiote_in_config_t int_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
-   nrfx_gpiote_in_init(CARRIER_ACC_INT2, &int_gpio_config, accelerometer_fifo_full_handler);
-   nrfx_gpiote_in_event_enable(CARRIER_ACC_INT2, 1);
+   nrfx_gpiote_in_init(CARRIER_IMU_INT2, &int_gpio_config, accelerometer_fifo_full_handler);
+   nrfx_gpiote_in_event_enable(CARRIER_IMU_INT2, 1);
    lis2dw12_interrupt_enable(true);
 
    // Reset FIFO
    lis2dw12_fifo_reset();
+   return true;
+
+#else
+   return false;
+#endif  // #if (BOARD_V < 0x11)
 }
 
 nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
 {
+#if (BOARD_V < 0x11)
+
    // Read 32 samples from the accelerometer FIFO
    uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
    nrfx_spim_uninit(_spi_instance);
@@ -255,12 +255,15 @@ nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
    // Convert each sample to milli-g's
    for (size_t i = 0, j = 1; i < ACC_NUM_RESULTS_PER_READ; ++i, j += 6)
    {
-      x_data[i] = ((int16_t)(_acc_xyz[j+0] | ((int16_t)_acc_xyz[j+1] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-      y_data[i] = ((int16_t)(_acc_xyz[j+2] | ((int16_t)_acc_xyz[j+3] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-      z_data[i] = ((int16_t)(_acc_xyz[j+4] | ((int16_t)_acc_xyz[j+5] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (x_data) x_data[i] = ((int16_t)(_acc_xyz[j+0] | ((int16_t)_acc_xyz[j+1] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (y_data) y_data[i] = ((int16_t)(_acc_xyz[j+2] | ((int16_t)_acc_xyz[j+3] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (z_data) z_data[i] = ((int16_t)(_acc_xyz[j+4] | ((int16_t)_acc_xyz[j+5] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
    }
    return NRFX_SUCCESS;
-}
 
-void accelerometer_on(void) { lis2dw12_on(); }
-void accelerometer_off(void) { lis2dw12_off(); }
+#else
+
+   return NRFX_ERROR_INTERNAL;
+
+#endif  // #if (BOARD_V < 0x11)
+}

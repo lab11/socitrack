@@ -13,11 +13,6 @@
 #define DEVICE_NAME "TotTag"
 #endif
 
-// BLE Address used to advertise
-#ifndef BLE_ADDRESS
-#error "Did not specify a BLE address...cannot continue"
-#endif
-
 // Battery monitor
 #define CARRIER_BATTERY_MONITOR NRF_GPIO_PIN_MAP(0,30)
 #define CARRIER_BATTERY_PIN     NRF_SAADC_INPUT_AIN6
@@ -35,9 +30,14 @@
 #define CARRIER_LED_GREEN   NRF_GPIO_PIN_MAP(0,6)
 
 // SPI bus
-#define CARRIER_SPI_SCLK    NRF_GPIO_PIN_MAP(0,17)
-#define CARRIER_SPI_MISO    NRF_GPIO_PIN_MAP(0,15)
-#define CARRIER_SPI_MOSI    NRF_GPIO_PIN_MAP(0,13)
+#define IMU_SPI_SCLK        NRF_GPIO_PIN_MAP(0,17)
+#define IMU_SPI_MISO        NRF_GPIO_PIN_MAP(0,15)
+#define IMU_SPI_MOSI        NRF_GPIO_PIN_MAP(0,13)
+#define IMU_SPI_BUS         NRFX_SPIM_INSTANCE(0)
+#define RTC_SD_SPI_SCLK     NRF_GPIO_PIN_MAP(0,17)
+#define RTC_SD_SPI_MISO     NRF_GPIO_PIN_MAP(0,15)
+#define RTC_SD_SPI_MOSI     NRF_GPIO_PIN_MAP(0,13)
+#define RTC_SD_SPI_BUS      NRFX_SPIM_INSTANCE(0)
 
 // SD Card
 #define CARRIER_CS_SD       NRF_GPIO_PIN_MAP(0,20)
@@ -48,22 +48,22 @@
 #define SD_CARD_ENABLE          CARRIER_SD_ENABLE
 #define SD_CARD_DETECT          CARRIER_SD_DETECT
 #define SD_CARD_SPI_CS          CARRIER_CS_SD
-#define SD_CARD_SPI_MISO        CARRIER_SPI_MISO
-#define SD_CARD_SPI_MOSI        CARRIER_SPI_MOSI
-#define SD_CARD_SPI_SCLK        CARRIER_SPI_SCLK
+#define SD_CARD_SPI_MISO        RTC_SD_SPI_MISO
+#define SD_CARD_SPI_MOSI        RTC_SD_SPI_MOSI
+#define SD_CARD_SPI_SCLK        RTC_SD_SPI_SCLK
 #define SD_CARD_SPI_INSTANCE    NRF_SPI0
 
 // Accelerometer
-#define CARRIER_CS_ACC      NRF_GPIO_PIN_MAP(0,16)
-#define CARRIER_ACC_INT1    NRF_GPIO_PIN_MAP(0,22)
-#define CARRIER_ACC_INT2    NRF_GPIO_PIN_MAP(0,24)
+#define CARRIER_CS_IMU      NRF_GPIO_PIN_MAP(0,16)
+#define CARRIER_IMU_INT1    NRF_GPIO_PIN_MAP(0,22)
+#define CARRIER_IMU_INT2    NRF_GPIO_PIN_MAP(0,24)
 
 // I2C connection to module
 #define CARRIER_I2C_SCL     NRF_GPIO_PIN_MAP(1,9)
 #define CARRIER_I2C_SDA     NRF_GPIO_PIN_MAP(0,12)
 
 // Interrupt line to module (STM controller)
-#define CARRIER_INTERRUPT_MODULE    NRF_GPIO_PIN_MAP(0,8)
+#define STM_INTERRUPT    NRF_GPIO_PIN_MAP(0,8)
 
 // UART serial connection (to FTDI)
 #define CARRIER_UART_RX     NRF_GPIO_PIN_MAP(0,7)

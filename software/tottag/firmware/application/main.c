@@ -1,13 +1,13 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include <string.h>
-#include "accelerometer.h"
 #include "battery.h"
 #include "ble_config.h"
 #include "ble_gap.h"
 #include "bluetooth.h"
 #include "boards.h"
 #include "buzzer.h"
+#include "imu.h"
 #include "led.h"
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
@@ -27,11 +27,10 @@
 // Application state variables -----------------------------------------------------------------------------------------
 
 static app_flags_t _app_flags = { 0 };
-static nrfx_spim_t _spi_instance = NRFX_SPIM_INSTANCE(0);
+static nrfx_spim_t _rtc_sd_spi_instance = RTC_SD_SPI_BUS;
+static nrfx_spim_t _imu_spi_instance = IMU_SPI_BUS;
 static uint8_t _range_buffer[APP_BLE_BUFFER_LENGTH] = { 0 };
 static uint16_t _range_buffer_length = 0;
-static float _acc_x[ACC_NUM_RESULTS_PER_READ] = { 0 }, _acc_y[ACC_NUM_RESULTS_PER_READ] = { 0 };
-static float _acc_z[ACC_NUM_RESULTS_PER_READ] = { 0 };
 
 
 // Helper functions ----------------------------------------------------------------------------------------------------
@@ -52,17 +51,24 @@ static void app_init(void)
 static void spi_init(void)
 {
    // Configure SPI pins
-   nrf_gpio_cfg_input(CARRIER_SPI_MISO, NRF_GPIO_PIN_PULLUP);
+   nrf_gpio_cfg_input(RTC_SD_SPI_MISO, NRF_GPIO_PIN_PULLUP);
    nrfx_gpiote_out_config_t spi_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_config_t spi_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(CARRIER_SPI_MOSI, &spi_mosi_pin_config);
-   nrfx_gpiote_out_init(CARRIER_SPI_SCLK, &spi_sclk_pin_config);
+   nrfx_gpiote_out_init(RTC_SD_SPI_MOSI, &spi_mosi_pin_config);
+   nrfx_gpiote_out_init(RTC_SD_SPI_SCLK, &spi_sclk_pin_config);
+#if (BOARD_V >= 0x11)
+   nrf_gpio_cfg_input(IMU_SPI_MISO, NRF_GPIO_PIN_PULLUP);
+   nrfx_gpiote_out_config_t spi_imu_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_config_t spi_imu_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_init(IMU_SPI_MOSI, &spi_imu_mosi_pin_config);
+   nrfx_gpiote_out_init(IMU_SPI_SCLK, &spi_imu_sclk_pin_config);
+#endif
 
    // Setup Chip Selects (CS)
    nrfx_gpiote_out_config_t cs_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
-   nrfx_gpiote_out_config_t cs_acc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
+   nrfx_gpiote_out_config_t cs_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_init(CARRIER_CS_SD, &cs_sd_pin_config);
-   nrfx_gpiote_out_init(CARRIER_CS_ACC, &cs_acc_pin_config);
+   nrfx_gpiote_out_init(CARRIER_CS_IMU, &cs_imu_pin_config);
 #if (BOARD_V >= 0xF)
    nrfx_gpiote_out_config_t cs_rtc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_init(CARRIER_CS_RTC, &cs_rtc_pin_config);
@@ -72,18 +78,18 @@ static void spi_init(void)
    nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_init(CARRIER_SD_ENABLE, &sd_enable_pin_config);
 
-   // Configure SPI lines
+   // Configure RTC/SD-Card SPI lines
    nrfx_spim_config_t spi_config = NRFX_SPIM_DEFAULT_CONFIG;
-   spi_config.sck_pin = CARRIER_SPI_SCLK;
-   spi_config.miso_pin = CARRIER_SPI_MISO;
-   spi_config.mosi_pin = CARRIER_SPI_MOSI;
+   spi_config.sck_pin = RTC_SD_SPI_SCLK;
+   spi_config.miso_pin = RTC_SD_SPI_MISO;
+   spi_config.mosi_pin = RTC_SD_SPI_MOSI;
    spi_config.ss_pin = CARRIER_CS_SD;
    spi_config.frequency = NRF_SPIM_FREQ_4M;
    spi_config.mode = NRF_SPIM_MODE_3;
    spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
 
-   // Initialize SPI
-   APP_ERROR_CHECK(nrfx_spim_init(&_spi_instance, &spi_config, NULL, NULL));
+   // Initialize RTC/SD-Card SPI
+   APP_ERROR_CHECK(nrfx_spim_init(&_rtc_sd_spi_instance, &spi_config, NULL, NULL));
 }
 
 static void hardware_init(void)
@@ -116,7 +122,12 @@ static void hardware_init(void)
    usb_init();
 
    // Initialize the Bluetooth stack via a SoftDevice
-   ble_init(&_app_flags.squarepoint_enabled, &_app_flags.squarepoint_running, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index);
+   if (ble_init(&_app_flags.squarepoint_enabled, &_app_flags.squarepoint_running, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
+      while (true)
+      {
+         buzzer_indicate_error();
+         nrf_delay_ms(2500);
+      }
 
    // Tell the SoftDevice to use the DC/DC regulator and low-power mode
    sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
@@ -127,30 +138,30 @@ static void hardware_init(void)
    printf("INFO: Initialized critical hardware and software services\n");
 
    // Wait until SD Card is inserted
-   while (!sd_card_init(&_spi_instance, &_app_flags.sd_card_inserted, ble_get_eui()))
+   while (!sd_card_init(&_rtc_sd_spi_instance, &_app_flags.sd_card_inserted, ble_get_eui()))
    {
       buzzer_indicate_error();
       nrf_delay_ms(2500);
    }
 
    // Enable the external Real-Time Clock and ensure that the fetched timestamp is valid
-   rtc_external_init(&_spi_instance);
-#ifndef DISABLE_RTC_TIME_CHECK
-   uint32_t current_timestamp = rtc_get_current_time();
-   while ((current_timestamp < 1588291200) || (current_timestamp > 2534976000))
+   rtc_external_init(&_rtc_sd_spi_instance);
+   uint32_t current_timestamp = rtc_get_current_time(), num_retries = 3;
+   while (--num_retries && ((current_timestamp < MINIMUM_VALID_TIMESTAMP) || (current_timestamp > MAXIMUM_VALID_TIMESTAMP)))
    {
       printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
-      rtc_external_init(&_spi_instance);
-      buzzer_indicate_error();
+      rtc_external_init(&_rtc_sd_spi_instance);
+      buzzer_indicate_invalid_rtc_time();
       nrf_delay_ms(1000);
       current_timestamp = rtc_get_current_time();
    }
-#endif
+   if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
+      nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
 
    // Initialize supplementary hardware components
-   accelerometer_init(&_spi_instance, &_app_flags.accelerometer_data_ready);
+   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready);
    battery_monitor_init(&_app_flags.battery_status_changed);
-   sd_card_create_log(rtc_get_current_time());
+   sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0);
    led_off();
    printf("INFO: Initialized supplementary hardware and software services\n");
 }
@@ -320,7 +331,7 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 
          // Update the application epoch
          memcpy(&epoch, data + packet_overhead + (num_ranges * APP_LOG_RANGE_LENGTH), sizeof(epoch));
-         if ((epoch > 1588291200) && (epoch < 2534976000))
+         if ((epoch > MINIMUM_VALID_TIMESTAMP) && (epoch < MAXIMUM_VALID_TIMESTAMP))
          {
             rtc_set_current_time(epoch);
             printf("INFO:     Updated current epoch time: %lu\n", epoch);
@@ -395,15 +406,11 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
    }
 }
 
-static void accelerometer_data_handler(void)
+static void imu_data_handler(void)
 {
    // Read data from the accelerometer
-   if (accelerometer_read_data(_acc_x, _acc_y, _acc_z) == NRFX_SUCCESS)
+   if (imu_read_accelerometer_data(NULL, NULL, NULL) == NRFX_SUCCESS)
    {
-      // TODO: Do something with the accelerometer data
-      //for (int i = 0; i < ACC_NUM_RESULTS_PER_READ; ++i)
-      //   printf("DEBUG: x = %d, y = %d, z = %d\n", (int)_acc_x[i], (int)_acc_y[i], (int)_acc_z[i]);
-
       // Log a change in motion
       if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
          log_motion(true, rtc_get_current_time(), false);
@@ -438,9 +445,9 @@ int main(void)
       // Handle USB communications
       usb_handle_comms();
 
-      // Check if accelerometer data is ready to be read
-      if (nrfx_atomic_flag_clear_fetch(&_app_flags.accelerometer_data_ready))
-         accelerometer_data_handler();
+      // Check if IMU data is ready to be read
+      if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
+         imu_data_handler();
 
       // Check if new ranging data was received
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))

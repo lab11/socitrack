@@ -64,7 +64,7 @@ static void twi_bus_clear(void)
 static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
    // Verify that the interrupt is from the SquarePoint module
-   if (pin != CARRIER_INTERRUPT_MODULE)
+   if (pin != STM_INTERRUPT)
       return;
 
    // Read the length of the incoming packet and ensure that it is valid
@@ -99,10 +99,10 @@ static nrfx_err_t twi_hw_init(void)
 
    // Setup an interrupt handler to detect when SquarePoint has data to send
    nrfx_gpiote_in_config_t int_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
-   nrfx_err_t err_code = nrfx_gpiote_in_init(CARRIER_INTERRUPT_MODULE, &int_config, squarepoint_interrupt_handler);
+   nrfx_err_t err_code = nrfx_gpiote_in_init(STM_INTERRUPT, &int_config, squarepoint_interrupt_handler);
    if (err_code == NRFX_SUCCESS)
    {
-      nrfx_gpiote_in_event_enable(CARRIER_INTERRUPT_MODULE, true);
+      nrfx_gpiote_in_event_enable(STM_INTERRUPT, true);
       _twi_initialized = true;
    }
    else
@@ -113,16 +113,16 @@ static nrfx_err_t twi_hw_init(void)
 static void twi_hw_uninit(void)
 {
    // Uninitialize the interrupt handler and the TWI Master peripheral
-   nrfx_gpiote_in_uninit(CARRIER_INTERRUPT_MODULE);
+   nrfx_gpiote_in_uninit(STM_INTERRUPT);
    nrfx_twi_uninit(&_twi_instance);
    _twi_initialized = false;
 }
 
-static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version)
+static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version, const uint8_t *eui)
 {
    // Requesting a device info string from the SquarePoint module
-   uint8_t cmd = SQUAREPOINT_CMD_INFO, resp[3] = { 0 };
-   nrfx_err_t err_code = nrfx_twi_tx(&_twi_instance, SQUAREPOINT_ADDRESS, &cmd, sizeof(cmd), false);
+   uint8_t cmd[7] = { SQUAREPOINT_CMD_INFO, eui[0], eui[1], eui[2], eui[3], eui[4], eui[5] }, resp[3] = { 0 };
+   nrfx_err_t err_code = nrfx_twi_tx(&_twi_instance, SQUAREPOINT_ADDRESS, cmd, sizeof(cmd), false);
    if (err_code == NRFX_SUCCESS)
       err_code = nrfx_twi_rx(&_twi_instance, SQUAREPOINT_ADDRESS, resp, sizeof(resp));
    if (err_code == NRFX_SUCCESS)
@@ -151,15 +151,14 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
    // Try to read information from SquarePoint to validate the TWI connection
    uint16_t id = 0;
    uint8_t version = 0;
-   if (squarepoint_get_info(&id, &version) != NRFX_SUCCESS)
+   if (squarepoint_get_info(&id, &version, eui) != NRFX_SUCCESS)
    {
       twi_hw_uninit();
       return NRFX_ERROR_INTERNAL;
    }
-   if ((*(uint8_t*)&id != eui[1]) || (*(((uint8_t*)&id) + 1) != eui[0]))
+   if (id != SQUAREPOINT_ID)
    {
-      printf("ERROR: SquarePoint [%02x:%02x] and TotTag module [%02x:%02x] EUIs do not match!\n",
-            *((uint8_t*)&id+1), *((uint8_t*)&id), eui[1], eui[0]);
+      printf("ERROR: SquarePoint module is not reporting the expected ID [Expected = %uh Reported = %uh]\n", SQUAREPOINT_ID, id);
       return NRFX_ERROR_INVALID_STATE;
    }
    return NRFX_SUCCESS;
@@ -213,12 +212,12 @@ nrfx_err_t squarepoint_wakeup_module(void)
 
    // Reverse the direction of the module interrupt to wake up SquarePoint
    _twi_initialized = false;
-   nrfx_gpiote_in_uninit(CARRIER_INTERRUPT_MODULE);
+   nrfx_gpiote_in_uninit(STM_INTERRUPT);
    nrfx_gpiote_out_config_t out_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_err_t err_code = nrfx_gpiote_out_init(CARRIER_INTERRUPT_MODULE, &out_config);
+   nrfx_err_t err_code = nrfx_gpiote_out_init(STM_INTERRUPT, &out_config);
    if (err_code == NRFX_SUCCESS)
-      nrfx_gpiote_out_set(CARRIER_INTERRUPT_MODULE);
-   nrfx_gpiote_out_uninit(CARRIER_INTERRUPT_MODULE);
+      nrfx_gpiote_out_set(STM_INTERRUPT);
+   nrfx_gpiote_out_uninit(STM_INTERRUPT);
    nrfx_twi_uninit(&_twi_instance);
    err_code = twi_hw_init();
 

@@ -572,6 +572,27 @@ void debug_msg_eui(PROTOCOL_EUI_TYPE eui)
 
 }
 
+void debug_msg_eui_full(uint8_t* eui)
+{
+
+#ifdef DEBUG_OUTPUT_RTT
+#define EUI_LEN 8
+
+   char msg[3*EUI_LEN] = { 0 };
+   for (int8_t i = EUI_LEN - 1, j = 0; i >= 0; --i, ++j)
+   {
+      msg[j*3] = eui[i] >> 0x04;
+      msg[(j*3)+1] = eui[i] & 0x0F;
+      msg[j*3] += (msg[j*3] > 9) ? '7' : '0';
+      msg[(j*3)+1] += (msg[(j*3)+1] > 9) ? '7' : '0';
+      msg[(j*3)+2] = ':';
+   }
+   msg[(3*EUI_LEN)-1] = '\0';
+   SEGGER_RTT_WriteString(0, msg);
+#endif
+
+}
+
 /*********************************************************************
  *
  *       SEGGER_RTT_WriteString

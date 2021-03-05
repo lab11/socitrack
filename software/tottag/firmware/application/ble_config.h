@@ -11,15 +11,12 @@
 // User configurable definitions ---------------------------------------------------------------------------------------
 
 //#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
-#define ENABLE_LEDS
-//#define DISABLE_RTC_TIME_CHECK
+//#define ENABLE_LEDS
+
 
 // Forced definitions for "Deployment Mode" ----------------------------------------------------------------------------
 
 #ifndef DEBUG_MODE
-#ifndef DISABLE_RTC_TIME_CHECK
-#define DISABLE_RTC_TIME_CHECK
-#endif
 #ifdef ENABLE_LEDS
 #undef ENABLE_LEDS
 #endif
@@ -27,6 +24,7 @@
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #endif
 #endif
+
 
 // Constants -----------------------------------------------------------------------------------------------------------
 
@@ -61,6 +59,8 @@
 #define APP_RUNNING_RESPONSE_TIMEOUT_SEC        2
 #define SQUAREPOINT_ERROR_NOTIFY_COUNT          5
 #define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   3
+#define MINIMUM_VALID_TIMESTAMP                 1612810414
+#define MAXIMUM_VALID_TIMESTAMP                 2000000000
 
 // Storage / Buffers
 #define APP_BLE_BUFFER_LENGTH                   256
@@ -76,6 +76,7 @@
 #define APP_BLE_ADVDATA_LENGTH                  APP_BLE_ADV_SCHED_EUI_LENGTH
 
 // nRF hardware definitions
+#define DEVICE_ID_MEMORY                        0x10001080
 #define DEAD_BEEF                               0xDEADBEEF
 #define APP_LOG_CHUNK_SIZE                      254
 
@@ -95,8 +96,9 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
    nrfx_atomic_flag_t squarepoint_needs_reset;
    nrfx_atomic_flag_t sd_card_inserted;
+   nrfx_atomic_flag_t rtc_time_valid;
    nrfx_atomic_flag_t battery_check_time;
-   nrfx_atomic_flag_t accelerometer_data_ready;
+   nrfx_atomic_flag_t imu_data_ready;
    nrfx_atomic_flag_t battery_status_changed;
    nrfx_atomic_flag_t range_buffer_updated;
    nrfx_atomic_flag_t device_in_motion;

@@ -58,9 +58,9 @@ static uint8_t month_to_i(const char *c)
 uint8_t ab1815_init(void)
 {
    // Setup SPI parameters
-   _spi_config.sck_pin = CARRIER_SPI_SCLK;
-   _spi_config.miso_pin = CARRIER_SPI_MISO;
-   _spi_config.mosi_pin = CARRIER_SPI_MOSI;
+   _spi_config.sck_pin = RTC_SD_SPI_SCLK;
+   _spi_config.miso_pin = RTC_SD_SPI_MISO;
+   _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
    _spi_config.ss_pin = CARRIER_CS_RTC;
    _spi_config.frequency = NRF_SPIM_FREQ_1M;
    _spi_config.mode = NRF_SPIM_MODE_3;
@@ -96,19 +96,18 @@ uint8_t ab1815_init_time(void)
 #ifdef FORCE_RTC_RESET
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdate-time"
-   const char _date[] = __DATE__;  // the format is "Jan  1 2000"
-   const char _time[] = __TIME__;  // the format is "00:00:00"
-   printf("INFO: Forcing RTC reset to %s, %s\n", _date, _time);
+   const char _datetime[] = _DATETIME;  // the format is "Tue Jan  1 00:00:00 UTC 2000"
+   printf("INFO: Forcing RTC reset to %s\n", _datetime);
 
    ab1815_time_t comp_time;
    comp_time.hundredths = 0;
-   comp_time.seconds = ascii_to_i(_time[6]) * 10 + ascii_to_i(_time[7]);
-   comp_time.minutes = ascii_to_i(_time[3]) * 10 + ascii_to_i(_time[4]);
-   comp_time.hours = ascii_to_i(_time[0]) * 10 + ascii_to_i(_time[1]);
+   comp_time.seconds = ascii_to_i(_datetime[17]) * 10 + ascii_to_i(_datetime[18]);
+   comp_time.minutes = ascii_to_i(_datetime[14]) * 10 + ascii_to_i(_datetime[15]);
+   comp_time.hours = ascii_to_i(_datetime[11]) * 10 + ascii_to_i(_datetime[12]);
 
-   comp_time.date = ascii_to_i(_date[4]) * 10 + ascii_to_i(_date[5]);
-   comp_time.months = month_to_i(&_date[0]);
-   comp_time.years = ascii_to_i(_date[9]) * 10 + ascii_to_i(_date[10]);
+   comp_time.date = ascii_to_i(_datetime[8]) * 10 + ascii_to_i(_datetime[9]);
+   comp_time.months = month_to_i(&_datetime[4]);
+   comp_time.years = ascii_to_i(_datetime[26]) * 10 + ascii_to_i(_datetime[27]);
    comp_time.weekday = 0;  // default
 
    return ab1815_set_time(comp_time);
@@ -377,6 +376,13 @@ uint8_t ab1815_get_time(ab1815_time_t *time)
    return 1;
 }
 
+uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
+{
+   struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
+   ab1815_time_t new_time = unix_to_ab1815(tv);
+   return ab1815_set_time(new_time);
+}
+
 struct timeval ab1815_get_time_unix(void)
 {
    struct timeval tv = { 0 };
@@ -536,7 +542,7 @@ uint8_t rtc_external_init(const nrfx_spim_t* spi_instance)
 #if (BOARD_V >= 0x0F)
    _spi_instance = spi_instance;
    nrfx_gpiote_out_set(CARRIER_CS_SD);
-   nrfx_gpiote_out_set(CARRIER_CS_ACC);
+   nrfx_gpiote_out_set(CARRIER_CS_IMU);
    nrfx_gpiote_out_set(CARRIER_CS_RTC);
    nrfx_gpiote_out_clear(CARRIER_SD_ENABLE);
 

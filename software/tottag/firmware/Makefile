@@ -1,4 +1,5 @@
 PROJECT_NAME = $(shell basename "$(realpath ./)")
+CFLAGS += -D_DATETIME="\"$(shell date -u)\""
 CDBG :=
 
 # Configuration
@@ -6,13 +7,6 @@ NRF_MODEL = NRF52
 NRF_IC = nrf52840
 SDK_VERSION = 15
 SOFTDEVICE_MODEL = s140
-
-# Set BLE_ADDRESS
-ifeq ($(ID), )
-$(info ERROR: Missing ID flag!)
-else
-CFLAGS += -DBLE_ADDRESS=$(ID)
-endif
 
 # Allow to circumvent BLE interface
 ifneq ($(BLE_CALIBRATION), )
@@ -30,7 +24,6 @@ APP_HEADER_PATHS += .
 APP_SOURCE_PATHS += .
 APP_SOURCES = $(notdir $(wildcard ./*.c))
 
-
 # Optimize for size
 CFLAGS += -Os -s
 
@@ -46,8 +39,10 @@ ifeq ($(BOARD_REV), D)
 include boards/TotTag_revD/Board.mk
 else ifeq ($(BOARD_REV), F)
 include boards/TotTag_revF/Board.mk
-else
+else ifeq ($(BOARD_REV), G)
 include boards/TotTag_revG/Board.mk
+else
+include boards/TotTag_revH/Board.mk
 endif
 
 # Path to base of nRF52-base repo

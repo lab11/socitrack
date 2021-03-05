@@ -33,6 +33,7 @@
 #define RADIO_STATE_TX 0x040000
 #define RADIO_STATE_RX 0x050000
 
+uint8_t eui[EUI_LEN] = { 0 };
 const uint8_t pgDelay[DW1000_NUM_CHANNELS] = { 0x0, 0xc9, 0xc2, 0xc5, 0x95, 0xc0, 0x0, 0x93 };
 
 //NOTE: THIS IS DEPENDENT ON BAUDRATE
@@ -256,29 +257,7 @@ static void setup(void)
    DMA_InitStructure.DMA_Mode = DMA_Mode_Normal;
    DMA_InitStructure.DMA_M2M = DMA_M2M_Disable;
 
-   // Pull from flash the calibration values
-   /*memcpy(&_prog_values, (uint8_t*) FLASH_LOCATION_MAGIC, sizeof(dw1000_programmed_values_t));
-   if (_prog_values.magic != PROGRAMMED_MAGIC)
-   {
-      debug_msg("WARNING: Calibration values not found in FLASH\n");
-      for (uint8_t i = 0; i < 3; i++)
-         for (uint8_t j = 0; j < 3; j++)
-            _prog_values.calibration_values[i][j] = DW1000_DEFAULT_CALIBRATION;
-   }
-   else
-   {
-      PROTOCOL_EUI_TYPE eui = 0;
-      memcpy(&eui, _prog_values.eui, sizeof(eui));
-      debug_msg("INFO: Successfully loaded calibration values with EUI ");
-      debug_msg_eui(eui);
-      debug_msg("\n");
-   }*/
-   memcpy(&_prog_values, (uint8_t*)FLASH_LOCATION_MAGIC, sizeof(dw1000_programmed_values_t));
-   PROTOCOL_EUI_TYPE eui = 0;
-   memcpy(&eui, _prog_values.eui, sizeof(eui));
-   debug_msg("INFO: Loaded Device EUI ");
-   debug_msg_eui(eui);
-   debug_msg("\n");
+   // Set default calibration values
    for (uint8_t i = 0; i < 3; i++)
       for (uint8_t j = 0; j < 3; j++)
          _prog_values.calibration_values[i][j] = DW1000_DEFAULT_CALIBRATION;
@@ -660,7 +639,32 @@ void dw1000_choose_antenna(uint8_t antenna_number)
 // Read this node's EUI from the correct address in flash
 void dw1000_read_eui(uint8_t *eui_buf)
 {
-   memcpy(eui_buf, (uint8_t*)FLASH_LOCATION_EUI, EUI_LEN);
+   // Determine if the EUI has already been loaded
+   uint8_t eui_loaded = 0;
+   for (int i = 0; i < EUI_LEN; ++i)
+      if (eui[i])
+      {
+         eui_loaded = 1;
+         break;
+      }
+
+   // Copy the EUI into the specified buffer
+   if (!eui_loaded)
+   {
+      memcpy(eui, (uint8_t*)FLASH_LOCATION_EUI, EUI_LEN);
+      memcpy(eui_buf, (uint8_t*)FLASH_LOCATION_EUI, EUI_LEN);
+   }
+   else
+      memcpy(eui_buf, eui, EUI_LEN);
+}
+
+void dw1000_update_runtime_eui(uint8_t *eui_buf)
+{
+   // Set this node's ID and the PAN ID for our DW1000 ranging system
+   dw1000_spi_slow();
+   memcpy(eui, eui_buf, EUI_LEN);
+   dwt_seteui(eui_buf);
+   dw1000_spi_fast();
 }
 
 bool dw1000_radio_disable(void)

@@ -16,16 +16,23 @@ For detailed programming instructions, refer to the
 [Provisioning Documentation](../../../doc/Provisioning.md).
 
 To program the microcontroller, connect a SEGGER J-Link Programmer to the board
-via USB, then enter the following command, making sure to set the correct Device
-ID for the target:
+via USB, then enter the following command, replacing `<segger_id>` with the 
+9-digit serial number of your J-Link Programmer:
 
-> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash`
+> `make SEGGER_SERIAL=<segger_id> flash`
+
+If this is the first time you are programming the board (or you have a specific 
+need to change the unique Device ID on the target), you may set the correct ID 
+by using the following command, replacing `<device_id>` with your deired 
+Device ID, such as `c0:98:e5:42:00:01`:
+
+> `make SEGGER_SERIAL=<segger_id> ID=<device_id> flash`
 
 If you are flashing the board for use in a non-production debugging environment,
 append `DEBUG_MODE=1` to the flash command to allow certain debugging tasks
 and device checks to run:
 
-> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 DEBUG_MODE=1 flash`
+> `make SEGGER_SERIAL=<segger_id> DEBUG_MODE=1 flash`
 
 To display any J-Link debugging messages, enter the following commands in order
 (note that the `JLinkExe` command may be shortened to `JLink` on a
@@ -58,11 +65,11 @@ accurate universal time even when the device is powered down or low on battery.
 Should you find that the RTC clock value is incorrect, it can be reconfigured by
 flashing the microcontroller as follows:
 
-> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 FORCE_RTC_RESET=1 flash`
+> `make SEGGER_SERIAL=<segger_id> FORCE_RTC_RESET=1 flash`
 
 > <--- DEVICE IS NOW FLASHED AND RTC IS SET TO THE CORRECT DATE AND TIME --->
 
-> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash`
+> `make SEGGER_SERIAL=<segger_id> flash`
 
 **IMPORTANT:** You *must* execute the same command twice, with the second command
 removing the `FORCE_RTC_RESET=1` flag; otherwise, the RTC will be reset to 
@@ -71,7 +78,7 @@ the compilation time every time the device is restarted.
 Also note, if you need to flash the TotTag firmware onto an older board revision,
 you should use the following command to do so:
 
-> `make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 BOARD_REV=F flash`
+> `make SEGGER_SERIAL=<segger_id> BOARD_REV=G flash`
 
 where the `BOARD_REV` flag should be set to the correct board revision letter.
 

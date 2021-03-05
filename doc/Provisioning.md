@@ -53,7 +53,13 @@ the [TotTag README](../software/tottag/firmware).
         make clean
 
 6. Build the TotTag firmware. You will need the JLink serial number (`S/N` on
-   the back of the JLink) and the TotTag Device ID (sticker on the back of the tag):
+   the back of the JLink) and optionally, the TotTag Device ID
+   (sticker on the back of the TotTag):
+
+        make SEGGER_SERIAL=<segger_id> flash
+
+   or to specify the Device ID (should only be done the first time the TotTag
+   is being programmed):
 
         make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash
 
@@ -77,7 +83,7 @@ the [TotTag README](../software/tottag/firmware).
    environment, append the flag `DEBUG_MODE=1` to the make command to enable
    certain debugging tasks and device checks:
 
-        make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 DEBUG_MODE=1 flash
+        make SEGGER_SERIAL=<segger_id> DEBUG_MODE=1 flash
 
    Having problems? Check the [JLink FAQs.](./Glossary.md#miscellaneous)
 
@@ -114,10 +120,9 @@ differences have been highlighted.
         make clean
 
 6. Build the SquarePoint firmware. You will need the JLink serial number (`S/N`
-   on the back of the JLink) and the TotTag Device ID (sticker on the back of
-   the tag):
+   on the back of the JLink):
 
-        make SEGGER_SERIAL=<segger_id> ID=c0:98:e5:42:00:01 flash
+        make SEGGER_SERIAL=<segger_id> flash
 
    It is important to watch the end of the output. A lot of text will fly by,
    but near the end you should see:
