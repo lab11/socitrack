@@ -7,22 +7,11 @@ from sklearn.metrics import accuracy_score
 
 def train_knn(X, Y):
     """Trains a K-nearest-neighbors classifier on data X and labels Y, and returns the classifier"""
-
-    X = np.array(X)
-    Y = np.array(Y)
-
-    x_train, x_test, y_train, y_test = train_test_split(X,Y, train_size=0.625)
-
-    x_train = np.array(x_train)
-    y_train = np.array(y_train)
-    x_test = np.array(x_test)
-    y_test = np.array(y_test)
+    x_train = np.array(X)
+    y_train = np.array(Y)
 
     clf = KNeighborsClassifier(n_neighbors = 1)
     clf.fit(x_train, y_train)
-
-    y_pred = clf.predict(x_test)
-    print(f"K-Neighbors Accuracy: {accuracy_score(y_test, y_pred) * 100}%")
 
     return clf
 
@@ -30,20 +19,27 @@ def train_knn(X, Y):
 def train_forest(X, Y):
     """Trains a Random Forest classifier on data X and labels Y, and returns the classifier"""
 
-    X = np.array(X)
-    Y = np.array(Y)
+    x_train = np.array(X)
+    y_train = np.array(Y)
 
-    x_train, x_test, y_train, y_test = train_test_split(X,Y, train_size=0.625)
-
-    x_train = np.array(x_train)
-    y_train = np.array(y_train)
-    x_test = np.array(x_test)
-    y_test = np.array(y_test)
-    
     clf = RandomForestClassifier(n_estimators=50)
     clf.fit(x_train, y_train)
 
-    y_pred = clf.predict(x_test)
-    print(f"Random Forest Accuracy: {accuracy_score(y_test, y_pred) * 100}%")
-
     return clf
+
+
+def evaluate(model, X, Y):
+    """Evaluates the accuracy of a given model on a provided test set"""
+
+    x_test = np.array(X)
+    y_test = np.array(Y)
+
+    y_pred = model.predict(x_test)
+    print(f"Model Accuracy: {accuracy_score(y_test, y_pred) * 100}%") 
+
+    for i in range(len(y_test)):
+        if y_pred[i] != y_test[i]:
+            print(f"Window {i} was labeled {y_pred[i]} when it should've been labeled {y_test[i]}")
+            print(x_test[i])
+
+    return y_pred
