@@ -47,6 +47,7 @@
 #define MODEL_NUMBER                            TOTTAG
 #define HARDWARE_REVISION                       REVISION
 #define FIRMWARE_REVISION                       "2.0"
+#define FIRMWARE_VERSION                        FW_VERSION
 
 // Calibration
 #define BLE_CALIBRATION_INDEX_INVALID           255

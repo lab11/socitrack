@@ -7,8 +7,10 @@ NRF_MODEL = NRF52
 NRF_IC = nrf52840
 SDK_VERSION = 15
 SOFTDEVICE_MODEL = s140
+FW_VERSION = $(shell git describe --always --dirty --broken)
 
 # Allow to circumvent BLE interface
+CFLAGS += -DFW_VERSION="\"$(FW_VERSION)\""
 ifneq ($(BLE_CALIBRATION), )
 CFLAGS += -DBLE_CALIBRATION
 endif

@@ -154,7 +154,7 @@ void sd_card_create_log(uint32_t current_time)
       simple_logger_reinit(_sd_filename, _sd_permissions);
 
       // If no header, add it
-      uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s, Date: 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", _sd_filename, EUI_string, time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
+      uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s; Firmware: %s; Date: 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", _sd_filename, EUI_string, FIRMWARE_VERSION, time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
       if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
          ret_val = simple_logger_log("### Device booted at 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
    }
@@ -165,7 +165,7 @@ void sd_card_create_log(uint32_t current_time)
       simple_logger_reinit(_sd_filename, _sd_permissions);
 
       // If no header, add it
-      uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s\n", _sd_filename, EUI_string);
+      uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s; Firmware: %s\n", _sd_filename, EUI_string, FIRMWARE_VERSION);
       if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
          ret_val = simple_logger_log("### Device rebooted\n");
    }
@@ -177,7 +177,7 @@ void sd_card_create_log(uint32_t current_time)
    simple_logger_reinit(_sd_filename, _sd_permissions);
 
    // If no header, add it
-   uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s\n", _sd_filename, EUI_string);
+   uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s; Firmware: %s\n", _sd_filename, EUI_string, FIRMWARE_VERSION);
    if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
       ret_val = simple_logger_log("### Device rebooted\n");
 

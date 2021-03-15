@@ -115,6 +115,7 @@ $(info $(space) SDK         $(SDK_VERSION))
 $(info $(space) SoftDevice  $(SOFTDEVICE_MODEL) $(SOFTDEVICE_VERSION))
 $(info $(space) Board       $(BOARD))
 $(info $(space) Board Rev:  $(REVISION))
+$(info $(space) Firmware:   $(FW_VERSION))
 $(info $(space))
 
 # Dump configuration for verbose builds
