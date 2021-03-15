@@ -7,16 +7,6 @@
 #include "nrfx_atomic.h"
 #include "nrfx_spim.h"
 
-// TODO: DELETE THIS
-typedef nrfx_err_t (*stmdev_write_ptr)(void *, uint8_t, uint8_t *, uint16_t);
-typedef nrfx_err_t (*stmdev_read_ptr) (void *, uint8_t, uint8_t *, uint16_t);
-typedef struct
-{
-  stmdev_write_ptr  write_reg;
-  stmdev_read_ptr   read_reg;
-  void *handle;
-} stmdev_ctx_t;
-
 
 // LIS3MDL register definitions ----------------------------------------------------------------------------------------
 
@@ -64,6 +54,9 @@ typedef struct
 
 
 // LIS3MDL enums and structs -------------------------------------------------------------------------------------------
+
+typedef nrfx_err_t (*write_reg_ptr)(uint8_t, uint8_t *, uint16_t);
+typedef nrfx_err_t (*read_reg_ptr)(uint8_t, uint8_t *, uint16_t);
 
 typedef enum
 {
@@ -253,69 +246,69 @@ typedef union
 
 // LIS3MDL driver functions --------------------------------------------------------------------------------------------
 
-nrfx_err_t lis3mdl_read_reg(stmdev_ctx_t *ctx, uint8_t reg, uint8_t *data, uint16_t len);
-nrfx_err_t lis3mdl_write_reg(stmdev_ctx_t *ctx, uint8_t reg, uint8_t *data, uint16_t len);
-
 float lis3mdl_from_fs4_to_gauss(int16_t lsb);
 float lis3mdl_from_fs8_to_gauss(int16_t lsb);
 float lis3mdl_from_fs12_to_gauss(int16_t lsb);
 float lis3mdl_from_fs16_to_gauss(int16_t lsb);
 float lis3mdl_from_lsb_to_celsius(int16_t lsb);
 
-nrfx_err_t lis3mdl_data_rate_set(stmdev_ctx_t *ctx, lis3mdl_om_t val);
-nrfx_err_t lis3mdl_data_rate_get(stmdev_ctx_t *ctx, lis3mdl_om_t *val);
-nrfx_err_t lis3mdl_temperature_meas_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_temperature_meas_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_full_scale_set(stmdev_ctx_t *ctx, lis3mdl_fs_t val);
-nrfx_err_t lis3mdl_full_scale_get(stmdev_ctx_t *ctx, lis3mdl_fs_t *val);
-nrfx_err_t lis3mdl_operating_mode_set(stmdev_ctx_t *ctx, lis3mdl_md_t val);
-nrfx_err_t lis3mdl_operating_mode_get(stmdev_ctx_t *ctx, lis3mdl_md_t *val);
-nrfx_err_t lis3mdl_fast_low_power_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_fast_low_power_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_block_data_update_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_block_data_update_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_high_part_cycle_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_high_part_cycle_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_mag_data_ready_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_mag_data_ovr_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_magnetic_raw_get(stmdev_ctx_t *ctx, int16_t *val);
-nrfx_err_t lis3mdl_temperature_raw_get(stmdev_ctx_t *ctx, int16_t *val);
-nrfx_err_t lis3mdl_device_id_get(stmdev_ctx_t *ctx, uint8_t *buff);
-nrfx_err_t lis3mdl_self_test_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_self_test_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_reset_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_reset_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_boot_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_boot_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_data_format_set(stmdev_ctx_t *ctx, lis3mdl_ble_t val);
-nrfx_err_t lis3mdl_data_format_get(stmdev_ctx_t *ctx, lis3mdl_ble_t *val);
-nrfx_err_t lis3mdl_status_get(stmdev_ctx_t *ctx, lis3mdl_status_reg_t *val);
-nrfx_err_t lis3mdl_int_config_set(stmdev_ctx_t *ctx, lis3mdl_int_cfg_t *val);
-nrfx_err_t lis3mdl_int_config_get(stmdev_ctx_t *ctx, lis3mdl_int_cfg_t *val);
-nrfx_err_t lis3mdl_int_generation_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_int_generation_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_notification_mode_set(stmdev_ctx_t *ctx, lis3mdl_lir_t val);
-nrfx_err_t lis3mdl_int_notification_mode_get(stmdev_ctx_t *ctx, lis3mdl_lir_t *val);
-nrfx_err_t lis3mdl_int_polarity_set(stmdev_ctx_t *ctx, lis3mdl_iea_t val);
-nrfx_err_t lis3mdl_int_polarity_get(stmdev_ctx_t *ctx, lis3mdl_iea_t *val);
-nrfx_err_t lis3mdl_int_on_z_ax_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_int_on_z_ax_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_on_y_ax_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_int_on_y_ax_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_on_x_ax_set(stmdev_ctx_t *ctx, uint8_t val);
-nrfx_err_t lis3mdl_int_on_x_ax_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_source_get(stmdev_ctx_t *ctx, lis3mdl_int_src_t *val);
-nrfx_err_t lis3mdl_interrupt_event_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_mag_over_range_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_neg_z_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_neg_y_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_neg_x_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_pos_z_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_pos_y_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_pos_x_flag_get(stmdev_ctx_t *ctx, uint8_t *val);
-nrfx_err_t lis3mdl_int_threshold_set(stmdev_ctx_t *ctx, uint16_t val);
-nrfx_err_t lis3mdl_int_threshold_get(stmdev_ctx_t *ctx, uint16_t *val);
-nrfx_err_t lis3mdl_spi_mode_set(stmdev_ctx_t *ctx, lis3mdl_sim_t val);
-nrfx_err_t lis3mdl_spi_mode_get(stmdev_ctx_t *ctx, lis3mdl_sim_t *val);
+nrfx_err_t lis3mdl_data_rate_set(lis3mdl_om_t val);
+nrfx_err_t lis3mdl_data_rate_get(lis3mdl_om_t *val);
+nrfx_err_t lis3mdl_temperature_meas_set(uint8_t val);
+nrfx_err_t lis3mdl_temperature_meas_get(uint8_t *val);
+nrfx_err_t lis3mdl_full_scale_set(lis3mdl_fs_t val);
+nrfx_err_t lis3mdl_full_scale_get(lis3mdl_fs_t *val);
+nrfx_err_t lis3mdl_operating_mode_set(lis3mdl_md_t val);
+nrfx_err_t lis3mdl_operating_mode_get(lis3mdl_md_t *val);
+nrfx_err_t lis3mdl_fast_low_power_set(uint8_t val);
+nrfx_err_t lis3mdl_fast_low_power_get(uint8_t *val);
+nrfx_err_t lis3mdl_block_data_update_set(uint8_t val);
+nrfx_err_t lis3mdl_block_data_update_get(uint8_t *val);
+nrfx_err_t lis3mdl_high_part_cycle_set(uint8_t val);
+nrfx_err_t lis3mdl_high_part_cycle_get(uint8_t *val);
+nrfx_err_t lis3mdl_mag_data_ready_get(uint8_t *val);
+nrfx_err_t lis3mdl_mag_data_ovr_get(uint8_t *val);
+nrfx_err_t lis3mdl_magnetic_raw_get(int16_t *val);
+nrfx_err_t lis3mdl_temperature_raw_get(int16_t *val);
+nrfx_err_t lis3mdl_device_id_get(uint8_t *buff);
+nrfx_err_t lis3mdl_self_test_set(uint8_t val);
+nrfx_err_t lis3mdl_self_test_get(uint8_t *val);
+nrfx_err_t lis3mdl_reset_set(uint8_t val);
+nrfx_err_t lis3mdl_reset_get(uint8_t *val);
+nrfx_err_t lis3mdl_boot_set(uint8_t val);
+nrfx_err_t lis3mdl_boot_get(uint8_t *val);
+nrfx_err_t lis3mdl_data_format_set(lis3mdl_ble_t val);
+nrfx_err_t lis3mdl_data_format_get(lis3mdl_ble_t *val);
+nrfx_err_t lis3mdl_status_get(lis3mdl_status_reg_t *val);
+nrfx_err_t lis3mdl_int_config_set(lis3mdl_int_cfg_t *val);
+nrfx_err_t lis3mdl_int_config_get(lis3mdl_int_cfg_t *val);
+nrfx_err_t lis3mdl_int_generation_set(uint8_t val);
+nrfx_err_t lis3mdl_int_generation_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_notification_mode_set(lis3mdl_lir_t val);
+nrfx_err_t lis3mdl_int_notification_mode_get(lis3mdl_lir_t *val);
+nrfx_err_t lis3mdl_int_polarity_set(lis3mdl_iea_t val);
+nrfx_err_t lis3mdl_int_polarity_get(lis3mdl_iea_t *val);
+nrfx_err_t lis3mdl_int_on_z_ax_set(uint8_t val);
+nrfx_err_t lis3mdl_int_on_z_ax_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_on_y_ax_set(uint8_t val);
+nrfx_err_t lis3mdl_int_on_y_ax_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_on_x_ax_set(uint8_t val);
+nrfx_err_t lis3mdl_int_on_x_ax_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_source_get(lis3mdl_int_src_t *val);
+nrfx_err_t lis3mdl_interrupt_event_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_mag_over_range_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_neg_z_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_neg_y_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_neg_x_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_pos_z_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_pos_y_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_pos_x_flag_get(uint8_t *val);
+nrfx_err_t lis3mdl_int_threshold_set(uint16_t val);
+nrfx_err_t lis3mdl_int_threshold_get(uint16_t *val);
+nrfx_err_t lis3mdl_spi_mode_set(lis3mdl_sim_t val);
+nrfx_err_t lis3mdl_spi_mode_get(lis3mdl_sim_t *val);
+
+void lis3mdl_set_read_reg_function(read_reg_ptr read_reg_function);
+void lis3mdl_set_write_reg_function(write_reg_ptr write_reg_function);
 
 #endif // #ifndef __MAGNETOMETER_HEADER_H
