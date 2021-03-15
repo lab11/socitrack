@@ -1,0 +1,708 @@
+==================================================
+Training Data:	|	Start	 End	 Label
+==================================================
+Window 1:	|	2 	 6 	 Close-by
+Window 2:	|	3 	 7 	 Close-by
+Window 3:	|	4 	 8 	 Close-by
+Window 4:	|	5 	 9 	 Close-by
+Window 5:	|	6 	 10 	 Close-by
+Window 6:	|	7 	 11 	 Close-by
+Window 7:	|	8 	 12 	 Close-by
+Window 8:	|	9 	 13 	 Close-by
+Window 9:	|	10 	 14 	 Close-by
+Window 10:	|	11 	 15 	 Close-by
+Window 11:	|	12 	 16 	 Close-by
+Window 12:	|	13 	 17 	 Close-by
+Window 13:	|	14 	 18 	 Close-by
+Window 14:	|	15 	 19 	 Close-by
+Window 15:	|	16 	 20 	 Close-by
+Window 16:	|	17 	 21 	 Close-by
+Window 17:	|	18 	 22 	 Close-by
+Window 18:	|	19 	 23 	 Close-by
+Window 19:	|	20 	 24 	 Close-by
+Window 20:	|	21 	 25 	 Close-by
+Window 21:	|	22 	 26 	 Close-by
+Window 22:	|	23 	 27 	 Close-by
+Window 23:	|	24 	 28 	 Close-by
+Window 24:	|	25 	 29 	 Close-by
+Window 25:	|	26 	 30 	 Close-by
+Window 26:	|	27 	 31 	 Close-by
+Window 27:	|	28 	 32 	 Close-by
+Window 28:	|	29 	 33 	 Close-by
+Window 29:	|	30 	 34 	 Close-by
+Window 30:	|	31 	 35 	 Close-by
+Window 31:	|	32 	 36 	 Close-by
+Window 32:	|	33 	 37 	 Close-by
+Window 33:	|	34 	 38 	 Close-by
+Window 34:	|	35 	 39 	 Close-by
+Window 35:	|	36 	 40 	 Close-by
+Window 36:	|	37 	 41 	 Close-by
+Window 37:	|	38 	 42 	 Close-by
+Window 38:	|	39 	 43 	 Close-by
+Window 39:	|	40 	 44 	 Close-by
+Window 40:	|	41 	 45 	 Close-by
+Window 41:	|	42 	 46 	 Close-by
+Window 42:	|	43 	 47 	 Close-by
+Window 43:	|	44 	 48 	 Close-by
+Window 44:	|	45 	 49 	 Close-by
+Window 45:	|	46 	 50 	 Close-by
+Window 46:	|	47 	 51 	 Close-by
+Window 47:	|	48 	 52 	 Close-by
+Window 48:	|	49 	 53 	 Close-by
+Window 49:	|	50 	 54 	 Close-by
+Window 50:	|	51 	 55 	 Close-by
+Window 51:	|	52 	 56 	 Close-by
+Window 52:	|	53 	 57 	 Close-by
+Window 53:	|	54 	 58 	 Close-by
+Window 54:	|	55 	 59 	 Close-by
+Window 55:	|	56 	 60 	 Close-by
+Window 56:	|	57 	 61 	 Close-by
+Window 57:	|	58 	 62 	 Close-by
+Window 58:	|	59 	 63 	 Close-by
+Window 59:	|	60 	 64 	 Close-by
+Window 60:	|	61 	 65 	 Close-by
+Window 61:	|	62 	 66 	 Close-by
+Window 62:	|	63 	 67 	 Close-by
+Window 63:	|	64 	 68 	 Close-by
+Window 64:	|	65 	 69 	 Close-by
+Window 65:	|	66 	 70 	 Close-by
+Window 66:	|	67 	 71 	 Close-by
+Window 67:	|	68 	 72 	 Close-by
+Window 68:	|	69 	 73 	 Close-by
+Window 69:	|	70 	 74 	 Close-by
+Window 70:	|	71 	 75 	 Close-by
+Window 71:	|	72 	 76 	 Close-by
+Window 72:	|	73 	 77 	 Leaving room
+Window 73:	|	74 	 78 	 Leaving room
+Window 74:	|	75 	 79 	 Leaving room
+Window 75:	|	76 	 80 	 Leaving room
+Window 76:	|	77 	 81 	 Leaving room
+Window 77:	|	78 	 82 	 Leaving room
+Window 78:	|	79 	 83 	 Leaving room
+Window 79:	|	80 	 84 	 Leaving room
+Window 80:	|	81 	 85 	 Leaving room
+Window 81:	|	82 	 86 	 Passing by
+Window 82:	|	83 	 87 	 Passing by
+Window 83:	|	84 	 88 	 Passing by
+Window 84:	|	85 	 89 	 Passing by
+Window 85:	|	86 	 90 	 Passing by
+Window 86:	|	87 	 91 	 Passing by
+Window 87:	|	88 	 92 	 Passing by
+Window 88:	|	89 	 93 	 Passing by
+Window 89:	|	90 	 94 	 Passing by
+Window 90:	|	91 	 95 	 Passing by
+Window 91:	|	92 	 96 	 Passing by
+Window 92:	|	93 	 97 	 Passing by
+Window 93:	|	94 	 98 	 Passing by
+Window 94:	|	95 	 99 	 Passing by
+Window 95:	|	96 	 100 	 Passing by
+Window 96:	|	97 	 101 	 Passing by
+Window 97:	|	98 	 102 	 Passing by
+Window 98:	|	99 	 103 	 Passing by
+Window 99:	|	100 	 104 	 Passing by
+Window 100:	|	101 	 105 	 Passing by
+Window 101:	|	102 	 106 	 Passing by
+Window 102:	|	103 	 107 	 Passing by
+Window 103:	|	104 	 108 	 Passing by
+Window 104:	|	105 	 109 	 Passing by
+Window 105:	|	106 	 110 	 Passing by
+Window 106:	|	107 	 111 	 Passing by
+Window 107:	|	108 	 112 	 Passing by
+Window 108:	|	109 	 113 	 Passing by
+Window 109:	|	110 	 114 	 Passing by
+Window 110:	|	116 	 120 	 Passing by
+Window 111:	|	117 	 121 	 Passing by
+Window 112:	|	118 	 122 	 Passing by
+Window 113:	|	119 	 123 	 Passing by
+Window 114:	|	120 	 124 	 Passing by
+Window 115:	|	121 	 125 	 Passing by
+Window 116:	|	122 	 126 	 Passing by
+Window 117:	|	123 	 127 	 Passing by
+Window 118:	|	124 	 128 	 Passing by
+Window 119:	|	125 	 129 	 Passing by
+Window 120:	|	126 	 130 	 Passing by
+Window 121:	|	127 	 131 	 Passing by
+Window 122:	|	128 	 132 	 Passing by
+Window 123:	|	129 	 133 	 Entering room
+Window 124:	|	130 	 134 	 Entering room
+Window 125:	|	131 	 135 	 Entering room
+Window 126:	|	132 	 136 	 Entering room
+Window 127:	|	133 	 137 	 Entering room
+Window 128:	|	134 	 138 	 Entering room
+Window 129:	|	135 	 139 	 Entering room
+Window 130:	|	136 	 140 	 Entering room
+Window 131:	|	137 	 141 	 Entering room
+Window 132:	|	138 	 142 	 Leaving room
+Window 133:	|	139 	 143 	 Leaving room
+Window 134:	|	140 	 144 	 Leaving room
+Window 135:	|	141 	 145 	 Leaving room
+Window 136:	|	142 	 146 	 Leaving room
+==================================================
+Testing Data:	|	Start	 End	 Label
+==================================================
+Window 1:	|	10 	 14 	 Passing by
+Window 2:	|	11 	 15 	 Passing by
+Window 3:	|	12 	 16 	 Passing by
+Window 4:	|	13 	 17 	 Passing by
+Window 5:	|	14 	 18 	 Passing by
+Window 6:	|	15 	 19 	 Passing by
+Window 7:	|	16 	 20 	 Passing by
+Window 8:	|	17 	 21 	 Passing by
+Window 9:	|	18 	 22 	 Passing by
+Window 10:	|	19 	 23 	 Passing by
+Window 11:	|	20 	 24 	 Passing by
+Window 12:	|	21 	 25 	 Passing by
+Window 13:	|	22 	 26 	 Passing by
+Window 14:	|	23 	 27 	 Passing by
+Window 15:	|	24 	 28 	 Passing by
+Window 16:	|	25 	 29 	 Passing by
+Window 17:	|	26 	 30 	 Passing by
+Window 18:	|	27 	 31 	 Passing by
+Window 19:	|	28 	 32 	 Passing by
+Window 20:	|	29 	 33 	 Passing by
+Window 21:	|	30 	 34 	 Passing by
+Window 22:	|	31 	 35 	 Passing by
+Window 23:	|	32 	 36 	 Passing by
+Window 24:	|	33 	 37 	 Passing by
+Window 25:	|	34 	 38 	 Passing by
+Window 26:	|	35 	 39 	 Passing by
+Window 27:	|	36 	 40 	 Passing by
+Window 28:	|	37 	 41 	 Passing by
+Window 29:	|	38 	 42 	 Passing by
+Window 30:	|	39 	 43 	 Passing by
+Window 31:	|	40 	 44 	 Passing by
+Window 32:	|	41 	 45 	 Passing by
+Window 33:	|	42 	 46 	 Passing by
+Window 34:	|	43 	 47 	 Passing by
+Window 35:	|	44 	 48 	 Passing by
+Window 36:	|	45 	 49 	 Passing by
+Window 37:	|	46 	 50 	 Passing by
+Window 38:	|	47 	 51 	 Passing by
+Window 39:	|	48 	 52 	 Passing by
+Window 40:	|	49 	 53 	 Passing by
+Window 41:	|	50 	 54 	 Passing by
+Window 42:	|	51 	 55 	 Passing by
+Window 43:	|	52 	 56 	 Passing by
+Window 44:	|	53 	 57 	 Passing by
+Window 45:	|	54 	 58 	 Passing by
+Window 46:	|	55 	 59 	 Passing by
+Window 47:	|	56 	 60 	 Passing by
+Window 48:	|	57 	 61 	 Passing by
+Window 49:	|	58 	 62 	 Passing by
+Window 50:	|	59 	 63 	 Passing by
+Window 51:	|	60 	 64 	 Passing by
+Window 52:	|	61 	 65 	 Passing by
+Window 53:	|	62 	 66 	 Passing by
+Window 54:	|	63 	 67 	 Passing by
+Window 55:	|	64 	 68 	 Passing by
+Window 56:	|	65 	 69 	 Passing by
+Window 57:	|	66 	 70 	 Passing by
+Window 58:	|	67 	 71 	 Passing by
+Window 59:	|	68 	 72 	 Passing by
+Window 60:	|	69 	 73 	 Passing by
+Window 61:	|	70 	 74 	 Passing by
+Window 62:	|	71 	 75 	 Passing by
+Window 63:	|	72 	 76 	 Passing by
+Window 64:	|	73 	 77 	 Passing by
+Window 65:	|	74 	 78 	 Passing by
+Window 66:	|	75 	 79 	 Passing by
+Window 67:	|	76 	 80 	 Passing by
+Window 68:	|	77 	 81 	 Passing by
+Window 69:	|	78 	 82 	 Passing by
+Window 70:	|	79 	 83 	 Passing by
+Window 71:	|	80 	 84 	 Passing by
+Window 72:	|	81 	 85 	 Passing by
+Window 73:	|	82 	 86 	 Passing by
+Window 74:	|	83 	 87 	 Passing by
+Window 75:	|	84 	 88 	 Passing by
+Window 76:	|	85 	 89 	 Passing by
+Window 77:	|	86 	 90 	 Passing by
+Window 78:	|	87 	 91 	 Passing by
+Window 79:	|	88 	 92 	 Passing by
+Window 80:	|	89 	 93 	 Passing by
+Window 81:	|	90 	 94 	 Passing by
+Window 82:	|	91 	 95 	 Passing by
+Window 83:	|	92 	 96 	 Passing by
+Window 84:	|	93 	 97 	 Passing by
+Window 85:	|	94 	 98 	 Passing by
+Window 86:	|	95 	 99 	 Passing by
+Window 87:	|	96 	 100 	 Passing by
+Window 88:	|	97 	 101 	 Passing by
+Window 89:	|	98 	 102 	 Passing by
+Window 90:	|	99 	 103 	 Passing by
+Window 91:	|	100 	 104 	 Passing by
+Window 92:	|	101 	 105 	 Passing by
+Window 93:	|	102 	 106 	 Passing by
+Window 94:	|	103 	 107 	 Passing by
+Window 95:	|	104 	 108 	 Passing by
+Window 96:	|	105 	 109 	 Passing by
+Window 97:	|	106 	 110 	 Passing by
+Window 98:	|	107 	 111 	 Passing by
+Window 99:	|	108 	 112 	 Passing by
+Window 100:	|	109 	 113 	 Passing by
+Window 101:	|	110 	 114 	 Passing by
+Window 102:	|	111 	 115 	 Passing by
+Window 103:	|	112 	 116 	 Passing by
+Window 104:	|	113 	 117 	 Passing by
+Window 105:	|	114 	 118 	 Passing by
+Window 106:	|	115 	 119 	 Passing by
+Window 107:	|	116 	 120 	 Passing by
+Window 108:	|	117 	 121 	 Passing by
+Window 109:	|	118 	 122 	 Passing by
+Window 110:	|	119 	 123 	 Passing by
+Window 111:	|	120 	 124 	 Passing by
+Window 112:	|	121 	 125 	 Passing by
+Window 113:	|	122 	 126 	 Passing by
+Window 114:	|	123 	 127 	 Passing by
+Window 115:	|	124 	 128 	 Passing by
+Window 116:	|	125 	 129 	 Passing by
+Window 117:	|	126 	 130 	 Passing by
+Window 118:	|	127 	 131 	 Passing by
+Window 119:	|	128 	 132 	 Passing by
+Window 120:	|	129 	 133 	 Passing by
+Window 121:	|	130 	 134 	 Passing by
+Window 122:	|	131 	 135 	 Passing by
+Window 123:	|	132 	 136 	 Passing by
+Window 124:	|	133 	 137 	 Passing by
+Window 125:	|	134 	 138 	 Passing by
+Window 126:	|	135 	 139 	 Passing by
+Window 127:	|	136 	 140 	 Passing by
+Window 128:	|	137 	 141 	 Passing by
+Window 129:	|	138 	 142 	 Passing by
+Window 130:	|	139 	 143 	 Passing by
+Window 131:	|	140 	 144 	 Passing by
+Window 132:	|	141 	 145 	 Passing by
+Window 133:	|	142 	 146 	 Passing by
+Window 134:	|	143 	 147 	 Passing by
+Window 135:	|	144 	 148 	 Passing by
+Window 136:	|	145 	 149 	 Passing by
+Window 137:	|	146 	 150 	 Passing by
+Window 138:	|	147 	 151 	 Passing by
+Window 139:	|	148 	 152 	 Passing by
+Window 140:	|	149 	 153 	 Passing by
+Window 141:	|	150 	 154 	 Passing by
+Window 142:	|	151 	 155 	 Passing by
+Window 143:	|	152 	 156 	 Passing by
+Window 144:	|	153 	 157 	 Passing by
+Window 145:	|	154 	 158 	 Passing by
+Window 146:	|	155 	 159 	 Passing by
+Window 147:	|	156 	 160 	 Passing by
+Window 148:	|	157 	 161 	 Passing by
+Window 149:	|	158 	 162 	 Passing by
+Window 150:	|	159 	 163 	 Passing by
+Window 151:	|	160 	 164 	 Passing by
+Window 152:	|	161 	 165 	 Passing by
+Window 153:	|	162 	 166 	 Passing by
+Window 154:	|	163 	 167 	 Passing by
+Window 155:	|	164 	 168 	 Passing by
+Window 156:	|	165 	 169 	 Passing by
+Window 157:	|	166 	 170 	 Passing by
+Window 158:	|	167 	 171 	 Passing by
+Window 159:	|	168 	 172 	 Passing by
+Window 160:	|	169 	 173 	 Passing by
+Window 161:	|	170 	 174 	 Passing by
+Window 162:	|	171 	 175 	 Passing by
+Window 163:	|	172 	 176 	 Passing by
+Window 164:	|	173 	 177 	 Passing by
+Window 165:	|	174 	 178 	 Passing by
+Window 166:	|	175 	 179 	 Passing by
+Window 167:	|	176 	 180 	 Passing by
+Window 168:	|	177 	 181 	 Passing by
+Window 169:	|	178 	 182 	 Passing by
+Window 170:	|	179 	 183 	 Passing by
+Window 171:	|	180 	 184 	 Passing by
+Window 172:	|	181 	 185 	 Passing by
+Window 173:	|	182 	 186 	 Passing by
+Window 174:	|	183 	 187 	 Passing by
+Window 175:	|	184 	 188 	 Passing by
+Window 176:	|	185 	 189 	 Passing by
+Window 177:	|	186 	 190 	 Passing by
+Window 178:	|	187 	 191 	 Passing by
+Window 179:	|	188 	 192 	 Passing by
+Window 180:	|	189 	 193 	 Passing by
+Window 181:	|	190 	 194 	 Passing by
+Window 182:	|	191 	 195 	 Passing by
+Window 183:	|	192 	 196 	 Passing by
+Window 184:	|	193 	 197 	 Passing by
+Window 185:	|	194 	 198 	 Passing by
+Window 186:	|	195 	 199 	 Passing by
+Window 187:	|	196 	 200 	 Passing by
+Window 188:	|	197 	 201 	 Passing by
+Window 189:	|	198 	 202 	 Passing by
+Window 190:	|	199 	 203 	 Passing by
+Window 191:	|	200 	 204 	 Passing by
+Window 192:	|	201 	 205 	 Passing by
+Window 193:	|	202 	 206 	 Passing by
+Window 194:	|	203 	 207 	 Passing by
+Window 195:	|	204 	 208 	 Passing by
+Window 196:	|	205 	 209 	 Passing by
+Window 197:	|	206 	 210 	 Passing by
+Window 198:	|	207 	 211 	 Passing by
+Window 199:	|	208 	 212 	 Passing by
+Window 200:	|	209 	 213 	 Passing by
+Window 201:	|	210 	 214 	 Passing by
+Window 202:	|	211 	 215 	 Passing by
+Window 203:	|	212 	 216 	 Passing by
+Window 204:	|	213 	 217 	 Passing by
+Window 205:	|	214 	 218 	 Passing by
+Window 206:	|	215 	 219 	 Passing by
+Window 207:	|	216 	 220 	 Passing by
+Window 208:	|	217 	 221 	 Passing by
+Window 209:	|	218 	 222 	 Passing by
+Window 210:	|	219 	 223 	 Passing by
+Window 211:	|	220 	 224 	 Passing by
+Window 212:	|	221 	 225 	 Passing by
+Window 213:	|	222 	 226 	 Passing by
+Window 214:	|	223 	 227 	 Passing by
+Window 215:	|	224 	 228 	 Passing by
+Window 216:	|	225 	 229 	 Passing by
+Window 217:	|	226 	 230 	 Passing by
+Window 218:	|	227 	 231 	 Passing by
+Window 219:	|	228 	 232 	 Passing by
+Window 220:	|	229 	 233 	 Passing by
+Window 221:	|	230 	 234 	 Passing by
+Window 222:	|	231 	 235 	 Passing by
+Window 223:	|	232 	 236 	 Passing by
+Window 224:	|	233 	 237 	 Passing by
+Window 225:	|	234 	 238 	 Passing by
+Window 226:	|	235 	 239 	 Passing by
+Window 227:	|	236 	 240 	 Passing by
+Window 228:	|	237 	 241 	 Passing by
+Window 229:	|	238 	 242 	 Passing by
+Window 230:	|	239 	 243 	 Passing by
+Window 231:	|	240 	 244 	 Passing by
+Window 232:	|	241 	 245 	 Passing by
+Window 233:	|	242 	 246 	 Passing by
+Window 234:	|	243 	 247 	 Passing by
+Window 235:	|	244 	 248 	 Passing by
+Window 236:	|	245 	 249 	 Passing by
+Window 237:	|	246 	 250 	 Passing by
+Window 238:	|	247 	 251 	 Passing by
+Window 239:	|	248 	 252 	 Passing by
+Window 240:	|	249 	 253 	 Passing by
+Window 241:	|	250 	 254 	 Passing by
+Window 242:	|	251 	 255 	 Passing by
+Window 243:	|	252 	 256 	 Passing by
+Window 244:	|	253 	 257 	 Passing by
+Window 245:	|	254 	 258 	 Passing by
+Window 246:	|	255 	 259 	 Passing by
+Window 247:	|	256 	 260 	 Passing by
+Window 248:	|	257 	 261 	 Passing by
+Window 249:	|	258 	 262 	 Passing by
+Window 250:	|	259 	 263 	 Passing by
+Window 251:	|	260 	 264 	 Passing by
+Window 252:	|	261 	 265 	 Passing by
+Window 253:	|	262 	 266 	 Passing by
+Window 254:	|	263 	 267 	 Passing by
+Window 255:	|	264 	 268 	 Passing by
+Window 256:	|	265 	 269 	 Passing by
+Window 257:	|	266 	 270 	 Passing by
+Window 258:	|	267 	 271 	 Passing by
+Window 259:	|	268 	 272 	 Passing by
+Window 260:	|	269 	 273 	 Passing by
+Window 261:	|	270 	 274 	 Passing by
+Window 262:	|	271 	 275 	 Passing by
+Window 263:	|	272 	 276 	 Passing by
+Window 264:	|	273 	 277 	 Passing by
+Window 265:	|	274 	 278 	 Passing by
+Window 266:	|	275 	 279 	 Passing by
+Window 267:	|	276 	 280 	 Passing by
+Window 268:	|	277 	 281 	 Passing by
+Window 269:	|	278 	 282 	 Passing by
+Window 270:	|	279 	 283 	 Passing by
+Window 271:	|	280 	 284 	 Passing by
+Window 272:	|	281 	 285 	 Passing by
+Window 273:	|	282 	 286 	 Passing by
+Window 274:	|	283 	 287 	 Passing by
+Window 275:	|	284 	 288 	 Passing by
+Window 276:	|	285 	 289 	 Passing by
+Window 277:	|	286 	 290 	 Passing by
+Window 278:	|	287 	 291 	 Passing by
+Window 279:	|	288 	 292 	 Passing by
+Window 280:	|	289 	 293 	 Passing by
+Window 281:	|	290 	 294 	 Passing by
+Window 282:	|	291 	 295 	 Passing by
+Window 283:	|	292 	 296 	 Passing by
+Window 284:	|	293 	 297 	 Passing by
+Window 285:	|	294 	 298 	 Passing by
+Window 286:	|	295 	 299 	 Passing by
+Window 287:	|	296 	 300 	 Passing by
+Window 288:	|	297 	 301 	 Passing by
+Window 289:	|	298 	 302 	 Passing by
+Window 290:	|	299 	 303 	 Passing by
+Window 291:	|	300 	 304 	 Passing by
+Window 292:	|	301 	 305 	 Passing by
+Window 293:	|	302 	 306 	 Passing by
+Window 294:	|	303 	 307 	 Passing by
+Window 295:	|	304 	 308 	 Passing by
+Window 296:	|	305 	 309 	 Passing by
+Window 297:	|	306 	 310 	 Passing by
+Window 298:	|	307 	 311 	 Passing by
+Window 299:	|	308 	 312 	 Passing by
+Window 300:	|	309 	 313 	 Passing by
+Window 301:	|	310 	 314 	 Passing by
+Window 302:	|	311 	 315 	 Passing by
+Window 303:	|	312 	 316 	 Passing by
+Window 304:	|	313 	 317 	 Passing by
+Window 305:	|	314 	 318 	 Passing by
+Window 306:	|	315 	 319 	 Passing by
+Window 307:	|	316 	 320 	 Passing by
+Window 308:	|	317 	 321 	 Passing by
+Window 309:	|	318 	 322 	 Passing by
+Window 310:	|	319 	 323 	 Passing by
+Window 311:	|	320 	 324 	 Passing by
+Window 312:	|	321 	 325 	 Passing by
+Window 313:	|	322 	 326 	 Passing by
+Window 314:	|	323 	 327 	 Passing by
+Window 315:	|	324 	 328 	 Passing by
+Window 316:	|	325 	 329 	 Passing by
+Window 317:	|	326 	 330 	 Passing by
+Window 318:	|	327 	 331 	 Passing by
+Window 319:	|	328 	 332 	 Passing by
+Window 320:	|	329 	 333 	 Passing by
+Window 321:	|	330 	 334 	 Passing by
+Window 322:	|	331 	 335 	 Passing by
+Window 323:	|	332 	 336 	 Passing by
+Window 324:	|	333 	 337 	 Passing by
+Window 325:	|	334 	 338 	 Passing by
+Window 326:	|	335 	 339 	 Passing by
+Window 327:	|	336 	 340 	 Passing by
+Window 328:	|	337 	 341 	 Passing by
+Window 329:	|	338 	 342 	 Passing by
+Window 330:	|	339 	 343 	 Passing by
+Window 331:	|	340 	 344 	 Passing by
+Window 332:	|	341 	 345 	 Passing by
+Window 333:	|	342 	 346 	 Passing by
+Window 334:	|	343 	 347 	 Passing by
+Window 335:	|	344 	 348 	 Passing by
+Window 336:	|	345 	 349 	 Passing by
+Window 337:	|	346 	 350 	 Passing by
+Window 338:	|	347 	 351 	 Passing by
+Window 339:	|	348 	 352 	 Passing by
+Window 340:	|	349 	 353 	 Passing by
+Window 341:	|	350 	 354 	 Passing by
+Window 342:	|	351 	 355 	 Passing by
+Window 343:	|	352 	 356 	 Passing by
+Window 344:	|	353 	 357 	 Passing by
+Window 345:	|	354 	 358 	 Passing by
+Window 346:	|	355 	 359 	 Passing by
+Window 347:	|	356 	 360 	 Passing by
+Window 348:	|	357 	 361 	 Passing by
+Window 349:	|	358 	 362 	 Passing by
+Window 350:	|	359 	 363 	 Passing by
+Window 351:	|	360 	 364 	 Passing by
+Window 352:	|	361 	 365 	 Passing by
+Window 353:	|	362 	 366 	 Passing by
+Window 354:	|	363 	 367 	 Passing by
+Window 355:	|	364 	 368 	 Passing by
+Window 356:	|	365 	 369 	 Passing by
+Window 357:	|	366 	 370 	 Passing by
+Window 358:	|	367 	 371 	 Passing by
+Window 359:	|	368 	 372 	 Passing by
+Window 360:	|	369 	 373 	 Passing by
+Window 361:	|	370 	 374 	 Passing by
+Window 362:	|	371 	 375 	 Passing by
+Window 363:	|	372 	 376 	 Passing by
+Window 364:	|	373 	 377 	 Passing by
+Window 365:	|	374 	 378 	 Passing by
+Window 366:	|	375 	 379 	 Passing by
+Window 367:	|	376 	 380 	 Passing by
+Window 368:	|	377 	 381 	 Passing by
+Window 369:	|	378 	 382 	 Passing by
+Window 370:	|	379 	 383 	 Passing by
+Window 371:	|	380 	 384 	 Passing by
+Window 372:	|	381 	 385 	 Passing by
+Window 373:	|	382 	 386 	 Passing by
+Window 374:	|	383 	 387 	 Passing by
+Window 375:	|	384 	 388 	 Passing by
+Window 376:	|	385 	 389 	 Passing by
+Window 377:	|	386 	 390 	 Passing by
+Window 378:	|	387 	 391 	 Passing by
+Window 379:	|	388 	 392 	 Passing by
+Window 380:	|	389 	 393 	 Passing by
+Window 381:	|	390 	 394 	 Passing by
+Window 382:	|	391 	 395 	 Passing by
+Window 383:	|	392 	 396 	 Passing by
+Window 384:	|	393 	 397 	 Passing by
+Window 385:	|	394 	 398 	 Passing by
+Window 386:	|	395 	 399 	 Passing by
+Window 387:	|	396 	 400 	 Passing by
+Window 388:	|	397 	 401 	 Passing by
+Window 389:	|	398 	 402 	 Passing by
+Window 390:	|	399 	 403 	 Passing by
+Window 391:	|	400 	 404 	 Passing by
+Window 392:	|	401 	 405 	 Passing by
+Window 393:	|	402 	 406 	 Passing by
+Window 394:	|	403 	 407 	 Passing by
+Window 395:	|	404 	 408 	 Passing by
+Window 396:	|	405 	 409 	 Passing by
+Window 397:	|	406 	 410 	 Passing by
+Window 398:	|	407 	 411 	 Passing by
+Window 399:	|	408 	 412 	 Passing by
+Window 400:	|	409 	 413 	 Passing by
+Window 401:	|	410 	 414 	 Passing by
+Window 402:	|	411 	 415 	 Passing by
+Window 403:	|	412 	 416 	 Passing by
+Window 404:	|	413 	 417 	 Passing by
+Window 405:	|	414 	 418 	 Passing by
+Window 406:	|	415 	 419 	 Passing by
+Window 407:	|	416 	 420 	 Passing by
+Window 408:	|	417 	 421 	 Passing by
+Window 409:	|	418 	 422 	 Passing by
+Window 410:	|	419 	 423 	 Passing by
+Window 411:	|	420 	 424 	 Passing by
+Window 412:	|	421 	 425 	 Passing by
+Window 413:	|	422 	 426 	 Passing by
+Window 414:	|	423 	 427 	 Passing by
+Window 415:	|	424 	 428 	 Passing by
+Window 416:	|	425 	 429 	 Passing by
+Window 417:	|	426 	 430 	 Passing by
+Window 418:	|	427 	 431 	 Passing by
+Window 419:	|	428 	 432 	 Passing by
+Window 420:	|	429 	 433 	 Passing by
+Window 421:	|	430 	 434 	 Passing by
+Window 422:	|	431 	 435 	 Passing by
+Window 423:	|	432 	 436 	 Passing by
+Window 424:	|	433 	 437 	 Passing by
+Window 425:	|	434 	 438 	 Passing by
+Window 426:	|	435 	 439 	 Passing by
+Window 427:	|	436 	 440 	 Passing by
+Window 428:	|	437 	 441 	 Passing by
+Window 429:	|	438 	 442 	 Passing by
+Window 430:	|	439 	 443 	 Passing by
+Window 431:	|	440 	 444 	 Passing by
+Window 432:	|	441 	 445 	 Passing by
+Window 433:	|	442 	 446 	 Passing by
+Window 434:	|	443 	 447 	 Passing by
+Window 435:	|	444 	 448 	 Passing by
+Window 436:	|	445 	 449 	 Passing by
+Window 437:	|	446 	 450 	 Passing by
+Window 438:	|	447 	 451 	 Passing by
+Window 439:	|	448 	 452 	 Passing by
+Window 440:	|	449 	 453 	 Passing by
+Window 441:	|	450 	 454 	 Passing by
+Window 442:	|	451 	 455 	 Passing by
+Window 443:	|	452 	 456 	 Passing by
+Window 444:	|	453 	 457 	 Passing by
+Window 445:	|	454 	 458 	 Passing by
+Window 446:	|	455 	 459 	 Passing by
+Window 447:	|	456 	 460 	 Passing by
+Window 448:	|	457 	 461 	 Passing by
+Window 449:	|	458 	 462 	 Passing by
+Window 450:	|	459 	 463 	 Passing by
+Window 451:	|	460 	 464 	 Passing by
+Window 452:	|	461 	 465 	 Passing by
+Window 453:	|	462 	 466 	 Passing by
+Window 454:	|	463 	 467 	 Passing by
+Window 455:	|	464 	 468 	 Passing by
+Window 456:	|	465 	 469 	 Passing by
+Window 457:	|	466 	 470 	 Passing by
+Window 458:	|	467 	 471 	 Passing by
+Window 459:	|	468 	 472 	 Passing by
+Window 460:	|	469 	 473 	 Passing by
+Window 461:	|	470 	 474 	 Passing by
+Window 462:	|	471 	 475 	 Passing by
+Window 463:	|	472 	 476 	 Passing by
+Window 464:	|	473 	 477 	 Passing by
+Window 465:	|	474 	 478 	 Passing by
+Window 466:	|	475 	 479 	 Passing by
+Window 467:	|	476 	 480 	 Passing by
+Window 468:	|	477 	 481 	 Passing by
+Window 469:	|	478 	 482 	 Passing by
+Window 470:	|	479 	 483 	 Passing by
+Window 471:	|	480 	 484 	 Passing by
+Window 472:	|	481 	 485 	 Passing by
+Window 473:	|	482 	 486 	 Passing by
+Window 474:	|	483 	 487 	 Passing by
+Window 475:	|	484 	 488 	 Passing by
+Window 476:	|	485 	 489 	 Passing by
+Window 477:	|	486 	 490 	 Passing by
+Window 478:	|	487 	 491 	 Passing by
+Window 479:	|	488 	 492 	 Passing by
+Window 480:	|	489 	 493 	 Passing by
+Window 481:	|	490 	 494 	 Passing by
+Window 482:	|	491 	 495 	 Passing by
+Window 483:	|	492 	 496 	 Passing by
+Window 484:	|	493 	 497 	 Passing by
+Window 485:	|	494 	 498 	 Passing by
+Window 486:	|	495 	 499 	 Passing by
+Window 487:	|	496 	 500 	 Passing by
+Window 488:	|	497 	 501 	 Passing by
+Window 489:	|	498 	 502 	 Passing by
+Window 490:	|	499 	 503 	 Passing by
+Window 491:	|	500 	 504 	 Passing by
+Window 492:	|	501 	 505 	 Passing by
+Window 493:	|	502 	 506 	 Passing by
+Window 494:	|	503 	 507 	 Passing by
+Window 495:	|	504 	 508 	 Passing by
+Window 496:	|	505 	 509 	 Passing by
+Window 497:	|	506 	 510 	 Passing by
+Window 498:	|	507 	 511 	 Passing by
+Window 499:	|	508 	 512 	 Passing by
+Window 500:	|	509 	 513 	 Passing by
+Window 501:	|	510 	 514 	 Passing by
+Window 502:	|	511 	 515 	 Passing by
+Window 503:	|	512 	 516 	 Passing by
+Window 504:	|	513 	 517 	 Passing by
+Window 505:	|	514 	 518 	 Passing by
+Window 506:	|	515 	 519 	 Passing by
+Window 507:	|	516 	 520 	 Passing by
+Window 508:	|	517 	 521 	 Passing by
+Window 509:	|	518 	 522 	 Passing by
+Window 510:	|	519 	 523 	 Passing by
+Window 511:	|	520 	 524 	 Passing by
+Window 512:	|	521 	 525 	 Passing by
+Window 513:	|	522 	 526 	 Passing by
+Window 514:	|	523 	 527 	 Passing by
+Window 515:	|	524 	 528 	 Passing by
+Window 516:	|	525 	 529 	 Passing by
+Window 517:	|	526 	 530 	 Passing by
+Window 518:	|	527 	 531 	 Passing by
+Window 519:	|	528 	 532 	 Passing by
+Window 520:	|	529 	 533 	 Passing by
+Window 521:	|	530 	 534 	 Passing by
+Window 522:	|	531 	 535 	 Passing by
+Window 523:	|	532 	 536 	 Passing by
+Window 524:	|	533 	 537 	 Passing by
+Window 525:	|	534 	 538 	 Passing by
+Window 526:	|	535 	 539 	 Passing by
+Window 527:	|	536 	 540 	 Passing by
+Window 528:	|	537 	 541 	 Passing by
+Window 529:	|	538 	 542 	 Passing by
+Window 530:	|	539 	 543 	 Passing by
+Window 531:	|	540 	 544 	 Passing by
+Window 532:	|	541 	 545 	 Passing by
+Window 533:	|	542 	 546 	 Passing by
+Window 534:	|	543 	 547 	 Passing by
+Window 535:	|	544 	 548 	 Passing by
+Window 536:	|	545 	 549 	 Passing by
+Window 537:	|	546 	 550 	 Passing by
+Window 538:	|	547 	 551 	 Passing by
+Window 539:	|	548 	 552 	 Passing by
+Window 540:	|	549 	 553 	 Passing by
+Window 541:	|	550 	 554 	 Passing by
+Window 542:	|	551 	 555 	 Passing by
+Window 543:	|	552 	 556 	 Passing by
+Window 544:	|	553 	 557 	 Passing by
+Window 545:	|	554 	 558 	 Passing by
+Window 546:	|	555 	 559 	 Passing by
+Window 547:	|	556 	 560 	 Passing by
+Window 548:	|	557 	 561 	 Passing by
+Window 549:	|	558 	 562 	 Passing by
+Window 550:	|	559 	 563 	 Passing by
+Window 551:	|	560 	 564 	 Passing by
+Window 552:	|	561 	 565 	 Passing by
+Window 553:	|	562 	 566 	 Passing by
+Window 554:	|	563 	 567 	 Passing by
+Window 555:	|	564 	 568 	 Passing by
+Window 556:	|	565 	 569 	 Passing by
+Window 557:	|	566 	 570 	 Passing by
+Window 558:	|	567 	 571 	 Passing by
+Window 559:	|	568 	 572 	 Passing by
+Window 560:	|	569 	 573 	 Passing by
+Window 561:	|	570 	 574 	 Passing by
+Window 562:	|	571 	 575 	 Passing by
+Window 563:	|	572 	 576 	 Passing by
+==================================================
+Model Accuracy: 100.0%
+==================================================
