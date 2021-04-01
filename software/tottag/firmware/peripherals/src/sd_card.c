@@ -1,9 +1,9 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#include <stdarg.h>
 #include <string.h>
 #include "ble_config.h"
 #include "ble_gap.h"
-#include "boards.h"
 #include "nrf_delay.h"
 #include "rtc_external.h"
 #include "sd_card.h"
@@ -36,11 +36,13 @@ static void flush_sd_buffer(void)
       return;
 
    // Power ON the SD card
+#ifndef PRINTF_TO_SD_CARD
    if (simple_logger_power_on())
    {
       simple_logger_power_off();
       return;
    }
+#endif
 
    // Ensure that the SD card is present
    if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
@@ -50,7 +52,9 @@ static void flush_sd_buffer(void)
       nrfx_atomic_flag_clear(_sd_card_inserted);
       _sd_card_buffer_length = 0;
       memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
+#ifndef PRINTF_TO_SD_CARD
       simple_logger_power_off();
+#endif
       return;
    }
    else
@@ -78,7 +82,9 @@ static void flush_sd_buffer(void)
    // Reset the buffer and turn off power to the SD card
    _sd_card_buffer_length = 0;
    memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
+#ifndef PRINTF_TO_SD_CARD
    simple_logger_power_off();
+#endif
 }
 
 
@@ -109,15 +115,25 @@ bool sd_card_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* sd_card_i
          simple_logger_delete_file(file_name);
 
    // Ensure SD card is physically present
-   if (!nrf_gpio_pin_read(CARRIER_SD_DETECT))
+   if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
    {
-      nrfx_atomic_flag_set(_sd_card_inserted);
-      return true;
+      nrfx_atomic_flag_clear(_sd_card_inserted);
+      return false;
    }
 
+   // Create an SD card debug log file
+#ifdef PRINTF_TO_SD_CARD
+
+   // Create a debugging log file
+   simple_logger_power_on();
+   snprintf(_sd_filename, sizeof(_sd_filename), "%02X@debug.log", _full_eui[0]);
+   simple_logger_init_debug(_sd_filename);
+
+#endif
+
    // Clear SD card presence flag
-   nrfx_atomic_flag_clear(_sd_card_inserted);
-   return false;
+   nrfx_atomic_flag_set(_sd_card_inserted);
+   return true;
 }
 
 void sd_card_create_log(uint32_t current_time)
@@ -127,7 +143,9 @@ void sd_card_create_log(uint32_t current_time)
    nrf_delay_ms(250);
 
    // Power ON the SD card
+#ifndef PRINTF_TO_SD_CARD
    simple_logger_power_on();
+#endif
 
    // Create a string containing the current device's EUI
    char EUI_string[(3 * EUI_LEN) + 1] = { 0 };
@@ -184,7 +202,9 @@ void sd_card_create_log(uint32_t current_time)
 #endif
 
    // Power OFF the SD card
+#ifndef PRINTF_TO_SD_CARD
    simple_logger_power_off();
+#endif
 }
 
 void sd_card_write(const char *data, uint16_t length, bool flush)
@@ -200,37 +220,65 @@ void sd_card_write(const char *data, uint16_t length, bool flush)
 
 bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuation)
 {
+#ifndef PRINTF_TO_SD_CARD
    if (!continuation)
       simple_logger_power_on();
    uint8_t ret_val = simple_logger_list_files(file_name, file_size, continuation);
    if (!ret_val)
       simple_logger_power_off();
    return ret_val;
+#else
+   return simple_logger_list_files(file_name, file_size, continuation);
+#endif
 }
 
 bool sd_card_erase_file(const char *file_name)
 {
+#ifndef PRINTF_TO_SD_CARD
    simple_logger_power_on();
    uint8_t ret_val = simple_logger_delete_file(file_name);
    simple_logger_power_off();
    return ret_val;
+#else
+   return simple_logger_delete_file(file_name);
+#endif
 }
 
 bool sd_card_open_file_for_reading(const char *file_name)
 {
+#ifndef PRINTF_TO_SD_CARD
    simple_logger_power_on();
+#endif
    return simple_logger_open_file_for_reading(file_name);
 }
 
 void sd_card_close_reading_file(void)
 {
    simple_logger_close_reading_file();
+#ifndef PRINTF_TO_SD_CARD
    simple_logger_power_off();
+#endif
 }
 
 uint32_t sd_card_read_reading_file(uint8_t *data_buffer, uint32_t buffer_length)
 {
    return simple_logger_read_reading_file(data_buffer, buffer_length);
+}
+
+int sd_card_printf(const char *__restrict format, ...)
+{
+   // Print log messages to the console
+   va_list argptr1;
+   va_start(argptr1, format);
+   int res = vprintf(format, argptr1);
+   va_end(argptr1);
+
+   // Print log messages to the SD card
+   va_list argptr2;
+   va_start(argptr2, format);
+   res |= simple_logger_printf(format, argptr2);
+   va_end(argptr2);
+   return res;
 }
 
 void log_ranges(const uint8_t *data, uint16_t length)
