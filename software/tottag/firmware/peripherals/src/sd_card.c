@@ -23,8 +23,9 @@ static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
 static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH] = { 0 };
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _log_info_buf[128] = { 0 };
 static char _sd_write_buf[APP_LOG_CHUNK_SIZE + 1] = { 0 };
-static char _sd_filename[16] = { 0 };
+static char _sd_filename[16] = { 0 }, _sd_debug_filename[16] = { 0 };
 static const char _sd_permissions[] = "a,r";
+static bool _sd_debug_file_inited = false;
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
 
 
@@ -49,7 +50,7 @@ static void flush_sd_buffer(void)
    if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
    {
       // No SD card detected
-      log_printf("ERROR: SD card not detected!\n");
+      printf("ERROR: SD card not detected!\n");
       nrfx_atomic_flag_clear(_sd_card_inserted);
       _sd_card_buffer_length = 0;
       memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
@@ -112,7 +113,7 @@ bool sd_card_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* sd_card_i
    uint8_t continuation = 0;
    char file_name[16] = { 0 };
    while (simple_logger_list_files(file_name, &file_size, continuation++))
-      if ((strcasecmp(file_name, "DATA.LOG") != 0) && (file_name[2] != '@'))
+      if (file_name[2] != '@')
          simple_logger_delete_file(file_name);
 
    // Ensure SD card is physically present
@@ -121,16 +122,6 @@ bool sd_card_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* sd_card_i
       nrfx_atomic_flag_clear(_sd_card_inserted);
       return false;
    }
-
-   // Create an SD card debug log file
-#ifdef PRINTF_TO_SD_CARD
-
-   // Create a debugging log file
-   simple_logger_power_on();
-   snprintf(_sd_filename, sizeof(_sd_filename), "%02X@debug.log", _full_eui[0]);
-   simple_logger_init_debug(_sd_filename);
-
-#endif
 
    // Clear SD card presence flag
    nrfx_atomic_flag_set(_sd_card_inserted);
@@ -268,16 +259,23 @@ uint32_t sd_card_read_reading_file(uint8_t *data_buffer, uint32_t buffer_length)
 
 int sd_card_printf(const char *__restrict format, ...)
 {
+   // Create an SD card debug log file
+   if (!_sd_debug_file_inited)
+   {
+      snprintf(_sd_debug_filename, sizeof(_sd_filename), "%02X@dbg.log", _full_eui[0]);
+      _sd_debug_file_inited = (simple_logger_init_debug(_sd_debug_filename) == 0);
+   }
+
    // Print log messages to the console
    va_list argptr1;
    va_start(argptr1, format);
-   int res = vprintf(format, argptr1);
+   vprintf(format, argptr1);
    va_end(argptr1);
 
    // Print log messages to the SD card
    va_list argptr2;
    va_start(argptr2, format);
-   res |= simple_logger_printf(format, argptr2);
+   int res = simple_logger_printf(format, argptr2);
    va_end(argptr2);
    return res;
 }
