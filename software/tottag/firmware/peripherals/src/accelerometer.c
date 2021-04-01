@@ -2,7 +2,7 @@
 
 #include <string.h>
 #include "accelerometer.h"
-#include "boards.h"
+#include "ble_config.h"
 #include "nrf_delay.h"
 
 

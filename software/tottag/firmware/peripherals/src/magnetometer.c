@@ -1,7 +1,7 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include <string.h>
-#include "boards.h"
+#include "ble_config.h"
 #include "magnetometer.h"
 #include "nrf_delay.h"
 

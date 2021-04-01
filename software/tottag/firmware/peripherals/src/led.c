@@ -1,7 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include "ble_config.h"
-#include "boards.h"
 #include "led.h"
 
 #ifndef LEDS_ACTIVE_LOW

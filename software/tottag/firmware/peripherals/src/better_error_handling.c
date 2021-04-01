@@ -16,6 +16,7 @@
 #include "nrf_log.h"
 #include "nrf_log_ctrl.h"
 #include "nrfx_gpiote.h"
+#include "sd_card.h"
 
 // include softdevice faults if applicable
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT
@@ -23,7 +24,6 @@
 #endif
 
 // ***** Board Specific Configuration *****
-#include "boards.h"
 #define LED_COUNT 3
 static const uint8_t LEDS[LED_COUNT] = {CARRIER_LED_RED, CARRIER_LED_BLUE, CARRIER_LED_GREEN};
 // ****************************************

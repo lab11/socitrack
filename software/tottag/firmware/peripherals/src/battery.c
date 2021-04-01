@@ -2,6 +2,7 @@
 
 #include "battery.h"
 #include "ble_config.h"
+#include "sd_card.h"
 
 
 // Battery monitoring state variables ----------------------------------------------------------------------------------

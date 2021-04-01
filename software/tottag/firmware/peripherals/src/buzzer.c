@@ -1,6 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "boards.h"
+#include "ble_config.h"
 #include "buzzer.h"
 #include "nrf_delay.h"
 #include "nrfx_pwm.h"

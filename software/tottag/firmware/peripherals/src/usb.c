@@ -1,6 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "boards.h"
+#include "ble_config.h"
 #include "sd_card.h"
 #include "usb.h"
 

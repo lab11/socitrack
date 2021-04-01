@@ -12,6 +12,7 @@
 #include "nrf_sdh_ble.h"
 #include "nrf_sdh_soc.h"
 #include "rtc.h"
+#include "sd_card.h"
 
 
 // Bluetooth state definitions -----------------------------------------------------------------------------------------

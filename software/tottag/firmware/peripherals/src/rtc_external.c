@@ -2,7 +2,6 @@
 
 #include <string.h>
 #include "ble_config.h"
-#include "boards.h"
 #include "nrf_delay.h"
 #include "rtc.h"
 #include "rtc_external.h"

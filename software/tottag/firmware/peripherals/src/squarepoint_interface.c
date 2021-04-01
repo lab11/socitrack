@@ -2,9 +2,9 @@
 
 #include <string.h>
 #include "ble_config.h"
-#include "boards.h"
 #include "nrf_delay.h"
 #include "nrfx_twi.h"
+#include "sd_card.h"
 #include "squarepoint_interface.h"
 
 
