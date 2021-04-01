@@ -57,6 +57,6 @@ uint8_t simple_logger_delete_file(const char *file_name);
 uint8_t simple_logger_open_file_for_reading(const char *file_name);
 void simple_logger_close_reading_file(void);
 uint32_t simple_logger_read_reading_file(uint8_t *data_buffer, uint32_t buffer_length);
-uint8_t simple_logger_printf(const char *format, va_list ap) __attribute__ ((format (printf, 1, 0)));
+uint8_t simple_logger_printf(uint32_t timestamp, const char *format, va_list ap) __attribute__ ((format (printf, 2, 0)));
 
 #endif

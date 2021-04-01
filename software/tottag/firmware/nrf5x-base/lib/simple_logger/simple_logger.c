@@ -342,8 +342,10 @@ uint32_t simple_logger_read_reading_file(uint8_t *data_buffer, uint32_t buffer_l
    return (f_read(&file_for_reading, data_buffer, buffer_length, &bytes_read) == FR_OK) ? (uint32_t)bytes_read : 0;
 }
 
-uint8_t simple_logger_printf(const char *format, va_list ap)
+uint8_t simple_logger_printf(uint32_t timestamp, const char *format, va_list ap)
 {
+   snprintf(buffer, buffer_size, "%lu: ", timestamp);
+   f_puts(buffer, &debug_file);
    vsnprintf(buffer, buffer_size, format, ap);
    f_puts(buffer, &debug_file);
    return f_sync(&debug_file);

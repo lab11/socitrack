@@ -6,6 +6,7 @@
 #include "ble_gap.h"
 #include "nrf_delay.h"
 #include "nrfx_gpiote.h"
+#include "rtc.h"
 #include "rtc_external.h"
 #include "sd_card.h"
 #include "simple_logger.h"
@@ -275,7 +276,7 @@ int sd_card_printf(const char *__restrict format, ...)
    // Print log messages to the SD card
    va_list argptr2;
    va_start(argptr2, format);
-   int res = simple_logger_printf(format, argptr2);
+   int res = simple_logger_printf(rtc_get_current_time(), format, argptr2);
    va_end(argptr2);
    return res;
 }
