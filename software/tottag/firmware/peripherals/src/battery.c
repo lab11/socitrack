@@ -1,6 +1,7 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include "battery.h"
+#include "ble_config.h"
 
 
 // Battery monitoring state variables ----------------------------------------------------------------------------------
@@ -90,7 +91,7 @@ uint16_t battery_monitor_get_level_mV(void)
    nrfx_err_t err_code = nrfx_saadc_sample_convert(BATTERY_MONITOR_CHANNEL, &adc_sample);
    if (err_code != NRFX_SUCCESS)
    {
-      printf("WARNING: ADC is busy and cannot sample the battery voltage\n");
+      log_printf("WARNING: ADC is busy and cannot sample the battery voltage\n");
       return 0;
    }
 

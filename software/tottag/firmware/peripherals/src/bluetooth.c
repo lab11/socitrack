@@ -63,7 +63,7 @@ static uint8_t ascii_to_i(uint8_t number)
    else if ((number >= 'a') && (number <= 'f'))
       return (number - (uint8_t)'a' + (uint8_t)10);
    else
-      printf("ERROR: Tried converting non-hex ASCII: %i\n", number);
+      log_printf("ERROR: Tried converting non-hex ASCII: %i\n", number);
    return 0;
 }
 
@@ -131,7 +131,7 @@ static uint8_t gap_params_init(void)
    memcpy(_carrier_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
    if ((_carrier_ble_address[5] != 0xc0) || (_carrier_ble_address[4] != 0x98))
       return 0;
-   printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
+   log_printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
    memcpy(gap_addr.addr, _carrier_ble_address, BLE_GAP_ADDR_LEN);
    memcpy(_scratch_eui, _carrier_ble_address, sizeof(_scratch_eui));
    APP_ERROR_CHECK(sd_ble_gap_addr_set(&gap_addr));
@@ -293,7 +293,7 @@ static void on_scheduler_eui(const uint8_t* scheduler_eui, bool force_update)
    // Only reconfigure if scheduler is non-zero and has changed
    if ((memcmp(scheduler_eui, _scheduler_eui, sizeof(_scheduler_eui)) == 0) || (!force_update && (memcmp(scheduler_eui, _empty_eui, sizeof(_empty_eui)) == 0)))
       return;
-   printf("INFO: Switched Scheduler EUI from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n",
+   log_printf("INFO: Switched Scheduler EUI from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n",
          _scheduler_eui[5], _scheduler_eui[4], _scheduler_eui[3], _scheduler_eui[2], _scheduler_eui[1], _scheduler_eui[0],
          scheduler_eui[5], scheduler_eui[4], scheduler_eui[3], scheduler_eui[2], scheduler_eui[1], scheduler_eui[0]);
    memcpy(_scheduler_eui, scheduler_eui, sizeof(_scheduler_eui));
@@ -338,7 +338,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const *p_adv_report)
       if (memcmp(p_adv_report->peer_addr.addr, _highest_discovered_eui, sizeof(_highest_discovered_eui)) > 0)
       {
          memcpy(_highest_discovered_eui, p_adv_report->peer_addr.addr, sizeof(_highest_discovered_eui));
-         printf("INFO: Discovered new device: %02x:%02x:%02x:%02x:%02x:%02x\n", p_adv_report->peer_addr.addr[5], p_adv_report->peer_addr.addr[4], p_adv_report->peer_addr.addr[3], p_adv_report->peer_addr.addr[2], p_adv_report->peer_addr.addr[1], p_adv_report->peer_addr.addr[0]);
+         log_printf("INFO: Discovered new device: %02x:%02x:%02x:%02x:%02x:%02x\n", p_adv_report->peer_addr.addr[5], p_adv_report->peer_addr.addr[4], p_adv_report->peer_addr.addr[3], p_adv_report->peer_addr.addr[2], p_adv_report->peer_addr.addr[1], p_adv_report->peer_addr.addr[0]);
       }
 
       // Update the scheduler EUI
@@ -357,8 +357,7 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
    if (p_evt_write->handle == carrier_ble_char_config_handle.value_handle)
    {
       // Configure the device by role and epoch time
-      uint8_t len = p_evt_write->len;
-      printf("INFO: Received CONFIG evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+      log_printf("INFO: Received CONFIG evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
       const uint8_t expected_response_role_offset = 6, role_length = 1, time_length = 10;
       const uint8_t expected_response_time_offset = expected_response_role_offset + role_length + 8;
       uint8_t response_role = ascii_to_i(p_evt_write->data[expected_response_role_offset]);
@@ -372,8 +371,7 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
    else if (p_evt_write->handle == _carrier_ble_char_enable_handle.value_handle)
    {
       // Enable or disable ranging
-      uint8_t len = p_evt_write->len;
-      printf("INFO: Received ENABLE evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+      log_printf("INFO: Received ENABLE evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
       const uint8_t expected_response_ranging_offset = 9;
       uint8_t response_ranging = ascii_to_i(p_evt_write->data[expected_response_ranging_offset]);
       if (response_ranging)
@@ -384,14 +382,13 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
    else if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle)
    {
       // Start device calibration
-      uint8_t len = p_evt_write->len;
-      printf("INFO: Received CALIBRATION evt: %s, length %i\n", (const char*)p_evt_write->data, len);
+      log_printf("INFO: Received CALIBRATION evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
       const uint8_t expected_response_calib_offset = 13;
       uint8_t response = ascii_to_i(p_evt_write->data[expected_response_calib_offset]);
       nrfx_atomic_u32_store(_calibration_index, response);
   }
    else
-      printf("ERROR: Received unknown BLE event handle: %hu\n", p_evt_write->handle);
+      log_printf("ERROR: Received unknown BLE event handle: %hu\n", p_evt_write->handle);
 }
 
 static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
@@ -479,7 +476,7 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       {
          // Only connection attempts can timeout
          if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
-            printf("WARNING: BLE connection attempts timed out\n");
+            log_printf("WARNING: BLE connection attempts timed out\n");
          break;
       }
       case BLE_GATTC_EVT_TIMEOUT:

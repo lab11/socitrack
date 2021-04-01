@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "app_error.h"
+#include "ble_config.h"
 #include "hardfault.h"
 #include "nrf.h"
 #include "nrf_delay.h"
@@ -28,13 +29,15 @@ static const uint8_t LEDS[LED_COUNT] = {CARRIER_LED_RED, CARRIER_LED_BLUE, CARRI
 // ****************************************
 
 // app error handler. Overwrites weak definition in app_error_weak.c
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
 __attribute__(( noreturn )) void app_error_fault_handler(uint32_t id, uint32_t pc, uint32_t info) {
     // halt all existing state
     __disable_irq();
     NRF_LOG_FINAL_FLUSH();
 
     // print banner
-    printf("\n\n***** App Error *****\n");
+    log_printf("\n\n***** App Error *****\n");
 
     // check cause of error
     switch (id) {
@@ -50,13 +53,13 @@ __attribute__(( noreturn )) void app_error_fault_handler(uint32_t id, uint32_t p
 #endif
         case NRF_FAULT_ID_SDK_ASSERT: {
             assert_info_t * p_info = (assert_info_t *)info;
-            printf("ASSERTION FAILED at %s:%lu\n",
+            log_printf("ASSERTION FAILED at %s:%lu\n",
                    p_info->p_file_name, (uint32_t)p_info->line_num);
             break;
         }
         case NRF_FAULT_ID_SDK_ERROR: {
             error_info_t * p_info = (error_info_t *)info;
-            printf("ERROR %lu at %s:%lu\t\tPC at: 0x%08lX\n",
+            log_printf("ERROR %lu at %s:%lu\t\tPC at: 0x%08lX\n",
                    p_info->err_code,
                    p_info->p_file_name,
                    p_info->line_num,
@@ -64,7 +67,7 @@ __attribute__(( noreturn )) void app_error_fault_handler(uint32_t id, uint32_t p
             break;
         }
         default: {
-            printf("UNKNOWN FAULT at 0x%08lX\n", pc);
+           log_printf("UNKNOWN FAULT at 0x%08lX\n", pc);
             break;
         }
     }
@@ -99,6 +102,7 @@ __attribute__(( noreturn )) void app_error_fault_handler(uint32_t id, uint32_t p
         nrf_delay_ms(250);
     }
 }
+#pragma GCC diagnostic pop
 
 // process-specific HardFault handler. Overwrites weak definition in hardfault_implementation.c
 __attribute__(( noreturn )) void HardFault_process(HardFault_stack_t* p_stack) {

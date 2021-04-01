@@ -80,7 +80,7 @@ static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_pola
          (nrfx_twi_rx(&_twi_instance, SQUAREPOINT_ADDRESS, _twi_rx_buf + 1, _twi_rx_buf[0]) == NRFX_SUCCESS))
       nrfx_atomic_flag_set(_squarepoint_interrupt_thrown);
    else
-      printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_buf[0]);
+      log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_buf[0]);
 }
 
 static nrfx_err_t twi_hw_init(void)
@@ -158,7 +158,7 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
    }
    if (id != SQUAREPOINT_ID)
    {
-      printf("ERROR: SquarePoint module is not reporting the expected ID [Expected = %uh Reported = %uh]\n", SQUAREPOINT_ID, id);
+      log_printf("ERROR: SquarePoint module is not reporting the expected ID [Expected = %uh Reported = %uh]\n", SQUAREPOINT_ID, id);
       return NRFX_ERROR_INVALID_STATE;
    }
    return NRFX_SUCCESS;
@@ -167,7 +167,7 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
 nrfx_err_t squarepoint_start_application(uint32_t current_time, uint8_t device_role, uint8_t scheduler_role)
 {
    // Send an outgoing command requesting that the SquarePoint module start
-   printf("INFO: Starting SquarePoint module as %s with timestamp %lu\n", (scheduler_role == SCHEDULER) ? "SCHEDULER" : "PARTICIPANT", current_time);
+   log_printf("INFO: Starting SquarePoint module as %s with timestamp %lu\n", (scheduler_role == SCHEDULER) ? "SCHEDULER" : "PARTICIPANT", current_time);
    uint8_t cmd[6] = { SQUAREPOINT_CMD_START, device_role | (scheduler_role << 3) | (SQUAREPOINT_RUNTIME_MODE_STANDARD << 6), 0, 0, 0, 0 };
    memcpy(cmd + 2, &current_time, sizeof(current_time));
    return nrfx_twi_tx(&_twi_instance, SQUAREPOINT_ADDRESS, cmd, sizeof(cmd), false);

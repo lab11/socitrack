@@ -1,5 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#include "ble_config.h"
 #include "nrfx_atomic.h"
 #include "nrfx_rtc.h"
 #include "rtc.h"
@@ -41,13 +42,13 @@ uint32_t rtc_get_current_time(void)
    // Check for an RTC overflow
    if (!_rtc_sync_rtc_overflown && (current_rtc_counter < _rtc_sync_rtc_counter))
    {
-      printf("WARNING: RTC overflow has occurred\n");
+      log_printf("WARNING: RTC overflow has occurred\n");
       _rtc_sync_rtc_overflown = true;
       ++_rtc_sync_rtc_overflow_counter;
    }
    else if (_rtc_sync_rtc_overflown && (current_rtc_counter > _rtc_sync_rtc_counter))
    {
-      printf("INFO: RTC overflow flag cleared, ready for next overflow\n");
+      log_printf("INFO: RTC overflow flag cleared, ready for next overflow\n");
       _rtc_sync_rtc_overflown = false;
    }
 

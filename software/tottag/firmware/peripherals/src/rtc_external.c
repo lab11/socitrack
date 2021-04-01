@@ -1,6 +1,7 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include <string.h>
+#include "ble_config.h"
 #include "boards.h"
 #include "nrf_delay.h"
 #include "rtc.h"
@@ -596,7 +597,7 @@ uint8_t rtc_external_init(const nrfx_spim_t* spi_instance)
    // Make sure that we once again disable the RTC
    nrfx_gpiote_out_set(CARRIER_CS_RTC);
 #else
-   printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
+   log_printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
 #endif
    return 1;
 }

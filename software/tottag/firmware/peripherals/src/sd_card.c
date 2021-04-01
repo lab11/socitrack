@@ -46,7 +46,7 @@ static void flush_sd_buffer(void)
    if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
    {
       // No SD card detected
-      printf("ERROR: SD card not detected!\n");
+      log_printf("ERROR: SD card not detected!\n");
       nrfx_atomic_flag_clear(_sd_card_inserted);
       _sd_card_buffer_length = 0;
       memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
@@ -242,7 +242,7 @@ void log_ranges(const uint8_t *data, uint16_t length)
    uint8_t num_ranges = data[0];
    if (((length - offset_data - 4) / APP_LOG_RANGE_LENGTH) != num_ranges)
    {
-      printf("WARNING: Attempting to log an incorrect number of ranges!\n");
+      log_printf("WARNING: Attempting to log an incorrect number of ranges!\n");
       return;
    }
 
@@ -286,7 +286,7 @@ void log_ranges(const uint8_t *data, uint16_t length)
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_timestamp >= _next_day_timestamp))
    {
-      printf("INFO: Starting new SD card log file...new day detected\n");
+      log_printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_timestamp);
    }
 
@@ -301,7 +301,7 @@ void log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush)
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
    {
-      printf("INFO: Starting new SD card log file...new day detected\n");
+      log_printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_time);
    }
 
@@ -314,11 +314,11 @@ void log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
    {
-      printf("INFO: Starting new SD card log file...new day detected\n");
+      log_printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_time);
    }
 
-   printf("INFO: Device is%s PLUGGED IN and%s CHARGING!\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT");
+   log_printf("INFO: Device is%s PLUGGED IN and%s CHARGING!\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT");
    uint16_t bytes_written = (uint16_t)snprintf(_log_info_buf, sizeof(_log_info_buf),
          "### CHARGING STATUS:%s PLUGGED IN and%s CHARGING; Timestamp: %lu\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT", current_time);
    sd_card_write(_log_info_buf, bytes_written, flush);
@@ -329,11 +329,11 @@ void log_motion(bool in_motion, uint32_t current_time, bool flush)
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
    {
-      printf("INFO: Starting new SD card log file...new day detected\n");
+      log_printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_time);
    }
 
-   printf("INFO: Device is now %s\n", in_motion ? "IN MOTION" : "STATIONARY");
+   log_printf("INFO: Device is now %s\n", in_motion ? "IN MOTION" : "STATIONARY");
    uint16_t bytes_written = (uint16_t)snprintf(_log_info_buf, sizeof(_log_info_buf), "### MOTION CHANGE: %s; Timestamp: %lu\n", in_motion ? "IN MOTION" : "STATIONARY", current_time);
    sd_card_write(_log_info_buf, bytes_written, flush);
 }

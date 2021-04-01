@@ -12,17 +12,18 @@
 
 //#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 //#define ENABLE_LEDS
+#define log_printf printf
 
 
 // Forced definitions for "Deployment Mode" ----------------------------------------------------------------------------
 
 #ifndef DEBUG_MODE
-#ifdef ENABLE_LEDS
 #undef ENABLE_LEDS
-#endif
 #ifndef STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #endif
+#undef log_printf
+#define log_printf(...) (void)0
 #endif
 
 
