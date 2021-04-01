@@ -176,7 +176,7 @@ uint8_t simple_logger_reinit(const char *filename, const char *permissions)
 uint8_t simple_logger_init_debug(const char *filename)
 {
    // Open or create the debugging log file and seek to the end
-   volatile FRESULT res = f_open(&debug_file, filename, FA_WRITE | FA_OPEN_ALWAYS);
+   FRESULT res = f_open(&debug_file, filename, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
    res |= f_lseek(&debug_file, f_size(&debug_file));
    return res;
 }

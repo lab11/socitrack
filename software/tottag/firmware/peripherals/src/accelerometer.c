@@ -4,6 +4,7 @@
 #include "accelerometer.h"
 #include "ble_config.h"
 #include "nrf_delay.h"
+#include "nrfx_gpiote.h"
 
 
 // Static accelerometer state variables --------------------------------------------------------------------------------

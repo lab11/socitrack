@@ -132,7 +132,7 @@ static uint8_t gap_params_init(void)
    memcpy(_carrier_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
    if ((_carrier_ble_address[5] != 0xc0) || (_carrier_ble_address[4] != 0x98))
       return 0;
-   log_printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
+   printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
    memcpy(gap_addr.addr, _carrier_ble_address, BLE_GAP_ADDR_LEN);
    memcpy(_scratch_eui, _carrier_ble_address, sizeof(_scratch_eui));
    APP_ERROR_CHECK(sd_ble_gap_addr_set(&gap_addr));

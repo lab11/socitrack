@@ -101,14 +101,14 @@ static void hardware_init(void)
    led_on(RED);
 
    // Initialize the RTT library
-   log_printf("\n----------------------------------------------\n");
+   printf("\n----------------------------------------------\n");
    uint32_t reset_reason = nrf_power_resetreas_get();
    if (reset_reason)
    {
-      log_printf("WARNING: Chip experienced a reset with reason %lu\n", reset_reason);
+      printf("WARNING: Chip experienced a reset with reason %lu\n", reset_reason);
       nrf_power_resetreas_clear(0xFFFFFFFF);
    }
-   log_printf("INFO: Initializing nRF...\n");
+   printf("INFO: Initializing nRF...\n");
 
    // Initialize the application state and essential hardware components
    app_init();
@@ -136,7 +136,7 @@ static void hardware_init(void)
 
    // Initialize SPI buses
    spi_init();
-   log_printf("INFO: Initialized critical hardware and software services\n");
+   printf("INFO: Initialized critical hardware and software services\n");
 
    // Wait until SD Card is inserted
    while (!sd_card_init(&_rtc_sd_spi_instance, &_app_flags.sd_card_inserted, ble_get_eui()))
@@ -150,7 +150,7 @@ static void hardware_init(void)
    uint32_t current_timestamp = rtc_get_current_time(), num_retries = 3;
    while (--num_retries && ((current_timestamp < MINIMUM_VALID_TIMESTAMP) || (current_timestamp > MAXIMUM_VALID_TIMESTAMP)))
    {
-      log_printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
+      printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
       rtc_external_init(&_rtc_sd_spi_instance);
       buzzer_indicate_invalid_rtc_time();
       nrf_delay_ms(1000);
@@ -164,7 +164,7 @@ static void hardware_init(void)
    battery_monitor_init(&_app_flags.battery_status_changed);
    sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0);
    led_off();
-   log_printf("INFO: Initialized supplementary hardware and software services\n");
+   printf("INFO: Initialized supplementary hardware and software services\n");
 }
 
 static void update_leds(uint32_t app_running, uint32_t network_discovered)
