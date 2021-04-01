@@ -43,6 +43,7 @@ enum SIMPLE_LOGGER_ERROR {
 
 uint8_t simple_logger_init(void);
 uint8_t simple_logger_reinit(const char *filename, const char *permissions);
+uint8_t simple_logger_init_debug(const char *filename);
 uint8_t simple_logger_ready(void);
 void simple_logger_update(void);
 uint8_t simple_logger_power_on(void);
@@ -56,5 +57,6 @@ uint8_t simple_logger_delete_file(const char *file_name);
 uint8_t simple_logger_open_file_for_reading(const char *file_name);
 void simple_logger_close_reading_file(void);
 uint32_t simple_logger_read_reading_file(uint8_t *data_buffer, uint32_t buffer_length);
+uint8_t simple_logger_printf(const char *format, va_list ap) __attribute__ ((format (printf, 1, 0)));
 
 #endif

@@ -31,6 +31,7 @@ static uint8_t simple_logger_opts;
 static BYTE work[FF_MAX_SS];		/* Work area (larger is better for processing time) */
 
 static FIL file_for_reading;
+static FIL debug_file;
 
 static void error(void)
 {
@@ -156,7 +157,7 @@ uint8_t simple_logger_reinit(const char *filename, const char *permissions)
    file = filename;
 
    // Set write/append permissions
-   if((permissions[0] != 'w'  && permissions[0] != 'a') || (permissions[1] != '\0' && permissions[2] != 'r') )
+   if((permissions[0] != 'w' && permissions[0] != 'a') || (permissions[1] != '\0' && permissions[2] != 'r') )
       return SIMPLE_LOGGER_BAD_PERMISSIONS;
    if(permissions[0] == 'w')
       simple_logger_opts = (FA_WRITE | FA_CREATE_ALWAYS);
@@ -170,6 +171,14 @@ uint8_t simple_logger_reinit(const char *filename, const char *permissions)
       simple_logger_opts |= FA_READ;
 
    return logger_init(0);
+}
+
+uint8_t simple_logger_init_debug(const char *filename)
+{
+   // Open or create the debugging log file and seek to the end
+   volatile FRESULT res = f_open(&debug_file, filename, FA_WRITE | FA_OPEN_ALWAYS);
+   res |= f_lseek(&debug_file, f_size(&debug_file));
+   return res;
 }
 
 // Re-enable the SD card and initialize again
@@ -331,4 +340,11 @@ uint32_t simple_logger_read_reading_file(uint8_t *data_buffer, uint32_t buffer_l
 {
    UINT bytes_read = 0;
    return (f_read(&file_for_reading, data_buffer, buffer_length, &bytes_read) == FR_OK) ? (uint32_t)bytes_read : 0;
+}
+
+uint8_t simple_logger_printf(const char *format, va_list ap)
+{
+   vsnprintf(buffer, buffer_size, format, ap);
+   f_puts(buffer, &debug_file);
+   return f_sync(&debug_file);
 }
