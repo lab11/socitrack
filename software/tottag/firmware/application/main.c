@@ -12,6 +12,7 @@
 #include "nrf_delay.h"
 #include "nrf_drv_power.h"
 #include "nrf_pwr_mgmt.h"
+#include "nrfx_gpiote.h"
 #include "nrfx_power.h"
 #include "nrfx_wdt.h"
 #include "rtc.h"

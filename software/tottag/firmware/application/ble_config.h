@@ -8,11 +8,11 @@
 #include "nrfx_atomic.h"
 
 
-// User configurable definitions ---------------------------------------------------------------------------------------
+// User configurable debug definitions ---------------------------------------------------------------------------------
 
 //#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
-//#define ENABLE_LEDS
-#define log_printf printf
+#define ENABLE_LEDS
+//#define PRINTF_TO_SD_CARD
 
 
 // Forced definitions for "Deployment Mode" ----------------------------------------------------------------------------
@@ -22,10 +22,18 @@
 #ifndef STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #endif
-#undef log_printf
-#define log_printf(...) (void)0
+#undef PRINTF_TO_SD_CARD
 #endif
 
+#ifndef DEBUG_MODE
+#define log_printf(...) (void)0
+#else
+#ifdef PRINTF_TO_SD_CARD
+#define log_printf sd_card_printf
+#else
+#define log_printf printf
+#endif
+#endif
 
 // Constants -----------------------------------------------------------------------------------------------------------
 
