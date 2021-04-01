@@ -3,6 +3,7 @@
 #include <string.h>
 #include "ble_config.h"
 #include "nrf_delay.h"
+#include "nrfx_gpiote.h"
 #include "rtc.h"
 #include "rtc_external.h"
 

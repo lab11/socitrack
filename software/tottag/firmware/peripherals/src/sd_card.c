@@ -5,6 +5,7 @@
 #include "ble_config.h"
 #include "ble_gap.h"
 #include "nrf_delay.h"
+#include "nrfx_gpiote.h"
 #include "rtc_external.h"
 #include "sd_card.h"
 #include "simple_logger.h"

@@ -2,6 +2,7 @@
 
 #include "battery.h"
 #include "ble_config.h"
+#include "nrfx_gpiote.h"
 #include "sd_card.h"
 
 

@@ -1,11 +1,15 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #include <string.h>
 #include "ble_config.h"
 #include "nrf_delay.h"
+#include "nrfx_gpiote.h"
 #include "nrfx_twi.h"
 #include "sd_card.h"
 #include "squarepoint_interface.h"
+#pragma GCC diagnostic pop
 
 
 // Application connectivity variables ----------------------------------------------------------------------------------

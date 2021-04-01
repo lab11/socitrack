@@ -6,9 +6,6 @@
 #define BOARD_V 0x0D
 #endif
 
-#include "nrfx_gpiote.h"
-#include "nrfx_saadc.h"
-
 #ifndef DEVICE_NAME
 #define DEVICE_NAME "TotTag"
 #endif

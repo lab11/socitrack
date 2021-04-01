@@ -3,6 +3,7 @@
 #include "ble_config.h"
 #include "buzzer.h"
 #include "nrf_delay.h"
+#include "nrfx_gpiote.h"
 #include "nrfx_pwm.h"
 
 

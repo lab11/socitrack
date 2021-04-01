@@ -1,6 +1,7 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include "ble_config.h"
+#include "nrfx_gpiote.h"
 #include "system.h"
 
 typedef struct gpio_pin_def_t { uint8_t a, b; } gpio_pin_def_t;

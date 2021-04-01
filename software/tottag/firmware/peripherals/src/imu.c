@@ -4,6 +4,7 @@
 #include "ble_config.h"
 #include "imu.h"
 #include "nrf_delay.h"
+#include "nrfx_gpiote.h"
 
 
 #if (BOARD_V < 0x11)  // Accelerometer forwarding for older boards -----------------------------------------------------
