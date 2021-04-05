@@ -10,9 +10,9 @@
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
 
-//#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
-#define ENABLE_LEDS
-//#define PRINTF_TO_SD_CARD
+#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
+//#define ENABLE_LEDS
+#define PRINTF_TO_SD_CARD
 
 
 // Forced definitions for "Deployment Mode" ----------------------------------------------------------------------------
@@ -68,7 +68,9 @@
 #define APP_LACK_OF_MOTION_TIMEOUT_SEC          2
 #define APP_RUNNING_RESPONSE_TIMEOUT_SEC        2
 #define SQUAREPOINT_ERROR_NOTIFY_COUNT          5
-#define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   3
+#define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   5
+#define BLE_SINGLE_SCAN_DURATION_SEC            5
+#define BLE_SINGLE_SCAN_INTERVAL_SEC            180
 #define MINIMUM_VALID_TIMESTAMP                 1612810414
 #define MAXIMUM_VALID_TIMESTAMP                 2000000000
 
@@ -104,6 +106,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_data_received;
    nrfx_atomic_flag_t squarepoint_wakeup_triggered;
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
+   nrfx_atomic_flag_t squarepoint_needs_init;
    nrfx_atomic_flag_t squarepoint_needs_reset;
    nrfx_atomic_flag_t sd_card_inserted;
    nrfx_atomic_flag_t rtc_time_valid;
@@ -114,6 +117,8 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t device_in_motion;
    nrfx_atomic_flag_t bluetooth_is_advertising;
    nrfx_atomic_flag_t bluetooth_is_scanning;
+   nrfx_atomic_flag_t bluetooth_single_scanning;
+   nrfx_atomic_u32_t bluetooth_single_scan_timer;
    nrfx_atomic_u32_t squarepoint_comms_error_count;
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;

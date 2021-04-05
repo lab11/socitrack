@@ -123,7 +123,7 @@ static void hardware_init(void)
    usb_init();
 
    // Initialize the Bluetooth stack via a SoftDevice
-   if (ble_init(&_app_flags.squarepoint_enabled, &_app_flags.squarepoint_running, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
+   if (ble_init(&_app_flags.squarepoint_enabled, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
       while (true)
       {
          buzzer_indicate_error();
@@ -190,10 +190,14 @@ static nrfx_err_t start_squarepoint(void)
    // Initialize the SquarePoint module and communications
    nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui());
    if (err_code == NRFX_SUCCESS)
+   {
       nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
+      nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_init);
+   }
    else
    {
       log_printf("ERROR: Unable to communicate with the SquarePoint module\n");
+      nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_init);
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_inited);
       return err_code;
    }
@@ -215,11 +219,13 @@ static nrfx_err_t start_squarepoint(void)
    else
    {
       // Update the application state
-      ble_reset_discovered_devices();
+      ble_stop_scanning();
       log_printf("INFO: SquarePoint module successfully started!\n");
       nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_reset);
+      nrfx_atomic_flag_clear(&_app_flags.bluetooth_single_scanning);
       nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
+      nrfx_atomic_u32_store(&_app_flags.bluetooth_single_scan_timer, BLE_SINGLE_SCAN_INTERVAL_SEC);
    }
    return NRFX_SUCCESS;
 }
@@ -234,10 +240,14 @@ static nrfx_err_t start_squarepoint_calibration(void)
    // Initialize the SquarePoint module and communications
    nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui());
    if (err_code == NRFX_SUCCESS)
+   {
       nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
+      nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_init);
+   }
    else
    {
       printf("ERROR: Unable to communicate with the SquarePoint module\n");
+      nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_init);
       nrfx_atomic_flag_clear(&_app_flags.squarepoint_inited);
       return err_code;
    }
@@ -270,6 +280,21 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
    nrfx_wdt_feed();
    ble_second_has_elapsed();
 
+   // Decrement the single-scan BLE timer and update its state
+   if (!nrfx_atomic_u32_sub_hs(&_app_flags.bluetooth_single_scan_timer, 1))
+   {
+      if (nrfx_atomic_flag_fetch(&_app_flags.bluetooth_single_scanning))
+      {
+         nrfx_atomic_flag_clear(&_app_flags.bluetooth_single_scanning);
+         nrfx_atomic_u32_store(&_app_flags.bluetooth_single_scan_timer, BLE_SINGLE_SCAN_INTERVAL_SEC);
+      }
+      else
+      {
+         nrfx_atomic_flag_set(&_app_flags.bluetooth_single_scanning);
+         nrfx_atomic_u32_store(&_app_flags.bluetooth_single_scan_timer, BLE_SINGLE_SCAN_DURATION_SEC);
+      }
+   }
+
    // Increment the battery voltage check timeout counter
    if (nrfx_atomic_u32_fetch_add(&_app_flags.battery_check_counter, 1) >= APP_BATTERY_CHECK_TIMEOUT_SEC)
    {
@@ -280,16 +305,8 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
    // Validate communications connection with the SquarePoint module
    if (!nrfx_atomic_flag_fetch(&_app_flags.squarepoint_inited))
    {
-      // Wake up and initialize the SquarePoint module
-      log_printf("INFO: Connecting to the SquarePoint module...\n");
-      squarepoint_wakeup_module();
-      if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
-      {
-         nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
-         nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
-         log_printf("INFO: SquarePoint module connection successful\n");
-      }
-      else if (nrfx_atomic_u32_fetch_add(&_app_flags.squarepoint_comms_error_count, 1) >= SQUAREPOINT_ERROR_NOTIFY_COUNT)
+      nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_init);
+      if (nrfx_atomic_u32_fetch_add(&_app_flags.squarepoint_comms_error_count, 1) >= SQUAREPOINT_ERROR_NOTIFY_COUNT)
       {
          buzzer_indicate_error();
          nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
@@ -345,12 +362,19 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 
 
          // Update the scheduler EUI
-         ble_set_scheduler_eui(data + 2, SQUAREPOINT_EUI_LEN);
-
-         // Trigger SD log file storage from the main loop
-         nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
-         nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
-         nrfx_atomic_flag_set(&_app_flags.range_buffer_updated);
+         if (ble_set_scheduler_eui(data + 2, SQUAREPOINT_EUI_LEN))
+         {
+            // Scheduler EUI changed so there must have been a network conflict
+            log_printf("WARNING: Scheduler EUI changed unexpectedly due to a network conflict...restarting\n");
+            nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_reset);
+         }
+         else
+         {
+            // Trigger SD log file storage from the main loop
+            nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
+            nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
+            nrfx_atomic_flag_set(&_app_flags.range_buffer_updated);
+         }
          break;
       }
       case SQUAREPOINT_INCOMING_CALIBRATION:
@@ -373,7 +397,6 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 
          // Update the app state
          ble_clear_scheduler_eui();
-         ble_reset_discovered_devices();
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_running);
          nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
          break;
@@ -521,7 +544,7 @@ int main(void)
       // Update the BLE advertising and scanning states
       if (!app_enabled)
       {
-         if (nrfx_atomic_flag_clear_fetch(&_app_flags.bluetooth_is_scanning))
+         if (nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
             ble_stop_scanning();
          if (nrfx_atomic_flag_clear_fetch(&_app_flags.bluetooth_is_advertising))
             ble_stop_advertising();
@@ -531,11 +554,31 @@ int main(void)
          if (!nrfx_atomic_flag_set_fetch(&_app_flags.bluetooth_is_advertising) && (ble_start_advertising() != NRF_SUCCESS))
             nrfx_atomic_flag_clear(&_app_flags.bluetooth_is_advertising);
 #ifndef BLE_CALIBRATION
-         if (!app_running && !nrfx_atomic_flag_set_fetch(&_app_flags.bluetooth_is_scanning) && (ble_start_scanning() != NRF_SUCCESS))
-            nrfx_atomic_flag_clear(&_app_flags.bluetooth_is_scanning);
-         else if (app_running && nrfx_atomic_flag_clear_fetch(&_app_flags.bluetooth_is_scanning))
-            ble_stop_scanning();
+         if (!app_running && !nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
+            ble_start_scanning();
+         else if (app_running)
+         {
+            if (nrfx_atomic_flag_fetch(&_app_flags.bluetooth_single_scanning) && !nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
+               ble_start_scanning();
+            else if (!nrfx_atomic_flag_fetch(&_app_flags.bluetooth_single_scanning) && nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
+               ble_stop_scanning();
+         }
 #endif
+      }
+
+      // Wake up and initialize the SquarePoint module if necessary
+      if (nrfx_atomic_flag_clear_fetch(&_app_flags.squarepoint_needs_init))
+      {
+         log_printf("INFO: Connecting to the SquarePoint module...\n");
+         squarepoint_wakeup_module();
+         if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
+         {
+            nrfx_atomic_flag_set(&_app_flags.squarepoint_inited);
+            nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
+            log_printf("INFO: SquarePoint module connection successful\n");
+         }
+         else
+            log_printf("ERROR: SquarePoint module connection unsuccessful!\n");
       }
 
       // If the SquarePoint module appears to have crashed, try to reset it and re-discover networks
@@ -544,7 +587,6 @@ int main(void)
          // Update the app state and reset the SquarePoint module
          log_printf("INFO: SquarePoint communications appear to be down...restarting\n");
          ble_clear_scheduler_eui();
-         ble_reset_discovered_devices();
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_running);
          nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
          squarepoint_stop();

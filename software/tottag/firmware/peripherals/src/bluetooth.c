@@ -43,7 +43,7 @@ static ble_advdata_service_data_t _service_data = { 0 };
 static uint8_t _app_ble_advdata[APP_BLE_ADVDATA_LENGTH] = { 0 }, _scratch_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static uint8_t _scheduler_eui[BLE_GAP_ADDR_LEN] = { 0 }, _highest_discovered_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
-static nrfx_atomic_flag_t *_squarepoint_enabled_flag = NULL, *_squarepoint_running_flag = NULL, *_ble_scanning_flag = NULL;
+static nrfx_atomic_flag_t *_squarepoint_enabled_flag = NULL, *_ble_scanning_flag = NULL;
 static nrfx_atomic_u32_t _network_discovered_counter = 0, *_calibration_index = NULL;
 static device_role_t _device_role = HYBRID;
 
@@ -289,11 +289,12 @@ static void conn_params_init(void)
 
 void assert_nrf_callback(uint16_t line_num, const uint8_t *p_file_name) { app_error_handler(DEAD_BEEF, line_num, p_file_name); }
 
-static void on_scheduler_eui(const uint8_t* scheduler_eui, bool force_update)
+static uint8_t on_scheduler_eui(const uint8_t* scheduler_eui, bool force_update)
 {
    // Only reconfigure if scheduler is non-zero and has changed
    if ((memcmp(scheduler_eui, _scheduler_eui, sizeof(_scheduler_eui)) == 0) || (!force_update && (memcmp(scheduler_eui, _empty_eui, sizeof(_empty_eui)) == 0)))
-      return;
+      return 0;
+   uint8_t switched_euis = memcmp(_scheduler_eui, _empty_eui, sizeof(_empty_eui));
    log_printf("INFO: Switched Scheduler EUI from %02x:%02x:%02x:%02x:%02x:%02x to %02x:%02x:%02x:%02x:%02x:%02x\n",
          _scheduler_eui[5], _scheduler_eui[4], _scheduler_eui[3], _scheduler_eui[2], _scheduler_eui[1], _scheduler_eui[0],
          scheduler_eui[5], scheduler_eui[4], scheduler_eui[3], scheduler_eui[2], scheduler_eui[1], scheduler_eui[0]);
@@ -307,6 +308,7 @@ static void on_scheduler_eui(const uint8_t* scheduler_eui, bool force_update)
    ble_advertising_conn_cfg_tag_set(&_advertising, APP_BLE_CONN_CFG_TAG);
    if (should_reenable)
       ble_start_advertising();
+   return switched_euis;
 }
 
 static uint32_t adv_report_parse(uint8_t type, const ble_data_t* p_advdata, ble_data_t* p_typedata)
@@ -501,10 +503,9 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
 // Public Bluetooth API ------------------------------------------------------------------------------------------------
 
-nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* squarepoint_running_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
+nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
 {
    _squarepoint_enabled_flag = squarepoint_enabled_flag;
-   _squarepoint_running_flag = squarepoint_running_flag;
    _ble_scanning_flag = ble_is_scanning_flag;
    _calibration_index = calibration_index;
    ble_stack_init();
@@ -528,6 +529,13 @@ nrfx_err_t ble_start_scanning(void)
    nrfx_err_t err_code = sd_ble_gap_scan_start(NULL, &_scan_buffer);
    if (err_code == NRF_ERROR_INVALID_STATE)
       err_code = sd_ble_gap_scan_start(&_scan_params, &_scan_buffer);
+   if (err_code == NRF_SUCCESS)
+      nrfx_atomic_flag_set(_ble_scanning_flag);
+   else
+   {
+      log_printf("ERROR: Unable to start scanning for BLE advertisements\n");
+      nrfx_atomic_flag_clear(_ble_scanning_flag);
+   }
    return err_code;
 }
 void ble_stop_advertising(void)
@@ -535,15 +543,18 @@ void ble_stop_advertising(void)
    ble_advertising_start(&_advertising, BLE_ADV_MODE_IDLE);
    sd_ble_gap_adv_stop(_advertising.adv_handle);
 }
-void ble_stop_scanning(void) { sd_ble_gap_scan_stop(); }
-void ble_clear_scheduler_eui(void) { on_scheduler_eui(_empty_eui, true); }
-void ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
+void ble_stop_scanning(void)
 {
-   if (memcmp(eui, _empty_eui, num_eui_bytes) != 0)
-   {
-      memcpy(_scratch_eui, eui, num_eui_bytes);
-      on_scheduler_eui(_scratch_eui, false);
-   }
+   sd_ble_gap_scan_stop();
+   nrfx_atomic_flag_clear(_ble_scanning_flag);
+   nrfx_atomic_u32_store(&_network_discovered_counter, 0);
+   memset(_highest_discovered_eui, 0, sizeof(_highest_discovered_eui));
+}
+void ble_clear_scheduler_eui(void) { on_scheduler_eui(_empty_eui, true); }
+uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
+{
+   memcpy(_scratch_eui, eui, num_eui_bytes);
+   return on_scheduler_eui(_scratch_eui, false);
 }
 void ble_update_ranging_data(const uint8_t *data, uint16_t *length)
 {
@@ -559,10 +570,10 @@ void ble_update_ranging_data(const uint8_t *data, uint16_t *length)
       sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
    }
 }
-void ble_reset_discovered_devices(void)
+void ble_second_has_elapsed(void)
 {
-   nrfx_atomic_u32_store(&_network_discovered_counter, 0);
-   memset(_highest_discovered_eui, 0, sizeof(_highest_discovered_eui));
+   // Reset highest discovered network after discovery counter has reached 0
+   if (!nrfx_atomic_u32_sub_hs(&_network_discovered_counter, 1))
+      memset(_highest_discovered_eui, 0, sizeof(_highest_discovered_eui));
 }
-void ble_second_has_elapsed(void) { nrfx_atomic_u32_sub_hs(&_network_discovered_counter, 1); }
 uint32_t ble_is_network_available(void) { return nrfx_atomic_u32_fetch(&_network_discovered_counter); }
