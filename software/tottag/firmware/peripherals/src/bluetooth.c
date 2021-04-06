@@ -433,14 +433,33 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       }
       case BLE_GAP_EVT_CONNECTED:
       {
+         // Assign BLE connection handle
          _carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
          ret_code_t err_code = nrf_ble_qwr_conn_handle_assign(&_qwr, _carrier_ble_conn_handle);
          APP_ERROR_CHECK(err_code);
+
+         // Continue advertising, but non-connectably
+         _advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
+         err_code = sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
+         if (err_code != NRF_ERROR_INVALID_STATE)
+            APP_ERROR_CHECK(err_code);
+         err_code = sd_ble_gap_adv_start(_advertising.adv_handle, _advertising.conn_cfg_tag);
+         if (err_code != NRF_ERROR_INVALID_STATE)
+            APP_ERROR_CHECK(err_code);
          break;
       }
       case BLE_GAP_EVT_DISCONNECTED:
       {
+         // Go back to advertising connectably
+         sd_ble_gap_adv_stop(_advertising.adv_handle);
          _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         _advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
+         ret_code_t err_code = sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
+         if (err_code != NRF_ERROR_INVALID_STATE)
+            APP_ERROR_CHECK(err_code);
+         err_code = sd_ble_gap_adv_start(_advertising.adv_handle, _advertising.conn_cfg_tag);
+         if (err_code != NRF_ERROR_INVALID_STATE)
+            APP_ERROR_CHECK(err_code);
          break;
       }
       case BLE_GAP_EVT_ADV_REPORT:
