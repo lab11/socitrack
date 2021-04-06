@@ -46,6 +46,7 @@ static uint8_t _scheduler_eui[BLE_GAP_ADDR_LEN] = { 0 }, _highest_discovered_eui
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static nrfx_atomic_flag_t *_squarepoint_enabled_flag = NULL, *_ble_scanning_flag = NULL;
 static nrfx_atomic_u32_t _network_discovered_counter = 0, *_calibration_index = NULL;
+ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
 static device_role_t _device_role = HYBRID;
 
 
@@ -145,6 +146,10 @@ static uint8_t gap_params_init(void)
 
 static void gatt_init(void)
 {
+   // Initialize GATT structures
+   _ble_timestamp_reply.params.read.offset = 0;
+   _ble_timestamp_reply.params.read.update = 1;
+   _ble_timestamp_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
    APP_ERROR_CHECK(nrf_ble_gatt_init(&_gatt, NULL));
 }
 
@@ -481,14 +486,9 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
       {
          uint32_t timestamp = rtc_get_current_time();
-         ble_gatts_rw_authorize_reply_params_t rdReply;
-         rdReply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
-         rdReply.params.read.offset = 0;
-         rdReply.params.read.update = 1;
-         rdReply.params.read.len = sizeof(timestamp);
-         rdReply.params.read.p_data = (uint8_t*)&timestamp;
-         rdReply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
-         APP_ERROR_CHECK(sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gap_evt.conn_handle, &rdReply));
+         _ble_timestamp_reply.params.read.len = sizeof(timestamp);
+         _ble_timestamp_reply.params.read.p_data = (uint8_t*)&timestamp;
+         APP_ERROR_CHECK(sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gap_evt.conn_handle, &_ble_timestamp_reply));
          break;
       }
       case BLE_GAP_EVT_TIMEOUT:
@@ -574,8 +574,12 @@ void ble_stop_scanning(void)
 void ble_clear_scheduler_eui(void) { on_scheduler_eui(_empty_eui, true); }
 uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
 {
-   memcpy(_scratch_eui, eui, num_eui_bytes);
-   return on_scheduler_eui(_scratch_eui, false);
+   if (memcmp(eui, _empty_eui, num_eui_bytes) != 0)
+   {
+      memcpy(_scratch_eui, eui, num_eui_bytes);
+      return on_scheduler_eui(_scratch_eui, false);
+   }
+   return 0;
 }
 
 void ble_update_ranging_data(const uint8_t *data, uint16_t *length)
