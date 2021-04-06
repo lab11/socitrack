@@ -10,7 +10,7 @@
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
 
-#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
+//#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 //#define ENABLE_LEDS
 #define PRINTF_TO_SD_CARD
 
@@ -48,7 +48,7 @@
 #define CARRIER_BLE_CHAR_ENABLE                 0x3155
 #define CARRIER_BLE_CHAR_STATUS                 0x3156
 #define CARRIER_BLE_CHAR_CALIBRATION            0x3157
-#define CARRIER_BLE_CHAR_MASTER                 0x3158
+#define CARRIER_BLE_CHAR_TIMESTAMP              0x3158
 
 // Information
 #define APP_COMPANY_IDENTIFIER                  0x02E0

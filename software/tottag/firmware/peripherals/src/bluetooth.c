@@ -27,9 +27,10 @@ BLE_ADVERTISING_DEF(_advertising);
 static const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = { .uuid128 = { 0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c, 0x90, 0xee, 0x3f, 0xa2, 0x52, 0x31, 0x8c, 0xd6 } };  // Service UUID
 static ble_uuid_t _adv_uuids[] = { { PHYSWEB_SERVICE_ID, BLE_UUID_TYPE_BLE } };  // Advertisement UUIDs: Eddystone
 static ble_uuid_t _sr_uuids[] = { { BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE }, { CARRIER_BLE_SERV_SHORT_UUID, BLE_UUID_TYPE_VENDOR_BEGIN } };  // Scan Response UUIDs
-static ble_gatts_char_handles_t carrier_ble_char_location_handle = { .value_handle = CARRIER_BLE_CHAR_LOCATION };
-static ble_gatts_char_handles_t carrier_ble_char_config_handle = { .value_handle = CARRIER_BLE_CHAR_CONFIG };
+static ble_gatts_char_handles_t _carrier_ble_char_location_handle = { .value_handle = CARRIER_BLE_CHAR_LOCATION };
+static ble_gatts_char_handles_t _carrier_ble_char_config_handle = { .value_handle = CARRIER_BLE_CHAR_CONFIG };
 static ble_gatts_char_handles_t _carrier_ble_char_enable_handle = { .value_handle = CARRIER_BLE_CHAR_ENABLE };
+static ble_gatts_char_handles_t _carrier_ble_char_timestamp_handle = { .value_handle = CARRIER_BLE_CHAR_TIMESTAMP };
 static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_handle = CARRIER_BLE_CHAR_CALIBRATION };
 static uint16_t _carrier_ble_service_handle = 0, _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 static uint8_t _carrier_ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
@@ -197,11 +198,11 @@ static void advertising_init(void)
    ble_advertising_conn_cfg_tag_set(&_advertising, APP_BLE_CONN_CFG_TAG);
 }
 
-static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t vlen, uint8_t data_len, volatile uint8_t *data, uint16_t uuid, ble_gatts_char_handles_t *char_handle)
+static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t read_event, uint8_t vlen, uint8_t data_len, volatile uint8_t *data, uint16_t uuid, ble_gatts_char_handles_t *char_handle)
 {
    // Add characteristics
    ble_uuid128_t base_uuid = CARRIER_BLE_SERV_LONG_UUID;
-   ble_uuid_t char_uuid = { .uuid = uuid };
+   ble_uuid_t char_uuid = { .uuid = uuid, .type = BLE_UUID_TYPE_VENDOR_BEGIN };
    APP_ERROR_CHECK(sd_ble_uuid_vs_add(&base_uuid, &char_uuid.type));
 
    // Add read/write properties to our characteristic
@@ -225,6 +226,7 @@ static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, 
    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.read_perm);
    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&attr_md.write_perm);
    attr_md.vloc = BLE_GATTS_VLOC_STACK;
+   attr_md.rd_auth = read_event;
    attr_md.vlen = vlen;
 
    // Configure the characteristic value attribute
@@ -251,15 +253,16 @@ static void services_init(void)
 
    // Initialize our own BLE service
    ble_uuid128_t base_uuid = CARRIER_BLE_SERV_LONG_UUID;
-   ble_uuid_t service_uuid = { .uuid = CARRIER_BLE_SERV_SHORT_UUID };
+   ble_uuid_t service_uuid = { .uuid = CARRIER_BLE_SERV_SHORT_UUID, .type = BLE_UUID_TYPE_VENDOR_BEGIN };
    APP_ERROR_CHECK(sd_ble_uuid_vs_add(&base_uuid, &service_uuid.type));
    APP_ERROR_CHECK(sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &service_uuid, &_carrier_ble_service_handle));
 
    // Add characteristics
-   ble_characteristic_add(1, 0, 1, 0, 128, NULL, CARRIER_BLE_CHAR_LOCATION, &carrier_ble_char_location_handle);
-   ble_characteristic_add(1, 1, 0, 0, 28, (volatile uint8_t*)&_device_role, CARRIER_BLE_CHAR_CONFIG, &carrier_ble_char_config_handle);
-   ble_characteristic_add(1, 1, 0, 0, 10, (volatile uint8_t*)_squarepoint_enabled_flag, CARRIER_BLE_CHAR_ENABLE, &_carrier_ble_char_enable_handle);
-   ble_characteristic_add(1, 1, 0, 0, 14, (volatile uint8_t*)_calibration_index, CARRIER_BLE_CHAR_CALIBRATION, &carrier_ble_char_calibration_handle);
+   ble_characteristic_add(1, 0, 1, 0, 0, 128, NULL, CARRIER_BLE_CHAR_LOCATION, &_carrier_ble_char_location_handle);
+   ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, CARRIER_BLE_CHAR_TIMESTAMP, &_carrier_ble_char_timestamp_handle);
+   ble_characteristic_add(1, 1, 0, 0, 0, 28, (volatile uint8_t*)&_device_role, CARRIER_BLE_CHAR_CONFIG, &_carrier_ble_char_config_handle);
+   ble_characteristic_add(1, 1, 0, 0, 0, 10, (volatile uint8_t*)_squarepoint_enabled_flag, CARRIER_BLE_CHAR_ENABLE, &_carrier_ble_char_enable_handle);
+   ble_characteristic_add(1, 1, 0, 0, 0, 14, (volatile uint8_t*)_calibration_index, CARRIER_BLE_CHAR_CALIBRATION, &carrier_ble_char_calibration_handle);
 }
 
 static void central_init(void)
@@ -357,7 +360,7 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
 {
    // Handle a BLE write event
    const ble_gatts_evt_write_t *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
-   if (p_evt_write->handle == carrier_ble_char_config_handle.value_handle)
+   if (p_evt_write->handle == _carrier_ble_char_config_handle.value_handle)
    {
       // Configure the device by role and epoch time
       log_printf("INFO: Received CONFIG evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
@@ -475,6 +478,19 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
          APP_ERROR_CHECK(sd_ble_gap_conn_param_update(p_ble_evt->evt.gap_evt.conn_handle, &p_ble_evt->evt.gap_evt.params.conn_param_update_request.conn_params));
          break;
       }
+      case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
+      {
+         uint32_t timestamp = rtc_get_current_time();
+         ble_gatts_rw_authorize_reply_params_t rdReply;
+         rdReply.type = BLE_GATTS_AUTHORIZE_TYPE_READ;
+         rdReply.params.read.offset = 0;
+         rdReply.params.read.update = 1;
+         rdReply.params.read.len = sizeof(timestamp);
+         rdReply.params.read.p_data = (uint8_t*)&timestamp;
+         rdReply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
+         APP_ERROR_CHECK(sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gap_evt.conn_handle, &rdReply));
+         break;
+      }
       case BLE_GAP_EVT_TIMEOUT:
       {
          // Only connection attempts can timeout
@@ -518,12 +534,14 @@ nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_fl
    conn_params_init();
    return NRF_SUCCESS;
 }
+
 uint8_t ble_get_device_role(void) { return _device_role; }
 const uint8_t* ble_get_eui(void) { return _carrier_ble_address; }
 const uint8_t* ble_get_empty_eui(void) { return _empty_eui; }
 const uint8_t* ble_get_scheduler_eui(void) { return _scheduler_eui; }
 const uint8_t* ble_get_highest_network_eui(void) { return _highest_discovered_eui; }
 nrfx_err_t ble_start_advertising(void) { return ble_advertising_start(&_advertising, BLE_ADV_MODE_FAST); }
+
 nrfx_err_t ble_start_scanning(void)
 {
    nrfx_err_t err_code = sd_ble_gap_scan_start(NULL, &_scan_buffer);
@@ -538,11 +556,13 @@ nrfx_err_t ble_start_scanning(void)
    }
    return err_code;
 }
+
 void ble_stop_advertising(void)
 {
    ble_advertising_start(&_advertising, BLE_ADV_MODE_IDLE);
    sd_ble_gap_adv_stop(_advertising.adv_handle);
 }
+
 void ble_stop_scanning(void)
 {
    sd_ble_gap_scan_stop();
@@ -550,19 +570,21 @@ void ble_stop_scanning(void)
    nrfx_atomic_u32_store(&_network_discovered_counter, 0);
    memset(_highest_discovered_eui, 0, sizeof(_highest_discovered_eui));
 }
+
 void ble_clear_scheduler_eui(void) { on_scheduler_eui(_empty_eui, true); }
 uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
 {
    memcpy(_scratch_eui, eui, num_eui_bytes);
    return on_scheduler_eui(_scratch_eui, false);
 }
+
 void ble_update_ranging_data(const uint8_t *data, uint16_t *length)
 {
    // Only update the Bluetooth characteristic if there is a valid connection
    if ((_carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (*length <= APP_BLE_MAX_CHAR_LEN))
    {
       ble_gatts_hvx_params_t notify_params = { 0 };
-      notify_params.handle = carrier_ble_char_location_handle.value_handle;
+      notify_params.handle = _carrier_ble_char_location_handle.value_handle;
       notify_params.type   = BLE_GATT_HVX_NOTIFICATION;
       notify_params.offset = 0;
       notify_params.p_len  = length;
@@ -570,10 +592,12 @@ void ble_update_ranging_data(const uint8_t *data, uint16_t *length)
       sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
    }
 }
+
 void ble_second_has_elapsed(void)
 {
    // Reset highest discovered network after discovery counter has reached 0
    if (!nrfx_atomic_u32_sub_hs(&_network_discovered_counter, 1))
       memset(_highest_discovered_eui, 0, sizeof(_highest_discovered_eui));
 }
+
 uint32_t ble_is_network_available(void) { return nrfx_atomic_u32_fetch(&_network_discovered_counter); }

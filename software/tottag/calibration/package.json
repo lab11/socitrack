@@ -16,8 +16,8 @@
     "url": "https://github.com/lab11/socitrack/issues"
   },
   "dependencies": {
-    "long": "latest",
     "@abandonware/noble": "latest",
+    "long": "latest",
     "strftime": "latest"
   }
 }
