@@ -319,7 +319,7 @@ static uint8_t on_scheduler_eui(const uint8_t* scheduler_eui, bool force_update)
    // Stop BLE advertisements, update data, and restart
    ble_stop_advertising();
    memcpy(_app_ble_advdata, _scheduler_eui, APP_BLE_ADVDATA_LENGTH);
-   APP_ERROR_CHECK(ble_advertising_init(&_advertising, &_adv_init));
+   ble_advertising_init(&_advertising, &_adv_init);
    ble_advertising_conn_cfg_tag_set(&_advertising, APP_BLE_CONN_CFG_TAG);
    ble_start_advertising();
    return switched_euis;
@@ -427,7 +427,7 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
 static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 {
    // Set or clear the advertising active flag
-   if (ble_adv_evt != BLE_ADV_EVT_FAST)
+   if (ble_adv_evt == BLE_ADV_EVT_IDLE)
       nrfx_atomic_flag_clear(_ble_advertising_flag);
    else
       nrfx_atomic_flag_set(_ble_advertising_flag);
@@ -444,8 +444,7 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       }
       case BLE_GATTS_EVT_SYS_ATTR_MISSING:
       {
-         ret_code_t err_code = sd_ble_gatts_sys_attr_set(p_ble_evt->evt.common_evt.conn_handle, NULL, 0, 0);
-         APP_ERROR_CHECK(err_code);
+         sd_ble_gatts_sys_attr_set(p_ble_evt->evt.common_evt.conn_handle, NULL, 0, 0);
          break;
       }
       case BLE_GAP_EVT_CONNECTED:
@@ -466,9 +465,7 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
             // Continue advertising during an incoming connection, but non-connectably
             ble_stop_advertising();
             _advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
-            err_code = sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
-            if (err_code != NRF_ERROR_INVALID_STATE)
-               APP_ERROR_CHECK(err_code);
+            sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
             ble_start_advertising();
          }
          break;
@@ -480,9 +477,7 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
          {
             ble_stop_advertising();
             _advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
-            ret_code_t err_code = sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
-            if (err_code != NRF_ERROR_INVALID_STATE)
-               APP_ERROR_CHECK(err_code);
+            sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
             ble_start_advertising();
          }
          _outgoing_ble_connection_active = _outgoing_ble_connection_done = 0;
