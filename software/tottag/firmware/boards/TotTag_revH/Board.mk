@@ -38,6 +38,7 @@ BOARD_SOURCES += \
 	ble_advdata.c\
 	ble_advertising.c\
 	ble_conn_params.c\
+	ble_db_discovery.c\
 	ble_srv_common.c\
 	diskio.c\
 	ff.c\

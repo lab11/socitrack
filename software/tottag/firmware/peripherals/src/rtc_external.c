@@ -379,6 +379,7 @@ uint8_t ab1815_get_time(ab1815_time_t *time)
 
 uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
 {
+   rtc_set_current_time(unix_timestamp);
    struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
    ab1815_time_t new_time = unix_to_ab1815(tv);
    return ab1815_set_time(new_time);

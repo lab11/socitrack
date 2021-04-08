@@ -10,7 +10,7 @@
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
 
-//#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
+#define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 //#define ENABLE_LEDS
 #define PRINTF_TO_SD_CARD
 
