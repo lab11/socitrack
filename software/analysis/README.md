@@ -44,6 +44,23 @@ When you are done using the utility, you can exit by simply entering command
 number `5`.
 
 
+Monitoring
+----------
+
+There are two scripts available for real-time monitoring of a deployed network
+of TotTags in the vicinity of a desktop computer. The 'tottagCurrentTimestamps.py'
+script may be used to retrieve the current Unix timestamp from the point of
+view of the real-time clock programmed on each visible TotTag within range of
+the Bluetooth radio.
+
+The 'tottagRealtimeRanging.py' script may be used to output a list of current
+ranges between TotTag devices as calculated from a specific device's point
+of view. When running this script, you will be presented with a list of
+available TotTag devices in your immediate area. You may select one of these
+units to subscribe to its real-time ranging data which will be updated once
+per second.
+
+
 Analysis
 --------
 

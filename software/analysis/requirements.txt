@@ -1,0 +1,5 @@
+# Required Python packages
+
+matplotlib
+serial
+bleak
