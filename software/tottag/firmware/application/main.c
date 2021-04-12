@@ -477,7 +477,7 @@ int main(void)
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))
       {
          log_ranges(_range_buffer, _range_buffer_length);
-         ble_update_ranging_data(_range_buffer, &_range_buffer_length);
+         ble_update_ranging_data(_range_buffer, _range_buffer_length);
       }
 
       // Handle any timer interrupts

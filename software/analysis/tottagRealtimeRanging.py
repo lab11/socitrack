@@ -30,16 +30,13 @@ tottags = []
 
 def data_received_callback(data_file, sender_characteristic, data):
 
-  print('HERE');
-  print(len(data))
-  print(data)
-  print(data[0])
-  #num_ranges = int(data[0])
-  #timestamp = data[1 + EUI_LENGTH + (num_ranges * RANGE_DATA_LENGTH)];
-  #for i in range(num_ranges):
-  #  node_id = data[1 + EUI_LENGTH + (i * RANGE_DATA_LENGTH)]
-  #  range_mm = data[1 + (2 * EUI_LENGTH) + (i * RANGE_DATA_LENGTH)]
-  #  data_file.write('{}\t{}\t{}\n'.format(timestamp, node_id, range_mm))
+  num_ranges, from_eui = struct.unpack('<BB', data[:2])
+  timestamp = struct.unpack('<I', data[(2+num_ranges*5):(6+num_ranges*5)])[0]
+  print('Range from Device {} to {} device(s) @ {}:'.format(hex(from_eui)[2:], num_ranges, timestamp))
+  for i in range(num_ranges):
+    to_eui, range_mm = struct.unpack('<BI', data[(2+i*5):(2+(i+1)*5)])
+    print('\tDevice {} with millimeter range {}'.format(hex(to_eui)[2:], range_mm))
+    data_file.write('{}\t{}    {}    {}\n'.format(timestamp, hex(from_eui)[2:], hex(to_eui)[2:], range_mm))
 
 
 # MAIN RANGE LOGGING FUNCTION -----------------------------------------------------------------------------------------
@@ -68,7 +65,7 @@ async def log_ranges():
             if characteristic.uuid == TOTTAG_DATA_UUID:
               try:
                 file = open(filename_base + client.address.replace(':', '') + '.data', 'w')
-                file.write('Timestamp\tNode ID\tDistance (mm)\n')
+                file.write('Timestamp\tFrom  To    Distance (mm)\n')
               except Exception as e:
                 print(e)
                 print('ERROR: Unable to create a ranging data log file')
@@ -80,7 +77,6 @@ async def log_ranges():
 
       except Exception as e:
         print('ERROR: Unable to connect to TotTag {}'.format(device.address))
-      finally:
         await client.disconnect()
 
   # Wait forever while ranging data is being logged
@@ -91,13 +87,17 @@ async def log_ranges():
     await tottags[i].stop_notify(data_characteristics[i])
     await tottags[i].disconnect()
 
-  # Close all calibration data log files
-  for file in ranging_files:
-    file.close()
-
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
 
 print('\nSearching 6 seconds for TotTags...\n')
 loop = asyncio.get_event_loop()
-loop.run_until_complete(log_ranges())
+
+# Listen forever for TotTag ranges
+try:
+  loop.run_until_complete(log_ranges())
+
+# Gracefully close all log files
+finally:
+  for file in ranging_files:
+    file.close()

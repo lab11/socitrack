@@ -20,7 +20,7 @@ void ble_stop_advertising(void);
 void ble_stop_scanning(void);
 void ble_clear_scheduler_eui(void);
 uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes);
-void ble_update_ranging_data(const uint8_t *data, volatile uint16_t *length);
+void ble_update_ranging_data(const uint8_t *data, uint16_t length);
 void ble_second_has_elapsed(void);
 uint32_t ble_request_timestamp(void);
 uint32_t ble_is_network_available(void);

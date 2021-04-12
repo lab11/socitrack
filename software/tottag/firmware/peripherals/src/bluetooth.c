@@ -616,19 +616,19 @@ uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
    return 0;
 }
 
-void ble_update_ranging_data(const uint8_t *data, volatile uint16_t *length)
+void ble_update_ranging_data(const uint8_t *data, uint16_t length)
 {
    // Only update the Bluetooth characteristic if there is a valid connection
-   if ((_carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (*length <= APP_BLE_MAX_CHAR_LEN))
+   if ((_carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (length <= APP_BLE_MAX_CHAR_LEN))
    {
-      uint16_t len = *length;
-      ble_gatts_hvx_params_t notify_params = { 0 };
-      notify_params.handle = _carrier_ble_char_location_handle.value_handle;
-      notify_params.type   = BLE_GATT_HVX_NOTIFICATION;
-      notify_params.offset = 0;
-      notify_params.p_len  = &len;
-      notify_params.p_data = data;
-      sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
+      ble_gatts_hvx_params_t notify_params = {
+         .handle = _carrier_ble_char_location_handle.value_handle,
+         .type   = BLE_GATT_HVX_NOTIFICATION,
+         .offset = 0,
+         .p_len  = &length,
+         .p_data = data
+      };
+      uint32_t dd = sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
    }
 }
 
