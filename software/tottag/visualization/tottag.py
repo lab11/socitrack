@@ -50,7 +50,6 @@ logfile_dir = os.path.dirname(os.path.abspath(logfile))
 logfile_date = datetime.today()
 
 # Create an output directory
-script_dir = os.path.dirname(__file__)
 results_dir = os.path.join(logfile_dir, 'figs')
 if not os.path.isdir(results_dir):
    os.makedirs(results_dir)
