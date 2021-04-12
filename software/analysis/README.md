@@ -2,7 +2,14 @@ TotTag Analysis Scripts
 =======================
 
 This directory contains a collection of Python scripts for use in managing and
-analyzing stored TotTag measurement data.
+analyzing stored TotTag measurement data. To ensure that all scripts run
+without problem, you may pre-install all necessary packages at one time by
+entering the following terminal command (depending on whether you are
+using Python version 2 or 3):
+
+For Python 2: `pip install -r requirements.txt`
+
+For Python 3: `pip3 install -r requirements.txt`
 
 
 Management
@@ -11,14 +18,6 @@ Management
 The script entitled `tottagLogManagement.py` can be used to fully manage
 the log files stored on any TotTag's SD Card. It allows you to list the files
 present on a device, download them individually or as a whole, and erase them.
-
-If you have never run this script before, you may first need to install the
-PySerial package using one of the following commands (depending on if you are
-using Python version 2 or 3):
-
-For Python 2: `pip install pyserial`
-
-For Python 3: `pip3 install pyserial`
 
 To run the script, first ensure that your TotTag is connected to your computer
 via USB, then enter the following in a terminal (again the `python` command

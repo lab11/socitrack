@@ -1,5 +1,5 @@
 # Required Python packages
 
 matplotlib
-serial
+pyserial
 bleak
