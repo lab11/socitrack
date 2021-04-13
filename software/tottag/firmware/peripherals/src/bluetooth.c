@@ -628,7 +628,7 @@ void ble_update_ranging_data(const uint8_t *data, uint16_t length)
          .p_len  = &length,
          .p_data = data
       };
-      uint32_t dd = sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
+      sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
    }
 }
 
