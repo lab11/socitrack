@@ -1,6 +1,7 @@
 import sys
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
+import datetime as dt
 from classifiers import *
 from exceptions import *
 
@@ -69,6 +70,8 @@ def load_diary(diary_filepath: str) -> tuple[list[DiaryEvent],dict[str,int]]:
     event_map = {}
     encoding_index = 0
 
+    event_map["Undefined"] = -1
+
     with open(diary_filepath) as f:
         for line in f:
 
@@ -99,6 +102,9 @@ def load_testdiary(diary_filepath: str, event_map) -> tuple[list[DiaryEvent],dic
                 continue
 
             label_string, start, end = line.split(",")[0:3]
+
+            if label_string not in event_map:
+                label_string = "Undefined"
 
             encoded_label = event_map[label_string]
 
@@ -215,21 +221,23 @@ def plot(tags: dict[Device, TotTagData]) -> None:
         print("Plotting data for", tag)
         x_axis, y_axis = zip(*data)
 
+        x_axis = tuple(map(lambda x : dt.datetime.utcfromtimestamp(x).ctime(), x_axis))
         y_axis = tuple(map(lambda x : x/304.8, y_axis)) 
 
-        plt.plot(x_axis, y_axis, 'c', label='Original')
+        plt.scatter(x_axis, y_axis)#, 'c', label='Original')
+        plt.xticks(tuple(filter(lambda x: x_axis.index(x)%100 == 0, x_axis)))
         plt.title('TotTag data for device ' + tag)
         plt.xlabel('Timestamp')
         plt.ylabel('Distance in ft')
 
-        smoothed_y_axis = savgol_filter(y_axis, window_length=9, polyorder=3)
+        #smoothed_y_axis = savgol_filter(y_axis, window_length=9, polyorder=3)
 
-        plt.plot(x_axis, smoothed_y_axis, 'k', label='Smoothed')
+        #plt.plot(x_axis, smoothed_y_axis, 'k', label='Smoothed')
         # plt.title('Savitzky-Golay Filtered TotTag data for device ' + tag)
         # plt.xlabel('Timestamp')
         # plt.ylabel('Distance in mm')
 
-        plt.legend(['Original', 'Smoothed'])
+        #plt.legend(['Original', 'Smoothed'])
         plt.show()
 
 
@@ -308,7 +316,7 @@ if __name__ == "__main__":
     reverse_event_map = {v: k for k, v in event_map.items()}
     print("="*50)
     print_window_times_and_labels(windows, labels, reverse_event_map)
-    print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
+    # print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
     
     # Remove timestamps from windows; they are in order anyways, and would affect training if included
     stripped_windows = strip_timestamps(windows)
