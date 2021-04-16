@@ -31,7 +31,7 @@ static app_flags_t _app_flags = { 0 };
 static nrfx_spim_t _rtc_sd_spi_instance = RTC_SD_SPI_BUS;
 static nrfx_spim_t _imu_spi_instance = IMU_SPI_BUS;
 static uint8_t _range_buffer[APP_BLE_BUFFER_LENGTH] = { 0 };
-static uint16_t _range_buffer_length = 0;
+static volatile uint16_t _range_buffer_length = 0;
 
 
 // Helper functions ----------------------------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ static void hardware_init(void)
    usb_init();
 
    // Initialize the Bluetooth stack via a SoftDevice
-   if (ble_init(&_app_flags.squarepoint_enabled, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
+   if (ble_init(&_app_flags.squarepoint_enabled, &_app_flags.bluetooth_is_advertising, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
       while (true)
       {
          buzzer_indicate_error();
@@ -454,7 +454,7 @@ int main(void)
 
    // Loop forever
    bool charger_plugged_in = false;
-   uint32_t app_enabled = 1, app_running = 0, network_discovered = 0, hfclk_running = 0;
+   uint32_t app_enabled = 1, app_running = 0, network_discovered = 0, hfclk_running = 0, current_timestamp = 0;
    while (1)
    {
       // Go to sleep until something happens
@@ -477,7 +477,7 @@ int main(void)
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))
       {
          log_ranges(_range_buffer, _range_buffer_length);
-         ble_update_ranging_data(_range_buffer, &_range_buffer_length);
+         ble_update_ranging_data(_range_buffer, _range_buffer_length);
       }
 
       // Handle any timer interrupts
@@ -533,7 +533,18 @@ int main(void)
       network_discovered = ble_is_network_available();
       app_enabled = nrfx_atomic_flag_fetch(&_app_flags.squarepoint_enabled);
       if (app_enabled && network_discovered && !app_running)
-         start_squarepoint();
+      {
+         // Either start SquarePoint or request the correct RTC time based on our current status
+         if (nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid))
+            start_squarepoint();
+         else if ((current_timestamp = ble_request_timestamp()) > 0)
+         {
+            log_printf("INFO: Setting timestamp to the network response: %lu\n", current_timestamp);
+            ab1815_set_timestamp(current_timestamp);
+            sd_card_create_log(current_timestamp);
+            nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
+         }
+      }
       else if (!app_enabled && app_running)
          squarepoint_stop();
 #ifdef BLE_CALIBRATION
@@ -546,13 +557,13 @@ int main(void)
       {
          if (nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
             ble_stop_scanning();
-         if (nrfx_atomic_flag_clear_fetch(&_app_flags.bluetooth_is_advertising))
+         if (nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_advertising))
             ble_stop_advertising();
       }
       else
       {
-         if (!nrfx_atomic_flag_set_fetch(&_app_flags.bluetooth_is_advertising) && (ble_start_advertising() != NRF_SUCCESS))
-            nrfx_atomic_flag_clear(&_app_flags.bluetooth_is_advertising);
+         if (!nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_advertising) && nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid))
+            ble_start_advertising();
 #ifndef BLE_CALIBRATION
          if (!app_running && !nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
             ble_start_scanning();

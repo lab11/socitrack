@@ -775,6 +775,9 @@ static void on_descriptor_discovery_rsp(ble_db_discovery_t * const    p_db_disco
                     p_char_being_discovered->report_ref_handle =
                         p_desc_disc_rsp_evt->descs[i].handle;
                     break;
+
+                default:
+                    break;
             }
 
             /* Break if we've found all the descriptors we are looking for. */
