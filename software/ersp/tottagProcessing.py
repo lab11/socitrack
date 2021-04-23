@@ -68,9 +68,9 @@ def load_diary(diary_filepath: str) -> tuple[list[DiaryEvent],dict[str,int]]:
     """Loads diary data from a specified filepath, and returns a list containing the events in the diary."""
     diary = []
     event_map = {}
-    encoding_index = 0
+    encoding_index = 1
 
-    event_map["Undefined"] = -1
+    event_map["Undefined"] = 0
 
     with open(diary_filepath) as f:
         for line in f:
@@ -224,15 +224,15 @@ def plot(tags: dict[Device, TotTagData]) -> None:
         x_axis = tuple(map(lambda x : dt.datetime.utcfromtimestamp(x).ctime(), x_axis))
         y_axis = tuple(map(lambda x : x/304.8, y_axis)) 
 
-        plt.scatter(x_axis, y_axis)#, 'c', label='Original')
+        plt.plot(x_axis, y_axis)#, 'c', label='Original')
         plt.xticks(tuple(filter(lambda x: x_axis.index(x)%100 == 0, x_axis)))
         plt.title('TotTag data for device ' + tag)
         plt.xlabel('Timestamp')
         plt.ylabel('Distance in ft')
 
-        #smoothed_y_axis = savgol_filter(y_axis, window_length=9, polyorder=3)
+        # smoothed_y_axis = savgol_filter(y_axis, window_length=9, polyorder=3)
 
-        #plt.plot(x_axis, smoothed_y_axis, 'k', label='Smoothed')
+        # plt.plot(x_axis, smoothed_y_axis, 'k', label='Smoothed')
         # plt.title('Savitzky-Golay Filtered TotTag data for device ' + tag)
         # plt.xlabel('Timestamp')
         # plt.ylabel('Distance in mm')
@@ -275,6 +275,9 @@ def graph_labeling(windows, window_labels, reverse_event_map):
         if window_labels[i] not in bins: 
             bins[window_labels[i]] = windows[i]
         else:
+            last_time = bins[window_labels[i]][-1][0]
+            next_time = windows[i][0][0]
+            bins[window_labels[i]].extend([(i, np.nan) for i in range(last_time + 1, next_time)])
             bins[window_labels[i]].extend(windows[i])
 
     plt.title('TotTag training data labeling')
@@ -283,15 +286,21 @@ def graph_labeling(windows, window_labels, reverse_event_map):
 
     for data_label, data in bins.items():
         x_1, y_1 = zip(*data)
+        x_1 = tuple(map(lambda x : dt.datetime.utcfromtimestamp(x).ctime(), x_1))
         y_1 = tuple(map(lambda x : x/304.8, y_1))
-        plt.scatter(x_1, y_1, label=reverse_event_map[data_label])
+        plt.plot(x_1, y_1, label=reverse_event_map[data_label])
 
     plt.legend()
+    locs, _ = plt.xticks()
+    plt.xticks(tuple(filter(lambda x: locs.index(x)%300 == 0, locs)))
     plt.show()
 
 
 if __name__ == "__main__":
     ### Test the code here! :)
+
+    ## IMPORTANT!! ##
+    target_tag = '51'
 
     # Load command-line arguments
     train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_file = parse_args() 
@@ -303,10 +312,10 @@ if __name__ == "__main__":
     testdiary = load_testdiary(test_diary_file, event_map)
 
     # Create sliding windows
-    window_length = 5 
+    window_length = 2
     window_shift = 1
-    windows = generate_sliding_windows(tags, list(tags.keys())[0], window_length, window_shift)
-    testwindows = generate_sliding_windows(testtags, list(testtags.keys())[0], window_length, window_shift)
+    windows = generate_sliding_windows(tags, target_tag, window_length, window_shift)
+    testwindows = generate_sliding_windows(testtags, target_tag, window_length, window_shift)
 
     # Label the windows
     labels = label_events(windows, diary, event_map.values())
@@ -316,7 +325,7 @@ if __name__ == "__main__":
     reverse_event_map = {v: k for k, v in event_map.items()}
     print("="*50)
     print_window_times_and_labels(windows, labels, reverse_event_map)
-    # print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
+    print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
     
     # Remove timestamps from windows; they are in order anyways, and would affect training if included
     stripped_windows = strip_timestamps(windows)
