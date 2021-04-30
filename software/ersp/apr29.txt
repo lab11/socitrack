@@ -1,0 +1,2288 @@
+==================================================
+Training Data:	|	Start	 End	 Label
+==================================================
+Window 1:	|	1614990067 	 1614990068 	 Pass By
+Window 2:	|	1614990087 	 1614990088 	 Pass By
+Window 3:	|	1614990088 	 1614990089 	 Close By
+Window 4:	|	1614990089 	 1614990090 	 Close By
+Window 5:	|	1614990090 	 1614990091 	 Close By
+Window 6:	|	1614990091 	 1614990092 	 Close By
+Window 7:	|	1614990092 	 1614990093 	 Close By
+Window 8:	|	1614990093 	 1614990094 	 Close By
+Window 9:	|	1614990094 	 1614990095 	 Close By
+Window 10:	|	1614990095 	 1614990096 	 Close By
+Window 11:	|	1614990096 	 1614990097 	 Close By
+Window 12:	|	1614990097 	 1614990098 	 Close By
+Window 13:	|	1614990098 	 1614990099 	 Close By
+Window 14:	|	1614990099 	 1614990100 	 Close By
+Window 15:	|	1614990100 	 1614990101 	 Close By
+Window 16:	|	1614990101 	 1614990102 	 Close By
+Window 17:	|	1614990102 	 1614990103 	 Close By
+Window 18:	|	1614990103 	 1614990104 	 Close By
+Window 19:	|	1614990104 	 1614990105 	 Close By
+Window 20:	|	1614990105 	 1614990106 	 Close By
+Window 21:	|	1614990106 	 1614990107 	 Close By
+Window 22:	|	1614990107 	 1614990108 	 Close By
+Window 23:	|	1614990110 	 1614990111 	 Close By
+Window 24:	|	1614990111 	 1614990112 	 Close By
+Window 25:	|	1614990112 	 1614990113 	 Close By
+Window 26:	|	1614990113 	 1614990114 	 Close By
+Window 27:	|	1614990114 	 1614990115 	 Close By
+Window 28:	|	1614990132 	 1614990133 	 Close By
+Window 29:	|	1614990133 	 1614990134 	 Close By
+Window 30:	|	1614990134 	 1614990135 	 Close By
+Window 31:	|	1614990135 	 1614990136 	 Close By
+Window 32:	|	1614990136 	 1614990137 	 Close By
+Window 33:	|	1614990172 	 1614990173 	 Close By
+Window 34:	|	1614990173 	 1614990174 	 Close By
+Window 35:	|	1614990174 	 1614990175 	 Close By
+Window 36:	|	1614990175 	 1614990176 	 Close By
+Window 37:	|	1614990176 	 1614990177 	 Close By
+Window 38:	|	1614990177 	 1614990178 	 Close By
+Window 39:	|	1614990198 	 1614990199 	 Out of Range
+Window 40:	|	1614990199 	 1614990200 	 Out of Range
+Window 41:	|	1614990200 	 1614990201 	 Out of Range
+Window 42:	|	1614990201 	 1614990202 	 Out of Range
+Window 43:	|	1614990202 	 1614990203 	 Out of Range
+Window 44:	|	1614990203 	 1614990204 	 Out of Range
+Window 45:	|	1614990204 	 1614990205 	 Out of Range
+Window 46:	|	1614990205 	 1614990206 	 Out of Range
+Window 47:	|	1614990206 	 1614990207 	 Out of Range
+Window 48:	|	1614990207 	 1614990208 	 Out of Range
+Window 49:	|	1614990208 	 1614990209 	 Out of Range
+Window 50:	|	1614990209 	 1614990210 	 Out of Range
+Window 51:	|	1614990210 	 1614990211 	 Out of Range
+Window 52:	|	1614990211 	 1614990212 	 Out of Range
+Window 53:	|	1614990212 	 1614990213 	 Out of Range
+Window 54:	|	1614990213 	 1614990214 	 Out of Range
+Window 55:	|	1614990214 	 1614990215 	 Out of Range
+Window 56:	|	1614990248 	 1614990249 	 Close By
+Window 57:	|	1614990249 	 1614990250 	 Close By
+Window 58:	|	1614990250 	 1614990251 	 Close By
+Window 59:	|	1614990251 	 1614990252 	 Close By
+Window 60:	|	1614990252 	 1614990253 	 Close By
+Window 61:	|	1614990255 	 1614990256 	 Close By
+Window 62:	|	1614990256 	 1614990257 	 Close By
+Window 63:	|	1614990257 	 1614990258 	 Close By
+Window 64:	|	1614990258 	 1614990259 	 Close By
+Window 65:	|	1614990263 	 1614990264 	 Close By
+Window 66:	|	1614990264 	 1614990265 	 Close By
+Window 67:	|	1614990265 	 1614990266 	 Close By
+Window 68:	|	1614990266 	 1614990267 	 Close By
+Window 69:	|	1614990267 	 1614990268 	 Close By
+Window 70:	|	1614990268 	 1614990269 	 Close By
+Window 71:	|	1614990269 	 1614990270 	 Close By
+Window 72:	|	1614990270 	 1614990271 	 Close By
+Window 73:	|	1614990271 	 1614990272 	 Close By
+Window 74:	|	1614990272 	 1614990273 	 Close By
+Window 75:	|	1614990273 	 1614990274 	 Close By
+Window 76:	|	1614990284 	 1614990285 	 Close By
+Window 77:	|	1614990285 	 1614990286 	 Close By
+Window 78:	|	1614990286 	 1614990287 	 Close By
+Window 79:	|	1614990287 	 1614990288 	 Close By
+Window 80:	|	1614990288 	 1614990289 	 Close By
+Window 81:	|	1614990289 	 1614990290 	 Close By
+Window 82:	|	1614990290 	 1614990291 	 Close By
+Window 83:	|	1614990291 	 1614990292 	 Close By
+Window 84:	|	1614990292 	 1614990293 	 Close By
+Window 85:	|	1614990293 	 1614990294 	 Close By
+Window 86:	|	1614990294 	 1614990295 	 Pass By
+Window 87:	|	1614990295 	 1614990296 	 Leaving Room
+Window 88:	|	1614990296 	 1614990297 	 Out of Range
+Window 89:	|	1614990297 	 1614990298 	 Out of Range
+Window 90:	|	1614990298 	 1614990299 	 Out of Range
+Window 91:	|	1614990299 	 1614990300 	 Out of Range
+Window 92:	|	1614990300 	 1614990301 	 Out of Range
+Window 93:	|	1614990301 	 1614990302 	 Out of Range
+Window 94:	|	1614990302 	 1614990303 	 Out of Range
+Window 95:	|	1614990303 	 1614990304 	 Out of Range
+Window 96:	|	1614990304 	 1614990305 	 Out of Range
+Window 97:	|	1614990305 	 1614990306 	 Out of Range
+Window 98:	|	1614990308 	 1614990309 	 Out of Range
+Window 99:	|	1614990333 	 1614990334 	 Close By
+Window 100:	|	1614990334 	 1614990335 	 Close By
+Window 101:	|	1614990335 	 1614990336 	 Close By
+Window 102:	|	1614990336 	 1614990337 	 Close By
+Window 103:	|	1614990337 	 1614990338 	 Close By
+Window 104:	|	1614990338 	 1614990339 	 Close By
+Window 105:	|	1614990339 	 1614990340 	 Close By
+Window 106:	|	1614990340 	 1614990341 	 Close By
+Window 107:	|	1614990341 	 1614990342 	 Close By
+Window 108:	|	1614990342 	 1614990343 	 Close By
+Window 109:	|	1614990343 	 1614990344 	 Close By
+Window 110:	|	1614990354 	 1614990355 	 Close By
+Window 111:	|	1614990355 	 1614990356 	 Close By
+Window 112:	|	1614990356 	 1614990357 	 Close By
+Window 113:	|	1614990357 	 1614990358 	 Close By
+Window 114:	|	1614990358 	 1614990359 	 Close By
+Window 115:	|	1614990361 	 1614990362 	 Close By
+Window 116:	|	1614990366 	 1614990367 	 Close By
+Window 117:	|	1614990367 	 1614990368 	 Close By
+Window 118:	|	1614990368 	 1614990369 	 Close By
+Window 119:	|	1614990369 	 1614990370 	 Close By
+Window 120:	|	1614990370 	 1614990371 	 Close By
+Window 121:	|	1614990371 	 1614990372 	 Close By
+Window 122:	|	1614990372 	 1614990373 	 Close By
+Window 123:	|	1614990373 	 1614990374 	 Close By
+Window 124:	|	1614990374 	 1614990375 	 Close By
+Window 125:	|	1614990375 	 1614990376 	 Close By
+Window 126:	|	1614990376 	 1614990377 	 Close By
+Window 127:	|	1614990377 	 1614990378 	 Close By
+Window 128:	|	1614990378 	 1614990379 	 Close By
+Window 129:	|	1614990379 	 1614990380 	 Close By
+Window 130:	|	1614990380 	 1614990381 	 Close By
+Window 131:	|	1614990381 	 1614990382 	 Close By
+Window 132:	|	1614990382 	 1614990383 	 Close By
+Window 133:	|	1614990383 	 1614990384 	 Close By
+Window 134:	|	1614990384 	 1614990385 	 Close By
+Window 135:	|	1614990385 	 1614990386 	 Close By
+Window 136:	|	1614990386 	 1614990387 	 Close By
+Window 137:	|	1614990387 	 1614990388 	 Close By
+Window 138:	|	1614990388 	 1614990389 	 Close By
+Window 139:	|	1614990413 	 1614990414 	 Close By
+Window 140:	|	1614990414 	 1614990415 	 Close By
+Window 141:	|	1614990415 	 1614990416 	 Close By
+Window 142:	|	1614990416 	 1614990417 	 Close By
+Window 143:	|	1614990442 	 1614990443 	 Out of Range
+Window 144:	|	1614990447 	 1614990448 	 Out of Range
+Window 145:	|	1614990448 	 1614990449 	 Out of Range
+Window 146:	|	1614990449 	 1614990450 	 Out of Range
+Window 147:	|	1614990450 	 1614990451 	 Out of Range
+Window 148:	|	1614990451 	 1614990452 	 Out of Range
+Window 149:	|	1614990452 	 1614990453 	 Out of Range
+Window 150:	|	1614990467 	 1614990468 	 Out of Range
+Window 151:	|	1614990468 	 1614990469 	 Out of Range
+Window 152:	|	1614990469 	 1614990470 	 Out of Range
+Window 153:	|	1614990470 	 1614990471 	 Out of Range
+Window 154:	|	1614990484 	 1614990485 	 Out of Range
+Window 155:	|	1614990547 	 1614990548 	 Out of Range
+Window 156:	|	1614990548 	 1614990549 	 Out of Range
+Window 157:	|	1614990549 	 1614990550 	 Out of Range
+Window 158:	|	1614990550 	 1614990551 	 Out of Range
+Window 159:	|	1614990551 	 1614990552 	 Out of Range
+Window 160:	|	1614990552 	 1614990553 	 Out of Range
+Window 161:	|	1614990553 	 1614990554 	 Out of Range
+Window 162:	|	1614990554 	 1614990555 	 Out of Range
+Window 163:	|	1614990555 	 1614990556 	 Out of Range
+Window 164:	|	1614990556 	 1614990557 	 Out of Range
+Window 165:	|	1614990557 	 1614990558 	 Out of Range
+Window 166:	|	1614990558 	 1614990559 	 Out of Range
+Window 167:	|	1614990559 	 1614990560 	 Out of Range
+Window 168:	|	1614990655 	 1614990656 	 Undefined
+Window 169:	|	1614990656 	 1614990657 	 Undefined
+Window 170:	|	1614990704 	 1614990705 	 Undefined
+Window 171:	|	1614990707 	 1614990708 	 Undefined
+Window 172:	|	1614990708 	 1614990709 	 Undefined
+Window 173:	|	1614990709 	 1614990710 	 Undefined
+Window 174:	|	1614990710 	 1614990711 	 Undefined
+Window 175:	|	1614990721 	 1614990722 	 Undefined
+Window 176:	|	1614990722 	 1614990723 	 Undefined
+Window 177:	|	1614990723 	 1614990724 	 Undefined
+Window 178:	|	1614990724 	 1614990725 	 Undefined
+Window 179:	|	1614990725 	 1614990726 	 Undefined
+Window 180:	|	1614990726 	 1614990727 	 Undefined
+Window 181:	|	1614990727 	 1614990728 	 Undefined
+Window 182:	|	1614990728 	 1614990729 	 Undefined
+Window 183:	|	1614990729 	 1614990730 	 Undefined
+Window 184:	|	1614990730 	 1614990731 	 Undefined
+Window 185:	|	1614990731 	 1614990732 	 Undefined
+Window 186:	|	1614990732 	 1614990733 	 Undefined
+Window 187:	|	1614990733 	 1614990734 	 Undefined
+Window 188:	|	1614990734 	 1614990735 	 Undefined
+Window 189:	|	1614990735 	 1614990736 	 Undefined
+Window 190:	|	1614990736 	 1614990737 	 Undefined
+Window 191:	|	1614990737 	 1614990738 	 Undefined
+Window 192:	|	1614990738 	 1614990739 	 Undefined
+Window 193:	|	1614990739 	 1614990740 	 Undefined
+Window 194:	|	1614990740 	 1614990741 	 Undefined
+Window 195:	|	1614990741 	 1614990742 	 Undefined
+Window 196:	|	1614990742 	 1614990743 	 Undefined
+Window 197:	|	1614990743 	 1614990744 	 Undefined
+Window 198:	|	1614990744 	 1614990745 	 Undefined
+Window 199:	|	1614990745 	 1614990746 	 Undefined
+Window 200:	|	1614990746 	 1614990747 	 Undefined
+Window 201:	|	1614990747 	 1614990748 	 Undefined
+Window 202:	|	1614990748 	 1614990749 	 Undefined
+Window 203:	|	1614990749 	 1614990750 	 Undefined
+Window 204:	|	1614990750 	 1614990751 	 Undefined
+Window 205:	|	1614990751 	 1614990752 	 Undefined
+Window 206:	|	1614990772 	 1614990773 	 Undefined
+Window 207:	|	1614990773 	 1614990774 	 Undefined
+Window 208:	|	1614990774 	 1614990775 	 Undefined
+Window 209:	|	1614990775 	 1614990776 	 Undefined
+Window 210:	|	1614990778 	 1614990779 	 Undefined
+Window 211:	|	1614990807 	 1614990808 	 Undefined
+Window 212:	|	1614990808 	 1614990809 	 Undefined
+Window 213:	|	1614990809 	 1614990810 	 Undefined
+Window 214:	|	1614990810 	 1614990811 	 Undefined
+Window 215:	|	1614990811 	 1614990812 	 Undefined
+Window 216:	|	1614990812 	 1614990813 	 Undefined
+Window 217:	|	1614990813 	 1614990814 	 Undefined
+Window 218:	|	1614990814 	 1614990815 	 Undefined
+Window 219:	|	1614990815 	 1614990816 	 Undefined
+Window 220:	|	1614990816 	 1614990817 	 Undefined
+Window 221:	|	1614990817 	 1614990818 	 Undefined
+Window 222:	|	1614990818 	 1614990819 	 Undefined
+Window 223:	|	1614990819 	 1614990820 	 Undefined
+Window 224:	|	1614990822 	 1614990823 	 Undefined
+Window 225:	|	1614990823 	 1614990824 	 Undefined
+Window 226:	|	1614990824 	 1614990825 	 Undefined
+Window 227:	|	1614990825 	 1614990826 	 Undefined
+Window 228:	|	1614990826 	 1614990827 	 Undefined
+Window 229:	|	1614990852 	 1614990853 	 Undefined
+Window 230:	|	1614990853 	 1614990854 	 Undefined
+Window 231:	|	1614990854 	 1614990855 	 Undefined
+Window 232:	|	1614990855 	 1614990856 	 Undefined
+Window 233:	|	1614990856 	 1614990857 	 Undefined
+Window 234:	|	1614990857 	 1614990858 	 Undefined
+Window 235:	|	1614990858 	 1614990859 	 Undefined
+Window 236:	|	1614990859 	 1614990860 	 Undefined
+Window 237:	|	1614990860 	 1614990861 	 Undefined
+Window 238:	|	1614990861 	 1614990862 	 Undefined
+Window 239:	|	1614990862 	 1614990863 	 Undefined
+Window 240:	|	1614990863 	 1614990864 	 Undefined
+Window 241:	|	1614990864 	 1614990865 	 Undefined
+Window 242:	|	1614990865 	 1614990866 	 Undefined
+Window 243:	|	1614990866 	 1614990867 	 Undefined
+Window 244:	|	1614990867 	 1614990868 	 Undefined
+Window 245:	|	1614990868 	 1614990869 	 Undefined
+Window 246:	|	1614990869 	 1614990870 	 Undefined
+Window 247:	|	1614990870 	 1614990871 	 Undefined
+Window 248:	|	1614990871 	 1614990872 	 Undefined
+Window 249:	|	1614990872 	 1614990873 	 Undefined
+Window 250:	|	1614990873 	 1614990874 	 Undefined
+Window 251:	|	1614990874 	 1614990875 	 Undefined
+Window 252:	|	1614990875 	 1614990876 	 Undefined
+Window 253:	|	1614990876 	 1614990877 	 Undefined
+Window 254:	|	1614990877 	 1614990878 	 Undefined
+Window 255:	|	1614990878 	 1614990879 	 Undefined
+Window 256:	|	1614990879 	 1614990880 	 Undefined
+Window 257:	|	1614990880 	 1614990881 	 Undefined
+Window 258:	|	1614990883 	 1614990884 	 Undefined
+Window 259:	|	1614990884 	 1614990885 	 Undefined
+Window 260:	|	1614990885 	 1614990886 	 Undefined
+Window 261:	|	1614990886 	 1614990887 	 Undefined
+Window 262:	|	1614990887 	 1614990888 	 Undefined
+Window 263:	|	1614990888 	 1614990889 	 Undefined
+Window 264:	|	1614990889 	 1614990890 	 Undefined
+Window 265:	|	1614990890 	 1614990891 	 Undefined
+Window 266:	|	1614990891 	 1614990892 	 Undefined
+Window 267:	|	1614990892 	 1614990893 	 Undefined
+Window 268:	|	1614990893 	 1614990894 	 Undefined
+Window 269:	|	1614990894 	 1614990895 	 Undefined
+Window 270:	|	1614990895 	 1614990896 	 Undefined
+Window 271:	|	1614990896 	 1614990897 	 Undefined
+Window 272:	|	1614990897 	 1614990898 	 Undefined
+Window 273:	|	1614990898 	 1614990899 	 Undefined
+Window 274:	|	1614990928 	 1614990929 	 Undefined
+Window 275:	|	1614990929 	 1614990930 	 Undefined
+Window 276:	|	1614990930 	 1614990931 	 Undefined
+Window 277:	|	1614990931 	 1614990932 	 Undefined
+Window 278:	|	1614990932 	 1614990933 	 Undefined
+Window 279:	|	1614990933 	 1614990934 	 Undefined
+Window 280:	|	1614990934 	 1614990935 	 Undefined
+Window 281:	|	1614990935 	 1614990936 	 Undefined
+Window 282:	|	1614991082 	 1614991083 	 Undefined
+Window 283:	|	1614991106 	 1614991107 	 Undefined
+Window 284:	|	1614991107 	 1614991108 	 Undefined
+Window 285:	|	1614991108 	 1614991109 	 Undefined
+Window 286:	|	1614991109 	 1614991110 	 Undefined
+Window 287:	|	1614991110 	 1614991111 	 Undefined
+Window 288:	|	1614991111 	 1614991112 	 Undefined
+Window 289:	|	1614991112 	 1614991113 	 Undefined
+Window 290:	|	1614991113 	 1614991114 	 Undefined
+Window 291:	|	1614991114 	 1614991115 	 Undefined
+Window 292:	|	1614991115 	 1614991116 	 Undefined
+Window 293:	|	1614991116 	 1614991117 	 Undefined
+Window 294:	|	1614991121 	 1614991122 	 Undefined
+Window 295:	|	1614991122 	 1614991123 	 Undefined
+Window 296:	|	1614991123 	 1614991124 	 Undefined
+Window 297:	|	1614991124 	 1614991125 	 Undefined
+Window 298:	|	1614991125 	 1614991126 	 Undefined
+Window 299:	|	1614991126 	 1614991127 	 Undefined
+Window 300:	|	1614991127 	 1614991128 	 Undefined
+Window 301:	|	1614991128 	 1614991129 	 Undefined
+Window 302:	|	1614991129 	 1614991130 	 Undefined
+Window 303:	|	1614991130 	 1614991131 	 Undefined
+Window 304:	|	1614991131 	 1614991132 	 Undefined
+Window 305:	|	1614991134 	 1614991135 	 Undefined
+Window 306:	|	1614991135 	 1614991136 	 Undefined
+Window 307:	|	1614991136 	 1614991137 	 Undefined
+Window 308:	|	1614991137 	 1614991138 	 Undefined
+Window 309:	|	1614991138 	 1614991139 	 Undefined
+Window 310:	|	1614991139 	 1614991140 	 Undefined
+Window 311:	|	1614991140 	 1614991141 	 Undefined
+Window 312:	|	1614991141 	 1614991142 	 Undefined
+Window 313:	|	1614991142 	 1614991143 	 Undefined
+Window 314:	|	1614991143 	 1614991144 	 Undefined
+Window 315:	|	1614991144 	 1614991145 	 Undefined
+Window 316:	|	1614991145 	 1614991146 	 Undefined
+Window 317:	|	1614991146 	 1614991147 	 Undefined
+Window 318:	|	1614991147 	 1614991148 	 Undefined
+Window 319:	|	1614991148 	 1614991149 	 Undefined
+Window 320:	|	1614991153 	 1614991154 	 Undefined
+Window 321:	|	1614991154 	 1614991155 	 Undefined
+Window 322:	|	1614991160 	 1614991161 	 Undefined
+Window 323:	|	1614991161 	 1614991162 	 Undefined
+Window 324:	|	1614991162 	 1614991163 	 Undefined
+Window 325:	|	1614991163 	 1614991164 	 Undefined
+Window 326:	|	1614991173 	 1614991174 	 Undefined
+Window 327:	|	1614991176 	 1614991177 	 Undefined
+Window 328:	|	1614991177 	 1614991178 	 Undefined
+Window 329:	|	1614991178 	 1614991179 	 Undefined
+Window 330:	|	1614991208 	 1614991209 	 Undefined
+Window 331:	|	1614991209 	 1614991210 	 Undefined
+Window 332:	|	1614991210 	 1614991211 	 Undefined
+Window 333:	|	1614991211 	 1614991212 	 Undefined
+Window 334:	|	1614991212 	 1614991213 	 Undefined
+Window 335:	|	1614991213 	 1614991214 	 Undefined
+Window 336:	|	1614991214 	 1614991215 	 Undefined
+Window 337:	|	1614991215 	 1614991216 	 Undefined
+Window 338:	|	1614991220 	 1614991221 	 Undefined
+Window 339:	|	1614991221 	 1614991222 	 Undefined
+Window 340:	|	1614991222 	 1614991223 	 Undefined
+Window 341:	|	1614991223 	 1614991224 	 Undefined
+Window 342:	|	1614991224 	 1614991225 	 Undefined
+Window 343:	|	1614991273 	 1614991274 	 Undefined
+Window 344:	|	1614991339 	 1614991340 	 Undefined
+Window 345:	|	1614991340 	 1614991341 	 Undefined
+Window 346:	|	1614991341 	 1614991342 	 Undefined
+Window 347:	|	1614991342 	 1614991343 	 Undefined
+Window 348:	|	1614991343 	 1614991344 	 Undefined
+Window 349:	|	1614991344 	 1614991345 	 Undefined
+Window 350:	|	1614991345 	 1614991346 	 Undefined
+Window 351:	|	1614991346 	 1614991347 	 Undefined
+Window 352:	|	1614991347 	 1614991348 	 Undefined
+Window 353:	|	1614991348 	 1614991349 	 Undefined
+Window 354:	|	1614991349 	 1614991350 	 Undefined
+Window 355:	|	1614991350 	 1614991351 	 Undefined
+Window 356:	|	1614991351 	 1614991352 	 Undefined
+Window 357:	|	1614991354 	 1614991355 	 Undefined
+Window 358:	|	1614991355 	 1614991356 	 Undefined
+Window 359:	|	1614991356 	 1614991357 	 Undefined
+Window 360:	|	1614991357 	 1614991358 	 Undefined
+Window 361:	|	1614991358 	 1614991359 	 Undefined
+Window 362:	|	1614991359 	 1614991360 	 Undefined
+Window 363:	|	1614991360 	 1614991361 	 Undefined
+Window 364:	|	1614991361 	 1614991362 	 Undefined
+Window 365:	|	1614991362 	 1614991363 	 Undefined
+Window 366:	|	1614991363 	 1614991364 	 Undefined
+Window 367:	|	1614991364 	 1614991365 	 Undefined
+Window 368:	|	1614991365 	 1614991366 	 Undefined
+Window 369:	|	1614991366 	 1614991367 	 Undefined
+Window 370:	|	1614991367 	 1614991368 	 Undefined
+Window 371:	|	1614991368 	 1614991369 	 Undefined
+Window 372:	|	1614991369 	 1614991370 	 Undefined
+Window 373:	|	1614991370 	 1614991371 	 Undefined
+Window 374:	|	1614991371 	 1614991372 	 Undefined
+Window 375:	|	1614991372 	 1614991373 	 Undefined
+Window 376:	|	1614991373 	 1614991374 	 Undefined
+Window 377:	|	1614991374 	 1614991375 	 Undefined
+Window 378:	|	1614991391 	 1614991392 	 Undefined
+Window 379:	|	1614991392 	 1614991393 	 Undefined
+Window 380:	|	1614991393 	 1614991394 	 Undefined
+Window 381:	|	1614991447 	 1614991448 	 Undefined
+Window 382:	|	1614991448 	 1614991449 	 Undefined
+Window 383:	|	1614991481 	 1614991482 	 Undefined
+Window 384:	|	1614991482 	 1614991483 	 Undefined
+Window 385:	|	1614991483 	 1614991484 	 Undefined
+Window 386:	|	1614991484 	 1614991485 	 Undefined
+Window 387:	|	1614991485 	 1614991486 	 Undefined
+Window 388:	|	1614991486 	 1614991487 	 Undefined
+Window 389:	|	1614991487 	 1614991488 	 Undefined
+Window 390:	|	1614991488 	 1614991489 	 Undefined
+Window 391:	|	1614991492 	 1614991493 	 Undefined
+Window 392:	|	1614991493 	 1614991494 	 Undefined
+Window 393:	|	1614991494 	 1614991495 	 Undefined
+Window 394:	|	1614991495 	 1614991496 	 Undefined
+Window 395:	|	1614991496 	 1614991497 	 Undefined
+Window 396:	|	1614991497 	 1614991498 	 Undefined
+Window 397:	|	1614991498 	 1614991499 	 Undefined
+Window 398:	|	1614991499 	 1614991500 	 Undefined
+Window 399:	|	1614991500 	 1614991501 	 Undefined
+Window 400:	|	1614991501 	 1614991502 	 Undefined
+Window 401:	|	1614991502 	 1614991503 	 Undefined
+Window 402:	|	1614991503 	 1614991504 	 Undefined
+Window 403:	|	1614991504 	 1614991505 	 Undefined
+Window 404:	|	1614991505 	 1614991506 	 Undefined
+Window 405:	|	1614991506 	 1614991507 	 Undefined
+Window 406:	|	1614991507 	 1614991508 	 Undefined
+Window 407:	|	1614991508 	 1614991509 	 Undefined
+Window 408:	|	1614991509 	 1614991510 	 Undefined
+Window 409:	|	1614991515 	 1614991516 	 Undefined
+Window 410:	|	1614991516 	 1614991517 	 Undefined
+Window 411:	|	1614991519 	 1614991520 	 Undefined
+Window 412:	|	1614991520 	 1614991521 	 Undefined
+Window 413:	|	1614991521 	 1614991522 	 Undefined
+Window 414:	|	1614991522 	 1614991523 	 Undefined
+Window 415:	|	1614991523 	 1614991524 	 Undefined
+Window 416:	|	1614991524 	 1614991525 	 Undefined
+Window 417:	|	1614991525 	 1614991526 	 Undefined
+Window 418:	|	1614991526 	 1614991527 	 Undefined
+Window 419:	|	1614991527 	 1614991528 	 Undefined
+Window 420:	|	1614991528 	 1614991529 	 Undefined
+Window 421:	|	1614991529 	 1614991530 	 Undefined
+Window 422:	|	1614991530 	 1614991531 	 Undefined
+Window 423:	|	1614991531 	 1614991532 	 Undefined
+Window 424:	|	1614991532 	 1614991533 	 Undefined
+Window 425:	|	1614991533 	 1614991534 	 Undefined
+Window 426:	|	1614991534 	 1614991535 	 Undefined
+Window 427:	|	1614991535 	 1614991536 	 Undefined
+Window 428:	|	1614991536 	 1614991537 	 Undefined
+Window 429:	|	1614991537 	 1614991538 	 Undefined
+Window 430:	|	1614991538 	 1614991539 	 Undefined
+Window 431:	|	1614991539 	 1614991540 	 Undefined
+Window 432:	|	1614991540 	 1614991541 	 Undefined
+Window 433:	|	1614991541 	 1614991542 	 Undefined
+Window 434:	|	1614991542 	 1614991543 	 Undefined
+Window 435:	|	1614991543 	 1614991544 	 Undefined
+Window 436:	|	1614991544 	 1614991545 	 Undefined
+Window 437:	|	1614991545 	 1614991546 	 Undefined
+Window 438:	|	1614991546 	 1614991547 	 Undefined
+Window 439:	|	1614991547 	 1614991548 	 Undefined
+Window 440:	|	1614991548 	 1614991549 	 Undefined
+Window 441:	|	1614991551 	 1614991552 	 Undefined
+Window 442:	|	1614991579 	 1614991580 	 Undefined
+Window 443:	|	1614991580 	 1614991581 	 Undefined
+Window 444:	|	1614991581 	 1614991582 	 Undefined
+Window 445:	|	1614991582 	 1614991583 	 Undefined
+Window 446:	|	1614991583 	 1614991584 	 Undefined
+Window 447:	|	1614991584 	 1614991585 	 Undefined
+Window 448:	|	1614991585 	 1614991586 	 Undefined
+Window 449:	|	1614991586 	 1614991587 	 Undefined
+Window 450:	|	1614991643 	 1614991644 	 Undefined
+Window 451:	|	1614991644 	 1614991645 	 Undefined
+Window 452:	|	1614991651 	 1614991652 	 Undefined
+Window 453:	|	1614991652 	 1614991653 	 Undefined
+Window 454:	|	1614991653 	 1614991654 	 Undefined
+Window 455:	|	1614991654 	 1614991655 	 Undefined
+Window 456:	|	1614991655 	 1614991656 	 Undefined
+Window 457:	|	1614991656 	 1614991657 	 Undefined
+Window 458:	|	1614991657 	 1614991658 	 Undefined
+Window 459:	|	1614991658 	 1614991659 	 Undefined
+Window 460:	|	1614991659 	 1614991660 	 Undefined
+Window 461:	|	1614991660 	 1614991661 	 Undefined
+Window 462:	|	1614991661 	 1614991662 	 Undefined
+Window 463:	|	1614991662 	 1614991663 	 Undefined
+Window 464:	|	1614991663 	 1614991664 	 Undefined
+Window 465:	|	1614991664 	 1614991665 	 Undefined
+Window 466:	|	1614991665 	 1614991666 	 Undefined
+Window 467:	|	1614991666 	 1614991667 	 Undefined
+Window 468:	|	1614991667 	 1614991668 	 Undefined
+Window 469:	|	1614991668 	 1614991669 	 Undefined
+Window 470:	|	1614991669 	 1614991670 	 Undefined
+Window 471:	|	1614991670 	 1614991671 	 Undefined
+Window 472:	|	1614991671 	 1614991672 	 Undefined
+Window 473:	|	1614991688 	 1614991689 	 Undefined
+Window 474:	|	1614991689 	 1614991690 	 Undefined
+Window 475:	|	1614991696 	 1614991697 	 Undefined
+Window 476:	|	1614991697 	 1614991698 	 Undefined
+Window 477:	|	1614991698 	 1614991699 	 Undefined
+Window 478:	|	1614991751 	 1614991752 	 Undefined
+Window 479:	|	1614991752 	 1614991753 	 Undefined
+Window 480:	|	1614991753 	 1614991754 	 Undefined
+Window 481:	|	1614991754 	 1614991755 	 Undefined
+Window 482:	|	1614991755 	 1614991756 	 Undefined
+Window 483:	|	1614991756 	 1614991757 	 Undefined
+Window 484:	|	1614991757 	 1614991758 	 Undefined
+Window 485:	|	1614991758 	 1614991759 	 Undefined
+Window 486:	|	1614991759 	 1614991760 	 Undefined
+Window 487:	|	1614991760 	 1614991761 	 Undefined
+Window 488:	|	1614991761 	 1614991762 	 Undefined
+Window 489:	|	1614991762 	 1614991763 	 Undefined
+Window 490:	|	1614991763 	 1614991764 	 Undefined
+Window 491:	|	1614991764 	 1614991765 	 Undefined
+Window 492:	|	1614991765 	 1614991766 	 Undefined
+Window 493:	|	1614991766 	 1614991767 	 Undefined
+Window 494:	|	1614991767 	 1614991768 	 Undefined
+Window 495:	|	1614991768 	 1614991769 	 Undefined
+Window 496:	|	1614991769 	 1614991770 	 Undefined
+Window 497:	|	1614991770 	 1614991771 	 Undefined
+Window 498:	|	1614991771 	 1614991772 	 Undefined
+Window 499:	|	1614991772 	 1614991773 	 Undefined
+Window 500:	|	1614991773 	 1614991774 	 Undefined
+Window 501:	|	1614991774 	 1614991775 	 Undefined
+Window 502:	|	1614991775 	 1614991776 	 Undefined
+Window 503:	|	1614991776 	 1614991777 	 Undefined
+Window 504:	|	1614991777 	 1614991778 	 Undefined
+Window 505:	|	1614991778 	 1614991779 	 Undefined
+Window 506:	|	1614991779 	 1614991780 	 Undefined
+Window 507:	|	1614991780 	 1614991781 	 Undefined
+Window 508:	|	1614991781 	 1614991782 	 Undefined
+Window 509:	|	1614991782 	 1614991783 	 Undefined
+Window 510:	|	1614991783 	 1614991784 	 Undefined
+Window 511:	|	1614991784 	 1614991785 	 Undefined
+Window 512:	|	1614991785 	 1614991786 	 Undefined
+Window 513:	|	1614991786 	 1614991787 	 Undefined
+Window 514:	|	1614991787 	 1614991788 	 Undefined
+Window 515:	|	1614991788 	 1614991789 	 Undefined
+Window 516:	|	1614991789 	 1614991790 	 Undefined
+Window 517:	|	1614991790 	 1614991791 	 Undefined
+Window 518:	|	1614991791 	 1614991792 	 Undefined
+Window 519:	|	1614991792 	 1614991793 	 Undefined
+Window 520:	|	1614991793 	 1614991794 	 Undefined
+Window 521:	|	1614991794 	 1614991795 	 Undefined
+Window 522:	|	1614991795 	 1614991796 	 Undefined
+Window 523:	|	1614991796 	 1614991797 	 Undefined
+Window 524:	|	1614991797 	 1614991798 	 Undefined
+Window 525:	|	1614991798 	 1614991799 	 Undefined
+Window 526:	|	1614991799 	 1614991800 	 Undefined
+Window 527:	|	1614991800 	 1614991801 	 Undefined
+Window 528:	|	1614991801 	 1614991802 	 Undefined
+Window 529:	|	1614991802 	 1614991803 	 Undefined
+Window 530:	|	1614991803 	 1614991804 	 Undefined
+Window 531:	|	1614991804 	 1614991805 	 Undefined
+Window 532:	|	1614991805 	 1614991806 	 Undefined
+Window 533:	|	1614991806 	 1614991807 	 Undefined
+Window 534:	|	1614991807 	 1614991808 	 Undefined
+Window 535:	|	1614991808 	 1614991809 	 Undefined
+Window 536:	|	1614991809 	 1614991810 	 Undefined
+Window 537:	|	1614991810 	 1614991811 	 Undefined
+Window 538:	|	1614991811 	 1614991812 	 Undefined
+Window 539:	|	1614991812 	 1614991813 	 Undefined
+Window 540:	|	1614991813 	 1614991814 	 Undefined
+Window 541:	|	1614991814 	 1614991815 	 Undefined
+Window 542:	|	1614991815 	 1614991816 	 Undefined
+Window 543:	|	1614991816 	 1614991817 	 Undefined
+Window 544:	|	1614991817 	 1614991818 	 Undefined
+Window 545:	|	1614991818 	 1614991819 	 Undefined
+Window 546:	|	1614991826 	 1614991827 	 Undefined
+Window 547:	|	1614991827 	 1614991828 	 Undefined
+Window 548:	|	1614991828 	 1614991829 	 Undefined
+Window 549:	|	1614991829 	 1614991830 	 Undefined
+Window 550:	|	1614991830 	 1614991831 	 Undefined
+Window 551:	|	1614991831 	 1614991832 	 Undefined
+Window 552:	|	1614991832 	 1614991833 	 Undefined
+Window 553:	|	1614991833 	 1614991834 	 Undefined
+Window 554:	|	1614991834 	 1614991835 	 Undefined
+Window 555:	|	1614991835 	 1614991836 	 Undefined
+Window 556:	|	1614991836 	 1614991837 	 Undefined
+Window 557:	|	1614991837 	 1614991838 	 Undefined
+Window 558:	|	1614991838 	 1614991839 	 Undefined
+Window 559:	|	1614991839 	 1614991840 	 Undefined
+Window 560:	|	1614991840 	 1614991841 	 Undefined
+Window 561:	|	1614991841 	 1614991842 	 Undefined
+Window 562:	|	1614991842 	 1614991843 	 Undefined
+Window 563:	|	1614991843 	 1614991844 	 Undefined
+Window 564:	|	1614991844 	 1614991845 	 Undefined
+Window 565:	|	1614991845 	 1614991846 	 Undefined
+Window 566:	|	1614991846 	 1614991847 	 Undefined
+Window 567:	|	1614991847 	 1614991848 	 Undefined
+Window 568:	|	1614991848 	 1614991849 	 Undefined
+Window 569:	|	1614991849 	 1614991850 	 Undefined
+Window 570:	|	1614991850 	 1614991851 	 Undefined
+Window 571:	|	1614991851 	 1614991852 	 Undefined
+Window 572:	|	1614991852 	 1614991853 	 Undefined
+Window 573:	|	1614991853 	 1614991854 	 Undefined
+Window 574:	|	1614991854 	 1614991855 	 Undefined
+Window 575:	|	1614991855 	 1614991856 	 Undefined
+Window 576:	|	1614991856 	 1614991857 	 Undefined
+Window 577:	|	1614991857 	 1614991858 	 Undefined
+Window 578:	|	1614991858 	 1614991859 	 Undefined
+Window 579:	|	1614991859 	 1614991860 	 Undefined
+Window 580:	|	1614991893 	 1614991894 	 Undefined
+Window 581:	|	1614991899 	 1614991900 	 Undefined
+Window 582:	|	1614991900 	 1614991901 	 Undefined
+Window 583:	|	1614991901 	 1614991902 	 Undefined
+Window 584:	|	1614991902 	 1614991903 	 Undefined
+Window 585:	|	1614991903 	 1614991904 	 Undefined
+Window 586:	|	1614991904 	 1614991905 	 Undefined
+Window 587:	|	1614991905 	 1614991906 	 Undefined
+Window 588:	|	1614991906 	 1614991907 	 Undefined
+Window 589:	|	1614991907 	 1614991908 	 Undefined
+Window 590:	|	1614991908 	 1614991909 	 Undefined
+Window 591:	|	1614991909 	 1614991910 	 Undefined
+Window 592:	|	1614991910 	 1614991911 	 Undefined
+Window 593:	|	1614991911 	 1614991912 	 Undefined
+Window 594:	|	1614991912 	 1614991913 	 Undefined
+Window 595:	|	1614991913 	 1614991914 	 Undefined
+Window 596:	|	1614991914 	 1614991915 	 Undefined
+Window 597:	|	1614991915 	 1614991916 	 Undefined
+Window 598:	|	1614991916 	 1614991917 	 Undefined
+Window 599:	|	1614991917 	 1614991918 	 Undefined
+Window 600:	|	1614991918 	 1614991919 	 Undefined
+Window 601:	|	1614991919 	 1614991920 	 Undefined
+Window 602:	|	1614991920 	 1614991921 	 Undefined
+Window 603:	|	1614991921 	 1614991922 	 Undefined
+Window 604:	|	1614991922 	 1614991923 	 Undefined
+Window 605:	|	1614991923 	 1614991924 	 Undefined
+Window 606:	|	1614991924 	 1614991925 	 Undefined
+Window 607:	|	1614991925 	 1614991926 	 Undefined
+Window 608:	|	1614991926 	 1614991927 	 Undefined
+Window 609:	|	1614991927 	 1614991928 	 Undefined
+Window 610:	|	1614991928 	 1614991929 	 Undefined
+Window 611:	|	1614991931 	 1614991932 	 Undefined
+Window 612:	|	1614991936 	 1614991937 	 Undefined
+Window 613:	|	1614991937 	 1614991938 	 Undefined
+Window 614:	|	1614991938 	 1614991939 	 Undefined
+Window 615:	|	1614991939 	 1614991940 	 Undefined
+Window 616:	|	1614991940 	 1614991941 	 Undefined
+Window 617:	|	1614991941 	 1614991942 	 Undefined
+Window 618:	|	1614991942 	 1614991943 	 Undefined
+Window 619:	|	1614991945 	 1614991946 	 Undefined
+Window 620:	|	1614991946 	 1614991947 	 Undefined
+Window 621:	|	1614991947 	 1614991948 	 Undefined
+Window 622:	|	1614991948 	 1614991949 	 Undefined
+Window 623:	|	1614991949 	 1614991950 	 Undefined
+Window 624:	|	1614991950 	 1614991951 	 Undefined
+Window 625:	|	1614991951 	 1614991952 	 Undefined
+Window 626:	|	1614991952 	 1614991953 	 Undefined
+Window 627:	|	1614991953 	 1614991954 	 Undefined
+Window 628:	|	1614991958 	 1614991959 	 Undefined
+Window 629:	|	1614991959 	 1614991960 	 Undefined
+Window 630:	|	1614991960 	 1614991961 	 Undefined
+Window 631:	|	1614991965 	 1614991966 	 Undefined
+Window 632:	|	1614991966 	 1614991967 	 Undefined
+Window 633:	|	1614991967 	 1614991968 	 Undefined
+Window 634:	|	1614991968 	 1614991969 	 Undefined
+Window 635:	|	1614991969 	 1614991970 	 Undefined
+Window 636:	|	1614991970 	 1614991971 	 Undefined
+Window 637:	|	1614991971 	 1614991972 	 Undefined
+Window 638:	|	1614991972 	 1614991973 	 Undefined
+Window 639:	|	1614991973 	 1614991974 	 Undefined
+Window 640:	|	1614991974 	 1614991975 	 Undefined
+Window 641:	|	1614991975 	 1614991976 	 Undefined
+Window 642:	|	1614991976 	 1614991977 	 Undefined
+Window 643:	|	1614991977 	 1614991978 	 Undefined
+Window 644:	|	1614991978 	 1614991979 	 Undefined
+Window 645:	|	1614991979 	 1614991980 	 Undefined
+Window 646:	|	1614991980 	 1614991981 	 Undefined
+Window 647:	|	1614991981 	 1614991982 	 Undefined
+Window 648:	|	1614991996 	 1614991997 	 Undefined
+Window 649:	|	1614992121 	 1614992122 	 Undefined
+Window 650:	|	1614992122 	 1614992123 	 Undefined
+Window 651:	|	1614992123 	 1614992124 	 Undefined
+Window 652:	|	1614992124 	 1614992125 	 Undefined
+==================================================
+Testing Data:	|	Start	 End	 Label
+==================================================
+Window 1:	|	1614990067 	 1614990068 	 Undefined
+Window 2:	|	1614990087 	 1614990088 	 Undefined
+Window 3:	|	1614990088 	 1614990089 	 Undefined
+Window 4:	|	1614990089 	 1614990090 	 Undefined
+Window 5:	|	1614990090 	 1614990091 	 Undefined
+Window 6:	|	1614990091 	 1614990092 	 Undefined
+Window 7:	|	1614990092 	 1614990093 	 Undefined
+Window 8:	|	1614990093 	 1614990094 	 Undefined
+Window 9:	|	1614990094 	 1614990095 	 Undefined
+Window 10:	|	1614990095 	 1614990096 	 Undefined
+Window 11:	|	1614990096 	 1614990097 	 Undefined
+Window 12:	|	1614990097 	 1614990098 	 Undefined
+Window 13:	|	1614990098 	 1614990099 	 Undefined
+Window 14:	|	1614990099 	 1614990100 	 Undefined
+Window 15:	|	1614990100 	 1614990101 	 Undefined
+Window 16:	|	1614990101 	 1614990102 	 Undefined
+Window 17:	|	1614990102 	 1614990103 	 Undefined
+Window 18:	|	1614990103 	 1614990104 	 Undefined
+Window 19:	|	1614990104 	 1614990105 	 Undefined
+Window 20:	|	1614990105 	 1614990106 	 Undefined
+Window 21:	|	1614990106 	 1614990107 	 Undefined
+Window 22:	|	1614990107 	 1614990108 	 Undefined
+Window 23:	|	1614990110 	 1614990111 	 Undefined
+Window 24:	|	1614990111 	 1614990112 	 Undefined
+Window 25:	|	1614990112 	 1614990113 	 Undefined
+Window 26:	|	1614990113 	 1614990114 	 Undefined
+Window 27:	|	1614990114 	 1614990115 	 Undefined
+Window 28:	|	1614990132 	 1614990133 	 Undefined
+Window 29:	|	1614990133 	 1614990134 	 Undefined
+Window 30:	|	1614990134 	 1614990135 	 Undefined
+Window 31:	|	1614990135 	 1614990136 	 Undefined
+Window 32:	|	1614990136 	 1614990137 	 Undefined
+Window 33:	|	1614990172 	 1614990173 	 Undefined
+Window 34:	|	1614990173 	 1614990174 	 Undefined
+Window 35:	|	1614990174 	 1614990175 	 Undefined
+Window 36:	|	1614990175 	 1614990176 	 Undefined
+Window 37:	|	1614990176 	 1614990177 	 Undefined
+Window 38:	|	1614990177 	 1614990178 	 Undefined
+Window 39:	|	1614990198 	 1614990199 	 Undefined
+Window 40:	|	1614990199 	 1614990200 	 Undefined
+Window 41:	|	1614990200 	 1614990201 	 Undefined
+Window 42:	|	1614990201 	 1614990202 	 Undefined
+Window 43:	|	1614990202 	 1614990203 	 Undefined
+Window 44:	|	1614990203 	 1614990204 	 Undefined
+Window 45:	|	1614990204 	 1614990205 	 Undefined
+Window 46:	|	1614990205 	 1614990206 	 Undefined
+Window 47:	|	1614990206 	 1614990207 	 Undefined
+Window 48:	|	1614990207 	 1614990208 	 Undefined
+Window 49:	|	1614990208 	 1614990209 	 Undefined
+Window 50:	|	1614990209 	 1614990210 	 Undefined
+Window 51:	|	1614990210 	 1614990211 	 Undefined
+Window 52:	|	1614990211 	 1614990212 	 Undefined
+Window 53:	|	1614990212 	 1614990213 	 Undefined
+Window 54:	|	1614990213 	 1614990214 	 Undefined
+Window 55:	|	1614990214 	 1614990215 	 Undefined
+Window 56:	|	1614990248 	 1614990249 	 Undefined
+Window 57:	|	1614990249 	 1614990250 	 Undefined
+Window 58:	|	1614990250 	 1614990251 	 Undefined
+Window 59:	|	1614990251 	 1614990252 	 Undefined
+Window 60:	|	1614990252 	 1614990253 	 Undefined
+Window 61:	|	1614990255 	 1614990256 	 Undefined
+Window 62:	|	1614990256 	 1614990257 	 Undefined
+Window 63:	|	1614990257 	 1614990258 	 Undefined
+Window 64:	|	1614990258 	 1614990259 	 Undefined
+Window 65:	|	1614990263 	 1614990264 	 Undefined
+Window 66:	|	1614990264 	 1614990265 	 Undefined
+Window 67:	|	1614990265 	 1614990266 	 Undefined
+Window 68:	|	1614990266 	 1614990267 	 Undefined
+Window 69:	|	1614990267 	 1614990268 	 Undefined
+Window 70:	|	1614990268 	 1614990269 	 Undefined
+Window 71:	|	1614990269 	 1614990270 	 Undefined
+Window 72:	|	1614990270 	 1614990271 	 Undefined
+Window 73:	|	1614990271 	 1614990272 	 Undefined
+Window 74:	|	1614990272 	 1614990273 	 Undefined
+Window 75:	|	1614990273 	 1614990274 	 Undefined
+Window 76:	|	1614990284 	 1614990285 	 Undefined
+Window 77:	|	1614990285 	 1614990286 	 Undefined
+Window 78:	|	1614990286 	 1614990287 	 Undefined
+Window 79:	|	1614990287 	 1614990288 	 Undefined
+Window 80:	|	1614990288 	 1614990289 	 Undefined
+Window 81:	|	1614990289 	 1614990290 	 Undefined
+Window 82:	|	1614990290 	 1614990291 	 Undefined
+Window 83:	|	1614990291 	 1614990292 	 Undefined
+Window 84:	|	1614990292 	 1614990293 	 Undefined
+Window 85:	|	1614990293 	 1614990294 	 Undefined
+Window 86:	|	1614990294 	 1614990295 	 Undefined
+Window 87:	|	1614990295 	 1614990296 	 Undefined
+Window 88:	|	1614990296 	 1614990297 	 Undefined
+Window 89:	|	1614990297 	 1614990298 	 Undefined
+Window 90:	|	1614990298 	 1614990299 	 Undefined
+Window 91:	|	1614990299 	 1614990300 	 Undefined
+Window 92:	|	1614990300 	 1614990301 	 Undefined
+Window 93:	|	1614990301 	 1614990302 	 Undefined
+Window 94:	|	1614990302 	 1614990303 	 Undefined
+Window 95:	|	1614990303 	 1614990304 	 Undefined
+Window 96:	|	1614990304 	 1614990305 	 Undefined
+Window 97:	|	1614990305 	 1614990306 	 Undefined
+Window 98:	|	1614990308 	 1614990309 	 Undefined
+Window 99:	|	1614990333 	 1614990334 	 Undefined
+Window 100:	|	1614990334 	 1614990335 	 Undefined
+Window 101:	|	1614990335 	 1614990336 	 Undefined
+Window 102:	|	1614990336 	 1614990337 	 Undefined
+Window 103:	|	1614990337 	 1614990338 	 Undefined
+Window 104:	|	1614990338 	 1614990339 	 Undefined
+Window 105:	|	1614990339 	 1614990340 	 Undefined
+Window 106:	|	1614990340 	 1614990341 	 Undefined
+Window 107:	|	1614990341 	 1614990342 	 Undefined
+Window 108:	|	1614990342 	 1614990343 	 Undefined
+Window 109:	|	1614990343 	 1614990344 	 Undefined
+Window 110:	|	1614990354 	 1614990355 	 Undefined
+Window 111:	|	1614990355 	 1614990356 	 Undefined
+Window 112:	|	1614990356 	 1614990357 	 Undefined
+Window 113:	|	1614990357 	 1614990358 	 Undefined
+Window 114:	|	1614990358 	 1614990359 	 Undefined
+Window 115:	|	1614990361 	 1614990362 	 Undefined
+Window 116:	|	1614990366 	 1614990367 	 Undefined
+Window 117:	|	1614990367 	 1614990368 	 Undefined
+Window 118:	|	1614990368 	 1614990369 	 Undefined
+Window 119:	|	1614990369 	 1614990370 	 Undefined
+Window 120:	|	1614990370 	 1614990371 	 Undefined
+Window 121:	|	1614990371 	 1614990372 	 Undefined
+Window 122:	|	1614990372 	 1614990373 	 Undefined
+Window 123:	|	1614990373 	 1614990374 	 Undefined
+Window 124:	|	1614990374 	 1614990375 	 Undefined
+Window 125:	|	1614990375 	 1614990376 	 Undefined
+Window 126:	|	1614990376 	 1614990377 	 Undefined
+Window 127:	|	1614990377 	 1614990378 	 Undefined
+Window 128:	|	1614990378 	 1614990379 	 Undefined
+Window 129:	|	1614990379 	 1614990380 	 Undefined
+Window 130:	|	1614990380 	 1614990381 	 Undefined
+Window 131:	|	1614990381 	 1614990382 	 Undefined
+Window 132:	|	1614990382 	 1614990383 	 Undefined
+Window 133:	|	1614990383 	 1614990384 	 Undefined
+Window 134:	|	1614990384 	 1614990385 	 Undefined
+Window 135:	|	1614990385 	 1614990386 	 Undefined
+Window 136:	|	1614990386 	 1614990387 	 Undefined
+Window 137:	|	1614990387 	 1614990388 	 Undefined
+Window 138:	|	1614990388 	 1614990389 	 Undefined
+Window 139:	|	1614990413 	 1614990414 	 Undefined
+Window 140:	|	1614990414 	 1614990415 	 Undefined
+Window 141:	|	1614990415 	 1614990416 	 Undefined
+Window 142:	|	1614990416 	 1614990417 	 Undefined
+Window 143:	|	1614990442 	 1614990443 	 Undefined
+Window 144:	|	1614990447 	 1614990448 	 Undefined
+Window 145:	|	1614990448 	 1614990449 	 Undefined
+Window 146:	|	1614990449 	 1614990450 	 Undefined
+Window 147:	|	1614990450 	 1614990451 	 Undefined
+Window 148:	|	1614990451 	 1614990452 	 Undefined
+Window 149:	|	1614990452 	 1614990453 	 Undefined
+Window 150:	|	1614990467 	 1614990468 	 Undefined
+Window 151:	|	1614990468 	 1614990469 	 Undefined
+Window 152:	|	1614990469 	 1614990470 	 Undefined
+Window 153:	|	1614990470 	 1614990471 	 Undefined
+Window 154:	|	1614990484 	 1614990485 	 Undefined
+Window 155:	|	1614990547 	 1614990548 	 Undefined
+Window 156:	|	1614990548 	 1614990549 	 Undefined
+Window 157:	|	1614990549 	 1614990550 	 Undefined
+Window 158:	|	1614990550 	 1614990551 	 Undefined
+Window 159:	|	1614990551 	 1614990552 	 Undefined
+Window 160:	|	1614990552 	 1614990553 	 Undefined
+Window 161:	|	1614990553 	 1614990554 	 Undefined
+Window 162:	|	1614990554 	 1614990555 	 Undefined
+Window 163:	|	1614990555 	 1614990556 	 Undefined
+Window 164:	|	1614990556 	 1614990557 	 Undefined
+Window 165:	|	1614990557 	 1614990558 	 Undefined
+Window 166:	|	1614990558 	 1614990559 	 Undefined
+Window 167:	|	1614990559 	 1614990560 	 Undefined
+Window 168:	|	1614990655 	 1614990656 	 Undefined
+Window 169:	|	1614990656 	 1614990657 	 Undefined
+Window 170:	|	1614990704 	 1614990705 	 Undefined
+Window 171:	|	1614990707 	 1614990708 	 Undefined
+Window 172:	|	1614990708 	 1614990709 	 Undefined
+Window 173:	|	1614990709 	 1614990710 	 Undefined
+Window 174:	|	1614990710 	 1614990711 	 Undefined
+Window 175:	|	1614990721 	 1614990722 	 Undefined
+Window 176:	|	1614990722 	 1614990723 	 Undefined
+Window 177:	|	1614990723 	 1614990724 	 Undefined
+Window 178:	|	1614990724 	 1614990725 	 Undefined
+Window 179:	|	1614990725 	 1614990726 	 Undefined
+Window 180:	|	1614990726 	 1614990727 	 Undefined
+Window 181:	|	1614990727 	 1614990728 	 Undefined
+Window 182:	|	1614990728 	 1614990729 	 Undefined
+Window 183:	|	1614990729 	 1614990730 	 Undefined
+Window 184:	|	1614990730 	 1614990731 	 Undefined
+Window 185:	|	1614990731 	 1614990732 	 Undefined
+Window 186:	|	1614990732 	 1614990733 	 Undefined
+Window 187:	|	1614990733 	 1614990734 	 Undefined
+Window 188:	|	1614990734 	 1614990735 	 Undefined
+Window 189:	|	1614990735 	 1614990736 	 Undefined
+Window 190:	|	1614990736 	 1614990737 	 Undefined
+Window 191:	|	1614990737 	 1614990738 	 Undefined
+Window 192:	|	1614990738 	 1614990739 	 Undefined
+Window 193:	|	1614990739 	 1614990740 	 Undefined
+Window 194:	|	1614990740 	 1614990741 	 Undefined
+Window 195:	|	1614990741 	 1614990742 	 Undefined
+Window 196:	|	1614990742 	 1614990743 	 Undefined
+Window 197:	|	1614990743 	 1614990744 	 Undefined
+Window 198:	|	1614990744 	 1614990745 	 Undefined
+Window 199:	|	1614990745 	 1614990746 	 Undefined
+Window 200:	|	1614990746 	 1614990747 	 Undefined
+Window 201:	|	1614990747 	 1614990748 	 Undefined
+Window 202:	|	1614990748 	 1614990749 	 Undefined
+Window 203:	|	1614990749 	 1614990750 	 Undefined
+Window 204:	|	1614990750 	 1614990751 	 Undefined
+Window 205:	|	1614990751 	 1614990752 	 Undefined
+Window 206:	|	1614990772 	 1614990773 	 Undefined
+Window 207:	|	1614990773 	 1614990774 	 Undefined
+Window 208:	|	1614990774 	 1614990775 	 Undefined
+Window 209:	|	1614990775 	 1614990776 	 Undefined
+Window 210:	|	1614990778 	 1614990779 	 Undefined
+Window 211:	|	1614990807 	 1614990808 	 Undefined
+Window 212:	|	1614990808 	 1614990809 	 Undefined
+Window 213:	|	1614990809 	 1614990810 	 Undefined
+Window 214:	|	1614990810 	 1614990811 	 Undefined
+Window 215:	|	1614990811 	 1614990812 	 Undefined
+Window 216:	|	1614990812 	 1614990813 	 Undefined
+Window 217:	|	1614990813 	 1614990814 	 Undefined
+Window 218:	|	1614990814 	 1614990815 	 Undefined
+Window 219:	|	1614990815 	 1614990816 	 Undefined
+Window 220:	|	1614990816 	 1614990817 	 Undefined
+Window 221:	|	1614990817 	 1614990818 	 Undefined
+Window 222:	|	1614990818 	 1614990819 	 Undefined
+Window 223:	|	1614990819 	 1614990820 	 Undefined
+Window 224:	|	1614990822 	 1614990823 	 Undefined
+Window 225:	|	1614990823 	 1614990824 	 Undefined
+Window 226:	|	1614990824 	 1614990825 	 Undefined
+Window 227:	|	1614990825 	 1614990826 	 Undefined
+Window 228:	|	1614990826 	 1614990827 	 Undefined
+Window 229:	|	1614990852 	 1614990853 	 Undefined
+Window 230:	|	1614990853 	 1614990854 	 Undefined
+Window 231:	|	1614990854 	 1614990855 	 Undefined
+Window 232:	|	1614990855 	 1614990856 	 Undefined
+Window 233:	|	1614990856 	 1614990857 	 Undefined
+Window 234:	|	1614990857 	 1614990858 	 Undefined
+Window 235:	|	1614990858 	 1614990859 	 Undefined
+Window 236:	|	1614990859 	 1614990860 	 Undefined
+Window 237:	|	1614990860 	 1614990861 	 Undefined
+Window 238:	|	1614990861 	 1614990862 	 Undefined
+Window 239:	|	1614990862 	 1614990863 	 Undefined
+Window 240:	|	1614990863 	 1614990864 	 Undefined
+Window 241:	|	1614990864 	 1614990865 	 Undefined
+Window 242:	|	1614990865 	 1614990866 	 Undefined
+Window 243:	|	1614990866 	 1614990867 	 Undefined
+Window 244:	|	1614990867 	 1614990868 	 Undefined
+Window 245:	|	1614990868 	 1614990869 	 Undefined
+Window 246:	|	1614990869 	 1614990870 	 Undefined
+Window 247:	|	1614990870 	 1614990871 	 Undefined
+Window 248:	|	1614990871 	 1614990872 	 Undefined
+Window 249:	|	1614990872 	 1614990873 	 Undefined
+Window 250:	|	1614990873 	 1614990874 	 Undefined
+Window 251:	|	1614990874 	 1614990875 	 Undefined
+Window 252:	|	1614990875 	 1614990876 	 Undefined
+Window 253:	|	1614990876 	 1614990877 	 Undefined
+Window 254:	|	1614990877 	 1614990878 	 Undefined
+Window 255:	|	1614990878 	 1614990879 	 Undefined
+Window 256:	|	1614990879 	 1614990880 	 Undefined
+Window 257:	|	1614990880 	 1614990881 	 Undefined
+Window 258:	|	1614990883 	 1614990884 	 Undefined
+Window 259:	|	1614990884 	 1614990885 	 Undefined
+Window 260:	|	1614990885 	 1614990886 	 Undefined
+Window 261:	|	1614990886 	 1614990887 	 Undefined
+Window 262:	|	1614990887 	 1614990888 	 Undefined
+Window 263:	|	1614990888 	 1614990889 	 Undefined
+Window 264:	|	1614990889 	 1614990890 	 Undefined
+Window 265:	|	1614990890 	 1614990891 	 Undefined
+Window 266:	|	1614990891 	 1614990892 	 Undefined
+Window 267:	|	1614990892 	 1614990893 	 Undefined
+Window 268:	|	1614990893 	 1614990894 	 Undefined
+Window 269:	|	1614990894 	 1614990895 	 Undefined
+Window 270:	|	1614990895 	 1614990896 	 Undefined
+Window 271:	|	1614990896 	 1614990897 	 Undefined
+Window 272:	|	1614990897 	 1614990898 	 Undefined
+Window 273:	|	1614990898 	 1614990899 	 Undefined
+Window 274:	|	1614990928 	 1614990929 	 Undefined
+Window 275:	|	1614990929 	 1614990930 	 Undefined
+Window 276:	|	1614990930 	 1614990931 	 Undefined
+Window 277:	|	1614990931 	 1614990932 	 Undefined
+Window 278:	|	1614990932 	 1614990933 	 Undefined
+Window 279:	|	1614990933 	 1614990934 	 Undefined
+Window 280:	|	1614990934 	 1614990935 	 Undefined
+Window 281:	|	1614990935 	 1614990936 	 Undefined
+Window 282:	|	1614991082 	 1614991083 	 Undefined
+Window 283:	|	1614991106 	 1614991107 	 Undefined
+Window 284:	|	1614991107 	 1614991108 	 Undefined
+Window 285:	|	1614991108 	 1614991109 	 Undefined
+Window 286:	|	1614991109 	 1614991110 	 Undefined
+Window 287:	|	1614991110 	 1614991111 	 Undefined
+Window 288:	|	1614991111 	 1614991112 	 Undefined
+Window 289:	|	1614991112 	 1614991113 	 Undefined
+Window 290:	|	1614991113 	 1614991114 	 Undefined
+Window 291:	|	1614991114 	 1614991115 	 Undefined
+Window 292:	|	1614991115 	 1614991116 	 Undefined
+Window 293:	|	1614991116 	 1614991117 	 Undefined
+Window 294:	|	1614991121 	 1614991122 	 Undefined
+Window 295:	|	1614991122 	 1614991123 	 Undefined
+Window 296:	|	1614991123 	 1614991124 	 Undefined
+Window 297:	|	1614991124 	 1614991125 	 Undefined
+Window 298:	|	1614991125 	 1614991126 	 Undefined
+Window 299:	|	1614991126 	 1614991127 	 Undefined
+Window 300:	|	1614991127 	 1614991128 	 Undefined
+Window 301:	|	1614991128 	 1614991129 	 Undefined
+Window 302:	|	1614991129 	 1614991130 	 Undefined
+Window 303:	|	1614991130 	 1614991131 	 Undefined
+Window 304:	|	1614991131 	 1614991132 	 Undefined
+Window 305:	|	1614991134 	 1614991135 	 Undefined
+Window 306:	|	1614991135 	 1614991136 	 Undefined
+Window 307:	|	1614991136 	 1614991137 	 Undefined
+Window 308:	|	1614991137 	 1614991138 	 Undefined
+Window 309:	|	1614991138 	 1614991139 	 Undefined
+Window 310:	|	1614991139 	 1614991140 	 Undefined
+Window 311:	|	1614991140 	 1614991141 	 Undefined
+Window 312:	|	1614991141 	 1614991142 	 Undefined
+Window 313:	|	1614991142 	 1614991143 	 Undefined
+Window 314:	|	1614991143 	 1614991144 	 Undefined
+Window 315:	|	1614991144 	 1614991145 	 Undefined
+Window 316:	|	1614991145 	 1614991146 	 Undefined
+Window 317:	|	1614991146 	 1614991147 	 Undefined
+Window 318:	|	1614991147 	 1614991148 	 Undefined
+Window 319:	|	1614991148 	 1614991149 	 Undefined
+Window 320:	|	1614991153 	 1614991154 	 Undefined
+Window 321:	|	1614991154 	 1614991155 	 Undefined
+Window 322:	|	1614991160 	 1614991161 	 Undefined
+Window 323:	|	1614991161 	 1614991162 	 Undefined
+Window 324:	|	1614991162 	 1614991163 	 Undefined
+Window 325:	|	1614991163 	 1614991164 	 Undefined
+Window 326:	|	1614991173 	 1614991174 	 Undefined
+Window 327:	|	1614991176 	 1614991177 	 Undefined
+Window 328:	|	1614991177 	 1614991178 	 Undefined
+Window 329:	|	1614991178 	 1614991179 	 Undefined
+Window 330:	|	1614991208 	 1614991209 	 Undefined
+Window 331:	|	1614991209 	 1614991210 	 Undefined
+Window 332:	|	1614991210 	 1614991211 	 Undefined
+Window 333:	|	1614991211 	 1614991212 	 Undefined
+Window 334:	|	1614991212 	 1614991213 	 Undefined
+Window 335:	|	1614991213 	 1614991214 	 Undefined
+Window 336:	|	1614991214 	 1614991215 	 Undefined
+Window 337:	|	1614991215 	 1614991216 	 Undefined
+Window 338:	|	1614991220 	 1614991221 	 Undefined
+Window 339:	|	1614991221 	 1614991222 	 Undefined
+Window 340:	|	1614991222 	 1614991223 	 Undefined
+Window 341:	|	1614991223 	 1614991224 	 Undefined
+Window 342:	|	1614991224 	 1614991225 	 Undefined
+Window 343:	|	1614991273 	 1614991274 	 Undefined
+Window 344:	|	1614991339 	 1614991340 	 Close By
+Window 345:	|	1614991340 	 1614991341 	 Close By
+Window 346:	|	1614991341 	 1614991342 	 Close By
+Window 347:	|	1614991342 	 1614991343 	 Close By
+Window 348:	|	1614991343 	 1614991344 	 Close By
+Window 349:	|	1614991344 	 1614991345 	 Close By
+Window 350:	|	1614991345 	 1614991346 	 Close By
+Window 351:	|	1614991346 	 1614991347 	 Close By
+Window 352:	|	1614991347 	 1614991348 	 Close By
+Window 353:	|	1614991348 	 1614991349 	 Close By
+Window 354:	|	1614991349 	 1614991350 	 Close By
+Window 355:	|	1614991350 	 1614991351 	 Close By
+Window 356:	|	1614991351 	 1614991352 	 Close By
+Window 357:	|	1614991354 	 1614991355 	 Close By
+Window 358:	|	1614991355 	 1614991356 	 Close By
+Window 359:	|	1614991356 	 1614991357 	 Close By
+Window 360:	|	1614991357 	 1614991358 	 Close By
+Window 361:	|	1614991358 	 1614991359 	 Close By
+Window 362:	|	1614991359 	 1614991360 	 Close By
+Window 363:	|	1614991360 	 1614991361 	 Close By
+Window 364:	|	1614991361 	 1614991362 	 Close By
+Window 365:	|	1614991362 	 1614991363 	 Close By
+Window 366:	|	1614991363 	 1614991364 	 Close By
+Window 367:	|	1614991364 	 1614991365 	 Close By
+Window 368:	|	1614991365 	 1614991366 	 Close By
+Window 369:	|	1614991366 	 1614991367 	 Close By
+Window 370:	|	1614991367 	 1614991368 	 Close By
+Window 371:	|	1614991368 	 1614991369 	 Close By
+Window 372:	|	1614991369 	 1614991370 	 Close By
+Window 373:	|	1614991370 	 1614991371 	 Close By
+Window 374:	|	1614991371 	 1614991372 	 Close By
+Window 375:	|	1614991372 	 1614991373 	 Close By
+Window 376:	|	1614991373 	 1614991374 	 Close By
+Window 377:	|	1614991374 	 1614991375 	 Close By
+Window 378:	|	1614991391 	 1614991392 	 Close By
+Window 379:	|	1614991392 	 1614991393 	 Close By
+Window 380:	|	1614991393 	 1614991394 	 Close By
+Window 381:	|	1614991447 	 1614991448 	 Close By
+Window 382:	|	1614991448 	 1614991449 	 Close By
+Window 383:	|	1614991481 	 1614991482 	 Close By
+Window 384:	|	1614991482 	 1614991483 	 Close By
+Window 385:	|	1614991483 	 1614991484 	 Close By
+Window 386:	|	1614991484 	 1614991485 	 Close By
+Window 387:	|	1614991485 	 1614991486 	 Close By
+Window 388:	|	1614991486 	 1614991487 	 Close By
+Window 389:	|	1614991487 	 1614991488 	 Close By
+Window 390:	|	1614991488 	 1614991489 	 Close By
+Window 391:	|	1614991492 	 1614991493 	 Close By
+Window 392:	|	1614991493 	 1614991494 	 Close By
+Window 393:	|	1614991494 	 1614991495 	 Close By
+Window 394:	|	1614991495 	 1614991496 	 Close By
+Window 395:	|	1614991496 	 1614991497 	 Close By
+Window 396:	|	1614991497 	 1614991498 	 Close By
+Window 397:	|	1614991498 	 1614991499 	 Close By
+Window 398:	|	1614991499 	 1614991500 	 Close By
+Window 399:	|	1614991500 	 1614991501 	 Close By
+Window 400:	|	1614991501 	 1614991502 	 Close By
+Window 401:	|	1614991502 	 1614991503 	 Close By
+Window 402:	|	1614991503 	 1614991504 	 Close By
+Window 403:	|	1614991504 	 1614991505 	 Close By
+Window 404:	|	1614991505 	 1614991506 	 Close By
+Window 405:	|	1614991506 	 1614991507 	 Close By
+Window 406:	|	1614991507 	 1614991508 	 Close By
+Window 407:	|	1614991508 	 1614991509 	 Close By
+Window 408:	|	1614991509 	 1614991510 	 Close By
+Window 409:	|	1614991515 	 1614991516 	 Close By
+Window 410:	|	1614991516 	 1614991517 	 Close By
+Window 411:	|	1614991519 	 1614991520 	 Close By
+Window 412:	|	1614991520 	 1614991521 	 Close By
+Window 413:	|	1614991521 	 1614991522 	 Close By
+Window 414:	|	1614991522 	 1614991523 	 Close By
+Window 415:	|	1614991523 	 1614991524 	 Close By
+Window 416:	|	1614991524 	 1614991525 	 Close By
+Window 417:	|	1614991525 	 1614991526 	 Close By
+Window 418:	|	1614991526 	 1614991527 	 Close By
+Window 419:	|	1614991527 	 1614991528 	 Close By
+Window 420:	|	1614991528 	 1614991529 	 Close By
+Window 421:	|	1614991529 	 1614991530 	 Close By
+Window 422:	|	1614991530 	 1614991531 	 Close By
+Window 423:	|	1614991531 	 1614991532 	 Close By
+Window 424:	|	1614991532 	 1614991533 	 Close By
+Window 425:	|	1614991533 	 1614991534 	 Close By
+Window 426:	|	1614991534 	 1614991535 	 Close By
+Window 427:	|	1614991535 	 1614991536 	 Close By
+Window 428:	|	1614991536 	 1614991537 	 Close By
+Window 429:	|	1614991537 	 1614991538 	 Close By
+Window 430:	|	1614991538 	 1614991539 	 Close By
+Window 431:	|	1614991539 	 1614991540 	 Close By
+Window 432:	|	1614991540 	 1614991541 	 Close By
+Window 433:	|	1614991541 	 1614991542 	 Close By
+Window 434:	|	1614991542 	 1614991543 	 Close By
+Window 435:	|	1614991543 	 1614991544 	 Close By
+Window 436:	|	1614991544 	 1614991545 	 Close By
+Window 437:	|	1614991545 	 1614991546 	 Close By
+Window 438:	|	1614991546 	 1614991547 	 Close By
+Window 439:	|	1614991547 	 1614991548 	 Close By
+Window 440:	|	1614991548 	 1614991549 	 Close By
+Window 441:	|	1614991551 	 1614991552 	 Close By
+Window 442:	|	1614991579 	 1614991580 	 Close By
+Window 443:	|	1614991580 	 1614991581 	 Close By
+Window 444:	|	1614991581 	 1614991582 	 Close By
+Window 445:	|	1614991582 	 1614991583 	 Close By
+Window 446:	|	1614991583 	 1614991584 	 Close By
+Window 447:	|	1614991584 	 1614991585 	 Close By
+Window 448:	|	1614991585 	 1614991586 	 Close By
+Window 449:	|	1614991586 	 1614991587 	 Close By
+Window 450:	|	1614991643 	 1614991644 	 Close By
+Window 451:	|	1614991644 	 1614991645 	 Close By
+Window 452:	|	1614991651 	 1614991652 	 Close By
+Window 453:	|	1614991652 	 1614991653 	 Close By
+Window 454:	|	1614991653 	 1614991654 	 Close By
+Window 455:	|	1614991654 	 1614991655 	 Close By
+Window 456:	|	1614991655 	 1614991656 	 Close By
+Window 457:	|	1614991656 	 1614991657 	 Close By
+Window 458:	|	1614991657 	 1614991658 	 Close By
+Window 459:	|	1614991658 	 1614991659 	 Close By
+Window 460:	|	1614991659 	 1614991660 	 Close By
+Window 461:	|	1614991660 	 1614991661 	 Close By
+Window 462:	|	1614991661 	 1614991662 	 Close By
+Window 463:	|	1614991662 	 1614991663 	 Close By
+Window 464:	|	1614991663 	 1614991664 	 Close By
+Window 465:	|	1614991664 	 1614991665 	 Close By
+Window 466:	|	1614991665 	 1614991666 	 Close By
+Window 467:	|	1614991666 	 1614991667 	 Close By
+Window 468:	|	1614991667 	 1614991668 	 Close By
+Window 469:	|	1614991668 	 1614991669 	 Close By
+Window 470:	|	1614991669 	 1614991670 	 Close By
+Window 471:	|	1614991670 	 1614991671 	 Close By
+Window 472:	|	1614991671 	 1614991672 	 Close By
+Window 473:	|	1614991688 	 1614991689 	 Close By
+Window 474:	|	1614991689 	 1614991690 	 Close By
+Window 475:	|	1614991696 	 1614991697 	 Close By
+Window 476:	|	1614991697 	 1614991698 	 Close By
+Window 477:	|	1614991698 	 1614991699 	 Close By
+Window 478:	|	1614991751 	 1614991752 	 Close By
+Window 479:	|	1614991752 	 1614991753 	 Close By
+Window 480:	|	1614991753 	 1614991754 	 Close By
+Window 481:	|	1614991754 	 1614991755 	 Close By
+Window 482:	|	1614991755 	 1614991756 	 Close By
+Window 483:	|	1614991756 	 1614991757 	 Close By
+Window 484:	|	1614991757 	 1614991758 	 Close By
+Window 485:	|	1614991758 	 1614991759 	 Close By
+Window 486:	|	1614991759 	 1614991760 	 Close By
+Window 487:	|	1614991760 	 1614991761 	 Close By
+Window 488:	|	1614991761 	 1614991762 	 Close By
+Window 489:	|	1614991762 	 1614991763 	 Close By
+Window 490:	|	1614991763 	 1614991764 	 Close By
+Window 491:	|	1614991764 	 1614991765 	 Close By
+Window 492:	|	1614991765 	 1614991766 	 Close By
+Window 493:	|	1614991766 	 1614991767 	 Close By
+Window 494:	|	1614991767 	 1614991768 	 Close By
+Window 495:	|	1614991768 	 1614991769 	 Close By
+Window 496:	|	1614991769 	 1614991770 	 Close By
+Window 497:	|	1614991770 	 1614991771 	 Close By
+Window 498:	|	1614991771 	 1614991772 	 Close By
+Window 499:	|	1614991772 	 1614991773 	 Close By
+Window 500:	|	1614991773 	 1614991774 	 Close By
+Window 501:	|	1614991774 	 1614991775 	 Close By
+Window 502:	|	1614991775 	 1614991776 	 Close By
+Window 503:	|	1614991776 	 1614991777 	 Close By
+Window 504:	|	1614991777 	 1614991778 	 Close By
+Window 505:	|	1614991778 	 1614991779 	 Close By
+Window 506:	|	1614991779 	 1614991780 	 Close By
+Window 507:	|	1614991780 	 1614991781 	 Close By
+Window 508:	|	1614991781 	 1614991782 	 Close By
+Window 509:	|	1614991782 	 1614991783 	 Close By
+Window 510:	|	1614991783 	 1614991784 	 Close By
+Window 511:	|	1614991784 	 1614991785 	 Close By
+Window 512:	|	1614991785 	 1614991786 	 Close By
+Window 513:	|	1614991786 	 1614991787 	 Close By
+Window 514:	|	1614991787 	 1614991788 	 Close By
+Window 515:	|	1614991788 	 1614991789 	 Close By
+Window 516:	|	1614991789 	 1614991790 	 Close By
+Window 517:	|	1614991790 	 1614991791 	 Close By
+Window 518:	|	1614991791 	 1614991792 	 Close By
+Window 519:	|	1614991792 	 1614991793 	 Close By
+Window 520:	|	1614991793 	 1614991794 	 Close By
+Window 521:	|	1614991794 	 1614991795 	 Close By
+Window 522:	|	1614991795 	 1614991796 	 Close By
+Window 523:	|	1614991796 	 1614991797 	 Close By
+Window 524:	|	1614991797 	 1614991798 	 Close By
+Window 525:	|	1614991798 	 1614991799 	 Close By
+Window 526:	|	1614991799 	 1614991800 	 Close By
+Window 527:	|	1614991800 	 1614991801 	 Close By
+Window 528:	|	1614991801 	 1614991802 	 Close By
+Window 529:	|	1614991802 	 1614991803 	 Close By
+Window 530:	|	1614991803 	 1614991804 	 Close By
+Window 531:	|	1614991804 	 1614991805 	 Close By
+Window 532:	|	1614991805 	 1614991806 	 Close By
+Window 533:	|	1614991806 	 1614991807 	 Close By
+Window 534:	|	1614991807 	 1614991808 	 Close By
+Window 535:	|	1614991808 	 1614991809 	 Close By
+Window 536:	|	1614991809 	 1614991810 	 Close By
+Window 537:	|	1614991810 	 1614991811 	 Close By
+Window 538:	|	1614991811 	 1614991812 	 Close By
+Window 539:	|	1614991812 	 1614991813 	 Close By
+Window 540:	|	1614991813 	 1614991814 	 Close By
+Window 541:	|	1614991814 	 1614991815 	 Close By
+Window 542:	|	1614991815 	 1614991816 	 Close By
+Window 543:	|	1614991816 	 1614991817 	 Close By
+Window 544:	|	1614991817 	 1614991818 	 Close By
+Window 545:	|	1614991818 	 1614991819 	 Close By
+Window 546:	|	1614991826 	 1614991827 	 Close By
+Window 547:	|	1614991827 	 1614991828 	 Close By
+Window 548:	|	1614991828 	 1614991829 	 Close By
+Window 549:	|	1614991829 	 1614991830 	 Close By
+Window 550:	|	1614991830 	 1614991831 	 Close By
+Window 551:	|	1614991831 	 1614991832 	 Close By
+Window 552:	|	1614991832 	 1614991833 	 Close By
+Window 553:	|	1614991833 	 1614991834 	 Close By
+Window 554:	|	1614991834 	 1614991835 	 Close By
+Window 555:	|	1614991835 	 1614991836 	 Close By
+Window 556:	|	1614991836 	 1614991837 	 Close By
+Window 557:	|	1614991837 	 1614991838 	 Close By
+Window 558:	|	1614991838 	 1614991839 	 Close By
+Window 559:	|	1614991839 	 1614991840 	 Close By
+Window 560:	|	1614991840 	 1614991841 	 Close By
+Window 561:	|	1614991841 	 1614991842 	 Close By
+Window 562:	|	1614991842 	 1614991843 	 Close By
+Window 563:	|	1614991843 	 1614991844 	 Close By
+Window 564:	|	1614991844 	 1614991845 	 Close By
+Window 565:	|	1614991845 	 1614991846 	 Close By
+Window 566:	|	1614991846 	 1614991847 	 Close By
+Window 567:	|	1614991847 	 1614991848 	 Close By
+Window 568:	|	1614991848 	 1614991849 	 Close By
+Window 569:	|	1614991849 	 1614991850 	 Close By
+Window 570:	|	1614991850 	 1614991851 	 Close By
+Window 571:	|	1614991851 	 1614991852 	 Close By
+Window 572:	|	1614991852 	 1614991853 	 Close By
+Window 573:	|	1614991853 	 1614991854 	 Close By
+Window 574:	|	1614991854 	 1614991855 	 Close By
+Window 575:	|	1614991855 	 1614991856 	 Close By
+Window 576:	|	1614991856 	 1614991857 	 Close By
+Window 577:	|	1614991857 	 1614991858 	 Close By
+Window 578:	|	1614991858 	 1614991859 	 Close By
+Window 579:	|	1614991859 	 1614991860 	 Close By
+Window 580:	|	1614991893 	 1614991894 	 Close By
+Window 581:	|	1614991899 	 1614991900 	 Close By
+Window 582:	|	1614991900 	 1614991901 	 Close By
+Window 583:	|	1614991901 	 1614991902 	 Close By
+Window 584:	|	1614991902 	 1614991903 	 Close By
+Window 585:	|	1614991903 	 1614991904 	 Close By
+Window 586:	|	1614991904 	 1614991905 	 Close By
+Window 587:	|	1614991905 	 1614991906 	 Close By
+Window 588:	|	1614991906 	 1614991907 	 Close By
+Window 589:	|	1614991907 	 1614991908 	 Undefined
+Window 590:	|	1614991908 	 1614991909 	 Leaving Room
+Window 591:	|	1614991909 	 1614991910 	 Leaving Room
+Window 592:	|	1614991910 	 1614991911 	 Leaving Room
+Window 593:	|	1614991911 	 1614991912 	 Leaving Room
+Window 594:	|	1614991912 	 1614991913 	 Leaving Room
+Window 595:	|	1614991913 	 1614991914 	 Leaving Room
+Window 596:	|	1614991914 	 1614991915 	 Undefined
+Window 597:	|	1614991915 	 1614991916 	 Out of Range
+Window 598:	|	1614991916 	 1614991917 	 Out of Range
+Window 599:	|	1614991917 	 1614991918 	 Out of Range
+Window 600:	|	1614991918 	 1614991919 	 Out of Range
+Window 601:	|	1614991919 	 1614991920 	 Out of Range
+Window 602:	|	1614991920 	 1614991921 	 Out of Range
+Window 603:	|	1614991921 	 1614991922 	 Out of Range
+Window 604:	|	1614991922 	 1614991923 	 Out of Range
+Window 605:	|	1614991923 	 1614991924 	 Out of Range
+Window 606:	|	1614991924 	 1614991925 	 Out of Range
+Window 607:	|	1614991925 	 1614991926 	 Out of Range
+Window 608:	|	1614991926 	 1614991927 	 Out of Range
+Window 609:	|	1614991927 	 1614991928 	 Out of Range
+Window 610:	|	1614991928 	 1614991929 	 Out of Range
+Window 611:	|	1614991931 	 1614991932 	 Out of Range
+Window 612:	|	1614991936 	 1614991937 	 Entering Room
+Window 613:	|	1614991937 	 1614991938 	 Entering Room
+Window 614:	|	1614991938 	 1614991939 	 Entering Room
+Window 615:	|	1614991939 	 1614991940 	 Entering Room
+Window 616:	|	1614991940 	 1614991941 	 Entering Room
+Window 617:	|	1614991941 	 1614991942 	 Entering Room
+Window 618:	|	1614991942 	 1614991943 	 Entering Room
+Window 619:	|	1614991945 	 1614991946 	 Undefined
+Window 620:	|	1614991946 	 1614991947 	 Undefined
+Window 621:	|	1614991947 	 1614991948 	 Undefined
+Window 622:	|	1614991948 	 1614991949 	 Close By
+Window 623:	|	1614991949 	 1614991950 	 Close By
+Window 624:	|	1614991950 	 1614991951 	 Close By
+Window 625:	|	1614991951 	 1614991952 	 Close By
+Window 626:	|	1614991952 	 1614991953 	 Close By
+Window 627:	|	1614991953 	 1614991954 	 Close By
+Window 628:	|	1614991958 	 1614991959 	 Close By
+Window 629:	|	1614991959 	 1614991960 	 Close By
+Window 630:	|	1614991960 	 1614991961 	 Close By
+Window 631:	|	1614991965 	 1614991966 	 Close By
+Window 632:	|	1614991966 	 1614991967 	 Close By
+Window 633:	|	1614991967 	 1614991968 	 Close By
+Window 634:	|	1614991968 	 1614991969 	 Close By
+Window 635:	|	1614991969 	 1614991970 	 Close By
+Window 636:	|	1614991970 	 1614991971 	 Close By
+Window 637:	|	1614991971 	 1614991972 	 Close By
+Window 638:	|	1614991972 	 1614991973 	 Close By
+Window 639:	|	1614991973 	 1614991974 	 Close By
+Window 640:	|	1614991974 	 1614991975 	 Close By
+Window 641:	|	1614991975 	 1614991976 	 Close By
+Window 642:	|	1614991976 	 1614991977 	 Close By
+Window 643:	|	1614991977 	 1614991978 	 Close By
+Window 644:	|	1614991978 	 1614991979 	 Close By
+Window 645:	|	1614991979 	 1614991980 	 Close By
+Window 646:	|	1614991980 	 1614991981 	 Close By
+Window 647:	|	1614991981 	 1614991982 	 Close By
+Window 648:	|	1614991996 	 1614991997 	 Pass By
+Window 649:	|	1614992121 	 1614992122 	 Close By
+Window 650:	|	1614992122 	 1614992123 	 Close By
+Window 651:	|	1614992123 	 1614992124 	 Close By
+Window 652:	|	1614992124 	 1614992125 	 Close By
+==================================================
+Model Accuracy: 27.76073619631902%
+Model Accuracy: 27.914110429447852%
+==================================================
+==================================================
+Training Data:	|	Start	 End	 Label
+==================================================
+Window 1:	|	1614990087 	 1614990091 	 Close By
+Window 2:	|	1614990088 	 1614990092 	 Close By
+Window 3:	|	1614990089 	 1614990093 	 Close By
+Window 4:	|	1614990090 	 1614990094 	 Close By
+Window 5:	|	1614990091 	 1614990095 	 Close By
+Window 6:	|	1614990092 	 1614990096 	 Close By
+Window 7:	|	1614990093 	 1614990097 	 Close By
+Window 8:	|	1614990094 	 1614990098 	 Close By
+Window 9:	|	1614990095 	 1614990099 	 Close By
+Window 10:	|	1614990096 	 1614990100 	 Close By
+Window 11:	|	1614990097 	 1614990101 	 Close By
+Window 12:	|	1614990098 	 1614990102 	 Close By
+Window 13:	|	1614990099 	 1614990103 	 Close By
+Window 14:	|	1614990100 	 1614990104 	 Close By
+Window 15:	|	1614990101 	 1614990105 	 Close By
+Window 16:	|	1614990102 	 1614990106 	 Close By
+Window 17:	|	1614990103 	 1614990107 	 Close By
+Window 18:	|	1614990104 	 1614990108 	 Close By
+Window 19:	|	1614990110 	 1614990114 	 Close By
+Window 20:	|	1614990111 	 1614990115 	 Close By
+Window 21:	|	1614990132 	 1614990136 	 Close By
+Window 22:	|	1614990133 	 1614990137 	 Close By
+Window 23:	|	1614990172 	 1614990176 	 Close By
+Window 24:	|	1614990173 	 1614990177 	 Close By
+Window 25:	|	1614990174 	 1614990178 	 Close By
+Window 26:	|	1614990198 	 1614990202 	 Out of Range
+Window 27:	|	1614990199 	 1614990203 	 Out of Range
+Window 28:	|	1614990200 	 1614990204 	 Out of Range
+Window 29:	|	1614990201 	 1614990205 	 Out of Range
+Window 30:	|	1614990202 	 1614990206 	 Out of Range
+Window 31:	|	1614990203 	 1614990207 	 Out of Range
+Window 32:	|	1614990204 	 1614990208 	 Out of Range
+Window 33:	|	1614990205 	 1614990209 	 Out of Range
+Window 34:	|	1614990206 	 1614990210 	 Out of Range
+Window 35:	|	1614990207 	 1614990211 	 Out of Range
+Window 36:	|	1614990208 	 1614990212 	 Out of Range
+Window 37:	|	1614990209 	 1614990213 	 Out of Range
+Window 38:	|	1614990210 	 1614990214 	 Out of Range
+Window 39:	|	1614990211 	 1614990215 	 Out of Range
+Window 40:	|	1614990248 	 1614990252 	 Close By
+Window 41:	|	1614990249 	 1614990253 	 Close By
+Window 42:	|	1614990255 	 1614990259 	 Close By
+Window 43:	|	1614990263 	 1614990267 	 Close By
+Window 44:	|	1614990264 	 1614990268 	 Close By
+Window 45:	|	1614990265 	 1614990269 	 Close By
+Window 46:	|	1614990266 	 1614990270 	 Close By
+Window 47:	|	1614990267 	 1614990271 	 Close By
+Window 48:	|	1614990268 	 1614990272 	 Close By
+Window 49:	|	1614990269 	 1614990273 	 Close By
+Window 50:	|	1614990270 	 1614990274 	 Close By
+Window 51:	|	1614990284 	 1614990288 	 Close By
+Window 52:	|	1614990285 	 1614990289 	 Close By
+Window 53:	|	1614990286 	 1614990290 	 Close By
+Window 54:	|	1614990287 	 1614990291 	 Close By
+Window 55:	|	1614990288 	 1614990292 	 Close By
+Window 56:	|	1614990289 	 1614990293 	 Close By
+Window 57:	|	1614990290 	 1614990294 	 Close By
+Window 58:	|	1614990291 	 1614990295 	 Close By
+Window 59:	|	1614990292 	 1614990296 	 Close By
+Window 60:	|	1614990293 	 1614990297 	 Pass By
+Window 61:	|	1614990294 	 1614990298 	 Out of Range
+Window 62:	|	1614990295 	 1614990299 	 Out of Range
+Window 63:	|	1614990296 	 1614990300 	 Out of Range
+Window 64:	|	1614990297 	 1614990301 	 Out of Range
+Window 65:	|	1614990298 	 1614990302 	 Out of Range
+Window 66:	|	1614990299 	 1614990303 	 Out of Range
+Window 67:	|	1614990300 	 1614990304 	 Out of Range
+Window 68:	|	1614990301 	 1614990305 	 Out of Range
+Window 69:	|	1614990302 	 1614990306 	 Out of Range
+Window 70:	|	1614990333 	 1614990337 	 Close By
+Window 71:	|	1614990334 	 1614990338 	 Close By
+Window 72:	|	1614990335 	 1614990339 	 Close By
+Window 73:	|	1614990336 	 1614990340 	 Close By
+Window 74:	|	1614990337 	 1614990341 	 Close By
+Window 75:	|	1614990338 	 1614990342 	 Close By
+Window 76:	|	1614990339 	 1614990343 	 Close By
+Window 77:	|	1614990340 	 1614990344 	 Close By
+Window 78:	|	1614990354 	 1614990358 	 Close By
+Window 79:	|	1614990355 	 1614990359 	 Close By
+Window 80:	|	1614990366 	 1614990370 	 Close By
+Window 81:	|	1614990367 	 1614990371 	 Close By
+Window 82:	|	1614990368 	 1614990372 	 Close By
+Window 83:	|	1614990369 	 1614990373 	 Close By
+Window 84:	|	1614990370 	 1614990374 	 Close By
+Window 85:	|	1614990371 	 1614990375 	 Close By
+Window 86:	|	1614990372 	 1614990376 	 Close By
+Window 87:	|	1614990373 	 1614990377 	 Close By
+Window 88:	|	1614990374 	 1614990378 	 Close By
+Window 89:	|	1614990375 	 1614990379 	 Close By
+Window 90:	|	1614990376 	 1614990380 	 Close By
+Window 91:	|	1614990377 	 1614990381 	 Close By
+Window 92:	|	1614990378 	 1614990382 	 Close By
+Window 93:	|	1614990379 	 1614990383 	 Close By
+Window 94:	|	1614990380 	 1614990384 	 Close By
+Window 95:	|	1614990381 	 1614990385 	 Close By
+Window 96:	|	1614990382 	 1614990386 	 Close By
+Window 97:	|	1614990383 	 1614990387 	 Close By
+Window 98:	|	1614990384 	 1614990388 	 Close By
+Window 99:	|	1614990385 	 1614990389 	 Close By
+Window 100:	|	1614990413 	 1614990417 	 Close By
+Window 101:	|	1614990447 	 1614990451 	 Out of Range
+Window 102:	|	1614990448 	 1614990452 	 Out of Range
+Window 103:	|	1614990449 	 1614990453 	 Out of Range
+Window 104:	|	1614990467 	 1614990471 	 Out of Range
+Window 105:	|	1614990547 	 1614990551 	 Out of Range
+Window 106:	|	1614990548 	 1614990552 	 Out of Range
+Window 107:	|	1614990549 	 1614990553 	 Out of Range
+Window 108:	|	1614990550 	 1614990554 	 Out of Range
+Window 109:	|	1614990551 	 1614990555 	 Out of Range
+Window 110:	|	1614990552 	 1614990556 	 Out of Range
+Window 111:	|	1614990553 	 1614990557 	 Out of Range
+Window 112:	|	1614990554 	 1614990558 	 Out of Range
+Window 113:	|	1614990555 	 1614990559 	 Out of Range
+Window 114:	|	1614990556 	 1614990560 	 Out of Range
+Window 115:	|	1614990707 	 1614990711 	 Undefined
+Window 116:	|	1614990721 	 1614990725 	 Undefined
+Window 117:	|	1614990722 	 1614990726 	 Undefined
+Window 118:	|	1614990723 	 1614990727 	 Undefined
+Window 119:	|	1614990724 	 1614990728 	 Undefined
+Window 120:	|	1614990725 	 1614990729 	 Undefined
+Window 121:	|	1614990726 	 1614990730 	 Undefined
+Window 122:	|	1614990727 	 1614990731 	 Undefined
+Window 123:	|	1614990728 	 1614990732 	 Undefined
+Window 124:	|	1614990729 	 1614990733 	 Undefined
+Window 125:	|	1614990730 	 1614990734 	 Undefined
+Window 126:	|	1614990731 	 1614990735 	 Undefined
+Window 127:	|	1614990732 	 1614990736 	 Undefined
+Window 128:	|	1614990733 	 1614990737 	 Undefined
+Window 129:	|	1614990734 	 1614990738 	 Undefined
+Window 130:	|	1614990735 	 1614990739 	 Undefined
+Window 131:	|	1614990736 	 1614990740 	 Undefined
+Window 132:	|	1614990737 	 1614990741 	 Undefined
+Window 133:	|	1614990738 	 1614990742 	 Undefined
+Window 134:	|	1614990739 	 1614990743 	 Undefined
+Window 135:	|	1614990740 	 1614990744 	 Undefined
+Window 136:	|	1614990741 	 1614990745 	 Undefined
+Window 137:	|	1614990742 	 1614990746 	 Undefined
+Window 138:	|	1614990743 	 1614990747 	 Undefined
+Window 139:	|	1614990744 	 1614990748 	 Undefined
+Window 140:	|	1614990745 	 1614990749 	 Undefined
+Window 141:	|	1614990746 	 1614990750 	 Undefined
+Window 142:	|	1614990747 	 1614990751 	 Undefined
+Window 143:	|	1614990748 	 1614990752 	 Undefined
+Window 144:	|	1614990772 	 1614990776 	 Undefined
+Window 145:	|	1614990807 	 1614990811 	 Undefined
+Window 146:	|	1614990808 	 1614990812 	 Undefined
+Window 147:	|	1614990809 	 1614990813 	 Undefined
+Window 148:	|	1614990810 	 1614990814 	 Undefined
+Window 149:	|	1614990811 	 1614990815 	 Undefined
+Window 150:	|	1614990812 	 1614990816 	 Undefined
+Window 151:	|	1614990813 	 1614990817 	 Undefined
+Window 152:	|	1614990814 	 1614990818 	 Undefined
+Window 153:	|	1614990815 	 1614990819 	 Undefined
+Window 154:	|	1614990816 	 1614990820 	 Undefined
+Window 155:	|	1614990822 	 1614990826 	 Undefined
+Window 156:	|	1614990823 	 1614990827 	 Undefined
+Window 157:	|	1614990852 	 1614990856 	 Undefined
+Window 158:	|	1614990853 	 1614990857 	 Undefined
+Window 159:	|	1614990854 	 1614990858 	 Undefined
+Window 160:	|	1614990855 	 1614990859 	 Undefined
+Window 161:	|	1614990856 	 1614990860 	 Undefined
+Window 162:	|	1614990857 	 1614990861 	 Undefined
+Window 163:	|	1614990858 	 1614990862 	 Undefined
+Window 164:	|	1614990859 	 1614990863 	 Undefined
+Window 165:	|	1614990860 	 1614990864 	 Undefined
+Window 166:	|	1614990861 	 1614990865 	 Undefined
+Window 167:	|	1614990862 	 1614990866 	 Undefined
+Window 168:	|	1614990863 	 1614990867 	 Undefined
+Window 169:	|	1614990864 	 1614990868 	 Undefined
+Window 170:	|	1614990865 	 1614990869 	 Undefined
+Window 171:	|	1614990866 	 1614990870 	 Undefined
+Window 172:	|	1614990867 	 1614990871 	 Undefined
+Window 173:	|	1614990868 	 1614990872 	 Undefined
+Window 174:	|	1614990869 	 1614990873 	 Undefined
+Window 175:	|	1614990870 	 1614990874 	 Undefined
+Window 176:	|	1614990871 	 1614990875 	 Undefined
+Window 177:	|	1614990872 	 1614990876 	 Undefined
+Window 178:	|	1614990873 	 1614990877 	 Undefined
+Window 179:	|	1614990874 	 1614990878 	 Undefined
+Window 180:	|	1614990875 	 1614990879 	 Undefined
+Window 181:	|	1614990876 	 1614990880 	 Undefined
+Window 182:	|	1614990877 	 1614990881 	 Undefined
+Window 183:	|	1614990883 	 1614990887 	 Undefined
+Window 184:	|	1614990884 	 1614990888 	 Undefined
+Window 185:	|	1614990885 	 1614990889 	 Undefined
+Window 186:	|	1614990886 	 1614990890 	 Undefined
+Window 187:	|	1614990887 	 1614990891 	 Undefined
+Window 188:	|	1614990888 	 1614990892 	 Undefined
+Window 189:	|	1614990889 	 1614990893 	 Undefined
+Window 190:	|	1614990890 	 1614990894 	 Undefined
+Window 191:	|	1614990891 	 1614990895 	 Undefined
+Window 192:	|	1614990892 	 1614990896 	 Undefined
+Window 193:	|	1614990893 	 1614990897 	 Undefined
+Window 194:	|	1614990894 	 1614990898 	 Undefined
+Window 195:	|	1614990895 	 1614990899 	 Undefined
+Window 196:	|	1614990928 	 1614990932 	 Undefined
+Window 197:	|	1614990929 	 1614990933 	 Undefined
+Window 198:	|	1614990930 	 1614990934 	 Undefined
+Window 199:	|	1614990931 	 1614990935 	 Undefined
+Window 200:	|	1614990932 	 1614990936 	 Undefined
+Window 201:	|	1614991106 	 1614991110 	 Undefined
+Window 202:	|	1614991107 	 1614991111 	 Undefined
+Window 203:	|	1614991108 	 1614991112 	 Undefined
+Window 204:	|	1614991109 	 1614991113 	 Undefined
+Window 205:	|	1614991110 	 1614991114 	 Undefined
+Window 206:	|	1614991111 	 1614991115 	 Undefined
+Window 207:	|	1614991112 	 1614991116 	 Undefined
+Window 208:	|	1614991113 	 1614991117 	 Undefined
+Window 209:	|	1614991121 	 1614991125 	 Undefined
+Window 210:	|	1614991122 	 1614991126 	 Undefined
+Window 211:	|	1614991123 	 1614991127 	 Undefined
+Window 212:	|	1614991124 	 1614991128 	 Undefined
+Window 213:	|	1614991125 	 1614991129 	 Undefined
+Window 214:	|	1614991126 	 1614991130 	 Undefined
+Window 215:	|	1614991127 	 1614991131 	 Undefined
+Window 216:	|	1614991128 	 1614991132 	 Undefined
+Window 217:	|	1614991134 	 1614991138 	 Undefined
+Window 218:	|	1614991135 	 1614991139 	 Undefined
+Window 219:	|	1614991136 	 1614991140 	 Undefined
+Window 220:	|	1614991137 	 1614991141 	 Undefined
+Window 221:	|	1614991138 	 1614991142 	 Undefined
+Window 222:	|	1614991139 	 1614991143 	 Undefined
+Window 223:	|	1614991140 	 1614991144 	 Undefined
+Window 224:	|	1614991141 	 1614991145 	 Undefined
+Window 225:	|	1614991142 	 1614991146 	 Undefined
+Window 226:	|	1614991143 	 1614991147 	 Undefined
+Window 227:	|	1614991144 	 1614991148 	 Undefined
+Window 228:	|	1614991145 	 1614991149 	 Undefined
+Window 229:	|	1614991160 	 1614991164 	 Undefined
+Window 230:	|	1614991208 	 1614991212 	 Undefined
+Window 231:	|	1614991209 	 1614991213 	 Undefined
+Window 232:	|	1614991210 	 1614991214 	 Undefined
+Window 233:	|	1614991211 	 1614991215 	 Undefined
+Window 234:	|	1614991212 	 1614991216 	 Undefined
+Window 235:	|	1614991220 	 1614991224 	 Undefined
+Window 236:	|	1614991221 	 1614991225 	 Undefined
+Window 237:	|	1614991339 	 1614991343 	 Undefined
+Window 238:	|	1614991340 	 1614991344 	 Undefined
+Window 239:	|	1614991341 	 1614991345 	 Undefined
+Window 240:	|	1614991342 	 1614991346 	 Undefined
+Window 241:	|	1614991343 	 1614991347 	 Undefined
+Window 242:	|	1614991344 	 1614991348 	 Undefined
+Window 243:	|	1614991345 	 1614991349 	 Undefined
+Window 244:	|	1614991346 	 1614991350 	 Undefined
+Window 245:	|	1614991347 	 1614991351 	 Undefined
+Window 246:	|	1614991348 	 1614991352 	 Undefined
+Window 247:	|	1614991354 	 1614991358 	 Undefined
+Window 248:	|	1614991355 	 1614991359 	 Undefined
+Window 249:	|	1614991356 	 1614991360 	 Undefined
+Window 250:	|	1614991357 	 1614991361 	 Undefined
+Window 251:	|	1614991358 	 1614991362 	 Undefined
+Window 252:	|	1614991359 	 1614991363 	 Undefined
+Window 253:	|	1614991360 	 1614991364 	 Undefined
+Window 254:	|	1614991361 	 1614991365 	 Undefined
+Window 255:	|	1614991362 	 1614991366 	 Undefined
+Window 256:	|	1614991363 	 1614991367 	 Undefined
+Window 257:	|	1614991364 	 1614991368 	 Undefined
+Window 258:	|	1614991365 	 1614991369 	 Undefined
+Window 259:	|	1614991366 	 1614991370 	 Undefined
+Window 260:	|	1614991367 	 1614991371 	 Undefined
+Window 261:	|	1614991368 	 1614991372 	 Undefined
+Window 262:	|	1614991369 	 1614991373 	 Undefined
+Window 263:	|	1614991370 	 1614991374 	 Undefined
+Window 264:	|	1614991371 	 1614991375 	 Undefined
+Window 265:	|	1614991481 	 1614991485 	 Undefined
+Window 266:	|	1614991482 	 1614991486 	 Undefined
+Window 267:	|	1614991483 	 1614991487 	 Undefined
+Window 268:	|	1614991484 	 1614991488 	 Undefined
+Window 269:	|	1614991485 	 1614991489 	 Undefined
+Window 270:	|	1614991492 	 1614991496 	 Undefined
+Window 271:	|	1614991493 	 1614991497 	 Undefined
+Window 272:	|	1614991494 	 1614991498 	 Undefined
+Window 273:	|	1614991495 	 1614991499 	 Undefined
+Window 274:	|	1614991496 	 1614991500 	 Undefined
+Window 275:	|	1614991497 	 1614991501 	 Undefined
+Window 276:	|	1614991498 	 1614991502 	 Undefined
+Window 277:	|	1614991499 	 1614991503 	 Undefined
+Window 278:	|	1614991500 	 1614991504 	 Undefined
+Window 279:	|	1614991501 	 1614991505 	 Undefined
+Window 280:	|	1614991502 	 1614991506 	 Undefined
+Window 281:	|	1614991503 	 1614991507 	 Undefined
+Window 282:	|	1614991504 	 1614991508 	 Undefined
+Window 283:	|	1614991505 	 1614991509 	 Undefined
+Window 284:	|	1614991506 	 1614991510 	 Undefined
+Window 285:	|	1614991519 	 1614991523 	 Undefined
+Window 286:	|	1614991520 	 1614991524 	 Undefined
+Window 287:	|	1614991521 	 1614991525 	 Undefined
+Window 288:	|	1614991522 	 1614991526 	 Undefined
+Window 289:	|	1614991523 	 1614991527 	 Undefined
+Window 290:	|	1614991524 	 1614991528 	 Undefined
+Window 291:	|	1614991525 	 1614991529 	 Undefined
+Window 292:	|	1614991526 	 1614991530 	 Undefined
+Window 293:	|	1614991527 	 1614991531 	 Undefined
+Window 294:	|	1614991528 	 1614991532 	 Undefined
+Window 295:	|	1614991529 	 1614991533 	 Undefined
+Window 296:	|	1614991530 	 1614991534 	 Undefined
+Window 297:	|	1614991531 	 1614991535 	 Undefined
+Window 298:	|	1614991532 	 1614991536 	 Undefined
+Window 299:	|	1614991533 	 1614991537 	 Undefined
+Window 300:	|	1614991534 	 1614991538 	 Undefined
+Window 301:	|	1614991535 	 1614991539 	 Undefined
+Window 302:	|	1614991536 	 1614991540 	 Undefined
+Window 303:	|	1614991537 	 1614991541 	 Undefined
+Window 304:	|	1614991538 	 1614991542 	 Undefined
+Window 305:	|	1614991539 	 1614991543 	 Undefined
+Window 306:	|	1614991540 	 1614991544 	 Undefined
+Window 307:	|	1614991541 	 1614991545 	 Undefined
+Window 308:	|	1614991542 	 1614991546 	 Undefined
+Window 309:	|	1614991543 	 1614991547 	 Undefined
+Window 310:	|	1614991544 	 1614991548 	 Undefined
+Window 311:	|	1614991545 	 1614991549 	 Undefined
+Window 312:	|	1614991579 	 1614991583 	 Undefined
+Window 313:	|	1614991580 	 1614991584 	 Undefined
+Window 314:	|	1614991581 	 1614991585 	 Undefined
+Window 315:	|	1614991582 	 1614991586 	 Undefined
+Window 316:	|	1614991583 	 1614991587 	 Undefined
+Window 317:	|	1614991651 	 1614991655 	 Undefined
+Window 318:	|	1614991652 	 1614991656 	 Undefined
+Window 319:	|	1614991653 	 1614991657 	 Undefined
+Window 320:	|	1614991654 	 1614991658 	 Undefined
+Window 321:	|	1614991655 	 1614991659 	 Undefined
+Window 322:	|	1614991656 	 1614991660 	 Undefined
+Window 323:	|	1614991657 	 1614991661 	 Undefined
+Window 324:	|	1614991658 	 1614991662 	 Undefined
+Window 325:	|	1614991659 	 1614991663 	 Undefined
+Window 326:	|	1614991660 	 1614991664 	 Undefined
+Window 327:	|	1614991661 	 1614991665 	 Undefined
+Window 328:	|	1614991662 	 1614991666 	 Undefined
+Window 329:	|	1614991663 	 1614991667 	 Undefined
+Window 330:	|	1614991664 	 1614991668 	 Undefined
+Window 331:	|	1614991665 	 1614991669 	 Undefined
+Window 332:	|	1614991666 	 1614991670 	 Undefined
+Window 333:	|	1614991667 	 1614991671 	 Undefined
+Window 334:	|	1614991668 	 1614991672 	 Undefined
+Window 335:	|	1614991751 	 1614991755 	 Undefined
+Window 336:	|	1614991752 	 1614991756 	 Undefined
+Window 337:	|	1614991753 	 1614991757 	 Undefined
+Window 338:	|	1614991754 	 1614991758 	 Undefined
+Window 339:	|	1614991755 	 1614991759 	 Undefined
+Window 340:	|	1614991756 	 1614991760 	 Undefined
+Window 341:	|	1614991757 	 1614991761 	 Undefined
+Window 342:	|	1614991758 	 1614991762 	 Undefined
+Window 343:	|	1614991759 	 1614991763 	 Undefined
+Window 344:	|	1614991760 	 1614991764 	 Undefined
+Window 345:	|	1614991761 	 1614991765 	 Undefined
+Window 346:	|	1614991762 	 1614991766 	 Undefined
+Window 347:	|	1614991763 	 1614991767 	 Undefined
+Window 348:	|	1614991764 	 1614991768 	 Undefined
+Window 349:	|	1614991765 	 1614991769 	 Undefined
+Window 350:	|	1614991766 	 1614991770 	 Undefined
+Window 351:	|	1614991767 	 1614991771 	 Undefined
+Window 352:	|	1614991768 	 1614991772 	 Undefined
+Window 353:	|	1614991769 	 1614991773 	 Undefined
+Window 354:	|	1614991770 	 1614991774 	 Undefined
+Window 355:	|	1614991771 	 1614991775 	 Undefined
+Window 356:	|	1614991772 	 1614991776 	 Undefined
+Window 357:	|	1614991773 	 1614991777 	 Undefined
+Window 358:	|	1614991774 	 1614991778 	 Undefined
+Window 359:	|	1614991775 	 1614991779 	 Undefined
+Window 360:	|	1614991776 	 1614991780 	 Undefined
+Window 361:	|	1614991777 	 1614991781 	 Undefined
+Window 362:	|	1614991778 	 1614991782 	 Undefined
+Window 363:	|	1614991779 	 1614991783 	 Undefined
+Window 364:	|	1614991780 	 1614991784 	 Undefined
+Window 365:	|	1614991781 	 1614991785 	 Undefined
+Window 366:	|	1614991782 	 1614991786 	 Undefined
+Window 367:	|	1614991783 	 1614991787 	 Undefined
+Window 368:	|	1614991784 	 1614991788 	 Undefined
+Window 369:	|	1614991785 	 1614991789 	 Undefined
+Window 370:	|	1614991786 	 1614991790 	 Undefined
+Window 371:	|	1614991787 	 1614991791 	 Undefined
+Window 372:	|	1614991788 	 1614991792 	 Undefined
+Window 373:	|	1614991789 	 1614991793 	 Undefined
+Window 374:	|	1614991790 	 1614991794 	 Undefined
+Window 375:	|	1614991791 	 1614991795 	 Undefined
+Window 376:	|	1614991792 	 1614991796 	 Undefined
+Window 377:	|	1614991793 	 1614991797 	 Undefined
+Window 378:	|	1614991794 	 1614991798 	 Undefined
+Window 379:	|	1614991795 	 1614991799 	 Undefined
+Window 380:	|	1614991796 	 1614991800 	 Undefined
+Window 381:	|	1614991797 	 1614991801 	 Undefined
+Window 382:	|	1614991798 	 1614991802 	 Undefined
+Window 383:	|	1614991799 	 1614991803 	 Undefined
+Window 384:	|	1614991800 	 1614991804 	 Undefined
+Window 385:	|	1614991801 	 1614991805 	 Undefined
+Window 386:	|	1614991802 	 1614991806 	 Undefined
+Window 387:	|	1614991803 	 1614991807 	 Undefined
+Window 388:	|	1614991804 	 1614991808 	 Undefined
+Window 389:	|	1614991805 	 1614991809 	 Undefined
+Window 390:	|	1614991806 	 1614991810 	 Undefined
+Window 391:	|	1614991807 	 1614991811 	 Undefined
+Window 392:	|	1614991808 	 1614991812 	 Undefined
+Window 393:	|	1614991809 	 1614991813 	 Undefined
+Window 394:	|	1614991810 	 1614991814 	 Undefined
+Window 395:	|	1614991811 	 1614991815 	 Undefined
+Window 396:	|	1614991812 	 1614991816 	 Undefined
+Window 397:	|	1614991813 	 1614991817 	 Undefined
+Window 398:	|	1614991814 	 1614991818 	 Undefined
+Window 399:	|	1614991815 	 1614991819 	 Undefined
+Window 400:	|	1614991826 	 1614991830 	 Undefined
+Window 401:	|	1614991827 	 1614991831 	 Undefined
+Window 402:	|	1614991828 	 1614991832 	 Undefined
+Window 403:	|	1614991829 	 1614991833 	 Undefined
+Window 404:	|	1614991830 	 1614991834 	 Undefined
+Window 405:	|	1614991831 	 1614991835 	 Undefined
+Window 406:	|	1614991832 	 1614991836 	 Undefined
+Window 407:	|	1614991833 	 1614991837 	 Undefined
+Window 408:	|	1614991834 	 1614991838 	 Undefined
+Window 409:	|	1614991835 	 1614991839 	 Undefined
+Window 410:	|	1614991836 	 1614991840 	 Undefined
+Window 411:	|	1614991837 	 1614991841 	 Undefined
+Window 412:	|	1614991838 	 1614991842 	 Undefined
+Window 413:	|	1614991839 	 1614991843 	 Undefined
+Window 414:	|	1614991840 	 1614991844 	 Undefined
+Window 415:	|	1614991841 	 1614991845 	 Undefined
+Window 416:	|	1614991842 	 1614991846 	 Undefined
+Window 417:	|	1614991843 	 1614991847 	 Undefined
+Window 418:	|	1614991844 	 1614991848 	 Undefined
+Window 419:	|	1614991845 	 1614991849 	 Undefined
+Window 420:	|	1614991846 	 1614991850 	 Undefined
+Window 421:	|	1614991847 	 1614991851 	 Undefined
+Window 422:	|	1614991848 	 1614991852 	 Undefined
+Window 423:	|	1614991849 	 1614991853 	 Undefined
+Window 424:	|	1614991850 	 1614991854 	 Undefined
+Window 425:	|	1614991851 	 1614991855 	 Undefined
+Window 426:	|	1614991852 	 1614991856 	 Undefined
+Window 427:	|	1614991853 	 1614991857 	 Undefined
+Window 428:	|	1614991854 	 1614991858 	 Undefined
+Window 429:	|	1614991855 	 1614991859 	 Undefined
+Window 430:	|	1614991856 	 1614991860 	 Undefined
+Window 431:	|	1614991899 	 1614991903 	 Undefined
+Window 432:	|	1614991900 	 1614991904 	 Undefined
+Window 433:	|	1614991901 	 1614991905 	 Undefined
+Window 434:	|	1614991902 	 1614991906 	 Undefined
+Window 435:	|	1614991903 	 1614991907 	 Undefined
+Window 436:	|	1614991904 	 1614991908 	 Undefined
+Window 437:	|	1614991905 	 1614991909 	 Undefined
+Window 438:	|	1614991906 	 1614991910 	 Undefined
+Window 439:	|	1614991907 	 1614991911 	 Undefined
+Window 440:	|	1614991908 	 1614991912 	 Undefined
+Window 441:	|	1614991909 	 1614991913 	 Undefined
+Window 442:	|	1614991910 	 1614991914 	 Undefined
+Window 443:	|	1614991911 	 1614991915 	 Undefined
+Window 444:	|	1614991912 	 1614991916 	 Undefined
+Window 445:	|	1614991913 	 1614991917 	 Undefined
+Window 446:	|	1614991914 	 1614991918 	 Undefined
+Window 447:	|	1614991915 	 1614991919 	 Undefined
+Window 448:	|	1614991916 	 1614991920 	 Undefined
+Window 449:	|	1614991917 	 1614991921 	 Undefined
+Window 450:	|	1614991918 	 1614991922 	 Undefined
+Window 451:	|	1614991919 	 1614991923 	 Undefined
+Window 452:	|	1614991920 	 1614991924 	 Undefined
+Window 453:	|	1614991921 	 1614991925 	 Undefined
+Window 454:	|	1614991922 	 1614991926 	 Undefined
+Window 455:	|	1614991923 	 1614991927 	 Undefined
+Window 456:	|	1614991924 	 1614991928 	 Undefined
+Window 457:	|	1614991925 	 1614991929 	 Undefined
+Window 458:	|	1614991936 	 1614991940 	 Undefined
+Window 459:	|	1614991937 	 1614991941 	 Undefined
+Window 460:	|	1614991938 	 1614991942 	 Undefined
+Window 461:	|	1614991939 	 1614991943 	 Undefined
+Window 462:	|	1614991945 	 1614991949 	 Undefined
+Window 463:	|	1614991946 	 1614991950 	 Undefined
+Window 464:	|	1614991947 	 1614991951 	 Undefined
+Window 465:	|	1614991948 	 1614991952 	 Undefined
+Window 466:	|	1614991949 	 1614991953 	 Undefined
+Window 467:	|	1614991950 	 1614991954 	 Undefined
+Window 468:	|	1614991965 	 1614991969 	 Undefined
+Window 469:	|	1614991966 	 1614991970 	 Undefined
+Window 470:	|	1614991967 	 1614991971 	 Undefined
+Window 471:	|	1614991968 	 1614991972 	 Undefined
+Window 472:	|	1614991969 	 1614991973 	 Undefined
+Window 473:	|	1614991970 	 1614991974 	 Undefined
+Window 474:	|	1614991971 	 1614991975 	 Undefined
+Window 475:	|	1614991972 	 1614991976 	 Undefined
+Window 476:	|	1614991973 	 1614991977 	 Undefined
+Window 477:	|	1614991974 	 1614991978 	 Undefined
+Window 478:	|	1614991975 	 1614991979 	 Undefined
+Window 479:	|	1614991976 	 1614991980 	 Undefined
+Window 480:	|	1614991977 	 1614991981 	 Undefined
+Window 481:	|	1614991978 	 1614991982 	 Undefined
+Window 482:	|	1614992121 	 1614992125 	 Undefined
+==================================================
+Testing Data:	|	Start	 End	 Label
+==================================================
+Window 1:	|	1614990087 	 1614990091 	 Undefined
+Window 2:	|	1614990088 	 1614990092 	 Undefined
+Window 3:	|	1614990089 	 1614990093 	 Undefined
+Window 4:	|	1614990090 	 1614990094 	 Undefined
+Window 5:	|	1614990091 	 1614990095 	 Undefined
+Window 6:	|	1614990092 	 1614990096 	 Undefined
+Window 7:	|	1614990093 	 1614990097 	 Undefined
+Window 8:	|	1614990094 	 1614990098 	 Undefined
+Window 9:	|	1614990095 	 1614990099 	 Undefined
+Window 10:	|	1614990096 	 1614990100 	 Undefined
+Window 11:	|	1614990097 	 1614990101 	 Undefined
+Window 12:	|	1614990098 	 1614990102 	 Undefined
+Window 13:	|	1614990099 	 1614990103 	 Undefined
+Window 14:	|	1614990100 	 1614990104 	 Undefined
+Window 15:	|	1614990101 	 1614990105 	 Undefined
+Window 16:	|	1614990102 	 1614990106 	 Undefined
+Window 17:	|	1614990103 	 1614990107 	 Undefined
+Window 18:	|	1614990104 	 1614990108 	 Undefined
+Window 19:	|	1614990110 	 1614990114 	 Undefined
+Window 20:	|	1614990111 	 1614990115 	 Undefined
+Window 21:	|	1614990132 	 1614990136 	 Undefined
+Window 22:	|	1614990133 	 1614990137 	 Undefined
+Window 23:	|	1614990172 	 1614990176 	 Undefined
+Window 24:	|	1614990173 	 1614990177 	 Undefined
+Window 25:	|	1614990174 	 1614990178 	 Undefined
+Window 26:	|	1614990198 	 1614990202 	 Undefined
+Window 27:	|	1614990199 	 1614990203 	 Undefined
+Window 28:	|	1614990200 	 1614990204 	 Undefined
+Window 29:	|	1614990201 	 1614990205 	 Undefined
+Window 30:	|	1614990202 	 1614990206 	 Undefined
+Window 31:	|	1614990203 	 1614990207 	 Undefined
+Window 32:	|	1614990204 	 1614990208 	 Undefined
+Window 33:	|	1614990205 	 1614990209 	 Undefined
+Window 34:	|	1614990206 	 1614990210 	 Undefined
+Window 35:	|	1614990207 	 1614990211 	 Undefined
+Window 36:	|	1614990208 	 1614990212 	 Undefined
+Window 37:	|	1614990209 	 1614990213 	 Undefined
+Window 38:	|	1614990210 	 1614990214 	 Undefined
+Window 39:	|	1614990211 	 1614990215 	 Undefined
+Window 40:	|	1614990248 	 1614990252 	 Undefined
+Window 41:	|	1614990249 	 1614990253 	 Undefined
+Window 42:	|	1614990255 	 1614990259 	 Undefined
+Window 43:	|	1614990263 	 1614990267 	 Undefined
+Window 44:	|	1614990264 	 1614990268 	 Undefined
+Window 45:	|	1614990265 	 1614990269 	 Undefined
+Window 46:	|	1614990266 	 1614990270 	 Undefined
+Window 47:	|	1614990267 	 1614990271 	 Undefined
+Window 48:	|	1614990268 	 1614990272 	 Undefined
+Window 49:	|	1614990269 	 1614990273 	 Undefined
+Window 50:	|	1614990270 	 1614990274 	 Undefined
+Window 51:	|	1614990284 	 1614990288 	 Undefined
+Window 52:	|	1614990285 	 1614990289 	 Undefined
+Window 53:	|	1614990286 	 1614990290 	 Undefined
+Window 54:	|	1614990287 	 1614990291 	 Undefined
+Window 55:	|	1614990288 	 1614990292 	 Undefined
+Window 56:	|	1614990289 	 1614990293 	 Undefined
+Window 57:	|	1614990290 	 1614990294 	 Undefined
+Window 58:	|	1614990291 	 1614990295 	 Undefined
+Window 59:	|	1614990292 	 1614990296 	 Undefined
+Window 60:	|	1614990293 	 1614990297 	 Undefined
+Window 61:	|	1614990294 	 1614990298 	 Undefined
+Window 62:	|	1614990295 	 1614990299 	 Undefined
+Window 63:	|	1614990296 	 1614990300 	 Undefined
+Window 64:	|	1614990297 	 1614990301 	 Undefined
+Window 65:	|	1614990298 	 1614990302 	 Undefined
+Window 66:	|	1614990299 	 1614990303 	 Undefined
+Window 67:	|	1614990300 	 1614990304 	 Undefined
+Window 68:	|	1614990301 	 1614990305 	 Undefined
+Window 69:	|	1614990302 	 1614990306 	 Undefined
+Window 70:	|	1614990333 	 1614990337 	 Undefined
+Window 71:	|	1614990334 	 1614990338 	 Undefined
+Window 72:	|	1614990335 	 1614990339 	 Undefined
+Window 73:	|	1614990336 	 1614990340 	 Undefined
+Window 74:	|	1614990337 	 1614990341 	 Undefined
+Window 75:	|	1614990338 	 1614990342 	 Undefined
+Window 76:	|	1614990339 	 1614990343 	 Undefined
+Window 77:	|	1614990340 	 1614990344 	 Undefined
+Window 78:	|	1614990354 	 1614990358 	 Undefined
+Window 79:	|	1614990355 	 1614990359 	 Undefined
+Window 80:	|	1614990366 	 1614990370 	 Undefined
+Window 81:	|	1614990367 	 1614990371 	 Undefined
+Window 82:	|	1614990368 	 1614990372 	 Undefined
+Window 83:	|	1614990369 	 1614990373 	 Undefined
+Window 84:	|	1614990370 	 1614990374 	 Undefined
+Window 85:	|	1614990371 	 1614990375 	 Undefined
+Window 86:	|	1614990372 	 1614990376 	 Undefined
+Window 87:	|	1614990373 	 1614990377 	 Undefined
+Window 88:	|	1614990374 	 1614990378 	 Undefined
+Window 89:	|	1614990375 	 1614990379 	 Undefined
+Window 90:	|	1614990376 	 1614990380 	 Undefined
+Window 91:	|	1614990377 	 1614990381 	 Undefined
+Window 92:	|	1614990378 	 1614990382 	 Undefined
+Window 93:	|	1614990379 	 1614990383 	 Undefined
+Window 94:	|	1614990380 	 1614990384 	 Undefined
+Window 95:	|	1614990381 	 1614990385 	 Undefined
+Window 96:	|	1614990382 	 1614990386 	 Undefined
+Window 97:	|	1614990383 	 1614990387 	 Undefined
+Window 98:	|	1614990384 	 1614990388 	 Undefined
+Window 99:	|	1614990385 	 1614990389 	 Undefined
+Window 100:	|	1614990413 	 1614990417 	 Undefined
+Window 101:	|	1614990447 	 1614990451 	 Undefined
+Window 102:	|	1614990448 	 1614990452 	 Undefined
+Window 103:	|	1614990449 	 1614990453 	 Undefined
+Window 104:	|	1614990467 	 1614990471 	 Undefined
+Window 105:	|	1614990547 	 1614990551 	 Undefined
+Window 106:	|	1614990548 	 1614990552 	 Undefined
+Window 107:	|	1614990549 	 1614990553 	 Undefined
+Window 108:	|	1614990550 	 1614990554 	 Undefined
+Window 109:	|	1614990551 	 1614990555 	 Undefined
+Window 110:	|	1614990552 	 1614990556 	 Undefined
+Window 111:	|	1614990553 	 1614990557 	 Undefined
+Window 112:	|	1614990554 	 1614990558 	 Undefined
+Window 113:	|	1614990555 	 1614990559 	 Undefined
+Window 114:	|	1614990556 	 1614990560 	 Undefined
+Window 115:	|	1614990707 	 1614990711 	 Undefined
+Window 116:	|	1614990721 	 1614990725 	 Undefined
+Window 117:	|	1614990722 	 1614990726 	 Undefined
+Window 118:	|	1614990723 	 1614990727 	 Undefined
+Window 119:	|	1614990724 	 1614990728 	 Undefined
+Window 120:	|	1614990725 	 1614990729 	 Undefined
+Window 121:	|	1614990726 	 1614990730 	 Undefined
+Window 122:	|	1614990727 	 1614990731 	 Undefined
+Window 123:	|	1614990728 	 1614990732 	 Undefined
+Window 124:	|	1614990729 	 1614990733 	 Undefined
+Window 125:	|	1614990730 	 1614990734 	 Undefined
+Window 126:	|	1614990731 	 1614990735 	 Undefined
+Window 127:	|	1614990732 	 1614990736 	 Undefined
+Window 128:	|	1614990733 	 1614990737 	 Undefined
+Window 129:	|	1614990734 	 1614990738 	 Undefined
+Window 130:	|	1614990735 	 1614990739 	 Undefined
+Window 131:	|	1614990736 	 1614990740 	 Undefined
+Window 132:	|	1614990737 	 1614990741 	 Undefined
+Window 133:	|	1614990738 	 1614990742 	 Undefined
+Window 134:	|	1614990739 	 1614990743 	 Undefined
+Window 135:	|	1614990740 	 1614990744 	 Undefined
+Window 136:	|	1614990741 	 1614990745 	 Undefined
+Window 137:	|	1614990742 	 1614990746 	 Undefined
+Window 138:	|	1614990743 	 1614990747 	 Undefined
+Window 139:	|	1614990744 	 1614990748 	 Undefined
+Window 140:	|	1614990745 	 1614990749 	 Undefined
+Window 141:	|	1614990746 	 1614990750 	 Undefined
+Window 142:	|	1614990747 	 1614990751 	 Undefined
+Window 143:	|	1614990748 	 1614990752 	 Undefined
+Window 144:	|	1614990772 	 1614990776 	 Undefined
+Window 145:	|	1614990807 	 1614990811 	 Undefined
+Window 146:	|	1614990808 	 1614990812 	 Undefined
+Window 147:	|	1614990809 	 1614990813 	 Undefined
+Window 148:	|	1614990810 	 1614990814 	 Undefined
+Window 149:	|	1614990811 	 1614990815 	 Undefined
+Window 150:	|	1614990812 	 1614990816 	 Undefined
+Window 151:	|	1614990813 	 1614990817 	 Undefined
+Window 152:	|	1614990814 	 1614990818 	 Undefined
+Window 153:	|	1614990815 	 1614990819 	 Undefined
+Window 154:	|	1614990816 	 1614990820 	 Undefined
+Window 155:	|	1614990822 	 1614990826 	 Undefined
+Window 156:	|	1614990823 	 1614990827 	 Undefined
+Window 157:	|	1614990852 	 1614990856 	 Undefined
+Window 158:	|	1614990853 	 1614990857 	 Undefined
+Window 159:	|	1614990854 	 1614990858 	 Undefined
+Window 160:	|	1614990855 	 1614990859 	 Undefined
+Window 161:	|	1614990856 	 1614990860 	 Undefined
+Window 162:	|	1614990857 	 1614990861 	 Undefined
+Window 163:	|	1614990858 	 1614990862 	 Undefined
+Window 164:	|	1614990859 	 1614990863 	 Undefined
+Window 165:	|	1614990860 	 1614990864 	 Undefined
+Window 166:	|	1614990861 	 1614990865 	 Undefined
+Window 167:	|	1614990862 	 1614990866 	 Undefined
+Window 168:	|	1614990863 	 1614990867 	 Undefined
+Window 169:	|	1614990864 	 1614990868 	 Undefined
+Window 170:	|	1614990865 	 1614990869 	 Undefined
+Window 171:	|	1614990866 	 1614990870 	 Undefined
+Window 172:	|	1614990867 	 1614990871 	 Undefined
+Window 173:	|	1614990868 	 1614990872 	 Undefined
+Window 174:	|	1614990869 	 1614990873 	 Undefined
+Window 175:	|	1614990870 	 1614990874 	 Undefined
+Window 176:	|	1614990871 	 1614990875 	 Undefined
+Window 177:	|	1614990872 	 1614990876 	 Undefined
+Window 178:	|	1614990873 	 1614990877 	 Undefined
+Window 179:	|	1614990874 	 1614990878 	 Undefined
+Window 180:	|	1614990875 	 1614990879 	 Undefined
+Window 181:	|	1614990876 	 1614990880 	 Undefined
+Window 182:	|	1614990877 	 1614990881 	 Undefined
+Window 183:	|	1614990883 	 1614990887 	 Undefined
+Window 184:	|	1614990884 	 1614990888 	 Undefined
+Window 185:	|	1614990885 	 1614990889 	 Undefined
+Window 186:	|	1614990886 	 1614990890 	 Undefined
+Window 187:	|	1614990887 	 1614990891 	 Undefined
+Window 188:	|	1614990888 	 1614990892 	 Undefined
+Window 189:	|	1614990889 	 1614990893 	 Undefined
+Window 190:	|	1614990890 	 1614990894 	 Undefined
+Window 191:	|	1614990891 	 1614990895 	 Undefined
+Window 192:	|	1614990892 	 1614990896 	 Undefined
+Window 193:	|	1614990893 	 1614990897 	 Undefined
+Window 194:	|	1614990894 	 1614990898 	 Undefined
+Window 195:	|	1614990895 	 1614990899 	 Undefined
+Window 196:	|	1614990928 	 1614990932 	 Undefined
+Window 197:	|	1614990929 	 1614990933 	 Undefined
+Window 198:	|	1614990930 	 1614990934 	 Undefined
+Window 199:	|	1614990931 	 1614990935 	 Undefined
+Window 200:	|	1614990932 	 1614990936 	 Undefined
+Window 201:	|	1614991106 	 1614991110 	 Undefined
+Window 202:	|	1614991107 	 1614991111 	 Undefined
+Window 203:	|	1614991108 	 1614991112 	 Undefined
+Window 204:	|	1614991109 	 1614991113 	 Undefined
+Window 205:	|	1614991110 	 1614991114 	 Undefined
+Window 206:	|	1614991111 	 1614991115 	 Undefined
+Window 207:	|	1614991112 	 1614991116 	 Undefined
+Window 208:	|	1614991113 	 1614991117 	 Undefined
+Window 209:	|	1614991121 	 1614991125 	 Undefined
+Window 210:	|	1614991122 	 1614991126 	 Undefined
+Window 211:	|	1614991123 	 1614991127 	 Undefined
+Window 212:	|	1614991124 	 1614991128 	 Undefined
+Window 213:	|	1614991125 	 1614991129 	 Undefined
+Window 214:	|	1614991126 	 1614991130 	 Undefined
+Window 215:	|	1614991127 	 1614991131 	 Undefined
+Window 216:	|	1614991128 	 1614991132 	 Undefined
+Window 217:	|	1614991134 	 1614991138 	 Undefined
+Window 218:	|	1614991135 	 1614991139 	 Undefined
+Window 219:	|	1614991136 	 1614991140 	 Undefined
+Window 220:	|	1614991137 	 1614991141 	 Undefined
+Window 221:	|	1614991138 	 1614991142 	 Undefined
+Window 222:	|	1614991139 	 1614991143 	 Undefined
+Window 223:	|	1614991140 	 1614991144 	 Undefined
+Window 224:	|	1614991141 	 1614991145 	 Undefined
+Window 225:	|	1614991142 	 1614991146 	 Undefined
+Window 226:	|	1614991143 	 1614991147 	 Undefined
+Window 227:	|	1614991144 	 1614991148 	 Undefined
+Window 228:	|	1614991145 	 1614991149 	 Undefined
+Window 229:	|	1614991160 	 1614991164 	 Undefined
+Window 230:	|	1614991208 	 1614991212 	 Undefined
+Window 231:	|	1614991209 	 1614991213 	 Undefined
+Window 232:	|	1614991210 	 1614991214 	 Undefined
+Window 233:	|	1614991211 	 1614991215 	 Undefined
+Window 234:	|	1614991212 	 1614991216 	 Undefined
+Window 235:	|	1614991220 	 1614991224 	 Undefined
+Window 236:	|	1614991221 	 1614991225 	 Undefined
+Window 237:	|	1614991339 	 1614991343 	 Close By
+Window 238:	|	1614991340 	 1614991344 	 Close By
+Window 239:	|	1614991341 	 1614991345 	 Close By
+Window 240:	|	1614991342 	 1614991346 	 Close By
+Window 241:	|	1614991343 	 1614991347 	 Close By
+Window 242:	|	1614991344 	 1614991348 	 Close By
+Window 243:	|	1614991345 	 1614991349 	 Close By
+Window 244:	|	1614991346 	 1614991350 	 Close By
+Window 245:	|	1614991347 	 1614991351 	 Close By
+Window 246:	|	1614991348 	 1614991352 	 Close By
+Window 247:	|	1614991354 	 1614991358 	 Close By
+Window 248:	|	1614991355 	 1614991359 	 Close By
+Window 249:	|	1614991356 	 1614991360 	 Close By
+Window 250:	|	1614991357 	 1614991361 	 Close By
+Window 251:	|	1614991358 	 1614991362 	 Close By
+Window 252:	|	1614991359 	 1614991363 	 Close By
+Window 253:	|	1614991360 	 1614991364 	 Close By
+Window 254:	|	1614991361 	 1614991365 	 Close By
+Window 255:	|	1614991362 	 1614991366 	 Close By
+Window 256:	|	1614991363 	 1614991367 	 Close By
+Window 257:	|	1614991364 	 1614991368 	 Close By
+Window 258:	|	1614991365 	 1614991369 	 Close By
+Window 259:	|	1614991366 	 1614991370 	 Close By
+Window 260:	|	1614991367 	 1614991371 	 Close By
+Window 261:	|	1614991368 	 1614991372 	 Close By
+Window 262:	|	1614991369 	 1614991373 	 Close By
+Window 263:	|	1614991370 	 1614991374 	 Close By
+Window 264:	|	1614991371 	 1614991375 	 Close By
+Window 265:	|	1614991481 	 1614991485 	 Close By
+Window 266:	|	1614991482 	 1614991486 	 Close By
+Window 267:	|	1614991483 	 1614991487 	 Close By
+Window 268:	|	1614991484 	 1614991488 	 Close By
+Window 269:	|	1614991485 	 1614991489 	 Close By
+Window 270:	|	1614991492 	 1614991496 	 Close By
+Window 271:	|	1614991493 	 1614991497 	 Close By
+Window 272:	|	1614991494 	 1614991498 	 Close By
+Window 273:	|	1614991495 	 1614991499 	 Close By
+Window 274:	|	1614991496 	 1614991500 	 Close By
+Window 275:	|	1614991497 	 1614991501 	 Close By
+Window 276:	|	1614991498 	 1614991502 	 Close By
+Window 277:	|	1614991499 	 1614991503 	 Close By
+Window 278:	|	1614991500 	 1614991504 	 Close By
+Window 279:	|	1614991501 	 1614991505 	 Close By
+Window 280:	|	1614991502 	 1614991506 	 Close By
+Window 281:	|	1614991503 	 1614991507 	 Close By
+Window 282:	|	1614991504 	 1614991508 	 Close By
+Window 283:	|	1614991505 	 1614991509 	 Close By
+Window 284:	|	1614991506 	 1614991510 	 Close By
+Window 285:	|	1614991519 	 1614991523 	 Close By
+Window 286:	|	1614991520 	 1614991524 	 Close By
+Window 287:	|	1614991521 	 1614991525 	 Close By
+Window 288:	|	1614991522 	 1614991526 	 Close By
+Window 289:	|	1614991523 	 1614991527 	 Close By
+Window 290:	|	1614991524 	 1614991528 	 Close By
+Window 291:	|	1614991525 	 1614991529 	 Close By
+Window 292:	|	1614991526 	 1614991530 	 Close By
+Window 293:	|	1614991527 	 1614991531 	 Close By
+Window 294:	|	1614991528 	 1614991532 	 Close By
+Window 295:	|	1614991529 	 1614991533 	 Close By
+Window 296:	|	1614991530 	 1614991534 	 Close By
+Window 297:	|	1614991531 	 1614991535 	 Close By
+Window 298:	|	1614991532 	 1614991536 	 Close By
+Window 299:	|	1614991533 	 1614991537 	 Close By
+Window 300:	|	1614991534 	 1614991538 	 Close By
+Window 301:	|	1614991535 	 1614991539 	 Close By
+Window 302:	|	1614991536 	 1614991540 	 Close By
+Window 303:	|	1614991537 	 1614991541 	 Close By
+Window 304:	|	1614991538 	 1614991542 	 Close By
+Window 305:	|	1614991539 	 1614991543 	 Close By
+Window 306:	|	1614991540 	 1614991544 	 Close By
+Window 307:	|	1614991541 	 1614991545 	 Close By
+Window 308:	|	1614991542 	 1614991546 	 Close By
+Window 309:	|	1614991543 	 1614991547 	 Close By
+Window 310:	|	1614991544 	 1614991548 	 Close By
+Window 311:	|	1614991545 	 1614991549 	 Close By
+Window 312:	|	1614991579 	 1614991583 	 Close By
+Window 313:	|	1614991580 	 1614991584 	 Close By
+Window 314:	|	1614991581 	 1614991585 	 Close By
+Window 315:	|	1614991582 	 1614991586 	 Close By
+Window 316:	|	1614991583 	 1614991587 	 Close By
+Window 317:	|	1614991651 	 1614991655 	 Close By
+Window 318:	|	1614991652 	 1614991656 	 Close By
+Window 319:	|	1614991653 	 1614991657 	 Close By
+Window 320:	|	1614991654 	 1614991658 	 Close By
+Window 321:	|	1614991655 	 1614991659 	 Close By
+Window 322:	|	1614991656 	 1614991660 	 Close By
+Window 323:	|	1614991657 	 1614991661 	 Close By
+Window 324:	|	1614991658 	 1614991662 	 Close By
+Window 325:	|	1614991659 	 1614991663 	 Close By
+Window 326:	|	1614991660 	 1614991664 	 Close By
+Window 327:	|	1614991661 	 1614991665 	 Close By
+Window 328:	|	1614991662 	 1614991666 	 Close By
+Window 329:	|	1614991663 	 1614991667 	 Close By
+Window 330:	|	1614991664 	 1614991668 	 Close By
+Window 331:	|	1614991665 	 1614991669 	 Close By
+Window 332:	|	1614991666 	 1614991670 	 Close By
+Window 333:	|	1614991667 	 1614991671 	 Close By
+Window 334:	|	1614991668 	 1614991672 	 Close By
+Window 335:	|	1614991751 	 1614991755 	 Close By
+Window 336:	|	1614991752 	 1614991756 	 Close By
+Window 337:	|	1614991753 	 1614991757 	 Close By
+Window 338:	|	1614991754 	 1614991758 	 Close By
+Window 339:	|	1614991755 	 1614991759 	 Close By
+Window 340:	|	1614991756 	 1614991760 	 Close By
+Window 341:	|	1614991757 	 1614991761 	 Close By
+Window 342:	|	1614991758 	 1614991762 	 Close By
+Window 343:	|	1614991759 	 1614991763 	 Close By
+Window 344:	|	1614991760 	 1614991764 	 Close By
+Window 345:	|	1614991761 	 1614991765 	 Close By
+Window 346:	|	1614991762 	 1614991766 	 Close By
+Window 347:	|	1614991763 	 1614991767 	 Close By
+Window 348:	|	1614991764 	 1614991768 	 Close By
+Window 349:	|	1614991765 	 1614991769 	 Close By
+Window 350:	|	1614991766 	 1614991770 	 Close By
+Window 351:	|	1614991767 	 1614991771 	 Close By
+Window 352:	|	1614991768 	 1614991772 	 Close By
+Window 353:	|	1614991769 	 1614991773 	 Close By
+Window 354:	|	1614991770 	 1614991774 	 Close By
+Window 355:	|	1614991771 	 1614991775 	 Close By
+Window 356:	|	1614991772 	 1614991776 	 Close By
+Window 357:	|	1614991773 	 1614991777 	 Close By
+Window 358:	|	1614991774 	 1614991778 	 Close By
+Window 359:	|	1614991775 	 1614991779 	 Close By
+Window 360:	|	1614991776 	 1614991780 	 Close By
+Window 361:	|	1614991777 	 1614991781 	 Close By
+Window 362:	|	1614991778 	 1614991782 	 Close By
+Window 363:	|	1614991779 	 1614991783 	 Close By
+Window 364:	|	1614991780 	 1614991784 	 Close By
+Window 365:	|	1614991781 	 1614991785 	 Close By
+Window 366:	|	1614991782 	 1614991786 	 Close By
+Window 367:	|	1614991783 	 1614991787 	 Close By
+Window 368:	|	1614991784 	 1614991788 	 Close By
+Window 369:	|	1614991785 	 1614991789 	 Close By
+Window 370:	|	1614991786 	 1614991790 	 Close By
+Window 371:	|	1614991787 	 1614991791 	 Close By
+Window 372:	|	1614991788 	 1614991792 	 Close By
+Window 373:	|	1614991789 	 1614991793 	 Close By
+Window 374:	|	1614991790 	 1614991794 	 Close By
+Window 375:	|	1614991791 	 1614991795 	 Close By
+Window 376:	|	1614991792 	 1614991796 	 Close By
+Window 377:	|	1614991793 	 1614991797 	 Close By
+Window 378:	|	1614991794 	 1614991798 	 Close By
+Window 379:	|	1614991795 	 1614991799 	 Close By
+Window 380:	|	1614991796 	 1614991800 	 Close By
+Window 381:	|	1614991797 	 1614991801 	 Close By
+Window 382:	|	1614991798 	 1614991802 	 Close By
+Window 383:	|	1614991799 	 1614991803 	 Close By
+Window 384:	|	1614991800 	 1614991804 	 Close By
+Window 385:	|	1614991801 	 1614991805 	 Close By
+Window 386:	|	1614991802 	 1614991806 	 Close By
+Window 387:	|	1614991803 	 1614991807 	 Close By
+Window 388:	|	1614991804 	 1614991808 	 Close By
+Window 389:	|	1614991805 	 1614991809 	 Close By
+Window 390:	|	1614991806 	 1614991810 	 Close By
+Window 391:	|	1614991807 	 1614991811 	 Close By
+Window 392:	|	1614991808 	 1614991812 	 Close By
+Window 393:	|	1614991809 	 1614991813 	 Close By
+Window 394:	|	1614991810 	 1614991814 	 Close By
+Window 395:	|	1614991811 	 1614991815 	 Close By
+Window 396:	|	1614991812 	 1614991816 	 Close By
+Window 397:	|	1614991813 	 1614991817 	 Close By
+Window 398:	|	1614991814 	 1614991818 	 Close By
+Window 399:	|	1614991815 	 1614991819 	 Close By
+Window 400:	|	1614991826 	 1614991830 	 Close By
+Window 401:	|	1614991827 	 1614991831 	 Close By
+Window 402:	|	1614991828 	 1614991832 	 Close By
+Window 403:	|	1614991829 	 1614991833 	 Close By
+Window 404:	|	1614991830 	 1614991834 	 Close By
+Window 405:	|	1614991831 	 1614991835 	 Close By
+Window 406:	|	1614991832 	 1614991836 	 Close By
+Window 407:	|	1614991833 	 1614991837 	 Close By
+Window 408:	|	1614991834 	 1614991838 	 Close By
+Window 409:	|	1614991835 	 1614991839 	 Close By
+Window 410:	|	1614991836 	 1614991840 	 Close By
+Window 411:	|	1614991837 	 1614991841 	 Close By
+Window 412:	|	1614991838 	 1614991842 	 Close By
+Window 413:	|	1614991839 	 1614991843 	 Close By
+Window 414:	|	1614991840 	 1614991844 	 Close By
+Window 415:	|	1614991841 	 1614991845 	 Close By
+Window 416:	|	1614991842 	 1614991846 	 Close By
+Window 417:	|	1614991843 	 1614991847 	 Close By
+Window 418:	|	1614991844 	 1614991848 	 Close By
+Window 419:	|	1614991845 	 1614991849 	 Close By
+Window 420:	|	1614991846 	 1614991850 	 Close By
+Window 421:	|	1614991847 	 1614991851 	 Close By
+Window 422:	|	1614991848 	 1614991852 	 Close By
+Window 423:	|	1614991849 	 1614991853 	 Close By
+Window 424:	|	1614991850 	 1614991854 	 Close By
+Window 425:	|	1614991851 	 1614991855 	 Close By
+Window 426:	|	1614991852 	 1614991856 	 Close By
+Window 427:	|	1614991853 	 1614991857 	 Close By
+Window 428:	|	1614991854 	 1614991858 	 Close By
+Window 429:	|	1614991855 	 1614991859 	 Close By
+Window 430:	|	1614991856 	 1614991860 	 Close By
+Window 431:	|	1614991899 	 1614991903 	 Close By
+Window 432:	|	1614991900 	 1614991904 	 Close By
+Window 433:	|	1614991901 	 1614991905 	 Close By
+Window 434:	|	1614991902 	 1614991906 	 Close By
+Window 435:	|	1614991903 	 1614991907 	 Close By
+Window 436:	|	1614991904 	 1614991908 	 Close By
+Window 437:	|	1614991905 	 1614991909 	 Close By
+Window 438:	|	1614991906 	 1614991910 	 Leaving Room
+Window 439:	|	1614991907 	 1614991911 	 Leaving Room
+Window 440:	|	1614991908 	 1614991912 	 Leaving Room
+Window 441:	|	1614991909 	 1614991913 	 Leaving Room
+Window 442:	|	1614991910 	 1614991914 	 Leaving Room
+Window 443:	|	1614991911 	 1614991915 	 Leaving Room
+Window 444:	|	1614991912 	 1614991916 	 Leaving Room
+Window 445:	|	1614991913 	 1614991917 	 Out of Range
+Window 446:	|	1614991914 	 1614991918 	 Out of Range
+Window 447:	|	1614991915 	 1614991919 	 Out of Range
+Window 448:	|	1614991916 	 1614991920 	 Out of Range
+Window 449:	|	1614991917 	 1614991921 	 Out of Range
+Window 450:	|	1614991918 	 1614991922 	 Out of Range
+Window 451:	|	1614991919 	 1614991923 	 Out of Range
+Window 452:	|	1614991920 	 1614991924 	 Out of Range
+Window 453:	|	1614991921 	 1614991925 	 Out of Range
+Window 454:	|	1614991922 	 1614991926 	 Out of Range
+Window 455:	|	1614991923 	 1614991927 	 Out of Range
+Window 456:	|	1614991924 	 1614991928 	 Out of Range
+Window 457:	|	1614991925 	 1614991929 	 Out of Range
+Window 458:	|	1614991936 	 1614991940 	 Entering Room
+Window 459:	|	1614991937 	 1614991941 	 Entering Room
+Window 460:	|	1614991938 	 1614991942 	 Entering Room
+Window 461:	|	1614991939 	 1614991943 	 Entering Room
+Window 462:	|	1614991945 	 1614991949 	 Close By
+Window 463:	|	1614991946 	 1614991950 	 Close By
+Window 464:	|	1614991947 	 1614991951 	 Close By
+Window 465:	|	1614991948 	 1614991952 	 Close By
+Window 466:	|	1614991949 	 1614991953 	 Close By
+Window 467:	|	1614991950 	 1614991954 	 Close By
+Window 468:	|	1614991965 	 1614991969 	 Close By
+Window 469:	|	1614991966 	 1614991970 	 Close By
+Window 470:	|	1614991967 	 1614991971 	 Close By
+Window 471:	|	1614991968 	 1614991972 	 Close By
+Window 472:	|	1614991969 	 1614991973 	 Close By
+Window 473:	|	1614991970 	 1614991974 	 Close By
+Window 474:	|	1614991971 	 1614991975 	 Close By
+Window 475:	|	1614991972 	 1614991976 	 Close By
+Window 476:	|	1614991973 	 1614991977 	 Close By
+Window 477:	|	1614991974 	 1614991978 	 Close By
+Window 478:	|	1614991975 	 1614991979 	 Close By
+Window 479:	|	1614991976 	 1614991980 	 Close By
+Window 480:	|	1614991977 	 1614991981 	 Close By
+Window 481:	|	1614991978 	 1614991982 	 Close By
+Window 482:	|	1614992121 	 1614992125 	 Close By
+==================================================
+Model Accuracy: 25.311203319502074%
+Model Accuracy: 25.311203319502074%
+==================================================

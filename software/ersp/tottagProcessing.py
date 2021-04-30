@@ -1,6 +1,7 @@
 import sys
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
+from sklearn.ensemble import VotingClassifier
 import datetime as dt
 from classifiers import *
 from exceptions import *
@@ -51,6 +52,7 @@ def load_log(log_filepath: str) -> dict[Device,TotTagData]:
             timestamp, tag_id, distance = line.split()
 
             if int(distance) == 999999:
+                # distance = np.nan
                 continue
 
             timestamp = int(timestamp)
@@ -268,7 +270,13 @@ def demo_sliding_window(windows: list[TotTagData]) -> None:
     plt.show()
 
 
-def graph_labeling(windows, window_labels, reverse_event_map):
+def graph_labeling(windows, window_labels, reverse_event_map, window_setting):
+
+    offset = 0
+    # if window_setting == 2:
+    #     offset = 0
+    # else:
+    #     offset = 30
 
     bins = {} 
     for i in range(len(windows)):
@@ -280,39 +288,31 @@ def graph_labeling(windows, window_labels, reverse_event_map):
             bins[window_labels[i]].extend([(i, np.nan) for i in range(last_time + 1, next_time)])
             bins[window_labels[i]].extend(windows[i])
 
-    plt.title('TotTag training data labeling')
+    plt.title(f'TotTag training data labeling (window size {window_setting})')
     plt.xlabel('Timestamp (s)')
     plt.ylabel('Distance (ft)')
 
     for data_label, data in bins.items():
         x_1, y_1 = zip(*data)
-        x_1 = tuple(map(lambda x : dt.datetime.utcfromtimestamp(x).ctime(), x_1))
-        y_1 = tuple(map(lambda x : x/304.8, y_1))
+        # x_1 = tuple(map(lambda x : dt.datetime.utcfromtimestamp(x).ctime(), x_1))
+        y_1 = tuple(map(lambda x : x/304.8 + offset, y_1))
         plt.plot(x_1, y_1, label=reverse_event_map[data_label])
 
     plt.legend()
-    locs, _ = plt.xticks()
-    plt.xticks(tuple(filter(lambda x: locs.index(x)%300 == 0, locs)))
+    # locs, _ = plt.xticks()
+    # plt.xticks(tuple(filter(lambda x: locs.index(x)%300 == 0, locs)))
     plt.show()
 
 
-if __name__ == "__main__":
-    ### Test the code here! :)
-
-    ## IMPORTANT!! ##
-    target_tag = '51'
-
-    # Load command-line arguments
-    train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_file = parse_args() 
-
+def do_model_stuff(window_setting, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath):
     # Load log and diary files
     tags = load_log(train_log_filepath)
     diary, event_map = load_diary(train_diary_filepath)
     testtags = load_log(test_log_filepath)
-    testdiary = load_testdiary(test_diary_file, event_map)
+    testdiary = load_testdiary(test_diary_filepath, event_map)
 
     # Create sliding windows
-    window_length = 2
+    window_length = window_setting
     window_shift = 1
     windows = generate_sliding_windows(tags, target_tag, window_length, window_shift)
     testwindows = generate_sliding_windows(testtags, target_tag, window_length, window_shift)
@@ -324,23 +324,82 @@ if __name__ == "__main__":
     # Print a summary for each window we've labeled (debug step; unnecessary)
     reverse_event_map = {v: k for k, v in event_map.items()}
     print("="*50)
-    print_window_times_and_labels(windows, labels, reverse_event_map)
-    print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
+    # print_window_times_and_labels(windows, labels, reverse_event_map)
+    # print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
     
     # Remove timestamps from windows; they are in order anyways, and would affect training if included
     stripped_windows = strip_timestamps(windows)
     stripped_testwindows = strip_timestamps(testwindows)
 
-    # Train models on the processed data
-    knn_model = train_knn(stripped_windows, labels)
-    forest_model = train_forest(stripped_windows, labels)
+    filtered_windows, filtered_labels = zip(*tuple(filter(lambda x: reverse_event_map[x[1]] != 'Undefined', tuple(zip(stripped_windows, labels)))))
+    filtered_test_windows, filtered_test_labels = zip(*tuple(filter(lambda x: reverse_event_map[x[1]] != 'Undefined', tuple(zip(stripped_testwindows, testlabels)))))
 
-    evaluate(knn_model, stripped_testwindows, testlabels)
-    evaluate(forest_model, stripped_testwindows, testlabels)
+    # Train models on the processed data
+    knn_model = train_knn(filtered_windows, filtered_labels)
+    forest_model = train_forest(filtered_windows, filtered_labels)
+
+    evaluate(knn_model, filtered_test_windows, filtered_test_labels, window_setting)
+    evaluate(forest_model, filtered_test_windows, filtered_test_labels, window_setting)
 
     print("="*50)
 
     # Plot the windows, allowing user to compare labels with those printed by debug step 
     # plot(tags)
 
-    graph_labeling(windows, labels, reverse_event_map)
+    #graph_labeling(windows, labels, reverse_event_map, window_setting)
+
+
+if __name__ == "__main__":
+    ### Test the code here! :)
+
+    ## IMPORTANT!! ##
+    target_tag = '51'
+
+    # Load command-line arguments
+    train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath = parse_args() 
+
+    for i in range(2,20):
+        do_model_stuff(i, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
+
+    # do_model_stuff(2, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
+    # do_model_stuff(5, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
+
+    # # Load log and diary files
+    # tags = load_log(train_log_filepath)
+    # diary, event_map = load_diary(train_diary_filepath)
+    # testtags = load_log(test_log_filepath)
+    # testdiary = load_testdiary(test_diary_file, event_map)
+
+    # # Create sliding windows
+    # window_length = 2
+    # window_shift = 1
+    # windows = generate_sliding_windows(tags, target_tag, window_length, window_shift)
+    # testwindows = generate_sliding_windows(testtags, target_tag, window_length, window_shift)
+
+    # # Label the windows
+    # labels = label_events(windows, diary, event_map.values())
+    # testlabels = label_events(testwindows, testdiary, event_map.values())
+
+    # # Print a summary for each window we've labeled (debug step; unnecessary)
+    # reverse_event_map = {v: k for k, v in event_map.items()}
+    # print("="*50)
+    # print_window_times_and_labels(windows, labels, reverse_event_map)
+    # print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
+    
+    # # Remove timestamps from windows; they are in order anyways, and would affect training if included
+    # stripped_windows = strip_timestamps(windows)
+    # stripped_testwindows = strip_timestamps(testwindows)
+
+    # # Train models on the processed data
+    # knn_model = train_knn(stripped_windows, labels)
+    # forest_model = train_forest(stripped_windows, labels)
+
+    # evaluate(knn_model, stripped_testwindows, testlabels)
+    # evaluate(forest_model, stripped_testwindows, testlabels)
+
+    # print("="*50)
+
+    # # Plot the windows, allowing user to compare labels with those printed by debug step 
+    # # plot(tags)
+
+    # graph_labeling(windows, labels, reverse_event_map)
