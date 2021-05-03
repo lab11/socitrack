@@ -1,0 +1,144 @@
+==================================================
+KNeighborsClassifier Accuracy with Window Length 2: 78.1021897810219%
+KNeighborsClassifier Macro F1-score with Window Length 2: 0.2923497267759563
+KNeighborsClassifier Micro F1-score with Window Length 2: 0.781021897810219
+RandomForestClassifier Accuracy with Window Length 2: 78.1021897810219%
+RandomForestClassifier Macro F1-score with Window Length 2: 0.2923497267759563
+RandomForestClassifier Micro F1-score with Window Length 2: 0.781021897810219
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 3: 79.06976744186046%
+KNeighborsClassifier Macro F1-score with Window Length 3: 0.29437229437229434
+KNeighborsClassifier Micro F1-score with Window Length 3: 0.7906976744186046
+RandomForestClassifier Accuracy with Window Length 3: 79.06976744186046%
+RandomForestClassifier Macro F1-score with Window Length 3: 0.29437229437229434
+RandomForestClassifier Micro F1-score with Window Length 3: 0.7906976744186046
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 4: 79.50819672131148%
+KNeighborsClassifier Macro F1-score with Window Length 4: 0.29528158295281587
+KNeighborsClassifier Micro F1-score with Window Length 4: 0.7950819672131149
+RandomForestClassifier Accuracy with Window Length 4: 79.50819672131148%
+RandomForestClassifier Macro F1-score with Window Length 4: 0.29528158295281587
+RandomForestClassifier Micro F1-score with Window Length 4: 0.7950819672131149
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 5: 81.03448275862068%
+KNeighborsClassifier Macro F1-score with Window Length 5: 0.2984126984126984
+KNeighborsClassifier Micro F1-score with Window Length 5: 0.8103448275862069
+RandomForestClassifier Accuracy with Window Length 5: 81.03448275862068%
+RandomForestClassifier Macro F1-score with Window Length 5: 0.2984126984126984
+RandomForestClassifier Micro F1-score with Window Length 5: 0.8103448275862069
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 6: 81.81818181818183%
+KNeighborsClassifier Macro F1-score with Window Length 6: 0.3
+KNeighborsClassifier Micro F1-score with Window Length 6: 0.8181818181818182
+RandomForestClassifier Accuracy with Window Length 6: 81.81818181818183%
+RandomForestClassifier Macro F1-score with Window Length 6: 0.3
+RandomForestClassifier Micro F1-score with Window Length 6: 0.8181818181818182
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 7: 83.65384615384616%
+KNeighborsClassifier Macro F1-score with Window Length 7: 0.45549738219895286
+KNeighborsClassifier Micro F1-score with Window Length 7: 0.8365384615384616
+RandomForestClassifier Accuracy with Window Length 7: 83.65384615384616%
+RandomForestClassifier Macro F1-score with Window Length 7: 0.45549738219895286
+RandomForestClassifier Micro F1-score with Window Length 7: 0.8365384615384616
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 8: 84.84848484848484%
+KNeighborsClassifier Macro F1-score with Window Length 8: 0.4590163934426229
+KNeighborsClassifier Micro F1-score with Window Length 8: 0.8484848484848486
+RandomForestClassifier Accuracy with Window Length 8: 84.84848484848484%
+RandomForestClassifier Macro F1-score with Window Length 8: 0.4590163934426229
+RandomForestClassifier Micro F1-score with Window Length 8: 0.8484848484848486
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 9: 86.17021276595744%
+KNeighborsClassifier Macro F1-score with Window Length 9: 0.46285714285714286
+KNeighborsClassifier Micro F1-score with Window Length 9: 0.8617021276595744
+RandomForestClassifier Accuracy with Window Length 9: 86.17021276595744%
+RandomForestClassifier Macro F1-score with Window Length 9: 0.46285714285714286
+RandomForestClassifier Micro F1-score with Window Length 9: 0.8617021276595744
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 10: 87.64044943820225%
+KNeighborsClassifier Macro F1-score with Window Length 10: 0.46706586826347307
+KNeighborsClassifier Micro F1-score with Window Length 10: 0.8764044943820225
+RandomForestClassifier Accuracy with Window Length 10: 87.64044943820225%
+RandomForestClassifier Macro F1-score with Window Length 10: 0.46706586826347307
+RandomForestClassifier Micro F1-score with Window Length 10: 0.8764044943820225
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 11: 89.28571428571429%
+KNeighborsClassifier Macro F1-score with Window Length 11: 0.47169811320754723
+KNeighborsClassifier Micro F1-score with Window Length 11: 0.8928571428571429
+RandomForestClassifier Accuracy with Window Length 11: 89.28571428571429%
+RandomForestClassifier Macro F1-score with Window Length 11: 0.47169811320754723
+RandomForestClassifier Micro F1-score with Window Length 11: 0.8928571428571429
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 12: 90.0%
+KNeighborsClassifier Macro F1-score with Window Length 12: 0.4736842105263158
+KNeighborsClassifier Micro F1-score with Window Length 12: 0.9
+RandomForestClassifier Accuracy with Window Length 12: 90.0%
+RandomForestClassifier Macro F1-score with Window Length 12: 0.4736842105263158
+RandomForestClassifier Micro F1-score with Window Length 12: 0.9
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 13: 90.78947368421053%
+KNeighborsClassifier Macro F1-score with Window Length 13: 0.47586206896551725
+KNeighborsClassifier Micro F1-score with Window Length 13: 0.9078947368421053
+RandomForestClassifier Accuracy with Window Length 13: 90.78947368421053%
+RandomForestClassifier Macro F1-score with Window Length 13: 0.47586206896551725
+RandomForestClassifier Micro F1-score with Window Length 13: 0.9078947368421053
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 14: 91.66666666666666%
+KNeighborsClassifier Macro F1-score with Window Length 14: 0.4782608695652174
+KNeighborsClassifier Micro F1-score with Window Length 14: 0.9166666666666666
+RandomForestClassifier Accuracy with Window Length 14: 91.66666666666666%
+RandomForestClassifier Macro F1-score with Window Length 14: 0.4782608695652174
+RandomForestClassifier Micro F1-score with Window Length 14: 0.9166666666666666
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 15: 92.64705882352942%
+KNeighborsClassifier Macro F1-score with Window Length 15: 0.48091603053435117
+KNeighborsClassifier Micro F1-score with Window Length 15: 0.9264705882352942
+RandomForestClassifier Accuracy with Window Length 15: 92.64705882352942%
+RandomForestClassifier Macro F1-score with Window Length 15: 0.48091603053435117
+RandomForestClassifier Micro F1-score with Window Length 15: 0.9264705882352942
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 16: 93.75%
+KNeighborsClassifier Macro F1-score with Window Length 16: 0.4838709677419355
+KNeighborsClassifier Micro F1-score with Window Length 16: 0.9375
+RandomForestClassifier Accuracy with Window Length 16: 93.75%
+RandomForestClassifier Macro F1-score with Window Length 16: 0.4838709677419355
+RandomForestClassifier Micro F1-score with Window Length 16: 0.9375
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 17: 95.0%
+KNeighborsClassifier Macro F1-score with Window Length 17: 0.48717948717948717
+KNeighborsClassifier Micro F1-score with Window Length 17: 0.9500000000000001
+RandomForestClassifier Accuracy with Window Length 17: 95.0%
+RandomForestClassifier Macro F1-score with Window Length 17: 0.48717948717948717
+RandomForestClassifier Micro F1-score with Window Length 17: 0.9500000000000001
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 18: 96.42857142857143%
+KNeighborsClassifier Macro F1-score with Window Length 18: 0.4909090909090909
+KNeighborsClassifier Micro F1-score with Window Length 18: 0.9642857142857143
+RandomForestClassifier Accuracy with Window Length 18: 96.42857142857143%
+RandomForestClassifier Macro F1-score with Window Length 18: 0.4909090909090909
+RandomForestClassifier Micro F1-score with Window Length 18: 0.9642857142857143
+==================================================
+==================================================
+KNeighborsClassifier Accuracy with Window Length 19: 98.07692307692307%
+KNeighborsClassifier Macro F1-score with Window Length 19: 0.4951456310679611
+KNeighborsClassifier Micro F1-score with Window Length 19: 0.9807692307692307
+RandomForestClassifier Accuracy with Window Length 19: 98.07692307692307%
+RandomForestClassifier Macro F1-score with Window Length 19: 0.4951456310679611
+RandomForestClassifier Micro F1-score with Window Length 19: 0.9807692307692307
+==================================================
