@@ -14,8 +14,14 @@ jobs:
       - name: compile-squarepoint
         run: pushd software/squarepoint && make
       - name: compile-tottag-revF
-        run: pushd software/tottag && make BOARD_REV=F
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=F
+      - name: compile-tottag-revF-debug
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=F DEBUG_MODE=1
       - name: compile-tottag-revG
-        run: pushd software/tottag && make BOARD_REV=G
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=G
+      - name: compile-tottag-revG-debug
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=G DEBUG_MODE=1
       - name: compile-tottag-revH
-        run: pushd software/tottag && make BOARD_REV=H
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=H
+      - name: compile-tottag-revH-debug
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=H DEBUG_MODE=1
