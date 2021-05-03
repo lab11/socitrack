@@ -65,7 +65,7 @@ BOARD_SOURCES += \
 
 # Make sure that bluetooth.c is always compiled so the ID is picked up correctly
 _build/bluetooth.o: FORCE
-	
+
 # Make sure that rtc.c is always compiled so that the compile time is correct
 _build/rtc_external.o: FORCE
 

@@ -64,4 +64,6 @@ BOARD_SOURCES += \
 # Make sure that bluetooth.c is always compiled so the ID is picked up correctly
 _build/bluetooth.o: FORCE
 
+.PHONY: FORCE
+
 endif

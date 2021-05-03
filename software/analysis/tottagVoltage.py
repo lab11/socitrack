@@ -45,10 +45,10 @@ with open(logfile) as f:
          voltages.append(int(line[(line.find('VOLTAGE: ')+9):line.find(' mV')]))
          timestamps.append(int(line[(line.find('Timestamp: ')+11):].rstrip('\n')))
       elif (line.find('HEADER') != -1) and (line.find('Device: ') != -1) and (line.find('Timestamp: ') != -1):
-         recording_device = line[(line.find('Device: ')+8):line.find(', Date:')]
+         recording_device = line[(line.find('Device: ')+8):line.find('; Firmware:')]
 
 # Save time series plot of the battery voltage over time
-print('\n\nTime series plots can be found at the following location:\n')
+print('\nTime series plots can be found at the following location:\n')
 plt.clf()
 plt.ylim(3200, 4300)
 plt.plot([datetime.utcfromtimestamp(x) for x in timestamps], voltages)
