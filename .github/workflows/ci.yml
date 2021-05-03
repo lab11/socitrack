@@ -1,0 +1,21 @@
+name: Compilation CI
+on: [push]
+
+jobs:
+  compile-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: fiam/arm-none-eabi-gcc@v1
+        with:
+          release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+      - name: compile-squarepoint
+        run: pushd software/squarepoint && make
+      - name: compile-tottag-revF
+        run: pushd software/tottag && make BOARD_REV=F
+      - name: compile-tottag-revG
+        run: pushd software/tottag && make BOARD_REV=G
+      - name: compile-tottag-revH
+        run: pushd software/tottag && make BOARD_REV=H
