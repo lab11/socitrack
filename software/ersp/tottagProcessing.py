@@ -314,39 +314,59 @@ def do_model_stuff(window_setting, train_log_filepath, train_diary_filepath, tes
     # Create sliding windows
     window_length = window_setting
     window_shift = 1
-    windows = generate_sliding_windows(tags, target_tag, window_length, window_shift)
+    windows     = generate_sliding_windows(tags, target_tag, window_length, window_shift)
     testwindows = generate_sliding_windows(testtags, target_tag, window_length, window_shift)
 
     # Label the windows
-    labels = label_events(windows, diary, event_map.values())
+    labels     = label_events(windows,     diary,     event_map.values())
     testlabels = label_events(testwindows, testdiary, event_map.values())
 
     # Print a summary for each window we've labeled (debug step; unnecessary)
     reverse_event_map = {v: k for k, v in event_map.items()}
-    print("="*50)
+    print("="*70)
     # print_window_times_and_labels(windows, labels, reverse_event_map)
     # print_window_times_and_labels(testwindows, testlabels, reverse_event_map, "test")
     
     # Remove timestamps from windows; they are in order anyways, and would affect training if included
-    stripped_windows = strip_timestamps(windows)
+    stripped_windows     = strip_timestamps(windows)
     stripped_testwindows = strip_timestamps(testwindows)
 
-    filtered_windows, filtered_labels = zip(*tuple(filter(lambda x: reverse_event_map[x[1]] != 'Undefined', tuple(zip(stripped_windows, labels)))))
+    filtered_windows,      filtered_labels      = zip(*tuple(filter(lambda x: reverse_event_map[x[1]] != 'Undefined', tuple(zip(stripped_windows,     labels)))))
     filtered_test_windows, filtered_test_labels = zip(*tuple(filter(lambda x: reverse_event_map[x[1]] != 'Undefined', tuple(zip(stripped_testwindows, testlabels)))))
 
     # Train models on the processed data
-    knn_model = train_knn(filtered_windows, filtered_labels)
+    knn_model    = train_knn(filtered_windows, filtered_labels)
     forest_model = train_forest(filtered_windows, filtered_labels)
 
-    evaluate(knn_model, filtered_test_windows, filtered_test_labels, window_setting)
-    evaluate(forest_model, filtered_test_windows, filtered_test_labels, window_setting)
+    knn_preds = evaluate(knn_model,    filtered_test_windows, filtered_test_labels, window_setting)
+    rf_preds  = evaluate(forest_model, filtered_test_windows, filtered_test_labels, window_setting)
 
-    print("="*50)
+    # label: [(x1, y1), ...], ...
+    # -> label (x1, y1), label (x2, y2), ...
+
+    flattened_knn_preds = []
+    for pred in knn_preds:
+        for _ in range(window_setting):
+            flattened_knn_preds.append(pred)
+
+    flattened_rf_preds = []
+    for pred in rf_preds:
+        for _ in range(window_setting):
+            flattened_rf_preds.append(pred)
+
+    flattened_testwindows = []
+    for window in testwindows:
+        flattened_testwindows.extend(window)
+
+    print("="*70)
 
     # Plot the windows, allowing user to compare labels with those printed by debug step 
     # plot(tags)
 
     #graph_labeling(windows, labels, reverse_event_map, window_setting)
+    
+    # return (knn_preds, rf_preds)
+    return flattened_knn_preds, flattened_rf_preds, flattened_testwindows
 
 
 if __name__ == "__main__":
@@ -358,8 +378,18 @@ if __name__ == "__main__":
     # Load command-line arguments
     train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath = parse_args() 
 
-    for i in range(2,20):
-        do_model_stuff(i, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
+    fkp2, frp2, ftw2 = do_model_stuff(2, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
+    fkp5, frp5, ftw5 = do_model_stuff(5, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
+
+    print("Window size 2 KNN:", len(fkp2))
+    print("Window size 5 KNN:", len(fkp5))
+    print("Window size 2  RF:", len(fkp2))
+    print("Window size 5  RF:", len(fkp5))
+
+    
+
+    # for i in range(2,20):
+        # do_model_stuff(i, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
 
     # do_model_stuff(2, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
     # do_model_stuff(5, train_log_filepath, train_diary_filepath, test_log_filepath, test_diary_filepath)
