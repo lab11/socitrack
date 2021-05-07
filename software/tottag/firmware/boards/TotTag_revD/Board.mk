@@ -39,6 +39,8 @@ BOARD_SOURCES += \
 	nrf_balloc.c\
 	nrf_ble_gatt.c\
 	nrf_ble_qwr.c\
+	nrf_drv_clock.c\
+	nrf_drv_power.c\
 	nrf_log_frontend.c\
 	nrf_memobj.c\
 	nrf_pwr_mgmt.c\
@@ -47,7 +49,9 @@ BOARD_SOURCES += \
 	nrf_section_iter.c\
 	nrf_strerror.c\
 	nrfx_atomic.c\
+	nrfx_clock.c\
 	nrfx_gpiote.c\
+	nrfx_power.c\
 	nrfx_prs.c\
 	nrfx_pwm.c\
 	nrfx_rtc.c\
@@ -63,5 +67,7 @@ BOARD_SOURCES += \
 
 # Make sure that bluetooth.c is always compiled so the ID is picked up correctly
 _build/bluetooth.o: FORCE
+
+.PHONY: FORCE
 
 endif

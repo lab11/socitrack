@@ -1,0 +1,27 @@
+name: Compilation CI
+on: [push]
+
+jobs:
+  compile-job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: fiam/arm-none-eabi-gcc@v1
+        with:
+          release: '10-2020-q4' # The arm-none-eabi-gcc release to use.
+      - name: compile-squarepoint
+        run: pushd software/squarepoint && make
+      - name: compile-tottag-revF
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=F
+      - name: compile-tottag-revF-debug
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=F DEBUG_MODE=1
+      - name: compile-tottag-revG
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=G
+      - name: compile-tottag-revG-debug
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=G DEBUG_MODE=1
+      - name: compile-tottag-revH
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=H
+      - name: compile-tottag-revH-debug
+        run: pushd software/tottag/firmware && make clean && make -j all BOARD_REV=H DEBUG_MODE=1
