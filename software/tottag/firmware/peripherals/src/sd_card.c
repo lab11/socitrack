@@ -17,7 +17,6 @@
 
 #define EUI_LEN BLE_GAP_ADDR_LEN
 
-static const nrfx_spim_t* _spi_instance = NULL;
 static uint32_t _next_day_timestamp = 0;
 static volatile uint16_t _sd_card_buffer_length = 0;
 static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
@@ -93,10 +92,9 @@ static void flush_sd_buffer(void)
 
 // Public SD Card functionality ----------------------------------------------------------------------------------------
 
-bool sd_card_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full_eui)
+bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full_eui)
 {
    // Store local variables
-   _spi_instance = spi_instance;
    _sd_card_inserted = sd_card_inserted_flag;
    memcpy(_full_eui, full_eui, sizeof(_full_eui));
 
@@ -281,7 +279,7 @@ int sd_card_printf(const char *__restrict format, ...)
    return res;
 }
 
-void log_ranges(const uint8_t *data, uint16_t length)
+void sd_card_log_ranges(const uint8_t *data, uint16_t length)
 {
 #ifndef BLE_CALIBRATION
 
@@ -344,7 +342,7 @@ void log_ranges(const uint8_t *data, uint16_t length)
 #endif
 }
 
-void log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush)
+void sd_card_log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush)
 {
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
@@ -357,7 +355,7 @@ void log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush)
    sd_card_write(_log_info_buf, bytes_written, flush);
 }
 
-void log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool flush)
+void sd_card_log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool flush)
 {
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
@@ -372,7 +370,7 @@ void log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool
    sd_card_write(_log_info_buf, bytes_written, flush);
 }
 
-void log_motion(bool in_motion, uint32_t current_time, bool flush)
+void sd_card_log_motion(bool in_motion, uint32_t current_time, bool flush)
 {
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))

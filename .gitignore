@@ -9,6 +9,7 @@ __pycache__/
 
 # Editor swap files
 *.sw*
+*.emSession
 
 # IDE project files
 .cproject

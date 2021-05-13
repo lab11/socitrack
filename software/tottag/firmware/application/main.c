@@ -139,7 +139,7 @@ static void hardware_init(void)
    printf("INFO: Initialized critical hardware and software services\n");
 
    // Wait until SD Card is inserted
-   while (!sd_card_init(&_rtc_sd_spi_instance, &_app_flags.sd_card_inserted, ble_get_eui()))
+   while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
    {
       buzzer_indicate_error();
       nrf_delay_ms(2500);
@@ -437,10 +437,10 @@ static void imu_data_handler(void)
    {
       // Log a change in motion
       if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
-         log_motion(true, rtc_get_current_time(), false);
+         sd_card_log_motion(true, rtc_get_current_time(), false);
    }
    else if (nrfx_atomic_flag_clear_fetch(&_app_flags.device_in_motion))
-      log_motion(false, rtc_get_current_time(), false);
+      sd_card_log_motion(false, rtc_get_current_time(), false);
 }
 
 
@@ -476,7 +476,7 @@ int main(void)
       // Check if new ranging data was received
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))
       {
-         log_ranges(_range_buffer, _range_buffer_length);
+         sd_card_log_ranges(_range_buffer, _range_buffer_length);
          ble_update_ranging_data(_range_buffer, _range_buffer_length);
       }
 
@@ -500,7 +500,7 @@ int main(void)
             log_printf("WARNING: Battery voltage is getting critically low @ %hu mV!\n", batt_mv);
          else
             log_printf("INFO: Battery voltage currently %hu mV\n", batt_mv);
-         log_battery(batt_mv, rtc_get_current_time(), !app_running);
+         sd_card_log_battery(batt_mv, rtc_get_current_time(), !app_running);
       }
 
       // Check if the battery charging status has changed
@@ -510,7 +510,7 @@ int main(void)
          bool is_plugged_in = battery_monitor_is_plugged_in(), is_charging = battery_monitor_is_charging();
          if (charger_plugged_in != is_plugged_in)
             buzzer_indicate_plugged_status(is_plugged_in);
-         log_charging(is_plugged_in, is_charging, rtc_get_current_time(), !app_running);
+         sd_card_log_charging(is_plugged_in, is_charging, rtc_get_current_time(), !app_running);
          usb_change_power_status(is_plugged_in);
          charger_plugged_in = is_plugged_in;
 
