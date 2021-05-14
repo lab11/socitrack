@@ -7,178 +7,97 @@
 #include "chanfs/diskio.h"
 #include "nrf_delay.h"
 
-static uint8_t simple_logger_inited = 0;
-static uint8_t simple_logger_file_exists = 0;
-static uint8_t header_written = 0;
-static uint8_t error_count = 0;
-
-static DIR root_dir = { 0 };
-static FILINFO file_info = { 0 };
-const char *file = NULL;
-
 // Define your own buffer size if required; 256 used as default
 #ifndef SIMPLE_LOGGER_BUFFER_SIZE
 #define SIMPLE_LOGGER_BUFFER_SIZE	256
 #endif
 
+static volatile uint8_t log_file_exists = 0;
+static const char *file_name = NULL;
+static DIR root_dir = { 0 };
+static FILINFO file_info = { 0 };
+
 static char buffer[SIMPLE_LOGGER_BUFFER_SIZE];
 static char header_buffer[SIMPLE_LOGGER_BUFFER_SIZE];
 static uint32_t buffer_size = SIMPLE_LOGGER_BUFFER_SIZE;
 
+static FIL debug_file = { 0 };
+static FIL file_for_reading = { 0 };
 static FIL simple_logger_fpointer = { 0 };
 static FATFS simple_logger_fs = { 0 };
-static uint8_t simple_logger_opts;
 static BYTE work[FF_MAX_SS];		/* Work area (larger is better for processing time) */
-
-static FIL file_for_reading;
-static FIL debug_file;
-
-static void error(void)
-{
-   if (++error_count > 20)
-   {
-      disk_restart();
-      error_count = 0;
-   }
-}
 
 /*-----------------------------------------------------------------------*/
 /* SD card function                                                		 */
 /*-----------------------------------------------------------------------*/
 
-// An SD card was inserted after being gone for a bit
-// Let's reopen the file, and try to rewrite the header if it's necessary
-static uint8_t logger_init(uint8_t force_complete_init)
-{
-   // Mount the file system if not already initialized
-   volatile FRESULT res = FR_OK;
-   if (force_complete_init || !simple_logger_inited)
-   {
-      // See if the file system already exists
-      res = f_mount(&simple_logger_fs, "", 1);
-      while (res != FR_OK)
-      {
-         switch (res)
-         {
-            case FR_NOT_READY:
-               // No disk found; check "Card Detected" signal before calling this function
-               printf("ERROR: Unable to access SD card!\n");
-               return res;
-            case FR_NO_FILESYSTEM:
-               // No existing file system
-               res = f_mkfs("", 0, work, sizeof(work));
-               if (res != FR_OK)
-               {
-                  printf("ERROR: Failed to create a new SD card filesystem: %d\n", res);
-                  return res;
-               }
-
-               // Retry mounting now
-               res = f_mount(&simple_logger_fs, "", 1);
-               if (res != FR_OK)
-               {
-                  printf("ERROR: Unable to mount SD card filesystem: %d\n", res);
-                  return res;
-               }
-               break;
-            default:
-               printf("ERROR: Unexpected error while mounting SD card: %d\n", res);
-               return res;
-         }
-      }
-   }
-   else
-      simple_logger_inited = 0;
-
-   // See if the file already exists
-   FIL temp;
-   res = f_open(&temp, file, FA_READ | FA_OPEN_EXISTING);
-   if (res == FR_NO_FILE)
-      simple_logger_file_exists = 0;
-   else if (res == FR_OK)
-   {
-      simple_logger_file_exists = 1;
-      res = f_close(&temp);
-   }
-
-   // Open the file and set the write cursor
-   res |= f_open(&simple_logger_fpointer, file, simple_logger_opts);
-   if (simple_logger_opts & FA_OPEN_ALWAYS)
-   {
-      // We are in append mode and should move to the end
-      res |= f_lseek(&simple_logger_fpointer, f_size(&simple_logger_fpointer));
-   }
-   if (header_written && !simple_logger_file_exists)
-   {
-      f_puts(header_buffer, &simple_logger_fpointer);
-      res |= f_sync(&simple_logger_fpointer);
-   }
-
-   simple_logger_inited = 1;
-   return res;
-}
-
 uint8_t simple_logger_init(void)
 {
-   // See if the file system already exists
-   simple_logger_inited = 0;
+   // Mount the file system
    volatile FRESULT res = f_mount(&simple_logger_fs, "", 1);
    switch (res)
    {
       case FR_OK:
          break;
       case FR_NOT_READY:
-         printf("ERROR: No SD card detected!\n");
-         break;
+         printf("ERROR: Unable to access SD card!\n");
+         return res;
       case FR_NO_FILESYSTEM:
-         // No existing file system
          res = f_mkfs("", 0, work, sizeof(work));
          if (res != FR_OK)
-            printf("ERROR: Failed to create a new filesystem on the SD card!\n");
-         else
-            res = f_mount(&simple_logger_fs, "", 1);
+         {
+            printf("ERROR: Failed to create a new SD card filesystem: %d\n", res);
+            return res;
+         }
+         res = f_mount(&simple_logger_fs, "", 1);
+         if (res != FR_OK)
+         {
+            printf("ERROR: Unable to mount SD card filesystem: %d\n", res);
+            return res;
+         }
          break;
       default:
          printf("ERROR: Unexpected error while mounting SD card: %d\n", res);
-         break;
+         return res;
    }
 
-   // Set initialized flag
-   simple_logger_inited = 1;
+   // Initialize the file pointer if a valid filename has been set
+   if (file_name)
+   {
+      // See if the file already exists
+      FIL temp;
+      res = f_open(&temp, file_name, FA_READ | FA_OPEN_EXISTING);
+      f_close(&temp);
+      if (res == FR_OK)
+         log_file_exists = 1;
+      else if (res == FR_NO_FILE)
+         log_file_exists = 0;
+      else
+      {
+         printf("ERROR: Unexpected error while attempting to open SD card log file: %d\n", res);
+         return res;
+      }
+
+      // Open the file
+      res = f_open(&simple_logger_fpointer, file_name, FA_WRITE | FA_READ | FA_OPEN_APPEND);
+   }
+
+   // Return success or failure
    return res;
 }
 
-uint8_t simple_logger_reinit(const char *filename, const char *permissions)
+uint8_t simple_logger_reinit(const char *filename)
 {
-   // Close current file and reset filename
-   header_written = 0;
-   if (file)
-      f_close(&simple_logger_fpointer);
-   file = filename;
-
-   // Set write/append permissions
-   if((permissions[0] != 'w' && permissions[0] != 'a') || (permissions[1] != '\0' && permissions[2] != 'r') )
-      return SIMPLE_LOGGER_BAD_PERMISSIONS;
-   if(permissions[0] == 'w')
-      simple_logger_opts = (FA_WRITE | FA_CREATE_ALWAYS);
-   else if (permissions[0] == 'a')
-      simple_logger_opts = (FA_WRITE | FA_OPEN_ALWAYS);
-   else
-      return SIMPLE_LOGGER_BAD_PERMISSIONS;
-
-   // Set read permission
-   if (permissions[1] == ',' && permissions[2] == 'r')
-      simple_logger_opts |= FA_READ;
-
-   return logger_init(0);
+   // Close current file and reset the filename
+   f_close(&simple_logger_fpointer);
+   file_name = filename;
+   return simple_logger_init();
 }
 
 uint8_t simple_logger_init_debug(const char *filename)
 {
-   // Open or create the debugging log file and seek to the end
-   FRESULT res = f_open(&debug_file, filename, FA_READ | FA_WRITE | FA_OPEN_ALWAYS);
-   res |= f_lseek(&debug_file, f_size(&debug_file));
-   return res;
+   // Open or create the debugging log file in append mode
+   return f_open(&debug_file, filename, FA_READ | FA_WRITE | FA_OPEN_APPEND);
 }
 
 // Re-enable the SD card and initialize again
@@ -186,11 +105,15 @@ uint8_t simple_logger_power_on()
 {
    // Enable SD card
    disk_enable();
+   nrf_delay_ms(250);
 
    // Re-initialize
-   uint8_t res = logger_init(1), num_retries = 10;
+   uint8_t res = simple_logger_init(), num_retries = 10;
    while (--num_retries && (res != FR_OK))
-      res = logger_init(1);
+   {
+      nrf_delay_ms(25);
+      res = simple_logger_init();
+   }
    return res;
 }
 
@@ -204,54 +127,35 @@ void simple_logger_power_off()
 
 uint8_t simple_logger_log_string(const char *str)
 {
-   f_puts(str, &simple_logger_fpointer);
+   // Attempt to write the data string
+   if (f_puts(str, &simple_logger_fpointer) < 0)
+   {
+      printf("ERROR: Problem writing data string to SD card!\n");
+      return FR_DISK_ERR;
+   }
+
+   // Sync any cached data to the SD card
    FRESULT res = f_sync(&simple_logger_fpointer);
    if (res != FR_OK)
    {
-      res = logger_init(1);
+      res = simple_logger_init();
       if (res == FR_OK)
       {
-         f_puts(str, &simple_logger_fpointer);
+         if (f_puts(str, &simple_logger_fpointer) < 0)
+         {
+            printf("ERROR: Problem writing data string to SD card!\n");
+            return FR_DISK_ERR;
+         }
          res = f_sync(&simple_logger_fpointer);
       }
-      else
-         error();
    }
    return res;
 }
 
-uint8_t simple_logger_log_header(const char *format, ...)
-{
-   header_written = 1;
-
-   va_list argptr;
-   va_start(argptr, format);
-   vsnprintf(header_buffer, buffer_size, format, argptr);
-   va_end(argptr);
-
-   if (!simple_logger_file_exists)
-   {
-      f_puts(header_buffer, &simple_logger_fpointer);
-      FRESULT res = f_sync(&simple_logger_fpointer);
-      if (res != FR_OK)
-      {
-         res = logger_init(1);
-         if (res != FR_OK)
-            error();
-         return res;
-      }
-      return res;
-   }
-   else
-      return SIMPLE_LOGGER_FILE_EXISTS;
-}
-
-// Log data
 uint8_t simple_logger_log(const char *format, ...)
 {
    // ATTENTION: Make sure all strings are <= 255 bytes; the nRF SPI implementation does not allow longer transaction
    // Note: This is due to the underlying DMA being restricted to 255 bytes; for more information, see https://devzone.nordicsemi.com/f/nordic-q-a/16580/send-more-than-255-bytes-by-spi-nrf52
-
    va_list argptr;
    va_start(argptr, format);
    vsnprintf(buffer, buffer_size, format, argptr);
@@ -259,34 +163,31 @@ uint8_t simple_logger_log(const char *format, ...)
    return simple_logger_log_string(buffer);
 }
 
-// Read data
-uint8_t simple_logger_read(uint8_t* buf, uint8_t buf_len)
+uint8_t simple_logger_log_header(const char *format, ...)
 {
-   // Buffer should be cleared before calling this function
-   UINT read_len = 0;
+   // Print the header to a string
+   va_list argptr;
+   va_start(argptr, format);
+   vsnprintf(header_buffer, buffer_size, format, argptr);
+   va_end(argptr);
 
-   // Set read/write pointer back by amount we want to read
-   FRESULT res = f_lseek(&simple_logger_fpointer, f_size(&simple_logger_fpointer) - buf_len);
-   if (res != FR_OK)
+   // Write the header string to the SD card if the log file is new
+   if (!log_file_exists)
    {
-      printf("ERROR: Failed reverting R/W pointer: %i\n", res);
-      error();
+      if (f_puts(header_buffer, &simple_logger_fpointer) < 0)
+      {
+         printf("ERROR: Problem writing header to SD card!\n");
+         return FR_DISK_ERR;
+      }
+      log_file_exists = 1;
+      return f_sync(&simple_logger_fpointer);
    }
 
-   // Read string
-   res = f_read(&simple_logger_fpointer, (void*)buf, buf_len, &read_len);
-   if (read_len != buf_len)
-      printf("ERROR: Should have read %i bytes, but only read %i\n", buf_len, read_len);
-   if (res != FR_OK)
-   {
-      printf("ERROR: Failed reading from SD card: %i\n", res);
-      error();
-   }
-
-   return res;
+   // Do not write the header if the log file already existed
+   return SIMPLE_LOGGER_FILE_EXISTS;
 }
 
-uint8_t simple_logger_list_files(char *file_name, uint32_t *file_size, uint8_t continuation)
+uint8_t simple_logger_list_files(char *filename, uint32_t *file_size, uint8_t continuation)
 {
    // Open the root directory
    FRESULT res = FR_OK;
@@ -310,10 +211,10 @@ uint8_t simple_logger_list_files(char *file_name, uint32_t *file_size, uint8_t c
       // Ignore the system log file
       if ((file_info.fname[0] == 'S') && (file_info.fname[1] == 'Y') && (file_info.fname[2] == 'S') &&
             (file_info.fname[3] == 'T') && (file_info.fname[4] == 'E') && (file_info.fname[5] == 'M'))
-         return simple_logger_list_files(file_name, file_size, 1);
+         return simple_logger_list_files(filename, file_size, 1);
       else
       {
-         memcpy(file_name, file_info.fname, strlen(file_info.fname));
+         memcpy(filename, file_info.fname, strlen(file_info.fname));
          *file_size = (uint32_t)file_info.fsize;
          return 1;
       }
@@ -321,14 +222,14 @@ uint8_t simple_logger_list_files(char *file_name, uint32_t *file_size, uint8_t c
    return 0;
 }
 
-uint8_t simple_logger_delete_file(const char *file_name)
+uint8_t simple_logger_delete_file(const char *filename)
 {
-   return (f_unlink(file_name) == FR_OK);
+   return (f_unlink(filename) == FR_OK);
 }
 
-uint8_t simple_logger_open_file_for_reading(const char *file_name)
+uint8_t simple_logger_open_file_for_reading(const char *filename)
 {
-   return (f_open(&file_for_reading, file_name, FA_READ | FA_OPEN_EXISTING) == FR_OK);
+   return (f_open(&file_for_reading, filename, FA_READ | FA_OPEN_EXISTING) == FR_OK);
 }
 
 void simple_logger_close_reading_file(void)
