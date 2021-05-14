@@ -399,6 +399,7 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
          ble_clear_scheduler_eui();
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_running);
          nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
+         sd_card_flush();
          break;
       }
       case SQUAREPOINT_INCOMING_WAKEUP:
@@ -601,6 +602,7 @@ int main(void)
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_running);
          nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
          squarepoint_stop();
+         sd_card_flush();
       }
 
       // Update the LED status indicators

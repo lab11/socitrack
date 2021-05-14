@@ -24,7 +24,6 @@ static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LEN
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _log_info_buf[128] = { 0 };
 static char _sd_write_buf[APP_LOG_CHUNK_SIZE + 1] = { 0 };
 static char _sd_filename[16] = { 0 }, _sd_debug_filename[16] = { 0 };
-static const char _sd_permissions[] = "a,r";
 static bool _sd_debug_file_inited = false;
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
 
@@ -41,6 +40,7 @@ static void flush_sd_buffer(void)
 #ifndef PRINTF_TO_SD_CARD
    if (simple_logger_power_on())
    {
+      printf("ERROR: Unable to power on the SD Card!\n");
       simple_logger_power_off();
       return;
    }
@@ -53,7 +53,6 @@ static void flush_sd_buffer(void)
       printf("ERROR: SD card not detected!\n");
       nrfx_atomic_flag_clear(_sd_card_inserted);
       _sd_card_buffer_length = 0;
-      memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
 #ifndef PRINTF_TO_SD_CARD
       simple_logger_power_off();
 #endif
@@ -78,12 +77,12 @@ static void flush_sd_buffer(void)
          memcpy(_sd_write_buf, _sd_card_buffer + (i * APP_LOG_CHUNK_SIZE), APP_LOG_CHUNK_SIZE);
          _sd_write_buf[APP_LOG_CHUNK_SIZE] = '\0';
       }
-      simple_logger_log_string(_sd_write_buf);
+      if (simple_logger_log_string(_sd_write_buf))
+         printf("ERROR: Problem writing data to SD Card!\n");
    }
 
    // Reset the buffer and turn off power to the SD card
    _sd_card_buffer_length = 0;
-   memset(_sd_card_buffer, 0, sizeof(_sd_card_buffer));
 #ifndef PRINTF_TO_SD_CARD
    simple_logger_power_off();
 #endif
@@ -102,10 +101,19 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    nrf_gpio_cfg_input(CARRIER_SD_DETECT, NRF_GPIO_PIN_NOPULL);
    nrfx_gpiote_out_set(CARRIER_CS_SD);
    nrfx_gpiote_out_set(CARRIER_SD_ENABLE);
+   nrf_delay_ms(500);
 
    // Initialize SD card logger
    if (simple_logger_init())
       return false;
+
+   // Ensure SD card is physically present
+   if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
+   {
+      // Clear SD card presence flag
+      nrfx_atomic_flag_clear(_sd_card_inserted);
+      return false;
+   }
 
    // Clean up any unexpected SD card files
    uint32_t file_size = 0;
@@ -115,19 +123,12 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
       if (file_name[2] != '@')
          simple_logger_delete_file(file_name);
 
-   // Ensure SD card is physically present
-   if (nrf_gpio_pin_read(CARRIER_SD_DETECT))
-   {
-      nrfx_atomic_flag_clear(_sd_card_inserted);
-      return false;
-   }
-
-   // Clear SD card presence flag
+   // Set SD card presence flag
    nrfx_atomic_flag_set(_sd_card_inserted);
    return true;
 }
 
-void sd_card_create_log(uint32_t current_time)
+bool sd_card_create_log(uint32_t current_time)
 {
    // Flush any data waiting to be written to the SD card
    flush_sd_buffer();
@@ -135,7 +136,12 @@ void sd_card_create_log(uint32_t current_time)
 
    // Power ON the SD card
 #ifndef PRINTF_TO_SD_CARD
-   simple_logger_power_on();
+   if (simple_logger_power_on())
+   {
+      printf("ERROR: Unable to power on the SD Card!\n");
+      simple_logger_power_off();
+      return false;
+   }
 #endif
 
    // Create a string containing the current device's EUI
@@ -160,35 +166,80 @@ void sd_card_create_log(uint32_t current_time)
 
       // Create a log file name based on the current date
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%02u-%02u.log", _full_eui[0], time.months, time.date);
-      simple_logger_reinit(_sd_filename, _sd_permissions);
+      if (simple_logger_reinit(_sd_filename))
+      {
+         printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
+#ifndef PRINTF_TO_SD_CARD
+         simple_logger_power_off();
+#endif
+         return false;
+      }
 
       // If no header, add it
       uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s; Firmware: %s; Date: 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", _sd_filename, EUI_string, FIRMWARE_VERSION, time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
       if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
          ret_val = simple_logger_log("### Device booted at 20%02u/%02u/%02u %02u:%02u:%02u; Timestamp: %lld\n", time.years, time.months, time.date, time.hours, time.minutes, time.seconds, curr_time);
+      else if (ret_val)
+      {
+         printf("ERROR: Problem writing header to the SD card log file!\n");
+#ifndef PRINTF_TO_SD_CARD
+         simple_logger_power_off();
+#endif
+         return false;
+      }
    }
    else
    {
       // Create a log file with a generic name
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
-      simple_logger_reinit(_sd_filename, _sd_permissions);
+      if (simple_logger_reinit(_sd_filename))
+      {
+         printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
+#ifndef PRINTF_TO_SD_CARD
+         simple_logger_power_off();
+#endif
+         return false;
+      }
 
       // If no header, add it
       uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s; Firmware: %s\n", _sd_filename, EUI_string, FIRMWARE_VERSION);
       if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
          ret_val = simple_logger_log("### Device rebooted\n");
+      else if (ret_val)
+      {
+         printf("ERROR: Problem writing header to the SD card log file!\n");
+#ifndef PRINTF_TO_SD_CARD
+         simple_logger_power_off();
+#endif
+         return false;
+      }
    }
 
 #else
 
    // Create a log file with a generic name
    snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
-   simple_logger_reinit(_sd_filename, _sd_permissions);
+   if (simple_logger_reinit(_sd_filename))
+   {
+      printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
+#ifndef PRINTF_TO_SD_CARD
+      simple_logger_power_off();
+#endif
+      return false;
+   }
 
    // If no header, add it
    uint8_t ret_val = simple_logger_log_header("### HEADER for file \'%s\'; Device: %s; Firmware: %s\n", _sd_filename, EUI_string, FIRMWARE_VERSION);
    if (ret_val == SIMPLE_LOGGER_FILE_EXISTS)
       ret_val = simple_logger_log("### Device rebooted\n");
+   else if (ret_val)
+   {
+      printf("ERROR: Problem writing header to the SD card log file!\n");
+#ifndef PRINTF_TO_SD_CARD
+      simple_logger_power_off();
+#endif
+      return false;
+   }
 
 #endif
 
@@ -196,12 +247,19 @@ void sd_card_create_log(uint32_t current_time)
 #ifndef PRINTF_TO_SD_CARD
    simple_logger_power_off();
 #endif
+   return true;
+}
+
+void sd_card_flush(void)
+{
+   flush_sd_buffer();
+   nrf_delay_ms(250);
 }
 
 void sd_card_write(const char *data, uint16_t length, bool flush)
 {
    // Flush the buffer if requested or necessary
-   if (flush || ((APP_SDCARD_BUFFER_LENGTH - _sd_card_buffer_length - 1) <= length))
+   if (flush || ((APP_SDCARD_BUFFER_LENGTH - _sd_card_buffer_length - 10) <= length))
       flush_sd_buffer();
 
    // Append data to the buffer
