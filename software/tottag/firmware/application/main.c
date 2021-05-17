@@ -319,6 +319,13 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
    else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running) &&
          (nrfx_atomic_u32_fetch_add(&_app_flags.squarepoint_timeout_counter, 1) > APP_RUNNING_RESPONSE_TIMEOUT_SEC))
       nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_reset);
+#if defined(DEVICE_FORCE_RESET_INTERVAL_SEC) && (DEVICE_FORCE_RESET_INTERVAL_SEC > 0)
+   if (nrfx_atomic_u32_add(&_app_flags.device_reset_counter, 1) > DEVICE_FORCE_RESET_INTERVAL_SEC)
+   {
+      sd_card_flush();
+      while (true);
+   }
+#endif
 }
 
 static void squarepoint_data_handler(uint8_t *data, uint32_t len)

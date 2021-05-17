@@ -10,6 +10,7 @@
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
 
+#define DEVICE_FORCE_RESET_INTERVAL_SEC 3600
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 //#define ENABLE_LEDS
 #define PRINTF_TO_SD_CARD
@@ -122,6 +123,7 @@ typedef struct app_flags_t
    nrfx_atomic_u32_t squarepoint_comms_error_count;
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;
+   nrfx_atomic_u32_t device_reset_counter;
    nrfx_atomic_u32_t calibration_index;
 } app_flags_t;
 
