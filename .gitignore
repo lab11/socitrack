@@ -9,6 +9,7 @@ __pycache__/
 
 # Editor swap files
 *.sw*
+*.emSession
 
 # IDE project files
 .cproject
@@ -75,3 +76,4 @@ cmake-build-debug/
 
 # MacOS file system
 .DS_Store
+settings.json

@@ -217,10 +217,10 @@ nrfx_err_t squarepoint_wakeup_module(void)
    // Reverse the direction of the module interrupt to wake up SquarePoint
    _twi_initialized = false;
    nrfx_gpiote_in_uninit(STM_INTERRUPT);
-   nrfx_gpiote_out_config_t out_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_config_t out_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_err_t err_code = nrfx_gpiote_out_init(STM_INTERRUPT, &out_config);
    if (err_code == NRFX_SUCCESS)
-      nrfx_gpiote_out_set(STM_INTERRUPT);
+      nrfx_gpiote_out_clear(STM_INTERRUPT);
    nrfx_gpiote_out_uninit(STM_INTERRUPT);
    nrfx_twi_uninit(&_twi_instance);
    err_code = twi_hw_init();

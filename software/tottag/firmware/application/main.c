@@ -139,7 +139,7 @@ static void hardware_init(void)
    printf("INFO: Initialized critical hardware and software services\n");
 
    // Wait until SD Card is inserted
-   while (!sd_card_init(&_rtc_sd_spi_instance, &_app_flags.sd_card_inserted, ble_get_eui()))
+   while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
    {
       buzzer_indicate_error();
       nrf_delay_ms(2500);
@@ -319,6 +319,13 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
    else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running) &&
          (nrfx_atomic_u32_fetch_add(&_app_flags.squarepoint_timeout_counter, 1) > APP_RUNNING_RESPONSE_TIMEOUT_SEC))
       nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_reset);
+#if defined(DEVICE_FORCE_RESET_INTERVAL_SEC) && (DEVICE_FORCE_RESET_INTERVAL_SEC > 0)
+   if (nrfx_atomic_u32_add(&_app_flags.device_reset_counter, 1) > DEVICE_FORCE_RESET_INTERVAL_SEC)
+   {
+      sd_card_flush();
+      while (true);
+   }
+#endif
 }
 
 static void squarepoint_data_handler(uint8_t *data, uint32_t len)
@@ -399,6 +406,7 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
          ble_clear_scheduler_eui();
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_running);
          nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
+         sd_card_flush();
          break;
       }
       case SQUAREPOINT_INCOMING_WAKEUP:
@@ -437,10 +445,10 @@ static void imu_data_handler(void)
    {
       // Log a change in motion
       if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
-         log_motion(true, rtc_get_current_time(), false);
+         sd_card_log_motion(true, rtc_get_current_time(), false);
    }
    else if (nrfx_atomic_flag_clear_fetch(&_app_flags.device_in_motion))
-      log_motion(false, rtc_get_current_time(), false);
+      sd_card_log_motion(false, rtc_get_current_time(), false);
 }
 
 
@@ -476,7 +484,7 @@ int main(void)
       // Check if new ranging data was received
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))
       {
-         log_ranges(_range_buffer, _range_buffer_length);
+         sd_card_log_ranges(_range_buffer, _range_buffer_length);
          ble_update_ranging_data(_range_buffer, _range_buffer_length);
       }
 
@@ -500,7 +508,7 @@ int main(void)
             log_printf("WARNING: Battery voltage is getting critically low @ %hu mV!\n", batt_mv);
          else
             log_printf("INFO: Battery voltage currently %hu mV\n", batt_mv);
-         log_battery(batt_mv, rtc_get_current_time(), !app_running);
+         sd_card_log_battery(batt_mv, rtc_get_current_time(), !app_running);
       }
 
       // Check if the battery charging status has changed
@@ -510,7 +518,7 @@ int main(void)
          bool is_plugged_in = battery_monitor_is_plugged_in(), is_charging = battery_monitor_is_charging();
          if (charger_plugged_in != is_plugged_in)
             buzzer_indicate_plugged_status(is_plugged_in);
-         log_charging(is_plugged_in, is_charging, rtc_get_current_time(), !app_running);
+         sd_card_log_charging(is_plugged_in, is_charging, rtc_get_current_time(), !app_running);
          usb_change_power_status(is_plugged_in);
          charger_plugged_in = is_plugged_in;
 
@@ -601,6 +609,7 @@ int main(void)
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_running);
          nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
          squarepoint_stop();
+         sd_card_flush();
       }
 
       // Update the LED status indicators

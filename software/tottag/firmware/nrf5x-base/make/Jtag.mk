@@ -74,8 +74,8 @@ ifneq ($(SOFTDEVICE_MODEL),blank)
 	$(Q)touch $(BUILDDIR)downloaded_test.bin
 	$(Q)$(JLINK) $(JLINK_FLAGS) $(BUILDDIR)test-softdevice.jlink
 	$(Q)$(OBJCOPY) -Iihex -Obinary $(SOFTDEVICE_PATH) $(BUILDDIR)softdevice_bin.bin
-	$(Q)dd skip=$(shell printf "%d" $(SOFTDEVICE_TEST_ADDR)) count=$(shell printf "%d" $(SOFTDEVICE_TEST_LEN)) if=$(BUILDDIR)/softdevice_bin.bin of=$(BUILDDIR)softdevice_test.bin bs=1
-	$(Q)rm -f $(BUILDDIR)/softdevice_bin.bin
+	$(Q)dd skip=$(shell printf "%d" $(SOFTDEVICE_TEST_ADDR)) count=$(shell printf "%d" $(SOFTDEVICE_TEST_LEN)) if=$(BUILDDIR)softdevice_bin.bin of=$(BUILDDIR)softdevice_test.bin bs=1
+	$(Q)rm -f $(BUILDDIR)softdevice_bin.bin
 	$(Q)diff -q $(BUILDDIR)downloaded_test.bin $(BUILDDIR)softdevice_test.bin || $(MAKE) flash_softdevice
 endif
 
