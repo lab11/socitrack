@@ -158,3 +158,5 @@ We have two logs and two diaries used to gather a better insight on our algorith
 Thus, after running the script, it will print out a summary of the window sizes used for sliding windows in data parsing and the accuracy of each model: the single model window size output of each K-Nearest Neighbor classifier, the combined output of running two differing window sizes on K-Nearest Neighbor, and the output of each window size for Random Forest classifier. After training the classifiers with the dataset and printing the accuracy of each classifier, it will finally plot the log based on the interactions predicted for each time slot on the data.
 
 ![Training Data Labeling](https://www.dropbox.com/s/kz5gs6mar8jqcgd/TotTagData.png?raw=1)
+
+Happy coding!
