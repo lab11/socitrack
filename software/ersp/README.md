@@ -1,9 +1,54 @@
-ERSP Analysis Software
+User Guide
 ======================
 
-*** Under construction! ***
+Welcome to Team Pat's Guide!
 
-This directory will contain a collection of Python scripts comprising an event classifier for TotTag data. It is currently a work in progress, with limited although promising functionality.
+Background Knowledge
+--------------------
+
+This script is written in Python and implements a machine learning algorithm known as K-Nearest Neighbors (KNN). It is closer to a statistical approach than traditional machine learning algorithms and is relatively simple.
+
+-> https://towardsdatascience.com/machine-learning-basics-with-the-k-nearest-neighbors-algorithm-6a6e71d01761
+
+-> https://www.analyticsvidhya.com/blog/2018/03/introduction-k-neighbours-algorithm-clustering/
+
+-> https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html
+
+The KNN algorithm is fed data from TotTags broken into "sliding windows" that allow continuous data to be processed. We use information from both 5-second sliding windows and 2-second sliding windows, preferring decisions from the 5-second windows whenever possible.
+
+-> https://towardsdatascience.com/ml-approaches-for-time-series-4d44722e48fe
+
+Random Forest was a companion machine learning algorithm that we experimented with. It might be useful for more complex learning in the future.
+
+-> https://towardsdatascience.com/understanding-random-forest-58381e0602d2
+
+-> https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html
+
+Python can be a rather difficult language to jump into without prior experience. Therefore, before looking into the code, it may be useful to review Python's syntax and semantics.
+
+-> https://docs.python.org/3/reference/introduction.html
+
+Additionally, our code is not always the cleanest or most efficient, and there are some niche functions that might be difficult for those unfamiliar with functional programming and/or higher-order functions.
+
+```python
+# the * indicates this is actually an unzipping, which in this case means that
+# a list of ordered pairs is split (unzipped) into two separate lists; the first
+# being the timestamps list, and the second being the distances list
+x_axis, y_axis = zip(*data)
+```
+-> https://www.geeksforgeeks.org/zip-in-python/
+
+```python
+# map takes in a function and list of elements, and runs the function on each element
+
+# run datetime's UNIX timestamp -> UTC date+time conversion on x_axis data
+x_axis = tuple(map(lambda x : dt.datetime.utcfromtimestamp(x).ctime(), x_axis))
+
+# convert distances from mm to feet (final conversion factor is just dividing by 304.8
+y_axis = tuple(map(lambda x : x/304.8, y_axis))
+```
+
+-> https://www.learnpython.org/en/Map,_Filter,_Reduce
 
 Usage
 -----
