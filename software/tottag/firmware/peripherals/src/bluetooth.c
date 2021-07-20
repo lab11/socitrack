@@ -36,7 +36,7 @@ static ble_gatts_char_handles_t _carrier_ble_char_timestamp_handle = { .value_ha
 static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_handle = CARRIER_BLE_CHAR_CALIBRATION };
 static uint16_t _carrier_ble_service_handle = 0, _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 static uint8_t _carrier_ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
-static ble_gap_scan_params_t const _scan_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = BLE_GAP_SCAN_TIMEOUT_UNLIMITED, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
+static ble_gap_scan_params_t _scan_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = BLE_GAP_SCAN_TIMEOUT_UNLIMITED, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
 static ble_gap_conn_params_t const _connection_params = { MIN_CONN_INTERVAL, MAX_CONN_INTERVAL, SLAVE_LATENCY, CONN_SUP_TIMEOUT };
 static ble_data_t _scan_buffer = { _scan_buffer_data, BLE_GAP_SCAN_BUFFER_MIN };
 static ble_gap_addr_t _wl_addr_base = { 0 }, _networked_device_addr = { 0 };
@@ -49,7 +49,7 @@ static volatile uint8_t _outgoing_ble_connection_active = false, _outgoing_ble_c
 static volatile uint32_t _retrieved_timestamp = 0;
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static nrfx_atomic_flag_t *_squarepoint_enabled_flag = NULL, *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL;
-static nrfx_atomic_u32_t _network_discovered_counter = 0, *_calibration_index = NULL;
+static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0, *_calibration_index = NULL;
 ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
 static device_role_t _device_role = HYBRID;
 
@@ -363,8 +363,17 @@ static void on_adv_report(ble_gap_evt_adv_report_t const *p_adv_report)
       if ((err_code == NRFX_SUCCESS) && (advdata.len == (1 + 2 + sizeof(_app_ble_advdata))) && (memcmp(advdata.p_data + 2, _empty_eui, APP_BLE_ADVDATA_LENGTH) != 0))
          ble_set_scheduler_eui(advdata.p_data + 2, APP_BLE_ADVDATA_LENGTH);
 
-      // Reset the network discovery timeout counter
+      // Reset the network discovery timeout counters
       nrfx_atomic_u32_store(&_network_discovered_counter, BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE);
+      if (nrfx_atomic_u32_fetch_store(&_time_since_last_network_discovery, 0) >= BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT)
+      {
+         // Reset the BLE scanning interval and window to their active default values
+         log_printf("INFO: BLE scanning window and interval have been reset to their default values\n");
+         sd_ble_gap_scan_stop();
+         _scan_params.interval = APP_SCAN_INTERVAL;
+         _scan_params.window = APP_SCAN_WINDOW;
+         nrfx_atomic_flag_clear(_ble_scanning_flag);
+      }
    }
 }
 
@@ -637,6 +646,35 @@ void ble_second_has_elapsed(void)
    // Reset highest discovered network after discovery counter has reached 0
    if (!nrfx_atomic_u32_sub_hs(&_network_discovered_counter, 1))
       memset(_highest_discovered_eui, 0, sizeof(_highest_discovered_eui));
+
+   // Increase the number of seconds since a network was last discovered
+   switch (nrfx_atomic_u32_add(&_time_since_last_network_discovery, 1))
+   {
+      // Update the scanning interval and window if a transition point has been reached
+      case BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT:
+         log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT);
+         sd_ble_gap_scan_stop();
+         _scan_params.interval = BLE_NETWORK_TRANSITION1_SCAN_INTERVAL;
+         _scan_params.window = BLE_NETWORK_TRANSITION1_SCAN_WINDOW;
+         nrfx_atomic_flag_clear(_ble_scanning_flag);
+         break;
+      case BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT:
+         log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT);
+         sd_ble_gap_scan_stop();
+         _scan_params.interval = BLE_NETWORK_TRANSITION2_SCAN_INTERVAL;
+         _scan_params.window = BLE_NETWORK_TRANSITION2_SCAN_WINDOW;
+         nrfx_atomic_flag_clear(_ble_scanning_flag);
+         break;
+      case BLE_MISSING_NETWORK_TRANSITION3_TIMEOUT:
+         log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION3_TIMEOUT);
+         sd_ble_gap_scan_stop();
+         _scan_params.interval = BLE_NETWORK_TRANSITION3_SCAN_INTERVAL;
+         _scan_params.window = BLE_NETWORK_TRANSITION3_SCAN_WINDOW;
+         nrfx_atomic_flag_clear(_ble_scanning_flag);
+         break;
+      default:
+         break;
+   }
 }
 
 uint32_t ble_request_timestamp(void)
