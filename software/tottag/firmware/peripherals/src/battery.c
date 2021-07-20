@@ -62,8 +62,7 @@ void battery_monitor_init(nrfx_atomic_flag_t* battery_status_changed_flag)
    nrfx_saadc_config_t saadc_config = NRFX_SAADC_DEFAULT_CONFIG;
    nrfx_err_t err_code = nrfx_saadc_init(&saadc_config, saadc_callback);
    APP_ERROR_CHECK(err_code);
-   err_code = nrfx_saadc_calibrate_offset();
-   APP_ERROR_CHECK(err_code);
+   while (nrfx_saadc_calibrate_offset() != NRFX_SUCCESS);
    while (nrfx_saadc_is_busy())
       sd_app_evt_wait();
 
