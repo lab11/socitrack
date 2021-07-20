@@ -7,7 +7,7 @@ lazy-object-proxy==1.4.3
 matplotlib==3.3.4
 mccabe==0.6.1
 numpy==1.20.1
-Pillow==8.1.1
+Pillow==8.2.0
 pycryptodomex==3.9.9
 pylint==2.6.0
 pyparsing==2.4.7
