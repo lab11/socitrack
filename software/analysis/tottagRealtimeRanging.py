@@ -13,9 +13,9 @@ from datetime import datetime
 
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
 
-TOTTAG_DATA_UUID = 'd68c3153-a23f-ee90-0c45-5231395e5d2e'
 EUI_LENGTH = 1
 RANGE_DATA_LENGTH = EUI_LENGTH + 4
+TOTTAG_DATA_UUID = 'd68c3153-a23f-ee90-0c45-5231395e5d2e'
 
 
 # STATE VARIABLES -----------------------------------------------------------------------------------------------------
@@ -50,7 +50,7 @@ async def log_ranges():
   await scanner.stop()
 
   # Iterate through all discovered TotTag devices
-  for device in await scanner.get_discovered_devices():
+  for device in scanner.discovered_devices:
     if device.name == 'TotTag':
 
       # Connect to the specified TotTag and locate the ranging data service
