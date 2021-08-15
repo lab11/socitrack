@@ -58,19 +58,6 @@ static void saadc_callback(nrfx_saadc_evt_t const * p_event) {}     // This shou
 
 void battery_monitor_init(nrfx_atomic_flag_t* battery_status_changed_flag)
 {
-   // Enable and calibrate the SAADC
-   nrfx_saadc_config_t saadc_config = NRFX_SAADC_DEFAULT_CONFIG;
-   nrfx_err_t err_code = nrfx_saadc_init(&saadc_config, saadc_callback);
-   APP_ERROR_CHECK(err_code);
-   while (nrfx_saadc_calibrate_offset() != NRFX_SUCCESS);
-   while (nrfx_saadc_is_busy())
-      sd_app_evt_wait();
-
-   // Configure and enable the SAADC comparison channel
-   nrf_saadc_channel_config_t saadc_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(CARRIER_BATTERY_PIN);
-   err_code = nrfx_saadc_channel_init(BATTERY_MONITOR_CHANNEL, &saadc_channel_config);
-   APP_ERROR_CHECK(err_code);
-
    // Initialize the charging and plugged-in status interrupt pins
    _battery_status_changed = battery_status_changed_flag;
 #if (BOARD_V >= 0x10)
@@ -87,14 +74,29 @@ void battery_monitor_init(nrfx_atomic_flag_t* battery_status_changed_flag)
 
 uint16_t battery_monitor_get_level_mV(void)
 {
+   // Enable and calibrate the SAADC
+   nrfx_saadc_config_t saadc_config = NRFX_SAADC_DEFAULT_CONFIG;
+   APP_ERROR_CHECK(nrfx_saadc_init(&saadc_config, saadc_callback));
+   while (nrfx_saadc_calibrate_offset() != NRFX_SUCCESS);
+   while (nrfx_saadc_is_busy())
+      sd_app_evt_wait();
+
+   // Configure and enable the SAADC comparison channel
+   nrf_saadc_channel_config_t saadc_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(CARRIER_BATTERY_PIN);
+   APP_ERROR_CHECK(nrfx_saadc_channel_init(BATTERY_MONITOR_CHANNEL, &saadc_channel_config));
+
    // Get an ADC voltage sample
    nrf_saadc_value_t adc_sample;
-   nrfx_err_t err_code = nrfx_saadc_sample_convert(BATTERY_MONITOR_CHANNEL, &adc_sample);
-   if (err_code != NRFX_SUCCESS)
+   if (nrfx_saadc_sample_convert(BATTERY_MONITOR_CHANNEL, &adc_sample) != NRFX_SUCCESS)
    {
       log_printf("WARNING: ADC is busy and cannot sample the battery voltage\n");
       return 0;
    }
+
+   // Disable the SAADC
+   nrfx_saadc_uninit();
+   NRF_SAADC->INTENCLR = (SAADC_INTENCLR_END_Clear << SAADC_INTENCLR_END_Pos);
+   NVIC_ClearPendingIRQ(SAADC_IRQn);
 
    // Convert the ADC sample to a voltage reading in mV
    //   Calculation based on 600mV reference voltage with a gain of 1/6 and 10 bit return value
