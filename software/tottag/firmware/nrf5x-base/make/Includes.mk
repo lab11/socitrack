@@ -19,7 +19,7 @@ REPO_SOURCE_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
 ifneq (,$(filter $(NRF_IC),nrf52840))
 
     # Set the path
-    SDK_ROOT = $(NRF_BASE_DIR)/sdk/nrf5_sdk_15.3.0/
+    SDK_ROOT = $(NRF_BASE_DIR)/sdk/nrf5_sdk_17.1.0/
     
     # default files for ICs
     ifeq ($(NRF_IC),nrf52840)

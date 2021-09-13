@@ -45,6 +45,9 @@
 #define NRFX_LOG_MODULE SAADC
 #include <nrfx_log.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+
 #define EVT_TO_STR(event)                                                       \
     (event == NRF_SAADC_EVENT_STARTED       ? "NRF_SAADC_EVENT_STARTED"       : \
     (event == NRF_SAADC_EVENT_END           ? "NRF_SAADC_EVENT_END"           : \
@@ -636,4 +639,7 @@ void nrfx_saadc_limits_set(uint8_t channel, int16_t limit_low, int16_t limit_hig
         nrf_saadc_int_enable(int_mask);
     }
 }
+
+#pragma GCC diagnostic pop
+
 #endif // NRFX_CHECK(NRFX_SAADC_ENABLED)

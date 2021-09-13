@@ -5,7 +5,7 @@ CDBG :=
 # Configuration
 NRF_MODEL = NRF52
 NRF_IC = nrf52840
-SDK_VERSION = 15
+SDK_VERSION = 17
 SOFTDEVICE_MODEL = s140
 FW_VERSION = $(shell git describe --always --dirty --broken)
 

@@ -8,6 +8,7 @@
 #define NRF_BLE_CONN_PARAMS_ENABLED 1
 #define NRF_BLE_GATT_ENABLED 1
 #define NRF_BLE_QWR_ENABLED 1
+#define NRF_QUEUE_ENABLED 1
 #define BLE_ECS_ENABLED 1
 #define BLE_LBS_ENABLED 1
 #define BLE_NUS_ENABLED 1
@@ -40,6 +41,7 @@
 
 #define NRFX_SAADC_ENABLED 1
 #define NRFX_SAADC_CONFIG_LP_MODE 1
+#define NRFX_SAADC_API_V2 1
 
 // Disable retargeting of printf to UART, as we retarget it to RTT
 #define RETARGET_ENABLED 0

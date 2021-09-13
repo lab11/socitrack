@@ -22,6 +22,7 @@ NRF_BLE_GATT_DEF(_gatt);
 BLE_DB_DISCOVERY_DEF(_db_disc);
 NRF_BLE_QWR_DEF(_qwr);
 BLE_ADVERTISING_DEF(_advertising);
+NRF_BLE_GQ_DEF(_ble_gatt_queue, NRF_SDH_BLE_CENTRAL_LINK_COUNT, NRF_BLE_GQ_QUEUE_SIZE);
 
 
 // Bluetooth configuration variables -----------------------------------------------------------------------------------
@@ -152,11 +153,12 @@ static uint8_t gap_params_init(void)
 static void gatt_init(void)
 {
    // Initialize GATT structures
+   ble_db_discovery_init_t gatt_init = { .evt_handler = on_ble_service_discovered, .p_gatt_queue = &_ble_gatt_queue };
    _ble_timestamp_reply.params.read.offset = 0;
    _ble_timestamp_reply.params.read.update = 1;
    _ble_timestamp_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
    APP_ERROR_CHECK(nrf_ble_gatt_init(&_gatt, NULL));
-   APP_ERROR_CHECK(ble_db_discovery_init(on_ble_service_discovered));
+   APP_ERROR_CHECK(ble_db_discovery_init(&gatt_init));
 }
 
 static void advertising_init(void)
@@ -655,21 +657,12 @@ void ble_second_has_elapsed(void)
          log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT);
          sd_ble_gap_scan_stop();
          _scan_params.interval = BLE_NETWORK_TRANSITION1_SCAN_INTERVAL;
-         _scan_params.window = BLE_NETWORK_TRANSITION1_SCAN_WINDOW;
          nrfx_atomic_flag_clear(_ble_scanning_flag);
          break;
       case BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT:
          log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT);
          sd_ble_gap_scan_stop();
          _scan_params.interval = BLE_NETWORK_TRANSITION2_SCAN_INTERVAL;
-         _scan_params.window = BLE_NETWORK_TRANSITION2_SCAN_WINDOW;
-         nrfx_atomic_flag_clear(_ble_scanning_flag);
-         break;
-      case BLE_MISSING_NETWORK_TRANSITION3_TIMEOUT:
-         log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION3_TIMEOUT);
-         sd_ble_gap_scan_stop();
-         _scan_params.interval = BLE_NETWORK_TRANSITION3_SCAN_INTERVAL;
-         _scan_params.window = BLE_NETWORK_TRANSITION3_SCAN_WINDOW;
          nrfx_atomic_flag_clear(_ble_scanning_flag);
          break;
       default:

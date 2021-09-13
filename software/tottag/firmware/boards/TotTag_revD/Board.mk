@@ -38,6 +38,7 @@ BOARD_SOURCES += \
 	nrf_atomic.c\
 	nrf_balloc.c\
 	nrf_ble_gatt.c\
+	nrf_ble_gq.c\
 	nrf_ble_qwr.c\
 	nrf_drv_clock.c\
 	nrf_drv_power.c\

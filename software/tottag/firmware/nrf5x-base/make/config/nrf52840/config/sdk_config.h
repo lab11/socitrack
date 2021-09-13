@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017 - 2020, Nordic Semiconductor ASA
+ * Copyright (c) 2017 - 2021, Nordic Semiconductor ASA
  *
  * All rights reserved.
  *
@@ -56,12 +56,83 @@
 #define BLE_ADVERTISING_ENABLED 0
 #endif
 
-// <q> BLE_DTM_ENABLED  - ble_dtm - Module for testing RF/PHY using DTM commands
- 
-
+// <e> BLE_DTM_ENABLED - ble_dtm - Module for testing RF/PHY using DTM commands
+//==========================================================
 #ifndef BLE_DTM_ENABLED
 #define BLE_DTM_ENABLED 0
 #endif
+// <o> NRF_RADIO_ANTENNA_PIN_1 - Antenna 1 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_1
+#define NRF_RADIO_ANTENNA_PIN_1 21
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_2 - Antenna 2 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_2
+#define NRF_RADIO_ANTENNA_PIN_2 23
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_3 - Antenna 3 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_3
+#define NRF_RADIO_ANTENNA_PIN_3 26
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_4 - Antenna 4 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_4
+#define NRF_RADIO_ANTENNA_PIN_4 27
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_5 - Antenna 5 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_5
+#define NRF_RADIO_ANTENNA_PIN_5 28
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_6 - Antenna 6 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_6
+#define NRF_RADIO_ANTENNA_PIN_6 29
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_7 - Antenna 7 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_7
+#define NRF_RADIO_ANTENNA_PIN_7 30
+#endif
+
+// <o> NRF_RADIO_ANTENNA_PIN_8 - Antenna 8 GPIO pin 
+#ifndef NRF_RADIO_ANTENNA_PIN_8
+#define NRF_RADIO_ANTENNA_PIN_8 31
+#endif
+
+// <o> NRF_RADIO_ANTENNA_COUNT  
+#ifndef NRF_RADIO_ANTENNA_COUNT
+#define NRF_RADIO_ANTENNA_COUNT 12
+#endif
+
+// <o> DTM_RADIO_IRQ_PRIORITY - RADIO interrupt priority 
+#ifndef DTM_RADIO_IRQ_PRIORITY
+#define DTM_RADIO_IRQ_PRIORITY 2
+#endif
+
+// <o> DTM_TIMER_IRQ_PRIORITY - DTM timer interrupt priority 
+#ifndef DTM_TIMER_IRQ_PRIORITY
+#define DTM_TIMER_IRQ_PRIORITY 3
+#endif
+
+// <o> DTM_ANOMALY_172_TIMER_IRQ_PRIORITY - DTM anomaly 172 timer interrupt priority 
+#ifndef DTM_ANOMALY_172_TIMER_IRQ_PRIORITY
+#define DTM_ANOMALY_172_TIMER_IRQ_PRIORITY 2
+#endif
+
+// <o> NRF_DTM_TIMER_INSTANCE  - DTM TIMER instance
+ 
+// <0=> TIMER0 
+// <2=> TIMER2 
+// <3=> TIMER3 
+// <4=> TIMER4 
+
+#ifndef NRF_DTM_TIMER_INSTANCE
+#define NRF_DTM_TIMER_INSTANCE 0
+#endif
+
+// </e>
 
 // <q> BLE_RACP_ENABLED  - ble_racp - Record Access Control Point library
  
@@ -69,6 +140,34 @@
 #ifndef BLE_RACP_ENABLED
 #define BLE_RACP_ENABLED 0
 #endif
+
+// <e> NRF_BLE_GQ_ENABLED - nrf_ble_gq - BLE GATT Queue Module
+//==========================================================
+#ifndef NRF_BLE_GQ_ENABLED
+#define NRF_BLE_GQ_ENABLED 1
+#endif
+
+// <o> NRF_BLE_GQ_DATAPOOL_ELEMENT_SIZE - Default size of a single element in the pool of memory objects.
+#ifndef NRF_BLE_GQ_DATAPOOL_ELEMENT_SIZE
+#define NRF_BLE_GQ_DATAPOOL_ELEMENT_SIZE 20
+#endif
+
+// <o> NRF_BLE_GQ_DATAPOOL_ELEMENT_COUNT - Default number of elements in the pool of memory objects.
+#ifndef NRF_BLE_GQ_DATAPOOL_ELEMENT_COUNT
+#define NRF_BLE_GQ_DATAPOOL_ELEMENT_COUNT 8
+#endif
+
+// <o> NRF_BLE_GQ_GATTC_WRITE_MAX_DATA_LEN - Maximal size of the data inside GATTC write request (in bytes).
+#ifndef NRF_BLE_GQ_GATTC_WRITE_MAX_DATA_LEN
+#define NRF_BLE_GQ_GATTC_WRITE_MAX_DATA_LEN 16
+#endif
+
+// <o> NRF_BLE_GQ_GATTS_HVX_MAX_DATA_LEN - Maximal size of the data inside GATTC notification or indication request (in bytes).
+#ifndef NRF_BLE_GQ_GATTS_HVX_MAX_DATA_LEN
+#define NRF_BLE_GQ_GATTS_HVX_MAX_DATA_LEN 16
+#endif
+
+// </e>
 
 // <e> NRF_BLE_CONN_PARAMS_ENABLED - ble_conn_params - Initiating and executing a connection parameters negotiation procedure
 //==========================================================
@@ -94,10 +193,6 @@
 
 // <q> NRF_BLE_GATT_ENABLED  - nrf_ble_gatt - GATT module
 
-
-#ifndef NRF_BLE_GATT_ENABLED
-#define NRF_BLE_GATT_ENABLED 0
-#endif
 
 // <e> NRF_BLE_QWR_ENABLED - nrf_ble_qwr - Queued writes support module (prepare/execute write)
 //==========================================================
@@ -2503,7 +2598,7 @@
 // <e> NRFX_POWER_ENABLED - nrfx_power - POWER peripheral driver
 //==========================================================
 #ifndef NRFX_POWER_ENABLED
-#define NRFX_POWER_ENABLED 0
+#define NRFX_POWER_ENABLED 1
 #endif
 // <o> NRFX_POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
@@ -2592,99 +2687,6 @@
 
 #ifndef NRFX_PPI_CONFIG_DEBUG_COLOR
 #define NRFX_PPI_CONFIG_DEBUG_COLOR 0
-#endif
-
-// </e>
-
-// </e>
-
-// <e> NRFX_PRS_ENABLED - nrfx_prs - Peripheral Resource Sharing module
-//==========================================================
-#ifndef NRFX_PRS_ENABLED
-#define NRFX_PRS_ENABLED 1
-#endif
-// <q> NRFX_PRS_BOX_0_ENABLED  - Enables box 0 in the module.
-
-
-#ifndef NRFX_PRS_BOX_0_ENABLED
-#define NRFX_PRS_BOX_0_ENABLED 0
-#endif
-
-// <q> NRFX_PRS_BOX_1_ENABLED  - Enables box 1 in the module.
-
-
-#ifndef NRFX_PRS_BOX_1_ENABLED
-#define NRFX_PRS_BOX_1_ENABLED 0
-#endif
-
-// <q> NRFX_PRS_BOX_2_ENABLED  - Enables box 2 in the module.
-
-
-#ifndef NRFX_PRS_BOX_2_ENABLED
-#define NRFX_PRS_BOX_2_ENABLED 0
-#endif
-
-// <q> NRFX_PRS_BOX_3_ENABLED  - Enables box 3 in the module.
-
-
-#ifndef NRFX_PRS_BOX_3_ENABLED
-#define NRFX_PRS_BOX_3_ENABLED 0
-#endif
-
-// <q> NRFX_PRS_BOX_4_ENABLED  - Enables box 4 in the module.
-
-
-#ifndef NRFX_PRS_BOX_4_ENABLED
-#define NRFX_PRS_BOX_4_ENABLED 1
-#endif
-
-// <e> NRFX_PRS_CONFIG_LOG_ENABLED - Enables logging in the module.
-//==========================================================
-#ifndef NRFX_PRS_CONFIG_LOG_ENABLED
-#define NRFX_PRS_CONFIG_LOG_ENABLED 0
-#endif
-// <o> NRFX_PRS_CONFIG_LOG_LEVEL  - Default Severity level
-
-// <0=> Off
-// <1=> Error
-// <2=> Warning
-// <3=> Info
-// <4=> Debug
-
-#ifndef NRFX_PRS_CONFIG_LOG_LEVEL
-#define NRFX_PRS_CONFIG_LOG_LEVEL 3
-#endif
-
-// <o> NRFX_PRS_CONFIG_INFO_COLOR  - ANSI escape code prefix.
-
-// <0=> Default
-// <1=> Black
-// <2=> Red
-// <3=> Green
-// <4=> Yellow
-// <5=> Blue
-// <6=> Magenta
-// <7=> Cyan
-// <8=> White
-
-#ifndef NRFX_PRS_CONFIG_INFO_COLOR
-#define NRFX_PRS_CONFIG_INFO_COLOR 0
-#endif
-
-// <o> NRFX_PRS_CONFIG_DEBUG_COLOR  - ANSI escape code prefix.
-
-// <0=> Default
-// <1=> Black
-// <2=> Red
-// <3=> Green
-// <4=> Yellow
-// <5=> Blue
-// <6=> Magenta
-// <7=> Cyan
-// <8=> White
-
-#ifndef NRFX_PRS_CONFIG_DEBUG_COLOR
-#define NRFX_PRS_CONFIG_DEBUG_COLOR 0
 #endif
 
 // </e>
@@ -4673,6 +4675,17 @@
 #define NRFX_USBD_CONFIG_ISO_IN_ZLP 0
 #endif
 
+// <q> NRFX_USBD_USE_WORKAROUND_FOR_ANOMALY_211  - Use workaround for anomaly 211
+ 
+
+// <i> If set, workaround for anomaly 211 will be enabled.
+// <i> Anomaly 211 - Device remains in SUSPEND too long when host resumes
+// <i> bus activity (sending SOF packets) without a RESUME condition.
+
+#ifndef NRFX_USBD_USE_WORKAROUND_FOR_ANOMALY_211
+#define NRFX_USBD_USE_WORKAROUND_FOR_ANOMALY_211 0
+#endif
+
 // </e>
 
 // <e> NRFX_WDT_ENABLED - nrfx_wdt - WDT peripheral driver
@@ -4704,7 +4717,7 @@
 // <1=> Remove WDT IRQ handling 
 
 #ifndef NRFX_WDT_CONFIG_NO_IRQ
-#define NRFX_WDT_CONFIG_NO_IRQ 1
+#define NRFX_WDT_CONFIG_NO_IRQ 0
 #endif
 
 // <o> NRFX_WDT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -4873,7 +4886,7 @@
 // <e> POWER_ENABLED - nrf_drv_power - POWER peripheral driver - legacy layer
 //==========================================================
 #ifndef POWER_ENABLED
-#define POWER_ENABLED 0
+#define POWER_ENABLED 1
 #endif
 // <o> POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority
  
@@ -6001,6 +6014,7 @@
 
 // <i> If set, ISO IN endpoint will respond to an IN token with ZLP when no data is ready to be sent.
 // <i> Else, there will be no response.
+// <i> NOTE: This option does not work on Engineering A chip.
 
 #ifndef USBD_CONFIG_ISO_IN_ZLP
 #define USBD_CONFIG_ISO_IN_ZLP 0
@@ -6241,21 +6255,6 @@
 
 // </h> 
 //==========================================================
-
-// </e>
-
-// <e> APP_UART_ENABLED - app_uart - UART driver
-//==========================================================
-#ifndef APP_UART_ENABLED
-#define APP_UART_ENABLED 0
-#endif
-// <o> APP_UART_DRIVER_INSTANCE  - UART instance used
-
-// <0=> 0
-
-#ifndef APP_UART_DRIVER_INSTANCE
-#define APP_UART_DRIVER_INSTANCE 0
-#endif
 
 // </e>
 
@@ -7574,120 +7573,6 @@
 #endif
 
 // </h> 
-//==========================================================
-
-// </h>
-//==========================================================
-
-// <h> nRF_Log
-
-//==========================================================
-// <e> NRF_LOG_BACKEND_RTT_ENABLED - nrf_log_backend_rtt - Log RTT backend
-//==========================================================
-#ifndef NRF_LOG_BACKEND_RTT_ENABLED
-#define NRF_LOG_BACKEND_RTT_ENABLED 0
-#endif
-
-#ifndef NRF_LOG_USES_RTT
-#define NRF_LOG_USES_RTT 0
-#endif
-
-// <o> NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE - Size of buffer for partially processed strings.
-// <i> Size of the buffer is a trade-off between RAM usage and processing.
-// <i> if buffer is smaller then strings will often be fragmented.
-// <i> It is recommended to use size which will fit typical log and only the
-// <i> longer one will be fragmented.
-
-#ifndef NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE
-#define NRF_LOG_BACKEND_RTT_TEMP_BUFFER_SIZE 64
-#endif
-
-// <o> NRF_LOG_BACKEND_RTT_TX_RETRY_DELAY_MS - Period before retrying writing to RTT
-#ifndef NRF_LOG_BACKEND_RTT_TX_RETRY_DELAY_MS
-#define NRF_LOG_BACKEND_RTT_TX_RETRY_DELAY_MS 1
-#endif
-
-// <o> NRF_LOG_BACKEND_RTT_TX_RETRY_CNT - Writing to RTT retries.
-// <i> If RTT fails to accept any new data after retries
-// <i> module assumes that host is not active and on next
-// <i> request it will perform only one write attempt.
-// <i> On successful writing, module assumes that host is active
-// <i> and scheme with retry is applied again.
-
-#ifndef NRF_LOG_BACKEND_RTT_TX_RETRY_CNT
-#define NRF_LOG_BACKEND_RTT_TX_RETRY_CNT 3
-#endif
-
-// </e>
-
-// <e> NRF_LOG_BACKEND_UART_ENABLED - nrf_log_backend_uart - Log UART backend
-//==========================================================
-#ifndef NRF_LOG_BACKEND_UART_ENABLED
-#define NRF_LOG_BACKEND_UART_ENABLED 0
-#endif
-// <o> NRF_LOG_BACKEND_UART_TX_PIN - UART TX pin
-#ifndef NRF_LOG_BACKEND_UART_TX_PIN
-#define NRF_LOG_BACKEND_UART_TX_PIN 6
-#endif
-
-// <o> NRF_LOG_BACKEND_UART_BAUDRATE  - Default Baudrate
-
-// <323584=> 1200 baud
-// <643072=> 2400 baud
-// <1290240=> 4800 baud
-// <2576384=> 9600 baud
-// <3862528=> 14400 baud
-// <5152768=> 19200 baud
-// <7716864=> 28800 baud
-// <10289152=> 38400 baud
-// <15400960=> 57600 baud
-// <20615168=> 76800 baud
-// <30801920=> 115200 baud
-// <61865984=> 230400 baud
-// <67108864=> 250000 baud
-// <121634816=> 460800 baud
-// <251658240=> 921600 baud
-// <268435456=> 1000000 baud
-
-#ifndef NRF_LOG_BACKEND_UART_BAUDRATE
-#define NRF_LOG_BACKEND_UART_BAUDRATE 30801920
-#endif
-
-// <o> NRF_LOG_BACKEND_UART_TEMP_BUFFER_SIZE - Size of buffer for partially processed strings.
-// <i> Size of the buffer is a trade-off between RAM usage and processing.
-// <i> if buffer is smaller then strings will often be fragmented.
-// <i> It is recommended to use size which will fit typical log and only the
-// <i> longer one will be fragmented.
-
-#ifndef NRF_LOG_BACKEND_UART_TEMP_BUFFER_SIZE
-#define NRF_LOG_BACKEND_UART_TEMP_BUFFER_SIZE 64
-#endif
-
-// </e>
-
-// <q> NRF_LOG_STR_FORMATTER_TIMESTAMP_FORMAT_ENABLED  - nrf_log_str_formatter - Log string formatter
-
-
-#ifndef NRF_LOG_STR_FORMATTER_TIMESTAMP_FORMAT_ENABLED
-#define NRF_LOG_STR_FORMATTER_TIMESTAMP_FORMAT_ENABLED 1
-#endif
-
-// <o> NRF_LOG_STR_PUSH_BUFFER_SIZE  - Size of the buffer dedicated for strings stored using @ref NRF_LOG_PUSH.
-
-// <16=> 16
-// <32=> 32
-// <64=> 64
-// <128=> 128
-// <256=> 256
-// <512=> 512
-// <1024=> 1024
-
-#ifndef NRF_LOG_STR_PUSH_BUFFER_SIZE
-#define NRF_LOG_STR_PUSH_BUFFER_SIZE 128
-#endif
-
-// <h> nrf_log - Logger
-
 //==========================================================
 
 // <h> nrf_fprintf - fprintf function.
@@ -11962,14 +11847,7 @@
 // <h> SoC Observers priorities - Invididual priorities
 
 //==========================================================
-// <o> BLE_ADV_SOC_OBSERVER_PRIO
-// <i> Priority with which SoC events are dispatched to the Advertising module.
-
-#ifndef BLE_ADV_SOC_OBSERVER_PRIO
-#define BLE_ADV_SOC_OBSERVER_PRIO 1
-#endif
-
-// <o> BLE_DFU_SOC_OBSERVER_PRIO
+// <o> BLE_DFU_SOC_OBSERVER_PRIO  
 // <i> Priority with which BLE events are dispatched to the DFU Service.
 
 #ifndef BLE_DFU_SOC_OBSERVER_PRIO

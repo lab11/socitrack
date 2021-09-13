@@ -83,7 +83,7 @@ CONFIGURATION_VARS += $(FULL_IC_UPPER)
 # Default SDK and softdevice versions
 SDK_VERSION ?= 17
 ifeq ($(SOFTDEVICE_MODEL), s140)
-  SOFTDEVICE_VERSION = 6.1.1
+  SOFTDEVICE_VERSION = 7.2.0
 else ifeq ($(SOFTDEVICE_MODEL), blank)
   SOFTDEVICE_VERSION = 0
   USE_BLE = 0 # can't have BLE without a softdevice
