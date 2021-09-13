@@ -2,8 +2,13 @@
 
 #include "battery.h"
 #include "ble_config.h"
+#include "nrfx_atomic.h"
 #include "nrfx_gpiote.h"
-#include "sd_card.h"
+#include "nrfx_saadc.h"
+
+#ifndef NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY
+#define NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#endif
 
 
 // Battery monitoring state variables ----------------------------------------------------------------------------------
@@ -54,8 +59,6 @@ static void charging_status_changed(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t
 
 // Battery monitoring functionality ------------------------------------------------------------------------------------
 
-static void saadc_callback(nrfx_saadc_evt_t const * p_event) {}     // This should never be called
-
 void battery_monitor_init(nrfx_atomic_flag_t* battery_status_changed_flag)
 {
    // Initialize the charging and plugged-in status interrupt pins
@@ -75,19 +78,21 @@ void battery_monitor_init(nrfx_atomic_flag_t* battery_status_changed_flag)
 uint16_t battery_monitor_get_level_mV(void)
 {
    // Enable and calibrate the SAADC
-   nrfx_saadc_config_t saadc_config = NRFX_SAADC_DEFAULT_CONFIG;
-   APP_ERROR_CHECK(nrfx_saadc_init(&saadc_config, saadc_callback));
-   while (nrfx_saadc_calibrate_offset() != NRFX_SUCCESS);
-   while (nrfx_saadc_is_busy())
-      sd_app_evt_wait();
+   APP_ERROR_CHECK(nrfx_saadc_init(NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY));
+   while (nrfx_saadc_offset_calibrate(NULL) != NRFX_SUCCESS);
 
    // Configure and enable the SAADC comparison channel
-   nrf_saadc_channel_config_t saadc_channel_config = NRFX_SAADC_DEFAULT_CHANNEL_CONFIG_SE(CARRIER_BATTERY_PIN);
-   APP_ERROR_CHECK(nrfx_saadc_channel_init(BATTERY_MONITOR_CHANNEL, &saadc_channel_config));
+   nrfx_saadc_channel_t channel = NRFX_SAADC_DEFAULT_CHANNEL_SE(CARRIER_BATTERY_PIN, BATTERY_MONITOR_CHANNEL);
+   APP_ERROR_CHECK(nrfx_saadc_channels_config(&channel, 1));
+   APP_ERROR_CHECK(nrfx_saadc_simple_mode_set((1U << 0), NRF_SAADC_RESOLUTION_10BIT, NRF_SAADC_OVERSAMPLE_DISABLED, NULL));
 
    // Get an ADC voltage sample
    nrf_saadc_value_t adc_sample;
-   if (nrfx_saadc_sample_convert(BATTERY_MONITOR_CHANNEL, &adc_sample) != NRFX_SUCCESS)
+   APP_ERROR_CHECK(nrfx_saadc_buffer_set(&adc_sample, 1));
+   nrfx_err_t ret_val = nrfx_saadc_mode_trigger();
+   while (ret_val == NRFX_ERROR_BUSY)
+      ret_val = nrfx_saadc_mode_trigger();
+   if (ret_val != NRFX_SUCCESS)
    {
       log_printf("WARNING: ADC is busy and cannot sample the battery voltage\n");
       return 0;
