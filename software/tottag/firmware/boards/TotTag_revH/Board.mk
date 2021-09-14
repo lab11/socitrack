@@ -28,6 +28,7 @@ BOARD_VARS = \
 # Default SDK source files to be included
 BOARD_SOURCES += \
 	app_error_handler_gcc.c\
+	app_sdcard.c\
 	app_timer.c\
 	app_usbd.c\
 	app_usbd_cdc_acm.c\
