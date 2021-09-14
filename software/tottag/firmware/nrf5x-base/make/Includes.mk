@@ -6,14 +6,6 @@ ifndef INCLUDES_MAKEFILE
 INCLUDES_MAKEFILE = 1
 
 
-# ---- This repo's files
-REPO_HEADER_PATHS += $(NRF_BASE_DIR)/lib/
-REPO_HEADER_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/))
-#REPO_HEADER_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
-REPO_SOURCE_PATHS += $(NRF_BASE_DIR)/lib/
-REPO_SOURCE_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/))
-#REPO_SOURCE_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
-
 # ---- SDK files
 
 ifneq (,$(filter $(NRF_IC),nrf52840))
