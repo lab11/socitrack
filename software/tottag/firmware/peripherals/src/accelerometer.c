@@ -27,20 +27,22 @@ static uint8_t _lis2dw12_read_buf[257] = { 0 }, _lis2dw12_write_buf[257] = { 0 }
 
 // LIS2DW12-specific accelerometer functionality -----------------------------------------------------------------------
 
+static void lis2dw12_evt_handler(nrfx_spim_evt_t const * p_event, void * p_context) {}
+
 static nrfx_err_t lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len)
 {
    // Use SPI directly
    if (len > (sizeof(_lis2dw12_read_buf) - 1))
       return NRFX_ERROR_NO_MEM;
    uint8_t readreg = reg | LIS2DW12_SPI_READ;
-   nrfx_spim_uninit(_spi_instance);
-   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL);
+   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, lis2dw12_evt_handler, NULL);
    if (err_code != NRFX_SUCCESS)
       return err_code;
    nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(&readreg, 1, _lis2dw12_read_buf, sizeof(_lis2dw12_read_buf));
    err_code = nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
    if (err_code != NRFX_SUCCESS)
       return err_code;
+   nrfx_spim_uninit(_spi_instance);
    memcpy(read_buf, _lis2dw12_read_buf+1, len);
    return err_code;
 }
@@ -52,12 +54,13 @@ static nrfx_err_t lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len
       return NRFX_ERROR_NO_MEM;
    _lis2dw12_write_buf[0] = reg & (uint8_t)LIS2DW12_SPI_WRITE;
    memcpy(_lis2dw12_write_buf + 1, write_buf, len);
-   nrfx_spim_uninit(_spi_instance);
-   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL);
+   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, lis2dw12_evt_handler, NULL);
    if (err_code != NRFX_SUCCESS)
       return err_code;
    nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TX(_lis2dw12_write_buf, len + 1);
-   return nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
+   err_code = nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
+   nrfx_spim_uninit(_spi_instance);
+   return err_code;
 }
 
 static void lis2dw12_config(void)
@@ -206,10 +209,6 @@ bool accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* dat
    _spi_config.mode = NRF_SPIM_MODE_3;
    _spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
 
-   // Initialize SPI for the accelerometer
-   nrfx_spim_uninit(_spi_instance);
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-
    // Turn on and configure the accelerometer
    _accelerometer_int_config.int1_wakeup = true;
    _accelerometer_int_config.int2_fifo_full = true;
@@ -240,14 +239,14 @@ nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
 
    // Read 32 samples from the accelerometer FIFO
    uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
-   nrfx_spim_uninit(_spi_instance);
-   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL);
+   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, lis2dw12_evt_handler, NULL);
    if (err_code != NRFX_SUCCESS)
       return err_code;
    nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(&readreg, 1, _acc_xyz, sizeof(_acc_xyz));
    err_code = nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
    if (err_code != NRFX_SUCCESS)
       return err_code;
+   nrfx_spim_uninit(_spi_instance);
 
    // Only process accelerometer data if we are in motion
    if (lis2dw12_is_stationary())

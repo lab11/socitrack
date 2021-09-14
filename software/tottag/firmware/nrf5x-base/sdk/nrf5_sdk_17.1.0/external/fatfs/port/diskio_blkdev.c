@@ -40,6 +40,8 @@
 
 #include "diskio_blkdev.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
 
 /**
  * @brief Registered drives array.
@@ -331,3 +333,4 @@ void diskio_blockdev_register(diskio_blkdev_t * diskio_blkdevs, size_t count)
     m_drives_count = count;
 }
 
+#pragma GCC diagnostic pop

@@ -78,19 +78,6 @@ static void spi_init(void)
    // Make sure SPI lines are valid and not floating
    nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_init(CARRIER_SD_ENABLE, &sd_enable_pin_config);
-
-   // Configure RTC/SD-Card SPI lines
-   nrfx_spim_config_t spi_config = NRFX_SPIM_DEFAULT_CONFIG;
-   spi_config.sck_pin = RTC_SD_SPI_SCLK;
-   spi_config.miso_pin = RTC_SD_SPI_MISO;
-   spi_config.mosi_pin = RTC_SD_SPI_MOSI;
-   spi_config.ss_pin = CARRIER_CS_SD;
-   spi_config.frequency = NRF_SPIM_FREQ_4M;
-   spi_config.mode = NRF_SPIM_MODE_3;
-   spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
-
-   // Initialize RTC/SD-Card SPI
-   APP_ERROR_CHECK(nrfx_spim_init(&_rtc_sd_spi_instance, &spi_config, NULL, NULL));
 }
 
 static void hardware_init(void)
@@ -138,13 +125,6 @@ static void hardware_init(void)
    spi_init();
    printf("INFO: Initialized critical hardware and software services\n");
 
-   // Wait until SD Card is inserted
-   while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
-   {
-      buzzer_indicate_error();
-      nrf_delay_ms(2500);
-   }
-
    // Enable the external Real-Time Clock and ensure that the fetched timestamp is valid
    rtc_external_init(&_rtc_sd_spi_instance);
    uint32_t current_timestamp = rtc_get_current_time(), num_retries = 3;
@@ -158,6 +138,13 @@ static void hardware_init(void)
    }
    if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
       nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
+
+   // Wait until an SD Card is inserted
+   while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
+   {
+      buzzer_indicate_error();
+      nrf_delay_ms(2500);
+   }
 
    // Initialize supplementary hardware components
    imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready);
@@ -469,6 +456,7 @@ int main(void)
       if ((sd_clock_hfclk_is_running(&hfclk_running) == NRF_SUCCESS) && hfclk_running)
          sd_clock_hfclk_release();
       nrf_pwr_mgmt_run();
+      //TODO: DELETE log_printf("MAIN RUN\n");
 
       // Check if the SquarePoint module has communicated over TWI
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.squarepoint_data_received))

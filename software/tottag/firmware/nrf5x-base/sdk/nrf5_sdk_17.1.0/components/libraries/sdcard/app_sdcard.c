@@ -40,6 +40,11 @@
 #include "sdk_config.h"
 #if APP_SDCARD_ENABLED
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+#pragma GCC diagnostic ignored "-Wswitch-default"
+#pragma GCC diagnostic ignored "-Wcast-qual"
+
 #include "app_sdcard.h"
 #include "nrf_gpio.h"
 #include "nrf_drv_spi.h"
@@ -47,6 +52,8 @@
 #include "nrf_assert.h"
 
 #include "nrf_pt.h"
+
+#include "tottag.h"
 
 #define CMD_MASK  0x40
 #define ACMD_MASK 0x80
@@ -1109,11 +1116,11 @@ ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handl
                             .sck_pin      = p_config->sck_pin,
                             .mosi_pin     = p_config->mosi_pin,
                             .miso_pin     = p_config->miso_pin,
-                            .ss_pin       = NRF_DRV_SPI_PIN_NOT_USED,
+                            .ss_pin       = SD_CARD_SPI_CS,
                             .irq_priority = SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
                             .orc          = 0xFF,
                             .frequency    = (nrf_drv_spi_frequency_t) APP_SDCARD_FREQ_INIT,
-                            .mode         = NRF_DRV_SPI_MODE_0,
+                            .mode         = NRF_DRV_SPI_MODE_3,
                             .bit_order    = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST,
                         };
     err_code = nrf_drv_spi_init(&m_spi, &spi_cfg, spi_handler, NULL);
@@ -1170,5 +1177,7 @@ app_sdc_info_t const * app_sdc_info_get(void)
     }
     return NULL;
 }
+
+#pragma GCC diagnostic pop
 
 #endif //APP_SDCARD_ENABLED

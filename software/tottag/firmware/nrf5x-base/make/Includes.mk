@@ -9,10 +9,10 @@ INCLUDES_MAKEFILE = 1
 # ---- This repo's files
 REPO_HEADER_PATHS += $(NRF_BASE_DIR)/lib/
 REPO_HEADER_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/))
-REPO_HEADER_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
+#REPO_HEADER_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
 REPO_SOURCE_PATHS += $(NRF_BASE_DIR)/lib/
 REPO_SOURCE_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/))
-REPO_SOURCE_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
+#REPO_SOURCE_PATHS += $(dir $(wildcard $(NRF_BASE_DIR)/lib/simple_logger/*/))
 
 # ---- SDK files
 
@@ -121,13 +121,13 @@ ifneq (,$(filter $(NRF_IC),nrf52840))
     SDK_HEADER_PATHS += $(SDK_ROOT)components/toolchain/
     SDK_HEADER_PATHS += $(SDK_ROOT)components/toolchain/cmsis/include/
     SDK_HEADER_PATHS += $(SDK_ROOT)components/softdevice/common/
+    SDK_HEADER_PATHS += $(SDK_ROOT)external/fatfs/port/
+    SDK_HEADER_PATHS += $(SDK_ROOT)external/fatfs/src/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/fprintf/
-    SDK_HEADER_PATHS += $(SDK_ROOT)external/segger_rtt/
-    SDK_HEADER_PATHS += $(SDK_ROOT)external/cifra_AES128-EAX/
-    SDK_HEADER_PATHS += $(SDK_ROOT)external/mbedtls/include/
-    SDK_HEADER_PATHS += $(SDK_ROOT)external/nrf_tls/mbedtls/nrf_crypto/config/
+    SDK_HEADER_PATHS += $(SDK_ROOT)external/fprintf/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/protothreads/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/protothreads/pt-1.4/
+    SDK_HEADER_PATHS += $(SDK_ROOT)external/segger_rtt/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/utf_converter/
 
     SDK_SOURCE_PATHS += $(SDK_ROOT)components/
@@ -201,7 +201,11 @@ ifneq (,$(filter $(NRF_IC),nrf52840))
     SDK_SOURCE_PATHS += $(wildcard $(SDK_ROOT)components/drivers_ext/*/)
     SDK_SOURCE_PATHS += $(SDK_ROOT)components/toolchain/gcc/
     SDK_SOURCE_PATHS += $(SDK_ROOT)components/softdevice/common/
+    SDK_SOURCE_PATHS += $(SDK_ROOT)external/fatfs/port/
+    SDK_SOURCE_PATHS += $(SDK_ROOT)external/fatfs/src/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/fprintf/
+    SDK_SOURCE_PATHS += $(SDK_ROOT)external/protothreads/
+    SDK_SOURCE_PATHS += $(SDK_ROOT)external/protothreads/pt-1.4/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/segger_rtt/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/utf_converter/
 

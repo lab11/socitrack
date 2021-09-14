@@ -1105,6 +1105,9 @@ FRESULT put_fat (	/* FR_OK(0):succeeded, !=0:error */
 			st_dword(fs->win + clst * 4 % SS(fs), val);
 			fs->wflag = 1;
 			break;
+
+		default:
+		    break;
 		}
 	}
 	return res;

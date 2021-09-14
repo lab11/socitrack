@@ -36,9 +36,11 @@ static nrfx_err_t lsm6dsox_read_reg(uint8_t reg, uint8_t *data, uint16_t len)
    reg |= LSM6DSOX_SPI_READ;
    nrfx_spim_xfer_desc_t xfer_tx_desc = NRFX_SPIM_XFER_TX(&reg, 1);
    nrfx_spim_xfer_desc_t xfer_rx_desc = NRFX_SPIM_XFER_RX(data, len);
+   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
    nrfx_err_t err_code = nrfx_spim_xfer(_spi_instance, &xfer_tx_desc, 0);
    if (err_code == NRFX_SUCCESS)
       err_code = nrfx_spim_xfer(_spi_instance, &xfer_rx_desc, 0);
+   nrfx_spim_uninit(_spi_instance);
    return err_code;
 }
 
@@ -50,7 +52,10 @@ static nrfx_err_t lsm6dsox_write_reg(uint8_t reg, uint8_t *data, uint16_t len)
       return NRFX_ERROR_NO_MEM;
    memcpy(_lsm6dsox_write_buf + 1, data, len);
    nrfx_spim_xfer_desc_t xfer_tx_desc = NRFX_SPIM_XFER_TX(_lsm6dsox_write_buf, len + 1);
-   return nrfx_spim_xfer(_spi_instance, &xfer_tx_desc, 0);
+   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
+   nrfx_err_t err_code = nrfx_spim_xfer(_spi_instance, &xfer_tx_desc, 0);
+   nrfx_spim_uninit(_spi_instance);
+   return err_code;
 }
 
 static float lsm6dsox_from_fs2_to_mg(int16_t lsb) { return ((float)lsb) * 0.061f; }
@@ -6137,10 +6142,6 @@ bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
    _spi_config.frequency = NRF_SPIM_FREQ_4M;
    _spi_config.mode = NRF_SPIM_MODE_3;
    _spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
-
-   // Initialize SPI for the IMU
-   nrfx_spim_uninit(_spi_instance);
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
 
    // Check the IMU ID
    uint8_t dummy;

@@ -39,6 +39,9 @@
  */
 #include "nrf_block_dev_sdc.h"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+
 /**@file
  *
  * @ingroup nrf_block_dev_sdc
@@ -62,7 +65,7 @@ static void wait_func(void)
 {
 }
 
-static void sdc_wait()
+static void sdc_wait(void)
 {
     while (app_sdc_busy_check())
     {
@@ -395,5 +398,6 @@ const nrf_block_dev_ops_t nrf_block_device_sdc_ops = {
         .geometry = block_dev_sdc_geometry,
 };
 
+#pragma GCC diagnostic pop
 
 /** @} */

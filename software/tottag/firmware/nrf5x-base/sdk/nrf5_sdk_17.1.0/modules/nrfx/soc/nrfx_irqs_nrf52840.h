@@ -45,7 +45,6 @@
 extern "C" {
 #endif
 
-
 // POWER_CLOCK_IRQn
 #define nrfx_power_clock_irq_handler    POWER_CLOCK_IRQHandler
 
@@ -202,7 +201,6 @@ extern "C" {
 
 // SPIM3_IRQn
 #define nrfx_spim_3_irq_handler     SPIM3_IRQHandler
-
 
 #ifdef __cplusplus
 }
