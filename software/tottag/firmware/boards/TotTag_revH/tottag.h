@@ -43,18 +43,15 @@
 #define RTC_SD_SPI_BUS      NRFX_SPIM_INSTANCE(2)
 
 // SD Card
-#define CARRIER_CS_SD       NRF_GPIO_PIN_MAP(0,13)
-#define CARRIER_SD_ENABLE   NRF_GPIO_PIN_MAP(0,14)
-#define CARRIER_SD_DETECT   NRF_GPIO_PIN_MAP(0,11)
-
-// To use "simple_logger", we define some additional macros
+#define CARRIER_CS_SD           NRF_GPIO_PIN_MAP(0,13)
+#define CARRIER_SD_ENABLE       NRF_GPIO_PIN_MAP(0,14)
+#define CARRIER_SD_DETECT       NRF_GPIO_PIN_MAP(0,11)
 #define SD_CARD_ENABLE          CARRIER_SD_ENABLE
 #define SD_CARD_DETECT          CARRIER_SD_DETECT
 #define SD_CARD_SPI_CS          CARRIER_CS_SD
 #define SD_CARD_SPI_MISO        RTC_SD_SPI_MISO
 #define SD_CARD_SPI_MOSI        RTC_SD_SPI_MOSI
 #define SD_CARD_SPI_SCLK        RTC_SD_SPI_SCLK
-#define SD_CARD_SPI_INSTANCE    NRF_SPI0
 
 // Real Time Clock (RTC)
 #define CARRIER_CS_RTC      NRF_GPIO_PIN_MAP(0,29)

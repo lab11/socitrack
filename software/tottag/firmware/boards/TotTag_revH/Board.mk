@@ -40,7 +40,7 @@ BOARD_SOURCES += \
 	ble_conn_params.c\
 	ble_db_discovery.c\
 	ble_srv_common.c\
-	diskio.c\
+	diskio_blkdev.c\
 	ff.c\
 	nrf_atfifo.c\
 	nrf_atomic.c\
@@ -48,8 +48,10 @@ BOARD_SOURCES += \
 	nrf_ble_gatt.c\
 	nrf_ble_gq.c\
 	nrf_ble_qwr.c\
+	nrf_block_dev_sdc.c\
 	nrf_drv_clock.c\
 	nrf_drv_power.c\
+	nrf_drv_spi.c\
 	nrf_log_frontend.c\
 	nrf_memobj.c\
 	nrf_pwr_mgmt.c\
@@ -73,7 +75,6 @@ BOARD_SOURCES += \
 	SEGGER_RTT.c\
 	SEGGER_RTT_printf.c\
 	SEGGER_RTT_Syscalls_GCC.c\
-	simple_logger.c\
 	system_nrf52840.c
 
 # Make sure that bluetooth.c is always compiled so the ID is picked up correctly

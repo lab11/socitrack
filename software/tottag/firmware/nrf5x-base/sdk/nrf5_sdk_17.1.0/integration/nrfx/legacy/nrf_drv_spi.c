@@ -38,6 +38,9 @@
  *
  */
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include "nrf_drv_spi.h"
 
 #ifdef SPIM_PRESENT
@@ -133,3 +136,5 @@ ret_code_t nrf_drv_spi_init(nrf_drv_spi_t const * const p_instance,
     }
     return result;
 }
+
+#pragma GCC diagnostic pop
