@@ -1,5 +1,8 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <string.h>
 #include "battery.h"
 #include "ble_config.h"
@@ -24,12 +27,14 @@
 #include "timers.h"
 #include "usb.h"
 
+#pragma GCC diagnostic pop
+
 
 // Application state variables -----------------------------------------------------------------------------------------
 
 static app_flags_t _app_flags = { 0 };
-static nrfx_spim_t _rtc_sd_spi_instance = RTC_SD_SPI_BUS;
-static nrfx_spim_t _imu_spi_instance = IMU_SPI_BUS;
+static nrf_drv_spi_t _rtc_sd_spi_instance = NRF_DRV_SPI_INSTANCE(RTC_SD_SPI_BUS_IDX);
+static nrf_drv_spi_t _imu_spi_instance = NRF_DRV_SPI_INSTANCE(IMU_SPI_BUS_IDX);
 static uint8_t _range_buffer[APP_BLE_BUFFER_LENGTH] = { 0 };
 static volatile uint16_t _range_buffer_length = 0;
 
@@ -51,20 +56,6 @@ static void app_init(void)
 
 static void spi_init(void)
 {
-   // Configure SPI pins
-   nrf_gpio_cfg_input(RTC_SD_SPI_MISO, NRF_GPIO_PIN_PULLUP);
-   nrfx_gpiote_out_config_t spi_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_config_t spi_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(RTC_SD_SPI_MOSI, &spi_mosi_pin_config);
-   nrfx_gpiote_out_init(RTC_SD_SPI_SCLK, &spi_sclk_pin_config);
-#if (BOARD_V >= 0x11)
-   nrf_gpio_cfg_input(IMU_SPI_MISO, NRF_GPIO_PIN_PULLUP);
-   nrfx_gpiote_out_config_t spi_imu_mosi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_config_t spi_imu_sclk_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(IMU_SPI_MOSI, &spi_imu_mosi_pin_config);
-   nrfx_gpiote_out_init(IMU_SPI_SCLK, &spi_imu_sclk_pin_config);
-#endif
-
    // Setup Chip Selects (CS)
    nrfx_gpiote_out_config_t cs_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_config_t cs_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
@@ -139,16 +130,16 @@ static void hardware_init(void)
    if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
       nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
 
+   // Initialize supplementary hardware components
+   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready);
+   battery_monitor_init(&_app_flags.battery_status_changed);
+
    // Wait until an SD Card is inserted
    while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
    {
       buzzer_indicate_error();
       nrf_delay_ms(2500);
    }
-
-   // Initialize supplementary hardware components
-   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready);
-   battery_monitor_init(&_app_flags.battery_status_changed);
    sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0);
    led_off();
    printf("INFO: Initialized supplementary hardware and software services\n");
@@ -453,8 +444,8 @@ int main(void)
    while (1)
    {
       // Go to sleep until something happens
-      if ((sd_clock_hfclk_is_running(&hfclk_running) == NRF_SUCCESS) && hfclk_running)
-         sd_clock_hfclk_release();
+      //if ((sd_clock_hfclk_is_running(&hfclk_running) == NRF_SUCCESS) && hfclk_running)
+      //   sd_clock_hfclk_release();
       nrf_pwr_mgmt_run();
       //TODO: DELETE log_printf("MAIN RUN\n");
 
@@ -602,5 +593,13 @@ int main(void)
 
       // Update the LED status indicators
       update_leds(app_running, network_discovered);
+
+      // Wait until an SD card has been inserted
+      if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))
+         while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
+         {
+            buzzer_indicate_error();
+            nrf_delay_ms(2500);
+         }
    }
 }
