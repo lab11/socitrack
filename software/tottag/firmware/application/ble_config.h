@@ -112,6 +112,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t rtc_time_valid;
    nrfx_atomic_flag_t battery_check_time;
    nrfx_atomic_flag_t imu_data_ready;
+   nrfx_atomic_flag_t imu_motion_changed;
    nrfx_atomic_flag_t battery_status_changed;
    nrfx_atomic_flag_t range_buffer_updated;
    nrfx_atomic_flag_t device_in_motion;
@@ -134,11 +135,14 @@ typedef struct app_flags_t
 #define APP_BLE_ADDR_MAX        0xFF
 
 // Peripheral
+//#define APP_ADV_INTERVAL_MS     250
 #define APP_ADV_INTERVAL_MS     50
 #define APP_ADV_INTERVAL_CAL_MS 50
 
 // Central
+//#define APP_SCAN_INTERVAL_MS    2085
 #define APP_SCAN_INTERVAL_MS    915
+//#define APP_SCAN_WINDOW_MS      (APP_ADV_INTERVAL_MS + 11)
 #define APP_SCAN_WINDOW_MS      75
 
 // No-network transitions

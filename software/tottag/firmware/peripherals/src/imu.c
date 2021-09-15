@@ -16,8 +16,9 @@
 
 #include "accelerometer.h"
 
-bool imu_init(const nrf_drv_spi_t *spi_instance, nrfx_atomic_flag_t *data_ready) { return accelerometer_init(spi_instance, data_ready); }
+bool imu_init(const nrf_drv_spi_t *spi_instance, nrfx_atomic_flag_t *data_ready, nrfx_atomic_flag_t* motion_changed) { return accelerometer_init(spi_instance, data_ready, motion_changed); }
 nrfx_err_t imu_read_accelerometer_data(float *x_data, float *y_data, float *z_data) { return accelerometer_read_data(x_data, y_data, z_data); }
+bool imu_in_motion(void) { return accelerometer_in_motion(); }
 
 #else  // True IMU functionality for newer boards ----------------------------------------------------------------------
 
@@ -26,7 +27,7 @@ nrfx_err_t imu_read_accelerometer_data(float *x_data, float *y_data, float *z_da
 
 static const nrf_drv_spi_t* _spi_instance = NULL;
 static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
-static nrfx_atomic_flag_t* _imu_data_ready = NULL;
+static nrfx_atomic_flag_t *_imu_data_ready = NULL, *_imu_motion_changed = NULL;
 static uint8_t _lsm6dsox_write_buf[257] = { 0 };
 
 
@@ -6131,7 +6132,7 @@ static nrfx_err_t lsm6dsox_write_lis3mdl_reg(uint8_t reg, uint8_t *data, uint16_
 
 // Public IMU API functions --------------------------------------------------------------------------------------------
 
-bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
+bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed)
 {
    // Configure the magnetometer input pins as INPUT ANALOG no-ops
    nrf_gpio_cfg_default(MAGNETOMETER_INT);
@@ -6139,6 +6140,7 @@ bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
 
    // Setup SPI parameters
    _imu_data_ready = data_ready;
+   _imu_motion_changed = motion_changed;
    _spi_instance = spi_instance;
    _spi_config.sck_pin = IMU_SPI_SCLK;
    _spi_config.miso_pin = IMU_SPI_MISO;
@@ -6209,6 +6211,11 @@ bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
 nrfx_err_t imu_read_accelerometer_data(float* x_data, float* y_data, float* z_data)
 {
    return NRFX_ERROR_NOT_SUPPORTED;
+}
+
+bool imu_in_motion(void)
+{
+   return false;
 }
 
 #pragma GCC diagnostic pop

@@ -131,7 +131,7 @@ static void hardware_init(void)
       nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
 
    // Initialize supplementary hardware components
-   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready);
+   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready, &_app_flags.imu_motion_changed);
    battery_monitor_init(&_app_flags.battery_status_changed);
 
    // Wait until an SD Card is inserted
@@ -418,15 +418,21 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 
 static void imu_data_handler(void)
 {
-   // Read data from the accelerometer
-   if (imu_read_accelerometer_data(NULL, NULL, NULL) == NRFX_SUCCESS)
+   // Handle changes in detection of motion
+   if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_motion_changed))
    {
-      // Log a change in motion
-      if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
-         sd_card_log_motion(true, rtc_get_current_time(), false);
+      if (imu_in_motion())
+      {
+         if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
+            sd_card_log_motion(true, rtc_get_current_time(), false);
+      }
+      else if (nrfx_atomic_flag_clear_fetch(&_app_flags.device_in_motion))
+         sd_card_log_motion(false, rtc_get_current_time(), false);
    }
-   else if (nrfx_atomic_flag_clear_fetch(&_app_flags.device_in_motion))
-      sd_card_log_motion(false, rtc_get_current_time(), false);
+
+   // Check if IMU data is ready to be read
+   if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
+      imu_read_accelerometer_data(NULL, NULL, NULL);
 }
 
 
@@ -453,12 +459,9 @@ int main(void)
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.squarepoint_data_received))
          squarepoint_handle_incoming_data();
 
-      // Handle USB communications
+      // Handle USB and IMU communications
       usb_handle_comms();
-
-      // Check if IMU data is ready to be read
-      if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
-         imu_data_handler();
+      imu_data_handler();
 
       // Check if new ranging data was received
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))

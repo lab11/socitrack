@@ -153,8 +153,9 @@ typedef struct
 
 // Public Accelerometer API --------------------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready);
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed);
 nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data);
+bool accelerometer_in_motion(void);
 
 
 #endif // #ifndef __ACCELEROMETER_HEADER_H

@@ -16,15 +16,17 @@
 
 #if (BOARD_V < 0x11)
 
+#define DISABLE_ACCEL_DATA_READING
+
 static const nrf_drv_spi_t* _spi_instance = NULL;
 static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static lis2dw12_config_t _accelerometer_config = { .odr = lis2dw12_odr_200, .mode = lis2dw12_low_power,
       .lp_mode = lis2dw12_lp_1, .cs_nopull = 0, .bdu = 1, .auto_increment = 1, .i2c_disable = 1, .int_active_low = 0,
-      .on_demand = 1, .bandwidth = lis2dw12_bw_odr_2,.fs = lis2dw12_fs_4g, .high_pass = 1, .low_noise  = 1 };
-static lis2dw12_int_config_t _accelerometer_int_config = { 0 };
-static lis2dw12_wakeup_config_t _accelerometer_wake_config = { .sleep_enable = true, .threshold = 0x05,
-      .wake_duration = 0, .sleep_duration = 1 };
-static nrfx_atomic_flag_t* _accelerometer_data_ready = NULL;
+      .on_demand = 1, .bandwidth = lis2dw12_bw_odr_4, .fs = lis2dw12_fs_2g, .high_pass = 1, .low_noise  = 0 };
+static lis2dw12_int_config_t _accelerometer_int_config = { .int2_sleep_change = 1 };
+static lis2dw12_wakeup_config_t _accelerometer_wake_config = { .sleep_enable = true, .threshold = 0x01,
+      .wake_duration = 1, .sleep_duration = 1 };
+static nrfx_atomic_flag_t *_accelerometer_data_ready = NULL, *_accelerometer_motion_changed = NULL;
 static float _acc_sensitivity_scalar = 1.0f;
 static uint8_t _acc_xyz[(ACC_NUM_RESULTS_PER_READ*3*sizeof(int16_t)) + 1] = { 0 };
 static uint8_t _lis2dw12_read_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
@@ -168,9 +170,11 @@ static void lis2dw12_fifo_reset(void)
    lis2dw12_fifo_config_t fifo_config;
    fifo_config.mode = lis2dw12_fifo_bypass;
    lis2dw12_fifo_config(fifo_config);
+#ifndef DISABLE_ACCEL_DATA_READING
    fifo_config.mode = lis2dw12_fifo_continuous;
    fifo_config.thresh = 31;
    lis2dw12_fifo_config(fifo_config);
+#endif
 }
 
 static bool lis2dw12_is_stationary(void)
@@ -180,11 +184,13 @@ static bool lis2dw12_is_stationary(void)
    return ((status_byte >> 5) & 0x1);
 }
 
-static void accelerometer_fifo_full_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
+static void accelerometer_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
    // Set the "data ready" flag for the accelerometer
-   if (pin == CARRIER_IMU_INT2)
+   if (pin == CARRIER_IMU_INT1)
       nrfx_atomic_flag_set(_accelerometer_data_ready);
+   else if (pin == CARRIER_IMU_INT2)
+      nrfx_atomic_flag_set(_accelerometer_motion_changed);
 }
 
 #endif  // #if (BOARD_V < 0x11)
@@ -192,7 +198,7 @@ static void accelerometer_fifo_full_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
 
 // Public Accelerometer API functions ----------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready)
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed)
 {
 #if (BOARD_V < 0x11)
 
@@ -207,17 +213,24 @@ bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* d
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Turn on and configure the accelerometer
-   _accelerometer_int_config.int1_wakeup = true;
-   _accelerometer_int_config.int2_fifo_full = true;
+#ifndef DISABLE_ACCEL_DATA_READING
+   _accelerometer_int_config.int1_fifo_full = 1;
+#endif
    lis2dw12_reset();
    lis2dw12_config();
    lis2dw12_interrupt_config();
    lis2dw12_wakeup_config();
 
-   // Initialize the accelerometer interrupt pin
+   // Initialize the accelerometer interrupt pins
    _accelerometer_data_ready = data_ready;
-   nrfx_gpiote_in_config_t int_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
-   nrfx_gpiote_in_init(CARRIER_IMU_INT2, &int_gpio_config, accelerometer_fifo_full_handler);
+   _accelerometer_motion_changed = motion_changed;
+#ifndef DISABLE_ACCEL_DATA_READING
+   nrfx_gpiote_in_config_t int1_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+   nrfx_gpiote_in_init(CARRIER_IMU_INT1, &int1_gpio_config, accelerometer_interrupt_handler);
+   nrfx_gpiote_in_event_enable(CARRIER_IMU_INT1, 1);
+#endif
+   nrfx_gpiote_in_config_t int2_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+   nrfx_gpiote_in_init(CARRIER_IMU_INT2, &int2_gpio_config, accelerometer_interrupt_handler);
    nrfx_gpiote_in_event_enable(CARRIER_IMU_INT2, 1);
    lis2dw12_interrupt_enable(true);
 
@@ -246,10 +259,6 @@ nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
    if (err_code != NRFX_SUCCESS)
       return err_code;
 
-   // Only process accelerometer data if we are in motion
-   if (lis2dw12_is_stationary())
-      return NRFX_ERROR_INVALID_STATE;
-
    // Convert each sample to milli-g's
    for (size_t i = 0, j = 1; i < ACC_NUM_RESULTS_PER_READ; ++i, j += 6)
    {
@@ -264,4 +273,19 @@ nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
    return NRFX_ERROR_INTERNAL;
 
 #endif  // #if (BOARD_V < 0x11)
+}
+
+bool accelerometer_in_motion(void)
+{
+#if (BOARD_V < 0x11)
+
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
+   // Read the stationary detection register
+   return !lis2dw12_is_stationary();
+
+#endif
+   return false;
 }
