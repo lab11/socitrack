@@ -1,5 +1,8 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <string.h>
 #include "ble_config.h"
 #include "nrf_delay.h"
@@ -7,15 +10,19 @@
 #include "rtc.h"
 #include "rtc_external.h"
 
+#pragma GCC diagnostic pop
+
+
 #if (BOARD_V >= 0x0F)
 
 // Real-time clock state variables -------------------------------------------------------------------------------------
 
-static const nrfx_spim_t *_spi_instance = NULL;
+static const nrf_drv_spi_t *_spi_instance = NULL;
+static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static ab1815_control_t _ctrl_config = { 0 };
 static ab1815_int_config_t _int_config = { 0 };
-static nrfx_spim_config_t _spi_config = NRFX_SPIM_DEFAULT_CONFIG;
 static ab1815_alarm_callback *_interrupt_callback = NULL;
+static uint8_t _ab1815_read_write_buf[257] = { 0 };
 
 
 // Helper functions ----------------------------------------------------------------------------------------------------
@@ -58,15 +65,6 @@ static uint8_t month_to_i(const char *c)
 
 uint8_t ab1815_init(void)
 {
-   // Setup SPI parameters
-   _spi_config.sck_pin = RTC_SD_SPI_SCLK;
-   _spi_config.miso_pin = RTC_SD_SPI_MISO;
-   _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
-   _spi_config.ss_pin = CARRIER_CS_RTC;
-   _spi_config.frequency = NRF_SPIM_FREQ_250K;
-   _spi_config.mode = NRF_SPIM_MODE_3;
-   _spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
-
    // Setup interrupt pins
    nrf_gpio_cfg_input(CARRIER_RTC_INT, NRF_GPIO_PIN_PULLUP);
    nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
@@ -84,6 +82,8 @@ uint8_t ab1815_init(void)
       success = ab1815_wait_for_ready(1000);
    }
 #endif
+
+   // Disable the RTC chip watchdog
    ab1815_clear_watchdog();
    return success;
 }
@@ -117,64 +117,47 @@ uint8_t ab1815_init_time(void)
 void ab1815_reset(void)
 {
    // Write a software reset request to the configuration register
-   uint8_t buf[2] = { 0x80 | AB1815_CONFIGURATION_KEY, AB1815_CONF_KEY_SR };
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
    ab1815_wait_for_ready(1000);
-   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TX(buf, 2);
-   APP_ERROR_CHECK(nrfx_spim_xfer(_spi_instance, &xfer_desc, 0));
-   nrfx_spim_uninit(_spi_instance);
+   uint8_t buf[2] = { 0x80 | AB1815_CONFIGURATION_KEY, AB1815_CONF_KEY_SR };
+   nrf_gpio_pin_clear(CARRIER_CS_RTC);
+   APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, buf, 2, NULL, 0));
+   nrf_gpio_pin_set(CARRIER_CS_RTC);
 }
 
 static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
 {
-   // Ensure that the requested read length is less than the buffer size
-   uint8_t readreg = reg, buf[257];
-   if (len > (sizeof(buf) - 1))
+   // Wait until the RTC chip becomes available
+   if (!ab1815_wait_for_ready(1000))
       return 0;
 
-   // Initialize the SPI interface to communicate with the RTC
-   if (!ab1815_wait_for_ready(1000))
-      return 0;
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-   if (!ab1815_wait_for_ready(1000))
-   {
-      nrfx_spim_uninit(_spi_instance);
-      return 0;
-   }
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Read from the requested register
-   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(&readreg, 1, buf, sizeof(buf));
-   APP_ERROR_CHECK(nrfx_spim_xfer(_spi_instance, &xfer_desc, 0));
-   nrfx_spim_uninit(_spi_instance);
-   memcpy(read_buf, buf + 1, len);
+   nrf_gpio_pin_clear(CARRIER_CS_RTC);
+   APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, &reg, 1, _ab1815_read_write_buf, len + 1));
+   nrf_gpio_pin_set(CARRIER_CS_RTC);
+   memcpy(read_buf, _ab1815_read_write_buf + 1, len);
    return 1;
 }
 
 static uint8_t ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
 {
-   // Ensure that the requested write length is less than the buffer size
-   uint8_t buf[257];
-   if (len > (sizeof(buf) - 1))
-      return 0;
-
-   // Write: First bit is 1
-   buf[0] = 0x80 | reg;
-   memcpy(buf + 1, write_buf, len);
-
-   // Initialize the SPI interface to communicate with the RTC
+   // Wait until the RTC chip becomes available
    if (!ab1815_wait_for_ready(1000))
       return 0;
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-   if (!ab1815_wait_for_ready(1000))
-   {
-      nrfx_spim_uninit(_spi_instance);
-      return 0;
-   }
+
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Write to the requested register
-   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TX(buf, len + 1);
-   APP_ERROR_CHECK(nrfx_spim_xfer(_spi_instance, &xfer_desc, 0));
-   nrfx_spim_uninit(_spi_instance);
+   nrf_gpio_pin_clear(CARRIER_CS_RTC);
+   _ab1815_read_write_buf[0] = 0x80 | reg;
+   memcpy(_ab1815_read_write_buf + 1, write_buf, len);
+   APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, _ab1815_read_write_buf, len + 1, NULL, 0));
+   nrf_gpio_pin_set(CARRIER_CS_RTC);
    return 1;
 }
 
@@ -552,15 +535,23 @@ void ab1815_printTime(ab1815_time_t time)
 }
 #endif  // #if (BOARD_V >= 0x0F)
 
-uint8_t rtc_external_init(const nrfx_spim_t* spi_instance)
+uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance)
 {
-   // Make sure other SPI devices are not interfering
+   bool success = true;
 #if (BOARD_V >= 0x0F)
 
-   // Initialize the chip
+   // Setup SPI communications
    _spi_instance = spi_instance;
-   if (!ab1815_init())
-      return 0;
+   _spi_config.sck_pin = RTC_SD_SPI_SCLK;
+   _spi_config.miso_pin = RTC_SD_SPI_MISO;
+   _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
+   _spi_config.frequency = NRF_DRV_SPI_FREQ_250K;
+   _spi_config.mode = NRF_DRV_SPI_MODE_3;
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
+   // Initialize the chip
+   success = ab1815_init();
 
    // Startup RTC
    static ab1815_control_t ctrl_config = {
@@ -585,28 +576,25 @@ uint8_t rtc_external_init(const nrfx_spim_t* spi_instance)
    };
 
    // Set configurations
-   if (!ab1815_set_config(ctrl_config))
-      return 0;
-   if (!ab1815_set_int_config(int_config))
-      return 0;
-   if (!ab1815_enable_trickle_charger())
-      return 0;
-   if (!ab1815_use_xt_oscillator())
-      return 0;
+   success = (success && ab1815_set_config(ctrl_config));
+   success = (success && ab1815_set_int_config(int_config));
+   success = (success && ab1815_enable_trickle_charger());
+   success = (success && ab1815_use_xt_oscillator());
 
    // Initialize time
-   if (!ab1815_init_time())
-      return 0;
+   success = (success && ab1815_init_time());
 
    // Set nRF time from the RTC
    ab1815_time_t time = { 0 };
-   if (!ab1815_get_time(&time))
-      return 0;
-   rtc_set_current_time(ab1815_to_unix(time).tv_sec);
-   ab1815_printTime(time);
+   success = (success && ab1815_get_time(&time));
+   if (success)
+   {
+      rtc_set_current_time(ab1815_to_unix(time).tv_sec);
+      ab1815_printTime(time);
+   }
 
 #else
    printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
 #endif
-   return 1;
+   return success;
 }

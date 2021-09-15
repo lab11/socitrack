@@ -1,8 +1,14 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include "ble_config.h"
 #include "sd_card.h"
 #include "usb.h"
+
+#pragma GCC diagnostic pop
+
 
 #if (BOARD_V >= 0x10)
 

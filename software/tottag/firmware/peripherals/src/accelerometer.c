@@ -1,18 +1,23 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <string.h>
 #include "accelerometer.h"
 #include "ble_config.h"
 #include "nrf_delay.h"
 #include "nrfx_gpiote.h"
 
+#pragma GCC diagnostic pop
+
 
 // Static accelerometer state variables --------------------------------------------------------------------------------
 
 #if (BOARD_V < 0x11)
 
-static const nrfx_spim_t* _spi_instance = NULL;
-static nrfx_spim_config_t _spi_config = NRFX_SPIM_DEFAULT_CONFIG;
+static const nrf_drv_spi_t* _spi_instance = NULL;
+static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static lis2dw12_config_t _accelerometer_config = { .odr = lis2dw12_odr_200, .mode = lis2dw12_low_power,
       .lp_mode = lis2dw12_lp_1, .cs_nopull = 0, .bdu = 1, .auto_increment = 1, .i2c_disable = 1, .int_active_low = 0,
       .on_demand = 1, .bandwidth = lis2dw12_bw_odr_2,.fs = lis2dw12_fs_4g, .high_pass = 1, .low_noise  = 1 };
@@ -22,44 +27,38 @@ static lis2dw12_wakeup_config_t _accelerometer_wake_config = { .sleep_enable = t
 static nrfx_atomic_flag_t* _accelerometer_data_ready = NULL;
 static float _acc_sensitivity_scalar = 1.0f;
 static uint8_t _acc_xyz[(ACC_NUM_RESULTS_PER_READ*3*sizeof(int16_t)) + 1] = { 0 };
-static uint8_t _lis2dw12_read_buf[257] = { 0 }, _lis2dw12_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
+static uint8_t _lis2dw12_read_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
 
 
 // LIS2DW12-specific accelerometer functionality -----------------------------------------------------------------------
 
-static void lis2dw12_evt_handler(nrfx_spim_evt_t const * p_event, void * p_context) {}
-
 static nrfx_err_t lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len)
 {
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
    // Use SPI directly
-   if (len > (sizeof(_lis2dw12_read_buf) - 1))
-      return NRFX_ERROR_NO_MEM;
+   nrf_gpio_pin_clear(CARRIER_CS_IMU);
    uint8_t readreg = reg | LIS2DW12_SPI_READ;
-   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, lis2dw12_evt_handler, NULL);
-   if (err_code != NRFX_SUCCESS)
-      return err_code;
-   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(&readreg, 1, _lis2dw12_read_buf, sizeof(_lis2dw12_read_buf));
-   err_code = nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
-   if (err_code != NRFX_SUCCESS)
-      return err_code;
-   nrfx_spim_uninit(_spi_instance);
-   memcpy(read_buf, _lis2dw12_read_buf+1, len);
+   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &readreg, 1, _lis2dw12_read_write_buf, len + 1);
+   memcpy(read_buf, _lis2dw12_read_write_buf+1, len);
+   nrf_gpio_pin_set(CARRIER_CS_IMU);
    return err_code;
 }
 
 static nrfx_err_t lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len)
 {
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
    // Use SPI directly
-   if (len > (sizeof(_lis2dw12_write_buf) - 1))
-      return NRFX_ERROR_NO_MEM;
-   _lis2dw12_write_buf[0] = reg & (uint8_t)LIS2DW12_SPI_WRITE;
-   memcpy(_lis2dw12_write_buf + 1, write_buf, len);
-   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, lis2dw12_evt_handler, NULL);
-   if (err_code != NRFX_SUCCESS)
-      return err_code;
-   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TX(_lis2dw12_write_buf, len + 1);
-   err_code = nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
-   nrfx_spim_uninit(_spi_instance);
+   nrf_gpio_pin_clear(CARRIER_CS_IMU);
+   _lis2dw12_read_write_buf[0] = reg & (uint8_t)LIS2DW12_SPI_WRITE;
+   memcpy(_lis2dw12_read_write_buf + 1, write_buf, len);
+   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, _lis2dw12_read_write_buf, len + 1, NULL, 0);
+   nrf_gpio_pin_set(CARRIER_CS_IMU);
    return err_code;
 }
 
@@ -152,14 +151,12 @@ static void lis2dw12_fifo_config(lis2dw12_fifo_config_t config)
 
 static void lis2dw12_reset(void)
 {
-   // Reset byte in register CTRL2
-   uint8_t reset_byte = 1 << 6;
-   lis2dw12_write_reg(LIS2DW12_CTRL2, &reset_byte, 1);
-
    // Check that SoftReset value is reset
-   while (((reset_byte >> 6) & 0x01) == 1)
+   uint8_t reset_byte = 0x40;
+   for (int retries = 0; (retries < 10); ++retries)
    {
-      // Allow accelerometer time to reset
+      // Reset byte in register CTRL2
+      lis2dw12_write_reg(LIS2DW12_CTRL2, &reset_byte, 1);
       nrf_delay_ms(10);
       lis2dw12_read_reg(LIS2DW12_CTRL2, &reset_byte, 1);
    }
@@ -195,19 +192,19 @@ static void accelerometer_fifo_full_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
 
 // Public Accelerometer API functions ----------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready)
 {
 #if (BOARD_V < 0x11)
 
-   // Setup SPI parameters
+   // Initialize SPI communications
    _spi_instance = spi_instance;
    _spi_config.sck_pin = IMU_SPI_SCLK;
    _spi_config.miso_pin = IMU_SPI_MISO;
    _spi_config.mosi_pin = IMU_SPI_MOSI;
-   _spi_config.ss_pin = CARRIER_CS_IMU;
-   _spi_config.frequency = NRF_SPIM_FREQ_4M;
-   _spi_config.mode = NRF_SPIM_MODE_3;
-   _spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
+   _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
+   _spi_config.mode = NRF_DRV_SPI_MODE_3;
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Turn on and configure the accelerometer
    _accelerometer_int_config.int1_wakeup = true;
@@ -237,16 +234,17 @@ nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
 {
 #if (BOARD_V < 0x11)
 
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
    // Read 32 samples from the accelerometer FIFO
+   nrf_gpio_pin_clear(CARRIER_CS_IMU);
    uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
-   nrfx_err_t err_code = nrfx_spim_init(_spi_instance, &_spi_config, lis2dw12_evt_handler, NULL);
+   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &readreg, 1, _acc_xyz, sizeof(_acc_xyz));
+   nrf_gpio_pin_set(CARRIER_CS_IMU);
    if (err_code != NRFX_SUCCESS)
       return err_code;
-   nrfx_spim_xfer_desc_t xfer_desc = NRFX_SPIM_XFER_TRX(&readreg, 1, _acc_xyz, sizeof(_acc_xyz));
-   err_code = nrfx_spim_xfer(_spi_instance, &xfer_desc, 0);
-   if (err_code != NRFX_SUCCESS)
-      return err_code;
-   nrfx_spim_uninit(_spi_instance);
 
    // Only process accelerometer data if we are in motion
    if (lis2dw12_is_stationary())

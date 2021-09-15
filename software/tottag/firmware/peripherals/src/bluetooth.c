@@ -1,5 +1,8 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <stdlib.h>
 #include "ble_advertising.h"
 #include "ble_conn_params.h"
@@ -14,6 +17,8 @@
 #include "nrf_sdh_soc.h"
 #include "rtc.h"
 #include "sd_card.h"
+
+#pragma GCC diagnostic pop
 
 
 // Bluetooth state definitions -----------------------------------------------------------------------------------------

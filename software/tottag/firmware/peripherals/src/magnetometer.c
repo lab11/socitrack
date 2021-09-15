@@ -1,9 +1,14 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <string.h>
 #include "ble_config.h"
 #include "magnetometer.h"
 #include "nrf_delay.h"
+
+#pragma GCC diagnostic pop
 
 
 // LIS3MDL-specific magnetometer functionality -------------------------------------------------------------------------

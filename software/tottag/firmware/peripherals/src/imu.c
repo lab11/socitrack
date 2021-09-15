@@ -1,17 +1,22 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <string.h>
 #include "ble_config.h"
 #include "imu.h"
 #include "nrf_delay.h"
 #include "nrfx_gpiote.h"
 
+#pragma GCC diagnostic pop
+
 
 #if (BOARD_V < 0x11)  // Accelerometer forwarding for older boards -----------------------------------------------------
 
 #include "accelerometer.h"
 
-bool imu_init(const nrfx_spim_t *spi_instance, nrfx_atomic_flag_t *data_ready) { return accelerometer_init(spi_instance, data_ready); }
+bool imu_init(const nrf_drv_spi_t *spi_instance, nrfx_atomic_flag_t *data_ready) { return accelerometer_init(spi_instance, data_ready); }
 nrfx_err_t imu_read_accelerometer_data(float *x_data, float *y_data, float *z_data) { return accelerometer_read_data(x_data, y_data, z_data); }
 
 #else  // True IMU functionality for newer boards ----------------------------------------------------------------------
@@ -19,8 +24,8 @@ nrfx_err_t imu_read_accelerometer_data(float *x_data, float *y_data, float *z_da
 
 // Static IMU state variables ------------------------------------------------------------------------------------------
 
-static const nrfx_spim_t* _spi_instance = NULL;
-static nrfx_spim_config_t _spi_config = NRFX_SPIM_DEFAULT_CONFIG;
+static const nrf_drv_spi_t* _spi_instance = NULL;
+static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static nrfx_atomic_flag_t* _imu_data_ready = NULL;
 static uint8_t _lsm6dsox_write_buf[257] = { 0 };
 
@@ -6139,9 +6144,8 @@ bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready)
    _spi_config.miso_pin = IMU_SPI_MISO;
    _spi_config.mosi_pin = IMU_SPI_MOSI;
    _spi_config.ss_pin = CARRIER_CS_IMU;
-   _spi_config.frequency = NRF_SPIM_FREQ_4M;
-   _spi_config.mode = NRF_SPIM_MODE_3;
-   _spi_config.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST;
+   _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
+   _spi_config.mode = NRF_DRV_SPI_MODE_3;
 
    // Check the IMU ID
    uint8_t dummy;

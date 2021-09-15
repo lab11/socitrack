@@ -4,7 +4,7 @@
 
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "nrfx_spim.h"
+#include "nrf_drv_spi.h"
 #include "time.h"
 
 
@@ -178,6 +178,6 @@ uint8_t ab1815_wait_for_ready(uint16_t timeout_ms);
 void ab1815_printTime(ab1815_time_t time);
 
 // Public initialization function
-uint8_t rtc_external_init(const nrfx_spim_t* spi_instance);
+uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance);
 
 #endif // #ifndef __RTC_EXTERNAL_HEADER_H

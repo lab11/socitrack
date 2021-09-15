@@ -2252,7 +2252,7 @@ typedef struct
 
 // Public IMU API ------------------------------------------------------------------------------------------------------
 
-bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready);
+bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready);
 nrfx_err_t imu_read_accelerometer_data(float* x_data, float* y_data, float* z_data);
 
 #endif // #ifndef __IMU_HEADER_H

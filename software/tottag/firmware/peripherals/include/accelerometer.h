@@ -5,7 +5,7 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include "nrfx_atomic.h"
-#include "nrfx_spim.h"
+#include "nrf_drv_spi.h"
 
 
 // LIS2DW12 register definitions ---------------------------------------------------------------------------------------
@@ -153,7 +153,7 @@ typedef struct
 
 // Public Accelerometer API --------------------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready);
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready);
 nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data);
 
 

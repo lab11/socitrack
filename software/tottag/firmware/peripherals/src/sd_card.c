@@ -1,5 +1,8 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include <stdarg.h>
 #include <string.h>
 #include "ble_config.h"
@@ -14,17 +17,17 @@
 #include "sd_card.h"
 #include "squarepoint_interface.h"
 
+#pragma GCC diagnostic pop
+
 
 // SD Card block device functions and variables ------------------------------------------------------------------------
-
-static void wait_1ms(void) { nrf_delay_ms(1); }
 
 #define EUI_LEN BLE_GAP_ADDR_LEN
 NRF_BLOCK_DEV_SDC_DEFINE(_sdcard_dev,
       NRF_BLOCK_DEV_SDC_CONFIG(SDC_SECTOR_SIZE,
             APP_SDCARD_CONFIG(SD_CARD_SPI_MOSI, SD_CARD_SPI_MISO, SD_CARD_SPI_SCLK, SD_CARD_SPI_CS)),
       NFR_BLOCK_DEV_INFO_CONFIG("TotTag", "SDCard", "1.00"));
-static diskio_blkdev_t drives[] = { DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(_sdcard_dev, block_dev), wait_1ms) };
+static diskio_blkdev_t drives[] = { DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(_sdcard_dev, block_dev), NULL) };
 
 
 // Static SD Card state variables --------------------------------------------------------------------------------------
@@ -45,16 +48,19 @@ static FIL _file = { 0 }, _debug_file = { 0 }, _file_for_reading = { 0 };
 
 // Private helper functions --------------------------------------------------------------------------------------------
 
-static bool sd_card_power_on(void)
+static bool sd_card_power_on(bool uninitialized)
 {
    // Power on the SD card
    nrf_gpio_pin_set(SD_CARD_ENABLE);
 
-   // Ensure that the SD card is physically present
-   if (nrf_gpio_pin_read(SD_CARD_DETECT))
+   // Initialize the SD card
+   DSTATUS disk_state = STA_NOINIT;
+   for (uint32_t retries = 10; retries && disk_state; --retries)
+      disk_state = disk_initialize(0, uninitialized);
+   if (disk_state)
    {
-      // No SD card detected
-      log_printf("ERROR: SD card not detected!\n");
+      printf("ERROR: Unable to initialize SD card!\n");
+      disk_uninitialize(0);
       nrfx_atomic_flag_clear(_sd_card_inserted);
       nrf_gpio_pin_clear(SD_CARD_ENABLE);
       _sd_card_buffer_length = 0;
@@ -63,17 +69,6 @@ static bool sd_card_power_on(void)
    else
       nrfx_atomic_flag_set(_sd_card_inserted);
 
-   // Initialize the SD card
-   DSTATUS disk_state = STA_NOINIT;
-   for (uint32_t retries = 10; retries && disk_state; --retries)
-      disk_state = disk_initialize(0);
-   if (disk_state)
-   {
-      log_printf("ERROR: Unable to initialize SD card!\n");
-      nrf_gpio_pin_clear(SD_CARD_ENABLE);
-      return false;
-   }
-
    // Mount the SD card and filesystem
    FRESULT ff_result = f_mount(&_file_system, "", 1);
    switch (ff_result)
@@ -81,7 +76,7 @@ static bool sd_card_power_on(void)
       case FR_OK:
          break;
       case FR_NOT_READY:
-         log_printf("ERROR: Unable to access SD card!\n");
+         printf("ERROR: Unable to access SD card!\n");
          disk_uninitialize(0);
          nrf_gpio_pin_clear(SD_CARD_ENABLE);
          return false;
@@ -91,7 +86,7 @@ static bool sd_card_power_on(void)
          ff_result = f_mkfs("", FM_ANY, 0, work, sizeof(work));
          if (ff_result != FR_OK)
          {
-            log_printf("ERROR: Failed to create a new SD card filesystem: %d\n", ff_result);
+            printf("ERROR: Failed to create a new SD card filesystem: %d\n", ff_result);
             disk_uninitialize(0);
             nrf_gpio_pin_clear(SD_CARD_ENABLE);
             return false;
@@ -99,7 +94,7 @@ static bool sd_card_power_on(void)
          ff_result = f_mount(&_file_system, "", 1);
          if (ff_result != FR_OK)
          {
-            log_printf("ERROR: Unable to mount SD card filesystem: %d\n", ff_result);
+            printf("ERROR: Unable to mount SD card filesystem: %d\n", ff_result);
             disk_uninitialize(0);
             nrf_gpio_pin_clear(SD_CARD_ENABLE);
             return false;
@@ -107,7 +102,7 @@ static bool sd_card_power_on(void)
          break;
       }
       default:
-         log_printf("ERROR: Unexpected error while mounting SD card: %d\n", ff_result);
+         printf("ERROR: Unexpected error while mounting SD card: %d\n", ff_result);
          disk_uninitialize(0);
          nrf_gpio_pin_clear(SD_CARD_ENABLE);
          return false;
@@ -126,7 +121,7 @@ static bool sd_card_power_on(void)
          _log_file_exists = 0;
       else
       {
-         log_printf("ERROR: Unexpected error while attempting to open SD card log file: %d\n", ff_result);
+         printf("ERROR: Unexpected error while attempting to open SD card log file: %d\n", ff_result);
 #ifndef PRINTF_TO_SD_CARD
          disk_uninitialize(0);
          nrf_gpio_pin_clear(SD_CARD_ENABLE);
@@ -138,7 +133,7 @@ static bool sd_card_power_on(void)
       ff_result = f_open(&_file, _sd_filename, FA_WRITE | FA_READ | FA_OPEN_APPEND);
       if (ff_result != FR_OK)
       {
-         log_printf("ERROR: Unexpected error while attempting to open SD card log file: %d\n", ff_result);
+         printf("ERROR: Unexpected error while attempting to open SD card log file: %d\n", ff_result);
          disk_uninitialize(0);
          nrf_gpio_pin_clear(SD_CARD_ENABLE);
       }
@@ -188,7 +183,7 @@ static bool sd_card_list_next_file(char *filename, uint32_t *file_size, uint8_t 
          return sd_card_list_next_file(filename, file_size, 1);
       else
       {
-         memcpy(filename, _file_info.fname, strlen(_file_info.fname));
+         strcpy(filename, _file_info.fname);
          *file_size = (uint32_t)_file_info.fsize;
          return true;
       }
@@ -209,7 +204,7 @@ static __attribute__ ((format (printf, 1, 2))) uint8_t sd_card_log_header(const 
    {
       if (f_puts(_sd_write_buf, &_file) < 0)
       {
-         log_printf("ERROR: Problem writing header to SD card!\n");
+         printf("ERROR: Problem writing header to SD card!\n");
          return 1;
       }
       _log_file_exists = 1;
@@ -231,14 +226,14 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    nrf_gpio_cfg_input(SD_CARD_DETECT, NRF_GPIO_PIN_NOPULL);
 
    // Initialize the SD card
-   log_printf("INFO: Initializing SD Card...\n");
-   if (!sd_card_power_on())
+   printf("INFO: Initializing SD Card...\n");
+   if (!sd_card_power_on(true))
       return false;
 
    // Calculate the SD card capacity
    uint32_t blocks_per_mb = (1024uL * 1024uL) / _sdcard_dev.block_dev.p_ops->geometry(&_sdcard_dev.block_dev)->blk_size;
    uint32_t capacity = _sdcard_dev.block_dev.p_ops->geometry(&_sdcard_dev.block_dev)->blk_count / blocks_per_mb;
-   log_printf("INFO:    Card capacity: %lu MB\n", capacity);
+   printf("INFO:    Card capacity: %lu MB\n", capacity);
 
    // Clean up any unexpected SD card files
    uint32_t file_size = 0;
@@ -246,7 +241,7 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    char file_name[32] = { 0 };
    while (sd_card_list_next_file(file_name, &file_size, continuation++))
    {
-      log_printf("INFO:    Existing file found: %s\n", file_name);
+      printf("INFO:    Existing file found: %s\n", file_name);
       if (file_name[2] != '@')
       {
          f_unlink(file_name);
@@ -267,9 +262,9 @@ void sd_card_flush(void)
 
    // Power ON the SD card
 #ifndef PRINTF_TO_SD_CARD
-   if (!sd_card_power_on())
+   if (!sd_card_power_on(false))
    {
-      log_printf("ERROR: Unable to power on the SD Card!\n");
+      printf("ERROR: Unable to power on the SD Card!\n");
       sd_card_power_off();
       return;
    }
@@ -277,7 +272,7 @@ void sd_card_flush(void)
    if (nrf_gpio_pin_read(SD_CARD_DETECT))
    {
       // No SD card detected
-      log_printf("ERROR: SD card not detected!\n");
+      printf("ERROR: SD card not detected!\n");
       nrfx_atomic_flag_clear(_sd_card_inserted);
       _sd_card_buffer_length = 0;
       return;
@@ -305,7 +300,7 @@ void sd_card_flush(void)
 
       // Attempt to write the data string to the SD card
       if ((f_puts(_sd_write_buf, &_file) < 0) || (f_sync(&_file) != FR_OK))
-         log_printf("ERROR: Problem writing data string to SD card!\n");
+         printf("ERROR: Problem writing data string to SD card!\n");
    }
 
    // Reset the buffer and turn off power to the SD card
@@ -320,9 +315,9 @@ bool sd_card_create_log(uint32_t current_time)
 
    // Power ON the SD card
 #ifndef PRINTF_TO_SD_CARD
-   if (!sd_card_power_on())
+   if (!sd_card_power_on(false))
    {
-      log_printf("ERROR: Unable to power on the SD Card!\n");
+      printf("ERROR: Unable to power on the SD Card!\n");
       sd_card_power_off();
       return false;
    }
@@ -350,9 +345,9 @@ bool sd_card_create_log(uint32_t current_time)
 
       // Create a log file name based on the current date
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%02u-%02u.log", _full_eui[0], time.months, time.date);
-      if (!sd_card_power_on())
+      if (!sd_card_power_on(false))
       {
-         log_printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
+         printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
          sd_card_power_off();
          return false;
       }
@@ -367,7 +362,7 @@ bool sd_card_create_log(uint32_t current_time)
       }
       else if (ret_val)
       {
-         log_printf("ERROR: Problem writing header to the SD card log file!\n");
+         printf("ERROR: Problem writing header to the SD card log file!\n");
          sd_card_power_off();
          return false;
       }
@@ -376,9 +371,9 @@ bool sd_card_create_log(uint32_t current_time)
    {
       // Create a log file with a generic name
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
-      if (!sd_card_power_on())
+      if (!sd_card_power_on(false))
       {
-         log_printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
+         printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
          sd_card_power_off();
          return false;
       }
@@ -393,7 +388,7 @@ bool sd_card_create_log(uint32_t current_time)
       }
       else if (ret_val)
       {
-         log_printf("ERROR: Problem writing header to the SD card log file!\n");
+         printf("ERROR: Problem writing header to the SD card log file!\n");
          sd_card_power_off();
          return false;
       }
@@ -403,9 +398,9 @@ bool sd_card_create_log(uint32_t current_time)
 
    // Create a log file with a generic name
    snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
-   if (!sd_card_power_on())
+   if (!sd_card_power_on(false))
    {
-      log_printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
+      printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
       sd_card_power_off();
       return false;
    }
@@ -420,7 +415,7 @@ bool sd_card_create_log(uint32_t current_time)
    }
    else if (ret_val)
    {
-      log_printf("ERROR: Problem writing header to the SD card log file!\n");
+      printf("ERROR: Problem writing header to the SD card log file!\n");
       sd_card_power_off();
       return false;
    }
@@ -451,7 +446,7 @@ bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuati
 {
 #ifndef PRINTF_TO_SD_CARD
    if (!continuation)
-      sd_card_power_on();
+      sd_card_power_on(false);
    bool ret_val = sd_card_list_next_file(file_name, file_size, continuation);
    if (!ret_val)
       sd_card_power_off();
@@ -464,7 +459,7 @@ bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuati
 bool sd_card_erase_file(const char *file_name)
 {
 #ifndef PRINTF_TO_SD_CARD
-   sd_card_power_on();
+   sd_card_power_on(false);
    bool ret_val = (f_unlink(file_name) == FR_OK);
    sd_card_power_off();
    return ret_val;
@@ -476,7 +471,7 @@ bool sd_card_erase_file(const char *file_name)
 bool sd_card_open_file_for_reading(const char *file_name)
 {
 #ifndef PRINTF_TO_SD_CARD
-   sd_card_power_on();
+   sd_card_power_on(false);
 #endif
    return (f_open(&_file_for_reading, file_name, FA_READ | FA_OPEN_EXISTING) == FR_OK);
 }
@@ -529,7 +524,7 @@ void sd_card_log_ranges(const uint8_t *data, uint16_t length)
    uint8_t num_ranges = data[0];
    if (((length - offset_data - 4) / APP_LOG_RANGE_LENGTH) != num_ranges)
    {
-      log_printf("WARNING: Attempting to log an incorrect number of ranges!\n");
+      printf("WARNING: Attempting to log an incorrect number of ranges!\n");
       return;
    }
 
@@ -573,7 +568,7 @@ void sd_card_log_ranges(const uint8_t *data, uint16_t length)
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_timestamp >= _next_day_timestamp))
    {
-      log_printf("INFO: Starting new SD card log file...new day detected\n");
+      printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_timestamp);
    }
 
@@ -588,7 +583,7 @@ void sd_card_log_battery(uint16_t battery_millivolts, uint32_t current_time, boo
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
    {
-      log_printf("INFO: Starting new SD card log file...new day detected\n");
+      printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_time);
    }
 
@@ -601,11 +596,11 @@ void sd_card_log_charging(bool plugged_in, bool is_charging, uint32_t current_ti
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
    {
-      log_printf("INFO: Starting new SD card log file...new day detected\n");
+      printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_time);
    }
 
-   log_printf("INFO: Device is%s PLUGGED IN and%s CHARGING!\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT");
+   printf("INFO: Device is%s PLUGGED IN and%s CHARGING!\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT");
    uint16_t bytes_written = (uint16_t)snprintf(_sd_write_buf, sizeof(_sd_write_buf),
          "### CHARGING STATUS:%s PLUGGED IN and%s CHARGING; Timestamp: %lu\n", plugged_in ? "" : " NOT", is_charging ? "" : " NOT", current_time);
    sd_card_write(_sd_write_buf, bytes_written, flush);
@@ -616,11 +611,11 @@ void sd_card_log_motion(bool in_motion, uint32_t current_time, bool flush)
    // Start a new log file if it is a new day
    if (_next_day_timestamp && (current_time >= _next_day_timestamp))
    {
-      log_printf("INFO: Starting new SD card log file...new day detected\n");
+      printf("INFO: Starting new SD card log file...new day detected\n");
       sd_card_create_log(current_time);
    }
 
-   log_printf("INFO: Device is now %s\n", in_motion ? "IN MOTION" : "STATIONARY");
+   printf("INFO: Device is now %s\n", in_motion ? "IN MOTION" : "STATIONARY");
    uint16_t bytes_written = (uint16_t)snprintf(_sd_write_buf, sizeof(_sd_write_buf), "### MOTION CHANGE: %s; Timestamp: %lu\n", in_motion ? "IN MOTION" : "STATIONARY", current_time);
    sd_card_write(_sd_write_buf, bytes_written, flush);
 }

@@ -1,10 +1,15 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
+
 #include "ble_config.h"
 #include "nrfx_atomic.h"
 #include "nrfx_rtc.h"
 #include "rtc.h"
 #include "sd_card.h"
+
+#pragma GCC diagnostic pop
 
 
 // Static RTC state variables ------------------------------------------------------------------------------------------
