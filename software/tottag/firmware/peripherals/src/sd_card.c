@@ -48,7 +48,7 @@ static FIL _file = { 0 }, _debug_file = { 0 }, _file_for_reading = { 0 };
 
 // Private helper functions --------------------------------------------------------------------------------------------
 
-static bool sd_card_power_on(bool uninitialized)
+static bool sd_card_power_on(void)
 {
    // Power on the SD card
    nrf_gpio_pin_set(SD_CARD_ENABLE);
@@ -56,7 +56,7 @@ static bool sd_card_power_on(bool uninitialized)
    // Initialize the SD card
    DSTATUS disk_state = STA_NOINIT;
    for (uint32_t retries = 10; retries && disk_state; --retries)
-      disk_state = disk_initialize(0, uninitialized);
+      disk_state = disk_initialize(0);
    if (disk_state)
    {
       printf("ERROR: Unable to initialize SD card!\n");
@@ -227,7 +227,7 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
 
    // Initialize the SD card
    printf("INFO: Initializing SD Card...\n");
-   if (!sd_card_power_on(true))
+   if (!sd_card_power_on())
       return false;
 
    // Calculate the SD card capacity
@@ -262,7 +262,7 @@ void sd_card_flush(void)
 
    // Power ON the SD card
 #ifndef PRINTF_TO_SD_CARD
-   if (!sd_card_power_on(false))
+   if (!sd_card_power_on())
    {
       printf("ERROR: Unable to power on the SD Card!\n");
       sd_card_power_off();
@@ -315,7 +315,7 @@ bool sd_card_create_log(uint32_t current_time)
 
    // Power ON the SD card
 #ifndef PRINTF_TO_SD_CARD
-   if (!sd_card_power_on(false))
+   if (!sd_card_power_on())
    {
       printf("ERROR: Unable to power on the SD Card!\n");
       sd_card_power_off();
@@ -345,7 +345,7 @@ bool sd_card_create_log(uint32_t current_time)
 
       // Create a log file name based on the current date
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%02u-%02u.log", _full_eui[0], time.months, time.date);
-      if (!sd_card_power_on(false))
+      if (!sd_card_power_on())
       {
          printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
          sd_card_power_off();
@@ -371,7 +371,7 @@ bool sd_card_create_log(uint32_t current_time)
    {
       // Create a log file with a generic name
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
-      if (!sd_card_power_on(false))
+      if (!sd_card_power_on())
       {
          printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
          sd_card_power_off();
@@ -398,7 +398,7 @@ bool sd_card_create_log(uint32_t current_time)
 
    // Create a log file with a generic name
    snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
-   if (!sd_card_power_on(false))
+   if (!sd_card_power_on())
    {
       printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
       sd_card_power_off();
@@ -446,7 +446,7 @@ bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuati
 {
 #ifndef PRINTF_TO_SD_CARD
    if (!continuation)
-      sd_card_power_on(false);
+      sd_card_power_on();
    bool ret_val = sd_card_list_next_file(file_name, file_size, continuation);
    if (!ret_val)
       sd_card_power_off();
@@ -459,7 +459,7 @@ bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuati
 bool sd_card_erase_file(const char *file_name)
 {
 #ifndef PRINTF_TO_SD_CARD
-   sd_card_power_on(false);
+   sd_card_power_on();
    bool ret_val = (f_unlink(file_name) == FR_OK);
    sd_card_power_off();
    return ret_val;
@@ -471,7 +471,7 @@ bool sd_card_erase_file(const char *file_name)
 bool sd_card_open_file_for_reading(const char *file_name)
 {
 #ifndef PRINTF_TO_SD_CARD
-   sd_card_power_on(false);
+   sd_card_power_on();
 #endif
    return (f_open(&_file_for_reading, file_name, FA_READ | FA_OPEN_EXISTING) == FR_OK);
 }
