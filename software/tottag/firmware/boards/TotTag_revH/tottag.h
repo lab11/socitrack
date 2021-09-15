@@ -31,16 +31,18 @@
 #define CARRIER_LED_GREEN   NRF_GPIO_PIN_MAP(1,5)
 
 // SPI bus (IMU/Accelerometer)
+#define IMU_SPI_BUS_IDX     0
 #define IMU_SPI_SCLK        NRF_GPIO_PIN_MAP(0,20)
 #define IMU_SPI_MISO        NRF_GPIO_PIN_MAP(0,24)
 #define IMU_SPI_MOSI        NRF_GPIO_PIN_MAP(0,22)
-#define IMU_SPI_BUS         NRFX_SPIM_INSTANCE(0)
+#define IMU_SPI_BUS         NRFX_SPIM_INSTANCE(IMU_SPI_BUS_IDX)
 
 // SPI bus (RTC & SD Card)
+#define RTC_SD_SPI_BUS_IDX  2
 #define RTC_SD_SPI_SCLK     NRF_GPIO_PIN_MAP(0,6)
 #define RTC_SD_SPI_MISO     NRF_GPIO_PIN_MAP(0,5)
 #define RTC_SD_SPI_MOSI     NRF_GPIO_PIN_MAP(0,7)
-#define RTC_SD_SPI_BUS      NRFX_SPIM_INSTANCE(2)
+#define RTC_SD_SPI_BUS      NRFX_SPIM_INSTANCE(RTC_SD_SPI_BUS_IDX)
 
 // SD Card
 #define CARRIER_CS_SD           NRF_GPIO_PIN_MAP(0,13)
