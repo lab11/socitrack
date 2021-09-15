@@ -38,30 +38,28 @@ static uint8_t _lsm6dsox_write_buf[257] = { 0 };
 
 static nrfx_err_t lsm6dsox_read_reg(uint8_t reg, uint8_t *data, uint16_t len)
 {
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
    // Use SPI directly
    reg |= LSM6DSOX_SPI_READ;
-   nrfx_spim_xfer_desc_t xfer_tx_desc = NRFX_SPIM_XFER_TX(&reg, 1);
-   nrfx_spim_xfer_desc_t xfer_rx_desc = NRFX_SPIM_XFER_RX(data, len);
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-   nrfx_err_t err_code = nrfx_spim_xfer(_spi_instance, &xfer_tx_desc, 0);
+   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &reg, 1, NULL, 0);
    if (err_code == NRFX_SUCCESS)
-      err_code = nrfx_spim_xfer(_spi_instance, &xfer_rx_desc, 0);
-   nrfx_spim_uninit(_spi_instance);
+      err_code = nrf_drv_spi_transfer(_spi_instance, NULL, 0, data, len);
    return err_code;
 }
 
 static nrfx_err_t lsm6dsox_write_reg(uint8_t reg, uint8_t *data, uint16_t len)
 {
+   // Re-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+
    // Use SPI directly
    _lsm6dsox_write_buf[0] = reg & (uint8_t)LSM6DSOX_SPI_WRITE;
-   if (len > (sizeof(_lsm6dsox_write_buf) - 1))
-      return NRFX_ERROR_NO_MEM;
    memcpy(_lsm6dsox_write_buf + 1, data, len);
-   nrfx_spim_xfer_desc_t xfer_tx_desc = NRFX_SPIM_XFER_TX(_lsm6dsox_write_buf, len + 1);
-   APP_ERROR_CHECK(nrfx_spim_init(_spi_instance, &_spi_config, NULL, NULL));
-   nrfx_err_t err_code = nrfx_spim_xfer(_spi_instance, &xfer_tx_desc, 0);
-   nrfx_spim_uninit(_spi_instance);
-   return err_code;
+   return nrf_drv_spi_transfer(_spi_instance, _lsm6dsox_write_buf, len + 1, NULL, 0);
 }
 
 static float lsm6dsox_from_fs2_to_mg(int16_t lsb) { return ((float)lsb) * 0.061f; }
@@ -6132,7 +6130,7 @@ static nrfx_err_t lsm6dsox_write_lis3mdl_reg(uint8_t reg, uint8_t *data, uint16_
 
 // Public IMU API functions --------------------------------------------------------------------------------------------
 
-bool imu_init(const nrfx_spim_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed)
+bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed)
 {
    // Configure the magnetometer input pins as INPUT ANALOG no-ops
    nrf_gpio_cfg_default(MAGNETOMETER_INT);
