@@ -38,10 +38,11 @@
  *
  */
 
-#include "diskio_blkdev.h"
-
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 #pragma GCC diagnostic ignored "-Wcast-qual"
+
+#include "diskio_blkdev.h"
 
 /**
  * @brief Registered drives array.
@@ -89,7 +90,6 @@ static void default_wait_func(void)
 DSTATUS disk_initialize(BYTE drv)
 {
     ASSERT(m_drives);
-
     if (drv >= m_drives_count)
     {
         return (STA_NODISK | STA_NOINIT);
@@ -114,7 +114,7 @@ DSTATUS disk_initialize(BYTE drv)
     m_drives[drv].busy = true;
     ret_code_t err_code = nrf_blk_dev_init(m_drives[drv].config.p_block_device,
                                            block_dev_handler,
-                                           (void *) (uint32_t) drv);
+                                           (void *)(uint32_t)drv);
     if (err_code == NRF_SUCCESS)
     {
         while (m_drives[drv].busy)

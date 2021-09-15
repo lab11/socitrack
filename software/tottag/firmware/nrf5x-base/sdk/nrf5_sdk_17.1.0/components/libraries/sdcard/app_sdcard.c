@@ -1087,7 +1087,6 @@ ret_code_t app_sdc_block_write(uint8_t const * p_buf, uint32_t block_address, ui
     return NRF_SUCCESS;
 }
 
-
 ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handler_t event_handler)
 {
     if (m_cb.state.op != SDC_UNINITIALIZED)
@@ -1104,27 +1103,27 @@ ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handl
     }
 
     ret_code_t err_code;
-    ASSERT(p_config->cs_pin && p_config->miso_pin
-           && p_config->mosi_pin && p_config->sck_pin);
+    ASSERT(p_config->cs_pin && p_config->miso_pin && p_config->mosi_pin && p_config->sck_pin);
 
     // Configure chip select pin.
     m_cb.cs_pin = p_config->cs_pin;
     nrf_gpio_cfg_output(m_cb.cs_pin);
     SDC_CS_DEASSERT();
 
+    // Re-initialize SPI communications
     const nrf_drv_spi_config_t spi_cfg = {
                             .sck_pin      = p_config->sck_pin,
                             .mosi_pin     = p_config->mosi_pin,
                             .miso_pin     = p_config->miso_pin,
-                            .ss_pin       = SD_CARD_SPI_CS,
+                            .ss_pin       = NRF_DRV_SPI_PIN_NOT_USED,
                             .irq_priority = SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
                             .orc          = 0xFF,
-                            .frequency    = (nrf_drv_spi_frequency_t) APP_SDCARD_FREQ_INIT,
+                            .frequency    = (nrf_drv_spi_frequency_t)APP_SDCARD_FREQ_INIT,
                             .mode         = NRF_DRV_SPI_MODE_3,
                             .bit_order    = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST,
                         };
-    err_code = nrf_drv_spi_init(&m_spi, &spi_cfg, spi_handler, NULL);
-    APP_ERROR_CHECK(err_code);
+    nrf_drv_spi_uninit(&m_spi);
+    APP_ERROR_CHECK(nrf_drv_spi_init(&m_spi, &spi_cfg, spi_handler, NULL));
 
     m_cb.handler            = event_handler;
     m_cb.state.op           = SDC_OP_RESET;
@@ -1134,8 +1133,7 @@ ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handl
 
     // Send 80 clocks with CS inactive to switch into SPI mode.
     m_cb.cmd_buf[0] = 0xFF;
-    err_code = nrf_drv_spi_transfer(&m_spi, m_cb.cmd_buf, 1,
-                                            m_cb.rsp_buf, 10);
+    err_code = nrf_drv_spi_transfer(&m_spi, m_cb.cmd_buf, 1, m_cb.rsp_buf, 10);
     APP_ERROR_CHECK(err_code);
 
     return NRF_SUCCESS;
@@ -1152,9 +1150,6 @@ ret_code_t app_sdc_uninit(void)
     {
         return NRF_ERROR_BUSY;
     }
-
-    nrf_drv_spi_uninit(&m_spi);
-    nrf_gpio_cfg_input(m_cb.cs_pin, NRF_GPIO_PIN_NOPULL);
 
     m_cb.state.bus_state = SDC_BUS_IDLE;
     m_cb.state.op = SDC_UNINITIALIZED;
