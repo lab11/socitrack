@@ -242,11 +242,8 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    while (sd_card_list_next_file(file_name, &file_size, continuation++))
    {
       printf("INFO:    Existing file found: %s\n", file_name);
-      if (file_name[2] != '@')
-      {
-         f_unlink(file_name);
+      if ((file_name[2] != '@') && (f_unlink(file_name) == FR_OK))
          continuation = 0;
-      }
    }
 
    // Power off the SD card
