@@ -31,7 +31,7 @@ static const nrf_drv_spi_t* _spi_instance = NULL;
 static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static nrfx_atomic_flag_t *_imu_data_ready = NULL, *_imu_motion_changed = NULL;
 static uint8_t _lsm6dsox_write_buf[257] = { 0 };
-static imu_data_callback callback _data_callback = NULL;
+static imu_data_callback _data_callback = NULL;
 
 
 // LSM6DSOX-specific IMU functionality ---------------------------------------------------------------------------------
