@@ -36,8 +36,6 @@ static const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = { .uuid128 = { 0x2e, 0x5
 static ble_uuid_t _adv_uuids[] = { { PHYSWEB_SERVICE_ID, BLE_UUID_TYPE_BLE } };  // Advertisement UUIDs: Eddystone
 static ble_uuid_t _sr_uuids[] = { { BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE }, { CARRIER_BLE_SERV_SHORT_UUID, BLE_UUID_TYPE_VENDOR_BEGIN } };  // Scan Response UUIDs
 static ble_gatts_char_handles_t _carrier_ble_char_location_handle = { .value_handle = CARRIER_BLE_CHAR_LOCATION };
-static ble_gatts_char_handles_t _carrier_ble_char_config_handle = { .value_handle = CARRIER_BLE_CHAR_CONFIG };
-static ble_gatts_char_handles_t _carrier_ble_char_enable_handle = { .value_handle = CARRIER_BLE_CHAR_ENABLE };
 static ble_gatts_char_handles_t _carrier_ble_char_timestamp_handle = { .value_handle = CARRIER_BLE_CHAR_TIMESTAMP };
 static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_handle = CARRIER_BLE_CHAR_CALIBRATION };
 static uint16_t _carrier_ble_service_handle = 0, _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
@@ -54,7 +52,7 @@ static uint8_t _scheduler_eui[BLE_GAP_ADDR_LEN] = { 0 }, _highest_discovered_eui
 static volatile uint8_t _outgoing_ble_connection_active = false, _outgoing_ble_connection_done = false;
 static volatile uint32_t _retrieved_timestamp = 0;
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
-static nrfx_atomic_flag_t *_squarepoint_enabled_flag = NULL, *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL;
+static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL;
 static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0, *_calibration_index = NULL;
 ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
 static device_role_t _device_role = HYBRID;
@@ -205,8 +203,6 @@ static void services_init(void)
    // Add characteristics
    ble_characteristic_add(1, 0, 1, 0, 0, 128, NULL, CARRIER_BLE_CHAR_LOCATION, &_carrier_ble_char_location_handle);
    ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, CARRIER_BLE_CHAR_TIMESTAMP, &_carrier_ble_char_timestamp_handle);
-   ble_characteristic_add(1, 1, 0, 0, 0, 28, (volatile uint8_t*)&_device_role, CARRIER_BLE_CHAR_CONFIG, &_carrier_ble_char_config_handle);
-   ble_characteristic_add(1, 1, 0, 0, 0, 10, (volatile uint8_t*)_squarepoint_enabled_flag, CARRIER_BLE_CHAR_ENABLE, &_carrier_ble_char_enable_handle);
    ble_characteristic_add(1, 1, 0, 0, 0, 14, (volatile uint8_t*)_calibration_index, CARRIER_BLE_CHAR_CALIBRATION, &carrier_ble_char_calibration_handle);
 
    // Register service discovery events
@@ -363,32 +359,7 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
 {
    // Handle a BLE write event
    const ble_gatts_evt_write_t *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
-   if (p_evt_write->handle == _carrier_ble_char_config_handle.value_handle)
-   {
-      // Configure the device by role and epoch time
-      log_printf("INFO: Received CONFIG evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
-      const uint8_t expected_response_role_offset = 6, role_length = 1, time_length = 10;
-      const uint8_t expected_response_time_offset = expected_response_role_offset + role_length + 8;
-      uint8_t response_role = ascii_to_i(p_evt_write->data[expected_response_role_offset]);
-      uint32_t response_time = 0;
-      for (uint8_t i = expected_response_time_offset; i < (expected_response_time_offset + time_length); ++i)
-         response_time = (10 * response_time) + ascii_to_i(p_evt_write->data[i]);
-      rtc_set_current_time(response_time);
-      if ((response_role > UNASSIGNED) && (response_role <= SUPPORTER))
-         _device_role = response_role;
-   }
-   else if (p_evt_write->handle == _carrier_ble_char_enable_handle.value_handle)
-   {
-      // Enable or disable ranging
-      log_printf("INFO: Received ENABLE evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
-      const uint8_t expected_response_ranging_offset = 9;
-      uint8_t response_ranging = ascii_to_i(p_evt_write->data[expected_response_ranging_offset]);
-      if (response_ranging)
-         nrfx_atomic_flag_set(_squarepoint_enabled_flag);
-      else
-         nrfx_atomic_flag_clear(_squarepoint_enabled_flag);
-   }
-   else if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle)
+   if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle)
    {
       // Start device calibration
       log_printf("INFO: Received CALIBRATION evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
@@ -524,9 +495,8 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
 // Public Bluetooth API ------------------------------------------------------------------------------------------------
 
-nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
+nrfx_err_t ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
 {
-   _squarepoint_enabled_flag = squarepoint_enabled_flag;
    _ble_advertising_flag = ble_is_advertising_flag;
    _ble_scanning_flag = ble_is_scanning_flag;
    _calibration_index = calibration_index;
