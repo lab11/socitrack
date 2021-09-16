@@ -4,9 +4,9 @@
 #pragma GCC diagnostic ignored "-Wredundant-decls"
 
 #include <stdlib.h>
+#include "ble_config.h"
 #include "ble_advertising.h"
 #include "ble_conn_params.h"
-#include "ble_config.h"
 #include "ble_db_discovery.h"
 #include "bluetooth.h"
 #include "nrf_ble_es.h"
@@ -86,65 +86,25 @@ static uint8_t ascii_to_i(uint8_t number)
 
 static void ble_stack_init(void)
 {
-   // Initialize the BLE stack, including the SoftDevice and the BLE event interrupt
+   // Initialize the SoftDevice and the BLE stack
    uint32_t ram_start = 0;
    APP_ERROR_CHECK(nrf_sdh_enable_request());
-   APP_ERROR_CHECK(nrf_sdh_ble_app_ram_start_get(&ram_start));
-
-   // Configure the maximum number of BLE connections
-   ble_cfg_t ble_cfg;
-   memset(&ble_cfg, 0, sizeof(ble_cfg));
-   ble_cfg.conn_cfg.conn_cfg_tag = APP_BLE_CONN_CFG_TAG;
-   ble_cfg.conn_cfg.params.gap_conn_cfg.conn_count = NRF_SDH_BLE_TOTAL_LINK_COUNT;
-   ble_cfg.conn_cfg.params.gap_conn_cfg.event_length = NRF_SDH_BLE_GAP_EVENT_LENGTH;
-   APP_ERROR_CHECK(sd_ble_cfg_set(BLE_CONN_CFG_GAP, &ble_cfg, ram_start));
-
-   // Configure the connection roles
-   memset(&ble_cfg, 0, sizeof(ble_cfg));
-   ble_cfg.gap_cfg.role_count_cfg.periph_role_count = NRF_SDH_BLE_PERIPHERAL_LINK_COUNT;
-   ble_cfg.gap_cfg.role_count_cfg.central_role_count = NRF_SDH_BLE_CENTRAL_LINK_COUNT;
-   ble_cfg.gap_cfg.role_count_cfg.central_sec_count = BLE_GAP_ROLE_COUNT_CENTRAL_SEC_DEFAULT;
-   APP_ERROR_CHECK(sd_ble_cfg_set(BLE_GAP_CFG_ROLE_COUNT, &ble_cfg, ram_start));
-
-   // Configure the max ATT MTU size
-   memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-   ble_cfg.conn_cfg.conn_cfg_tag = APP_BLE_CONN_CFG_TAG;
-   ble_cfg.conn_cfg.params.gatt_conn_cfg.att_mtu = NRF_SDH_BLE_GATT_MAX_MTU_SIZE;
-   APP_ERROR_CHECK(sd_ble_cfg_set(BLE_CONN_CFG_GATT, &ble_cfg, ram_start));
-
-   // Configure the number of custom UUIDS
-   memset(&ble_cfg, 0, sizeof(ble_cfg));
-   ble_cfg.common_cfg.vs_uuid_cfg.vs_uuid_count = NRF_SDH_BLE_VS_UUID_COUNT;
-   APP_ERROR_CHECK(sd_ble_cfg_set(BLE_COMMON_CFG_VS_UUID, &ble_cfg, ram_start));
-
-   // Configure the GATTS attribute table
-   memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-   ble_cfg.gatts_cfg.attr_tab_size.attr_tab_size = NRF_SDH_BLE_GATTS_ATTR_TAB_SIZE;
-   APP_ERROR_CHECK(sd_ble_cfg_set(BLE_GATTS_CFG_ATTR_TAB_SIZE, &ble_cfg, ram_start));
-
-   // Configure the Service Changed characteristic
-   memset(&ble_cfg, 0x00, sizeof(ble_cfg));
-   ble_cfg.gatts_cfg.service_changed.service_changed = NRF_SDH_BLE_SERVICE_CHANGED;
-   APP_ERROR_CHECK(sd_ble_cfg_set(BLE_GATTS_CFG_SERVICE_CHANGED, &ble_cfg, ram_start));
-
-   // Enable the BLE stack and register a BLE event handler
+   APP_ERROR_CHECK(nrf_sdh_ble_default_cfg_set(APP_BLE_CONN_CFG_TAG, &ram_start));
    APP_ERROR_CHECK(nrf_sdh_ble_enable(&ram_start));
    NRF_SDH_BLE_OBSERVER(_ble_observer, APP_BLE_OBSERVER_PRIO, ble_evt_handler, NULL);
 }
 
-static uint8_t gap_params_init(void)
+static void gap_params_init(void)
 {
    // Set up all necessary GAP (Generic Access Profile) parameters of the device, permissions, and appearance
    ble_gap_conn_sec_mode_t sec_mode;
-   uint8_t device_name[] = APP_DEVICE_NAME;
    BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
-   APP_ERROR_CHECK(sd_ble_gap_device_name_set(&sec_mode, device_name, (uint16_t)strlen((const char*)device_name)));
+   APP_ERROR_CHECK(sd_ble_gap_device_name_set(&sec_mode, (uint8_t const * const)APP_DEVICE_NAME, strlen(APP_DEVICE_NAME)));
 
    // Set BLE address
    ble_gap_addr_t gap_addr = { .addr_type = BLE_GAP_ADDR_TYPE_PUBLIC };
    memcpy(_carrier_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
-   if ((_carrier_ble_address[5] != 0xc0) || (_carrier_ble_address[4] != 0x98))
-      return 0;
+   APP_ERROR_CHECK((_carrier_ble_address[5] != 0xc0) || (_carrier_ble_address[4] != 0x98));
    printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
    memcpy(gap_addr.addr, _carrier_ble_address, BLE_GAP_ADDR_LEN);
    memcpy(_scratch_eui, _carrier_ble_address, sizeof(_scratch_eui));
@@ -152,68 +112,35 @@ static uint8_t gap_params_init(void)
 
    // Setup connection parameters
    APP_ERROR_CHECK(sd_ble_gap_ppcp_set(&_connection_params));
-   return 1;
 }
 
 static void gatt_init(void)
 {
    // Initialize GATT structures
-   ble_db_discovery_init_t gatt_init = { .evt_handler = on_ble_service_discovered, .p_gatt_queue = &_ble_gatt_queue };
+   APP_ERROR_CHECK(nrf_ble_gatt_init(&_gatt, NULL));
+}
+
+static void conn_params_init(void)
+{
+   // Initializing the Connection Parameters module
+   ble_conn_params_init_t cp_init;
+   memset(&cp_init, 0, sizeof(cp_init));
+   cp_init.p_conn_params = NULL;
+   cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
+   cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
+   cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
+   cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
+   cp_init.disconnect_on_fail = true;
+   APP_ERROR_CHECK(ble_conn_params_init(&cp_init));
+}
+
+static void db_discovery_init(void)
+{
    _ble_timestamp_reply.params.read.offset = 0;
    _ble_timestamp_reply.params.read.update = 1;
    _ble_timestamp_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
-   APP_ERROR_CHECK(nrf_ble_gatt_init(&_gatt, NULL));
-   APP_ERROR_CHECK(ble_db_discovery_init(&gatt_init));
-}
-
-static void advertising_init(void)
-{
-   // Custom advertisement data
-   memset(&_adv_init, 0, sizeof(_adv_init));
-   memset(&_app_ble_advdata, 0, sizeof(_app_ble_advdata));
-   _manuf_data_adv.company_identifier = APP_COMPANY_IDENTIFIER;  // UMich's Company ID
-   _manuf_data_adv.data.p_data = _app_ble_advdata;
-   _manuf_data_adv.data.size = sizeof(_app_ble_advdata);
-   _adv_init.advdata.p_manuf_specific_data = &_manuf_data_adv;
-   _adv_init.advdata.name_type = BLE_ADVDATA_NO_NAME;
-
-   // Physical Web data
-   const char *url_str = PHYSWEB_URL;
-   const uint8_t header_len = 3;
-   uint8_t url_frame_length = header_len + strlen(url_str);  // Change to 4 if URLEND is applied
-   uint8_t m_url_frame[url_frame_length];
-   m_url_frame[0] = PHYSWEB_URL_TYPE;
-   m_url_frame[1] = PHYSWEB_TX_POWER;
-   m_url_frame[2] = PHYSWEB_URLSCHEME_HTTPS;
-   for (uint8_t i = 0; i < strlen(url_str); ++i)
-      m_url_frame[i + 3] = url_str[i];
-
-   // Advertise Physical Web service
-   _service_data.service_uuid = PHYSWEB_SERVICE_ID;
-   _service_data.data.p_data = m_url_frame;
-   _service_data.data.size = url_frame_length;
-   _adv_init.advdata.p_service_data_array = &_service_data;
-   _adv_init.advdata.service_data_count = 1;
-   _adv_init.advdata.include_appearance = false;
-   _adv_init.advdata.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
-   _adv_init.advdata.uuids_complete.uuid_cnt = sizeof(_adv_uuids) / sizeof(_adv_uuids[0]);
-   _adv_init.advdata.uuids_complete.p_uuids = _adv_uuids;
-
-   // Scan response
-   _adv_init.srdata.name_type = BLE_ADVDATA_FULL_NAME;
-   _adv_init.srdata.uuids_complete.uuid_cnt = sizeof(_sr_uuids) / sizeof(_sr_uuids[0]);
-   _adv_init.srdata.uuids_complete.p_uuids = _sr_uuids;
-   _adv_init.config.ble_adv_fast_enabled = true;
-#ifndef BLE_CALIBRATION
-   _adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
-#else
-    adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
-#endif
-
-   // Define Event handler
-   _adv_init.evt_handler = on_adv_evt;
-   APP_ERROR_CHECK(ble_advertising_init(&_advertising, &_adv_init));
-   ble_advertising_conn_cfg_tag_set(&_advertising, APP_BLE_CONN_CFG_TAG);
+   ble_db_discovery_init_t db_init = { .evt_handler = on_ble_service_discovered, .p_gatt_queue = &_ble_gatt_queue };
+   APP_ERROR_CHECK(ble_db_discovery_init(&db_init));
 }
 
 static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t read_event, uint8_t vlen, uint8_t data_len, volatile uint8_t *data, uint16_t uuid, ble_gatts_char_handles_t *char_handle)
@@ -286,25 +213,58 @@ static void services_init(void)
    APP_ERROR_CHECK(ble_db_discovery_evt_register(&service_uuid));
 }
 
-static void central_init(void)
+static void advertising_init(void)
 {
+   // Custom advertisement data
+   memset(&_adv_init, 0, sizeof(_adv_init));
+   memset(&_app_ble_advdata, 0, sizeof(_app_ble_advdata));
+   _manuf_data_adv.company_identifier = APP_COMPANY_IDENTIFIER;  // UMich's Company ID
+   _manuf_data_adv.data.p_data = _app_ble_advdata;
+   _manuf_data_adv.data.size = sizeof(_app_ble_advdata);
+   _adv_init.advdata.p_manuf_specific_data = &_manuf_data_adv;
+   _adv_init.advdata.name_type = BLE_ADVDATA_NO_NAME;
+
+   // Physical Web data
+   const char *url_str = PHYSWEB_URL;
+   const uint8_t header_len = 3;
+   uint8_t url_frame_length = header_len + strlen(url_str);  // Change to 4 if URLEND is applied
+   uint8_t m_url_frame[url_frame_length];
+   m_url_frame[0] = PHYSWEB_URL_TYPE;
+   m_url_frame[1] = PHYSWEB_TX_POWER;
+   m_url_frame[2] = PHYSWEB_URLSCHEME_HTTPS;
+   for (uint8_t i = 0; i < strlen(url_str); ++i)
+      m_url_frame[i + 3] = url_str[i];
+
+   // Advertise Physical Web service
+   _service_data.service_uuid = PHYSWEB_SERVICE_ID;
+   _service_data.data.p_data = m_url_frame;
+   _service_data.data.size = url_frame_length;
+   _adv_init.advdata.p_service_data_array = &_service_data;
+   _adv_init.advdata.service_data_count = 1;
+   _adv_init.advdata.include_appearance = false;
+   _adv_init.advdata.flags = BLE_GAP_ADV_FLAGS_LE_ONLY_GENERAL_DISC_MODE;
+   _adv_init.advdata.uuids_complete.uuid_cnt = sizeof(_adv_uuids) / sizeof(_adv_uuids[0]);
+   _adv_init.advdata.uuids_complete.p_uuids = _adv_uuids;
+
+   // Scan response
+   _adv_init.srdata.name_type = BLE_ADVDATA_FULL_NAME;
+   _adv_init.srdata.uuids_complete.uuid_cnt = sizeof(_sr_uuids) / sizeof(_sr_uuids[0]);
+   _adv_init.srdata.uuids_complete.p_uuids = _sr_uuids;
+   _adv_init.config.ble_adv_fast_enabled = true;
+#ifndef BLE_CALIBRATION
+   _adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
+#else
+    adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
+#endif
+
+   // Define Event handler
+   _adv_init.evt_handler = on_adv_evt;
+   APP_ERROR_CHECK(ble_advertising_init(&_advertising, &_adv_init));
+   ble_advertising_conn_cfg_tag_set(&_advertising, APP_BLE_CONN_CFG_TAG);
+
    // Create whitelist for all our devices
    ble_gap_addr_t whitelisted_ble_address = { .addr_type = BLE_GAP_ADDR_TYPE_PUBLIC, .addr = { APP_BLE_ADDR_MIN, APP_BLE_ADDR_MIN, 0x42, 0xe5, 0x98, 0xc0 } };
    memcpy(&_wl_addr_base, &whitelisted_ble_address, sizeof(ble_gap_addr_t));
-}
-
-static void conn_params_init(void)
-{
-   // Initializing the Connection Parameters module
-   ble_conn_params_init_t cp_init;
-   memset(&cp_init, 0, sizeof(cp_init));
-   cp_init.p_conn_params = NULL;//&_connection_params;
-   cp_init.first_conn_params_update_delay = FIRST_CONN_PARAMS_UPDATE_DELAY;
-   cp_init.next_conn_params_update_delay = NEXT_CONN_PARAMS_UPDATE_DELAY;
-   cp_init.max_conn_params_update_count = MAX_CONN_PARAMS_UPDATE_COUNT;
-   cp_init.start_on_notify_cccd_handle = BLE_GATT_HANDLE_INVALID;
-   cp_init.disconnect_on_fail = true;  // Can also add a on_conn_params_evt as a handler
-   APP_ERROR_CHECK(ble_conn_params_init(&cp_init));
 }
 
 
@@ -467,8 +427,7 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       {
          // Assign BLE connection handle
          _carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-         ret_code_t err_code = nrf_ble_qwr_conn_handle_assign(&_qwr, _carrier_ble_conn_handle);
-         APP_ERROR_CHECK(err_code);
+         APP_ERROR_CHECK(nrf_ble_qwr_conn_handle_assign(&_qwr, _carrier_ble_conn_handle));
 
          // Discover services if this was an outgoing connection
          if (_outgoing_ble_connection_active)
@@ -572,13 +531,12 @@ nrfx_err_t ble_init(nrfx_atomic_flag_t* squarepoint_enabled_flag, nrfx_atomic_fl
    _ble_scanning_flag = ble_is_scanning_flag;
    _calibration_index = calibration_index;
    ble_stack_init();
-   if (!gap_params_init())
-      return NRF_ERROR_INVALID_STATE;
+   gap_params_init();
    gatt_init();
+   conn_params_init();
+   db_discovery_init();
    services_init();
    advertising_init();
-   central_init();
-   conn_params_init();
    return NRF_SUCCESS;
 }
 
@@ -588,6 +546,12 @@ const uint8_t* ble_get_empty_eui(void) { return _empty_eui; }
 const uint8_t* ble_get_scheduler_eui(void) { return _scheduler_eui; }
 const uint8_t* ble_get_highest_network_eui(void) { return _highest_discovered_eui; }
 void ble_start_advertising(void) { ble_advertising_start(&_advertising, BLE_ADV_MODE_FAST); }
+
+void ble_stop_advertising(void)
+{
+   ble_advertising_start(&_advertising, BLE_ADV_MODE_IDLE);
+   sd_ble_gap_adv_stop(_advertising.adv_handle);
+}
 
 void ble_start_scanning(void)
 {
@@ -605,12 +569,6 @@ void ble_start_scanning(void)
          nrfx_atomic_flag_clear(_ble_scanning_flag);
       }
    }
-}
-
-void ble_stop_advertising(void)
-{
-   ble_advertising_start(&_advertising, BLE_ADV_MODE_IDLE);
-   sd_ble_gap_adv_stop(_advertising.adv_handle);
 }
 
 void ble_stop_scanning(void)
