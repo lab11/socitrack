@@ -7,6 +7,11 @@
 #include "magnetometer.h"
 
 
+// Internal typedefs ---------------------------------------------------------------------------------------------------
+
+typedef void (*imu_data_callback)(bool, float*, float*, float*);
+
+
 // LSM6DSOX enums ------------------------------------------------------------------------------------------------------
 
 typedef enum { LSM6DSOX_2g = 0, LSM6DSOX_16g = 1, /* if XL_FS_MODE = ‘1’ -> LSM6DSOX_2g */ LSM6DSOX_4g = 2, LSM6DSOX_8g = 3, } lsm6dsox_fs_xl_t;
@@ -2252,8 +2257,9 @@ typedef struct
 
 // Public IMU API ------------------------------------------------------------------------------------------------------
 
-bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed);
+bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed, imu_data_callback callback);
 nrfx_err_t imu_read_accelerometer_data(float* x_data, float* y_data, float* z_data);
 bool imu_in_motion(void);
+void imu_handle_incoming_data(void);
 
 #endif // #ifndef __IMU_HEADER_H

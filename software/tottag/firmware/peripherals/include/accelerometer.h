@@ -6,6 +6,7 @@
 
 #include "nrfx_atomic.h"
 #include "nrf_drv_spi.h"
+#include "imu.h"
 
 
 // LIS2DW12 register definitions ---------------------------------------------------------------------------------------
@@ -153,9 +154,10 @@ typedef struct
 
 // Public Accelerometer API --------------------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed);
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed, imu_data_callback callback);
 nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data);
 bool accelerometer_in_motion(void);
+void accelerometer_handle_incoming_data(void);
 
 
 #endif // #ifndef __ACCELEROMETER_HEADER_H

@@ -43,6 +43,7 @@ static volatile uint16_t _range_buffer_length = 0;
 
 static void watchdog_handler(void *p_context);
 static void squarepoint_data_handler(uint8_t *data, uint32_t len);
+static void imu_data_handler(bool in_motion, float* x_accel_data, float* y_accel_data, float* z_accel_data);
 
 static void app_init(void)
 {
@@ -132,7 +133,7 @@ static void hardware_init(void)
       nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
 
    // Initialize supplementary hardware components
-   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready, &_app_flags.imu_motion_changed);
+   imu_init(&_imu_spi_instance, &_app_flags.imu_data_ready, &_app_flags.imu_motion_changed, imu_data_handler);
    battery_monitor_init(&_app_flags.battery_status_changed);
 
    // Wait until an SD Card is inserted
@@ -164,15 +165,15 @@ static void hardware_init(void)
 
 static void update_leds(uint32_t app_running, uint32_t network_discovered)
 {
-   if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))               // RED = SD card not inserted
+   if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))            // RED = SD card not inserted
       led_on(RED);
-   else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init))    // PURPLE = Cannot communicate with SquarePoint
+   else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init))  // PURPLE = Cannot communicate with SquarePoint
       led_on(PURPLE);
-   else if (app_running)                                                    // GREEN = App running
+   else if (app_running)                                                 // GREEN = App running
       led_on(GREEN);
-   else if (network_discovered)                                             // ORANGE = Network discovered, app not running
+   else if (network_discovered)                                          // ORANGE = Network discovered, app not running
       led_on(ORANGE);
-   else                                                                     // BLUE = No network discovered
+   else                                                                  // BLUE = No network discovered
       led_on(BLUE);
 }
 
@@ -428,23 +429,16 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
    }
 }
 
-static void imu_data_handler(void)
+static void imu_data_handler(bool in_motion, float* x_accel_data, float* y_accel_data, float* z_accel_data)
 {
    // Handle changes in detection of motion
-   if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_motion_changed))
+   if (in_motion)
    {
-      if (imu_in_motion())
-      {
-         if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
-            sd_card_log_motion(true, rtc_get_current_time(), false);
-      }
-      else if (nrfx_atomic_flag_clear_fetch(&_app_flags.device_in_motion))
-         sd_card_log_motion(false, rtc_get_current_time(), false);
+      if (!nrfx_atomic_flag_set_fetch(&_app_flags.device_in_motion))
+         sd_card_log_motion(true, rtc_get_current_time(), false);
    }
-
-   // Check if IMU data is ready to be read
-   if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
-      imu_read_accelerometer_data(NULL, NULL, NULL);
+   else if (nrfx_atomic_flag_clear_fetch(&_app_flags.device_in_motion))
+      sd_card_log_motion(false, rtc_get_current_time(), false);
 }
 
 
@@ -465,13 +459,16 @@ int main(void)
       nrf_pwr_mgmt_run();
       //TODO: DELETE log_printf("MAIN RUN\n");
 
+      // Handle USB communications
+      usb_handle_comms();
+
       // Check if the SquarePoint module has communicated over TWI
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.squarepoint_data_received))
          squarepoint_handle_incoming_data();
 
-      // Handle USB and IMU communications
-      usb_handle_comms();
-      imu_data_handler();
+      // Check if there is new IMU data to handle
+      if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_motion_changed) || nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
+         imu_handle_incoming_data();
 
       // Check if new ranging data was received
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.range_buffer_updated))

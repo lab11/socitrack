@@ -30,6 +30,7 @@ static nrfx_atomic_flag_t *_accelerometer_data_ready = NULL, *_accelerometer_mot
 static float _acc_sensitivity_scalar = 1.0f;
 static uint8_t _acc_xyz[(ACC_NUM_RESULTS_PER_READ*3*sizeof(int16_t)) + 1] = { 0 };
 static uint8_t _lis2dw12_read_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
+static imu_data_callback _data_callback = NULL;
 
 
 // LIS2DW12-specific accelerometer functionality -----------------------------------------------------------------------
@@ -198,11 +199,12 @@ static void accelerometer_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
 
 // Public Accelerometer API functions ----------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed)
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed, imu_data_callback callback)
 {
 #if (BOARD_V < 0x11)
 
    // Initialize SPI communications
+   _data_callback = callback;
    _spi_instance = spi_instance;
    _spi_config.sck_pin = IMU_SPI_SCLK;
    _spi_config.miso_pin = IMU_SPI_MISO;
@@ -288,4 +290,9 @@ bool accelerometer_in_motion(void)
 
 #endif
    return false;
+}
+
+void accelerometer_handle_incoming_data(void)
+{
+   _data_callback(imu_in_motion(), NULL, NULL, NULL);
 }
