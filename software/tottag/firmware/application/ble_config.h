@@ -135,15 +135,13 @@ typedef struct app_flags_t
 #define APP_BLE_ADDR_MAX        0xFF
 
 // Peripheral
-//#define APP_ADV_INTERVAL_MS     250
 #define APP_ADV_INTERVAL_MS     50
 #define APP_ADV_INTERVAL_CAL_MS 50
 
 // Central
 //#define APP_SCAN_INTERVAL_MS    2085
 #define APP_SCAN_INTERVAL_MS    915
-//#define APP_SCAN_WINDOW_MS      (APP_ADV_INTERVAL_MS + 11)
-#define APP_SCAN_WINDOW_MS      75
+#define APP_SCAN_WINDOW_MS      (APP_ADV_INTERVAL_MS + 15)
 
 // No-network transitions
 #define BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT  300

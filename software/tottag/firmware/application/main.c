@@ -141,8 +141,8 @@ static void hardware_init(void)
       nrf_delay_ms(2500);
    }
    sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0);
-   led_off();
    printf("INFO: Initialized supplementary hardware and software services\n");
+   led_off();
 }
 
 static void update_leds(uint32_t app_running, uint32_t network_discovered)
@@ -446,12 +446,10 @@ int main(void)
 
    // Loop forever
    bool charger_plugged_in = false;
-   uint32_t app_enabled = 1, app_running = 0, network_discovered = 0, hfclk_running = 0, current_timestamp = 0;
+   uint32_t app_enabled = 1, app_running = 0, network_discovered = 0, current_timestamp = 0;
    while (1)
    {
       // Go to sleep until something happens
-      //if ((sd_clock_hfclk_is_running(&hfclk_running) == NRF_SUCCESS) && hfclk_running)
-      //   sd_clock_hfclk_release();
       nrf_pwr_mgmt_run();
       //TODO: DELETE log_printf("MAIN RUN\n");
 
