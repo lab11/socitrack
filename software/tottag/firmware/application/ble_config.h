@@ -103,10 +103,8 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_wakeup_triggered;
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
    nrfx_atomic_flag_t squarepoint_needs_init;
-   nrfx_atomic_flag_t squarepoint_needs_reset;
    nrfx_atomic_flag_t sd_card_inserted;
    nrfx_atomic_flag_t rtc_time_valid;
-   nrfx_atomic_flag_t battery_check_time;
    nrfx_atomic_flag_t imu_data_ready;
    nrfx_atomic_flag_t imu_motion_changed;
    nrfx_atomic_flag_t battery_status_changed;
