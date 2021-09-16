@@ -45,9 +45,6 @@
 // BLE characteristics
 #define CARRIER_BLE_SERV_SHORT_UUID             0x3152
 #define CARRIER_BLE_CHAR_LOCATION               0x3153
-#define CARRIER_BLE_CHAR_CONFIG                 0x3154
-#define CARRIER_BLE_CHAR_ENABLE                 0x3155
-#define CARRIER_BLE_CHAR_STATUS                 0x3156
 #define CARRIER_BLE_CHAR_CALIBRATION            0x3157
 #define CARRIER_BLE_CHAR_TIMESTAMP              0x3158
 
@@ -101,7 +98,6 @@ typedef enum { UNASSIGNED = 0, HYBRID, REQUESTER, RESPONDER, SUPPORTER } device_
 typedef struct app_flags_t
 {
    nrfx_atomic_flag_t squarepoint_enabled;
-   nrfx_atomic_flag_t squarepoint_inited;
    nrfx_atomic_flag_t squarepoint_running;
    nrfx_atomic_flag_t squarepoint_data_received;
    nrfx_atomic_flag_t squarepoint_wakeup_triggered;
