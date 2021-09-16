@@ -312,12 +312,9 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
 
 static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 {
-   // Reset the SquarePoint communications timeout counter
-   nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
-   nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
-
    // Handle the incoming message
    log_printf("INFO: SquarePoint module sent ");
+   nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
    switch (data[0])
    {
       case SQUAREPOINT_INCOMING_RANGES:
@@ -353,7 +350,6 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
             memcpy(data + packet_overhead + (num_ranges * APP_LOG_RANGE_LENGTH), &epoch, sizeof(epoch));
          }
 
-
          // Update the scheduler EUI
          if (ble_set_scheduler_eui(data + 2, SQUAREPOINT_EUI_LEN))
          {
@@ -363,6 +359,10 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
          }
          else       // Trigger SD log file storage from the main loop
             nrfx_atomic_flag_set(&_app_flags.range_buffer_updated);
+
+         // Reset the SquarePoint communications timeout counter
+         if (num_ranges)
+            nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
          break;
       }
       case SQUAREPOINT_INCOMING_CALIBRATION:
