@@ -2,7 +2,6 @@
 
 #include "battery.h"
 #include "ble_config.h"
-#include "nrfx_atomic.h"
 #include "nrfx_gpiote.h"
 #include "nrfx_saadc.h"
 

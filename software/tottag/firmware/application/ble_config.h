@@ -5,7 +5,7 @@
 
 #include "app_timer.h"
 #include "boards.h"
-#include "nrfx_atomic.h"
+#include "sd_card.h"
 
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
