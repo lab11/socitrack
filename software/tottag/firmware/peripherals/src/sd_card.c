@@ -215,11 +215,11 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    // Clean up any unexpected SD card files
    uint32_t file_size = 0;
    uint8_t continuation = 0;
-   char file_name[32] = { 0 };
+   char file_name[1024] = { 0 };
    while (sd_card_list_next_file(file_name, &file_size, continuation++))
    {
       printf("INFO:    Existing file found: %s\n", file_name);
-      if ((file_name[2] != '@') && (f_unlink(file_name) == FR_OK))
+      if ((file_name[2] != '@') && (f_chmod(file_name, 0, AM_RDO | AM_ARC | AM_SYS | AM_HID) == FR_OK) && (f_unlink_all(file_name, sizeof(file_name), &_file_info) == FR_OK))
          continuation = 0;
    }
 
