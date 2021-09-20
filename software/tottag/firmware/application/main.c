@@ -143,22 +143,22 @@ static void hardware_init(void)
       buzzer_indicate_error();
       nrf_delay_ms(2500);
    }
-   sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0);
+   sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0, true);
    printf("INFO: Initialized supplementary hardware and software services\n");
 
    // Initialize the SquarePoint module
    while (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init))
    {
-      printf("INFO: Connecting to the SquarePoint module...\n");
+      log_printf("INFO: Connecting to the SquarePoint module...\n");
       squarepoint_wakeup_module();
       if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
       {
-         printf("INFO: SquarePoint module connection successful\n");
+         log_printf("INFO: SquarePoint module connection successful\n");
          nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_init);
       }
       else
       {
-         printf("ERROR: SquarePoint module connection unsuccessful!\n");
+         log_printf("ERROR: SquarePoint module connection unsuccessful!\n");
          nrf_delay_ms(2500);
       }
    }
@@ -519,7 +519,7 @@ int main(void)
          {
             log_printf("INFO: Setting timestamp to the network response: %lu\n", current_timestamp);
             ab1815_set_timestamp(current_timestamp);
-            sd_card_create_log(current_timestamp);
+            sd_card_create_log(current_timestamp, false);
             nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
          }
       }
