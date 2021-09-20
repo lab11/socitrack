@@ -437,12 +437,10 @@ int main(void)
 
    // Loop forever
    bool charger_plugged_in = false;
-   uint32_t app_enabled = 1, app_running = 0, network_discovered = 0, hfclk_running = 0, current_timestamp = 0;
+   uint32_t app_enabled = 1, app_running = 0, network_discovered = 0, current_timestamp = 0;
    while (true)
    {
       // Go to sleep until something happens
-      if ((sd_clock_hfclk_is_running(&hfclk_running) == NRF_SUCCESS) && hfclk_running)
-         sd_clock_hfclk_release();
       nrf_pwr_mgmt_run();
 
       // Handle USB communications
