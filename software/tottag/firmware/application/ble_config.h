@@ -103,6 +103,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_wakeup_triggered;
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
    nrfx_atomic_flag_t squarepoint_needs_init;
+   nrfx_atomic_flag_t elapsed_second;
    nrfx_atomic_flag_t sd_card_inserted;
    nrfx_atomic_flag_t rtc_time_valid;
    nrfx_atomic_flag_t imu_data_ready;
@@ -133,8 +134,7 @@ typedef struct app_flags_t
 #define APP_ADV_INTERVAL_CAL_MS 50
 
 // Central
-//#define APP_SCAN_INTERVAL_MS    2085
-#define APP_SCAN_INTERVAL_MS    915
+#define APP_SCAN_INTERVAL_MS    1085
 #define APP_SCAN_WINDOW_MS      (APP_ADV_INTERVAL_MS + 15)
 
 // No-network transitions
@@ -216,6 +216,7 @@ typedef struct app_flags_t
 
 #define APP_SCAN_INTERVAL                   MSEC_TO_UNITS(APP_SCAN_INTERVAL_MS, UNIT_0_625_MS)
 #define APP_SCAN_WINDOW                     MSEC_TO_UNITS(APP_SCAN_WINDOW_MS, UNIT_0_625_MS)
+#define APP_SCAN_CONNECT_TIMEOUT            MSEC_TO_UNITS(2500, UNIT_10_MS)
 
 #define MIN_CONN_INTERVAL                   MSEC_TO_UNITS(50, UNIT_1_25_MS)             //!< Minimum acceptable connection interval (50 ms). The connection interval uses 1.25 ms units.
 #define MAX_CONN_INTERVAL                   MSEC_TO_UNITS(100, UNIT_1_25_MS)            //!< Maximum acceptable connection interval (100 ms). The connection interval uses 1.25 ms units.

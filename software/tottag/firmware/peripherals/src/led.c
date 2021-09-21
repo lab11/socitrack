@@ -19,11 +19,11 @@ static bool _leds_enabled = false;
 void leds_init(void)
 {
    // Configure all LED pins
-#ifdef ENABLE_LEDS
    nrfx_gpiote_out_config_t led_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(LEDS_ACTIVE_LOW);
    nrfx_gpiote_out_init(CARRIER_LED_RED, &led_pin_config);
    nrfx_gpiote_out_init(CARRIER_LED_BLUE, &led_pin_config);
    nrfx_gpiote_out_init(CARRIER_LED_GREEN, &led_pin_config);
+#ifdef ENABLE_LEDS
    _leds_enabled = true;
 #endif
 }
