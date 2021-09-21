@@ -82,7 +82,7 @@
 #define PROTOCOL_NUM_SLOTS_PER_REQUEST     7
 #define PROTOCOL_NUM_SLOTS_PER_RESPONSE    1
 #define PROTOCOL_MAX_MISSING_SCHEDULE_ROUNDS_BEFORE_STATE_CHANGE        3
-#define PROTOCOL_MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE                   10
+#define PROTOCOL_MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE                   5
 #define PROTOCOL_MAX_NUM_NETWORK_SEARCH_ATTEMPTS                        1
 
 // Application states and interrupts -----------------------------------------------------------------------------------

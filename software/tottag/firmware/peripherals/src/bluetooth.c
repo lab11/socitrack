@@ -41,6 +41,7 @@ static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_h
 static uint16_t _carrier_ble_service_handle = 0, _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 static uint8_t _carrier_ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
 static ble_gap_scan_params_t _scan_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = BLE_GAP_SCAN_TIMEOUT_UNLIMITED, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
+static ble_gap_scan_params_t _scan_connect_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = APP_SCAN_CONNECT_TIMEOUT, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
 static ble_gap_conn_params_t const _connection_params = { MIN_CONN_INTERVAL, MAX_CONN_INTERVAL, SLAVE_LATENCY, CONN_SUP_TIMEOUT };
 static ble_data_t _scan_buffer = { _scan_buffer_data, BLE_GAP_SCAN_BUFFER_MIN };
 static ble_gap_addr_t _wl_addr_base = { 0 }, _networked_device_addr = { 0 };
@@ -49,7 +50,7 @@ static ble_advdata_manuf_data_t _manuf_data_adv = { 0 };
 static ble_advdata_service_data_t _service_data = { 0 };
 static uint8_t _app_ble_advdata[APP_BLE_ADVDATA_LENGTH] = { 0 }, _scratch_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static uint8_t _scheduler_eui[BLE_GAP_ADDR_LEN] = { 0 }, _highest_discovered_eui[BLE_GAP_ADDR_LEN] = { 0 };
-static volatile uint8_t _outgoing_ble_connection_active = false, _outgoing_ble_connection_done = false;
+static volatile uint8_t _outgoing_ble_connection_active = 0;
 static volatile uint32_t _retrieved_timestamp = 0;
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL;
@@ -332,10 +333,9 @@ static void on_adv_report(ble_gap_evt_adv_report_t const *p_adv_report)
       {
          // Reset the BLE scanning interval and window to their active default values
          log_printf("INFO: BLE scanning window and interval have been reset to their default values\n");
-         sd_ble_gap_scan_stop();
          _scan_params.interval = APP_SCAN_INTERVAL;
          _scan_params.window = APP_SCAN_WINDOW;
-         nrfx_atomic_flag_clear(_ble_scanning_flag);
+         sd_ble_gap_scan_stop();
       }
    }
 }
@@ -348,11 +348,8 @@ static void on_ble_service_discovered(ble_db_discovery_evt_t * p_evt)
       // Search for and read from the requested characteristic
       for (uint8_t i = 0; i < p_evt->params.discovered_db.char_count; ++i)
          if (p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid == CARRIER_BLE_CHAR_TIMESTAMP)
-            if (sd_ble_gattc_read(p_evt->conn_handle, p_evt->params.discovered_db.charateristics[i].characteristic.handle_value, 0) != NRF_SUCCESS)
-               _outgoing_ble_connection_done = 1;
+            sd_ble_gattc_read(p_evt->conn_handle, p_evt->params.discovered_db.charateristics[i].characteristic.handle_value, 0);
    }
-   else
-      _outgoing_ble_connection_done = 1;
 }
 
 static void on_ble_write(const ble_evt_t *p_ble_evt)
@@ -406,27 +403,11 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
             memset(&_db_disc, 0, sizeof(_db_disc));
             APP_ERROR_CHECK(ble_db_discovery_start(&_db_disc, p_ble_evt->evt.gap_evt.conn_handle));
          }
-         else
-         {
-            // Continue advertising during an incoming connection, but non-connectably
-            ble_stop_advertising();
-            _advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_NONCONNECTABLE_SCANNABLE_UNDIRECTED;
-            sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
-            ble_start_advertising();
-         }
          break;
       }
       case BLE_GAP_EVT_DISCONNECTED:
       {
-         // Go back to advertising connectably
-         if (!_outgoing_ble_connection_active)
-         {
-            ble_stop_advertising();
-            _advertising.adv_params.properties.type = BLE_GAP_ADV_TYPE_CONNECTABLE_SCANNABLE_UNDIRECTED;
-            sd_ble_gap_adv_set_configure(&_advertising.adv_handle, _advertising.p_adv_data, &_advertising.adv_params);
-            ble_start_advertising();
-         }
-         _outgoing_ble_connection_active = _outgoing_ble_connection_done = 0;
+         _outgoing_ble_connection_active = 0;
          _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          break;
       }
@@ -458,29 +439,26 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       {
          if (p_ble_evt->evt.gattc_evt.params.read_rsp.len == sizeof(_retrieved_timestamp))
             _retrieved_timestamp = *(const uint32_t*)p_ble_evt->evt.gattc_evt.params.read_rsp.data;
-         _outgoing_ble_connection_done = 1;
          break;
       }
       case BLE_GAP_EVT_TIMEOUT:
       {
-         // Only connection attempts can timeout
-         if (p_ble_evt->evt.gap_evt.params.timeout.src == BLE_GAP_TIMEOUT_SRC_CONN)
-            log_printf("WARNING: BLE connection attempts timed out\n");
-         _outgoing_ble_connection_active = _outgoing_ble_connection_done = 0;
+         sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+         _outgoing_ble_connection_active = 0;
          _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          break;
       }
       case BLE_GATTC_EVT_TIMEOUT:
       {
          APP_ERROR_CHECK(sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
-         _outgoing_ble_connection_active = _outgoing_ble_connection_done = 0;
+         _outgoing_ble_connection_active = 0;
          _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          break;
       }
       case BLE_GATTS_EVT_TIMEOUT:
       {
          APP_ERROR_CHECK(sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
-         _outgoing_ble_connection_active = _outgoing_ble_connection_done = 0;
+         _outgoing_ble_connection_active = 0;
          _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          break;
       }
@@ -515,6 +493,7 @@ const uint8_t* ble_get_eui(void) { return _carrier_ble_address; }
 const uint8_t* ble_get_empty_eui(void) { return _empty_eui; }
 const uint8_t* ble_get_scheduler_eui(void) { return _scheduler_eui; }
 const uint8_t* ble_get_highest_network_eui(void) { return _highest_discovered_eui; }
+
 void ble_start_advertising(void) { ble_advertising_start(&_advertising, BLE_ADV_MODE_FAST); }
 
 void ble_stop_advertising(void)
@@ -588,15 +567,13 @@ void ble_second_has_elapsed(void)
       // Update the scanning interval and window if a transition point has been reached
       case BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT:
          log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT);
-         sd_ble_gap_scan_stop();
          _scan_params.interval = BLE_NETWORK_TRANSITION1_SCAN_INTERVAL;
-         nrfx_atomic_flag_clear(_ble_scanning_flag);
+         ble_stop_scanning();
          break;
       case BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT:
          log_printf("INFO: BLE scanning window and interval have been set to their %u-second disconnected values\n", BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT);
-         sd_ble_gap_scan_stop();
          _scan_params.interval = BLE_NETWORK_TRANSITION2_SCAN_INTERVAL;
-         nrfx_atomic_flag_clear(_ble_scanning_flag);
+         ble_stop_scanning();
          break;
       default:
          break;
@@ -610,12 +587,12 @@ uint32_t ble_request_timestamp(void)
    {
       log_printf("INFO: Requesting current timestamp from network...\n");
       _retrieved_timestamp = 0;
-      _outgoing_ble_connection_done = 0;
       _outgoing_ble_connection_active = 1;
-      if (sd_ble_gap_connect(&_networked_device_addr, &_scan_params, &_connection_params, APP_BLE_CONN_CFG_TAG) != NRF_SUCCESS)
+      if (sd_ble_gap_connect(&_networked_device_addr, &_scan_connect_params, &_connection_params, APP_BLE_CONN_CFG_TAG) != NRF_SUCCESS)
          _outgoing_ble_connection_active = 0;
+      nrfx_atomic_flag_clear(_ble_scanning_flag);
    }
-   else if (_outgoing_ble_connection_done)
+   else if (_retrieved_timestamp)
       sd_ble_gap_disconnect(_carrier_ble_conn_handle, BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
    return _retrieved_timestamp;
 }
