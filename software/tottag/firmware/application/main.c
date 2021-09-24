@@ -147,7 +147,7 @@ static void hardware_init(void)
    printf("INFO: Initialized supplementary hardware and software services\n");
 
    // Initialize the SquarePoint module
-   bool repeat_failure = false;
+   uint32_t repeat_failure = 0;
    while (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init))
    {
       log_printf("INFO: Connecting to the SquarePoint module...\n");
@@ -160,10 +160,9 @@ static void hardware_init(void)
       else
       {
          log_printf("ERROR: SquarePoint module connection unsuccessful!\n");
-         if (repeat_failure)
+         if ((++repeat_failure % 100) == 0)
             buzzer_indicate_error();
-         repeat_failure = true;
-         nrf_delay_ms(2500);
+         nrf_delay_ms(50);
       }
    }
 }
@@ -432,12 +431,12 @@ int main(void)
       // Go to sleep until something happens
       nrf_pwr_mgmt_run();
 
-      // Handle USB communications
-      usb_handle_comms();
-
       // Check if the SquarePoint module has communicated over TWI
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.squarepoint_data_received))
          squarepoint_handle_incoming_data();
+
+      // Handle USB communications
+      usb_handle_comms();
 
       // Check if there is new IMU data to handle
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_motion_changed) || nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
