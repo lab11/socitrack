@@ -26,14 +26,14 @@ APP_HEADER_PATHS += .
 APP_SOURCE_PATHS += .
 APP_SOURCES = $(notdir $(wildcard ./*.c))
 
-# Optimize for size
-CFLAGS += -Os -s
+# Optimize for speed
+CFLAGS += -O3 -s
 
 # Set correct port for GDB server
 GDB_PORT_NUMBER = 2331
 
 # Comment out the following line to remove debugging capabilities from firmware
-#CDBG += -DDEBUG_NRF -g
+#CDBG += -DDEBUG_NRF -O0 -g
 CFLAGS += $(CDBG)
 
 # Include board Makefile (if any)

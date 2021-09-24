@@ -43,7 +43,7 @@ $(BUILDDIR):
 
 $(BUILDDIR)%.o: %.c | $(BUILDDIR)
 	$(TRACE_CC)
-	$(Q)$(CC) $(LDFLAGS) $(CFLAGS) $(OPTIMIZATION_FLAG) $< -o $@
+	$(Q)$(CC) $(LDFLAGS) $(CFLAGS) $< -o $@
 
 $(BUILDDIR)%.o-debug: %.c | $(BUILDDIR)
 	$(TRACE_CC)

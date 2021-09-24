@@ -173,9 +173,6 @@ override CFLAGS += \
     #-DSOFTDEVICE_$(SOFTDEVICE_MODEL)\
     #-DCONFIG_GPIO_AS_PINRESET\
 
-#XXX: document this somewhere
-override OPTIMIZATION_FLAG ?= -Os
-
 #XXX: compare to tock and nrf to add new flags
 override LDFLAGS += \
     $(CPUFLAGS)\
