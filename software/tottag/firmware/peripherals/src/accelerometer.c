@@ -168,8 +168,7 @@ static void lis2dw12_reset(void)
 static void lis2dw12_fifo_reset(void)
 {
    // To reset FIFO content, Bypass mode should be written and then FIFO mode should be restarted
-   lis2dw12_fifo_config_t fifo_config;
-   fifo_config.mode = lis2dw12_fifo_bypass;
+   lis2dw12_fifo_config_t fifo_config = { .mode = lis2dw12_fifo_bypass, .thresh = 0 };
    lis2dw12_fifo_config(fifo_config);
 #ifndef DISABLE_ACCEL_DATA_READING
    fifo_config.mode = lis2dw12_fifo_continuous;
