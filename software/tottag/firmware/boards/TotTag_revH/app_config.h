@@ -88,5 +88,5 @@
 #define APP_USBD_STRING_SERIAL APP_USBD_STRING_DESC("202008010010")
 #define APP_USBD_STRINGS_CONFIGURATION APP_USBD_STRING_DESC("Serial Port Configuration")
 
-#define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 1024
-#define SEGGER_RTT_CONFIG_DEFAULT_MODE 2
+#define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 2048
+#define SEGGER_RTT_CONFIG_DEFAULT_MODE 0  // Change to 2 to ensure all printf contents are output, will crash if no debugger attached
