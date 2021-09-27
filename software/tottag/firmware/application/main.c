@@ -127,7 +127,7 @@ static void hardware_init(void)
       printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
       rtc_external_init(&_rtc_sd_spi_instance);
       buzzer_indicate_invalid_rtc_time();
-      nrf_delay_ms(1000);
+      nrf_delay_ms(2000);
       current_timestamp = rtc_get_current_time();
    }
    if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
@@ -141,7 +141,7 @@ static void hardware_init(void)
    while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
    {
       buzzer_indicate_error();
-      nrf_delay_ms(2500);
+      nrf_delay_ms(5000);
    }
    sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0, true);
    printf("INFO: Initialized supplementary hardware and software services\n");
@@ -296,6 +296,10 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
 
    // Increment the SquarePoint range reception timeout counter
    nrfx_atomic_u32_add(&_app_flags.squarepoint_timeout_counter, 1);
+
+   // Reset the device if required
+   if (nrfx_atomic_flag_fetch(&_app_flags.device_reset_required))
+      while (true);
 }
 
 static void squarepoint_data_handler(uint8_t *data, uint32_t len)
@@ -461,7 +465,7 @@ int main(void)
          if (nrfx_atomic_u32_add(&_app_flags.device_reset_counter, 1) > DEVICE_FORCE_RESET_INTERVAL_SEC)
          {
             sd_card_flush();
-            while (true);
+            nrfx_atomic_flag_set(&_app_flags.device_reset_required);
          }
 #endif
       }
@@ -582,6 +586,6 @@ int main(void)
 
       // Reset board if the SD card has been removed
       if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))
-         while (true);
+         nrfx_atomic_flag_set(&_app_flags.device_reset_required);
    }
 }

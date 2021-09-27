@@ -97,6 +97,7 @@ typedef enum { UNASSIGNED = 0, HYBRID, REQUESTER, RESPONDER, SUPPORTER } device_
 
 typedef struct app_flags_t
 {
+   nrfx_atomic_flag_t device_reset_required;
    nrfx_atomic_flag_t squarepoint_enabled;
    nrfx_atomic_flag_t squarepoint_running;
    nrfx_atomic_flag_t squarepoint_data_received;
