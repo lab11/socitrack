@@ -492,12 +492,18 @@ int main(void)
       if (nrfx_atomic_u32_fetch(&_app_flags.battery_check_counter) >= APP_BATTERY_CHECK_TIMEOUT_SEC)
       {
          uint16_t batt_mv = battery_monitor_get_level_mV();
-         if (batt_mv < BATTERY_VOLTAGE_CRITICAL)
+         if (batt_mv <= BATTERY_VOLTAGE_CRITICAL)
+         {
             log_printf("WARNING: Battery voltage is getting critically low @ %hu mV!\n", batt_mv);
+            nrfx_atomic_u32_store(&_app_flags.battery_check_counter, (APP_BATTERY_CHECK_TIMEOUT_SEC < 60) ? 0 : (APP_BATTERY_CHECK_TIMEOUT_SEC - 60));
+            buzzer_indicate_low_battery();
+         }
          else
+         {
             log_printf("INFO: Battery voltage currently %hu mV\n", batt_mv);
+            nrfx_atomic_u32_store(&_app_flags.battery_check_counter, 0);
+         }
          sd_card_log_battery(batt_mv, rtc_get_current_time(), !nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running));
-         nrfx_atomic_u32_store(&_app_flags.battery_check_counter, 0);
       }
 
       // Check if the battery charging status has changed

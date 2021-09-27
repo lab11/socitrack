@@ -189,3 +189,27 @@ void buzzer_indicate_error(void)
    nrfx_gpiote_out_set(BUZZER_DRIVER);
 #endif
 }
+
+void buzzer_indicate_low_battery(void)
+{
+#if (BOARD_V >= 0x10)
+#ifdef ENABLE_LOW_BATTERY_SOUNDS
+   uint32_t duration_ms = 150;
+   uint32_t tone_frequency_hz = 1760;
+   nrfx_pwm_uninit(&pwm_instance);
+   pwm_config.top_value = BUZZER_CLOCK_HZ / tone_frequency_hz;
+   nrfx_pwm_init(&pwm_instance, &pwm_config, NULL);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+   nrf_delay_ms(2 * duration_ms);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   nrf_delay_ms(6 * duration_ms);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+   nrf_delay_ms(2 * duration_ms);
+   nrfx_pwm_simple_playback(&pwm_instance, &pwm_sequence, (duration_ms * BUZZER_CLOCK_HZ / 2000) / pwm_config.top_value, NRFX_PWM_FLAG_STOP);
+
+   nrf_delay_ms(2 * duration_ms);
+   nrfx_gpiote_out_set(BUZZER_DRIVER);
+#endif
+#endif
+}
