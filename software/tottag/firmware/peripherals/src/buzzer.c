@@ -110,6 +110,7 @@ void buzzer_init(void)
    pwm_config.output_pins[0] = BUZZER_DRIVER;
    pwm_config.output_pins[1] = pwm_config.output_pins[2] = pwm_config.output_pins[3] = NRFX_PWM_PIN_NOT_USED;
    APP_ERROR_CHECK(nrfx_pwm_init(&pwm_instance, &pwm_config, NULL));
+   nrfx_gpiote_out_set(BUZZER_DRIVER);
 #endif
 }
 
