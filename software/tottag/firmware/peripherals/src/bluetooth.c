@@ -324,7 +324,7 @@ static void on_adv_report(ble_gap_evt_adv_report_t const *p_adv_report)
       }
 
       // Update the scheduler EUI
-      if ((err_code == NRFX_SUCCESS) && (advdata.len == (1 + 2 + sizeof(_app_ble_advdata))) && (memcmp(advdata.p_data + 2, _empty_eui, APP_BLE_ADVDATA_LENGTH) != 0))
+      if ((err_code == NRFX_SUCCESS) && (advdata.len == (1 + 2 + sizeof(_app_ble_advdata))))
          ble_set_scheduler_eui(advdata.p_data + 2, APP_BLE_ADVDATA_LENGTH);
 
       // Reset the network discovery timeout counters
