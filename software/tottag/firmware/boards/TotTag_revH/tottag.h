@@ -35,6 +35,7 @@
 #define IMU_SPI_SCLK        NRF_GPIO_PIN_MAP(0,20)
 #define IMU_SPI_MISO        NRF_GPIO_PIN_MAP(0,24)
 #define IMU_SPI_MOSI        NRF_GPIO_PIN_MAP(0,22)
+#define IMU_SPI_CS          NRF_GPIO_PIN_MAP(0,16)
 #define IMU_SPI_BUS         NRFX_SPIM_INSTANCE(IMU_SPI_BUS_IDX)
 
 // SPI bus (RTC & SD Card)
@@ -42,6 +43,7 @@
 #define RTC_SD_SPI_SCLK     NRF_GPIO_PIN_MAP(0,6)
 #define RTC_SD_SPI_MISO     NRF_GPIO_PIN_MAP(0,5)
 #define RTC_SD_SPI_MOSI     NRF_GPIO_PIN_MAP(0,7)
+#define RTC_SD_SPI_CS       NRF_GPIO_PIN_MAP(0,29)
 #define RTC_SD_SPI_BUS      NRFX_SPIM_INSTANCE(RTC_SD_SPI_BUS_IDX)
 
 // SD Card
@@ -61,7 +63,7 @@
 #define CARRIER_RTC_WDI     NRF_GPIO_PIN_MAP(0,31)
 
 // Inertial Measurement Unit
-#define CARRIER_CS_IMU      NRF_GPIO_PIN_MAP(0,16)
+#define CARRIER_CS_IMU      IMU_SPI_CS
 #define CARRIER_IMU_INT1    NRF_GPIO_PIN_MAP(0,17)
 #define CARRIER_IMU_INT2    NRF_GPIO_PIN_MAP(0,15)
 #define MAGNETOMETER_INT    NRF_GPIO_PIN_MAP(0,23)

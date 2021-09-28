@@ -41,10 +41,6 @@ static imu_data_callback _data_callback = NULL;
 
 static nrfx_err_t lsm6dsox_read_reg(uint8_t reg, uint8_t *data, uint16_t len)
 {
-   // Re-initialize SPI communications
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-
    // Use SPI directly
    reg |= LSM6DSOX_SPI_READ;
    nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &reg, 1, NULL, 0);
@@ -55,10 +51,6 @@ static nrfx_err_t lsm6dsox_read_reg(uint8_t reg, uint8_t *data, uint16_t len)
 
 static nrfx_err_t lsm6dsox_write_reg(uint8_t reg, uint8_t *data, uint16_t len)
 {
-   // Re-initialize SPI communications
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-
    // Use SPI directly
    _lsm6dsox_write_buf[0] = reg & (uint8_t)LSM6DSOX_SPI_WRITE;
    memcpy(_lsm6dsox_write_buf + 1, data, len);
@@ -6147,65 +6139,70 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready,
    _spi_config.sck_pin = IMU_SPI_SCLK;
    _spi_config.miso_pin = IMU_SPI_MISO;
    _spi_config.mosi_pin = IMU_SPI_MOSI;
-   _spi_config.ss_pin = CARRIER_CS_IMU;
+   _spi_config.ss_pin = IMU_SPI_CS;
    _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
    _spi_config.mode = NRF_DRV_SPI_MODE_3;
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Check the IMU ID
    uint8_t dummy;
    lsm6dsox_device_id_get(&dummy);
-   if (dummy != LSM6DSOX_ID)
-      return false;
+   if (dummy == LSM6DSOX_ID)
+   {
+      // Restore the default chip configuration and disable the I3C interface
+      lsm6dsox_reset_set(PROPERTY_ENABLE);
+      do { lsm6dsox_reset_get(&dummy); } while (dummy);
+      lsm6dsox_i3c_disable_set(LSM6DSOX_I3C_DISABLE);
+      // TODO Some hardware require to enable pull up on master I2C interface, maybe??
+      //lsm6dsox_sh_pin_mode_set(LSM6DSOX_INTERNAL_PULL_UP);
 
-   // Restore the default chip configuration and disable the I3C interface
-   lsm6dsox_reset_set(PROPERTY_ENABLE);
-   do { lsm6dsox_reset_get(&dummy); } while (dummy);
-   lsm6dsox_i3c_disable_set(LSM6DSOX_I3C_DISABLE);
-   // TODO Some hardware require to enable pull up on master I2C interface, maybe??
-   //lsm6dsox_sh_pin_mode_set(LSM6DSOX_INTERNAL_PULL_UP);
+      // Verify that the magnetometer is connected to the Sensor Hub
+      lis3mdl_set_read_reg_function(lsm6dsox_read_lis3mdl_reg);
+      lis3mdl_set_write_reg_function(lsm6dsox_write_lis3mdl_reg);
+      lis3mdl_device_id_get(&dummy);
+      if (dummy == LIS3MDL_ID)
+      {
+         // Configure the magnetometer
+         lis3mdl_block_data_update_set(PROPERTY_ENABLE);
+         lis3mdl_operating_mode_set(LIS3MDL_CONTINUOUS_MODE);
+         lis3mdl_data_rate_set(LIS3MDL_LP_20Hz);
 
-   // Verify that the magnetometer is connected to the Sensor Hub
-   lis3mdl_set_read_reg_function(lsm6dsox_read_lis3mdl_reg);
-   lis3mdl_set_write_reg_function(lsm6dsox_write_lis3mdl_reg);
-   lis3mdl_device_id_get(&dummy);
-   if (dummy != LIS3MDL_ID)
-      return false;
+         // Configure the IMU FIFO buffer in Stream/Continuous Mode with interrupts on INT1
+         lsm6dsox_pin_int1_route_t int1_route;
+         lsm6dsox_fifo_watermark_set(15);
+         lsm6dsox_fifo_mode_set(LSM6DSOX_STREAM_MODE);
+         lsm6dsox_int_notification_set(LSM6DSOX_ALL_INT_LATCHED);
+         lsm6dsox_pin_int1_route_get(&int1_route);
+         int1_route.fifo_th = PROPERTY_ENABLE;
+         lsm6dsox_pin_int1_route_set(int1_route);
 
-   // Configure the magnetometer
-   lis3mdl_block_data_update_set(PROPERTY_ENABLE);
-   lis3mdl_operating_mode_set(LIS3MDL_CONTINUOUS_MODE);
-   lis3mdl_data_rate_set(LIS3MDL_LP_20Hz);
+         // Enable FIFO batching of Slave0
+         lsm6dsox_sh_batch_slave_0_set(PROPERTY_ENABLE);
+         lsm6dsox_sh_data_rate_set(LSM6DSOX_SH_ODR_13Hz);
+         lsm6dsox_fifo_xl_batch_set(LSM6DSOX_XL_BATCHED_AT_12Hz5);
+         lsm6dsox_fifo_gy_batch_set(LSM6DSOX_GY_BATCHED_AT_12Hz5);
 
-   // Configure the IMU FIFO buffer in Stream/Continuous Mode with interrupts on INT1
-   lsm6dsox_pin_int1_route_t int1_route;
-   lsm6dsox_fifo_watermark_set(15);
-   lsm6dsox_fifo_mode_set(LSM6DSOX_STREAM_MODE);
-   lsm6dsox_int_notification_set(LSM6DSOX_ALL_INT_LATCHED);
-   lsm6dsox_pin_int1_route_get(&int1_route);
-   int1_route.fifo_th = PROPERTY_ENABLE;
-   lsm6dsox_pin_int1_route_set(int1_route);
+         // Prepare Sensor Hub to read data from external Slave0 continuously and store into FIFO
+         lsm6dsox_sh_cfg_read_t sh_cfg_read;
+         sh_cfg_read.slv_add = (LIS3MDL_I2C_ADD_H & 0xFEU) >> 1;
+         sh_cfg_read.slv_subadd = LIS3MDL_OUT_X_L;
+         sh_cfg_read.slv_len = 6;
+         lsm6dsox_sh_slv0_cfg_read(&sh_cfg_read);
+         lsm6dsox_sh_slave_connected_set(LSM6DSOX_SLV_0);
+         lsm6dsox_sh_master_set(PROPERTY_ENABLE);
 
-   // Enable FIFO batching of Slave0
-   lsm6dsox_sh_batch_slave_0_set(PROPERTY_ENABLE);
-   lsm6dsox_sh_data_rate_set(LSM6DSOX_SH_ODR_13Hz);
-   lsm6dsox_fifo_xl_batch_set(LSM6DSOX_XL_BATCHED_AT_12Hz5);
-   lsm6dsox_fifo_gy_batch_set(LSM6DSOX_GY_BATCHED_AT_12Hz5);
+         // Configure LSM6DSOX
+         lsm6dsox_xl_full_scale_set(LSM6DSOX_2g);
+         lsm6dsox_gy_full_scale_set(LSM6DSOX_2000dps);
+         lsm6dsox_block_data_update_set(PROPERTY_ENABLE);
+         lsm6dsox_xl_data_rate_set(LSM6DSOX_XL_ODR_12Hz5);
+         lsm6dsox_gy_data_rate_set(LSM6DSOX_GY_ODR_12Hz5);
+      }
+   }
 
-   // Prepare Sensor Hub to read data from external Slave0 continuously and store into FIFO
-   lsm6dsox_sh_cfg_read_t sh_cfg_read;
-   sh_cfg_read.slv_add = (LIS3MDL_I2C_ADD_H & 0xFEU) >> 1;
-   sh_cfg_read.slv_subadd = LIS3MDL_OUT_X_L;
-   sh_cfg_read.slv_len = 6;
-   lsm6dsox_sh_slv0_cfg_read(&sh_cfg_read);
-   lsm6dsox_sh_slave_connected_set(LSM6DSOX_SLV_0);
-   lsm6dsox_sh_master_set(PROPERTY_ENABLE);
-
-   // Configure LSM6DSOX
-   lsm6dsox_xl_full_scale_set(LSM6DSOX_2g);
-   lsm6dsox_gy_full_scale_set(LSM6DSOX_2000dps);
-   lsm6dsox_block_data_update_set(PROPERTY_ENABLE);
-   lsm6dsox_xl_data_rate_set(LSM6DSOX_XL_ODR_12Hz5);
-   lsm6dsox_gy_data_rate_set(LSM6DSOX_GY_ODR_12Hz5);
+   // De-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
    return true;
 }
@@ -6222,7 +6219,11 @@ bool imu_in_motion(void)
 
 void imu_handle_incoming_data(void)
 {
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
    _data_callback(imu_in_motion(), NULL, NULL, NULL);
+   nrf_drv_spi_uninit(_spi_instance);
+   nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 }
 
 #pragma GCC diagnostic pop

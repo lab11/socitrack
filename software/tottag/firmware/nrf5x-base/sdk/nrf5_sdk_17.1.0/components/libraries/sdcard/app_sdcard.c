@@ -1119,7 +1119,7 @@ ret_code_t app_sdc_init(app_sdc_config_t const * const p_config, sdc_event_handl
                             .irq_priority = SPI_DEFAULT_CONFIG_IRQ_PRIORITY,
                             .orc          = 0xFF,
                             .frequency    = (nrf_drv_spi_frequency_t)APP_SDCARD_FREQ_INIT,
-                            .mode         = NRF_DRV_SPI_MODE_3,
+                            .mode         = NRF_DRV_SPI_MODE_0,
                             .bit_order    = NRF_DRV_SPI_BIT_ORDER_MSB_FIRST,
                         };
     nrf_drv_spi_uninit(&m_spi);
@@ -1154,6 +1154,8 @@ ret_code_t app_sdc_uninit(void)
     m_cb.state.bus_state = SDC_BUS_IDLE;
     m_cb.state.op = SDC_UNINITIALIZED;
 
+    nrf_drv_spi_uninit(&m_spi);
+    nrf_gpio_pin_clear(SD_CARD_SPI_SCLK);
     return NRF_SUCCESS;
 }
 

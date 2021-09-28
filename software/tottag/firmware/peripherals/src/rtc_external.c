@@ -119,9 +119,7 @@ void ab1815_reset(void)
    // Write a software reset request to the configuration register
    ab1815_wait_for_ready(1000);
    uint8_t buf[2] = { 0x80 | AB1815_CONFIGURATION_KEY, AB1815_CONF_KEY_SR };
-   nrf_gpio_pin_clear(CARRIER_CS_RTC);
    APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, buf, 2, NULL, 0));
-   nrf_gpio_pin_set(CARRIER_CS_RTC);
 }
 
 static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
@@ -130,14 +128,8 @@ static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
    if (!ab1815_wait_for_ready(1000))
       return 0;
 
-   // Re-initialize SPI communications
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-
    // Read from the requested register
-   nrf_gpio_pin_clear(CARRIER_CS_RTC);
    APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, &reg, 1, _ab1815_read_write_buf, len + 1));
-   nrf_gpio_pin_set(CARRIER_CS_RTC);
    memcpy(read_buf, _ab1815_read_write_buf + 1, len);
    return 1;
 }
@@ -148,16 +140,10 @@ static uint8_t ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
    if (!ab1815_wait_for_ready(1000))
       return 0;
 
-   // Re-initialize SPI communications
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-
    // Write to the requested register
-   nrf_gpio_pin_clear(CARRIER_CS_RTC);
    _ab1815_read_write_buf[0] = 0x80 | reg;
    memcpy(_ab1815_read_write_buf + 1, write_buf, len);
    APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, _ab1815_read_write_buf, len + 1, NULL, 0));
-   nrf_gpio_pin_set(CARRIER_CS_RTC);
    return 1;
 }
 
@@ -368,10 +354,14 @@ uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
 {
 #if (BOARD_V >= 0x0F)
 
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
    rtc_set_current_time(unix_timestamp);
    struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
    ab1815_time_t new_time = unix_to_ab1815(tv);
    return ab1815_set_time(new_time);
+   nrf_drv_spi_uninit(_spi_instance);
+   nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
 
 #else
 
@@ -545,9 +535,9 @@ uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance)
    _spi_config.sck_pin = RTC_SD_SPI_SCLK;
    _spi_config.miso_pin = RTC_SD_SPI_MISO;
    _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
+   _spi_config.ss_pin = RTC_SD_SPI_CS;
    _spi_config.frequency = NRF_DRV_SPI_FREQ_250K;
    _spi_config.mode = NRF_DRV_SPI_MODE_3;
-   nrf_drv_spi_uninit(_spi_instance);
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Initialize the chip
@@ -592,6 +582,10 @@ uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance)
       rtc_set_current_time(ab1815_to_unix(time).tv_sec);
       ab1815_printTime(time);
    }
+
+   // De-initialize SPI communications
+   nrf_drv_spi_uninit(_spi_instance);
+   nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
 
 #else
    printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
