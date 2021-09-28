@@ -273,9 +273,13 @@ bool accelerometer_in_motion(void)
 
 void accelerometer_handle_incoming_data(void)
 {
+#if (BOARD_V < 0x11)
+
    nrf_drv_spi_uninit(_spi_instance);
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
    _data_callback(imu_in_motion(), NULL, NULL, NULL);
    nrf_drv_spi_uninit(_spi_instance);
    nrfx_gpiote_out_clear(IMU_SPI_SCLK);
+
+#endif  // #if (BOARD_V < 0x11)
 }
