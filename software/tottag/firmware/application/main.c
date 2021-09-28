@@ -306,7 +306,6 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
 {
    // Handle the incoming message
    log_printf("INFO: SquarePoint module sent ");
-   nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
    switch (data[0])
    {
       case SQUAREPOINT_INCOMING_RANGES:
@@ -314,6 +313,7 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
          // Display the callback reason
          log_printf("RANGES, included number of ranges: %i\n", data[1]);
          const uint8_t packet_overhead = 2 + SQUAREPOINT_EUI_LEN, num_ranges = data[1];
+         nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
          uint32_t range = 0, epoch = 0;
 
          // Output the received ranging data
@@ -364,6 +364,7 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
          memcpy(_range_buffer, data + 1, _range_buffer_length);
 
          // Trigger BLE transmission from the main loop
+         nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
          nrfx_atomic_flag_set(&_app_flags.range_buffer_updated);
          break;
       }
@@ -392,6 +393,7 @@ static void squarepoint_data_handler(uint8_t *data, uint32_t len)
       {
          log_printf("REQUEST_TIME, responding with current timestamp\n");
          nrfx_atomic_flag_set(&_app_flags.squarepoint_time_epoch_requested);
+         nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
          break;
       }
       case SQUAREPOINT_INCOMING_PING:
@@ -429,7 +431,7 @@ int main(void)
 
    // Loop forever
    bool charger_plugged_in = false;
-   uint32_t app_enabled = 1, network_discovered = 0, current_timestamp = 0;
+   uint32_t app_enabled = 1, current_timestamp = 0;
    while (true)
    {
       // Go to sleep until something happens
@@ -527,9 +529,8 @@ int main(void)
       }
 
       // Check if the SquarePoint module should be started or stopped based on runtime status and network discovery
-      network_discovered = ble_is_network_available();
       app_enabled = nrfx_atomic_flag_fetch(&_app_flags.squarepoint_enabled);
-      if (app_enabled && network_discovered && !nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
+      if (app_enabled && ble_is_network_available() && !nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
       {
          // Either start SquarePoint or request the correct RTC time based on our current status
          if (nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid))
@@ -588,7 +589,7 @@ int main(void)
       }
 
       // Update the LED status indicators
-      update_leds(network_discovered);
+      update_leds(ble_is_network_available());
 
       // Reset board if the SD card has been removed
       if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))
