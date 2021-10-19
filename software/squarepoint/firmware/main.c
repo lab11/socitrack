@@ -158,7 +158,7 @@ int main(void)
    // Initialize the I2C host controller communications interface
 #ifndef BYPASS_HOST_INTERFACE
    debug_msg("INFO: Connecting to the host interface...\n");
-   _force_reset = host_interface_init() || _force_reset;
+   _force_reset = _force_reset || host_interface_init();
    if (!_force_reset)
    {
       reset_watchdog();
