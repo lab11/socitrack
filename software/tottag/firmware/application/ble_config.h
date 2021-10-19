@@ -67,7 +67,6 @@
 #define APP_BATTERY_CHECK_TIMEOUT_SEC           300
 #define APP_LACK_OF_MOTION_TIMEOUT_SEC          2
 #define APP_RUNNING_RESPONSE_TIMEOUT_SEC        2
-#define SQUAREPOINT_ERROR_NOTIFY_COUNT          5
 #define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   5
 #define BLE_SINGLE_SCAN_DURATION_SEC            5
 #define BLE_SINGLE_SCAN_INTERVAL_SEC            180
@@ -105,7 +104,6 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_data_received;
    nrfx_atomic_flag_t squarepoint_wakeup_triggered;
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
-   nrfx_atomic_flag_t squarepoint_needs_init;
    nrfx_atomic_flag_t elapsed_second;
    nrfx_atomic_flag_t sd_card_inserted;
    nrfx_atomic_flag_t rtc_time_valid;
@@ -118,7 +116,6 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t bluetooth_is_scanning;
    nrfx_atomic_flag_t bluetooth_single_scanning;
    nrfx_atomic_u32_t bluetooth_single_scan_timer;
-   nrfx_atomic_u32_t squarepoint_comms_error_count;
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;
    nrfx_atomic_u32_t device_reset_counter;

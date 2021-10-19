@@ -49,7 +49,6 @@ static void app_init(void)
 {
    // Initialize flags that are not defaulted to false or 0
    _app_flags.squarepoint_enabled = true;
-   _app_flags.squarepoint_needs_init = true;
    _app_flags.sd_card_inserted = true;
    _app_flags.battery_status_changed = true;
    _app_flags.device_in_motion = true;
@@ -72,6 +71,34 @@ static void spi_init(void)
    // Make sure SPI lines are valid and not floating
    nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_init(CARRIER_SD_ENABLE, &sd_enable_pin_config);
+}
+
+static void squarepoint_comms_init(void)
+{
+   // Log the SquarePoint initialization attempt
+   log_printf("INFO: Connecting to the SquarePoint module...\n");
+   uint32_t repeat_failure = 0;
+   bool needs_init = true;
+
+   // Initialize the SquarePoint module
+   while (needs_init)
+   {
+      squarepoint_wakeup_module();
+      if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
+      {
+         log_printf("INFO: SquarePoint module connection successful\n");
+         needs_init = false;
+      }
+      else
+      {
+         if ((++repeat_failure % 100) == 0)
+         {
+            log_printf("ERROR: SquarePoint module connection unsuccessful!\n");
+            buzzer_indicate_error();
+         }
+         nrf_delay_ms(50);
+      }
+   }
 }
 
 static void hardware_init(void)
@@ -146,33 +173,14 @@ static void hardware_init(void)
    sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? rtc_get_current_time() : 0, true);
    printf("INFO: Initialized supplementary hardware and software services\n");
 
-   // Initialize the SquarePoint module
-   uint32_t repeat_failure = 0;
-   while (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init))
-   {
-      log_printf("INFO: Connecting to the SquarePoint module...\n");
-      squarepoint_wakeup_module();
-      if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
-      {
-         log_printf("INFO: SquarePoint module connection successful\n");
-         nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_init);
-      }
-      else
-      {
-         log_printf("ERROR: SquarePoint module connection unsuccessful!\n");
-         if ((++repeat_failure % 100) == 0)
-            buzzer_indicate_error();
-         nrf_delay_ms(50);
-      }
-   }
+   // Initialize communications with the SquarePoint module
+   squarepoint_comms_init();
 }
 
 static void update_leds(uint32_t network_discovered)
 {
    if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))            // RED = SD card not inserted
       led_on(RED);
-   else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init))  // PURPLE = Cannot communicate with SquarePoint
-      led_on(PURPLE);
    else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))     // GREEN = App running
       led_on(GREEN);
    else if (network_discovered)                                          // ORANGE = Network discovered, app not running
@@ -183,23 +191,8 @@ static void update_leds(uint32_t network_discovered)
 
 static nrfx_err_t start_squarepoint(void)
 {
-   // Wake up the SquarePoint module
-   log_printf("INFO: Starting the SquarePoint module...\n");
-   squarepoint_wakeup_module();
-
    // Initialize the SquarePoint module and communications
-   nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui());
-   if (err_code == NRFX_SUCCESS)
-   {
-      nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_init);
-      nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
-   }
-   else
-   {
-      log_printf("ERROR: Unable to communicate with the SquarePoint module\n");
-      nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_init);
-      return err_code;
-   }
+   squarepoint_comms_init();
 
    // Set this device to be the scheduler if we already are or if none exists and we have the highest EUI
    schedule_role_t scheduler_role = PARTICIPANT;
@@ -209,7 +202,8 @@ static nrfx_err_t start_squarepoint(void)
          scheduler_role = SCHEDULER;
 
    // Start the SquarePoint ranging application
-   err_code = squarepoint_start_application(rtc_get_current_time(), ble_get_device_role(), scheduler_role);
+   log_printf("INFO: Starting the SquarePoint module...\n");
+   nrfx_err_t err_code = squarepoint_start_application(rtc_get_current_time(), ble_get_device_role(), scheduler_role);
    if (err_code != NRFX_SUCCESS)
    {
       log_printf("ERROR: Failed to start the SquarePoint ranging app!\n");
@@ -231,26 +225,12 @@ static nrfx_err_t start_squarepoint(void)
 #ifdef BLE_CALIBRATION
 static nrfx_err_t start_squarepoint_calibration(void)
 {
-   // Wake up the SquarePoint module
-   printf("INFO: Starting the SquarePoint module in calibration mode...\n");
-   squarepoint_wakeup_module();
-
    // Initialize the SquarePoint module and communications
-   nrfx_err_t err_code = squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui());
-   if (err_code == NRFX_SUCCESS)
-   {
-      nrfx_atomic_flag_clear(&_app_flags.squarepoint_needs_init);
-      nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
-   }
-   else
-   {
-      printf("ERROR: Unable to communicate with the SquarePoint module\n");
-      nrfx_atomic_flag_set(&_app_flags.squarepoint_needs_init);
-      return err_code;
-   }
+   squarepoint_comms_init();
 
    // Start the SquarePoint calibration application
-   err_code = squarepoint_start_calibration((uint8_t)nrfx_atomic_u32_fetch(&_app_flags.calibration_index));
+   printf("INFO: Starting the SquarePoint module in calibration mode...\n");
+   nrfx_err_t err_code = squarepoint_start_calibration((uint8_t)nrfx_atomic_u32_fetch(&_app_flags.calibration_index));
    if (err_code != NRFX_SUCCESS)
    {
       printf("ERROR: Failed to start the SquarePoint calibration app!\n");
@@ -453,14 +433,6 @@ int main(void)
       {
          // Handle BLE time-based tasks
          ble_second_has_elapsed();
-
-         // Validate communications connectivity with the SquarePoint module
-         if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_needs_init) &&
-            (nrfx_atomic_u32_fetch_add(&_app_flags.squarepoint_comms_error_count, 1) >= SQUAREPOINT_ERROR_NOTIFY_COUNT))
-         {
-            buzzer_indicate_error();
-            nrfx_atomic_u32_store(&_app_flags.squarepoint_comms_error_count, 0);
-         }
 
          // Force a hard reset upon expiration of a specified number of seconds
 #if defined(DEVICE_FORCE_RESET_INTERVAL_SEC) && (DEVICE_FORCE_RESET_INTERVAL_SEC > 0)

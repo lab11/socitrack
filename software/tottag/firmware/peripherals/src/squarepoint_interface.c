@@ -272,7 +272,7 @@ nrfx_err_t squarepoint_wakeup_module(void)
    err_code = twi_hw_init();
 
    // Give the SquarePoint module some time to re-initialize
-   nrf_delay_ms(2);
+   nrf_delay_ms(5);
    return err_code;
 }
 
