@@ -505,6 +505,12 @@ void sd_card_log_ranges(const uint8_t *data, uint16_t length)
 #endif
 }
 
+void sd_card_log_updated_epoch(uint32_t epoch)
+{
+   uint16_t bytes_written = (uint16_t)snprintf(_sd_write_buf, sizeof(_sd_write_buf), "### NETWORK-UPDATED RTC TIME: %lu\n", epoch);
+   sd_card_write(_sd_write_buf, bytes_written, false);
+}
+
 void sd_card_log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush)
 {
    // Start a new log file if it is a new day

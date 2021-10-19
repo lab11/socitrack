@@ -537,10 +537,11 @@ int main(void)
             start_squarepoint();
          else if ((current_timestamp = ble_request_timestamp()) > 0)
          {
-            log_printf("INFO: Setting timestamp to the network response: %lu\n", current_timestamp);
-            ab1815_set_timestamp(current_timestamp);
+            sd_card_log_updated_epoch(current_timestamp);
             sd_card_create_log(current_timestamp, false);
             nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
+            ab1815_set_timestamp(current_timestamp);
+            log_printf("INFO: Setting timestamp to the network response: %lu\n", current_timestamp);
          }
       }
       else if (!app_enabled && nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
