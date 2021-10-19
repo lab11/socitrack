@@ -50,6 +50,7 @@
 /******************************************************************************/
 // INTERRUPT TO HOST DEVICE
 /********************************************************************************/
+#define EXT_WAKEUP_PIN_ENABLED      0
 #define EXT_INTERRUPT_PIN           GPIO_Pin_2
 #define EXT_INTERRUPT_PORT          GPIOA
 #define EXT_INTERRUPT_CLK           RCC_AHBPeriph_GPIOA
