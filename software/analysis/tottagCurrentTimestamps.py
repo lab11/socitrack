@@ -17,10 +17,10 @@ TIMESTAMP_SERVICE_UUID = 'd68c3158-a23f-ee90-0c45-5231395e5d2e'
 
 async def run():
 
-  # Scan for TotTag devices for 6 seconds
+  # Scan for TotTag devices for 5 seconds
   scanner = BleakScanner()
   await scanner.start()
-  await asyncio.sleep(6.0)
+  await asyncio.sleep(5.0)
   await scanner.stop()
 
   # Iterate through all discovered TotTag devices

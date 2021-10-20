@@ -83,7 +83,6 @@ static void squarepoint_comms_init(void)
    // Initialize the SquarePoint module
    while (needs_init)
    {
-      squarepoint_wakeup_module();
       if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
       {
          log_printf("INFO: SquarePoint module connection successful\n");

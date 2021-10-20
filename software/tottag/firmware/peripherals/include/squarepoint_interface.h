@@ -55,7 +55,6 @@ nrfx_err_t squarepoint_start_calibration(uint8_t index);
 nrfx_err_t squarepoint_get_calibration(uint8_t* calib_buf);
 nrfx_err_t squarepoint_stop(void);
 nrfx_err_t squarepoint_set_time(uint32_t epoch);
-nrfx_err_t squarepoint_wakeup_module(void);
 nrfx_err_t squarepoint_wakeup_radio(void);
 nrfx_err_t squarepoint_ack(void);
 void squarepoint_handle_incoming_data(void);

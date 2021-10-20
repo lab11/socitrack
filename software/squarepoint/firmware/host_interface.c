@@ -44,7 +44,7 @@ uint32_t host_interface_init(void)
    GPIO_InitStructure.GPIO_Pin = EXT_INTERRUPT_PIN;
    GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3;
    GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
    GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    EXT_INTERRUPT_PORT->BRR = EXT_INTERRUPT_PIN;  // clear
