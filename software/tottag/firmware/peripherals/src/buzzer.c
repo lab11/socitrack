@@ -25,6 +25,7 @@ static void buzzer_indicate_plugged(void)
 {
    // Tone Frequency = base_clock / top_value
 #if (BOARD_V >= 0x10)
+#ifdef ENABLE_SOUNDS
    const uint32_t duration_ms = 100;
    uint32_t tone_frequency_hz = 880;
    nrfx_pwm_uninit(&pwm_instance);
@@ -56,12 +57,14 @@ static void buzzer_indicate_plugged(void)
    nrf_delay_ms(duration_ms + 10);
    nrfx_gpiote_out_set(BUZZER_DRIVER);
 #endif
+#endif
 }
 
 static void buzzer_indicate_unplugged(void)
 {
    // Tone Frequency = base_clock / top_value
 #if (BOARD_V >= 0x10)
+#ifdef ENABLE_SOUNDS
    const uint32_t duration_ms = 100;
    uint32_t tone_frequency_hz = 1760;
    nrfx_pwm_uninit(&pwm_instance);
@@ -92,6 +95,7 @@ static void buzzer_indicate_unplugged(void)
 
    nrf_delay_ms(duration_ms + 10);
    nrfx_gpiote_out_set(BUZZER_DRIVER);
+#endif
 #endif
 }
 
@@ -126,6 +130,7 @@ void buzzer_indicate_invalid_rtc_time(void)
 {
    // Tone Frequency = base_clock / top_value
 #if (BOARD_V >= 0x10)
+#ifdef ENABLE_SOUNDS
    uint32_t duration_ms = 100;
    uint32_t tone_frequency_hz = 1047;
    nrfx_pwm_uninit(&pwm_instance);
@@ -166,12 +171,14 @@ void buzzer_indicate_invalid_rtc_time(void)
    nrf_delay_ms(duration_ms * 2);
    nrfx_gpiote_out_set(BUZZER_DRIVER);
 #endif
+#endif
 }
 
 void buzzer_indicate_error(void)
 {
    // Tone Frequency = base_clock / top_value
 #if (BOARD_V >= 0x10)
+#ifdef ENABLE_SOUNDS
    const uint32_t duration_ms = 300;
    uint32_t tone_frequency_hz = 880;
    nrfx_pwm_uninit(&pwm_instance);
@@ -189,11 +196,13 @@ void buzzer_indicate_error(void)
    nrf_delay_ms((2 * duration_ms) + 10);
    nrfx_gpiote_out_set(BUZZER_DRIVER);
 #endif
+#endif
 }
 
 void buzzer_indicate_low_battery(void)
 {
 #if (BOARD_V >= 0x10)
+#ifdef ENABLE_SOUNDS
 #ifdef ENABLE_LOW_BATTERY_SOUNDS
    uint32_t duration_ms = 150;
    uint32_t tone_frequency_hz = 1760;
@@ -211,6 +220,7 @@ void buzzer_indicate_low_battery(void)
 
    nrf_delay_ms(2 * duration_ms);
    nrfx_gpiote_out_set(BUZZER_DRIVER);
+#endif
 #endif
 #endif
 }
