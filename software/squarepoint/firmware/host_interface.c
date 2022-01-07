@@ -15,6 +15,7 @@
 
 // Scratch variables ---------------------------------------------------------------------------------------------------
 
+static GPIO_InitTypeDef GPIO_InitStructure;
 static volatile uint32_t tx_needs_ack = 0;
 static uint8_t rxBuffer[32] = { 0 };
 static uint8_t txBuffer[256] = { 0 };
@@ -39,15 +40,13 @@ uint32_t host_interface_init(void)
    atomic_clear(&tx_needs_ack);
 
    // Enable the Interrupt pin
-   GPIO_InitTypeDef GPIO_InitStructure;
    RCC_AHBPeriphClockCmd(EXT_INTERRUPT_CLK, ENABLE);
    GPIO_InitStructure.GPIO_Pin = EXT_INTERRUPT_PIN;
-   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;
    GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3;
-   GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
    GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
-   EXT_INTERRUPT_PORT->BRR = EXT_INTERRUPT_PIN;  // clear
 
    // Initialize local I2C Reception structures
    rxStructure.wNumData = sizeof(rxBuffer);     /* Maximum Number of data to be received */
@@ -129,8 +128,7 @@ void host_interface_notify_ranges(uint8_t *ids_ranges, uint8_t len)
       host_interface_error_occurred();
       return;
    }
-   while (GPIO_ReadOutputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET)
-      GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_RESET);
+   while (GPIO_ReadInputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET);
 
    // Set up the transfer buffer
    txBuffer[0] = 1 + len;
@@ -138,7 +136,11 @@ void host_interface_notify_ranges(uint8_t *ids_ranges, uint8_t len)
    memcpy(txBuffer + 2, ids_ranges, len);
 
    // Inform the host of impending data transfer
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_SET);
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
 }
 
 void host_interface_notify_calibration(uint8_t *calibration_data, uint8_t len)
@@ -149,8 +151,7 @@ void host_interface_notify_calibration(uint8_t *calibration_data, uint8_t len)
       host_interface_error_occurred();
       return;
    }
-   while (GPIO_ReadOutputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET)
-      GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_RESET);
+   while (GPIO_ReadInputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET);
 
    // Set up the transfer buffer
    txBuffer[0] = 1 + len;
@@ -158,7 +159,11 @@ void host_interface_notify_calibration(uint8_t *calibration_data, uint8_t len)
    memcpy(txBuffer + 2, calibration_data, len);
 
    // Inform the host of impending data transfer
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_SET);
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
 }
 
 void host_interface_schedule_wakeup(uint8_t quarter_wakeup_delay_ms)
@@ -169,8 +174,7 @@ void host_interface_schedule_wakeup(uint8_t quarter_wakeup_delay_ms)
       host_interface_error_occurred();
       return;
    }
-   while (GPIO_ReadOutputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET)
-      GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_RESET);
+   while (GPIO_ReadInputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET);
 
    // Set up the transfer buffer
    txBuffer[0] = 2;
@@ -178,7 +182,11 @@ void host_interface_schedule_wakeup(uint8_t quarter_wakeup_delay_ms)
    txBuffer[2] = quarter_wakeup_delay_ms;
 
    // Inform the host of impending data transfer
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_SET);
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
 }
 
 void host_interface_ping_host(void)
@@ -189,15 +197,18 @@ void host_interface_ping_host(void)
       host_interface_error_occurred();
       return;
    }
-   while (GPIO_ReadOutputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET)
-      GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_RESET);
+   while (GPIO_ReadInputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET);
 
    // Set up the transfer buffer
    txBuffer[0] = 1;
    txBuffer[1] = HOST_IFACE_INTERRUPT_PING;
 
    // Inform the host of impending data transfer
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_SET);
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
 }
 
 void host_interface_request_time(void)
@@ -208,15 +219,18 @@ void host_interface_request_time(void)
       host_interface_error_occurred();
       return;
    }
-   while (GPIO_ReadOutputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET)
-      GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_RESET);
+   while (GPIO_ReadInputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET);
 
    // Set up the transfer buffer
    txBuffer[0] = 1;
    txBuffer[1] = HOST_IFACE_INTERRUPT_REQUEST_TIME;
 
    // Inform the host of impending data transfer
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_SET);
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
 }
 
 void host_interface_notify_stopped(void)
@@ -227,15 +241,18 @@ void host_interface_notify_stopped(void)
       host_interface_error_occurred();
       return;
    }
-   while (GPIO_ReadOutputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET)
-      GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_RESET);
+   while (GPIO_ReadInputDataBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN) == Bit_SET);
 
    // Set up the transfer buffer
    txBuffer[0] = 1;
    txBuffer[1] = HOST_IFACE_INTERRUPT_STOPPED;
 
    // Inform the host of impending data transfer
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
    GPIO_WriteBit(EXT_INTERRUPT_PORT, EXT_INTERRUPT_PIN, Bit_SET);
+   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+   GPIO_Init(EXT_INTERRUPT_PORT, &GPIO_InitStructure);
 }
 
 // Called after a WRITE message from the Host

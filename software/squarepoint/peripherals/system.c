@@ -16,7 +16,6 @@
 
 // Local state variables -----------------------------------------------------------------------------------------------
 
-static GPIO_InitTypeDef _GPIO_InitStructure = { 0 };
 static EXTI_InitTypeDef _EXTI_InitStructure = { 0 };
 static NVIC_InitTypeDef _NVIC_InitStructure = { 0 };
 
@@ -122,13 +121,9 @@ uint8_t hw_init(void)
    WWDG_EnableIT();
 
    // Initialize External Interrupt Pin variables
-   _GPIO_InitStructure.GPIO_Pin = EXT_INTERRUPT_PIN;
-   _GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-   _GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-   _GPIO_InitStructure.GPIO_Speed = GPIO_Speed_Level_3;
    _EXTI_InitStructure.EXTI_Line = EXT_INTERRUPT_EXTI_LINE;
    _EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-   _EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
+   _EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising;
    _NVIC_InitStructure.NVIC_IRQChannel = EXT_INTERRUPT_EXTI_IRQn;
    _NVIC_InitStructure.NVIC_IRQChannelPriority = 0x00;
 
@@ -146,13 +141,11 @@ void hw_stop_chip(void)
    // Force the DW1000 radio into DEEP SLEEP mode
    dw1000_force_deepsleep();
 
-   // Enable the SYSCFG clock, and set the External Interrupt Pin to a detectable input
+   // Set the External Interrupt Pin to be an interruptible input
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
-   _GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-   _EXTI_InitStructure.EXTI_LineCmd = ENABLE;
-   _NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
-   GPIO_Init(EXT_INTERRUPT_PORT, &_GPIO_InitStructure);
    SYSCFG_EXTILineConfig(EXT_INTERRUPT_EXTI_PORT, EXT_INTERRUPT_EXTI_PIN);
+   _NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+   _EXTI_InitStructure.EXTI_LineCmd = ENABLE;
    EXTI_Init(&_EXTI_InitStructure);
    NVIC_Init(&_NVIC_InitStructure);
 
@@ -175,14 +168,12 @@ bool hw_restart_chip(void)
    // Re-initalize the system clocks and PLL
    SystemInit();
 
-   // Reset the External Interrupt Pin to be an output
+   // Reset the External Interrupt Pin to be a simple input
+   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
    _NVIC_InitStructure.NVIC_IRQChannelCmd = DISABLE;
-   _GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
    _EXTI_InitStructure.EXTI_LineCmd = DISABLE;
    NVIC_Init(&_NVIC_InitStructure);
    EXTI_Init(&_EXTI_InitStructure);
-   GPIO_Init(EXT_INTERRUPT_PORT, &_GPIO_InitStructure);
-   EXT_INTERRUPT_PORT->BRR = EXT_INTERRUPT_PIN;
 
    // Wake up the DW1000 radio from DEEP SLEEP mode
    dw1000_reset_hard(TRUE);

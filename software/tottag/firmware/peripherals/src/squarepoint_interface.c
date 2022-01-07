@@ -110,16 +110,20 @@ static nrfx_err_t twi_hw_init(void)
    twi_config.sda = CARRIER_I2C_SDA;
    twi_config.frequency = NRF_TWI_FREQ_400K;
    twi_config.interrupt_priority = APP_IRQ_PRIORITY_HIGHEST;
-   APP_ERROR_CHECK(nrfx_twi_init(&_twi_instance, &twi_config, NULL, NULL));
+   nrfx_twi_init(&_twi_instance, &twi_config, NULL, NULL);
    nrfx_twi_enable(&_twi_instance);
 
    // Setup an interrupt handler to detect when SquarePoint has data to send
    nrfx_gpiote_in_config_t int_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+   int_config.pull = NRF_GPIO_PIN_PULLDOWN;
    nrfx_err_t err_code = nrfx_gpiote_in_init(STM_INTERRUPT, &int_config, squarepoint_interrupt_handler);
    if (err_code == NRFX_SUCCESS)
       nrfx_gpiote_in_event_enable(STM_INTERRUPT, true);
    else
+   {
+      log_printf("ERROR: Unable to initialize SquarePoint interrupt GPIO pin; Error code = %lu\n", err_code);
       nrfx_twi_uninit(&_twi_instance);
+   }
    return err_code;
 }
 
@@ -144,8 +148,14 @@ static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version, const uin
                                            .primary_length = 3, .secondary_length = 0 };
    nrfx_err_t err_code = nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
    if (err_code == NRFX_SUCCESS)
+   {
       err_code = nrfx_twi_xfer(&_twi_instance, &rx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
-   if (err_code == NRFX_SUCCESS)
+      if ((err_code != NRFX_SUCCESS) && (err_code != NRFX_ERROR_DRV_TWI_ERR_OVERRUN))
+         log_printf("WARNING: Problem receiving SQUAREPOINT_CMD_INFO response; Error code = %lu\n", err_code);
+   }
+   else
+      log_printf("WARNING: Problem sending SQUAREPOINT_CMD_INFO request; Error code = %lu\n", err_code);
+   if ((err_code == NRFX_SUCCESS) || (err_code == NRFX_ERROR_DRV_TWI_ERR_OVERRUN))
    {
       *id = (uint16_t)((uint16_t)_twi_rx_buf[0] << (uint8_t)8) | _twi_rx_buf[1];
       *version = _twi_rx_buf[2];
@@ -166,11 +176,12 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
    if (squarepoint_get_info(&id, &version, eui) != NRFX_SUCCESS)
    {
       // Reverse the direction of the interrupt line to wake up SquarePoint
+      log_printf("INFO: Attempting to wake-up SquarePoint module and re-initiate communications\n");
       nrfx_gpiote_in_uninit(STM_INTERRUPT);
       nrfx_gpiote_out_config_t out_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
       nrfx_gpiote_out_init(STM_INTERRUPT, &out_config);
       twi_hw_uninit();
-      nrf_delay_ms(5);
+      nrf_delay_ms(50);
 
       // Ensure that the TWI peripheral hardware is initialized
       if (twi_hw_init() || squarepoint_get_info(&id, &version, eui))
