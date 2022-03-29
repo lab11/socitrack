@@ -107,7 +107,15 @@ uint8_t ab1815_init_time(void)
    comp_time.years = ascii_to_i(_datetime[26]) * 10 + ascii_to_i(_datetime[27]);
    comp_time.weekday = 0;  // default
 
-   return ab1815_set_time(comp_time);
+   uint8_t time_properly_set = 0, num_retries = 10;
+   struct timeval set_time = ab1815_to_unix(comp_time);
+   while (!time_properly_set && --num_retries)
+   {
+      ab1815_set_time(comp_time);
+      time_properly_set = (ab1815_get_time_unix().tv_sec <= (set_time.tv_sec + 60));
+   }
+   return time_properly_set;
+
 #pragma GCC diagnostic pop
 #else
    return 1;
@@ -359,9 +367,10 @@ uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
    rtc_set_current_time(unix_timestamp);
    struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
    ab1815_time_t new_time = unix_to_ab1815(tv);
-   return ab1815_set_time(new_time);
+   uint8_t ret_val = ab1815_set_time(new_time);
    nrf_drv_spi_uninit(_spi_instance);
    nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
+   return ret_val;
 
 #else
 

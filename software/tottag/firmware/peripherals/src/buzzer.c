@@ -14,8 +14,10 @@
 #if (BOARD_V >= 0x10)
 static nrfx_pwm_t pwm_instance = NRFX_PWM_INSTANCE(0);
 static nrfx_pwm_config_t pwm_config = NRFX_PWM_DEFAULT_CONFIG;
+#ifdef ENABLE_SOUNDS
 static nrf_pwm_values_common_t pwm_duties[] = { 0x8000, 0 };
 static nrf_pwm_sequence_t pwm_sequence = { .values.p_common = pwm_duties, .length = NRF_PWM_VALUES_LENGTH(pwm_duties), .repeats = 0, .end_delay = 0 };
+#endif
 #endif
 
 
