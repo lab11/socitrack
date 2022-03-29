@@ -78,8 +78,9 @@ BOARD_SOURCES += \
 	SEGGER_RTT_Syscalls_GCC.c\
 	system_nrf52840.c
 
-# Make sure that bluetooth.c is always compiled so the ID is picked up correctly
+# Make sure that main.c and bluetooth.c are always compiled so the ID and any macros are picked up correctly
 _build/bluetooth.o: FORCE
+_build/main.o: FORCE
 
 # Make sure that rtc.c is always compiled so that the compile time is correct
 _build/rtc_external.o: FORCE
