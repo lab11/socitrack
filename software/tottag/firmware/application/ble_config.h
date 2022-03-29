@@ -110,7 +110,6 @@
 // Constants -----------------------------------------------------------------------------------------------------------
 
 // SUMMON URL (must be <= 17 characters to not throw NRF_ERROR_INVALID_LENGTH, as header overhead is 14 byte and packet has size <= 31)
-
 #define PHYSWEB_URL "bit.ly/p1R8"               // Points to https://n.ethz.ch/~abiri/d/
 
 // BLE characteristics
@@ -184,6 +183,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t bluetooth_is_advertising;
    nrfx_atomic_flag_t bluetooth_is_scanning;
    nrfx_atomic_flag_t bluetooth_single_scanning;
+   nrfx_atomic_flag_t battery_too_low;
    nrfx_atomic_u32_t bluetooth_single_scan_timer;
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;

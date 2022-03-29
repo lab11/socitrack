@@ -41,6 +41,9 @@ static volatile uint16_t _range_buffer_length = 0;
 
 // Helper functions ----------------------------------------------------------------------------------------------------
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdate-time"
+
 static void watchdog_handler(void *p_context);
 static void squarepoint_data_handler(uint8_t *data, uint32_t len);
 static void imu_data_handler(bool in_motion, float* x_accel_data, float* y_accel_data, float* z_accel_data);
@@ -52,6 +55,7 @@ static void app_init(void)
    _app_flags.sd_card_inserted = true;
    _app_flags.battery_status_changed = true;
    _app_flags.device_in_motion = true;
+   _app_flags.battery_too_low = true;
    _app_flags.battery_check_counter = APP_BATTERY_CHECK_TIMEOUT_SEC;
    _app_flags.calibration_index = BLE_CALIBRATION_INDEX_INVALID;
 }
@@ -469,12 +473,14 @@ int main(void)
          {
             log_printf("WARNING: Battery voltage is getting critically low @ %hu mV!\n", batt_mv);
             nrfx_atomic_u32_store(&_app_flags.battery_check_counter, (APP_BATTERY_CHECK_TIMEOUT_SEC < 60) ? 0 : (APP_BATTERY_CHECK_TIMEOUT_SEC - 60));
+            nrfx_atomic_flag_set(&_app_flags.battery_too_low);
             buzzer_indicate_low_battery();
          }
          else
          {
             log_printf("INFO: Battery voltage currently %hu mV\n", batt_mv);
             nrfx_atomic_u32_store(&_app_flags.battery_check_counter, 0);
+            nrfx_atomic_flag_clear(&_app_flags.battery_too_low);
          }
          sd_card_log_battery(batt_mv, rtc_get_current_time(), !nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running));
       }
@@ -500,7 +506,7 @@ int main(void)
       }
 
       // Check if the SquarePoint module should be started or stopped based on runtime status and network discovery
-      app_enabled = nrfx_atomic_flag_fetch(&_app_flags.squarepoint_enabled);
+      app_enabled = nrfx_atomic_flag_fetch(&_app_flags.squarepoint_enabled) && !nrfx_atomic_flag_fetch(&_app_flags.battery_too_low);
       if (app_enabled && ble_is_network_available() && !nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
       {
          // Either start SquarePoint or request the correct RTC time based on our current status
@@ -568,3 +574,5 @@ int main(void)
          nrfx_atomic_flag_set(&_app_flags.device_reset_required);
    }
 }
+
+#pragma GCC diagnostic pop
