@@ -539,7 +539,7 @@ int main(void)
       }
       else
       {
-         if (!nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_advertising) && nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid))
+         if (!nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_advertising) && nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) && !nrfx_atomic_flag_fetch(&_app_flags.battery_too_low))
             ble_start_advertising();
 #ifndef BLE_CALIBRATION
          if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
