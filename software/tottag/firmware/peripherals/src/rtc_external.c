@@ -112,8 +112,10 @@ uint8_t ab1815_init_time(void)
    while (!time_properly_set && --num_retries)
    {
       ab1815_set_time(comp_time);
-      time_properly_set = (ab1815_get_time_unix().tv_sec <= (set_time.tv_sec + 60));
+      time_properly_set = (ab1815_get_time_unix().tv_sec <= (set_time.tv_sec + 60)) &&
+                          (ab1815_get_time_unix().tv_sec >= (set_time.tv_sec - 60));
    }
+   printf("%s: RTC clock was %s set to the current datetime\n", time_properly_set ? "INFO" : "ERROR", time_properly_set ? "properly" : "unable to be");
    return time_properly_set;
 
 #pragma GCC diagnostic pop
@@ -365,12 +367,20 @@ uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
    nrf_drv_spi_uninit(_spi_instance);
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
    rtc_set_current_time(unix_timestamp);
+
+   uint8_t time_properly_set = 0, num_retries = 10;
    struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
    ab1815_time_t new_time = unix_to_ab1815(tv);
-   uint8_t ret_val = ab1815_set_time(new_time);
+   while (!time_properly_set && --num_retries)
+   {
+      ab1815_set_time(new_time);
+      time_properly_set = (ab1815_get_time_unix().tv_sec <= (tv.tv_sec + 60)) &&
+                          (ab1815_get_time_unix().tv_sec >= (tv.tv_sec - 60));
+   }
+
    nrf_drv_spi_uninit(_spi_instance);
    nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
-   return ret_val;
+   return time_properly_set;
 
 #else
 
