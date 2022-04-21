@@ -71,11 +71,22 @@ BOARD_SOURCES += \
 	SEGGER_RTT_Syscalls_GCC.c\
 	system_nrf52840.c
 
-# Make sure that certain modules are always compiled so any flag changes are picked up correctly
+# Make sure that peripherals are always recompiled so any flag changes are picked up correctly
+_build/accelerometer.o: FORCE
+_build/battery.o: FORCE
+_build/better_error_handling.o: FORCE
 _build/bluetooth.o: FORCE
 _build/buzzer.o: FORCE
+_build/imu.o: FORCE
 _build/led.o: FORCE
+_build/magnetometer.o: FORCE
+_build/rtc_external.o: FORCE
+_build/rtc.o: FORCE
 _build/sd_card.o: FORCE
+_build/squarepoint_interface.o: FORCE
+_build/system.o: FORCE
+_build/timers.o: FORCE
+_build/usb.o: FORCE
 _build/main.o: FORCE
 
 .PHONY: FORCE
