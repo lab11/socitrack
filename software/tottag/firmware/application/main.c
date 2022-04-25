@@ -25,7 +25,6 @@
 #include "squarepoint_interface.h"
 #include "system.h"
 #include "timers.h"
-#include "usb.h"
 
 #pragma GCC diagnostic pop
 
@@ -87,7 +86,7 @@ static void squarepoint_comms_init(void)
    // Initialize the SquarePoint module
    while (needs_init)
    {
-      if (squarepoint_init(&_app_flags.squarepoint_data_received, squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
+      if (squarepoint_init(squarepoint_data_handler, ble_get_eui()) == NRFX_SUCCESS)
       {
          log_printf("INFO: SquarePoint module connection successful\n");
          needs_init = false;
@@ -127,11 +126,10 @@ static void hardware_init(void)
    timers_init(watchdog_handler, &_app_flags.squarepoint_wakeup_triggered);
    rtc_init();
 
-   // Initialize the power driver and USB stack
+   // Initialize the power driver
    const nrfx_power_config_t power_config = { .dcdcen = 1 };
    nrf_drv_power_init(&power_config);
    nrf_pwr_mgmt_init();
-   usb_init();
 
    // Initialize the Bluetooth stack via a SoftDevice
    if (ble_init(&_app_flags.bluetooth_is_advertising, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
@@ -420,12 +418,8 @@ int main(void)
       // Go to sleep until something happens
       nrf_pwr_mgmt_run();
 
-      // Check if the SquarePoint module has communicated over TWI
-      if (nrfx_atomic_flag_clear_fetch(&_app_flags.squarepoint_data_received))
-         squarepoint_handle_incoming_data();
-
-      // Handle USB communications
-      usb_handle_comms();
+      // Handle any incoming SquarePoint module data
+      squarepoint_handle_incoming_data();
 
       // Check if there is new IMU data to handle
       if (nrfx_atomic_flag_clear_fetch(&_app_flags.imu_motion_changed) || nrfx_atomic_flag_clear_fetch(&_app_flags.imu_data_ready))
@@ -493,7 +487,6 @@ int main(void)
          if (charger_plugged_in != is_plugged_in)
             buzzer_indicate_plugged_status(is_plugged_in);
          sd_card_log_charging(is_plugged_in, is_charging, rtc_get_current_time(), !nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running));
-         usb_change_power_status(is_plugged_in);
          charger_plugged_in = is_plugged_in;
 
          // Disable SquarePoint if charging or plugged in

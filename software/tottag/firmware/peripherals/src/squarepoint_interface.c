@@ -14,7 +14,7 @@
 
 // Application connectivity variables ----------------------------------------------------------------------------------
 
-static nrfx_atomic_flag_t *_squarepoint_interrupt_thrown = NULL;
+static nrfx_atomic_flag_t _squarepoint_interrupt_thrown;
 static squarepoint_interface_data_callback _data_callback = NULL;
 
 
@@ -94,7 +94,7 @@ static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_pola
    _rx_data_description.primary_length = _twi_rx_length;
    if ((nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS) &&
        (nrfx_twi_xfer(&_twi_instance, &_rx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS))
-      nrfx_atomic_flag_set(_squarepoint_interrupt_thrown);
+      nrfx_atomic_flag_set(&_squarepoint_interrupt_thrown);
    else
       log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_length);
 }
@@ -168,7 +168,7 @@ static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version, const uin
 
 // Public SquarePoint Interface API ------------------------------------------------------------------------------------
 
-nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_interface_data_callback callback, const uint8_t* eui)
+nrfx_err_t squarepoint_init(squarepoint_interface_data_callback callback, const uint8_t* eui)
 {
    // Determine if the SquarePoint module is already awake
    uint16_t id = 0;
@@ -192,7 +192,6 @@ nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_
    }
 
    // Setup connections to the application
-   _squarepoint_interrupt_thrown = incoming_data_flag;
    _data_callback = callback;
 
    // Try to read information from SquarePoint to validate the TWI connection
@@ -291,7 +290,7 @@ nrfx_err_t squarepoint_ack(void)
 
 void squarepoint_handle_incoming_data(void)
 {
-   // Call the user callback
-   if (_data_callback)
+   // Call the user callback if data is available
+   if (nrfx_atomic_flag_clear_fetch(&_squarepoint_interrupt_thrown) && _data_callback)
       _data_callback(_twi_rx_buf, _twi_rx_length);
 }

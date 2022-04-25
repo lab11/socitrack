@@ -49,7 +49,7 @@ typedef void (*squarepoint_interface_data_callback)(uint8_t* data, uint32_t len)
 
 // Public SquarePoint Interface API ------------------------------------------------------------------------------------
 
-nrfx_err_t squarepoint_init(nrfx_atomic_flag_t* incoming_data_flag, squarepoint_interface_data_callback callback, const uint8_t* eui);
+nrfx_err_t squarepoint_init(squarepoint_interface_data_callback callback, const uint8_t* eui);
 nrfx_err_t squarepoint_start_application(uint32_t current_time, uint8_t device_role, uint8_t scheduler_role);
 nrfx_err_t squarepoint_start_calibration(uint8_t index);
 nrfx_err_t squarepoint_get_calibration(uint8_t* calib_buf);
