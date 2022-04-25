@@ -1,4 +1,4 @@
-// Pin definitions for TotTag Revision G
+// Pin definitions for TotTag Revision H
 
 #pragma once
 

@@ -30,11 +30,6 @@ BOARD_SOURCES += \
 	app_error_handler_gcc.c\
 	app_sdcard.c\
 	app_timer.c\
-	app_usbd.c\
-	app_usbd_cdc_acm.c\
-	app_usbd_core.c\
-	app_usbd_serial_num.c\
-	app_usbd_string_desc.c\
 	app_util_platform.c\
 	ble_advdata.c\
 	ble_advertising.c\
@@ -43,7 +38,6 @@ BOARD_SOURCES += \
 	ble_srv_common.c\
 	diskio_blkdev.c\
 	ff.c\
-	nrf_atfifo.c\
 	nrf_atomic.c\
 	nrf_balloc.c\
 	nrf_ble_gatt.c\
@@ -71,7 +65,6 @@ BOARD_SOURCES += \
 	nrfx_saadc.c\
 	nrfx_spim.c\
 	nrfx_twi.c\
-	nrfx_usbd.c\
 	nrfx_wdt.c\
 	SEGGER_RTT.c\
 	SEGGER_RTT_printf.c\
@@ -93,7 +86,6 @@ _build/sd_card.o: FORCE
 _build/squarepoint_interface.o: FORCE
 _build/system.o: FORCE
 _build/timers.o: FORCE
-_build/usb.o: FORCE
 _build/main.o: FORCE
 
 .PHONY: FORCE

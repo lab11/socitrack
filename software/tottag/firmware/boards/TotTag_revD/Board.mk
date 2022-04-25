@@ -86,7 +86,6 @@ _build/sd_card.o: FORCE
 _build/squarepoint_interface.o: FORCE
 _build/system.o: FORCE
 _build/timers.o: FORCE
-_build/usb.o: FORCE
 _build/main.o: FORCE
 
 .PHONY: FORCE
