@@ -10,11 +10,11 @@
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
 
-#define DEVICE_FORCE_RESET_INTERVAL_SEC 3600
+//#define DEVICE_FORCE_RESET_INTERVAL_SEC 3600
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #define ENABLE_LOW_BATTERY_SOUNDS
-//#define ENABLE_LEDS
 #define ENABLE_SOUNDS
+//#define ENABLE_LEDS
 //#define PRINTF_TO_SD_CARD
 
 
@@ -169,7 +169,6 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t device_reset_required;
    nrfx_atomic_flag_t squarepoint_enabled;
    nrfx_atomic_flag_t squarepoint_running;
-   nrfx_atomic_flag_t squarepoint_data_received;
    nrfx_atomic_flag_t squarepoint_wakeup_triggered;
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
    nrfx_atomic_flag_t elapsed_second;
