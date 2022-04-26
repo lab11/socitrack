@@ -96,7 +96,7 @@ static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_pola
           (nrfx_twi_xfer(&_twi_instance, &_rx_data_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS))
          nrfx_atomic_u32_store(&_squarepoint_interrupt_count, idx + 1);
       else
-         log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_length);
+         log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_lens[idx]);
    }
 }
 
@@ -295,5 +295,6 @@ uint32_t squarepoint_handle_incoming_data(uint32_t timestamp)
    for (uint32_t i = 0; i < nrfx_atomic_u32_fetch(&_squarepoint_interrupt_count); ++i)
       if (_data_callback)
          timestamp = _data_callback(_twi_rx_bufs[i], _twi_rx_lens[i], timestamp);
+   nrfx_atomic_u32_store(&_squarepoint_interrupt_count, 0);
    return timestamp;
 }
