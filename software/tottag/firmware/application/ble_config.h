@@ -174,10 +174,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t elapsed_second;
    nrfx_atomic_flag_t sd_card_inserted;
    nrfx_atomic_flag_t rtc_time_valid;
-   nrfx_atomic_flag_t imu_data_ready;
-   nrfx_atomic_flag_t imu_motion_changed;
    nrfx_atomic_flag_t battery_status_changed;
-   nrfx_atomic_flag_t range_buffer_updated;
    nrfx_atomic_flag_t device_in_motion;
    nrfx_atomic_flag_t bluetooth_is_advertising;
    nrfx_atomic_flag_t bluetooth_is_scanning;

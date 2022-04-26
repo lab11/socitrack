@@ -16,10 +16,10 @@
 
 #include "accelerometer.h"
 
-bool imu_init(const nrf_drv_spi_t *spi_instance, nrfx_atomic_flag_t *data_ready, nrfx_atomic_flag_t* motion_changed, imu_data_callback callback) { return accelerometer_init(spi_instance, data_ready, motion_changed, callback); }
+bool imu_init(const nrf_drv_spi_t *spi_instance, imu_data_callback callback) { return accelerometer_init(spi_instance, callback); }
 nrfx_err_t imu_read_accelerometer_data(float *x_data, float *y_data, float *z_data) { return accelerometer_read_data(x_data, y_data, z_data); }
 bool imu_in_motion(void) { return accelerometer_in_motion(); }
-void imu_handle_incoming_data(void) { accelerometer_handle_incoming_data(); }
+void imu_handle_incoming_data(uint32_t timestamp) { accelerometer_handle_incoming_data(timestamp); }
 
 
 #else  // True IMU functionality for newer boards ----------------------------------------------------------------------
@@ -29,7 +29,7 @@ void imu_handle_incoming_data(void) { accelerometer_handle_incoming_data(); }
 
 static const nrf_drv_spi_t* _spi_instance = NULL;
 static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
-static nrfx_atomic_flag_t *_imu_data_ready = NULL, *_imu_motion_changed = NULL;
+static nrfx_atomic_flag_t _imu_data_ready, _imu_motion_changed;
 static uint8_t _lsm6dsox_write_buf[257] = { 0 };
 static imu_data_callback _data_callback = NULL;
 
@@ -6125,7 +6125,7 @@ static nrfx_err_t lsm6dsox_write_lis3mdl_reg(uint8_t reg, uint8_t *data, uint16_
 
 // Public IMU API functions --------------------------------------------------------------------------------------------
 
-bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed, imu_data_callback callback)
+bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
 {
    // Configure the magnetometer input pins as INPUT ANALOG no-ops
    nrf_gpio_cfg_default(MAGNETOMETER_INT);
@@ -6133,8 +6133,6 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready,
 
    // Setup SPI parameters
    _data_callback = callback;
-   _imu_data_ready = data_ready;
-   _imu_motion_changed = motion_changed;
    _spi_instance = spi_instance;
    _spi_config.sck_pin = IMU_SPI_SCLK;
    _spi_config.miso_pin = IMU_SPI_MISO;
@@ -6142,6 +6140,7 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready,
    _spi_config.ss_pin = IMU_SPI_CS;
    _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
    _spi_config.mode = NRF_DRV_SPI_MODE_3;
+   _imu_data_ready = _imu_motion_changed = false;
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
 
    // Check the IMU ID
@@ -6204,6 +6203,8 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready,
    nrf_drv_spi_uninit(_spi_instance);
    nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
+   // TODO: In some ISR, set _imu_data_ready and _imu_motion_changed
+
    return true;
 }
 
@@ -6217,13 +6218,26 @@ bool imu_in_motion(void)
    return false;
 }
 
-void imu_handle_incoming_data(void)
+void imu_handle_incoming_data(uint32_t timestamp)
 {
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-   _data_callback(imu_in_motion(), NULL, NULL, NULL);
-   nrf_drv_spi_uninit(_spi_instance);
-   nrfx_gpiote_out_clear(IMU_SPI_SCLK);
+   bool data_ready = nrfx_atomic_flag_clear_fetch(&_imu_data_ready);
+   if (nrfx_atomic_flag_clear_fetch(&_imu_motion_changed) || data_ready)
+   {
+      // Read the accelerometer data
+      nrf_drv_spi_uninit(_spi_instance);
+      nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+      bool in_motion = imu_in_motion();
+      if (data_ready)
+         imu_read_accelerometer_data(x_data, y_data, z_data);
+      nrf_drv_spi_uninit(_spi_instance);
+      nrfx_gpiote_out_clear(IMU_SPI_SCLK);
+
+      // Fire the IMU callback with the retrieved data
+      if (data_ready)
+         _data_callback(in_motion, timestamp, x_data, y_data, z_data);
+      else
+         _data_callback(in_motion, timestamp, NULL, NULL, NULL);
+   }
 }
 
 #pragma GCC diagnostic pop

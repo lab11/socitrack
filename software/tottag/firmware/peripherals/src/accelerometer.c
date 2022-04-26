@@ -26,8 +26,9 @@ static lis2dw12_config_t _accelerometer_config = { .odr = lis2dw12_odr_200, .mod
 static lis2dw12_int_config_t _accelerometer_int_config = { .int2_sleep_change = 1 };
 static lis2dw12_wakeup_config_t _accelerometer_wake_config = { .sleep_enable = true, .threshold = 0x01,
       .wake_duration = 1, .sleep_duration = 1 };
-static nrfx_atomic_flag_t *_accelerometer_data_ready = NULL, *_accelerometer_motion_changed = NULL;
+static nrfx_atomic_flag_t _accelerometer_data_ready, _accelerometer_motion_changed;
 static float _acc_sensitivity_scalar = 1.0f;
+static float x_data[ACC_NUM_RESULTS_PER_READ], y_data[ACC_NUM_RESULTS_PER_READ], z_data[ACC_NUM_RESULTS_PER_READ];
 static uint8_t _acc_xyz[(ACC_NUM_RESULTS_PER_READ*3*sizeof(int16_t)) + 1] = { 0 };
 static uint8_t _lis2dw12_read_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
 static imu_data_callback _data_callback = NULL;
@@ -176,9 +177,9 @@ static void accelerometer_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
 {
    // Set the "data ready" flag for the accelerometer
    if (pin == CARRIER_IMU_INT1)
-      nrfx_atomic_flag_set(_accelerometer_data_ready);
+      nrfx_atomic_flag_set(&_accelerometer_data_ready);
    else if (pin == CARRIER_IMU_INT2)
-      nrfx_atomic_flag_set(_accelerometer_motion_changed);
+      nrfx_atomic_flag_set(&_accelerometer_motion_changed);
 }
 
 #endif  // #if (BOARD_V < 0x11)
@@ -186,7 +187,7 @@ static void accelerometer_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
 
 // Public Accelerometer API functions ----------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* data_ready, nrfx_atomic_flag_t* motion_changed, imu_data_callback callback)
+bool accelerometer_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
 {
 #if (BOARD_V < 0x11)
 
@@ -200,6 +201,7 @@ bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* d
    _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
    _spi_config.mode = NRF_DRV_SPI_MODE_3;
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+   _accelerometer_data_ready = _accelerometer_motion_changed = false;
 
    // Turn on and configure the accelerometer
 #ifndef DISABLE_ACCEL_DATA_READING
@@ -211,8 +213,6 @@ bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* d
    lis2dw12_wakeup_config();
 
    // Initialize the accelerometer interrupt pins
-   _accelerometer_data_ready = data_ready;
-   _accelerometer_motion_changed = motion_changed;
 #ifndef DISABLE_ACCEL_DATA_READING
    nrfx_gpiote_in_config_t int1_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
    nrfx_gpiote_in_init(CARRIER_IMU_INT1, &int1_gpio_config, accelerometer_interrupt_handler);
@@ -234,7 +234,7 @@ bool accelerometer_init(const nrf_drv_spi_t* spi_instance, nrfx_atomic_flag_t* d
 #endif  // #if (BOARD_V < 0x11)
 }
 
-nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
+nrfx_err_t accelerometer_read_data(float* x, float* y, float* z)
 {
 #if (BOARD_V < 0x11)
 
@@ -247,9 +247,9 @@ nrfx_err_t accelerometer_read_data(float* x_data, float* y_data, float* z_data)
    // Convert each sample to milli-g's
    for (size_t i = 0, j = 1; i < ACC_NUM_RESULTS_PER_READ; ++i, j += 6)
    {
-      if (x_data) x_data[i] = ((int16_t)(_acc_xyz[j+0] | ((int16_t)_acc_xyz[j+1] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-      if (y_data) y_data[i] = ((int16_t)(_acc_xyz[j+2] | ((int16_t)_acc_xyz[j+3] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-      if (z_data) z_data[i] = ((int16_t)(_acc_xyz[j+4] | ((int16_t)_acc_xyz[j+5] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (x) x[i] = ((int16_t)(_acc_xyz[j+0] | ((int16_t)_acc_xyz[j+1] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (y) y[i] = ((int16_t)(_acc_xyz[j+2] | ((int16_t)_acc_xyz[j+3] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (z) z[i] = ((int16_t)(_acc_xyz[j+4] | ((int16_t)_acc_xyz[j+5] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
    }
    return NRFX_SUCCESS;
 
@@ -271,15 +271,28 @@ bool accelerometer_in_motion(void)
    return false;
 }
 
-void accelerometer_handle_incoming_data(void)
+void accelerometer_handle_incoming_data(uint32_t timestamp)
 {
 #if (BOARD_V < 0x11)
 
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-   _data_callback(imu_in_motion(), NULL, NULL, NULL);
-   nrf_drv_spi_uninit(_spi_instance);
-   nrfx_gpiote_out_clear(IMU_SPI_SCLK);
+   bool data_ready = nrfx_atomic_flag_clear_fetch(&_accelerometer_data_ready);
+   if (nrfx_atomic_flag_clear_fetch(&_accelerometer_motion_changed) || data_ready)
+   {
+      // Read the accelerometer data
+      nrf_drv_spi_uninit(_spi_instance);
+      nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+      bool in_motion = imu_in_motion();
+      if (data_ready)
+         imu_read_accelerometer_data(x_data, y_data, z_data);
+      nrf_drv_spi_uninit(_spi_instance);
+      nrfx_gpiote_out_clear(IMU_SPI_SCLK);
+
+      // Fire the IMU callback with the retrieved data
+      if (data_ready)
+         _data_callback(in_motion, timestamp, x_data, y_data, z_data);
+      else
+         _data_callback(in_motion, timestamp, NULL, NULL, NULL);
+   }
 
 #endif  // #if (BOARD_V < 0x11)
 }
