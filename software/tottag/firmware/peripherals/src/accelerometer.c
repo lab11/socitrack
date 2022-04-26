@@ -281,9 +281,9 @@ void accelerometer_handle_incoming_data(uint32_t timestamp)
       // Read the accelerometer data
       nrf_drv_spi_uninit(_spi_instance);
       nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-      bool in_motion = imu_in_motion();
+      bool in_motion = accelerometer_in_motion();
       if (data_ready)
-         imu_read_accelerometer_data(x_data, y_data, z_data);
+         accelerometer_read_data(x_data, y_data, z_data);
       nrf_drv_spi_uninit(_spi_instance);
       nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
