@@ -32,13 +32,13 @@ static diskio_blkdev_t drives[] = { DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADD
 
 // Static SD Card state variables --------------------------------------------------------------------------------------
 
-static uint32_t _next_day_timestamp = 0;
+static volatile uint32_t _next_day_timestamp = 0;
 static volatile uint16_t _sd_card_buffer_length = 0;
 static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
 static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH] = { 0 };
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _sd_write_buf[255] = { 0 };
 static char _sd_filename[16] = { 0 }, _sd_debug_filename[16] = { 0 };
-static bool _new_log_file = true, _sd_card_powers_down = true;
+static bool _new_log_file = false, _sd_card_powers_down = true;
 static bool _sd_card_initialized = false, _keep_sd_card_on = false;
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
 static FATFS _file_system = { 0 };
@@ -201,6 +201,8 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    diskio_blockdev_register(drives, ARRAY_SIZE(drives));
    nrf_gpio_cfg_input(SD_CARD_DETECT, NRF_GPIO_PIN_NOPULL);
    snprintf(_sd_debug_filename, sizeof(_sd_debug_filename), "%02X@dbg.log", full_eui[0]);
+   _sd_card_initialized = _keep_sd_card_on = _new_log_file = false;
+   _sd_card_buffer_length = 0;
 
    // Initialize the SD card
    printf("INFO: Initializing SD Card...\n");
@@ -249,26 +251,13 @@ bool sd_card_flush(void)
       return false;
    }
 
-   // Send data in chunks of 254 bytes, as this is the maximum which the nRF DMA can handle
-   uint8_t nr_writes = (_sd_card_buffer_length / (sizeof(_sd_write_buf) - 1)) + ((_sd_card_buffer_length % (sizeof(_sd_write_buf) - 1)) ? 1 : 0);
-   for (uint8_t i = 0; i < nr_writes; ++i)
+   // Attempt to write all data to the SD card
+   _sd_card_buffer[_sd_card_buffer_length] = 0;
+   if ((f_puts((char*)_sd_card_buffer, &_file) < 0) || (f_sync(&_file) != FR_OK))
    {
-      // Copy chunks to the write buffer and log data
-      if (i == (nr_writes - 1))             // Last chunk
-      {
-         uint8_t rest_length = _sd_card_buffer_length - (i * (sizeof(_sd_write_buf) - 1));
-         memcpy(_sd_write_buf, _sd_card_buffer + (i * (sizeof(_sd_write_buf) - 1)), rest_length);
-         _sd_write_buf[rest_length] = '\0';
-      }
-      else
-      {
-         memcpy(_sd_write_buf, _sd_card_buffer + (i * (sizeof(_sd_write_buf) - 1)), sizeof(_sd_write_buf) - 1);
-         _sd_write_buf[sizeof(_sd_write_buf)-1] = '\0';
-      }
-
-      // Attempt to write the data string to the SD card
-      if ((f_puts(_sd_write_buf, &_file) < 0) || (f_sync(&_file) != FR_OK))
-         printf("ERROR: Problem writing data to the SD card!\n");
+      f_puts("### SD CARD WRITE ERROR\n", &_file);
+      f_sync(&_file);
+      printf("ERROR: Problem writing data to the SD card!\n");
    }
 
    // Reset the buffer and turn off power to the SD card
@@ -326,6 +315,7 @@ bool sd_card_create_log(uint32_t current_time, bool is_device_reboot)
    else
    {
       // Create a log file based on the device ID
+      _next_day_timestamp = 0;
       snprintf(_sd_filename, sizeof(_sd_filename), "%02X@data.log", _full_eui[0]);
       if (!sd_card_power_on())
       {
