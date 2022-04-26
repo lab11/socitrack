@@ -345,8 +345,6 @@ uint8_t ab1815_get_time(ab1815_time_t *time)
    if (!ab1815_read_reg(AB1815_HUND, read, 8))
       return 0;
 
-   //printf("DEBUG: Packet Rx - %02x %02x %02x %02x %02x %02x %02x %02x\n", read[0], read[1], read[2], read[3], read[4], read[5], read[6], read[7]);
-
    time->hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
    time->seconds = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
    time->minutes = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
