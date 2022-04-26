@@ -182,6 +182,43 @@ static void accelerometer_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_po
       nrfx_atomic_flag_set(&_accelerometer_motion_changed);
 }
 
+static nrfx_err_t accelerometer_read_data(float* x, float* y, float* z)
+{
+#if (BOARD_V < 0x11)
+
+   // Read 32 samples from the accelerometer FIFO
+   uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
+   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &readreg, 1, _acc_xyz, sizeof(_acc_xyz));
+   if (err_code != NRFX_SUCCESS)
+      return err_code;
+
+   // Convert each sample to milli-g's
+   for (size_t i = 0, j = 1; i < ACC_NUM_RESULTS_PER_READ; ++i, j += 6)
+   {
+      if (x) x[i] = ((int16_t)(_acc_xyz[j+0] | ((int16_t)_acc_xyz[j+1] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (y) y[i] = ((int16_t)(_acc_xyz[j+2] | ((int16_t)_acc_xyz[j+3] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+      if (z) z[i] = ((int16_t)(_acc_xyz[j+4] | ((int16_t)_acc_xyz[j+5] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
+   }
+   return NRFX_SUCCESS;
+
+#else
+
+   return NRFX_ERROR_INTERNAL;
+
+#endif  // #if (BOARD_V < 0x11)
+}
+
+static bool accelerometer_in_motion(void)
+{
+#if (BOARD_V < 0x11)
+
+   // Read the stationary detection register
+   return !lis2dw12_is_stationary();
+
+#endif
+   return false;
+}
+
 #endif  // #if (BOARD_V < 0x11)
 
 
@@ -232,43 +269,6 @@ bool accelerometer_init(const nrf_drv_spi_t* spi_instance, imu_data_callback cal
 #else
    return false;
 #endif  // #if (BOARD_V < 0x11)
-}
-
-nrfx_err_t accelerometer_read_data(float* x, float* y, float* z)
-{
-#if (BOARD_V < 0x11)
-
-   // Read 32 samples from the accelerometer FIFO
-   uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
-   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &readreg, 1, _acc_xyz, sizeof(_acc_xyz));
-   if (err_code != NRFX_SUCCESS)
-      return err_code;
-
-   // Convert each sample to milli-g's
-   for (size_t i = 0, j = 1; i < ACC_NUM_RESULTS_PER_READ; ++i, j += 6)
-   {
-      if (x) x[i] = ((int16_t)(_acc_xyz[j+0] | ((int16_t)_acc_xyz[j+1] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-      if (y) y[i] = ((int16_t)(_acc_xyz[j+2] | ((int16_t)_acc_xyz[j+3] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-      if (z) z[i] = ((int16_t)(_acc_xyz[j+4] | ((int16_t)_acc_xyz[j+5] << 8)) >> _lsb_empty_bits) * _acc_sensitivity_scalar;
-   }
-   return NRFX_SUCCESS;
-
-#else
-
-   return NRFX_ERROR_INTERNAL;
-
-#endif  // #if (BOARD_V < 0x11)
-}
-
-bool accelerometer_in_motion(void)
-{
-#if (BOARD_V < 0x11)
-
-   // Read the stationary detection register
-   return !lis2dw12_is_stationary();
-
-#endif
-   return false;
 }
 
 void accelerometer_handle_incoming_data(uint32_t timestamp)

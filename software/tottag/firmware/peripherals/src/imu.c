@@ -17,8 +17,6 @@
 #include "accelerometer.h"
 
 bool imu_init(const nrf_drv_spi_t *spi_instance, imu_data_callback callback) { return accelerometer_init(spi_instance, callback); }
-nrfx_err_t imu_read_accelerometer_data(float *x_data, float *y_data, float *z_data) { return accelerometer_read_data(x_data, y_data, z_data); }
-bool imu_in_motion(void) { return accelerometer_in_motion(); }
 void imu_handle_incoming_data(uint32_t timestamp) { accelerometer_handle_incoming_data(timestamp); }
 
 
@@ -32,6 +30,7 @@ static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static nrfx_atomic_flag_t _imu_data_ready, _imu_motion_changed;
 static uint8_t _lsm6dsox_write_buf[257] = { 0 };
 static imu_data_callback _data_callback = NULL;
+static float x_data[1], y_data[1], z_data[1];
 
 
 // LSM6DSOX-specific IMU functionality ---------------------------------------------------------------------------------
@@ -6122,6 +6121,16 @@ static nrfx_err_t lsm6dsox_write_lis3mdl_reg(uint8_t reg, uint8_t *data, uint16_
    return ret;
 }
 
+static nrfx_err_t imu_read_accelerometer_data(float* x, float* y, float* z)
+{
+   return NRFX_ERROR_NOT_SUPPORTED;
+}
+
+static bool imu_in_motion(void)
+{
+   return false;
+}
+
 
 // Public IMU API functions --------------------------------------------------------------------------------------------
 
@@ -6206,16 +6215,6 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
    // TODO: In some ISR, set _imu_data_ready and _imu_motion_changed
 
    return true;
-}
-
-nrfx_err_t imu_read_accelerometer_data(float* x_data, float* y_data, float* z_data)
-{
-   return NRFX_ERROR_NOT_SUPPORTED;
-}
-
-bool imu_in_motion(void)
-{
-   return false;
 }
 
 void imu_handle_incoming_data(uint32_t timestamp)
