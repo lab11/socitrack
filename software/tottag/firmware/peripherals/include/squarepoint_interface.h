@@ -44,7 +44,7 @@
 
 // Internal typedefs ---------------------------------------------------------------------------------------------------
 
-typedef void (*squarepoint_interface_data_callback)(uint8_t* data, uint32_t len);
+typedef uint32_t (*squarepoint_interface_data_callback)(uint8_t*, uint32_t, uint32_t);
 
 
 // Public SquarePoint Interface API ------------------------------------------------------------------------------------
@@ -57,6 +57,6 @@ nrfx_err_t squarepoint_stop(void);
 nrfx_err_t squarepoint_set_time(uint32_t epoch);
 nrfx_err_t squarepoint_wakeup_radio(void);
 nrfx_err_t squarepoint_ack(void);
-void squarepoint_handle_incoming_data(void);
+uint32_t squarepoint_handle_incoming_data(uint32_t timestamp);
 
 #endif // #ifndef __SQUAREPOINT_INTERFACE_H

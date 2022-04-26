@@ -73,30 +73,30 @@ static void twi_bus_clear(void)
 static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
    // Verify that the interrupt is from the SquarePoint module
-   if (pin != STM_INTERRUPT)
-      return;
-
-   // Read the length of the incoming packet and ensure that it is valid
-   _twi_rx_buf[0] = SQUAREPOINT_CMD_READ_PACKET_LENGTH;
-   nrfx_twi_xfer_desc_t tx_description = { .type = NRFX_TWI_XFER_TX, .address = SQUAREPOINT_ADDRESS,
-                                           .p_primary_buf = _twi_rx_buf, .p_secondary_buf = NULL,
-                                           .primary_length = 1, .secondary_length = 0 };
-   if ((nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) != NRFX_SUCCESS) ||
-       (nrfx_twi_xfer(&_twi_instance, &_rx_length_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) != NRFX_SUCCESS) ||
-       !_twi_rx_length || (_twi_rx_length == 0xFF))
+   if (pin == STM_INTERRUPT)
    {
-      log_printf("ERROR: Failed reading SquarePoint packet length\n");
-      return;
-   }
+      // Read the length of the incoming packet and ensure that it is valid
+      _twi_rx_buf[0] = SQUAREPOINT_CMD_READ_PACKET_LENGTH;
+      nrfx_twi_xfer_desc_t tx_description = { .type = NRFX_TWI_XFER_TX, .address = SQUAREPOINT_ADDRESS,
+                                              .p_primary_buf = _twi_rx_buf, .p_secondary_buf = NULL,
+                                              .primary_length = 1, .secondary_length = 0 };
+      if ((nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) != NRFX_SUCCESS) ||
+          (nrfx_twi_xfer(&_twi_instance, &_rx_length_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) != NRFX_SUCCESS) ||
+          !_twi_rx_length || (_twi_rx_length == 0xFF))
+      {
+         log_printf("ERROR: Failed reading SquarePoint packet length\n");
+         return;
+      }
 
-   // Read the rest of the incoming packet
-   _twi_rx_buf[0] = SQUAREPOINT_CMD_READ_PACKET;
-   _rx_data_description.primary_length = _twi_rx_length;
-   if ((nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS) &&
-       (nrfx_twi_xfer(&_twi_instance, &_rx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS))
-      nrfx_atomic_flag_set(&_squarepoint_interrupt_thrown);
-   else
-      log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_length);
+      // Read the rest of the incoming packet
+      _twi_rx_buf[0] = SQUAREPOINT_CMD_READ_PACKET;
+      _rx_data_description.primary_length = _twi_rx_length;
+      if ((nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS) &&
+          (nrfx_twi_xfer(&_twi_instance, &_rx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS))
+         nrfx_atomic_flag_set(&_squarepoint_interrupt_thrown);
+      else
+         log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_length);
+   }
 }
 
 static nrfx_err_t twi_hw_init(void)
@@ -288,9 +288,10 @@ nrfx_err_t squarepoint_ack(void)
    return nrfx_twi_xfer(&_twi_instance, &tx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
 }
 
-void squarepoint_handle_incoming_data(void)
+uint32_t squarepoint_handle_incoming_data(uint32_t timestamp)
 {
    // Call the user callback if data is available
    if (nrfx_atomic_flag_clear_fetch(&_squarepoint_interrupt_thrown) && _data_callback)
-      _data_callback(_twi_rx_buf, _twi_rx_length);
+      timestamp = _data_callback(_twi_rx_buf, _twi_rx_length, timestamp);
+   return timestamp;
 }
