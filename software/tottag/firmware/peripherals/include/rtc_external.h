@@ -179,5 +179,6 @@ void ab1815_printTime(ab1815_time_t time);
 
 // Public initialization function
 uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance);
+uint32_t rtc_external_sync_to_internal(void);
 
 #endif // #ifndef __RTC_EXTERNAL_HEADER_H

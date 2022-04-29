@@ -192,6 +192,14 @@ static void update_leds(uint32_t network_discovered)
 
 static nrfx_err_t start_squarepoint(uint32_t timestamp)
 {
+   // Attempt to resynchronize the internal clock from the RTC chip
+   log_printf("INFO: Synchronizing internal clock from RTC...\n");
+   uint32_t rtc_timestamp = rtc_external_sync_to_internal();
+   if (rtc_timestamp > 0)
+      timestamp = rtc_timestamp;
+   else
+      log_printf("WARNING: Synchronization failed...using existing internal clock time\n");
+
    // Initialize the SquarePoint module and communications
    squarepoint_comms_init();
 

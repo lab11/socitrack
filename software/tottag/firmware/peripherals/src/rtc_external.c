@@ -364,18 +364,19 @@ uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
 
    nrf_drv_spi_uninit(_spi_instance);
    nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
-   rtc_set_current_time(unix_timestamp);
-
    uint8_t time_properly_set = 0, num_retries = 10;
-   struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
-   ab1815_time_t new_time = unix_to_ab1815(tv);
-   while (!time_properly_set && --num_retries)
+   rtc_set_current_time(unix_timestamp);
+   if (ab1815_wait_for_ready(1000))
    {
-      ab1815_set_time(new_time);
-      time_properly_set = (ab1815_get_time_unix().tv_sec <= (tv.tv_sec + 60)) &&
-                          (ab1815_get_time_unix().tv_sec >= (tv.tv_sec - 60));
+      struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
+      ab1815_time_t new_time = unix_to_ab1815(tv);
+      while (!time_properly_set && --num_retries)
+      {
+         ab1815_set_time(new_time);
+         time_properly_set = (ab1815_get_time_unix().tv_sec <= (tv.tv_sec + 60)) &&
+                             (ab1815_get_time_unix().tv_sec >= (tv.tv_sec - 60));
+      }
    }
-
    nrf_drv_spi_uninit(_spi_instance);
    nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
    return time_properly_set;
@@ -538,7 +539,7 @@ uint8_t ab1815_wait_for_ready(uint16_t timeout_ms)
 
 void ab1815_printTime(ab1815_time_t time)
 {
-   printf("INFO: Time is %02u:%02u:%02u, 20%02u/%02u/%02u\n", time.hours, time.minutes, time.seconds, time.years, time.months, time.date);
+   printf("INFO: RTC time is %02u:%02u:%02u, 20%02u/%02u/%02u\n", time.hours, time.minutes, time.seconds, time.years, time.months, time.date);
 }
 #endif  // #if (BOARD_V >= 0x0F)
 
@@ -608,4 +609,37 @@ uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance)
    printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
 #endif
    return success;
+}
+
+uint32_t rtc_external_sync_to_internal(void)
+{
+   uint32_t timestamp = 0;
+#if (BOARD_V >= 0x0F)
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdate-time"
+
+   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+   if (ab1815_wait_for_ready(600))
+   {
+      // Set nRF time from the RTC
+      ab1815_time_t time = { 0 };
+      if (ab1815_get_time(&time))
+         timestamp = ab1815_to_unix(time).tv_sec;
+      if ((timestamp > MINIMUM_VALID_TIMESTAMP) && (timestamp < MAXIMUM_VALID_TIMESTAMP))
+      {
+         rtc_set_current_time(timestamp);
+         ab1815_printTime(time);
+      }
+      else
+         timestamp = 0;
+   }
+   nrf_drv_spi_uninit(_spi_instance);
+   nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
+
+#pragma GCC diagnostic pop
+
+#endif  // #if (BOARD_V >= 0x0F)
+   return timestamp;
 }
