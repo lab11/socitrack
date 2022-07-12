@@ -7,6 +7,7 @@
 #include "ble_config.h"
 #include "imu.h"
 #include "nrf_delay.h"
+#include "nrf_drv_spi.h"
 #include "nrfx_gpiote.h"
 
 #pragma GCC diagnostic pop
@@ -16,7 +17,7 @@
 
 #include "accelerometer.h"
 
-bool imu_init(const nrf_drv_spi_t *spi_instance, imu_data_callback callback) { return accelerometer_init(spi_instance, callback); }
+bool imu_init(imu_data_callback callback) { return accelerometer_init(callback); }
 void imu_handle_incoming_data(uint32_t timestamp) { accelerometer_handle_incoming_data(timestamp); }
 
 
@@ -25,7 +26,7 @@ void imu_handle_incoming_data(uint32_t timestamp) { accelerometer_handle_incomin
 
 // Static IMU state variables ------------------------------------------------------------------------------------------
 
-static const nrf_drv_spi_t* _spi_instance = NULL;
+static nrf_drv_spi_t _spi_instance = NRF_DRV_SPI_INSTANCE(IMU_SPI_BUS_IDX);
 static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static nrfx_atomic_flag_t _imu_data_ready, _imu_motion_changed;
 static uint8_t _lsm6dsox_write_buf[257] = { 0 };
@@ -42,9 +43,9 @@ static nrfx_err_t lsm6dsox_read_reg(uint8_t reg, uint8_t *data, uint16_t len)
 {
    // Use SPI directly
    reg |= LSM6DSOX_SPI_READ;
-   nrfx_err_t err_code = nrf_drv_spi_transfer(_spi_instance, &reg, 1, NULL, 0);
+   nrfx_err_t err_code = nrf_drv_spi_transfer(&_spi_instance, &reg, 1, NULL, 0);
    if (err_code == NRFX_SUCCESS)
-      err_code = nrf_drv_spi_transfer(_spi_instance, NULL, 0, data, len);
+      err_code = nrf_drv_spi_transfer(&_spi_instance, NULL, 0, data, len);
    return err_code;
 }
 
@@ -53,7 +54,7 @@ static nrfx_err_t lsm6dsox_write_reg(uint8_t reg, uint8_t *data, uint16_t len)
    // Use SPI directly
    _lsm6dsox_write_buf[0] = reg & (uint8_t)LSM6DSOX_SPI_WRITE;
    memcpy(_lsm6dsox_write_buf + 1, data, len);
-   return nrf_drv_spi_transfer(_spi_instance, _lsm6dsox_write_buf, len + 1, NULL, 0);
+   return nrf_drv_spi_transfer(&_spi_instance, _lsm6dsox_write_buf, len + 1, NULL, 0);
 }
 
 static float lsm6dsox_from_fs2_to_mg(int16_t lsb) { return ((float)lsb) * 0.061f; }
@@ -6134,7 +6135,7 @@ static bool imu_in_motion(void)
 
 // Public IMU API functions --------------------------------------------------------------------------------------------
 
-bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
+bool imu_init(imu_data_callback callback)
 {
    // Configure the magnetometer input pins as INPUT ANALOG no-ops
    nrf_gpio_cfg_default(MAGNETOMETER_INT);
@@ -6142,7 +6143,6 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
 
    // Setup SPI parameters
    _data_callback = callback;
-   _spi_instance = spi_instance;
    _spi_config.sck_pin = IMU_SPI_SCLK;
    _spi_config.miso_pin = IMU_SPI_MISO;
    _spi_config.mosi_pin = IMU_SPI_MOSI;
@@ -6150,7 +6150,7 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
    _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
    _spi_config.mode = NRF_DRV_SPI_MODE_3;
    _imu_data_ready = _imu_motion_changed = false;
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+   nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
 
    // Check the IMU ID
    uint8_t dummy;
@@ -6209,7 +6209,7 @@ bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback)
    }
 
    // De-initialize SPI communications
-   nrf_drv_spi_uninit(_spi_instance);
+   nrf_drv_spi_uninit(&_spi_instance);
    nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
    // TODO: In some ISR, set _imu_data_ready and _imu_motion_changed
@@ -6223,12 +6223,12 @@ void imu_handle_incoming_data(uint32_t timestamp)
    if (nrfx_atomic_flag_clear_fetch(&_imu_motion_changed) || data_ready)
    {
       // Read the accelerometer data
-      nrf_drv_spi_uninit(_spi_instance);
-      nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+      nrf_drv_spi_uninit(&_spi_instance);
+      nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
       bool in_motion = imu_in_motion();
       if (data_ready)
          imu_read_accelerometer_data(x_data, y_data, z_data);
-      nrf_drv_spi_uninit(_spi_instance);
+      nrf_drv_spi_uninit(&_spi_instance);
       nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
       // Fire the IMU callback with the retrieved data

@@ -25,12 +25,12 @@ static void signal_charge_complete(bool charge_complete)
    {
       // Set the "charge complete" line to HIGH
       nrfx_gpiote_out_config_t charge_complete_gpio_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
-      nrfx_gpiote_out_init(CHARGER_COMPLETE_SIGAL, &charge_complete_gpio_config);
+      nrfx_gpiote_out_init(CHARGER_COMPLETE_SIGNAL, &charge_complete_gpio_config);
    }
    else
    {
       // Set the "charge complete" line to HIGH IMPEDANCE
-      nrf_gpio_cfg_input(CHARGER_COMPLETE_SIGAL, NRF_GPIO_PIN_NOPULL);
+      nrf_gpio_cfg_input(CHARGER_COMPLETE_SIGNAL, NRF_GPIO_PIN_NOPULL);
    }
 }
 
@@ -81,7 +81,7 @@ uint16_t battery_monitor_get_level_mV(void)
    while (nrfx_saadc_offset_calibrate(NULL) != NRFX_SUCCESS);
 
    // Configure and enable the SAADC comparison channel
-   nrfx_saadc_channel_t channel = NRFX_SAADC_DEFAULT_CHANNEL_SE(CARRIER_BATTERY_PIN, BATTERY_MONITOR_CHANNEL);
+   nrfx_saadc_channel_t channel = NRFX_SAADC_DEFAULT_CHANNEL_SE(BATTERY_PIN, BATTERY_MONITOR_CHANNEL);
    APP_ERROR_CHECK(nrfx_saadc_channels_config(&channel, 1));
    APP_ERROR_CHECK(nrfx_saadc_simple_mode_set((1U << 0), NRF_SAADC_RESOLUTION_10BIT, NRF_SAADC_OVERSAMPLE_DISABLED, NULL));
 

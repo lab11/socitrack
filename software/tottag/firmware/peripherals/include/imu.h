@@ -2257,7 +2257,7 @@ typedef struct
 
 // Public IMU API ------------------------------------------------------------------------------------------------------
 
-bool imu_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback);
+bool imu_init(imu_data_callback callback);
 void imu_handle_incoming_data(uint32_t timestamp);
 
 #endif // #ifndef __IMU_HEADER_H

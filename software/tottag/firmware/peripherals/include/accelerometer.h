@@ -5,7 +5,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include "nrfx_atomic.h"
-#include "nrf_drv_spi.h"
 #include "imu.h"
 
 
@@ -154,7 +153,7 @@ typedef struct
 
 // Public Accelerometer API --------------------------------------------------------------------------------------------
 
-bool accelerometer_init(const nrf_drv_spi_t* spi_instance, imu_data_callback callback);
+bool accelerometer_init(imu_data_callback callback);
 void accelerometer_handle_incoming_data(uint32_t timestamp);
 
 

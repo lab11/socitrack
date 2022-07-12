@@ -113,10 +113,10 @@
 #define PHYSWEB_URL "bit.ly/p1R8"               // Points to https://n.ethz.ch/~abiri/d/
 
 // BLE characteristics
-#define CARRIER_BLE_SERV_SHORT_UUID             0x3152
-#define CARRIER_BLE_CHAR_LOCATION               0x3153
-#define CARRIER_BLE_CHAR_CALIBRATION            0x3157
-#define CARRIER_BLE_CHAR_TIMESTAMP              0x3158
+#define BLE_SERV_SHORT_UUID                     0x3152
+#define BLE_CHAR_LOCATION                       0x3153
+#define BLE_CHAR_CALIBRATION                    0x3157
+#define BLE_CHAR_TIMESTAMP                      0x3158
 
 // Information
 #define APP_COMPANY_IDENTIFIER                  0x02E0

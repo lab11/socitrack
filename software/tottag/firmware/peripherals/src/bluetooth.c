@@ -32,12 +32,12 @@ NRF_BLE_GQ_DEF(_ble_gatt_queue, NRF_SDH_BLE_CENTRAL_LINK_COUNT, NRF_BLE_GQ_QUEUE
 
 // Bluetooth configuration variables -----------------------------------------------------------------------------------
 
-static const ble_uuid128_t CARRIER_BLE_SERV_LONG_UUID = { .uuid128 = { 0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c, 0x90, 0xee, 0x3f, 0xa2, 0x52, 0x31, 0x8c, 0xd6 } };  // Service UUID
+static const ble_uuid128_t BLE_SERV_LONG_UUID = { .uuid128 = { 0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c, 0x90, 0xee, 0x3f, 0xa2, 0x52, 0x31, 0x8c, 0xd6 } };  // Service UUID
 static ble_uuid_t _adv_uuids[] = { { PHYSWEB_SERVICE_ID, BLE_UUID_TYPE_BLE } };  // Advertisement UUIDs: Eddystone
-static ble_uuid_t _sr_uuids[] = { { BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE }, { CARRIER_BLE_SERV_SHORT_UUID, BLE_UUID_TYPE_VENDOR_BEGIN } };  // Scan Response UUIDs
-static ble_gatts_char_handles_t _carrier_ble_char_location_handle = { .value_handle = CARRIER_BLE_CHAR_LOCATION };
-static ble_gatts_char_handles_t _carrier_ble_char_timestamp_handle = { .value_handle = CARRIER_BLE_CHAR_TIMESTAMP };
-static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_handle = CARRIER_BLE_CHAR_CALIBRATION };
+static ble_uuid_t _sr_uuids[] = { { BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE }, { BLE_SERV_SHORT_UUID, BLE_UUID_TYPE_VENDOR_BEGIN } };  // Scan Response UUIDs
+static ble_gatts_char_handles_t _carrier_ble_char_location_handle = { .value_handle = BLE_CHAR_LOCATION };
+static ble_gatts_char_handles_t _carrier_ble_char_timestamp_handle = { .value_handle = BLE_CHAR_TIMESTAMP };
+static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_handle = BLE_CHAR_CALIBRATION };
 static uint16_t _carrier_ble_service_handle = 0, _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 static uint8_t _carrier_ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
 static ble_gap_scan_params_t _scan_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = BLE_GAP_SCAN_TIMEOUT_UNLIMITED, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
@@ -145,7 +145,7 @@ static void db_discovery_init(void)
 static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, uint8_t read_event, uint8_t vlen, uint8_t data_len, volatile uint8_t *data, uint16_t uuid, ble_gatts_char_handles_t *char_handle)
 {
    // Add characteristics
-   ble_uuid128_t base_uuid = CARRIER_BLE_SERV_LONG_UUID;
+   ble_uuid128_t base_uuid = BLE_SERV_LONG_UUID;
    ble_uuid_t char_uuid = { .uuid = uuid, .type = BLE_UUID_TYPE_VENDOR_BEGIN };
    APP_ERROR_CHECK(sd_ble_uuid_vs_add(&base_uuid, &char_uuid.type));
 
@@ -196,15 +196,15 @@ static void services_init(void)
    APP_ERROR_CHECK(nrf_ble_qwr_init(&_qwr, &qwr_init));
 
    // Initialize our own BLE service
-   ble_uuid128_t base_uuid = CARRIER_BLE_SERV_LONG_UUID;
-   ble_uuid_t service_uuid = { .uuid = CARRIER_BLE_SERV_SHORT_UUID, .type = BLE_UUID_TYPE_VENDOR_BEGIN };
+   ble_uuid128_t base_uuid = BLE_SERV_LONG_UUID;
+   ble_uuid_t service_uuid = { .uuid = BLE_SERV_SHORT_UUID, .type = BLE_UUID_TYPE_VENDOR_BEGIN };
    APP_ERROR_CHECK(sd_ble_uuid_vs_add(&base_uuid, &service_uuid.type));
    APP_ERROR_CHECK(sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &service_uuid, &_carrier_ble_service_handle));
 
    // Add characteristics
-   ble_characteristic_add(1, 0, 1, 0, 0, 128, NULL, CARRIER_BLE_CHAR_LOCATION, &_carrier_ble_char_location_handle);
-   ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, CARRIER_BLE_CHAR_TIMESTAMP, &_carrier_ble_char_timestamp_handle);
-   ble_characteristic_add(1, 1, 0, 0, 0, 14, (volatile uint8_t*)_calibration_index, CARRIER_BLE_CHAR_CALIBRATION, &carrier_ble_char_calibration_handle);
+   ble_characteristic_add(1, 0, 1, 0, 0, 128, NULL, BLE_CHAR_LOCATION, &_carrier_ble_char_location_handle);
+   ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_carrier_ble_char_timestamp_handle);
+   ble_characteristic_add(1, 1, 0, 0, 0, 14, (volatile uint8_t*)_calibration_index, BLE_CHAR_CALIBRATION, &carrier_ble_char_calibration_handle);
 
    // Register service discovery events
    APP_ERROR_CHECK(ble_db_discovery_evt_register(&service_uuid));
@@ -347,7 +347,7 @@ static void on_ble_service_discovered(ble_db_discovery_evt_t * p_evt)
    {
       // Search for and read from the requested characteristic
       for (uint8_t i = 0; i < p_evt->params.discovered_db.char_count; ++i)
-         if (p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid == CARRIER_BLE_CHAR_TIMESTAMP)
+         if (p_evt->params.discovered_db.charateristics[i].characteristic.uuid.uuid == BLE_CHAR_TIMESTAMP)
             sd_ble_gattc_read(p_evt->conn_handle, p_evt->params.discovered_db.charateristics[i].characteristic.handle_value, 0);
    }
 }

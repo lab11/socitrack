@@ -32,8 +32,6 @@
 // Application state variables -----------------------------------------------------------------------------------------
 
 static app_flags_t _app_flags = { 0 };
-static nrf_drv_spi_t _rtc_sd_spi_instance = NRF_DRV_SPI_INSTANCE(RTC_SD_SPI_BUS_IDX);
-static nrf_drv_spi_t _imu_spi_instance = NRF_DRV_SPI_INSTANCE(IMU_SPI_BUS_IDX);
 static uint8_t _range_buffer[APP_BLE_BUFFER_LENGTH] = { 0 };
 static volatile uint16_t _range_buffer_length = 0;
 
@@ -61,19 +59,17 @@ static void app_init(void)
 
 static void spi_init(void)
 {
-   // Setup Chip Selects (CS)
+   // Set up and deactivate all Chip Selects (CS)
    nrfx_gpiote_out_config_t cs_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_config_t cs_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
-   nrfx_gpiote_out_init(CARRIER_CS_SD, &cs_sd_pin_config);
-   nrfx_gpiote_out_init(CARRIER_CS_IMU, &cs_imu_pin_config);
-#if (BOARD_V >= 0xF)
    nrfx_gpiote_out_config_t cs_rtc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
-   nrfx_gpiote_out_init(CARRIER_CS_RTC, &cs_rtc_pin_config);
-#endif
+   APP_ERROR_CHECK(nrfx_gpiote_out_init(SD_CARD_SPI_CS, &cs_sd_pin_config));
+   APP_ERROR_CHECK(nrfx_gpiote_out_init(IMU_SPI_CS, &cs_imu_pin_config));
+   APP_ERROR_CHECK(nrfx_gpiote_out_init(RTC_SPI_CS, &cs_rtc_pin_config));
 
-   // Make sure SPI lines are valid and not floating
+   // Make sure all SPI lines are valid and not floating
    nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(CARRIER_SD_ENABLE, &sd_enable_pin_config);
+   APP_ERROR_CHECK(nrfx_gpiote_out_init(SD_CARD_ENABLE, &sd_enable_pin_config));
 }
 
 static void squarepoint_comms_init(void)
@@ -148,12 +144,12 @@ static void hardware_init(void)
    printf("INFO: Initialized critical hardware and software services\n");
 
    // Enable the external Real-Time Clock and ensure that the fetched timestamp is valid
-   rtc_external_init(&_rtc_sd_spi_instance);
+   rtc_external_init();
    uint32_t current_timestamp = rtc_get_current_time(), num_retries = 3;
    while (--num_retries && ((current_timestamp < MINIMUM_VALID_TIMESTAMP) || (current_timestamp > MAXIMUM_VALID_TIMESTAMP)))
    {
       printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
-      rtc_external_init(&_rtc_sd_spi_instance);
+      rtc_external_init();
       buzzer_indicate_invalid_rtc_time();
       nrf_delay_ms(2000);
       current_timestamp = rtc_get_current_time();
@@ -162,7 +158,7 @@ static void hardware_init(void)
       nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
 
    // Initialize supplementary hardware components
-   imu_init(&_imu_spi_instance, imu_data_handler);
+   imu_init(imu_data_handler);
    battery_monitor_init(&_app_flags.battery_status_changed);
 
    // Wait until an SD Card is inserted

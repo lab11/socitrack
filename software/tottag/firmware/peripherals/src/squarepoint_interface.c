@@ -37,21 +37,21 @@ static nrfx_twi_xfer_desc_t _rx_length_descriptions[MAX_NUM_SQUAREPOINT_INTERRUP
 static void twi_bus_clear(void)
 {
    // Generate a STOP condition on the TWI bus
-   nrf_gpio_cfg(CARRIER_I2C_SCL, NRF_GPIO_PIN_DIR_INPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
-   nrf_gpio_cfg(CARRIER_I2C_SDA, NRF_GPIO_PIN_DIR_INPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
-   nrf_gpio_pin_set(CARRIER_I2C_SCL);
-   nrf_gpio_pin_set(CARRIER_I2C_SDA);
+   nrf_gpio_cfg(STM_I2C_SCL, NRF_GPIO_PIN_DIR_INPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
+   nrf_gpio_cfg(STM_I2C_SDA, NRF_GPIO_PIN_DIR_INPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
+   nrf_gpio_pin_set(STM_I2C_SCL);
+   nrf_gpio_pin_set(STM_I2C_SDA);
 
    // Temporarily set both TWI lines to be outputs
-   nrf_gpio_cfg(CARRIER_I2C_SCL, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
-   nrf_gpio_cfg(CARRIER_I2C_SDA, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
+   nrf_gpio_cfg(STM_I2C_SCL, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
+   nrf_gpio_cfg(STM_I2C_SDA, NRF_GPIO_PIN_DIR_OUTPUT, NRF_GPIO_PIN_INPUT_CONNECT, NRF_GPIO_PIN_PULLUP, NRF_GPIO_PIN_S0D1, NRF_GPIO_PIN_NOSENSE);
 
    // Attempt to clock through the problem
    nrf_delay_us(4);
    for (int i = 0; i < 9; ++i)
    {
       // If the SDA line contains a logic 0, the problem has been resolved
-      if (nrf_gpio_pin_read(CARRIER_I2C_SDA))
+      if (nrf_gpio_pin_read(STM_I2C_SDA))
       {
          if (i == 0)
             return;
@@ -60,16 +60,16 @@ static void twi_bus_clear(void)
       }
 
       // Generate a clock pulse
-      nrf_gpio_pin_clear(CARRIER_I2C_SCL);
+      nrf_gpio_pin_clear(STM_I2C_SCL);
       nrf_delay_us(4);
-      nrf_gpio_pin_set(CARRIER_I2C_SCL);
+      nrf_gpio_pin_set(STM_I2C_SCL);
       nrf_delay_us(4);
    }
 
    // Generate a STOP condition on the TWI bus
-   nrf_gpio_pin_clear(CARRIER_I2C_SDA);
+   nrf_gpio_pin_clear(STM_I2C_SDA);
    nrf_delay_us(4);
-   nrf_gpio_pin_set(CARRIER_I2C_SDA);
+   nrf_gpio_pin_set(STM_I2C_SDA);
 }
 
 static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
@@ -107,8 +107,8 @@ static nrfx_err_t twi_hw_init(void)
 
    // Configure the TWI Master peripheral
    nrfx_twi_config_t twi_config = NRFX_TWI_DEFAULT_CONFIG;
-   twi_config.scl = CARRIER_I2C_SCL;
-   twi_config.sda = CARRIER_I2C_SDA;
+   twi_config.scl = STM_I2C_SCL;
+   twi_config.sda = STM_I2C_SDA;
    twi_config.frequency = NRF_TWI_FREQ_400K;
    twi_config.interrupt_priority = APP_IRQ_PRIORITY_HIGHEST;
    nrfx_twi_init(&_twi_instance, &twi_config, NULL, NULL);
@@ -170,6 +170,12 @@ static nrfx_err_t squarepoint_get_info(uint16_t *id, uint8_t *version, const uin
 
 nrfx_err_t squarepoint_init(squarepoint_interface_data_callback callback, const uint8_t* eui)
 {
+   // Set up the SquarePoint wakeup pin
+#if (BOARD_V >= 0x11)
+   nrfx_gpiote_out_config_t stm_wakeup_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   APP_ERROR_CHECK(nrfx_gpiote_out_init(STM_WAKEUP, &stm_wakeup_pin_config));
+#endif
+
    // Initialize all RX data descriptions
    if (!nrfx_atomic_flag_set_fetch(&_squarepoint_initialized))
       for (int i = 0; i < MAX_NUM_SQUAREPOINT_INTERRUPTS; ++i)

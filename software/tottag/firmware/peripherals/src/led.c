@@ -20,9 +20,9 @@ void leds_init(void)
 {
    // Configure all LED pins
    nrfx_gpiote_out_config_t led_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(LEDS_ACTIVE_LOW);
-   nrfx_gpiote_out_init(CARRIER_LED_RED, &led_pin_config);
-   nrfx_gpiote_out_init(CARRIER_LED_BLUE, &led_pin_config);
-   nrfx_gpiote_out_init(CARRIER_LED_GREEN, &led_pin_config);
+   nrfx_gpiote_out_init(LED_RED, &led_pin_config);
+   nrfx_gpiote_out_init(LED_BLUE, &led_pin_config);
+   nrfx_gpiote_out_init(LED_GREEN, &led_pin_config);
 #ifdef ENABLE_LEDS
    _leds_enabled = true;
 #endif
@@ -49,29 +49,29 @@ void led_on(led_color_t color)
       switch (color)
       {
          case RED:
-            nrfx_gpiote_out_clear(CARRIER_LED_RED);
-            nrfx_gpiote_out_set(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_set(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_clear(LED_RED);
+            nrfx_gpiote_out_set(LED_BLUE);
+            nrfx_gpiote_out_set(LED_GREEN);
             break;
          case BLUE:
-            nrfx_gpiote_out_set(CARRIER_LED_RED);
-            nrfx_gpiote_out_clear(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_set(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_set(LED_RED);
+            nrfx_gpiote_out_clear(LED_BLUE);
+            nrfx_gpiote_out_set(LED_GREEN);
             break;
          case GREEN:
-            nrfx_gpiote_out_set(CARRIER_LED_RED);
-            nrfx_gpiote_out_set(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_clear(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_set(LED_RED);
+            nrfx_gpiote_out_set(LED_BLUE);
+            nrfx_gpiote_out_clear(LED_GREEN);
             break;
          case ORANGE:
-            nrfx_gpiote_out_clear(CARRIER_LED_RED);
-            nrfx_gpiote_out_set(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_clear(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_clear(LED_RED);
+            nrfx_gpiote_out_set(LED_BLUE);
+            nrfx_gpiote_out_clear(LED_GREEN);
             break;
          case PURPLE:
-            nrfx_gpiote_out_clear(CARRIER_LED_RED);
-            nrfx_gpiote_out_clear(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_set(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_clear(LED_RED);
+            nrfx_gpiote_out_clear(LED_BLUE);
+            nrfx_gpiote_out_set(LED_GREEN);
             break;
          default:
             break;
@@ -80,29 +80,29 @@ void led_on(led_color_t color)
       switch (color)
       {
          case RED:
-            nrfx_gpiote_out_set(CARRIER_LED_RED);
-            nrfx_gpiote_out_clear(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_clear(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_set(LED_RED);
+            nrfx_gpiote_out_clear(LED_BLUE);
+            nrfx_gpiote_out_clear(LED_GREEN);
             break;
          case BLUE:
-            nrfx_gpiote_out_clear(CARRIER_LED_RED);
-            nrfx_gpiote_out_set(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_clear(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_clear(LED_RED);
+            nrfx_gpiote_out_set(LED_BLUE);
+            nrfx_gpiote_out_clear(LED_GREEN);
             break;
          case GREEN:
-            nrfx_gpiote_out_clear(CARRIER_LED_RED);
-            nrfx_gpiote_out_clear(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_set(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_clear(LED_RED);
+            nrfx_gpiote_out_clear(LED_BLUE);
+            nrfx_gpiote_out_set(LED_GREEN);
             break;
          case ORANGE:
-            nrfx_gpiote_out_set(CARRIER_LED_RED);
-            nrfx_gpiote_out_clear(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_set(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_set(LED_RED);
+            nrfx_gpiote_out_clear(LED_BLUE);
+            nrfx_gpiote_out_set(LED_GREEN);
             break;
          case PURPLE:
-            nrfx_gpiote_out_set(CARRIER_LED_RED);
-            nrfx_gpiote_out_set(CARRIER_LED_BLUE);
-            nrfx_gpiote_out_clear(CARRIER_LED_GREEN);
+            nrfx_gpiote_out_set(LED_RED);
+            nrfx_gpiote_out_set(LED_BLUE);
+            nrfx_gpiote_out_clear(LED_GREEN);
             break;
          default:
             break;
@@ -118,13 +118,13 @@ void led_off(void)
    if (_leds_enabled)
    {
 #if LEDS_ACTIVE_LOW
-      nrfx_gpiote_out_set(CARRIER_LED_RED);
-      nrfx_gpiote_out_set(CARRIER_LED_BLUE);
-      nrfx_gpiote_out_set(CARRIER_LED_GREEN);
+      nrfx_gpiote_out_set(LED_RED);
+      nrfx_gpiote_out_set(LED_BLUE);
+      nrfx_gpiote_out_set(LED_GREEN);
 #else
-      nrfx_gpiote_out_clear(CARRIER_LED_RED);
-      nrfx_gpiote_out_clear(CARRIER_LED_BLUE);
-      nrfx_gpiote_out_clear(CARRIER_LED_GREEN);
+      nrfx_gpiote_out_clear(LED_RED);
+      nrfx_gpiote_out_clear(LED_BLUE);
+      nrfx_gpiote_out_clear(LED_GREEN);
 #endif
    }
 #endif

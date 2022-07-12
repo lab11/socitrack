@@ -6,6 +6,7 @@
 #include <string.h>
 #include "ble_config.h"
 #include "nrf_delay.h"
+#include "nrf_drv_spi.h"
 #include "nrfx_gpiote.h"
 #include "rtc.h"
 #include "rtc_external.h"
@@ -13,11 +14,9 @@
 #pragma GCC diagnostic pop
 
 
-#if (BOARD_V >= 0x0F)
-
 // Real-time clock state variables -------------------------------------------------------------------------------------
 
-static const nrf_drv_spi_t *_spi_instance = NULL;
+static nrf_drv_spi_t _spi_instance = NRF_DRV_SPI_INSTANCE(RTC_SPI_BUS_IDX);
 static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
 static ab1815_control_t _ctrl_config = { 0 };
 static ab1815_int_config_t _int_config = { 0 };
@@ -66,9 +65,9 @@ static uint8_t month_to_i(const char *c)
 uint8_t ab1815_init(void)
 {
    // Setup interrupt pins
-   nrf_gpio_cfg_input(CARRIER_RTC_INT, NRF_GPIO_PIN_PULLUP);
+   nrf_gpio_cfg_input(RTC_INT, NRF_GPIO_PIN_PULLUP);
    nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(CARRIER_RTC_WDI, &rtc_wdi_pin_config);
+   nrfx_gpiote_out_init(RTC_WDI, &rtc_wdi_pin_config);
 
    // Wait until the chip becomes available
    bool success = ab1815_wait_for_ready(1000);
@@ -129,7 +128,7 @@ void ab1815_reset(void)
    // Write a software reset request to the configuration register
    ab1815_wait_for_ready(1000);
    uint8_t buf[2] = { 0x80 | AB1815_CONFIGURATION_KEY, AB1815_CONF_KEY_SR };
-   APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, buf, 2, NULL, 0));
+   APP_ERROR_CHECK(nrf_drv_spi_transfer(&_spi_instance, buf, 2, NULL, 0));
 }
 
 static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
@@ -139,7 +138,7 @@ static uint8_t ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
       return 0;
 
    // Read from the requested register
-   APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, &reg, 1, _ab1815_read_write_buf, len + 1));
+   APP_ERROR_CHECK(nrf_drv_spi_transfer(&_spi_instance, &reg, 1, _ab1815_read_write_buf, len + 1));
    memcpy(read_buf, _ab1815_read_write_buf + 1, len);
    return 1;
 }
@@ -153,14 +152,14 @@ static uint8_t ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
    // Write to the requested register
    _ab1815_read_write_buf[0] = 0x80 | reg;
    memcpy(_ab1815_read_write_buf + 1, write_buf, len);
-   APP_ERROR_CHECK(nrf_drv_spi_transfer(_spi_instance, _ab1815_read_write_buf, len + 1, NULL, 0));
+   APP_ERROR_CHECK(nrf_drv_spi_transfer(&_spi_instance, _ab1815_read_write_buf, len + 1, NULL, 0));
    return 1;
 }
 
 static void interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_polarity_t action)
 {
    // Read and clear interrupts
-   if (pin == CARRIER_RTC_INT)
+   if (pin == RTC_INT)
    {
       uint8_t status = 0;
       ab1815_read_reg(AB1815_STATUS, &status, 1);
@@ -356,14 +355,10 @@ uint8_t ab1815_get_time(ab1815_time_t *time)
    return 1;
 }
 
-#endif  // #if (BOARD_V >= 0x0F)
-
 uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
 {
-#if (BOARD_V >= 0x0F)
-
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+   nrf_drv_spi_uninit(&_spi_instance);
+   nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
    uint8_t time_properly_set = 0, num_retries = 10;
    rtc_set_current_time(unix_timestamp);
    if (ab1815_wait_for_ready(1000))
@@ -377,18 +372,10 @@ uint8_t ab1815_set_timestamp(uint32_t unix_timestamp)
                              (ab1815_get_time_unix().tv_sec >= (tv.tv_sec - 60));
       }
    }
-   nrf_drv_spi_uninit(_spi_instance);
-   nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
+   nrf_drv_spi_uninit(&_spi_instance);
+   nrfx_gpiote_out_clear(RTC_SPI_SCLK);
    return time_properly_set;
-
-#else
-
-   return 0;
-
-#endif  // #if (BOARD_V >= 0x0F)
 }
-
-#if (BOARD_V >= 0x0F)
 
 struct timeval ab1815_get_time_unix(void)
 {
@@ -468,9 +455,9 @@ uint8_t ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_
    // GPIOTE listen to IRQ1 pin
    nrfx_gpiote_in_config_t gpio_config = NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_HITOLO(0);
    gpio_config.pull = NRF_GPIO_PIN_PULLUP;
-   nrfx_err_t error = nrfx_gpiote_in_init(CARRIER_RTC_INT, &gpio_config, interrupt_handler);
+   nrfx_err_t error = nrfx_gpiote_in_init(RTC_INT, &gpio_config, interrupt_handler);
    APP_ERROR_CHECK(error);
-   nrfx_gpiote_in_event_enable(CARRIER_RTC_INT, 1);
+   nrfx_gpiote_in_event_enable(RTC_INT, 1);
 
    // Configure alarm time and frequency
    ab1815_form_time_buffer(time, buf);
@@ -503,7 +490,7 @@ uint8_t ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_freq
 
 void ab1815_tickle_watchdog(void)
 {
-   nrfx_gpiote_out_toggle(CARRIER_RTC_WDI);
+   nrfx_gpiote_out_toggle(RTC_WDI);
 }
 
 uint8_t ab1815_clear_watchdog(void)
@@ -514,7 +501,7 @@ uint8_t ab1815_clear_watchdog(void)
 
 uint8_t ab1815_ready(void)
 {
-   return nrfx_gpiote_in_is_set(CARRIER_RTC_INT);
+   return nrfx_gpiote_in_is_set(RTC_INT);
 }
 
 uint8_t ab1815_wait_for_ready(uint16_t timeout_ms)
@@ -541,22 +528,18 @@ void ab1815_printTime(ab1815_time_t time)
 {
    printf("INFO: RTC time is %02u:%02u:%02u, 20%02u/%02u/%02u\n", time.hours, time.minutes, time.seconds, time.years, time.months, time.date);
 }
-#endif  // #if (BOARD_V >= 0x0F)
 
-uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance)
+uint8_t rtc_external_init(void)
 {
-   bool success = true;
-#if (BOARD_V >= 0x0F)
-
    // Setup SPI communications
-   _spi_instance = spi_instance;
-   _spi_config.sck_pin = RTC_SD_SPI_SCLK;
-   _spi_config.miso_pin = RTC_SD_SPI_MISO;
-   _spi_config.mosi_pin = RTC_SD_SPI_MOSI;
-   _spi_config.ss_pin = RTC_SD_SPI_CS;
+   bool success = true;
+   _spi_config.sck_pin = RTC_SPI_SCLK;
+   _spi_config.miso_pin = RTC_SPI_MISO;
+   _spi_config.mosi_pin = RTC_SPI_MOSI;
+   _spi_config.ss_pin = RTC_SPI_CS;
    _spi_config.frequency = NRF_DRV_SPI_FREQ_250K;
    _spi_config.mode = NRF_DRV_SPI_MODE_3;
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+   nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
 
    // Initialize the chip
    success = ab1815_init();
@@ -602,25 +585,19 @@ uint8_t rtc_external_init(const nrf_drv_spi_t* spi_instance)
    }
 
    // De-initialize SPI communications
-   nrf_drv_spi_uninit(_spi_instance);
-   nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
-
-#else
-   printf("INFO: Skipping RTC as compiling for older board (Version < revF)\n");
-#endif
+   nrf_drv_spi_uninit(&_spi_instance);
+   nrfx_gpiote_out_clear(RTC_SPI_SCLK);
    return success;
 }
 
 uint32_t rtc_external_sync_to_internal(void)
 {
-   uint32_t timestamp = 0;
-#if (BOARD_V >= 0x0F)
-
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdate-time"
 
-   nrf_drv_spi_uninit(_spi_instance);
-   nrf_drv_spi_init(_spi_instance, &_spi_config, NULL, NULL);
+   uint32_t timestamp = 0;
+   nrf_drv_spi_uninit(&_spi_instance);
+   nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
    if (ab1815_wait_for_ready(600))
    {
       // Set nRF time from the RTC
@@ -635,11 +612,9 @@ uint32_t rtc_external_sync_to_internal(void)
       else
          timestamp = 0;
    }
-   nrf_drv_spi_uninit(_spi_instance);
-   nrfx_gpiote_out_clear(RTC_SD_SPI_SCLK);
+   nrf_drv_spi_uninit(&_spi_instance);
+   nrfx_gpiote_out_clear(RTC_SPI_SCLK);
 
 #pragma GCC diagnostic pop
-
-#endif  // #if (BOARD_V >= 0x0F)
    return timestamp;
 }

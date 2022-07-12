@@ -30,7 +30,7 @@
 
 // ***** Board Specific Configuration *****
 #define LED_COUNT 3
-static const uint8_t LEDS[LED_COUNT] = {CARRIER_LED_RED, CARRIER_LED_BLUE, CARRIER_LED_GREEN};
+static const uint8_t LEDS[LED_COUNT] = { LED_RED, LED_BLUE, LED_GREEN };
 // ****************************************
 
 // app error handler. Overwrites weak definition in app_error_weak.c
