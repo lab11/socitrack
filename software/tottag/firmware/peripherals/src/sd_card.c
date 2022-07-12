@@ -1,8 +1,5 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-
 #include <stdarg.h>
 #include <string.h>
 #include "ble_config.h"
@@ -16,8 +13,6 @@
 #include "rtc_external.h"
 #include "sd_card.h"
 #include "squarepoint_interface.h"
-
-#pragma GCC diagnostic pop
 
 
 // SD Card block device functions and variables ------------------------------------------------------------------------

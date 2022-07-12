@@ -209,7 +209,7 @@ override CFLAGS += -Wcast-qual #                # const char* -> char*
 override CFLAGS += -Wswitch-default #           # switch w/out default (doesn't cover all cases) (maybe annoying?)
 override CFLAGS += -Wstrict-prototypes #        # function defined w/out specifying argument types
 
-override CFLAGS += -Wdate-time #                # warn if __TIME__, __DATE__, or __TIMESTAMP__ used
+#override CFLAGS += -Wdate-time #                # warn if __TIME__, __DATE__, or __TIMESTAMP__ used
                                          # ^on b/c flashing assumes same code => no flash, these enforce
 override CFLAGS += -Wfloat-equal #              # floats used with '=' operator, likely imprecise
 override CFLAGS += -Wformat-nonliteral #        # can't check format string (maybe disable if annoying)
@@ -220,11 +220,12 @@ override CFLAGS += -Winit-self #                # { int i = i }
 override CFLAGS += -Wlogical-op #               # "suspicous use of logical operators in expressions" (a lint)
 #override CFLAGS += -Wmissing-declarations #     # ^same? not sure how these differ
 override CFLAGS += -Wno-missing-field-initializers # if init'ing struct w/out field names, warn if not all used
+override CFLAGS += -Wno-unused-function
 override CFLAGS += -Wmissing-format-attribute # # something looks printf-like but isn't marked as such
 #override CFLAGS += -Wmissing-noreturn #         # __attribute__((noreturn)) like -> ! in Rust, should use it
 override CFLAGS += -Wmultichar #                # use of 'foo' instead of "foo" (surpised not on by default?)
 override CFLAGS += -Wpointer-arith #            # sizeof things not define'd (i.e. sizeof(void))
-override CFLAGS += -Wredundant-decls #          # { int i; int i; } (a lint)
+#override CFLAGS += -Wredundant-decls #          # { int i; int i; } (a lint)
 override CFLAGS += -Wshadow #                   # int foo(int a) { int a = 1; } inner a shadows outer a
 override CFLAGS += -Wtrampolines #              # attempt to generate a trampoline on the NX stack
 #override CFLAGS += -Wunused-macros #            # macro defined in this file not used

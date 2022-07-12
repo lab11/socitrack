@@ -1,16 +1,11 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-
 #include <string.h>
 #include "ble_config.h"
 #include "imu.h"
 #include "nrf_delay.h"
 #include "nrf_drv_spi.h"
 #include "nrfx_gpiote.h"
-
-#pragma GCC diagnostic pop
 
 
 #if (BOARD_V < 0x11)  // Accelerometer forwarding for older boards -----------------------------------------------------
@@ -35,9 +30,6 @@ static float x_data[1], y_data[1], z_data[1];
 
 
 // LSM6DSOX-specific IMU functionality ---------------------------------------------------------------------------------
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 
 static nrfx_err_t lsm6dsox_read_reg(uint8_t reg, uint8_t *data, uint16_t len)
 {
@@ -6238,7 +6230,5 @@ void imu_handle_incoming_data(uint32_t timestamp)
          _data_callback(in_motion, timestamp, NULL, NULL, NULL);
    }
 }
-
-#pragma GCC diagnostic pop
 
 #endif  // #if (BOARD_V < 0x11)

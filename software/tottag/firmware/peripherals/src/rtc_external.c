@@ -1,8 +1,5 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-
 #include <string.h>
 #include "ble_config.h"
 #include "nrf_delay.h"
@@ -10,8 +7,6 @@
 #include "nrfx_gpiote.h"
 #include "rtc.h"
 #include "rtc_external.h"
-
-#pragma GCC diagnostic pop
 
 
 // Real-time clock state variables -------------------------------------------------------------------------------------
@@ -90,8 +85,7 @@ uint8_t ab1815_init(void)
 uint8_t ab1815_init_time(void)
 {
 #ifdef FORCE_RTC_RESET
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdate-time"
+
    const char _datetime[] = _DATETIME;  // the format is "Tue Jan  1 00:00:00 UTC 2000"
    printf("INFO: Forcing RTC reset to %s\n", _datetime);
 
@@ -117,7 +111,6 @@ uint8_t ab1815_init_time(void)
    printf("%s: RTC clock was %s set to the current datetime\n", time_properly_set ? "INFO" : "ERROR", time_properly_set ? "properly" : "unable to be");
    return time_properly_set;
 
-#pragma GCC diagnostic pop
 #else
    return 1;
 #endif
@@ -592,9 +585,6 @@ uint8_t rtc_external_init(void)
 
 uint32_t rtc_external_sync_to_internal(void)
 {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdate-time"
-
    uint32_t timestamp = 0;
    nrf_drv_spi_uninit(&_spi_instance);
    nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
@@ -614,7 +604,5 @@ uint32_t rtc_external_sync_to_internal(void)
    }
    nrf_drv_spi_uninit(&_spi_instance);
    nrfx_gpiote_out_clear(RTC_SPI_SCLK);
-
-#pragma GCC diagnostic pop
    return timestamp;
 }

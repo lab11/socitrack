@@ -1,16 +1,11 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-
 #include <string.h>
 #include "accelerometer.h"
 #include "ble_config.h"
 #include "nrf_delay.h"
 #include "nrfx_gpiote.h"
 #include "nrf_drv_spi.h"
-
-#pragma GCC diagnostic pop
 
 
 // Static accelerometer state variables --------------------------------------------------------------------------------

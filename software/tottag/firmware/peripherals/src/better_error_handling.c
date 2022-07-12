@@ -7,10 +7,6 @@
 
 #include <stdint.h>
 #include <stdio.h>
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-
 #include "app_error.h"
 #include "ble_config.h"
 #include "hardfault.h"
@@ -20,8 +16,6 @@
 #include "nrf_log_ctrl.h"
 #include "nrfx_gpiote.h"
 #include "sd_card.h"
-
-#pragma GCC diagnostic pop
 
 // include softdevice faults if applicable
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT

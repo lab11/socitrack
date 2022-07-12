@@ -1,8 +1,5 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wredundant-decls"
-
 #include <string.h>
 #include "battery.h"
 #include "ble_config.h"
@@ -26,8 +23,6 @@
 #include "system.h"
 #include "timers.h"
 
-#pragma GCC diagnostic pop
-
 
 // Application state variables -----------------------------------------------------------------------------------------
 
@@ -37,9 +32,6 @@ static volatile uint16_t _range_buffer_length = 0;
 
 
 // Helper functions ----------------------------------------------------------------------------------------------------
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdate-time"
 
 static void watchdog_handler(void *p_context);
 static uint32_t squarepoint_data_handler(uint8_t *data, uint32_t len, uint32_t timestamp);
@@ -566,5 +558,3 @@ int main(void)
          nrfx_atomic_flag_set(&_app_flags.device_reset_required);
    }
 }
-
-#pragma GCC diagnostic pop
