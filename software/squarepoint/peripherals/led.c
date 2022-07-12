@@ -1,10 +1,8 @@
-#include "board.h"
 #include "configuration.h"
 #include "led.h"
 
 void led_on(led_color_t color)
 {
-#if (BOARD_V == SQUAREPOINT)
 #if STM_ENABLE_LEDS
    switch (color)
    {
@@ -31,7 +29,6 @@ void led_on(led_color_t color)
       default:
          break;
    }
-#endif
 #endif
 }
 
