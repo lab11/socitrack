@@ -8,6 +8,7 @@
 #include "ble_config.h"
 #include "nrf_delay.h"
 #include "nrfx_gpiote.h"
+#include "nrf_drv_spi.h"
 
 #pragma GCC diagnostic pop
 
