@@ -13,13 +13,12 @@
 #include "deca_device_api.h"
 #include "deca_regs.h"
 
-#include "board.h"
 #include "configuration.h"
 #include "dw1000.h"
 #include "delay.h"
-#include "board.h"
 #include "scheduler.h"
 #include "SEGGER_RTT.h"
+#include "squarepoint.h"
 
 /******************************************************************************/
 // Constants for the DW1000

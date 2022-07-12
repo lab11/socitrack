@@ -1,10 +1,8 @@
 #include <string.h>
-
 #include "stm32f0xx.h"
 #include "stm32f0xx_tim.h"
 #include "stm32f0xx_rcc.h"
 #include "stm32f0xx_misc.h"
-
 #include "configuration.h"
 #include "timer.h"
 

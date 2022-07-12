@@ -1,7 +1,6 @@
 // Includes ------------------------------------------------------------------------------------------------------------
 
 #include "atomic.h"
-#include "board.h"
 #include "calibration.h"
 #include "configuration.h"
 #include "delay.h"
@@ -9,6 +8,7 @@
 #include "led.h"
 #include "scheduler.h"
 #include "SEGGER_RTT.h"
+#include "squarepoint.h"
 #include "stm32f0xx_pwr.h"
 #include "timer.h"
 

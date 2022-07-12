@@ -1,5 +1,6 @@
 #include "configuration.h"
 #include "led.h"
+#include "squarepoint.h"
 
 void led_on(led_color_t color)
 {

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <string.h>
 #include "atomic.h"
-#include "board.h"
 #include "calibration.h"
 #include "configuration.h"
 #include "delay.h"
@@ -10,6 +9,7 @@
 #include "host_interface.h"
 #include "scheduler.h"
 #include "SEGGER_RTT.h"
+#include "squarepoint.h"
 #include "stm32f0xx_i2c_cpal.h"
 #include "stm32f0xx_i2c_cpal_hal.h"
 

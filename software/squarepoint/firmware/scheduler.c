@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <string.h>
-#include "board.h"
 #include "deca_device_api.h"
 #include "deca_regs.h"
 #include "glossy.h"
@@ -12,6 +11,7 @@
 #include "response.h"
 #include "scheduler.h"
 #include "SEGGER_RTT.h"
+#include "squarepoint.h"
 #include "stm32f0xx_gpio.h"
 #include "timer.h"
 
