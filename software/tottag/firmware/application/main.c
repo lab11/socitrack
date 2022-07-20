@@ -1,24 +1,16 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include <string.h>
 #include "battery.h"
-#include "ble_config.h"
 #include "ble_gap.h"
 #include "bluetooth.h"
-#include "boards.h"
 #include "buzzer.h"
 #include "imu.h"
 #include "led.h"
 #include "nrf_delay.h"
-#include "nrf_drv_power.h"
-#include "nrf_pwr_mgmt.h"
-#include "nrfx_gpiote.h"
-#include "nrfx_power.h"
 #include "nrfx_wdt.h"
 #include "rtc.h"
 #include "rtc_external.h"
 #include "sd_card.h"
-#include "SEGGER_RTT.h"
 #include "squarepoint_interface.h"
 #include "system.h"
 #include "timers.h"
@@ -59,7 +51,7 @@ static void spi_init(void)
    APP_ERROR_CHECK(nrfx_gpiote_out_init(IMU_SPI_CS, &cs_imu_pin_config));
    APP_ERROR_CHECK(nrfx_gpiote_out_init(RTC_SPI_CS, &cs_rtc_pin_config));
 
-   // Make sure all SPI lines are valid and not floating
+   // Make sure the SD Card starts out disabled
    nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    APP_ERROR_CHECK(nrfx_gpiote_out_init(SD_CARD_ENABLE, &sd_enable_pin_config));
 }
@@ -93,74 +85,48 @@ static void squarepoint_comms_init(void)
 
 static void hardware_init(void)
 {
-   // Initialize the GPIO subsystem and the LEDs
+   // Initialize the GPIO subsystem, SPI chip selects, LEDs, and the application state
    initialize_gpio();
+   spi_init();
    leds_init();
    led_on(RED);
+   app_init();
 
-   // Initialize the RTT library
+   // Check and clear the reason for the chip reset
    printf("\n----------------------------------------------\n");
-   uint32_t reset_reason = nrf_power_resetreas_get();
-   if (reset_reason)
-   {
-      printf("WARNING: Chip experienced a reset with reason %lu\n", reset_reason);
-      nrf_power_resetreas_clear(0xFFFFFFFF);
-   }
+   printf("INFO: Chip experienced a reset with reason %lu\n", NRF_POWER->RESETREAS);
+   NRF_POWER->RESETREAS = 0xFFFFFFFF;
    printf("INFO: Initializing nRF...\n");
 
-   // Initialize the application state and essential hardware components
-   app_init();
-   buzzer_init();
+   // Initialize the application timers and Bluetooth stack via the SoftDevice
    timers_init(watchdog_handler, &_app_flags.squarepoint_wakeup_triggered);
+   ble_init(&_app_flags.bluetooth_is_advertising, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index);
+
+   // Initialize essential hardware components
    rtc_init();
-
-   // Initialize the power driver
-   const nrfx_power_config_t power_config = { .dcdcen = 1 };
-   nrf_drv_power_init(&power_config);
-   nrf_pwr_mgmt_init();
-
-   // Initialize the Bluetooth stack via a SoftDevice
-   if (ble_init(&_app_flags.bluetooth_is_advertising, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index) != NRF_SUCCESS)
-      while (true)
-      {
-         buzzer_indicate_error();
-         nrf_delay_ms(2500);
-      }
-
-   // Tell the SoftDevice to use the DC/DC regulator and low-power mode
-   sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE);
-   sd_power_mode_set(NRF_POWER_MODE_LOWPWR);
-
-   // Initialize SPI buses
-   spi_init();
-   printf("INFO: Initialized critical hardware and software services\n");
-
-   // Enable the external Real-Time Clock and ensure that the fetched timestamp is valid
+   buzzer_init();
    rtc_external_init();
-   uint32_t current_timestamp = rtc_get_current_time(), num_retries = 3;
-   while (--num_retries && ((current_timestamp < MINIMUM_VALID_TIMESTAMP) || (current_timestamp > MAXIMUM_VALID_TIMESTAMP)))
-   {
-      printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
-      rtc_external_init();
-      buzzer_indicate_invalid_rtc_time();
-      nrf_delay_ms(2000);
-      current_timestamp = rtc_get_current_time();
-   }
-   if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
-      nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
-
-   // Initialize supplementary hardware components
-   imu_init(imu_data_handler);
    battery_monitor_init(&_app_flags.battery_status_changed);
 
-   // Wait until an SD Card is inserted
+   // Ensure that the RTC timestamp is valid
+   uint32_t current_timestamp = rtc_get_current_time();
+   if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
+      nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
+   else
+   {
+      printf("ERROR: RTC chip returned an impossible Unix timestamp: %lu\n", current_timestamp);
+      buzzer_indicate_invalid_rtc_time();
+   }
+
+   // Initialize the IMU and wait until an SD card is inserted
+   imu_init(imu_data_handler);
    while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
    {
       buzzer_indicate_error();
       nrf_delay_ms(5000);
    }
    sd_card_create_log(nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid) ? current_timestamp : 0, true);
-   printf("INFO: Initialized supplementary hardware and software services\n");
+   printf("INFO: Initialized all hardware and software services\n");
 
    // Initialize communications with the SquarePoint module
    squarepoint_comms_init();
@@ -414,7 +380,8 @@ int main(void)
    while (true)
    {
       // Go to sleep until something happens
-      nrf_pwr_mgmt_run();
+      sd_app_evt_wait();
+      //TODO: printf("Processing Something: %lu\n", rtc_get_current_time());
 
       // Handle any incoming SquarePoint module data
       uint32_t current_timestamp = squarepoint_handle_incoming_data(rtc_get_current_time());
@@ -500,7 +467,7 @@ int main(void)
             sd_card_create_log(current_timestamp, false);
             nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
             log_printf("INFO: Setting timestamp to the network response: %lu\n", current_timestamp);
-            if (ab1815_set_timestamp(current_timestamp))
+            if (rtc_external_set_timestamp(current_timestamp))
                log_printf("INFO: RTC clock was successfully set to the current timestamp\n");
             else
                log_printf("ERROR: RTC clock was unable to be set to the current timestamp\n");
