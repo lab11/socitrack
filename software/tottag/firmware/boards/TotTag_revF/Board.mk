@@ -14,8 +14,9 @@ BOARD_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BOARD_SOURCE_PATHS = $(BOARD_DIR) $(BOARD_DIR)/../../peripherals/src $(BOARD_DIR)/../../application
 BOARD_HEADER_PATHS = $(BOARD_DIR) $(BOARD_DIR)/../../peripherals/include $(BOARD_DIR)/../../application
 BOARD_LINKER_PATHS = $(BOARD_DIR)
-BOARD_SOURCES      = $(foreach BOARD_PATH,$(BOARD_SOURCE_PATHS),$(wildcard $(BOARD_PATH)/*.c))
+BOARD_SOURCES_FULL = $(foreach BOARD_PATH,$(BOARD_SOURCE_PATHS),$(wildcard $(BOARD_PATH)/*.c))
 BOARD_AS           = $(foreach BOARD_PATH,$(BOARD_SOURCE_PATHS),$(wildcard $(BOARD_PATH)/*.s))
+BOARD_SOURCES      = $(filter-out $(BOARD_DIR)/../../peripherals/src/rtc_external.c,$(BOARD_SOURCES_FULL))
 
 # Convert board to upper case
 BOARD_UPPER = $(shell echo $(BOARD) | tr a-z A-Z)
@@ -44,22 +45,16 @@ BOARD_SOURCES += \
 	nrf_ble_gq.c\
 	nrf_ble_qwr.c\
 	nrf_block_dev_sdc.c\
-	nrf_drv_clock.c\
-	nrf_drv_power.c\
 	nrf_drv_spi.c\
 	nrf_log_frontend.c\
 	nrf_memobj.c\
-	nrf_pwr_mgmt.c\
 	nrf_queue.c\
 	nrf_sdh.c\
 	nrf_sdh_ble.c\
 	nrf_section_iter.c\
 	nrf_strerror.c\
 	nrfx_atomic.c\
-	nrfx_clock.c\
 	nrfx_gpiote.c\
-	nrfx_power.c\
-	nrfx_prs.c\
 	nrfx_pwm.c\
 	nrfx_rtc.c\
 	nrfx_saadc.c\
@@ -71,22 +66,23 @@ BOARD_SOURCES += \
 	SEGGER_RTT_Syscalls_GCC.c\
 	system_nrf52840.c
 
+# Add rtc_external.c last so that it is always compiled closest to when the board is actually flashed
+BOARD_SOURCES      += $(BOARD_DIR)/../../peripherals/src/rtc_external.c
+
 # Make sure that peripherals are always recompiled so any flag changes are picked up correctly
-_build/accelerometer.o: FORCE
 _build/battery.o: FORCE
-_build/better_error_handling.o: FORCE
 _build/bluetooth.o: FORCE
 _build/buzzer.o: FORCE
 _build/imu.o: FORCE
 _build/led.o: FORCE
 _build/magnetometer.o: FORCE
-_build/rtc_external.o: FORCE
 _build/rtc.o: FORCE
 _build/sd_card.o: FORCE
 _build/squarepoint_interface.o: FORCE
 _build/system.o: FORCE
 _build/timers.o: FORCE
 _build/main.o: FORCE
+_build/rtc_external.o: FORCE
 
 .PHONY: FORCE
 
