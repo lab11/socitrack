@@ -3,9 +3,13 @@
 
 // Includes ------------------------------------------------------------------------------------------------------------
 
+#include <stdarg.h>
+#include <string.h>
+#include "tottag.h"
+#include "app_config.h"
 #include "app_timer.h"
-#include "boards.h"
-#include "sd_card.h"
+#include "nrfx_atomic.h"
+#include "nrfx_gpiote.h"
 
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
