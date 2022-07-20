@@ -383,6 +383,7 @@ bool rtc_external_set_timestamp(uint32_t unix_timestamp)
       return success;
 
    // Initialize RTC chip communications and store the timestamp
+   nrfx_spi_uninit(&_rtc_spi_instance);
    if (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS)
    {
       success = ab1815_set_time(new_time);
@@ -404,6 +405,7 @@ uint32_t rtc_external_sync_to_internal(void)
       return timestamp;
 
    // Initialize RTC chip communications and retrieve the current timestamp
+   nrfx_spi_uninit(&_rtc_spi_instance);
    if (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS)
    {
       if (ab1815_get_time(&time))

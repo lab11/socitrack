@@ -14,7 +14,6 @@
 
 // User configurable debug definitions ---------------------------------------------------------------------------------
 
-//#define DEVICE_FORCE_RESET_INTERVAL_SEC 3600
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #define ENABLE_LOW_BATTERY_SOUNDS
 #define ENABLE_SOUNDS
@@ -177,6 +176,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t squarepoint_time_epoch_requested;
    nrfx_atomic_flag_t elapsed_second;
    nrfx_atomic_flag_t sd_card_inserted;
+   nrfx_atomic_flag_t sd_card_maintenance_mode;
    nrfx_atomic_flag_t rtc_time_valid;
    nrfx_atomic_flag_t battery_status_changed;
    nrfx_atomic_flag_t device_in_motion;

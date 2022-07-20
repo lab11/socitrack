@@ -274,6 +274,8 @@ nrfx_err_t squarepoint_set_time(uint32_t epoch)
 
 nrfx_err_t squarepoint_wakeup_radio(void)
 {
+   // TODO: Utilize the SquarePoint wakeup pin
+
    // Send an outgoing command requesting that the SquarePoint module's radio wakeup
    _tx_data_description.primary_length = 1;
    _twi_tx_buf[0] = SQUAREPOINT_CMD_WAKEUP;
