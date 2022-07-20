@@ -61,7 +61,7 @@ static ret_code_t ble_device_addr_encode(uint8_t  * p_encoded_data,
                                          uint16_t   max_size)
 {
     ret_code_t     err_code;
-    ble_gap_addr_t device_addr;
+    ble_gap_addr_t device_addr = { 0 };
 
     // Check for buffer overflow.
     if (((*p_offset) + AD_TYPE_BLE_DEVICE_ADDR_SIZE) > max_size)
@@ -179,7 +179,7 @@ static ret_code_t appearance_encode(uint8_t  * p_encoded_data,
                                     uint16_t   max_size)
 {
     ret_code_t err_code;
-    uint16_t   appearance;
+    uint16_t   appearance = 0;
 
     // Check for buffer overflow.
     if (((*p_offset) + AD_TYPE_APPEARANCE_SIZE) > max_size)
@@ -262,7 +262,7 @@ static ret_code_t uuid_list_sized_encode(const ble_advdata_uuid_list_t * p_uuid_
     for (i = 0; i < p_uuid_list->uuid_cnt; i++)
     {
         ret_code_t err_code;
-        uint8_t    encoded_size;
+        uint8_t    encoded_size = 0;
         ble_uuid_t uuid = p_uuid_list->p_uuids[i];
 
         // Find encoded uuid size.
@@ -748,7 +748,7 @@ bool ble_advdata_uuid_find(uint8_t    const * p_encoded_data,
     uint8_t         raw_uuid_len    = UUID128_SIZE;
     uint8_t const * p_parsed_uuid;
     uint16_t        parsed_uuid_len = data_len;
-    uint8_t         raw_uuid[UUID128_SIZE];
+    uint8_t         raw_uuid[UUID128_SIZE] = { 0 };
     uint8_t         ad_types[N_AD_TYPES];
 
     err_code = sd_ble_uuid_encode(p_target_uuid, &raw_uuid_len, raw_uuid);

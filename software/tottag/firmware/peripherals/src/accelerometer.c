@@ -228,7 +228,7 @@ bool accelerometer_init(imu_data_callback callback)
    _accel_spi_config.mosi_pin = IMU_SPI_MOSI;
    _accel_spi_config.ss_pin = IMU_SPI_CS;
    _accel_spi_config.frequency = NRF_SPI_FREQ_4M;
-   _accel_spi_config.mode = NRF_SPI_MODE_3;
+   _accel_spi_config.mode = NRF_SPI_MODE_0;
    nrfx_spi_init(&_accel_spi_instance, &_accel_spi_config, NULL, NULL);
    _accelerometer_data_ready = _accelerometer_motion_changed = false;
 

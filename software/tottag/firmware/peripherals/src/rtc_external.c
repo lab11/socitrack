@@ -119,7 +119,10 @@ static bool ab1815_wait_for_ready(uint16_t timeout_ms)
 
    // Return whether the RTC chip became available in the allotted time
    if (counter < timeout_ms)
+   {
+      nrf_delay_ms(100);
       return true;
+   }
    else
    {
       printf("WARNING: RTC not ready yet, but timeout of %u ms expired!\n", timeout_ms);
@@ -172,27 +175,16 @@ static bool ab1815_get_time(ab1815_time_t *time)
    return true;
 }
 
-static struct timeval ab1815_get_time_unix(void)
+static bool ab1815_set_config(void)
 {
-   struct timeval tv = { 0 };
-   ab1815_time_t time = { 0 };
-   if (ab1815_get_time(&time))
-      tv = ab1815_to_unix(time);
-   return tv;
-}
-
-static bool ab1815_set_config(ab1815_control_t config)
-{
-   // Store current configuration
-   _ctrl_config = config;
-
    // Control1
-   uint8_t write = config.stop << 7 | config.hour_12 << 6 | config.OUTB << 5 | config.OUT << 4 | config.rst_pol << 3 | config.auto_rst << 2 | 0x2 | config.write_rtc;
+   uint8_t write = _ctrl_config.stop << 7 | _ctrl_config.hour_12 << 6 |     _ctrl_config.OUTB << 5 |
+                   _ctrl_config.OUT << 4  | _ctrl_config.rst_pol << 3 | _ctrl_config.auto_rst << 2 | 0x2 | _ctrl_config.write_rtc;
    if (!ab1815_write_reg(AB1815_CONTROL1, &write, 1))
       return false;
 
    // Control2
-   write = config.psw_nirq2_function << 2 | config.fout_nirq_function;
+   write = _ctrl_config.psw_nirq2_function << 2 | _ctrl_config.fout_nirq_function;
    if (!ab1815_write_reg(AB1815_CONTROL2, &write, 1))
       return false;
 
@@ -212,13 +204,24 @@ static bool ab1815_set_config(ab1815_control_t config)
    return ab1815_write_reg(AB1815_BATMODE, &write, 1);
 }
 
+#ifdef FORCE_RTC_RESET
+static struct timeval ab1815_get_time_unix(void)
+{
+   struct timeval tv = { 0 };
+   ab1815_time_t time = { 0 };
+   if (ab1815_get_time(&time))
+      tv = ab1815_to_unix(time);
+   return tv;
+}
+#endif
+
 static bool ab1815_set_time(ab1815_time_t time)
 {
    // Ensure that the RTC write bit is enabled
    if (_ctrl_config.write_rtc != 1)
    {
       _ctrl_config.write_rtc = 1;
-      if (!ab1815_set_config(_ctrl_config))
+      if (!ab1815_set_config())
       {
          _ctrl_config.write_rtc = 0;
          return false;
@@ -232,7 +235,7 @@ static bool ab1815_set_time(ab1815_time_t time)
 
    // Ensure that the RTC write bit is disabled to prevent unintended access
    _ctrl_config.write_rtc = 0;
-   if (!ab1815_set_config(_ctrl_config))
+   if (!ab1815_set_config())
       _ctrl_config.write_rtc = 1;
    return true;
 }
@@ -260,8 +263,9 @@ static bool ab1815_init_time(void)
    while (!time_properly_set && --num_retries)
    {
       ab1815_set_time(comp_time);
-      time_properly_set = (ab1815_get_time_unix().tv_sec <= (set_time.tv_sec + 60)) &&
-                          (ab1815_get_time_unix().tv_sec >= (set_time.tv_sec - 60));
+      struct timeval retrieved_time = ab1815_get_time_unix();
+      time_properly_set = (retrieved_time.tv_sec <= (set_time.tv_sec + 120)) &&
+                          (retrieved_time.tv_sec >= (set_time.tv_sec - 60));
    }
    printf("%s: RTC clock was %s set to the current datetime\n", time_properly_set ? "INFO" : "ERROR", time_properly_set ? "properly" : "unable to be");
    return time_properly_set;
@@ -271,10 +275,10 @@ static bool ab1815_init_time(void)
 #endif
 }
 
-static bool ab1815_set_int_config(ab1815_int_config_t config)
+static bool ab1815_set_int_config(void)
 {
-   _int_config = config;
-   uint8_t write = config.century_en << 7 | config.int_mode << 5 | config.bat_low_en << 4 | config.timer_en << 3 | config.alarm_en << 2 | config.xt2_en << 1 | config.xt1_en;
+   uint8_t write = _int_config.century_en << 7 | _int_config.int_mode << 5 | _int_config.bat_low_en << 4 |
+                   _int_config.timer_en << 3   | _int_config.alarm_en << 2 |     _int_config.xt2_en << 1 | _int_config.xt1_en;
    return ab1815_write_reg(AB1815_INT_MASK, &write, 1);
 }
 
@@ -329,41 +333,24 @@ bool rtc_external_init(void)
    // Initialize the chip
    bool success = ab1815_init();
 
+   // Define the RTC configuration and settings
+   _ctrl_config.OUT = 1;
+   _ctrl_config.auto_rst = 1;
+   _int_config.int_mode = 0x3;
+
    // Setup SPI communications
+   _rtc_spi_config.ss_pin = RTC_SPI_CS;
    _rtc_spi_config.sck_pin = RTC_SPI_SCLK;
    _rtc_spi_config.miso_pin = RTC_SPI_MISO;
    _rtc_spi_config.mosi_pin = RTC_SPI_MOSI;
-   _rtc_spi_config.ss_pin = RTC_SPI_CS;
-   _rtc_spi_config.frequency = NRF_SPI_FREQ_1M;
    _rtc_spi_config.mode = NRF_SPI_MODE_0;
+   _rtc_spi_config.frequency = NRF_SPI_FREQ_1M;
    success = (success && (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS));
-
-   // Define the RTC configuration and settings
-   static ab1815_control_t ctrl_config = {
-         .stop      = 0,
-         .hour_12   = 0,
-         .OUTB      = 0,
-         .OUT       = 1,
-         .rst_pol   = 0,
-         .auto_rst  = 1,
-         .write_rtc = 0,
-         .psw_nirq2_function = 0,
-         .fout_nirq_function = 0
-   };
-   static ab1815_int_config_t int_config = {
-         .century_en = 0,
-         .int_mode   = 0x3,
-         .bat_low_en = 0,
-         .timer_en   = 0,
-         .alarm_en   = 0,
-         .xt2_en     = 0,
-         .xt1_en     = 0
-   };
 
    // Set configurations
    success = (success && ab1815_clear_watchdog());
-   success = (success && ab1815_set_config(ctrl_config));
-   success = (success && ab1815_set_int_config(int_config));
+   success = (success && ab1815_set_config());
+   success = (success && ab1815_set_int_config());
    success = (success && ab1815_enable_trickle_charger());
    success = (success && ab1815_use_xt_oscillator());
 
