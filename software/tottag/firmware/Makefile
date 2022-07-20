@@ -37,9 +37,7 @@ GDB_PORT_NUMBER = 2331
 CFLAGS += $(CDBG)
 
 # Include board Makefile (if any)
-ifeq ($(BOARD_REV), D)
-include boards/TotTag_revD/Board.mk
-else ifeq ($(BOARD_REV), F)
+ifeq ($(BOARD_REV), F)
 include boards/TotTag_revF/Board.mk
 else ifeq ($(BOARD_REV), G)
 include boards/TotTag_revG/Board.mk

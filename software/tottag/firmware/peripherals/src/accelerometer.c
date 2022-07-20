@@ -1,11 +1,8 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include <string.h>
 #include "accelerometer.h"
-#include "ble_config.h"
+#include "nrfx_spi.h"
 #include "nrf_delay.h"
-#include "nrfx_gpiote.h"
-#include "nrf_drv_spi.h"
 
 
 // Static accelerometer state variables --------------------------------------------------------------------------------
@@ -14,8 +11,8 @@
 
 #define DISABLE_ACCEL_DATA_READING
 
-static nrf_drv_spi_t _spi_instance = NRF_DRV_SPI_INSTANCE(IMU_SPI_BUS_IDX);
-static nrf_drv_spi_config_t _spi_config = NRF_DRV_SPI_DEFAULT_CONFIG;
+static nrfx_spi_t _accel_spi_instance = NRFX_SPI_INSTANCE(IMU_SPI_BUS_IDX);
+static nrfx_spi_config_t _accel_spi_config = NRFX_SPI_DEFAULT_CONFIG;
 static lis2dw12_config_t _accelerometer_config = { .odr = lis2dw12_odr_200, .mode = lis2dw12_low_power,
       .lp_mode = lis2dw12_lp_1, .cs_nopull = 0, .bdu = 1, .auto_increment = 1, .i2c_disable = 1, .int_active_low = 0,
       .on_demand = 1, .bandwidth = lis2dw12_bw_odr_4, .fs = lis2dw12_fs_2g, .high_pass = 1, .low_noise  = 0 };
@@ -26,7 +23,7 @@ static nrfx_atomic_flag_t _accelerometer_data_ready, _accelerometer_motion_chang
 static float _acc_sensitivity_scalar = 1.0f;
 static float x_data[ACC_NUM_RESULTS_PER_READ], y_data[ACC_NUM_RESULTS_PER_READ], z_data[ACC_NUM_RESULTS_PER_READ];
 static uint8_t _acc_xyz[(ACC_NUM_RESULTS_PER_READ*3*sizeof(int16_t)) + 1] = { 0 };
-static uint8_t _lis2dw12_read_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
+static uint8_t _acc_read_write_buf[257] = { 0 }, _lsb_empty_bits = 0;
 static imu_data_callback _data_callback = NULL;
 
 
@@ -35,19 +32,20 @@ static imu_data_callback _data_callback = NULL;
 static nrfx_err_t lis2dw12_read_reg(uint8_t reg, uint8_t* read_buf, size_t len)
 {
    // Use SPI directly
-   uint8_t readreg = reg | LIS2DW12_SPI_READ;
-   nrfx_err_t err_code = nrf_drv_spi_transfer(&_spi_instance, &readreg, 1, _lis2dw12_read_write_buf, len + 1);
-   memcpy(read_buf, _lis2dw12_read_write_buf+1, len);
+   uint8_t read_register = reg | LIS2DW12_SPI_READ;
+   nrfx_spi_xfer_desc_t read_transfer = NRFX_SPI_XFER_TRX(&read_register, 1, _acc_read_write_buf, 1 + len);
+   nrfx_err_t err_code = nrfx_spi_xfer(&_accel_spi_instance, &read_transfer, 0);
+   memcpy(read_buf, &_acc_read_write_buf[1], len);
    return err_code;
 }
 
 static nrfx_err_t lis2dw12_write_reg(uint8_t reg, uint8_t* write_buf, size_t len)
 {
    // Use SPI directly
-   _lis2dw12_read_write_buf[0] = reg & (uint8_t)LIS2DW12_SPI_WRITE;
-   memcpy(_lis2dw12_read_write_buf + 1, write_buf, len);
-   nrfx_err_t err_code = nrf_drv_spi_transfer(&_spi_instance, _lis2dw12_read_write_buf, len + 1, NULL, 0);
-   return err_code;
+   _acc_read_write_buf[0] = reg & (uint8_t)LIS2DW12_SPI_WRITE;
+   nrfx_spi_xfer_desc_t write_transfer = NRFX_SPI_XFER_TX(_acc_read_write_buf, 1 + len);
+   memcpy(&_acc_read_write_buf[1], write_buf, len);
+   return nrfx_spi_xfer(&_accel_spi_instance, &write_transfer, 0);
 }
 
 static void lis2dw12_config(void)
@@ -183,8 +181,7 @@ static nrfx_err_t accelerometer_read_data(float* x, float* y, float* z)
 #if (BOARD_V < 0x11)
 
    // Read 32 samples from the accelerometer FIFO
-   uint8_t readreg = LIS2DW12_OUT_X_L | LIS2DW12_SPI_READ;
-   nrfx_err_t err_code = nrf_drv_spi_transfer(&_spi_instance, &readreg, 1, _acc_xyz, sizeof(_acc_xyz));
+   nrfx_err_t err_code = lis2dw12_read_reg(LIS2DW12_OUT_X_L, _acc_xyz, sizeof(_acc_xyz));
    if (err_code != NRFX_SUCCESS)
       return err_code;
 
@@ -226,13 +223,13 @@ bool accelerometer_init(imu_data_callback callback)
 
    // Initialize SPI communications
    _data_callback = callback;
-   _spi_config.sck_pin = IMU_SPI_SCLK;
-   _spi_config.miso_pin = IMU_SPI_MISO;
-   _spi_config.mosi_pin = IMU_SPI_MOSI;
-   _spi_config.ss_pin = IMU_SPI_CS;
-   _spi_config.frequency = NRF_DRV_SPI_FREQ_4M;
-   _spi_config.mode = NRF_DRV_SPI_MODE_3;
-   nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
+   _accel_spi_config.sck_pin = IMU_SPI_SCLK;
+   _accel_spi_config.miso_pin = IMU_SPI_MISO;
+   _accel_spi_config.mosi_pin = IMU_SPI_MOSI;
+   _accel_spi_config.ss_pin = IMU_SPI_CS;
+   _accel_spi_config.frequency = NRF_SPI_FREQ_4M;
+   _accel_spi_config.mode = NRF_SPI_MODE_3;
+   nrfx_spi_init(&_accel_spi_instance, &_accel_spi_config, NULL, NULL);
    _accelerometer_data_ready = _accelerometer_motion_changed = false;
 
    // Turn on and configure the accelerometer
@@ -257,7 +254,7 @@ bool accelerometer_init(imu_data_callback callback)
 
    // Reset FIFO
    lis2dw12_fifo_reset();
-   nrf_drv_spi_uninit(&_spi_instance);
+   nrfx_spi_uninit(&_accel_spi_instance);
    nrfx_gpiote_out_clear(IMU_SPI_SCLK);
    return true;
 
@@ -274,12 +271,12 @@ void accelerometer_handle_incoming_data(uint32_t timestamp)
    if (nrfx_atomic_flag_clear_fetch(&_accelerometer_motion_changed) || data_ready)
    {
       // Read the accelerometer data
-      nrf_drv_spi_uninit(&_spi_instance);
-      nrf_drv_spi_init(&_spi_instance, &_spi_config, NULL, NULL);
+      nrfx_spi_uninit(&_accel_spi_instance);
+      nrfx_spi_init(&_accel_spi_instance, &_accel_spi_config, NULL, NULL);
       bool in_motion = accelerometer_in_motion();
       if (data_ready)
          accelerometer_read_data(x_data, y_data, z_data);
-      nrf_drv_spi_uninit(&_spi_instance);
+      nrfx_spi_uninit(&_accel_spi_instance);
       nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
       // Fire the IMU callback with the retrieved data

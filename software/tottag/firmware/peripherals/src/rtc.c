@@ -1,10 +1,7 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "ble_config.h"
-#include "nrfx_atomic.h"
 #include "nrfx_rtc.h"
 #include "rtc.h"
-#include "sd_card.h"
 
 
 // Static RTC state variables ------------------------------------------------------------------------------------------

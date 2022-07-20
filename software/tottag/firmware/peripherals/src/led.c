@@ -1,12 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "ble_config.h"
 #include "led.h"
-#include "nrfx_gpiote.h"
-
-#ifndef LEDS_ACTIVE_LOW
-#define LEDS_ACTIVE_LOW 1
-#endif
 
 
 // Static LED state ----------------------------------------------------------------------------------------------------

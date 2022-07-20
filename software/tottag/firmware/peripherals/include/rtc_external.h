@@ -4,6 +4,7 @@
 
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#include "ble_config.h"
 #include "time.h"
 
 
@@ -83,12 +84,6 @@
 
 // RTC typedefs and definitions ----------------------------------------------------------------------------------------
 
-typedef void ab1815_alarm_callback(void);
-
-typedef enum { _16HZ = 0, _4HZ, _1HZ, _1_4HZ } ab1815_watch_clock_freq;
-
-typedef enum { HUNDREDTH_MATCH = 0x7, ONCE_PER_MINUTE = 0x6, ONCE_PER_HOUR = 0x5, ONCE_PER_DAY = 0x4, ONCE_PER_WEEK = 0x3, ONCE_PER_MONTH = 0x2, ONCE_PER_YEAR = 0x1, DISABLED = 0x0 } ab1815_alarm_repeat;
-
 /* Control1: 0x10
  * STOP:  1 = stops the clocking system
  * 12/24: 0 = 24h mode, 1 = 12h mode
@@ -149,35 +144,10 @@ typedef struct
 } ab1815_time_t;
 
 
-// Public AB1815 RTC API -----------------------------------------------------------------------------------------------
+// Public RTC external API ---------------------------------------------------------------------------------------------
 
-uint8_t ab1815_init(void);
-uint8_t ab1815_init_time(void);
-void ab1815_reset(void);
-uint8_t ab1815_set_config(ab1815_control_t config);
-uint8_t ab1815_get_config(ab1815_control_t *config);
-uint8_t ab1815_set_int_config(ab1815_int_config_t config);
-uint8_t ab1815_get_int_config(ab1815_int_config_t *config);
-uint8_t ab1815_use_xt_oscillator(void);
-uint8_t ab1815_get_status(void);
-ab1815_time_t unix_to_ab1815(struct timeval tv);
-ab1815_time_t tm_to_ab1815(struct tm *t);
-struct timeval ab1815_to_unix(ab1815_time_t time);
-uint8_t ab1815_set_time(ab1815_time_t time);
-uint8_t ab1815_get_time(ab1815_time_t *time);
-uint8_t ab1815_set_timestamp(uint32_t unix_timestamp);
-struct timeval ab1815_get_time_unix(void);
-uint8_t ab1815_enable_trickle_charger(void);
-uint8_t ab1815_set_alarm(ab1815_time_t time, ab1815_alarm_repeat repeat, ab1815_alarm_callback *cb);
-uint8_t ab1815_set_watchdog(bool reset, uint8_t clock_cycles, uint8_t clock_frequency);
-void ab1815_tickle_watchdog(void);
-uint8_t ab1815_clear_watchdog(void);
-uint8_t ab1815_ready(void);
-uint8_t ab1815_wait_for_ready(uint16_t timeout_ms);
-void ab1815_printTime(ab1815_time_t time);
-
-// Public initialization function
-uint8_t rtc_external_init(void);
+bool rtc_external_init(void);
+bool rtc_external_set_timestamp(uint32_t unix_timestamp);
 uint32_t rtc_external_sync_to_internal(void);
 
 #endif // #ifndef __RTC_EXTERNAL_HEADER_H

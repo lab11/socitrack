@@ -5,17 +5,10 @@
 // (probably RTT). LED pins are board-specific configurations. Mostly copied
 // from `app_error_weak.c`
 
-#include <stdint.h>
-#include <stdio.h>
-#include "app_error.h"
 #include "ble_config.h"
 #include "hardfault.h"
-#include "nrf.h"
 #include "nrf_delay.h"
-#include "nrf_log.h"
 #include "nrf_log_ctrl.h"
-#include "nrfx_gpiote.h"
-#include "sd_card.h"
 
 // include softdevice faults if applicable
 #if defined(SOFTDEVICE_PRESENT) && SOFTDEVICE_PRESENT

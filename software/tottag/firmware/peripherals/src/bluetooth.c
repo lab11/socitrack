@@ -1,7 +1,5 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include <stdlib.h>
-#include "ble_config.h"
 #include "ble_advertising.h"
 #include "ble_conn_params.h"
 #include "ble_db_discovery.h"
@@ -10,10 +8,7 @@
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "nrf_sdh.h"
-#include "nrf_sdh_ble.h"
-#include "nrf_sdh_soc.h"
 #include "rtc.h"
-#include "sd_card.h"
 
 
 // Bluetooth state definitions -----------------------------------------------------------------------------------------
@@ -468,8 +463,9 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
 // Public Bluetooth API ------------------------------------------------------------------------------------------------
 
-nrfx_err_t ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
+void ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
 {
+   // Initialize the entire BLE stack
    _ble_advertising_flag = ble_is_advertising_flag;
    _ble_scanning_flag = ble_is_scanning_flag;
    _calibration_index = calibration_index;
@@ -480,7 +476,10 @@ nrfx_err_t ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_fla
    db_discovery_init();
    services_init();
    advertising_init();
-   return NRF_SUCCESS;
+
+   // Tell the SoftDevice to use the DC/DC regulator and low-power mode
+   APP_ERROR_CHECK(sd_power_dcdc_mode_set(NRF_POWER_DCDC_ENABLE));
+   APP_ERROR_CHECK(sd_power_mode_set(NRF_POWER_MODE_LOWPWR));
 }
 
 uint8_t ble_get_device_role(void) { return _device_role; }

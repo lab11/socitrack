@@ -1,14 +1,12 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include <string.h>
-#include "ble_config.h"
 #include "magnetometer.h"
-#include "nrf_delay.h"
 
 
 // LIS3MDL-specific magnetometer functionality -------------------------------------------------------------------------
 
-#if (BOARD_V >= 0x11)
+// TODO: Set correct version number
+#if (BOARD_V > 0x11)
 
 static read_reg_ptr lis3mdl_read_reg;
 static write_reg_ptr lis3mdl_write_reg;

@@ -1,6 +1,5 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "ble_config.h"
 #include "nrfx_wdt.h"
 #include "timers.h"
 

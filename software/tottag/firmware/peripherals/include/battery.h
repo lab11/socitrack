@@ -4,9 +4,7 @@
 
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "boards.h"
-#include "nrfx_atomic.h"
-#include "nrfx_saadc.h"
+#include "ble_config.h"
 
 
 // Battery-specific definitions ----------------------------------------------------------------------------------------

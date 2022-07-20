@@ -4,11 +4,11 @@
 
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
-#include "nrfx_atomic.h"
+#include "ble_config.h"
 
 
 // LIS3MDL register definitions ----------------------------------------------------------------------------------------
-
+/*
 #define LIS3MDL_I2C_ADD_L               0x39U
 #define LIS3MDL_I2C_ADD_H               0x3DU
 #define LIS3MDL_ID                      0x3DU
@@ -155,7 +155,7 @@ typedef struct
 typedef struct
 {
    uint8_t st              : 1;
-   uint8_t om              : 6; /* om + do + fast_odr -> om */
+   uint8_t om              : 6; // om + do + fast_odr -> om
    uint8_t temp_en         : 1;
 } lis3mdl_ctrl_reg1_t;
 
@@ -308,6 +308,6 @@ nrfx_err_t lis3mdl_spi_mode_set(lis3mdl_sim_t val);
 nrfx_err_t lis3mdl_spi_mode_get(lis3mdl_sim_t *val);
 
 void lis3mdl_set_read_reg_function(read_reg_ptr read_reg_function);
-void lis3mdl_set_write_reg_function(write_reg_ptr write_reg_function);
+void lis3mdl_set_write_reg_function(write_reg_ptr write_reg_function);*/
 
 #endif // #ifndef __MAGNETOMETER_HEADER_H

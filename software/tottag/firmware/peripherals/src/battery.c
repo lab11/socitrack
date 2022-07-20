@@ -1,8 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
 #include "battery.h"
-#include "ble_config.h"
-#include "nrfx_gpiote.h"
 #include "nrfx_saadc.h"
 
 #ifndef NRFX_SAADC_DEFAULT_CONFIG_IRQ_PRIORITY

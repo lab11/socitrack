@@ -1,9 +1,18 @@
 #ifndef __LED_HEADER_H
 #define __LED_HEADER_H
 
-// LED Color typedefs --------------------------------------------------------------------------------------------------
+// Header inclusions ---------------------------------------------------------------------------------------------------
+
+#include "ble_config.h"
+
+
+// LED Color typedefs and definitions ----------------------------------------------------------------------------------
 
 typedef enum { RED, BLUE, GREEN, ORANGE, PURPLE } led_color_t;
+
+#ifndef LEDS_ACTIVE_LOW
+#define LEDS_ACTIVE_LOW 1
+#endif
 
 
 // LED functionality ---------------------------------------------------------------------------------------------------

@@ -63,7 +63,7 @@ BOARD_SOURCES += \
 	nrfx_pwm.c\
 	nrfx_rtc.c\
 	nrfx_saadc.c\
-	nrfx_spim.c\
+	nrfx_spi.c\
 	nrfx_twi.c\
 	nrfx_wdt.c\
 	SEGGER_RTT.c\
