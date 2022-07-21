@@ -27,7 +27,7 @@ static volatile uint16_t _sd_card_buffer_length = 0;
 static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
 static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH] = { 0 };
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _sd_write_buf[255] = { 0 };
-static char _sd_filename[16] = { 0 }, _sd_debug_filename[16] = { 0 };
+static char _sd_filename[32] = { 0 }, _sd_debug_filename[32] = { 0 };
 static bool _new_log_file = false, _sd_card_powers_down = true;
 static bool _sd_card_initialized = false, _keep_sd_card_on = false;
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
@@ -275,7 +275,7 @@ bool sd_card_create_log(uint32_t current_time, bool is_device_reboot)
       struct tm *t = gmtime(&curr_time);
 
       // Create a log file name based on the device ID and current date
-      snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%02u-%02u.log", _full_eui[0], t->tm_mon + 1, t->tm_mday);
+      snprintf(_sd_filename, sizeof(_sd_filename), "%02X@%04u-%02u-%02u.log", _full_eui[0], 1900 + t->tm_year, t->tm_mon + 1, t->tm_mday);
       if (!sd_card_power_on())
       {
          printf("ERROR: Unable to re-initialize the SD card with the new file name: %s\n", _sd_filename);
