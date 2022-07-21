@@ -23,6 +23,7 @@ static uint8_t _imu_read_write_buf[257] = { 0 };
 static imu_data_callback _data_callback = NULL;
 static float x_data[1], y_data[1], z_data[1];
 static imudev_ctx_t imu_context = { 0 };
+static bool _needs_spi_reset = false;
 
 
 // LSM6DSOX-specific IMU functionality ---------------------------------------------------------------------------------
@@ -64,7 +65,12 @@ static nrfx_err_t imu_read_accelerometer_data(float* x, float* y, float* z)
 static bool imu_in_motion(void)
 {
    static lsm6dsox_all_sources_t all_source;
-   lsm6dsox_all_sources_get(&imu_context, &all_source);
+   if (lsm6dsox_all_sources_get(&imu_context, &all_source))
+   {
+      _needs_spi_reset = true;
+      nrfx_spi_uninit(&_imu_spi_instance);
+      nrfx_gpiote_out_clear(IMU_SPI_SCLK);
+   }
    return !all_source.sleep_state;
 }
 
@@ -131,6 +137,7 @@ bool imu_init(imu_data_callback callback)
    }
 
    // Reset the SPI driver
+   _needs_spi_reset = true;
    nrfx_spi_uninit(&_imu_spi_instance);
    nrfx_gpiote_out_clear(IMU_SPI_SCLK);
    return true;
@@ -141,14 +148,18 @@ void imu_handle_incoming_data(uint32_t timestamp)
    bool data_ready = nrfx_atomic_flag_clear_fetch(&_imu_data_ready);
    if (nrfx_atomic_flag_clear_fetch(&_imu_motion_changed) || data_ready)
    {
+      // Reset the SPI interface if necessary
+      if (_needs_spi_reset)
+      {
+         _needs_spi_reset = false;
+         nrfx_spi_uninit(&_imu_spi_instance);
+         nrfx_spi_init(&_imu_spi_instance, &_imu_spi_config, NULL, NULL);
+      }
+
       // Read the IMU data
-      nrfx_spi_uninit(&_imu_spi_instance);
-      nrfx_spi_init(&_imu_spi_instance, &_imu_spi_config, NULL, NULL);
       bool in_motion = imu_in_motion();
       if (data_ready)
          imu_read_accelerometer_data(x_data, y_data, z_data);
-      nrfx_spi_uninit(&_imu_spi_instance);
-      nrfx_gpiote_out_clear(IMU_SPI_SCLK);
 
       // Fire the IMU callback with the retrieved data
       if (data_ready)
