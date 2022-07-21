@@ -71,22 +71,41 @@ static void squarepoint_interrupt_handler(nrfx_gpiote_pin_t pin, nrf_gpiote_pola
    if (pin == STM_INTERRUPT)
    {
       // Read the length of the incoming packet and ensure that it is valid
+      uint8_t num_retries = 3;
       _tx_data_description.primary_length = 1;
       _twi_tx_buf[0] = SQUAREPOINT_CMD_READ_PACKET_LENGTH;
       uint32_t idx = (uint32_t)MIN(MAX_NUM_SQUAREPOINT_INTERRUPTS - 1, nrfx_atomic_u32_fetch(&_squarepoint_interrupt_count));
-      if ((nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) != NRFX_SUCCESS) ||
-          (nrfx_twi_xfer(&_twi_instance, &_rx_length_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) != NRFX_SUCCESS) ||
-          !_twi_rx_lens[idx] || (_twi_rx_lens[idx] == 0xFF))
+      nrfx_err_t err_code = nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+      while ((err_code != NRFX_SUCCESS) && num_retries--)
+         err_code = nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+      if (err_code == NRFX_SUCCESS)
+      {
+         num_retries = 3;
+         err_code = nrfx_twi_xfer(&_twi_instance, &_rx_length_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+         while ((err_code != NRFX_SUCCESS) && num_retries--)
+            err_code = nrfx_twi_xfer(&_twi_instance, &_rx_length_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+      }
+      if ((err_code != NRFX_SUCCESS) || !_twi_rx_lens[idx] || (_twi_rx_lens[idx] == 0xFF))
       {
          log_printf("ERROR: Failed reading SquarePoint packet length\n");
          return;
       }
 
       // Read the rest of the incoming packet
+      num_retries = 3;
       _twi_tx_buf[0] = SQUAREPOINT_CMD_READ_PACKET;
       _rx_data_descriptions[idx].primary_length = _twi_rx_lens[idx];
-      if ((nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS) &&
-          (nrfx_twi_xfer(&_twi_instance, &_rx_data_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER) == NRFX_SUCCESS))
+      err_code = nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+      while ((err_code != NRFX_SUCCESS) && num_retries--)
+         err_code = nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+      if (err_code == NRFX_SUCCESS)
+      {
+         num_retries = 3;
+         err_code = nrfx_twi_xfer(&_twi_instance, &_rx_data_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+         while ((err_code != NRFX_SUCCESS) && num_retries--)
+            err_code = nrfx_twi_xfer(&_twi_instance, &_rx_data_descriptions[idx], NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
+      }
+      if (err_code == NRFX_SUCCESS)
          nrfx_atomic_u32_store(&_squarepoint_interrupt_count, idx + 1);
       else
          log_printf("ERROR: Failed reading SquarePoint packet of length %i\n", _twi_rx_lens[idx]);
