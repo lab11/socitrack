@@ -115,6 +115,7 @@ ifneq (,$(filter $(NRF_IC),nrf52840))
     SDK_HEADER_PATHS += $(SDK_ROOT)components/softdevice/common/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/fatfs/port/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/fatfs/src/
+    SDK_HEADER_PATHS += $(SDK_ROOT)external/fatfs/src/option/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/fprintf/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/fprintf/
     SDK_HEADER_PATHS += $(SDK_ROOT)external/protothreads/
@@ -195,6 +196,7 @@ ifneq (,$(filter $(NRF_IC),nrf52840))
     SDK_SOURCE_PATHS += $(SDK_ROOT)components/softdevice/common/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/fatfs/port/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/fatfs/src/
+    SDK_SOURCE_PATHS += $(SDK_ROOT)external/fatfs/src/option/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/fprintf/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/protothreads/
     SDK_SOURCE_PATHS += $(SDK_ROOT)external/protothreads/pt-1.4/
