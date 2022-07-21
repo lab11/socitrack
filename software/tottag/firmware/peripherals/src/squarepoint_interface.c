@@ -102,7 +102,7 @@ static nrfx_err_t twi_hw_init(void)
    nrfx_twi_config_t twi_config = NRFX_TWI_DEFAULT_CONFIG;
    twi_config.scl = STM_I2C_SCL;
    twi_config.sda = STM_I2C_SDA;
-   twi_config.frequency = NRF_TWI_FREQ_400K;
+   twi_config.frequency = NRF_TWI_FREQ_250K;
    twi_config.interrupt_priority = APP_IRQ_PRIORITY_HIGHEST;
    nrfx_twi_init(&_twi_instance, &twi_config, NULL, NULL);
    nrfx_twi_enable(&_twi_instance);
@@ -166,7 +166,7 @@ nrfx_err_t squarepoint_init(squarepoint_interface_data_callback callback, const 
    // Set up the SquarePoint wakeup pin
 #if (BOARD_V >= 0x11)
    nrfx_gpiote_out_config_t stm_wakeup_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   APP_ERROR_CHECK(nrfx_gpiote_out_init(STM_WAKEUP, &stm_wakeup_pin_config));
+   nrfx_gpiote_out_init(STM_WAKEUP, &stm_wakeup_pin_config);
 #endif
 
    // Initialize all RX data descriptions
