@@ -24,6 +24,5 @@ void sd_card_log_updated_epoch(uint32_t epoch);
 void sd_card_log_battery(uint16_t battery_millivolts, uint32_t current_time, bool flush);
 void sd_card_log_charging(bool plugged_in, bool is_charging, uint32_t current_time, bool flush);
 void sd_card_log_motion(bool in_motion, uint32_t current_time, bool flush);
-bool sd_card_revoke_spi_access(bool revoke_access);
 
 #endif // #ifndef __SD_CARD_HEADER_H

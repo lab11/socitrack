@@ -29,7 +29,7 @@ static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LEN
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _sd_write_buf[255] = { 0 };
 static char _sd_filename[16] = { 0 }, _sd_debug_filename[16] = { 0 };
 static bool _new_log_file = false, _sd_card_powers_down = true;
-static bool _sd_card_initialized = false, _keep_sd_card_on = false, _spi_access_revoked = false;
+static bool _sd_card_initialized = false, _keep_sd_card_on = false;
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
 static FATFS _file_system = { 0 };
 static DIR _dir = { 0 };
@@ -56,10 +56,6 @@ static void sd_card_power_off(void)
 
 static bool sd_card_power_on(void)
 {
-   // Do not proceed if SPI access has been revoked
-   if (_spi_access_revoked)
-      return false;
-
    // Power on the SD card chip
    nrf_gpio_pin_set(SD_CARD_ENABLE);
 
@@ -195,7 +191,7 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    diskio_blockdev_register(drives, ARRAY_SIZE(drives));
    nrf_gpio_cfg_input(SD_CARD_DETECT, NRF_GPIO_PIN_NOPULL);
    snprintf(_sd_debug_filename, sizeof(_sd_debug_filename), "%02X@dbg.log", full_eui[0]);
-   _sd_card_initialized = _keep_sd_card_on = _new_log_file = _spi_access_revoked = false;
+   _sd_card_initialized = _keep_sd_card_on = _new_log_file = false;
    _sd_card_buffer_length = 0;
 
    // Initialize the SD card
@@ -536,13 +532,4 @@ void sd_card_log_motion(bool in_motion, uint32_t current_time, bool flush)
    log_printf("INFO: Device is now %s\n", in_motion ? "IN MOTION" : "STATIONARY");
    uint16_t bytes_written = (uint16_t)snprintf(_sd_write_buf, sizeof(_sd_write_buf), "### MOTION CHANGE: %s; Timestamp: %lu\n", in_motion ? "IN MOTION" : "STATIONARY", current_time);
    sd_card_write(_sd_write_buf, bytes_written, flush);
-}
-
-bool sd_card_revoke_spi_access(bool revoke_access)
-{
-   // Ensure that the SD card is powered down and unable to access the SPI bus
-   _spi_access_revoked = revoke_access;
-   if (revoke_access)
-      sd_card_power_off();
-   return true;
 }

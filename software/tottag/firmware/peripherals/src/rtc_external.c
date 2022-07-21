@@ -4,7 +4,6 @@
 #include "nrfx_spi.h"
 #include "rtc.h"
 #include "rtc_external.h"
-#include "sd_card.h"
 
 
 // Real-time clock state variables -------------------------------------------------------------------------------------
@@ -13,7 +12,7 @@ static nrfx_spi_t _rtc_spi_instance = NRFX_SPI_INSTANCE(RTC_SPI_BUS_IDX);
 static nrfx_spi_config_t _rtc_spi_config = NRFX_SPI_DEFAULT_CONFIG;
 static ab1815_control_t _ctrl_config = { 0 };
 static ab1815_int_config_t _int_config = { 0 };
-static uint8_t _ab1815_read_write_buf[257] = { 0 };
+static uint8_t _ab1815_write_buf[257] = { 0 };
 
 
 // Helper functions ----------------------------------------------------------------------------------------------------
@@ -53,19 +52,19 @@ static uint8_t month_to_i(const char *c)
 }
 #endif // #ifdef FORCE_RTC_RESET
 
-inline uint8_t get_tens(uint8_t x) { return (x / 10) % 10; }
+inline uint8_t get_tens(uint8_t x) { return x / 10; }
 inline uint8_t get_ones(uint8_t x) { return x % 10; }
 
 static void ab1815_form_time_buffer(ab1815_time_t time, uint8_t *buf)
 {
-   buf[0] = (get_tens(time.hundredths) & 0xF) << 4 | (get_ones(time.hundredths) & 0xF);
-   buf[1] = (get_tens(time.seconds) & 0x7) << 4 | (get_ones(time.seconds) & 0xF);
-   buf[2] = (get_tens(time.minutes) & 0x7) << 4 | (get_ones(time.minutes) & 0xF);
-   buf[3] = (get_tens(time.hours) & 0x3) << 4 | (get_ones(time.hours) & 0xF);
-   buf[4] = (get_tens(time.date) & 0x3) << 4 | (get_ones(time.date) & 0xF);
-   buf[5] = (get_tens(time.months) & 0x1) << 4 | (get_ones(time.months) & 0xF);
-   buf[6] = (get_tens(time.years) & 0xF) << 4 | (get_ones(time.years) & 0xF);
-   buf[7] = time.weekday & 0x7;
+   buf[0] = ((get_tens(time.hundredths) & 0x0F) << 4) | (get_ones(time.hundredths) & 0x0F);
+   buf[1] = ((get_tens(time.seconds) & 0x07) << 4) | (get_ones(time.seconds) & 0x0F);
+   buf[2] = ((get_tens(time.minutes) & 0x07) << 4) | (get_ones(time.minutes) & 0x0F);
+   buf[3] = ((get_tens(time.hours) & 0x03) << 4) | (get_ones(time.hours) & 0x0F);
+   buf[4] = ((get_tens(time.date) & 0x03) << 4) | (get_ones(time.date) & 0x0F);
+   buf[5] = ((get_tens(time.months) & 0x01) << 4) | (get_ones(time.months) & 0x0F);
+   buf[6] = ((get_tens(time.years) & 0x0F) << 4) | (get_ones(time.years) & 0x0F);
+   buf[7] = time.weekday & 0x07;
 }
 
 static ab1815_time_t tm_to_ab1815(struct tm *t)
@@ -143,43 +142,48 @@ static bool ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
 {
    // Read from the requested register
    uint8_t read_register = reg & 0x7F;
-   nrfx_spi_xfer_desc_t read_transfer = NRFX_SPI_XFER_TRX(&read_register, 1, _ab1815_read_write_buf, 1 + len);
+   nrfx_spi_xfer_desc_t read_transfer = NRFX_SPI_XFER_TRX(&read_register, 1, read_buf, 1 + len);
    nrfx_err_t err_code = nrfx_spi_xfer(&_rtc_spi_instance, &read_transfer, 0);
-   memcpy(read_buf, &_ab1815_read_write_buf[1], len);
    return (err_code == NRFX_SUCCESS);
 }
 
 static bool ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
 {
    // Write to the requested register
-   _ab1815_read_write_buf[0] = reg | 0x80;
-   memcpy(&_ab1815_read_write_buf[1], write_buf, len);
-   nrfx_spi_xfer_desc_t write_transfer = NRFX_SPI_XFER_TX(_ab1815_read_write_buf, 1 + len);
+   _ab1815_write_buf[0] = reg | 0x80;
+   memcpy(&_ab1815_write_buf[1], write_buf, len);
+   nrfx_spi_xfer_desc_t write_transfer = NRFX_SPI_XFER_TX(_ab1815_write_buf, 1 + len);
    return (nrfx_spi_xfer(&_rtc_spi_instance, &write_transfer, 0) == NRFX_SUCCESS);
 }
 
 static bool ab1815_get_time(ab1815_time_t *time)
 {
-   uint8_t read[10] = { 0 };
-   if (!ab1815_read_reg(AB1815_HUND, read, 8))
-      return false;
-
-   time->hundredths = 10 * ((read[0] & 0xF0) >> 4) + (read[0] & 0xF);
-   time->seconds = 10 * ((read[1] & 0x70) >> 4) + (read[1] & 0xF);
-   time->minutes = 10 * ((read[2] & 0x70) >> 4) + (read[2] & 0xF);
-   time->hours = 10 * ((read[3] & 0x30) >> 4) + (read[3] & 0xF);
-   time->date = 10 * ((read[4] & 0x30) >> 4) + (read[4] & 0xF);
-   time->months = 10 * ((read[5] & 0x10) >> 4) + (read[5] & 0xF);
-   time->years = 10 * ((read[6] & 0xF0) >> 4) + (read[6] & 0xF);
-   time->weekday = read[7] & 0x7;
-   return true;
+   bool success = false;
+   uint8_t read[10] = { 0 }, retries_remaining = 3;
+   while (!success && retries_remaining--)
+   {
+      if (ab1815_read_reg(AB1815_HUND, read, 8))
+      {
+         time->hundredths = 10 * ((read[1] >> 4) & 0x0F) + (read[1] & 0x0F);
+         time->seconds = 10 * ((read[2] >> 4) & 0x07) + (read[2] & 0x0F);
+         time->minutes = 10 * ((read[3] >> 4) & 0x07) + (read[3] & 0x0F);
+         time->hours = 10 * ((read[4] >> 4) & 0x03) + (read[4] & 0x0F);
+         time->date = 10 * ((read[5] >> 4) & 0x03) + (read[5] & 0x0F);
+         time->months = 10 * ((read[6] >> 4) & 0x01) + (read[6] & 0x0F);
+         time->years = 10 * ((read[7] >> 4) & 0x0F) + (read[7] & 0x0F);
+         time->weekday = read[8] & 0x07;
+         success = (time->hundredths < 100) && (time->seconds < 60) && (time->minutes < 60) && (time->hours < 24) && (time->date < 32) && (time->months < 13) && (time->years < 100);
+      }
+   }
+   return success;
 }
 
 static bool ab1815_set_config(void)
 {
    // Control1
-   uint8_t write = _ctrl_config.stop << 7 | _ctrl_config.hour_12 << 6 |     _ctrl_config.OUTB << 5 |
-                   _ctrl_config.OUT << 4  | _ctrl_config.rst_pol << 3 | _ctrl_config.auto_rst << 2 | 0x2 | _ctrl_config.write_rtc;
+   uint8_t write = _ctrl_config.stop << 7 | _ctrl_config.hour_12 << 6 | _ctrl_config.OUTB     << 5 |
+                   _ctrl_config.OUT  << 4 | _ctrl_config.rst_pol << 3 | _ctrl_config.auto_rst << 2 |
+                                      0x2 | _ctrl_config.write_rtc;
    if (!ab1815_write_reg(AB1815_CONTROL1, &write, 1))
       return false;
 
@@ -258,9 +262,9 @@ static bool ab1815_init_time(void)
    comp_time.years = ascii_to_i(_datetime[26]) * 10 + ascii_to_i(_datetime[27]);
    comp_time.weekday = 0;  // default
 
-   uint8_t time_properly_set = 0, num_retries = 10;
+   uint8_t time_properly_set = 0, num_retries = 3;
    struct timeval set_time = ab1815_to_unix(comp_time);
-   while (!time_properly_set && --num_retries)
+   while (!time_properly_set && num_retries--)
    {
       ab1815_set_time(comp_time);
       struct timeval retrieved_time = ab1815_get_time_unix();
@@ -278,7 +282,8 @@ static bool ab1815_init_time(void)
 static bool ab1815_set_int_config(void)
 {
    uint8_t write = _int_config.century_en << 7 | _int_config.int_mode << 5 | _int_config.bat_low_en << 4 |
-                   _int_config.timer_en << 3   | _int_config.alarm_en << 2 |     _int_config.xt2_en << 1 | _int_config.xt1_en;
+                   _int_config.timer_en   << 3 | _int_config.alarm_en << 2 | _int_config.xt2_en     << 1 |
+                   _int_config.xt1_en;
    return ab1815_write_reg(AB1815_INT_MASK, &write, 1);
 }
 
@@ -372,13 +377,11 @@ bool rtc_external_init(void)
 
 bool rtc_external_set_timestamp(uint32_t unix_timestamp)
 {
-   // Set the internal RTC time and temporarily block the SD card from using the SPI bus
+   // Set the internal RTC time
    bool success = false;
    rtc_set_current_time(unix_timestamp);
    struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
    ab1815_time_t new_time = unix_to_ab1815(tv);
-   if (!sd_card_revoke_spi_access(true))
-      return success;
 
    // Initialize RTC chip communications and store the timestamp
    nrfx_spi_uninit(&_rtc_spi_instance);
@@ -388,21 +391,14 @@ bool rtc_external_set_timestamp(uint32_t unix_timestamp)
       nrfx_spi_uninit(&_rtc_spi_instance);
       nrfx_gpiote_out_clear(RTC_SPI_SCLK);
    }
-
-   // Restore SD card access to the SPI bus
-   sd_card_revoke_spi_access(false);
    return success;
 }
 
 uint32_t rtc_external_sync_to_internal(void)
 {
-   // Temporarily block the SD card from using the SPI bus
+   // Initialize RTC chip communications and retrieve the current timestamp
    uint32_t timestamp = 0;
    ab1815_time_t time = { 0 };
-   if (!sd_card_revoke_spi_access(true))
-      return timestamp;
-
-   // Initialize RTC chip communications and retrieve the current timestamp
    nrfx_spi_uninit(&_rtc_spi_instance);
    if (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS)
    {
@@ -412,8 +408,7 @@ uint32_t rtc_external_sync_to_internal(void)
       nrfx_gpiote_out_clear(RTC_SPI_SCLK);
    }
 
-   // Restore SD card access to the SPI bus and sync the internal timestamp
-   sd_card_revoke_spi_access(false);
+   // Set the internal RTC time
    if ((timestamp > MINIMUM_VALID_TIMESTAMP) && (timestamp < MAXIMUM_VALID_TIMESTAMP))
    {
       rtc_set_current_time(timestamp);
