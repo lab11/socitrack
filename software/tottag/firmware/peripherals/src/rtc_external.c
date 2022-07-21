@@ -136,7 +136,7 @@ static bool ab1815_init(void)
    nrf_gpio_cfg_input(RTC_INT, NRF_GPIO_PIN_PULLUP);
    nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_init(RTC_WDI, &rtc_wdi_pin_config);
-   return ab1815_wait_for_ready(1000);
+   return ab1815_wait_for_ready(1500);
 }
 
 static bool ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
@@ -330,10 +330,8 @@ static void ab1815_printTime(ab1815_time_t time)
 
 bool rtc_external_init(void)
 {
-   // Initialize the chip
-   bool success = ab1815_init();
-
-   // Define the RTC configuration and settings
+   // Initialize the chip and define common RTC settings
+   ab1815_init();
    _ctrl_config.OUT = 1;
    _ctrl_config.auto_rst = 1;
    _int_config.int_mode = 0x3;
@@ -345,7 +343,7 @@ bool rtc_external_init(void)
    _rtc_spi_config.mosi_pin = RTC_SPI_MOSI;
    _rtc_spi_config.mode = NRF_SPI_MODE_0;
    _rtc_spi_config.frequency = NRF_SPI_FREQ_1M;
-   success = (success && (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS));
+   bool success = (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS);
 
    // Set configurations
    success = (success && ab1815_clear_watchdog());
