@@ -127,7 +127,7 @@ static nrfx_err_t twi_hw_init(void)
    nrfx_twi_enable(&_twi_instance);
 
    // Setup an interrupt handler to detect when SquarePoint has data to send
-   nrfx_gpiote_in_config_t int_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+   nrfx_gpiote_in_config_t int_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(0);
    int_config.pull = NRF_GPIO_PIN_PULLDOWN;
    nrfx_err_t err_code = nrfx_gpiote_in_init(STM_INTERRUPT, &int_config, squarepoint_interrupt_handler);
    if (err_code == NRFX_SUCCESS)
