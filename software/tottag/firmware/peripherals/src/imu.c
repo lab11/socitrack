@@ -107,18 +107,22 @@ bool imu_init(imu_data_callback callback)
       lsm6dsox_xl_full_scale_set(&imu_context, LSM6DSOX_2g);
       lsm6dsox_gy_full_scale_set(&imu_context, LSM6DSOX_250dps);
       lsm6dsox_block_data_update_set(&imu_context, PROPERTY_ENABLE);
-      lsm6dsox_xl_data_rate_set(&imu_context, LSM6DSOX_XL_ODR_12Hz5);
+      lsm6dsox_xl_data_rate_set(&imu_context, LSM6DSOX_XL_ODR_52Hz);
       lsm6dsox_gy_data_rate_set(&imu_context, LSM6DSOX_GY_ODR_12Hz5);
 
+      // Configure the LSM6DSOX power modes
+      lsm6dsox_xl_power_mode_set(&imu_context, LSM6DSOX_LOW_NORMAL_POWER_MD);
+      lsm6dsox_gy_power_mode_set(&imu_context, LSM6DSOX_GY_NORMAL);
+
       // Set the duration for activity/inactivity detection to:
-      //   [80.0 ms (0x01 * 1 / ODR_XL), 1.28 s (MAX(16, 0x00 * 512) / ODR_XL)]
+      //   [80.0 ms (0x01 * 1 / ODR_XL), 9.85 s (MAX(16, 0x01 * 512) / ODR_XL)]
       lsm6dsox_wkup_dur_set(&imu_context, 0x01);
-      lsm6dsox_act_sleep_dur_set(&imu_context, 0x00);
+      lsm6dsox_act_sleep_dur_set(&imu_context, 0x01);
       lsm6dsox_wkup_threshold_set(&imu_context, 0x02);
       lsm6dsox_act_mode_set(&imu_context, LSM6DSOX_XL_12Hz5_GY_PD);
 
       // Enable generation of activity-change interrupts on INT1 pin
-      nrfx_gpiote_in_config_t int1_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_LOTOHI(1);
+      nrfx_gpiote_in_config_t int1_gpio_config = NRFX_GPIOTE_CONFIG_IN_SENSE_TOGGLE(0);
       nrfx_gpiote_in_init(IMU_INT1, &int1_gpio_config, imu_interrupt_handler);
       nrfx_gpiote_in_event_enable(IMU_INT1, 1);
       lsm6dsox_pin_int1_route_t int1_route = { 0 };
