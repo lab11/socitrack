@@ -135,6 +135,7 @@
 // Behavior
 #define WATCHDOG_CHECK_RATE_MS                  1000
 #define WATCHDOG_HARD_RESET_TIMEOUT_MS          2000
+#define WATCHDOG_FROZEN_LOOP_MAX_SECONDS        5
 #define APP_BATTERY_CHECK_TIMEOUT_SEC           300
 #define APP_LACK_OF_MOTION_TIMEOUT_SEC          2
 #define APP_RUNNING_RESPONSE_TIMEOUT_SEC        5
@@ -184,6 +185,7 @@ typedef struct app_flags_t
    nrfx_atomic_flag_t bluetooth_is_scanning;
    nrfx_atomic_flag_t bluetooth_single_scanning;
    nrfx_atomic_flag_t battery_too_low;
+   nrfx_atomic_u32_t seconds_in_loop_iteration;
    nrfx_atomic_u32_t bluetooth_single_scan_timer;
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;

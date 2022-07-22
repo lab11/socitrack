@@ -241,6 +241,11 @@ static void watchdog_handler(void *p_context)     // This function is triggered 
    // Increment the SquarePoint range reception timeout counter
    nrfx_atomic_u32_add(&_app_flags.squarepoint_timeout_counter, 1);
 
+   // Ensure that the main loop has not become frozen
+   if (nrfx_atomic_u32_fetch(&_app_flags.seconds_in_loop_iteration) &&
+         (nrfx_atomic_u32_add(&_app_flags.seconds_in_loop_iteration, 1) >= WATCHDOG_FROZEN_LOOP_MAX_SECONDS))
+      nrfx_atomic_flag_set(&_app_flags.device_reset_required);
+
    // Reset the device if required
    if (nrfx_atomic_flag_fetch(&_app_flags.device_reset_required))
    {
@@ -519,6 +524,7 @@ int main(void)
    {
       // Go to sleep until something happens
       sd_app_evt_wait();
+      nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 1);
       //TODO: printf("Processing Something: %lu\n", rtc_get_current_time());
 
       // Prohibit all main-loop activity while externally interfacing with the SD card
@@ -526,5 +532,6 @@ int main(void)
          sd_card_maintenance_mode_process();
       else
          normal_mode_process();
+      nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 0);
    }
 }
