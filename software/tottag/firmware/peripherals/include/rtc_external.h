@@ -131,18 +131,6 @@ typedef struct
    bool xt1_en;
 } ab1815_int_config_t;
 
-typedef struct
-{
-   uint8_t hundredths;
-   uint8_t seconds;
-   uint8_t minutes;
-   uint8_t hours;
-   uint8_t date;
-   uint8_t months;
-   uint8_t years;
-   uint8_t weekday;
-} ab1815_time_t;
-
 
 // Public RTC external API ---------------------------------------------------------------------------------------------
 

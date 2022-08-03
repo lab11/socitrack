@@ -18,92 +18,53 @@ static uint8_t _ab1815_write_buf[257] = { 0 };
 // Helper functions ----------------------------------------------------------------------------------------------------
 
 #ifdef FORCE_RTC_RESET
-static uint8_t ascii_to_i(char c) { return (c == ' ') ? 0 : (uint8_t)(c - '0'); }
-static uint8_t month_to_i(const char *c)
+static int ascii_to_int(char c) { return (c == ' ') ? 0 : (int)(c - '0'); }
+static int month_to_int(const char *c)
 {
    // Read 3 chars and select month
    char month[] = { c[0], c[1], c[2], '\0' };
    if (strcmp(month, "Jan") == 0)
-      return 1;
+      return 0;
    else if (strcmp(month, "Feb") == 0)
-      return 2;
+      return 1;
    else if (strcmp(month, "Mar") == 0)
-      return 3;
+      return 2;
    else if (strcmp(month, "Apr") == 0)
-      return 4;
+      return 3;
    else if (strcmp(month, "May") == 0)
-      return 5;
+      return 4;
    else if (strcmp(month, "Jun") == 0)
-      return 6;
+      return 5;
    else if (strcmp(month, "Jul") == 0)
-      return 7;
+      return 6;
    else if (strcmp(month, "Aug") == 0)
-      return 8;
+      return 7;
    else if (strcmp(month, "Sep") == 0)
-      return 9;
+      return 8;
    else if (strcmp(month, "Oct") == 0)
-      return 10;
+      return 9;
    else if (strcmp(month, "Nov") == 0)
-      return 11;
+      return 10;
    else if (strcmp(month, "Dec") == 0)
-      return 12;
+      return 11;
    else
       return 0;
 }
 #endif // #ifdef FORCE_RTC_RESET
 
-inline uint8_t get_tens(uint8_t x) { return x / 10; }
-inline uint8_t get_ones(uint8_t x) { return x % 10; }
+inline int get_tens(int x) { return x / 10; }
+inline int get_ones(int x) { return x % 10; }
 
-static void ab1815_form_time_buffer(ab1815_time_t time, uint8_t *buf)
+static void ab1815_form_time_buffer(const struct tm *time_struct, uint8_t *buf)
 {
-   buf[0] = ((get_tens(time.hundredths) & 0x0F) << 4) | (get_ones(time.hundredths) & 0x0F);
-   buf[1] = ((get_tens(time.seconds) & 0x07) << 4) | (get_ones(time.seconds) & 0x0F);
-   buf[2] = ((get_tens(time.minutes) & 0x07) << 4) | (get_ones(time.minutes) & 0x0F);
-   buf[3] = ((get_tens(time.hours) & 0x03) << 4) | (get_ones(time.hours) & 0x0F);
-   buf[4] = ((get_tens(time.date) & 0x03) << 4) | (get_ones(time.date) & 0x0F);
-   buf[5] = ((get_tens(time.months) & 0x01) << 4) | (get_ones(time.months) & 0x0F);
-   buf[6] = ((get_tens(time.years) & 0x0F) << 4) | (get_ones(time.years) & 0x0F);
-   buf[7] = time.weekday & 0x07;
-}
-
-static ab1815_time_t tm_to_ab1815(struct tm *t)
-{
-   ab1815_time_t time;
-   time.hundredths = 0;
-   time.seconds = t->tm_sec;
-   time.minutes = t->tm_min;
-   time.hours = t->tm_hour;
-   time.date = t->tm_mday;
-   time.months = t->tm_mon + 1;
-   time.years = t->tm_year - 100;
-   time.weekday = t->tm_wday;
-   return time;
-}
-
-static ab1815_time_t unix_to_ab1815(struct timeval tv)
-{
-   ab1815_time_t time = tm_to_ab1815(gmtime((time_t*)&(tv.tv_sec)));
-   time.hundredths = tv.tv_usec / 10000;
-   return time;
-}
-
-static struct timeval ab1815_to_unix(ab1815_time_t time)
-{
-   struct tm t;
-   struct timeval unix_time;
-
-   t.tm_sec = time.seconds;
-   t.tm_min = time.minutes;
-   t.tm_hour = time.hours;
-   t.tm_mday = time.date;
-   t.tm_mon = time.months - 1;
-   t.tm_year = time.years + 100;
-   t.tm_wday = time.weekday;
-   unix_time.tv_sec = mktime(&t);
-   unix_time.tv_usec = time.hundredths * 10000;
-
-   return unix_time;
+   buf[0] = 0;
+   buf[1] = (uint8_t)(((get_tens(time_struct->tm_sec) & 0x00000007) << 4) | (get_ones(time_struct->tm_sec) & 0x0000000F));
+   buf[2] = (uint8_t)(((get_tens(time_struct->tm_min) & 0x00000007) << 4) | (get_ones(time_struct->tm_min) & 0x0000000F));
+   buf[3] = (uint8_t)(((get_tens(time_struct->tm_hour) & 0x00000003) << 4) | (get_ones(time_struct->tm_hour) & 0x0000000F));
+   buf[4] = (uint8_t)(((get_tens(time_struct->tm_mday) & 0x00000003) << 4) | (get_ones(time_struct->tm_mday) & 0x0000000F));
+   buf[5] = (uint8_t)(((get_tens(time_struct->tm_mon + 1) & 0x00000001) << 4) | (get_ones(time_struct->tm_mon + 1) & 0x0000000F));
+   buf[6] = (uint8_t)(((get_tens(time_struct->tm_year % 100) & 0x0000000F) << 4) | (get_ones(time_struct->tm_year % 100) & 0x0000000F));
+   buf[7] = (uint8_t)(time_struct->tm_wday & 0x00000007);
 }
 
 static bool ab1815_wait_for_ready(uint16_t timeout_ms)
@@ -156,26 +117,35 @@ static bool ab1815_write_reg(uint8_t reg, uint8_t *write_buf, size_t len)
    return (nrfx_spi_xfer(&_rtc_spi_instance, &write_transfer, 0) == NRFX_SUCCESS);
 }
 
-static bool ab1815_get_time(ab1815_time_t *time)
+static uint32_t ab1815_get_time(void)
 {
-   bool success = false;
+   uint32_t unix_time = 0;
    uint8_t read[10] = { 0 }, retries_remaining = 3;
-   while (!success && retries_remaining--)
+   while (!unix_time && retries_remaining--)
    {
       if (ab1815_read_reg(AB1815_HUND, read, 8))
       {
-         time->hundredths = 10 * ((read[1] >> 4) & 0x0F) + (read[1] & 0x0F);
-         time->seconds = 10 * ((read[2] >> 4) & 0x07) + (read[2] & 0x0F);
-         time->minutes = 10 * ((read[3] >> 4) & 0x07) + (read[3] & 0x0F);
-         time->hours = 10 * ((read[4] >> 4) & 0x03) + (read[4] & 0x0F);
-         time->date = 10 * ((read[5] >> 4) & 0x03) + (read[5] & 0x0F);
-         time->months = 10 * ((read[6] >> 4) & 0x01) + (read[6] & 0x0F);
-         time->years = 10 * ((read[7] >> 4) & 0x0F) + (read[7] & 0x0F);
-         time->weekday = read[8] & 0x07;
-         success = (time->hundredths < 100) && (time->seconds < 60) && (time->minutes < 60) && (time->hours < 24) && (time->date < 32) && (time->months < 13) && (time->years < 100);
+         struct tm time_struct = {
+               .tm_sec = (10 * (int)((read[2] >> 4) & 0x07)) + (int)(read[2] & 0x0F),
+               .tm_min = (10 * (int)((read[3] >> 4) & 0x07)) + (int)(read[3] & 0x0F),
+               .tm_hour = (10 * (int)((read[4] >> 4) & 0x03)) + (int)(read[4] & 0x0F),
+               .tm_mday = (10 * (int)((read[5] >> 4) & 0x03)) + (int)(read[5] & 0x0F),
+               .tm_mon = (10 * (int)((read[6] >> 4) & 0x01)) + (int)(read[6] & 0x0F) - 1,
+               .tm_year = (10 * (int)((read[7] >> 4) & 0x0F)) + (int)(read[7] & 0x0F) + 100,
+               .tm_wday = -1,
+               .tm_yday = -1,
+               .tm_isdst = -1
+         };
+         if ((time_struct.tm_sec >= 0) && (time_struct.tm_sec <= 60) &&
+             (time_struct.tm_min >= 0) && (time_struct.tm_min < 60) &&
+             (time_struct.tm_hour >= 0) && (time_struct.tm_hour < 24) &&
+             (time_struct.tm_mday > 0) && (time_struct.tm_mday < 32) &&
+             (time_struct.tm_mon >= 0) && (time_struct.tm_mon < 12) &&
+             (time_struct.tm_year > 120) && (time_struct.tm_year < 200))
+            unix_time = (uint32_t)mktime(&time_struct);
       }
    }
-   return success;
+   return unix_time;
 }
 
 static bool ab1815_set_config(void)
@@ -212,14 +182,14 @@ static bool ab1815_set_config(void)
 static struct timeval ab1815_get_time_unix(void)
 {
    struct timeval tv = { 0 };
-   ab1815_time_t time = { 0 };
-   if (ab1815_get_time(&time))
-      tv = ab1815_to_unix(time);
+   ab1815_time_t ab1815_time = { 0 };
+   if (ab1815_get_time(&ab1815_time))
+      tv = ab1815_to_unix(ab1815_time);
    return tv;
 }
 #endif
 
-static bool ab1815_set_time(ab1815_time_t time)
+static bool ab1815_set_time(const struct tm *time_struct)
 {
    // Ensure that the RTC write bit is enabled
    if (_ctrl_config.write_rtc != 1)
@@ -233,7 +203,7 @@ static bool ab1815_set_time(ab1815_time_t time)
    }
 
    uint8_t write[8] = { 0 };
-   ab1815_form_time_buffer(time, write);
+   ab1815_form_time_buffer(time_struct, write);
    if (!ab1815_write_reg(AB1815_HUND, write, 8))
       return false;
 
@@ -250,26 +220,26 @@ static bool ab1815_init_time(void)
 
    const char _datetime[] = _DATETIME;  // the format is "Tue Jan  1 00:00:00 UTC 2000"
    printf("INFO: Forcing RTC reset to %s\n", _datetime);
-
-   ab1815_time_t comp_time;
-   comp_time.hundredths = 0;
-   comp_time.seconds = ascii_to_i(_datetime[17]) * 10 + ascii_to_i(_datetime[18]);
-   comp_time.minutes = ascii_to_i(_datetime[14]) * 10 + ascii_to_i(_datetime[15]);
-   comp_time.hours = ascii_to_i(_datetime[11]) * 10 + ascii_to_i(_datetime[12]);
-
-   comp_time.date = ascii_to_i(_datetime[8]) * 10 + ascii_to_i(_datetime[9]);
-   comp_time.months = month_to_i(&_datetime[4]);
-   comp_time.years = ascii_to_i(_datetime[26]) * 10 + ascii_to_i(_datetime[27]);
-   comp_time.weekday = 0;  // default
+   struct tm comp_time = {
+         .tm_sec = (ascii_to_int(_datetime[17]) * 10) + ascii_to_int(_datetime[18]),
+         .tm_min = ((ascii_to_int(_datetime[14]) * 10) + ascii_to_int(_datetime[15]),
+         .tm_hour = (ascii_to_int(_datetime[11]) * 10) + ascii_to_int(_datetime[12]),
+         .tm_mday = (ascii_to_int(_datetime[8]) * 10) + ascii_to_int(_datetime[9]),
+         .tm_mon = month_to_int(&_datetime[4]),
+         .tm_year = (ascii_to_int(_datetime[24]) * 1000) + (ascii_to_int(_datetime[25]) * 100) +
+                    (ascii_to_int(_datetime[26]) * 10) + ascii_to_int(_datetime[27]) - 1900,
+         .tm_wday = -1,
+         .tm_yday = -1,
+         .tm_isdst = -1
+   };
 
    uint8_t time_properly_set = 0, num_retries = 3;
-   struct timeval set_time = ab1815_to_unix(comp_time);
+   uint32_t set_time = (uint32_t)mktime(&comp_time);
    while (!time_properly_set && num_retries--)
    {
-      ab1815_set_time(comp_time);
-      struct timeval retrieved_time = ab1815_get_time_unix();
-      time_properly_set = (retrieved_time.tv_sec <= (set_time.tv_sec + 120)) &&
-                          (retrieved_time.tv_sec >= (set_time.tv_sec - 60));
+      ab1815_set_time(&comp_time);
+      uint32_t retrieved_time = ab1815_get_time();
+      time_properly_set = (set_time <= retrieved_time) && ((retrieved_time - 60) <= set_time);
    }
    printf("%s: RTC clock was %s set to the current datetime\n", time_properly_set ? "INFO" : "ERROR", time_properly_set ? "properly" : "unable to be");
    return time_properly_set;
@@ -328,9 +298,13 @@ static bool ab1815_clear_watchdog(void)
    return ab1815_write_reg(AB1815_WATCHDOG_TIMER, &buf, 1);
 }
 
-static void ab1815_printTime(ab1815_time_t time)
+static void ab1815_printTime(uint32_t timestamp)
 {
-   printf("INFO: RTC time is %02u:%02u:%02u, 20%02u/%02u/%02u\n", time.hours, time.minutes, time.seconds, time.years, time.months, time.date);
+   time_t current_timestamp = (time_t)timestamp;
+   struct tm *current_time = gmtime(&current_timestamp);
+   printf("INFO: RTC time is %02u:%02u:%02u, %04u/%02u/%02u\n",
+         current_time->tm_hour, current_time->tm_min, current_time->tm_sec,
+         current_time->tm_year + 1900, current_time->tm_mon + 1, current_time->tm_mday);
 }
 
 bool rtc_external_init(void)
@@ -361,12 +335,12 @@ bool rtc_external_init(void)
    success = (success && ab1815_init_time());
 
    // Set nRF time from the RTC
-   ab1815_time_t time = { 0 };
-   success = (success && ab1815_get_time(&time));
+   uint32_t current_timestamp = ab1815_get_time();
+   success = (success && (current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP));
    if (success)
    {
-      rtc_set_current_time(ab1815_to_unix(time).tv_sec);
-      ab1815_printTime(time);
+      rtc_set_current_time(current_timestamp);
+      ab1815_printTime(current_timestamp);
    }
 
    // De-initialize SPI communications
@@ -377,19 +351,25 @@ bool rtc_external_init(void)
 
 bool rtc_external_set_timestamp(uint32_t unix_timestamp)
 {
-   // Set the internal RTC time
+   // Ensure the timestamp is valid
    bool success = false;
-   rtc_set_current_time(unix_timestamp);
-   struct timeval tv = { .tv_sec = unix_timestamp, .tv_usec = 0 };
-   ab1815_time_t new_time = unix_to_ab1815(tv);
-
-   // Initialize RTC chip communications and store the timestamp
-   nrfx_spi_uninit(&_rtc_spi_instance);
-   if (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS)
+   log_printf("INFO: Setting timestamp from the network: %lu\n", unix_timestamp);
+   if ((unix_timestamp > MINIMUM_VALID_TIMESTAMP) && (unix_timestamp < MAXIMUM_VALID_TIMESTAMP))
    {
-      success = ab1815_set_time(new_time);
+      // Set the internal RTC time
+      time_t timestamp = (time_t)unix_timestamp;
+      rtc_set_current_time(unix_timestamp);
+      success = true;
+
+      // Initialize RTC chip communications and store the timestamp
       nrfx_spi_uninit(&_rtc_spi_instance);
-      nrfx_gpiote_out_clear(RTC_SPI_SCLK);
+      if (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS)
+      {
+         ab1815_set_time(gmtime(&timestamp));
+         nrfx_spi_uninit(&_rtc_spi_instance);
+         nrfx_gpiote_out_clear(RTC_SPI_SCLK);
+         ab1815_printTime(unix_timestamp);
+      }
    }
    return success;
 }
@@ -398,12 +378,10 @@ uint32_t rtc_external_sync_to_internal(void)
 {
    // Initialize RTC chip communications and retrieve the current timestamp
    uint32_t timestamp = 0;
-   ab1815_time_t time = { 0 };
    nrfx_spi_uninit(&_rtc_spi_instance);
    if (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS)
    {
-      if (ab1815_get_time(&time))
-         timestamp = ab1815_to_unix(time).tv_sec;
+      timestamp = ab1815_get_time();
       nrfx_spi_uninit(&_rtc_spi_instance);
       nrfx_gpiote_out_clear(RTC_SPI_SCLK);
    }
@@ -412,7 +390,7 @@ uint32_t rtc_external_sync_to_internal(void)
    if ((timestamp > MINIMUM_VALID_TIMESTAMP) && (timestamp < MAXIMUM_VALID_TIMESTAMP))
    {
       rtc_set_current_time(timestamp);
-      ab1815_printTime(time);
+      ab1815_printTime(timestamp);
    }
    else
       timestamp = 0;
