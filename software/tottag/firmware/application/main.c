@@ -106,12 +106,12 @@ static void hardware_init(void)
    // Initialize essential hardware components
    rtc_init();
    buzzer_init();
-   rtc_external_init();
+   bool rtc_initialized = rtc_external_init();
    battery_monitor_init(&_app_flags.battery_status_changed);
 
    // Ensure that the RTC timestamp is valid
    uint32_t current_timestamp = rtc_get_current_time();
-   if ((current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
+   if (rtc_initialized && (current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
       nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
    else
    {
@@ -446,14 +446,12 @@ void normal_mode_process(void)
       // Either start SquarePoint or request the correct RTC time based on our current status
       if (nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid))
          start_squarepoint(current_timestamp);
-      else if (((current_timestamp = ble_request_timestamp()) > 0) && (current_timestamp > MINIMUM_VALID_TIMESTAMP) && (current_timestamp < MAXIMUM_VALID_TIMESTAMP))
+      else if (((current_timestamp = ble_request_timestamp()) > 0) && rtc_external_set_timestamp(current_timestamp))
       {
-         log_printf("INFO: Setting timestamp to the network response: %lu\n", current_timestamp);
-         bool rtc_successful = rtc_external_set_timestamp(current_timestamp);
          sd_card_log_updated_epoch(current_timestamp);
          sd_card_create_log(current_timestamp, false);
          nrfx_atomic_flag_set(&_app_flags.rtc_time_valid);
-         log_printf("%s: RTC clock was %s set to the current timestamp\n", rtc_successful ? "INFO" : "ERROR", rtc_successful ? "successfully" : "unable to be");
+         log_printf("INFO: RTC clock was successfully set to the current timestamp\n");
       }
    }
    else if (!app_enabled && nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
