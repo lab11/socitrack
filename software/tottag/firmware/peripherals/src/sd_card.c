@@ -27,14 +27,14 @@ static volatile uint16_t _sd_card_buffer_length = 0;
 static const uint8_t _empty_eui[SQUAREPOINT_EUI_LEN] = { 0 };
 static uint8_t _full_eui[EUI_LEN] = { 0 }, _sd_card_buffer[APP_SDCARD_BUFFER_LENGTH] = { 0 };
 static char _log_ranges_buf[APP_LOG_BUFFER_LENGTH] = { 0 }, _sd_write_buf[255] = { 0 };
-static char _sd_filename[32] = { 0 }, _sd_debug_filename[32] = { 0 };
+static char _sd_filename[32] = { 0 };
 static bool _new_log_file = false, _sd_card_powers_down = true;
 static bool _sd_card_initialized = false, _keep_sd_card_on = false;
 static nrfx_atomic_flag_t *_sd_card_inserted = NULL;
 static FATFS _file_system = { 0 };
 static DIR _dir = { 0 };
 static FILINFO _file_info = { 0 };
-static FIL _file = { 0 }, _debug_file = { 0 }, _file_for_reading = { 0 };
+static FIL _file = { 0 }, _file_for_reading = { 0 };
 
 
 // Private helper functions --------------------------------------------------------------------------------------------
@@ -45,13 +45,11 @@ static void sd_card_power_off(void)
    f_close(&_file);
 
    // Power off the SD card
-#ifndef PRINTF_TO_SD_CARD
    if (!_keep_sd_card_on)
    {
       disk_uninitialize(0);
       nrf_gpio_pin_clear(SD_CARD_ENABLE);
    }
-#endif
 }
 
 static bool sd_card_power_on(void)
@@ -190,7 +188,6 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
    memcpy(_full_eui, full_eui, sizeof(_full_eui));
    diskio_blockdev_register(drives, ARRAY_SIZE(drives));
    nrf_gpio_cfg_input(SD_CARD_DETECT, NRF_GPIO_PIN_NOPULL);
-   snprintf(_sd_debug_filename, sizeof(_sd_debug_filename), "%02X@dbg.log", full_eui[0]);
    _sd_card_initialized = _keep_sd_card_on = _new_log_file = false;
    _sd_card_buffer_length = 0;
 
@@ -214,13 +211,6 @@ bool sd_card_init(nrfx_atomic_flag_t* sd_card_inserted_flag, const uint8_t* full
       if ((file_name[2] != '@') && (f_chmod(file_name, 0, AM_RDO | AM_ARC | AM_SYS | AM_HID) == FR_OK) && (f_unlink_all(file_name, sizeof(file_name), &_file_info) == FR_OK))
          continuation = 0;
    }
-
-   // Open the SD card debug log file
-#ifdef PRINTF_TO_SD_CARD
-   _sd_card_powers_down = false;
-   if (f_open(&_debug_file, _sd_debug_filename, FA_READ | FA_WRITE | FA_OPEN_APPEND) != FR_OK)
-      printf("ERROR: Unable to open SD card log file for debugging: %s\n", _sd_debug_filename);
-#endif
 
    // Power off the SD card
    sd_card_power_off();
@@ -401,26 +391,6 @@ uint32_t sd_card_read_reading_file(uint8_t *data_buffer, uint32_t buffer_length)
 {
    UINT bytes_read = 0;
    return (f_read(&_file_for_reading, data_buffer, buffer_length, &bytes_read) == FR_OK) ? (uint32_t)bytes_read : 0;
-}
-
-int sd_card_printf(const char *__restrict format, ...)
-{
-   // Print log messages to the console
-   va_list argptr1;
-   va_start(argptr1, format);
-   vprintf(format, argptr1);
-   va_end(argptr1);
-
-   // Print log messages to the SD card
-   va_list argptr2;
-   va_start(argptr2, format);
-   snprintf(_sd_write_buf, sizeof(_sd_write_buf), "%lu: ", rtc_get_current_time());
-   f_puts(_sd_write_buf, &_debug_file);
-   vsnprintf(_sd_write_buf, sizeof(_sd_write_buf), format, argptr2);
-   f_puts(_sd_write_buf, &_debug_file);
-   int res = f_sync(&_debug_file);
-   va_end(argptr2);
-   return res;
 }
 
 void sd_card_log_ranges(const uint8_t *data, uint16_t length)
