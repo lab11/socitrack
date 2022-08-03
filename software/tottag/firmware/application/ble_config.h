@@ -17,29 +17,24 @@
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #define ENABLE_LOW_BATTERY_SOUNDS
 #define ENABLE_SOUNDS
-//#define ENABLE_LEDS
-//#define PRINTF_TO_SD_CARD
+#define ENABLE_LEDS
 
 
 // Forced definitions for "Deployment Mode" ----------------------------------------------------------------------------
 
 #ifndef DEBUG_MODE
+
 #undef ENABLE_LEDS
 #undef ENABLE_SOUNDS
-#undef PRINTF_TO_SD_CARD
 #ifndef STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #define STOP_BLE_AND_SQUAREPOINT_WHEN_CHARGING
 #endif
-#endif
-
-#ifndef DEBUG_MODE
 #define log_printf(...) (void)0
+
 #else
-#ifdef PRINTF_TO_SD_CARD
-#define log_printf sd_card_printf
-#else
+
 #define log_printf printf
-#endif
+
 #endif
 
 
@@ -142,8 +137,8 @@
 #define BLE_NETWORK_DISCOVERY_COUNTDOWN_VALUE   5
 #define BLE_SINGLE_SCAN_DURATION_SEC            5
 #define BLE_SINGLE_SCAN_INTERVAL_SEC            180
-#define MINIMUM_VALID_TIMESTAMP                 (UNIX_TIMESTAMP - 172800)
-#define MAXIMUM_VALID_TIMESTAMP                 2000000000
+#define MINIMUM_VALID_TIMESTAMP                 ((uint32_t)UNIX_TIMESTAMP - 172800)
+#define MAXIMUM_VALID_TIMESTAMP                 ((uint32_t)2000000000)
 
 // Storage / Buffers
 #define APP_BLE_BUFFER_LENGTH                   256
