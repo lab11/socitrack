@@ -198,7 +198,7 @@ static void services_init(void)
 
    // Add characteristics
    ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_LOCATION, &_ble_char_location_handle);
-   ble_characteristic_add(0, 1, 0, 0, 0, 4, &_find_my_tottag_counter, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
+   ble_characteristic_add(0, 1, 0, 0, 0, 4, (volatile uint8_t*)&_find_my_tottag_counter, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
    ble_characteristic_add(0, 1, 0, 0, 0, 1, &_sd_management_command, BLE_CHAR_SD_MANAGEMENT_COMMAND, &_ble_char_sd_management_command_handle);
    ble_characteristic_add(1, 0, 0, 0, 0, 0, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
    ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_ble_char_timestamp_handle);
