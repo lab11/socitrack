@@ -113,6 +113,9 @@
 // BLE characteristics
 #define BLE_SERV_SHORT_UUID                     0x3152
 #define BLE_CHAR_LOCATION                       0x3153
+#define BLE_CHAR_FIND_MY_TOTTAG                 0x3154
+#define BLE_CHAR_SD_MANAGEMENT_COMMAND          0x3155
+#define BLE_CHAR_SD_MANAGEMENT_DATA             0x3156
 #define BLE_CHAR_TIMESTAMP                      0x3158
 
 // Information
@@ -328,5 +331,13 @@ typedef struct app_flags_t
 // SCHEDULER CONFIGS
 #define SCHED_MAX_EVENT_DATA_SIZE           APP_TIMER_SCHED_EVENT_DATA_SIZE             //!< Maximum size of the scheduler event data.
 #define SCHED_QUEUE_SIZE                    10                                          //!< Size of the scheduler queue.
+
+
+// BLE-Based SD Card Maintenance ---------------------------------------------------------------------------------------
+
+#define BLE_SD_CARD_LIST_FILES              0x01
+#define BLE_SD_CARD_DOWNLOAD_FILE           0x02
+#define BLE_SD_CARD_DELETE_FILE             0x03
+#define BLE_SD_CARD_DELETE_ALL              0x04
 
 #endif

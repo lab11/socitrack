@@ -4,11 +4,13 @@
 #include "ble_conn_params.h"
 #include "ble_db_discovery.h"
 #include "bluetooth.h"
+#include "buzzer.h"
 #include "nrf_ble_es.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
 #include "nrf_sdh.h"
 #include "rtc.h"
+#include "sd_card.h"
 
 
 // Bluetooth state definitions -----------------------------------------------------------------------------------------
@@ -25,11 +27,13 @@ NRF_BLE_GQ_DEF(_ble_gatt_queue, NRF_SDH_BLE_CENTRAL_LINK_COUNT, NRF_BLE_GQ_QUEUE
 static const ble_uuid128_t BLE_SERV_LONG_UUID = { .uuid128 = { 0x2e, 0x5d, 0x5e, 0x39, 0x31, 0x52, 0x45, 0x0c, 0x90, 0xee, 0x3f, 0xa2, 0x52, 0x31, 0x8c, 0xd6 } };  // Service UUID
 static ble_uuid_t _adv_uuids[] = { { PHYSWEB_SERVICE_ID, BLE_UUID_TYPE_BLE } };  // Advertisement UUIDs: Eddystone
 static ble_uuid_t _sr_uuids[] = { { BLE_UUID_DEVICE_INFORMATION_SERVICE, BLE_UUID_TYPE_BLE }, { BLE_SERV_SHORT_UUID, BLE_UUID_TYPE_VENDOR_BEGIN } };  // Scan Response UUIDs
-static ble_gatts_char_handles_t _carrier_ble_char_location_handle = { .value_handle = BLE_CHAR_LOCATION };
-static ble_gatts_char_handles_t _carrier_ble_char_timestamp_handle = { .value_handle = BLE_CHAR_TIMESTAMP };
-static ble_gatts_char_handles_t carrier_ble_char_calibration_handle = { .value_handle = BLE_CHAR_CALIBRATION };
-static uint16_t _carrier_ble_service_handle = 0, _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
-static uint8_t _carrier_ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
+static ble_gatts_char_handles_t _ble_char_location_handle = { .value_handle = BLE_CHAR_LOCATION };
+static ble_gatts_char_handles_t _ble_char_find_my_tottag_handle = { .value_handle = BLE_CHAR_FIND_MY_TOTTAG };
+static ble_gatts_char_handles_t _ble_char_sd_management_command_handle = { .value_handle = BLE_CHAR_SD_MANAGEMENT_COMMAND };
+static ble_gatts_char_handles_t _ble_char_sd_management_data_handle = { .value_handle = BLE_CHAR_SD_MANAGEMENT_DATA };
+static ble_gatts_char_handles_t _ble_char_timestamp_handle = { .value_handle = BLE_CHAR_TIMESTAMP };
+static uint16_t _ble_service_handle = 0, _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+static uint8_t _ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
 static ble_gap_scan_params_t _scan_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = BLE_GAP_SCAN_TIMEOUT_UNLIMITED, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
 static ble_gap_scan_params_t _scan_connect_params = { .active = 0, .channel_mask = { 0, 0, 0, 0, 0 }, .extended = 0, .interval = APP_SCAN_INTERVAL, .window = APP_SCAN_WINDOW, .timeout = APP_SCAN_CONNECT_TIMEOUT, .scan_phys = BLE_GAP_PHY_1MBPS, .filter_policy = BLE_GAP_SCAN_FP_ACCEPT_ALL };
 static ble_gap_conn_params_t const _connection_params = { MIN_CONN_INTERVAL, MAX_CONN_INTERVAL, SLAVE_LATENCY, CONN_SUP_TIMEOUT };
@@ -41,11 +45,12 @@ static ble_advdata_service_data_t _service_data = { 0 };
 static uint8_t _app_ble_advdata[APP_BLE_ADVDATA_LENGTH] = { 0 }, _scratch_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static uint8_t _scheduler_eui[BLE_GAP_ADDR_LEN] = { 0 }, _highest_discovered_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static volatile uint8_t _outgoing_ble_connection_active = 0;
-static volatile uint32_t _retrieved_timestamp = 0;
+static volatile uint32_t _retrieved_timestamp = 0, _find_my_tottag_counter = 0;
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
-static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL;
-static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0, *_calibration_index = NULL;
-ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
+static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL, *_sd_card_maintenance_mode_flag = NULL;
+static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0;
+static ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
+static volatile uint8_t _sd_management_command = 0;
 static device_role_t _device_role = HYBRID;
 
 
@@ -92,11 +97,11 @@ static void gap_params_init(void)
 
    // Set BLE address
    ble_gap_addr_t gap_addr = { .addr_type = BLE_GAP_ADDR_TYPE_PUBLIC };
-   memcpy(_carrier_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
-   APP_ERROR_CHECK((_carrier_ble_address[5] != 0xc0) || (_carrier_ble_address[4] != 0x98));
-   printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _carrier_ble_address[5], _carrier_ble_address[4], _carrier_ble_address[3], _carrier_ble_address[2], _carrier_ble_address[1], _carrier_ble_address[0]);
-   memcpy(gap_addr.addr, _carrier_ble_address, BLE_GAP_ADDR_LEN);
-   memcpy(_scratch_eui, _carrier_ble_address, sizeof(_scratch_eui));
+   memcpy(_ble_address, (uint8_t*)DEVICE_ID_MEMORY, BLE_GAP_ADDR_LEN);
+   APP_ERROR_CHECK((_ble_address[5] != 0xc0) || (_ble_address[4] != 0x98));
+   printf("INFO: Bluetooth address: %02x:%02x:%02x:%02x:%02x:%02x\n", _ble_address[5], _ble_address[4], _ble_address[3], _ble_address[2], _ble_address[1], _ble_address[0]);
+   memcpy(gap_addr.addr, _ble_address, BLE_GAP_ADDR_LEN);
+   memcpy(_scratch_eui, _ble_address, sizeof(_scratch_eui));
    APP_ERROR_CHECK(sd_ble_gap_addr_set(&gap_addr));
 
    // Setup connection parameters
@@ -175,7 +180,7 @@ static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, 
    attr_char_value.p_value = data;
 
    // Add our new characteristics to the service
-   APP_ERROR_CHECK(sd_ble_gatts_characteristic_add(_carrier_ble_service_handle, &char_md, &attr_char_value, char_handle));
+   APP_ERROR_CHECK(sd_ble_gatts_characteristic_add(_ble_service_handle, &char_md, &attr_char_value, char_handle));
 }
 
 static void services_init(void)
@@ -189,12 +194,14 @@ static void services_init(void)
    ble_uuid128_t base_uuid = BLE_SERV_LONG_UUID;
    ble_uuid_t service_uuid = { .uuid = BLE_SERV_SHORT_UUID, .type = BLE_UUID_TYPE_VENDOR_BEGIN };
    APP_ERROR_CHECK(sd_ble_uuid_vs_add(&base_uuid, &service_uuid.type));
-   APP_ERROR_CHECK(sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &service_uuid, &_carrier_ble_service_handle));
+   APP_ERROR_CHECK(sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &service_uuid, &_ble_service_handle));
 
    // Add characteristics
-   ble_characteristic_add(1, 0, 1, 0, 0, 128, NULL, BLE_CHAR_LOCATION, &_carrier_ble_char_location_handle);
-   ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_carrier_ble_char_timestamp_handle);
-   ble_characteristic_add(1, 1, 0, 0, 0, 14, (volatile uint8_t*)_calibration_index, BLE_CHAR_CALIBRATION, &carrier_ble_char_calibration_handle);
+   ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_LOCATION, &_ble_char_location_handle);
+   ble_characteristic_add(0, 1, 0, 0, 0, 4, &_find_my_tottag_counter, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
+   ble_characteristic_add(0, 1, 0, 0, 0, 1, &_sd_management_command, BLE_CHAR_SD_MANAGEMENT_COMMAND, &_ble_char_sd_management_command_handle);
+   ble_characteristic_add(1, 0, 0, 0, 0, 0, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
+   ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_ble_char_timestamp_handle);
 
    // Register service discovery events
    APP_ERROR_CHECK(ble_db_discovery_evt_register(&service_uuid));
@@ -238,11 +245,7 @@ static void advertising_init(void)
    _adv_init.srdata.uuids_complete.uuid_cnt = sizeof(_sr_uuids) / sizeof(_sr_uuids[0]);
    _adv_init.srdata.uuids_complete.p_uuids = _sr_uuids;
    _adv_init.config.ble_adv_fast_enabled = true;
-#ifndef BLE_CALIBRATION
    _adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL;
-#else
-    adv_init.config.ble_adv_fast_interval = (uint32_t)APP_ADV_INTERVAL_CALIBRATION;
-#endif
 
    // Define Event handler
    _adv_init.evt_handler = on_adv_evt;
@@ -346,13 +349,17 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
 {
    // Handle a BLE write event
    const ble_gatts_evt_write_t *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
-   if (p_evt_write->handle == carrier_ble_char_calibration_handle.value_handle)
+   if (p_evt_write->handle == _ble_char_find_my_tottag_handle.value_handle)
    {
-      // Start device calibration
-      log_printf("INFO: Received CALIBRATION evt: %s, length %hu\n", (const char*)p_evt_write->data, p_evt_write->len);
-      const uint8_t expected_response_calib_offset = 13;
-      uint8_t response = ascii_to_i(p_evt_write->data[expected_response_calib_offset]);
-      nrfx_atomic_u32_store(_calibration_index, response);
+      log_printf("INFO: Received BLE event: FIND_MY_TOTTAG\n");
+      log_printf("      Value: %hu, Length: %hu\n", (uint16_t)p_evt_write->data[0], p_evt_write->len);
+      // TODO: DO WE NEED TO STORE THE VALUE, OR IS IT ALREADY IN _find_my_tottag_counter
+   }
+   else if (p_evt_write->handle == _ble_char_sd_management_command_handle.value_handle)
+   {
+      log_printf("INFO: Received BLE event: SD_CARD_MANAGEMENT, Command = %hu, Length = %hu\n", (uint16_t)p_evt_write->data[0], p_evt_write->len);
+      // TODO: DO WE NEED TO STORE THE VALUE, OR IS IT ALREADY IN _sd_management_command
+      // TODO: May need to set _sd_card_maintenance_mode_flag here if command is != 0, or clear if == 0
   }
    else
       log_printf("ERROR: Received unknown BLE event handle: %hu\n", p_evt_write->handle);
@@ -384,8 +391,8 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       case BLE_GAP_EVT_CONNECTED:
       {
          // Assign BLE connection handle
-         _carrier_ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
-         APP_ERROR_CHECK(nrf_ble_qwr_conn_handle_assign(&_qwr, _carrier_ble_conn_handle));
+         _ble_conn_handle = p_ble_evt->evt.gap_evt.conn_handle;
+         APP_ERROR_CHECK(nrf_ble_qwr_conn_handle_assign(&_qwr, _ble_conn_handle));
 
          // Discover services if this was an outgoing connection
          if (_outgoing_ble_connection_active)
@@ -398,7 +405,8 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       case BLE_GAP_EVT_DISCONNECTED:
       {
          _outgoing_ble_connection_active = 0;
-         _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
          break;
       }
       case BLE_GAP_EVT_ADV_REPORT:
@@ -435,21 +443,24 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       {
          sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
          _outgoing_ble_connection_active = 0;
-         _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
          break;
       }
       case BLE_GATTC_EVT_TIMEOUT:
       {
          APP_ERROR_CHECK(sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
          _outgoing_ble_connection_active = 0;
-         _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
          break;
       }
       case BLE_GATTS_EVT_TIMEOUT:
       {
          APP_ERROR_CHECK(sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
          _outgoing_ble_connection_active = 0;
-         _carrier_ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
+         nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
          break;
       }
       default:
@@ -463,12 +474,12 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
 // Public Bluetooth API ------------------------------------------------------------------------------------------------
 
-void ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_u32_t* calibration_index)
+void ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* ble_is_scanning_flag, nrfx_atomic_flag_t* sd_card_maintenance_mode_flag)
 {
    // Initialize the entire BLE stack
+   _sd_card_maintenance_mode_flag = sd_card_maintenance_mode_flag;
    _ble_advertising_flag = ble_is_advertising_flag;
    _ble_scanning_flag = ble_is_scanning_flag;
-   _calibration_index = calibration_index;
    ble_stack_init();
    gap_params_init();
    gatt_init();
@@ -483,7 +494,7 @@ void ble_init(nrfx_atomic_flag_t* ble_is_advertising_flag, nrfx_atomic_flag_t* b
 }
 
 uint8_t ble_get_device_role(void) { return _device_role; }
-const uint8_t* ble_get_eui(void) { return _carrier_ble_address; }
+const uint8_t* ble_get_eui(void) { return _ble_address; }
 const uint8_t* ble_get_empty_eui(void) { return _empty_eui; }
 const uint8_t* ble_get_scheduler_eui(void) { return _scheduler_eui; }
 const uint8_t* ble_get_highest_network_eui(void) { return _highest_discovered_eui; }
@@ -536,16 +547,16 @@ uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
 void ble_update_ranging_data(const uint8_t *data, uint16_t length)
 {
    // Only update the Bluetooth characteristic if there is a valid connection
-   if ((_carrier_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (length <= APP_BLE_MAX_CHAR_LEN))
+   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (length <= APP_BLE_MAX_CHAR_LEN))
    {
       ble_gatts_hvx_params_t notify_params = {
-         .handle = _carrier_ble_char_location_handle.value_handle,
+         .handle = _ble_char_location_handle.value_handle,
          .type   = BLE_GATT_HVX_NOTIFICATION,
          .offset = 0,
          .p_len  = &length,
          .p_data = data
       };
-      sd_ble_gatts_hvx(_carrier_ble_conn_handle, &notify_params);
+      sd_ble_gatts_hvx(_ble_conn_handle, &notify_params);
    }
 }
 
@@ -572,6 +583,10 @@ void ble_second_has_elapsed(void)
       default:
          break;
    }
+
+   // Cause TotTag to beep if FindMyTottag has been activated
+   if (nrfx_atomic_u32_sub_hs(&_find_my_tottag_counter, 1))
+      buzzer_indicate_location((nrfx_atomic_u32_fetch(&_find_my_tottag_counter) % 2) == 0);
 }
 
 uint32_t ble_request_timestamp(void)
@@ -587,8 +602,26 @@ uint32_t ble_request_timestamp(void)
       nrfx_atomic_flag_clear(_ble_scanning_flag);
    }
    else if (_retrieved_timestamp)
-      sd_ble_gap_disconnect(_carrier_ble_conn_handle, BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
+      sd_ble_gap_disconnect(_ble_conn_handle, BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
    return _retrieved_timestamp;
 }
 
 uint32_t ble_is_network_available(void) { return nrfx_atomic_u32_fetch(&_network_discovered_counter); }
+
+void ble_sd_card_maintenance(void)
+{
+   // TODO: Determine which SD card maintenance task to carry out
+   switch (_sd_management_command)
+   {
+      case BLE_SD_CARD_LIST_FILES:
+         break;
+      case BLE_SD_CARD_DOWNLOAD_FILE:
+         break;
+      case BLE_SD_CARD_DELETE_FILE:
+         break;
+      case BLE_SD_CARD_DELETE_ALL:
+         break;
+      default:
+         break;
+   }
+}
