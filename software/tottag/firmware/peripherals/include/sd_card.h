@@ -14,6 +14,7 @@ bool sd_card_create_log(uint32_t current_time, bool is_device_reboot);
 void sd_card_write(const char *data, uint16_t length, bool flush);
 bool sd_card_list_files(char *file_name, uint32_t *file_size, uint8_t continuation);
 bool sd_card_erase_file(const char *file_name);
+bool sd_card_erase_all_files(void);
 bool sd_card_open_file_for_reading(const char *file_name);
 void sd_card_close_reading_file(void);
 uint32_t sd_card_get_reading_file_size_bytes(void);

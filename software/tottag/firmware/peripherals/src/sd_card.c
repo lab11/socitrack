@@ -373,6 +373,16 @@ bool sd_card_erase_file(const char *file_name)
    return ret_val;
 }
 
+bool sd_card_erase_all_files(void)
+{
+   char file_name[1024] = { 0 };
+   file_name[0] = '/';
+   sd_card_power_on();
+   bool ret_val = (f_unlink_all(file_name, sizeof(file_name), &_file_info) == FR_OK);
+   sd_card_power_off();
+   return ret_val;
+}
+
 bool sd_card_open_file_for_reading(const char *file_name)
 {
    sd_card_power_on();
