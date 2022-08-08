@@ -50,6 +50,7 @@ static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL, *_sd_card_maintenance_mode_flag = NULL;
 static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0;
 static ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
+static uint8_t _sd_command_data[APP_BLE_BUFFER_LENGTH] = { 0 };
 static volatile uint8_t _sd_management_command = 0;
 static device_role_t _device_role = HYBRID;
 
@@ -360,6 +361,7 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
       log_printf("INFO: Received BLE event: SD_CARD_MANAGEMENT, Command = %hu, Length = %hu\n", (uint16_t)p_evt_write->data[0], p_evt_write->len);
       // TODO: DO WE NEED TO STORE THE VALUE, OR IS IT ALREADY IN _sd_management_command
       // TODO: May need to set _sd_card_maintenance_mode_flag here if command is != 0, or clear if == 0
+      // TODO: memcpy(_sd_command_data, p_evt_write->data + 1, min(p_evt_write->len - 1, APP_BLE_CHAR_MAX_LEN))
   }
    else
       log_printf("ERROR: Received unknown BLE event handle: %hu\n", p_evt_write->handle);
@@ -399,6 +401,12 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
          {
             memset(&_db_disc, 0, sizeof(_db_disc));
             APP_ERROR_CHECK(ble_db_discovery_start(&_db_disc, p_ble_evt->evt.gap_evt.conn_handle));
+         }
+         else
+         {
+            // Adjust the PHY to 2MBPS for increased data throughput on incoming connections
+            ble_gap_phys_t const phys = { .rx_phys = BLE_GAP_PHY_2MBPS, .tx_phys = BLE_GAP_PHY_2MBPS, };
+            APP_ERROR_CHECK(sd_ble_gap_phy_update(p_ble_evt->evt.gap_evt.conn_handle, &phys));
          }
          break;
       }
@@ -469,6 +477,19 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
    // Scanning stops upon reception of a BLE response packet
    nrfx_atomic_flag_clear(_ble_scanning_flag);
+}
+
+
+// BLE data transfer functionality -------------------------------------------------------------------------------------
+
+void ble_transfer_data(const uint8_t* data, uint32_t data_length)
+{
+   // TODO: Implement this
+}
+
+void ble_send_transfer_complete(bool command_successful)
+{
+   // TODO: Implement this
 }
 
 
@@ -547,7 +568,7 @@ uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
 void ble_update_ranging_data(const uint8_t *data, uint16_t length)
 {
    // Only update the Bluetooth characteristic if there is a valid connection
-   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (length <= APP_BLE_MAX_CHAR_LEN))
+   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (length <= APP_BLE_BUFFER_LENGTH))
    {
       ble_gatts_hvx_params_t notify_params = {
          .handle = _ble_char_location_handle.value_handle,
@@ -610,18 +631,46 @@ uint32_t ble_is_network_available(void) { return nrfx_atomic_u32_fetch(&_network
 
 void ble_sd_card_maintenance(void)
 {
-   // TODO: Determine which SD card maintenance task to carry out
+   // Determine which SD card maintenance task to carry out
    switch (_sd_management_command)
    {
       case BLE_SD_CARD_LIST_FILES:
+      {
+         uint32_t file_size = 0;
+         uint8_t continuation = 0;
+         char file_name[1024] = { 0 };
+         while (sd_card_list_files(file_name, &file_size, continuation++))
+         {
+            ble_transfer_data((const uint8_t*)"NEW", 3);
+            ble_transfer_data((uint8_t*)&file_size, sizeof(file_size));
+            ble_transfer_data((uint8_t*)file_name, strlen(file_name));
+         }
+         ble_send_transfer_complete(true);
          break;
+      }
       case BLE_SD_CARD_DOWNLOAD_FILE:
+      {
+         uint32_t bytes_read;
+         bool success = sd_card_open_file_for_reading((const char*)_sd_command_data);
+         if (success)
+            while ((bytes_read = sd_card_read_reading_file(_sd_command_data, sizeof(_sd_command_data))) != 0)
+               ble_transfer_data(_sd_command_data, bytes_read);
+         sd_card_close_reading_file();
+         ble_send_transfer_complete(success);
          break;
+      }
       case BLE_SD_CARD_DELETE_FILE:
+         ble_send_transfer_complete(sd_card_erase_file((const char*)_sd_command_data));
          break;
       case BLE_SD_CARD_DELETE_ALL:
+         ble_send_transfer_complete(sd_card_erase_all_files());
          break;
       default:
+         ble_send_transfer_complete(false);
          break;
    }
+
+   // Clean up command space to get ready for the next command
+   memset(_sd_command_data, 0, sizeof(_sd_command_data));
+   _sd_management_command = 0;
 }

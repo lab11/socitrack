@@ -140,8 +140,7 @@
 #define MAXIMUM_VALID_TIMESTAMP                 ((uint32_t)2000000000)
 
 // Storage / Buffers
-#define APP_BLE_BUFFER_LENGTH                   256
-#define APP_BLE_MAX_CHAR_LEN                    512
+#define APP_BLE_BUFFER_LENGTH                   NRF_SDH_BLE_GATT_MAX_MTU_SIZE
 #define APP_SDCARD_BUFFER_LENGTH                10240
 
 #define APP_LOG_BUFFER_LINE                     (10 + 1 + 3*6 + 6 + 1)
@@ -202,9 +201,9 @@ typedef struct app_flags_t
 #define APP_SCAN_WINDOW_MS      (APP_ADV_INTERVAL_MS + 15)
 
 // No-network transitions
-#define BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT  300
+#define BLE_MISSING_NETWORK_TRANSITION1_TIMEOUT     300
 #define BLE_NETWORK_TRANSITION1_SCAN_INTERVAL       MSEC_TO_UNITS(4085, UNIT_0_625_MS)
-#define BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT  600
+#define BLE_MISSING_NETWORK_TRANSITION2_TIMEOUT     600
 #define BLE_NETWORK_TRANSITION2_SCAN_INTERVAL       MSEC_TO_UNITS(6085, UNIT_0_625_MS)
 
 // Physical Web
