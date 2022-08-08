@@ -8,6 +8,7 @@
 #include "nrf_ble_es.h"
 #include "nrf_ble_gatt.h"
 #include "nrf_ble_qwr.h"
+#include "nrf_delay.h"
 #include "nrf_sdh.h"
 #include "rtc.h"
 #include "sd_card.h"
@@ -201,7 +202,7 @@ static void services_init(void)
    ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_LOCATION, &_ble_char_location_handle);
    ble_characteristic_add(0, 1, 0, 0, 0, 4, (volatile uint8_t*)&_find_my_tottag_counter, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
    ble_characteristic_add(0, 1, 0, 0, 0, 1, &_sd_management_command, BLE_CHAR_SD_MANAGEMENT_COMMAND, &_ble_char_sd_management_command_handle);
-   ble_characteristic_add(1, 0, 0, 0, 0, 0, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
+   ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
    ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_ble_char_timestamp_handle);
 
    // Register service discovery events
@@ -482,14 +483,34 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 
 // BLE data transfer functionality -------------------------------------------------------------------------------------
 
-void ble_transfer_data(const uint8_t* data, uint32_t data_length)
+static void ble_transfer_data(uint16_t data_length)
 {
-   // TODO: Implement this
+   // Only initiate the transfer if there is a valid connection
+   if (_ble_conn_handle != BLE_CONN_HANDLE_INVALID)
+   {
+      // Create the data notification structure
+      ble_gatts_hvx_params_t notify_params = {
+         .handle = _ble_char_sd_management_data_handle.value_handle,
+         .type   = BLE_GATT_HVX_NOTIFICATION,
+         .offset = 0,
+         .p_len  = &data_length,
+         .p_data = _sd_command_data
+      };
+
+      // Continue updating the notification until it is accepted
+      uint32_t err_code = sd_ble_gatts_hvx(_ble_conn_handle, &notify_params);
+      while (((err_code == NRF_ERROR_RESOURCES) || (err_code == NRF_ERROR_BUSY) || (err_code == NRF_ERROR_INVALID_STATE)) &&
+             (_ble_conn_handle != BLE_CONN_HANDLE_INVALID))
+      {
+         nrf_delay_ms(1);
+         err_code = sd_ble_gatts_hvx(_ble_conn_handle, &notify_params);
+      }
+   }
 }
 
-void ble_send_transfer_complete(bool command_successful)
+static void ble_send_transfer_complete(bool command_successful)
 {
-   // TODO: Implement this
+   // TODO: Implement this (send notification to _ble_char_sd_management_command_handle, once enabled)
 }
 
 
@@ -641,9 +662,11 @@ void ble_sd_card_maintenance(void)
          char file_name[1024] = { 0 };
          while (sd_card_list_files(file_name, &file_size, continuation++))
          {
-            ble_transfer_data((const uint8_t*)"NEW", 3);
-            ble_transfer_data((uint8_t*)&file_size, sizeof(file_size));
-            ble_transfer_data((uint8_t*)file_name, strlen(file_name));
+            size_t len = strlen(file_name);
+            memcpy(_sd_command_data, "NEW", 3);
+            memcpy(&_sd_command_data[3], &file_size, sizeof(file_size));
+            memcpy(&_sd_command_data[3+sizeof(file_size)], file_name, len);
+            ble_transfer_data(3 + sizeof(file_size) + len);
          }
          ble_send_transfer_complete(true);
          break;
@@ -654,7 +677,7 @@ void ble_sd_card_maintenance(void)
          bool success = sd_card_open_file_for_reading((const char*)_sd_command_data);
          if (success)
             while ((bytes_read = sd_card_read_reading_file(_sd_command_data, sizeof(_sd_command_data))) != 0)
-               ble_transfer_data(_sd_command_data, bytes_read);
+               ble_transfer_data((uint16_t)bytes_read);
          sd_card_close_reading_file();
          ble_send_transfer_complete(success);
          break;
