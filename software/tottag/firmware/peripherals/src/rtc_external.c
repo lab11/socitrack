@@ -178,17 +178,6 @@ static bool ab1815_set_config(void)
    return ab1815_write_reg(AB1815_BATMODE, &write, 1);
 }
 
-#ifdef FORCE_RTC_RESET
-static struct timeval ab1815_get_time_unix(void)
-{
-   struct timeval tv = { 0 };
-   ab1815_time_t ab1815_time = { 0 };
-   if (ab1815_get_time(&ab1815_time))
-      tv = ab1815_to_unix(ab1815_time);
-   return tv;
-}
-#endif
-
 static bool ab1815_set_time(const struct tm *time_struct)
 {
    // Ensure that the RTC write bit is enabled
