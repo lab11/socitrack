@@ -39,7 +39,6 @@
 // SquarePoint runtime modes -------------------------------------------------------------------------------------------
 
 #define SQUAREPOINT_RUNTIME_MODE_STANDARD               0x01
-#define SQUAREPOINT_RUNTIME_MODE_CALIBRATION            0x02
 
 
 // Internal typedefs ---------------------------------------------------------------------------------------------------
@@ -51,8 +50,6 @@ typedef uint32_t (*squarepoint_interface_data_callback)(uint8_t*, uint32_t, uint
 
 nrfx_err_t squarepoint_init(squarepoint_interface_data_callback callback, const uint8_t* eui);
 nrfx_err_t squarepoint_start_application(uint32_t current_time, uint8_t device_role, uint8_t scheduler_role);
-nrfx_err_t squarepoint_start_calibration(uint8_t index);
-nrfx_err_t squarepoint_get_calibration(uint8_t* calib_buf);
 nrfx_err_t squarepoint_stop(void);
 nrfx_err_t squarepoint_set_time(uint32_t epoch);
 nrfx_err_t squarepoint_wakeup_radio(void);

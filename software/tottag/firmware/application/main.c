@@ -39,7 +39,6 @@ static void app_init(void)
    _app_flags.device_in_motion = true;
    _app_flags.battery_too_low = true;
    _app_flags.battery_check_counter = APP_BATTERY_CHECK_TIMEOUT_SEC;
-   _app_flags.calibration_index = BLE_CALIBRATION_INDEX_INVALID;
 }
 
 static void spi_init(void)
@@ -101,7 +100,7 @@ static void hardware_init(void)
 
    // Initialize the application timers and Bluetooth stack via the SoftDevice
    timers_init(watchdog_handler, &_app_flags.squarepoint_wakeup_triggered);
-   ble_init(&_app_flags.bluetooth_is_advertising, &_app_flags.bluetooth_is_scanning, &_app_flags.calibration_index);
+   ble_init(&_app_flags.bluetooth_is_advertising, &_app_flags.bluetooth_is_scanning, &_app_flags.sd_card_maintenance_mode);
 
    // Initialize essential hardware components
    rtc_init();
@@ -137,6 +136,8 @@ static void update_leds(uint32_t network_discovered)
 {
    if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))            // RED = SD card not inserted
       led_on(RED);
+   else if (nrfx_atomic_flag_fetch(&_app_flags.sd_card_maintenance_mode))// PURPLE = SD card maintenance mode over BLE
+      led_on(PURPLE);
    else if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))     // GREEN = App running
       led_on(GREEN);
    else if (network_discovered)                                          // ORANGE = Network discovered, app not running
@@ -185,31 +186,6 @@ static nrfx_err_t start_squarepoint(uint32_t timestamp)
    }
    return NRFX_SUCCESS;
 }
-
-#ifdef BLE_CALIBRATION
-static nrfx_err_t start_squarepoint_calibration(void)
-{
-   // Initialize the SquarePoint module and communications
-   squarepoint_comms_init();
-
-   // Start the SquarePoint calibration application
-   printf("INFO: Starting the SquarePoint module in calibration mode...\n");
-   nrfx_err_t err_code = squarepoint_start_calibration((uint8_t)nrfx_atomic_u32_fetch(&_app_flags.calibration_index));
-   if (err_code != NRFX_SUCCESS)
-   {
-      printf("ERROR: Failed to start the SquarePoint calibration app!\n");
-      return err_code;
-   }
-   else
-   {
-      // Update the application state
-      printf("INFO: SquarePoint calibration successfully started!\n");
-      nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
-      nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
-   }
-   return NRFX_SUCCESS;
-}
-#endif
 
 
 // Callbacks and data handlers -----------------------------------------------------------------------------------------
@@ -309,17 +285,6 @@ static uint32_t squarepoint_data_handler(uint8_t *data, uint32_t len, uint32_t t
          // Reset the SquarePoint communications timeout counter
          if (num_ranges)
             nrfx_atomic_u32_store(&_app_flags.squarepoint_timeout_counter, 0);
-         break;
-      }
-      case SQUAREPOINT_INCOMING_CALIBRATION:
-      {
-         // Copy the calibration data to the ranging buffer
-         _range_buffer_length = (uint16_t)MIN(len - 1, APP_BLE_BUFFER_LENGTH);
-         memcpy(_range_buffer, data + 1, _range_buffer_length);
-
-         // Trigger BLE transmission
-         nrfx_atomic_flag_set(&_app_flags.squarepoint_running);
-         ble_update_ranging_data(_range_buffer, _range_buffer_length);
          break;
       }
       case SQUAREPOINT_INCOMING_STOPPED:
@@ -456,11 +421,6 @@ void normal_mode_process(void)
    }
    else if (!app_enabled && nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
       squarepoint_stop();
-#ifdef BLE_CALIBRATION
-   else if (!nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running) &&
-           (nrfx_atomic_u32_fetch(&_app_flags.calibration_index) != BLE_CALIBRATION_INDEX_INVALID))
-      start_squarepoint_calibration();
-#endif
 
    // Update the BLE advertising and scanning states
    if (!app_enabled)
@@ -474,7 +434,6 @@ void normal_mode_process(void)
    {
       if (!nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_advertising) && nrfx_atomic_flag_fetch(&_app_flags.rtc_time_valid))
          ble_start_advertising();
-#ifndef BLE_CALIBRATION
       if (nrfx_atomic_flag_fetch(&_app_flags.squarepoint_running))
       {
          if (nrfx_atomic_flag_fetch(&_app_flags.bluetooth_single_scanning) && !nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
@@ -484,7 +443,6 @@ void normal_mode_process(void)
       }
       else if (!nrfx_atomic_flag_fetch(&_app_flags.bluetooth_is_scanning))
          ble_start_scanning();
-#endif
    }
 
    // If the SquarePoint module appears to have crashed, try to reset it and re-discover networks
@@ -506,11 +464,6 @@ void normal_mode_process(void)
       nrfx_atomic_flag_set(&_app_flags.device_reset_required);
 }
 
-void sd_card_maintenance_mode_process(void)
-{
-   ;
-}
-
 int main(void)
 {
    // Initialize hardware services and start the watchdog timer
@@ -527,7 +480,10 @@ int main(void)
 
       // Prohibit all main-loop activity while externally interfacing with the SD card
       if (nrfx_atomic_flag_fetch(&_app_flags.sd_card_maintenance_mode))
-         sd_card_maintenance_mode_process();
+      {
+         update_leds(0);
+         ble_sd_card_maintenance();
+      }
       else
          normal_mode_process();
       nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 0);

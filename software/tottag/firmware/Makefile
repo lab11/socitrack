@@ -11,9 +11,6 @@ FW_VERSION = $(shell git describe --always --dirty --broken)
 
 # Allow to circumvent BLE interface
 CFLAGS += -DFW_VERSION="\"$(FW_VERSION)\""
-ifneq ($(BLE_CALIBRATION), )
-CFLAGS += -DBLE_CALIBRATION
-endif
 ifneq ($(FORCE_RTC_RESET), )
 CFLAGS += -DFORCE_RTC_RESET
 endif

@@ -247,30 +247,6 @@ nrfx_err_t squarepoint_start_application(uint32_t current_time, uint8_t device_r
    return nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
 }
 
-nrfx_err_t squarepoint_start_calibration(uint8_t index)
-{
-   // Send an outgoing command requesting that the SquarePoint module enter calibration mode
-   _twi_tx_buf[0] = SQUAREPOINT_CMD_START;
-   _twi_tx_buf[1] = (SQUAREPOINT_RUNTIME_MODE_CALIBRATION << 6);
-   _twi_tx_buf[2] = index;
-   _tx_data_description.primary_length = 3;
-   return nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
-}
-
-nrfx_err_t squarepoint_get_calibration(uint8_t *calib_buf)
-{
-   // Send an outgoing command requesting the SquarePoint calibration info
-   _tx_data_description.primary_length = 1;
-   _twi_tx_buf[0] = SQUAREPOINT_CMD_READ_CALIBRATION;
-   nrfx_twi_xfer_desc_t rx_description = { .type = NRFX_TWI_XFER_RX, .address = SQUAREPOINT_ADDRESS,
-                                           .p_primary_buf = calib_buf, .p_secondary_buf = NULL,
-                                           .primary_length = 18, .secondary_length = 0 };
-   nrfx_err_t err_code = nrfx_twi_xfer(&_twi_instance, &_tx_data_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
-   if (err_code == NRFX_SUCCESS)
-      err_code = nrfx_twi_xfer(&_twi_instance, &rx_description, NRFX_TWI_FLAG_NO_XFER_EVT_HANDLER);
-   return err_code;
-}
-
 nrfx_err_t squarepoint_stop(void)
 {
    // Send an outgoing command requesting that the SquarePoint module stop

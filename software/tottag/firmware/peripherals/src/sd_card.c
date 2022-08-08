@@ -395,8 +395,6 @@ uint32_t sd_card_read_reading_file(uint8_t *data_buffer, uint32_t buffer_length)
 
 void sd_card_log_ranges(const uint8_t *data, uint16_t length)
 {
-#ifndef BLE_CALIBRATION
-
    // Jump over interrupt reason and determine data length
    uint16_t offset_data = 1 + SQUAREPOINT_EUI_LEN, offset_buf = 0;
    uint8_t num_ranges = data[0];
@@ -452,8 +450,6 @@ void sd_card_log_ranges(const uint8_t *data, uint16_t length)
 
    // Write buffer to the SD card
    sd_card_write(_log_ranges_buf, offset_buf, false);
-
-#endif
 }
 
 void sd_card_log_updated_epoch(uint32_t epoch)

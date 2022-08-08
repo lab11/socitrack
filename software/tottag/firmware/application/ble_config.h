@@ -113,7 +113,6 @@
 // BLE characteristics
 #define BLE_SERV_SHORT_UUID                     0x3152
 #define BLE_CHAR_LOCATION                       0x3153
-#define BLE_CHAR_CALIBRATION                    0x3157
 #define BLE_CHAR_TIMESTAMP                      0x3158
 
 // Information
@@ -123,9 +122,6 @@
 #define HARDWARE_REVISION                       REVISION
 #define FIRMWARE_REVISION                       "2.0"
 #define FIRMWARE_VERSION                        FW_VERSION
-
-// Calibration
-#define BLE_CALIBRATION_INDEX_INVALID           255
 
 // Behavior
 #define WATCHDOG_CHECK_RATE_MS                  1000
@@ -142,7 +138,7 @@
 
 // Storage / Buffers
 #define APP_BLE_BUFFER_LENGTH                   256
-#define APP_BLE_MAX_CHAR_LEN                    128
+#define APP_BLE_MAX_CHAR_LEN                    512
 #define APP_SDCARD_BUFFER_LENGTH                10240
 
 #define APP_LOG_BUFFER_LINE                     (10 + 1 + 3*6 + 6 + 1)
@@ -185,7 +181,6 @@ typedef struct app_flags_t
    nrfx_atomic_u32_t squarepoint_timeout_counter;
    nrfx_atomic_u32_t battery_check_counter;
    nrfx_atomic_u32_t device_reset_counter;
-   nrfx_atomic_u32_t calibration_index;
 } app_flags_t;
 
 
@@ -247,7 +242,6 @@ typedef struct app_flags_t
 
 // Eddystone App configurations, adapted from nRF example "examples\ble_peripheral\ble_app_eddystone\es_app_config.h"
 #define APP_CONFIG_LOCK_CODE {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
-#define APP_CONFIG_CALIBRATED_RANGING_DATA {-49, -39, -29, -24, -19, -14, -9, -7, -5}   //!< Calibrated TX power at 0 m. See the nRF52 Product Specification for corresponding TX values.
 #define APP_CONFIG_TLM_TEMP_VBATT_UPDATE_INTERVAL_SECONDS   10                          //!< How often should the data in the TLM frame be updated.
 #define APP_CONFIG_TLM_ADV_INTERLEAVE_RATIO                 5                           //!< How often should the TLM frame be advertised.
 
@@ -278,8 +272,6 @@ typedef struct app_flags_t
 #define APP_CFG_DEFAULT_RADIO_TX_POWER                      0x00                        //!< Default TX power of the radio.
 
 #define APP_ADV_INTERVAL                    MSEC_TO_UNITS(APP_ADV_INTERVAL_MS, UNIT_0_625_MS)
-#define APP_ADV_INTERVAL_CALIBRATION        MSEC_TO_UNITS(APP_ADV_INTERVAL_CAL_MS, UNIT_0_625_MS)
-
 #define APP_SCAN_INTERVAL                   MSEC_TO_UNITS(APP_SCAN_INTERVAL_MS, UNIT_0_625_MS)
 #define APP_SCAN_WINDOW                     MSEC_TO_UNITS(APP_SCAN_WINDOW_MS, UNIT_0_625_MS)
 #define APP_SCAN_CONNECT_TIMEOUT            MSEC_TO_UNITS(2500, UNIT_10_MS)
