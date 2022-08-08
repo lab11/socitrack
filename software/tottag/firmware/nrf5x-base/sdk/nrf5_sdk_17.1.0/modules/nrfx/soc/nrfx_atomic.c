@@ -345,7 +345,8 @@ uint32_t nrfx_atomic_u32_fetch_sub_hs(nrfx_atomic_u32_t * p_data, uint32_t value
 #else
     NRFX_CRITICAL_SECTION_ENTER();
     uint32_t old_val = *p_data;
-    *p_data -= value;
+    if (old_val >= value)
+       *p_data -= value;
     NRFX_CRITICAL_SECTION_EXIT();
     return old_val;
 #endif //NRFX_ATOMIC_USE_BUILT_IN
@@ -376,7 +377,9 @@ uint32_t nrfx_atomic_u32_sub_hs(nrfx_atomic_u32_t * p_data, uint32_t value)
     return new_val;
 #else
     NRFX_CRITICAL_SECTION_ENTER();
-    *p_data -= value;
+    uint32_t old_val = *p_data;
+    if (old_val >= value)
+       *p_data -= value;
     uint32_t new_value = *p_data;
     NRFX_CRITICAL_SECTION_EXIT();
     return new_value;
