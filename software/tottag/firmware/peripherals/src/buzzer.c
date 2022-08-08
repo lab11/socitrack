@@ -224,3 +224,10 @@ void buzzer_indicate_low_battery(void)
 #endif
 #endif
 }
+
+void buzzer_indicate_location(void)
+{
+#if (BOARD_V >= 0x10)
+   // TODO: IMPLEMENT THIS NOISE
+#endif
+}
