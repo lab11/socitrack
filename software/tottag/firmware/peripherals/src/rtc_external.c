@@ -211,7 +211,7 @@ static bool ab1815_init_time(void)
    printf("INFO: Forcing RTC reset to %s\n", _datetime);
    struct tm comp_time = {
          .tm_sec = (ascii_to_int(_datetime[17]) * 10) + ascii_to_int(_datetime[18]),
-         .tm_min = ((ascii_to_int(_datetime[14]) * 10) + ascii_to_int(_datetime[15]),
+         .tm_min = (ascii_to_int(_datetime[14]) * 10) + ascii_to_int(_datetime[15]),
          .tm_hour = (ascii_to_int(_datetime[11]) * 10) + ascii_to_int(_datetime[12]),
          .tm_mday = (ascii_to_int(_datetime[8]) * 10) + ascii_to_int(_datetime[9]),
          .tm_mon = month_to_int(&_datetime[4]),
