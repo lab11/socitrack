@@ -116,6 +116,7 @@
 #define BLE_CHAR_FIND_MY_TOTTAG                 0x3154
 #define BLE_CHAR_SD_MANAGEMENT_COMMAND          0x3155
 #define BLE_CHAR_SD_MANAGEMENT_DATA             0x3156
+#define BLE_CHAR_VOLTAGE                        0x3157
 #define BLE_CHAR_TIMESTAMP                      0x3158
 
 // Information

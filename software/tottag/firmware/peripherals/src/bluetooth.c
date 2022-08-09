@@ -1,5 +1,6 @@
 // Header inclusions ---------------------------------------------------------------------------------------------------
 
+#include "battery.h"
 #include "ble_advertising.h"
 #include "ble_conn_params.h"
 #include "ble_db_discovery.h"
@@ -32,6 +33,7 @@ static ble_gatts_char_handles_t _ble_char_location_handle = { .value_handle = BL
 static ble_gatts_char_handles_t _ble_char_find_my_tottag_handle = { .value_handle = BLE_CHAR_FIND_MY_TOTTAG };
 static ble_gatts_char_handles_t _ble_char_sd_management_command_handle = { .value_handle = BLE_CHAR_SD_MANAGEMENT_COMMAND };
 static ble_gatts_char_handles_t _ble_char_sd_management_data_handle = { .value_handle = BLE_CHAR_SD_MANAGEMENT_DATA };
+static ble_gatts_char_handles_t _ble_char_voltage_handle = { .value_handle = BLE_CHAR_VOLTAGE };
 static ble_gatts_char_handles_t _ble_char_timestamp_handle = { .value_handle = BLE_CHAR_TIMESTAMP };
 static uint16_t _ble_service_handle = 0, _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
 static uint8_t _ble_address[BLE_GAP_ADDR_LEN] = { 0 }, _scan_buffer_data[BLE_GAP_SCAN_BUFFER_MIN] = { 0 };
@@ -50,7 +52,7 @@ static volatile uint32_t _retrieved_timestamp = 0, _find_my_tottag_counter = 0;
 static const uint8_t _empty_eui[BLE_GAP_ADDR_LEN] = { 0 };
 static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = NULL, *_sd_card_maintenance_mode_flag = NULL;
 static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0;
-static ble_gatts_rw_authorize_reply_params_t _ble_timestamp_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
+static ble_gatts_rw_authorize_reply_params_t _ble_timestamp_voltage_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
 static uint8_t _sd_command_data[APP_BLE_BUFFER_LENGTH] = { 0 };
 static volatile uint8_t _sd_management_command = 0;
 static device_role_t _device_role = HYBRID;
@@ -132,9 +134,9 @@ static void conn_params_init(void)
 
 static void db_discovery_init(void)
 {
-   _ble_timestamp_reply.params.read.offset = 0;
-   _ble_timestamp_reply.params.read.update = 1;
-   _ble_timestamp_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
+   _ble_timestamp_voltage_reply.params.read.offset = 0;
+   _ble_timestamp_voltage_reply.params.read.update = 1;
+   _ble_timestamp_voltage_reply.params.read.gatt_status = BLE_GATT_STATUS_SUCCESS;
    ble_db_discovery_init_t db_init = { .evt_handler = on_ble_service_discovered, .p_gatt_queue = &_ble_gatt_queue };
    APP_ERROR_CHECK(ble_db_discovery_init(&db_init));
 }
@@ -151,6 +153,7 @@ static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, 
    memset(&char_md, 0, sizeof(char_md));
    char_md.char_props.read = read;
    char_md.char_props.write = write;
+   char_md.char_props.write_wo_resp = write;
    char_md.char_props.notify = notify;
 
    // Configure Client Characteristic Configuration Descriptor (CCCD) metadata and add to char_md structure
@@ -203,6 +206,7 @@ static void services_init(void)
    ble_characteristic_add(0, 1, 0, 0, 0, 4, (volatile uint8_t*)&_find_my_tottag_counter, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
    ble_characteristic_add(0, 1, 0, 0, 0, 1, &_sd_management_command, BLE_CHAR_SD_MANAGEMENT_COMMAND, &_ble_char_sd_management_command_handle);
    ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
+   ble_characteristic_add(1, 0, 0, 1, 0, 2, NULL, BLE_CHAR_VOLTAGE, &_ble_char_voltage_handle);
    ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_ble_char_timestamp_handle);
 
    // Register service discovery events
@@ -436,10 +440,20 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       }
       case BLE_GATTS_EVT_RW_AUTHORIZE_REQUEST:
       {
-         uint32_t timestamp = rtc_get_current_time();
-         _ble_timestamp_reply.params.read.len = sizeof(timestamp);
-         _ble_timestamp_reply.params.read.p_data = (uint8_t*)&timestamp;
-         APP_ERROR_CHECK(sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gap_evt.conn_handle, &_ble_timestamp_reply));
+         if (p_ble_evt->evt.gatts_evt.params.authorize_request.request.read.handle == _ble_char_voltage_handle.value_handle)
+         {
+            uint16_t voltage = battery_monitor_get_level_mV();
+            _ble_timestamp_voltage_reply.params.read.len = sizeof(voltage);
+            _ble_timestamp_voltage_reply.params.read.p_data = (uint8_t*)&voltage;
+            APP_ERROR_CHECK(sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gap_evt.conn_handle, &_ble_timestamp_voltage_reply));
+         }
+         else if (p_ble_evt->evt.gatts_evt.params.authorize_request.request.read.handle == _ble_char_timestamp_handle.value_handle)
+         {
+            uint32_t timestamp = rtc_get_current_time();
+            _ble_timestamp_voltage_reply.params.read.len = sizeof(timestamp);
+            _ble_timestamp_voltage_reply.params.read.p_data = (uint8_t*)&timestamp;
+            APP_ERROR_CHECK(sd_ble_gatts_rw_authorize_reply(p_ble_evt->evt.gap_evt.conn_handle, &_ble_timestamp_voltage_reply));
+         }
          break;
       }
       case BLE_GATTC_EVT_READ_RSP:
@@ -634,6 +648,7 @@ void ble_second_has_elapsed(void)
 uint32_t ble_request_timestamp(void)
 {
    // Connect to a discovered device and request the current timestamp
+   uint32_t timestamp = 0;
    if (!_outgoing_ble_connection_active)
    {
       log_printf("INFO: Requesting current timestamp from network...\n");
@@ -644,8 +659,12 @@ uint32_t ble_request_timestamp(void)
       nrfx_atomic_flag_clear(_ble_scanning_flag);
    }
    else if (_retrieved_timestamp)
+   {
+      timestamp = _retrieved_timestamp;
       sd_ble_gap_disconnect(_ble_conn_handle, BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
-   return _retrieved_timestamp;
+      _retrieved_timestamp = 0;
+   }
+   return timestamp;
 }
 
 uint32_t ble_is_network_available(void) { return nrfx_atomic_u32_fetch(&_network_discovered_counter); }
