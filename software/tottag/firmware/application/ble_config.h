@@ -141,7 +141,7 @@
 #define MAXIMUM_VALID_TIMESTAMP                 ((uint32_t)2000000000)
 
 // Storage / Buffers
-#define APP_BLE_BUFFER_LENGTH                   NRF_SDH_BLE_GATT_MAX_MTU_SIZE
+#define APP_BLE_BUFFER_LENGTH                   (NRF_SDH_BLE_GATT_MAX_MTU_SIZE - 8)
 #define APP_SDCARD_BUFFER_LENGTH                10240
 
 #define APP_LOG_BUFFER_LINE                     (10 + 1 + 3*6 + 6 + 1)
