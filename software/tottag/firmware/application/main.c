@@ -34,7 +34,6 @@ static void app_init(void)
 {
    // Initialize flags that are not defaulted to false or 0
    _app_flags.squarepoint_enabled = true;
-   _app_flags.sd_card_inserted = true;
    _app_flags.battery_status_changed = true;
    _app_flags.device_in_motion = true;
    _app_flags.battery_too_low = true;
@@ -119,8 +118,9 @@ static void hardware_init(void)
    }
 
    // Initialize the IMU and wait until an SD card is inserted
+   uint32_t num_retries = 3;
    imu_init(imu_data_handler);
-   while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()))
+   while (!sd_card_init(&_app_flags.sd_card_inserted, ble_get_eui()) && num_retries--)
    {
       buzzer_indicate_error();
       nrf_delay_ms(5000);
@@ -458,10 +458,6 @@ void normal_mode_process(void)
 
    // Update the LED status indicators
    update_leds(ble_is_network_available());
-
-   // Reset board if the SD card has been removed
-   if (!nrfx_atomic_flag_fetch(&_app_flags.sd_card_inserted))
-      nrfx_atomic_flag_set(&_app_flags.device_reset_required);
 }
 
 int main(void)

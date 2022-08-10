@@ -227,6 +227,7 @@ bool sd_card_flush(void)
    if (!sd_card_power_on())
    {
       printf("ERROR: Unable to power on the SD Card!\n");
+      _sd_card_buffer_length = 0;
       sd_card_power_off();
       return false;
    }
