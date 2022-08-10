@@ -475,7 +475,6 @@ int main(void)
    {
       // Go to sleep until something happens
       sd_app_evt_wait();
-      nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 1);
       //TODO: printf("Processing Something: %lu\n", rtc_get_current_time());
 
       // Prohibit all main-loop activity while externally interfacing with the SD card
@@ -485,7 +484,10 @@ int main(void)
          ble_sd_card_maintenance();
       }
       else
+      {
+         nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 1);
          normal_mode_process();
-      nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 0);
+         nrfx_atomic_u32_store(&_app_flags.seconds_in_loop_iteration, 0);
+      }
    }
 }
