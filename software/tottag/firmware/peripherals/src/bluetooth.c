@@ -54,7 +54,7 @@ static nrfx_atomic_flag_t *_ble_advertising_flag = NULL, *_ble_scanning_flag = N
 static nrfx_atomic_u32_t _network_discovered_counter = 0, _time_since_last_network_discovery = 0;
 static ble_gatts_rw_authorize_reply_params_t _ble_timestamp_voltage_reply = { BLE_GATTS_AUTHORIZE_TYPE_READ, {} };
 static uint8_t _sd_command_data[APP_BLE_BUFFER_LENGTH] = { 0 };
-static volatile uint8_t _sd_management_command = 0;
+static volatile uint8_t _sd_management_command = 0, _locations_subscribed = 0, _data_transfer_initiated = 0;
 static device_role_t _device_role = HYBRID;
 
 
@@ -153,7 +153,6 @@ static void ble_characteristic_add(uint8_t read, uint8_t write, uint8_t notify, 
    memset(&char_md, 0, sizeof(char_md));
    char_md.char_props.read = read;
    char_md.char_props.write = write;
-   char_md.char_props.write_wo_resp = write;
    char_md.char_props.notify = notify;
 
    // Configure Client Characteristic Configuration Descriptor (CCCD) metadata and add to char_md structure
@@ -202,10 +201,10 @@ static void services_init(void)
    APP_ERROR_CHECK(sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &service_uuid, &_ble_service_handle));
 
    // Add characteristics
-   ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_LOCATION, &_ble_char_location_handle);
-   ble_characteristic_add(0, 1, 0, 0, 0, 4, (volatile uint8_t*)&_find_my_tottag_counter, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
-   ble_characteristic_add(0, 1, 0, 0, 0, 1, &_sd_management_command, BLE_CHAR_SD_MANAGEMENT_COMMAND, &_ble_char_sd_management_command_handle);
-   ble_characteristic_add(0, 0, 1, 0, 0, 0, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
+   ble_characteristic_add(0, 0, 1, 0, 1, APP_BLE_BUFFER_LENGTH, NULL, BLE_CHAR_LOCATION, &_ble_char_location_handle);
+   ble_characteristic_add(0, 1, 0, 0, 0, 4, NULL, BLE_CHAR_FIND_MY_TOTTAG, &_ble_char_find_my_tottag_handle);
+   ble_characteristic_add(0, 1, 1, 0, 1, APP_BLE_BUFFER_LENGTH, NULL, BLE_CHAR_SD_MANAGEMENT_COMMAND, &_ble_char_sd_management_command_handle);
+   ble_characteristic_add(0, 0, 1, 0, 1, APP_BLE_BUFFER_LENGTH, NULL, BLE_CHAR_SD_MANAGEMENT_DATA, &_ble_char_sd_management_data_handle);
    ble_characteristic_add(1, 0, 0, 1, 0, 2, NULL, BLE_CHAR_VOLTAGE, &_ble_char_voltage_handle);
    ble_characteristic_add(1, 0, 0, 1, 0, 4, NULL, BLE_CHAR_TIMESTAMP, &_ble_char_timestamp_handle);
 
@@ -355,21 +354,35 @@ static void on_ble_write(const ble_evt_t *p_ble_evt)
 {
    // Handle a BLE write event
    const ble_gatts_evt_write_t *p_evt_write = &p_ble_evt->evt.gatts_evt.params.write;
-   if (p_evt_write->handle == _ble_char_find_my_tottag_handle.value_handle)
+   if ((p_evt_write->handle == _ble_char_find_my_tottag_handle.value_handle) && (p_evt_write->len == sizeof(_find_my_tottag_counter)))
    {
       log_printf("INFO: Received BLE event: FIND_MY_TOTTAG\n");
-      log_printf("      Value: %hu, Length: %hu\n", (uint16_t)p_evt_write->data[0], p_evt_write->len);
-      // TODO: DO WE NEED TO STORE THE VALUE, OR IS IT ALREADY IN _find_my_tottag_counter
+      _find_my_tottag_counter = *((const uint32_t*)p_evt_write->data);
    }
    else if (p_evt_write->handle == _ble_char_sd_management_command_handle.value_handle)
    {
-      log_printf("INFO: Received BLE event: SD_CARD_MANAGEMENT, Command = %hu, Length = %hu\n", (uint16_t)p_evt_write->data[0], p_evt_write->len);
-      // TODO: DO WE NEED TO STORE THE VALUE, OR IS IT ALREADY IN _sd_management_command
-      // TODO: May need to set _sd_card_maintenance_mode_flag here if command is != 0, or clear if == 0
-      // TODO: memcpy(_sd_command_data, p_evt_write->data + 1, min(p_evt_write->len - 1, APP_BLE_CHAR_MAX_LEN))
+      if (p_evt_write->len > 1)
+         log_printf("INFO: Received BLE event: STORAGE_MANAGEMENT, Command = %hu, Value = %s\n", (uint16_t)p_evt_write->data[0], (const char*)p_evt_write->data + 1);
+      else
+         log_printf("INFO: Received BLE event: STORAGE_MANAGEMENT, Command = %hu\n", (uint16_t)p_evt_write->data[0]);
+      _sd_management_command = p_evt_write->data[0];
+      nrfx_atomic_flag_set(_sd_card_maintenance_mode_flag);
+      memcpy(_sd_command_data, p_evt_write->data + 1, MIN(p_evt_write->len - 1, APP_BLE_BUFFER_LENGTH));
   }
+   else if (p_evt_write->handle == _ble_char_sd_management_command_handle.cccd_handle)
+      log_printf("INFO: Received BLE event: %s\n", p_evt_write->data[0] ? "LISTEN_FOR_RESULT" : "STOP_LISTENING_FOR_RESULT");
+   else if (p_evt_write->handle == _ble_char_location_handle.cccd_handle)
+   {
+      log_printf("INFO: Received BLE event: %s\n", p_evt_write->data[0] ? "SUBSCRIBE_TO_LOCATIONS" : "UNSUBSCRIBE_FROM_LOCATIONS");
+      _locations_subscribed = p_evt_write->data[0];
+   }
+   else if (p_evt_write->handle == _ble_char_sd_management_data_handle.cccd_handle)
+   {
+      log_printf("INFO: Received BLE event: %s\n", p_evt_write->data[0] ? "INITIATE_DATA_TRANSFER" : "DATA_TRANSFER_COMPLETE");
+      _data_transfer_initiated = p_evt_write->data[0];
+   }
    else
-      log_printf("ERROR: Received unknown BLE event handle: %hu\n", p_evt_write->handle);
+      log_printf("ERROR: Received unknown BLE event: %hu\n", p_evt_write->handle);
 }
 
 static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
@@ -417,7 +430,8 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       }
       case BLE_GAP_EVT_DISCONNECTED:
       {
-         _outgoing_ble_connection_active = 0;
+         memset(_sd_command_data, 0, sizeof(_sd_command_data));
+         _outgoing_ble_connection_active = _locations_subscribed = _sd_management_command = _data_transfer_initiated = 0;
          _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
          break;
@@ -465,25 +479,28 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
       case BLE_GAP_EVT_TIMEOUT:
       {
          sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
-         _outgoing_ble_connection_active = 0;
+         _outgoing_ble_connection_active = _locations_subscribed = _sd_management_command = _data_transfer_initiated = 0;
          _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
+         memset(_sd_command_data, 0, sizeof(_sd_command_data));
          break;
       }
       case BLE_GATTC_EVT_TIMEOUT:
       {
          APP_ERROR_CHECK(sd_ble_gap_disconnect(p_ble_evt->evt.gattc_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
-         _outgoing_ble_connection_active = 0;
+         _outgoing_ble_connection_active = _locations_subscribed = _sd_management_command = _data_transfer_initiated = 0;
          _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
+         memset(_sd_command_data, 0, sizeof(_sd_command_data));
          break;
       }
       case BLE_GATTS_EVT_TIMEOUT:
       {
          APP_ERROR_CHECK(sd_ble_gap_disconnect(p_ble_evt->evt.gatts_evt.conn_handle, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION));
-         _outgoing_ble_connection_active = 0;
+         _outgoing_ble_connection_active = _locations_subscribed = _sd_management_command = _data_transfer_initiated = 0;
          _ble_conn_handle = BLE_CONN_HANDLE_INVALID;
          nrfx_atomic_flag_clear(_sd_card_maintenance_mode_flag);
+         memset(_sd_command_data, 0, sizeof(_sd_command_data));
          break;
       }
       default:
@@ -500,7 +517,7 @@ void ble_evt_handler(ble_evt_t const *p_ble_evt, void *p_context)
 static void ble_transfer_data(uint16_t data_length)
 {
    // Only initiate the transfer if there is a valid connection
-   if (_ble_conn_handle != BLE_CONN_HANDLE_INVALID)
+   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && _data_transfer_initiated)
    {
       // Create the data notification structure
       ble_gatts_hvx_params_t notify_params = {
@@ -522,9 +539,32 @@ static void ble_transfer_data(uint16_t data_length)
    }
 }
 
-static void ble_send_transfer_complete(bool command_successful)
+static void ble_send_transfer_complete(void)
 {
-   // TODO: Implement this (send notification to _ble_char_sd_management_command_handle, once enabled)
+   // Only update the Bluetooth characteristic if there is a valid connection
+   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && _data_transfer_initiated)
+   {
+      // Create the data notification structure
+      uint8_t data = 1;
+      uint16_t length = 1;
+      ble_gatts_hvx_params_t notify_params = {
+         .handle = _ble_char_sd_management_command_handle.value_handle,
+         .type   = BLE_GATT_HVX_NOTIFICATION,
+         .offset = 0,
+         .p_len  = &length,
+         .p_data = &data
+      };
+
+      // Continue updating the notification until it is accepted
+      uint32_t err_code = sd_ble_gatts_hvx(_ble_conn_handle, &notify_params);
+      while (((err_code == NRF_ERROR_RESOURCES) || (err_code == NRF_ERROR_BUSY) || (err_code == NRF_ERROR_INVALID_STATE)) &&
+             (_ble_conn_handle != BLE_CONN_HANDLE_INVALID))
+      {
+         nrf_delay_ms(1);
+         err_code = sd_ble_gatts_hvx(_ble_conn_handle, &notify_params);
+      }
+   }
+   _data_transfer_initiated = 0;
 }
 
 
@@ -603,7 +643,7 @@ uint8_t ble_set_scheduler_eui(const uint8_t* eui, uint8_t num_eui_bytes)
 void ble_update_ranging_data(const uint8_t *data, uint16_t length)
 {
    // Only update the Bluetooth characteristic if there is a valid connection
-   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && (length <= APP_BLE_BUFFER_LENGTH))
+   if ((_ble_conn_handle != BLE_CONN_HANDLE_INVALID) && _locations_subscribed)
    {
       ble_gatts_hvx_params_t notify_params = {
          .handle = _ble_char_location_handle.value_handle,
@@ -661,7 +701,8 @@ uint32_t ble_request_timestamp(void)
    else if (_retrieved_timestamp)
    {
       timestamp = _retrieved_timestamp;
-      sd_ble_gap_disconnect(_ble_conn_handle, BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
+      if (_ble_conn_handle != BLE_CONN_HANDLE_INVALID)
+         sd_ble_gap_disconnect(_ble_conn_handle, BLE_HCI_LOCAL_HOST_TERMINATED_CONNECTION);
       _retrieved_timestamp = 0;
    }
    return timestamp;
@@ -671,48 +712,53 @@ uint32_t ble_is_network_available(void) { return nrfx_atomic_u32_fetch(&_network
 
 void ble_sd_card_maintenance(void)
 {
-   // Determine which SD card maintenance task to carry out
-   switch (_sd_management_command)
+   // Wait until the data transfer initiation request has been received
+   if (_data_transfer_initiated)
    {
-      case BLE_SD_CARD_LIST_FILES:
+      // Determine which SD card maintenance task to carry out
+      switch (_sd_management_command)
       {
-         uint32_t file_size = 0;
-         uint8_t continuation = 0;
-         char file_name[1024] = { 0 };
-         while (sd_card_list_files(file_name, &file_size, continuation++))
+         case BLE_SD_CARD_LIST_FILES:
          {
-            size_t len = strlen(file_name);
-            memcpy(_sd_command_data, "NEW", 3);
-            memcpy(&_sd_command_data[3], &file_size, sizeof(file_size));
-            memcpy(&_sd_command_data[3+sizeof(file_size)], file_name, len);
-            ble_transfer_data(3 + sizeof(file_size) + len);
+            uint32_t file_size = 0;
+            uint8_t continuation = 0;
+            char file_name[1024] = { 0 };
+            while (sd_card_list_files(file_name, &file_size, continuation++))
+            {
+               size_t len = strlen(file_name);
+               memcpy(_sd_command_data, "NEW", 3);
+               memcpy(&_sd_command_data[3], &file_size, sizeof(file_size));
+               memcpy(&_sd_command_data[3+sizeof(file_size)], file_name, len);
+               ble_transfer_data(3 + sizeof(file_size) + len);
+            }
+            ble_send_transfer_complete();
+            break;
          }
-         ble_send_transfer_complete(true);
-         break;
+         case BLE_SD_CARD_DOWNLOAD_FILE:
+         {
+            uint32_t bytes_read;
+            if (sd_card_open_file_for_reading((const char*)_sd_command_data))
+               while ((bytes_read = sd_card_read_reading_file(_sd_command_data, sizeof(_sd_command_data))) != 0)
+                  ble_transfer_data((uint16_t)bytes_read);
+            sd_card_close_reading_file();
+            ble_send_transfer_complete();
+            break;
+         }
+         case BLE_SD_CARD_DELETE_FILE:
+            sd_card_erase_file((const char*)_sd_command_data);
+            ble_send_transfer_complete();
+            break;
+         case BLE_SD_CARD_DELETE_ALL:
+            sd_card_erase_all_files();
+            ble_send_transfer_complete();
+            break;
+         default:
+            ble_send_transfer_complete();
+            break;
       }
-      case BLE_SD_CARD_DOWNLOAD_FILE:
-      {
-         uint32_t bytes_read;
-         bool success = sd_card_open_file_for_reading((const char*)_sd_command_data);
-         if (success)
-            while ((bytes_read = sd_card_read_reading_file(_sd_command_data, sizeof(_sd_command_data))) != 0)
-               ble_transfer_data((uint16_t)bytes_read);
-         sd_card_close_reading_file();
-         ble_send_transfer_complete(success);
-         break;
-      }
-      case BLE_SD_CARD_DELETE_FILE:
-         ble_send_transfer_complete(sd_card_erase_file((const char*)_sd_command_data));
-         break;
-      case BLE_SD_CARD_DELETE_ALL:
-         ble_send_transfer_complete(sd_card_erase_all_files());
-         break;
-      default:
-         ble_send_transfer_complete(false);
-         break;
-   }
 
-   // Clean up command space to get ready for the next command
-   memset(_sd_command_data, 0, sizeof(_sd_command_data));
-   _sd_management_command = 0;
+      // Clean up command space to get ready for the next command
+      memset(_sd_command_data, 0, sizeof(_sd_command_data));
+      _sd_management_command = 0;
+   }
 }
