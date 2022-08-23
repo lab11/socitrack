@@ -20,7 +20,7 @@
 
 static app_flags_t _app_flags = { 0 };
 static bool _charger_plugged_in = false;
-static uint8_t _range_buffer[APP_BLE_BUFFER_LENGTH] = { 0 };
+static uint8_t _range_buffer[APP_BLE_MAX_BUFFER_LENGTH] = { 0 };
 static volatile uint16_t _range_buffer_length = 0;
 
 
@@ -254,7 +254,7 @@ static uint32_t squarepoint_data_handler(uint8_t *data, uint32_t len, uint32_t t
             }
 
          // Copy the ranging data to the ranging buffer
-         _range_buffer_length = (uint16_t)MIN(len - 1, APP_BLE_BUFFER_LENGTH);
+         _range_buffer_length = (uint16_t)MIN(len - 1, APP_BLE_MAX_BUFFER_LENGTH);
          memcpy(_range_buffer, data + 1, _range_buffer_length);
 
          // Update the application epoch
