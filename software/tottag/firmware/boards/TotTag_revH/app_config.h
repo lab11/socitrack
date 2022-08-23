@@ -22,6 +22,7 @@
 #define NRFX_SPI_ENABLED 1
 #define NRFX_SPI0_ENABLED 1
 #define NRFX_SPI2_ENABLED 1
+#define NRF_SPI_DRV_MISO_PULLUP_CFG 3
 
 #define NRF_CLOCK_ENABLED 1
 #define NRFX_CLOCK_ENABLED 1
@@ -75,7 +76,7 @@
 #define NRF_PWR_MGMT_CONFIG_FPU_SUPPORT_ENABLED 1
 
 #define APP_SDCARD_ENABLED 1
-#define APP_SDCARD_SPI_INSTANCE 0
+#define APP_SDCARD_SPI_INSTANCE 2
 
 #define SEGGER_RTT_CONFIG_BUFFER_SIZE_UP 2048
 #define SEGGER_RTT_CONFIG_DEFAULT_MODE 0  // Change to 2 to ensure all printf contents are output, will crash if no debugger attached

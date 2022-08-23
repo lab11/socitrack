@@ -5560,7 +5560,7 @@
 // <3=> NRF_GPIO_PIN_PULLUP 
 
 #ifndef NRF_SPI_DRV_MISO_PULLUP_CFG
-#define NRF_SPI_DRV_MISO_PULLUP_CFG 1
+#define NRF_SPI_DRV_MISO_PULLUP_CFG 3
 #endif
 
 // <e> SPI0_ENABLED - Enable SPI0 instance
