@@ -27,7 +27,7 @@ STORAGE_COMMAND_DELETE_FILE = 0x03
 STORAGE_COMMAND_DELETE_ALL = 0x04
 
 
-# ASYNCHRONOUS CALLBACKS ----------------------------------------------------------------------------------------------
+# GLOBAL VARIABLES ----------------------------------------------------------------------------------------------------
 
 storage_data = None
 total_file_size = 0
@@ -35,6 +35,9 @@ bytes_downloaded = 0
 num_seconds_elapsed = 0
 storage_data_file = None
 management_operation_complete = True
+
+
+# ASYNCHRONOUS CALLBACKS ----------------------------------------------------------------------------------------------
 
 def management_result_callback(_sender_uuid, data):
   global management_operation_complete
@@ -160,12 +163,15 @@ async def list_files(device):
   global management_operation_complete
   try:
     async with BleakClient(device) as client:
-      for service in await client.get_services():
+      data_characteristic = None
+      services = await client.get_services()
+      for service in services:
         for characteristic in service.characteristics:
           if characteristic.uuid == STORAGE_DATA_SERVICE_UUID:
             data_characteristic = characteristic
+      for service in services:
         for characteristic in service.characteristics:
-          if characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
+          if data_characteristic and characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
             try:
               management_operation_complete = False
               await client.write_gatt_char(characteristic, struct.pack('B', STORAGE_COMMAND_LIST_FILES), True)
@@ -211,12 +217,15 @@ async def download_single_file(device):
     bytes_downloaded = 0
     try:
       async with BleakClient(device) as client:
-        for service in await client.get_services():
+        data_characteristic = None
+        services = await client.get_services()
+        for service in services:
           for characteristic in service.characteristics:
             if characteristic.uuid == STORAGE_DATA_SERVICE_UUID:
               data_characteristic = characteristic
+        for service in services:
           for characteristic in service.characteristics:
-            if characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
+            if data_characteristic and characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
               try:
                 file_name = file_names[idx].encode()
                 management_operation_complete = False
@@ -245,12 +254,15 @@ async def delete_all_files(device):
   if idx == 1:
     try:
       async with BleakClient(device) as client:
-        for service in await client.get_services():
+        data_characteristic = None
+        services = await client.get_services()
+        for service in services:
           for characteristic in service.characteristics:
             if characteristic.uuid == STORAGE_DATA_SERVICE_UUID:
               data_characteristic = characteristic
+        for service in services:
           for characteristic in service.characteristics:
-            if characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
+            if data_characteristic and characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
               try:
                 management_operation_complete = False
                 await client.write_gatt_char(characteristic, struct.pack('B', STORAGE_COMMAND_DELETE_ALL), True)
@@ -275,12 +287,15 @@ async def delete_single_file(device):
   idx = await prompt_user('\nEnter the index of the file to delete: ', len(file_names))
   try:
     async with BleakClient(device) as client:
-      for service in await client.get_services():
+      data_characteristic = None
+      services = await client.get_services()
+      for service in services:
         for characteristic in service.characteristics:
           if characteristic.uuid == STORAGE_DATA_SERVICE_UUID:
             data_characteristic = characteristic
+      for service in services:
         for characteristic in service.characteristics:
-          if characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
+          if data_characteristic and characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
             try:
               file_name = file_names[idx].encode()
               management_operation_complete = False
