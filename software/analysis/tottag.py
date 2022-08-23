@@ -196,11 +196,46 @@ async def list_files(device):
 
 async def download_all_files(device):
   global storage_data
+  global total_file_size
+  global bytes_downloaded
+  global storage_data_file
   global management_operation_complete
-  print('Not implemented yet')
-  #global management_operation_complete
-  #management_operation_complete = False
-  pass
+  file_names, file_sizes = await list_files(device)
+  for idx in range(len(file_names)):
+    with open(file_names[idx], 'wb') as file:
+      total_file_size = file_sizes[idx]
+      storage_data_file = file
+      bytes_downloaded = 0
+      try:
+        async with BleakClient(device) as client:
+          data_characteristic = None
+          services = await client.get_services()
+          for service in services:
+            for characteristic in service.characteristics:
+              if characteristic.uuid == STORAGE_DATA_SERVICE_UUID:
+                data_characteristic = characteristic
+          for service in services:
+            for characteristic in service.characteristics:
+              if data_characteristic and characteristic.uuid == STORAGE_COMMAND_SERVICE_UUID:
+                try:
+                  file_name = file_names[idx].encode()
+                  management_operation_complete = False
+                  print('\nDownloading {}...'.format(file_names[idx]))
+                  await client.write_gatt_char(characteristic, struct.pack('B{}s'.format(len(file_name)), STORAGE_COMMAND_DOWNLOAD_FILE, file_name), True)
+                  await client.start_notify(characteristic, management_result_callback)
+                  await client.start_notify(data_characteristic, storage_data_callback)
+                  while not management_operation_complete:
+                    await asyncio.sleep(1)
+                  await client.stop_notify(data_characteristic)
+                  await client.stop_notify(characteristic)
+                  print('\nFile successfully downloaded to {}'.format(file_names[idx]))
+                except Exception as e:
+                  print('    ERROR: Unable to download a file from the TotTag!')
+                  print('           {}'.format(e))
+      except Exception as e:
+        print('ERROR: Unable to connect to TotTag {}'.format(device.address))
+    storage_data_file = None
+    total_file_size = bytes_downloaded = 0
 
 
 async def download_single_file(device):
@@ -236,7 +271,7 @@ async def download_single_file(device):
                   await asyncio.sleep(1)
                 await client.stop_notify(data_characteristic)
                 await client.stop_notify(characteristic)
-                print('\nFile successfully downloaded to {}'.format(file_name))
+                print('\nFile successfully downloaded to {}'.format(file_names[idx]))
               except Exception as e:
                 print('    ERROR: Unable to download a file from the TotTag!')
                 print('           {}'.format(e))
@@ -250,7 +285,8 @@ async def delete_all_files(device):
   global storage_data
   global management_operation_complete
   idx = await prompt_user('\nAre you sure you want to delete ALL stored log files (1 for YES, 0 for NO): ', 2)
-  idx = await prompt_user('Are you absolutely POSITIVE you want to delete ALL stored log files (1 for YES, 0 for NO): ', 2)
+  if idx == 1:
+    idx = await prompt_user('Are you absolutely POSITIVE you want to delete ALL stored log files (1 for YES, 0 for NO): ', 2)
   if idx == 1:
     try:
       async with BleakClient(device) as client:
