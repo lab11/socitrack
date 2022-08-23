@@ -58,9 +58,9 @@ static void spi_init(void)
    nrfx_gpiote_out_config_t sclk_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_config_t sclk_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_config_t sclk_rtc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   nrfx_gpiote_out_init(SD_CARD_SPI_SCLK, &cs_sd_pin_config);
-   nrfx_gpiote_out_init(IMU_SPI_SCLK, &cs_imu_pin_config);
-   nrfx_gpiote_out_init(RTC_SPI_SCLK, &cs_rtc_pin_config);
+   nrfx_gpiote_out_init(SD_CARD_SPI_SCLK, &sclk_sd_pin_config);
+   nrfx_gpiote_out_init(IMU_SPI_SCLK, &sclk_imu_pin_config);
+   nrfx_gpiote_out_init(RTC_SPI_SCLK, &sclk_rtc_pin_config);
 }
 
 static void squarepoint_comms_init(void)

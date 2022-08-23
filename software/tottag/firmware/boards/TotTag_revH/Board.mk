@@ -39,7 +39,7 @@ BOARD_SOURCES += \
 	ble_srv_common.c\
 	diskio_blkdev.c\
 	ff.c\
-	unicode.c\
+	ffunicode.c\
 	nrf_atomic.c\
 	nrf_balloc.c\
 	nrf_ble_gatt.c\

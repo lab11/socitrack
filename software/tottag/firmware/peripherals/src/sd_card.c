@@ -99,7 +99,8 @@ static bool sd_card_power_on(void)
          case FR_NO_FILESYSTEM:
          {
             BYTE work[512];
-            ff_result = f_mkfs("", FM_ANY, 0, work, sizeof(work));
+            MKFS_PARM fmt_opt = {FM_FAT32, 1, 512, 4096, 0};
+            ff_result = f_mkfs("0:", &fmt_opt, work, sizeof(work));
             if (ff_result != FR_OK)
             {
                printf("ERROR: Failed to create a new SD card filesystem: %d\n", ff_result);
