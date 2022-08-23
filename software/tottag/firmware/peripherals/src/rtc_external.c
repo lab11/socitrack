@@ -90,13 +90,12 @@ static bool ab1815_wait_for_ready(uint16_t timeout_ms)
    }
 }
 
-static bool ab1815_init(void)
+static void ab1815_init(void)
 {
-   // Setup interrupt pins and wait until the chip becomes available
+   // Setup interrupt pins
    nrf_gpio_cfg_input(RTC_INT, NRF_GPIO_PIN_PULLUP);
    nrfx_gpiote_out_config_t rtc_wdi_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
    nrfx_gpiote_out_init(RTC_WDI, &rtc_wdi_pin_config);
-   return ab1815_wait_for_ready(1500);
 }
 
 static bool ab1815_read_reg(uint8_t reg, uint8_t *read_buf, size_t len)
@@ -153,7 +152,7 @@ static bool ab1815_set_config(void)
    // Control1
    uint8_t write = _ctrl_config.stop << 7 | _ctrl_config.hour_12 << 6 | _ctrl_config.OUTB     << 5 |
                    _ctrl_config.OUT  << 4 | _ctrl_config.rst_pol << 3 | _ctrl_config.auto_rst << 2 |
-                                      0x2 | _ctrl_config.write_rtc;
+                   _ctrl_config.write_rtc;
    if (!ab1815_write_reg(AB1815_CONTROL1, &write, 1))
       return false;
 
@@ -175,7 +174,15 @@ static bool ab1815_set_config(void)
    if (!ab1815_write_reg(AB1815_CONFIGURATION_KEY, &write, 1))
       return false;
    write = 0;
-   return ab1815_write_reg(AB1815_BATMODE, &write, 1);
+   if (!ab1815_write_reg(AB1815_BATMODE, &write, 1))
+      return false;
+
+   // Disable the Countdown Timer
+   write = 0;
+   if (!ab1815_write_reg(AB1815_COUNTDOWN_CTRL, &write, 1))
+      return false;
+   write = 0xFF;
+   return ab1815_write_reg(AB1815_COUNTDOWN_TIMER, &write, 1);
 }
 
 static bool ab1815_set_time(const struct tm *time_struct)
@@ -312,6 +319,12 @@ bool rtc_external_init(void)
    _rtc_spi_config.mode = NRF_SPI_MODE_0;
    _rtc_spi_config.frequency = NRF_SPI_FREQ_1M;
    bool success = (nrfx_spi_init(&_rtc_spi_instance, &_rtc_spi_config, NULL, NULL) == NRFX_SUCCESS);
+
+   // Wait for the RTC chip to become ready and reset its status registers
+   uint8_t val = 0;
+   ab1815_wait_for_ready(1000);
+   ab1815_read_reg(AB1815_STATUS, &val, 1);
+   ab1815_read_reg(AB1815_STATUS, &val, 1);
 
    // Set configurations
    success = (success && ab1815_clear_watchdog());

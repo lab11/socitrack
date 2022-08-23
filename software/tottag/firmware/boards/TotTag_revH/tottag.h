@@ -64,6 +64,3 @@
 #define STM_WAKEUP                   NRF_GPIO_PIN_MAP(0,26)
 #define STM_I2C_SCL                  NRF_GPIO_PIN_MAP(1,9)
 #define STM_I2C_SDA                  NRF_GPIO_PIN_MAP(0,12)
-
-// Unused GPIO pins
-#define UNUSED_GPIO_PINS {{0,3},{0,9},{0,10},{0,19},{0,21},{0,27},{0,28},{0,30},{1,1},{1,6},{1,8},{1,10},{1,11},{1,12},{1,13},{1,14}}

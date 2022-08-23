@@ -42,6 +42,10 @@ static void app_init(void)
 
 static void spi_init(void)
 {
+   // Make sure the SD Card starts out disabled
+   nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   APP_ERROR_CHECK(nrfx_gpiote_out_init(SD_CARD_ENABLE, &sd_enable_pin_config));
+
    // Set up and deactivate all Chip Selects (CS)
    nrfx_gpiote_out_config_t cs_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
    nrfx_gpiote_out_config_t cs_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(1);
@@ -50,9 +54,13 @@ static void spi_init(void)
    APP_ERROR_CHECK(nrfx_gpiote_out_init(IMU_SPI_CS, &cs_imu_pin_config));
    APP_ERROR_CHECK(nrfx_gpiote_out_init(RTC_SPI_CS, &cs_rtc_pin_config));
 
-   // Make sure the SD Card starts out disabled
-   nrfx_gpiote_out_config_t sd_enable_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
-   APP_ERROR_CHECK(nrfx_gpiote_out_init(SD_CARD_ENABLE, &sd_enable_pin_config));
+   // Make sure all SPI clocks are initially disabled
+   nrfx_gpiote_out_config_t sclk_sd_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_config_t sclk_imu_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_config_t sclk_rtc_pin_config = NRFX_GPIOTE_CONFIG_OUT_SIMPLE(0);
+   nrfx_gpiote_out_init(SD_CARD_SPI_SCLK, &cs_sd_pin_config);
+   nrfx_gpiote_out_init(IMU_SPI_SCLK, &cs_imu_pin_config);
+   nrfx_gpiote_out_init(RTC_SPI_SCLK, &cs_rtc_pin_config);
 }
 
 static void squarepoint_comms_init(void)
