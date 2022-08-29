@@ -101,9 +101,9 @@ static bool sd_card_power_on(void)
             BYTE work[512];
             MKFS_PARM fmt_opt = { .fmt = FM_FAT32,
                                   .n_fat = 1,
-                                  .align = SDC_SECTOR_SIZE,
+                                  .align = 0,
                                   .n_root = 0,
-                                  .au_size = 4096};
+                                  .au_size = SDC_SECTOR_SIZE };
             ff_result = f_mkfs("", &fmt_opt, work, sizeof(work));
             if (ff_result != FR_OK)
             {
