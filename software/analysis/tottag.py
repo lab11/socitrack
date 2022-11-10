@@ -377,13 +377,13 @@ async def parse_file_listing(listing):
   while idx < (len(listing) - 3):
     if listing[idx] == 78 and listing[idx+1] == 69 and listing[idx+2] == 87:
       if file_name_start != 0:
-        file_names.append(listing[file_name_start:file_name_end].decode())
+        file_names.append(listing[file_name_start:file_name_end].decode('latin-1'))
       file_sizes.append(struct.unpack('<I', listing[(idx+3):(idx+7)])[0])
       file_name_start = idx + 7
     idx += 1
     file_name_end = idx
   if len(file_sizes) != 0:
-    file_names.append(listing[file_name_start:file_name_end+3].decode())
+    file_names.append(listing[file_name_start:file_name_end+3].decode('latin-1'))
   return file_sizes, file_names
 
 
