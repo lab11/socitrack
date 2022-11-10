@@ -8,6 +8,8 @@ from bleak import BleakClient, BleakScanner
 import asyncio
 import struct
 import sys
+from datetime import datetime, timezone
+from dateutil import tz
 
 
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
@@ -99,7 +101,11 @@ async def fetch_current_timestamp(device):
           if characteristic.uuid == TIMESTAMP_SERVICE_UUID:
             try:
               timestamp = bytes(await client.read_gatt_char(characteristic))
-              print('    Timestamp: {}'.format(struct.unpack('<I', timestamp)[0]))
+              unpacked_timestamp = struct.unpack('<I', timestamp)[0]
+              utc_time = datetime.utcfromtimestamp(unpacked_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+              local_time = datetime.utcfromtimestamp(unpacked_timestamp).replace(tzinfo=timezone.utc).astimezone(tz.gettz()).strftime('%Y-%m-%d %H:%M:%S')
+              print('    Timestamp: {}'.format(unpacked_timestamp))
+              print(f'    UTC: {utc_time}  LOCAL: {local_time}')
             except Exception as e:
               print('    ERROR: Unable to read timestamp from the TotTag!')
               print('           {}'.format(e))
