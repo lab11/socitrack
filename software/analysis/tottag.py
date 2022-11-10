@@ -148,12 +148,25 @@ async def manage_tottag_storage(device):
   while await storage_management_menu(device):
     print()
 
+async def return_to_device_selection(_):
+    print('\nChoose the index of the TotTag to connect to:\n')
+    for idx, device_option in enumerate(device_list):
+        print('   [{}]: {}'.format(idx, device_option.address))
+    idx = await prompt_user('\nDesired TotTag index: ', len(device_list))
+    device = device_list[idx]
+    print('\nConnecting to TotTag {}...'.format(device.address))
+
+    # Display main menu and wait until user selects 'Exit'
+    while await main_menu(device):
+      print()
+    print('Exiting TotTag Dashboard\n')
+        
 
 async def exit_dashboard(_):
   return
 
 operations = [find_my_tottag, fetch_current_timestamp, fetch_current_voltage,
-              subscribe_to_realtime_location_updates, manage_tottag_storage, exit_dashboard]
+              subscribe_to_realtime_location_updates, manage_tottag_storage, return_to_device_selection,exit_dashboard]
 
 
 # STORAGE OPERATIONS --------------------------------------------------------------------------------------------------
@@ -391,12 +404,14 @@ async def main_menu(device):
 
   # Create the main menu prompt
   menu_string = '\nMAIN MENU\n---------\n\n'
+      
   for idx, operation in enumerate(operations):
     menu_string += '[{}]: {}\n'.format(idx, operation.__name__.replace('_', ' ').title().replace('Tottag', 'TotTag'))
   menu_string += '\nEnter index of desired operation: '
 
   # Continually display the main menu
   idx = -1
+      
   while idx != (len(operations) - 1):
     idx = await prompt_user(menu_string, len(operations))
     await operations[idx](device)
@@ -435,11 +450,15 @@ async def run():
   await scanner.stop()
 
   # Prompt user about which TotTag to connect to
+  global device_list 
   device_list = [device for device in scanner.discovered_devices if device.name == 'TotTag']
   if len(device_list) == 0:
     print('No devices found!\n')
     return
   elif len(device_list) == 1:
+    # For single device, remove the manu item for device selection
+    if len(device_list)==1:
+        operations.remove(return_to_device_selection)
     device = device_list[0]
   else:
     print('\nChoose the index of the TotTag to connect to:\n')
