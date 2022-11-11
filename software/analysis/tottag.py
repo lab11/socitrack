@@ -165,11 +165,12 @@ async def return_to_device_selection(_):
     # Display main menu and wait until user selects 'Exit'
     while await main_menu(device):
       print()
-    print('Exiting TotTag Dashboard\n')
+    
         
 
 async def exit_dashboard(_):
-  return
+  print('Exiting TotTag Dashboard\n')
+  exit()
 
 operations = [find_my_tottag, fetch_current_timestamp, fetch_current_voltage,
               subscribe_to_realtime_location_updates, manage_tottag_storage, return_to_device_selection,exit_dashboard]
@@ -477,7 +478,6 @@ async def run():
   # Display main menu and wait until user selects 'Exit'
   while await main_menu(device):
     print()
-  print('Exiting TotTag Dashboard\n')
 
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
