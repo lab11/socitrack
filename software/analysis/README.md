@@ -11,6 +11,15 @@ For Python 2: `pip install -r requirements.txt`
 
 For Python 3: `pip3 install -r requirements.txt`
 
+Quick Visualization
+----------
+For quick check of data quality, if the `quickplot_folder.py` is already in the folder with logs from a single day, use 
+
+    python3 quickplot_folder.py
+
+Otherwise, use
+
+    python3 quickplot_folder.py path_to_the_single_day_folder
 
 Management
 ----------
