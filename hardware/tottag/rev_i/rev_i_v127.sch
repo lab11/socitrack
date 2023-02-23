@@ -5659,103 +5659,107 @@ High-power, low thermal resistance package.</description>
 <text x="0" y="2.54" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <text x="0" y="-2.286" size="0.762" layer="27" font="vector" ratio="12" align="top-center">&gt;VALUE</text>
 </package>
-<package name="4-XDFN-EP" urn="urn:adsk.eagle:footprint:38978640/1" library_version="7">
+<package name="4-XDFN-EP" urn="urn:adsk.eagle:footprint:38978640/2" library_version="8">
 <smd name="PAD" x="0" y="0" dx="0.2" dy="0.2" layer="1" rot="R45" stop="no" cream="no"/>
-<smd name="1" x="-0.535" y="0.535" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
-<smd name="4" x="0.535" y="0.535" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
-<smd name="2" x="-0.535" y="-0.535" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
-<smd name="3" x="0.535" y="-0.535" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
+<smd name="1" x="-0.505" y="0.325" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
+<smd name="4" x="0.505" y="0.325" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
+<smd name="2" x="-0.505" y="-0.325" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
+<smd name="3" x="0.505" y="-0.325" dx="0.21" dy="0.21" layer="1" stop="no" cream="no"/>
 <polygon width="0.1524" layer="29" pour="solid">
-<vertex x="-0.5638" y="0.5062"/>
-<vertex x="-0.4615625" y="0.5062"/>
-<vertex x="-0.4039625" y="0.5638"/>
-<vertex x="-0.5638" y="0.5638"/>
+<vertex x="-0.5338" y="0.2962"/>
+<vertex x="-0.4615625" y="0.2962"/>
+<vertex x="-0.4039625" y="0.3538"/>
+<vertex x="-0.5338" y="0.3538"/>
 </polygon>
 <polygon width="0.1524" layer="1" pour="solid">
-<vertex x="-0.6438" y="0.4262"/>
-<vertex x="-0.4215625" y="0.4262"/>
-<vertex x="-0.2762" y="0.5715625"/>
-<vertex x="-0.2762" y="0.6338"/>
-<vertex x="-0.6438" y="0.6338"/>
+<vertex x="-0.5838" y="0.2462"/>
+<vertex x="-0.4415625" y="0.2462"/>
+<vertex x="-0.2839625" y="0.4038"/>
+<vertex x="-0.5838" y="0.4038"/>
 </polygon>
 <polygon width="0.1524" layer="31" pour="solid">
-<vertex x="-0.5438" y="0.5262"/>
-<vertex x="-0.4715625" y="0.5262"/>
-<vertex x="-0.4539625" y="0.5438"/>
-<vertex x="-0.5438" y="0.5438"/>
-</polygon>
-<polygon width="0.1524" layer="1" pour="solid">
-<vertex x="0.2762" y="-0.6338"/>
-<vertex x="0.6438" y="-0.6338"/>
-<vertex x="0.6438" y="-0.4262"/>
-<vertex x="0.4215625" y="-0.4262"/>
-<vertex x="0.2762" y="-0.5715625"/>
+<vertex x="-0.5138" y="0.3162"/>
+<vertex x="-0.4715625" y="0.3162"/>
+<vertex x="-0.4539625" y="0.3338"/>
+<vertex x="-0.5138" y="0.3338"/>
 </polygon>
 <polygon width="0.1524" layer="29" pour="solid">
-<vertex x="0.4039625" y="-0.5638"/>
-<vertex x="0.5638" y="-0.5638"/>
-<vertex x="0.5638" y="-0.5062"/>
-<vertex x="0.4615625" y="-0.5062"/>
+<vertex x="-0.5338" y="-0.3538"/>
+<vertex x="-0.4039625" y="-0.3538"/>
+<vertex x="-0.4615625" y="-0.2962"/>
+<vertex x="-0.5338" y="-0.2962"/>
 </polygon>
 <polygon width="0.1524" layer="31" pour="solid">
-<vertex x="0.4539625" y="-0.5438"/>
-<vertex x="0.5438" y="-0.5438"/>
-<vertex x="0.5438" y="-0.5262"/>
-<vertex x="0.4715625" y="-0.5262"/>
+<vertex x="-0.5138" y="-0.3338"/>
+<vertex x="-0.4539625" y="-0.3338"/>
+<vertex x="-0.4715625" y="-0.3162"/>
+<vertex x="-0.5138" y="-0.3162"/>
 </polygon>
 <polygon width="0.1524" layer="1" pour="solid">
-<vertex x="-0.6438" y="-0.6438"/>
-<vertex x="-0.2762" y="-0.6438"/>
-<vertex x="-0.2762" y="-0.5815625"/>
-<vertex x="-0.4215625" y="-0.4362"/>
-<vertex x="-0.6438" y="-0.4362"/>
+<vertex x="-0.5838" y="-0.4038"/>
+<vertex x="-0.2839625" y="-0.4038"/>
+<vertex x="-0.4415625" y="-0.2462"/>
+<vertex x="-0.5838" y="-0.2462"/>
 </polygon>
 <polygon width="0.1524" layer="29" pour="solid">
-<vertex x="-0.5638" y="-0.5638"/>
-<vertex x="-0.4039625" y="-0.5638"/>
-<vertex x="-0.4615625" y="-0.5062"/>
-<vertex x="-0.5638" y="-0.5062"/>
+<vertex x="0.4039625" y="-0.3538"/>
+<vertex x="0.5338" y="-0.3538"/>
+<vertex x="0.5338" y="-0.2962"/>
+<vertex x="0.4615625" y="-0.2962"/>
 </polygon>
 <polygon width="0.1524" layer="31" pour="solid">
-<vertex x="-0.5438" y="-0.5438"/>
-<vertex x="-0.4439625" y="-0.5438"/>
-<vertex x="-0.4615625" y="-0.5262"/>
-<vertex x="-0.5438" y="-0.5262"/>
+<vertex x="0.4539625" y="-0.3338"/>
+<vertex x="0.5138" y="-0.3338"/>
+<vertex x="0.5138" y="-0.3162"/>
+<vertex x="0.4715625" y="-0.3162"/>
 </polygon>
 <polygon width="0.1524" layer="1" pour="solid">
-<vertex x="0.4215625" y="0.4362"/>
-<vertex x="0.6438" y="0.4362"/>
-<vertex x="0.6438" y="0.6438"/>
-<vertex x="0.2762" y="0.6438"/>
-<vertex x="0.2762" y="0.5815625"/>
-</polygon>
-<polygon width="0.1524" layer="31" pour="solid">
-<vertex x="0.4615625" y="0.5262"/>
-<vertex x="0.5438" y="0.5262"/>
-<vertex x="0.5438" y="0.5438"/>
-<vertex x="0.4439625" y="0.5438"/>
+<vertex x="0.2839625" y="-0.4038"/>
+<vertex x="0.5838" y="-0.4038"/>
+<vertex x="0.5838" y="-0.2462"/>
+<vertex x="0.4415625" y="-0.2462"/>
 </polygon>
 <polygon width="0.1524" layer="29" pour="solid">
-<vertex x="0.4615625" y="0.5062"/>
-<vertex x="0.5638" y="0.5062"/>
-<vertex x="0.5638" y="0.5638"/>
-<vertex x="0.4039625" y="0.5638"/>
+<vertex x="0.4615625" y="0.2962"/>
+<vertex x="0.5338" y="0.2962"/>
+<vertex x="0.5338" y="0.3538"/>
+<vertex x="0.4039625" y="0.3538"/>
 </polygon>
-<rectangle x1="-0.72" y1="0.35" x2="-0.64" y2="0.43" layer="48"/>
-<rectangle x1="-0.36" y1="0.44" x2="-0.28" y2="0.52" layer="48" rot="R45"/>
-<rectangle x1="-0.42" y1="0.46" x2="-0.4" y2="0.48" layer="48" rot="R45"/>
+<polygon width="0.1524" layer="31" pour="solid">
+<vertex x="0.4715625" y="0.3162"/>
+<vertex x="0.5138" y="0.3162"/>
+<vertex x="0.5138" y="0.3338"/>
+<vertex x="0.4539625" y="0.3338"/>
+</polygon>
+<polygon width="0.1524" layer="1" pour="solid">
+<vertex x="0.4415625" y="0.2462"/>
+<vertex x="0.5838" y="0.2462"/>
+<vertex x="0.5838" y="0.4038"/>
+<vertex x="0.2839625" y="0.4038"/>
+</polygon>
+<rectangle x1="-0.66" y1="0.17" x2="-0.61" y2="0.22" layer="47"/>
 <rectangle x1="-0.24" y1="-0.24" x2="0.24" y2="0.24" layer="29" rot="R45"/>
-<rectangle x1="-0.28" y1="-0.28" x2="0.28" y2="0.28" layer="1" rot="R45"/>
+<rectangle x1="-0.29" y1="-0.29" x2="0.29" y2="0.29" layer="1" rot="R45"/>
 <rectangle x1="-0.22" y1="-0.22" x2="0.22" y2="0.22" layer="31" rot="R45"/>
-<text x="-0.45" y="0.73" size="0.03" layer="48" align="bottom-center">Odd land pattern.
+<rectangle x1="-0.66" y1="0.43" x2="-0.61" y2="0.48" layer="47"/>
+<rectangle x1="-0.66" y1="-0.48" x2="-0.61" y2="-0.43" layer="47"/>
+<rectangle x1="-0.66" y1="-0.22" x2="-0.61" y2="-0.17" layer="47"/>
+<rectangle x1="-0.25" y1="0.43" x2="-0.2" y2="0.48" layer="47"/>
+<rectangle x1="-0.25" y1="-0.48" x2="-0.2" y2="-0.43" layer="47"/>
+<rectangle x1="0.61" y1="-0.48" x2="0.66" y2="-0.43" layer="47"/>
+<rectangle x1="0.61" y1="0.43" x2="0.66" y2="0.48" layer="47"/>
+<text x="0" y="0.55" size="0.03" layer="48" align="bottom-center">Odd land pattern.
 Explicit metal under solder mask.
 Cream is an estimate.</text>
-<text x="0" y="1.27" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="1.016" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
 <wire x1="-0.5" y1="0.5" x2="0.5" y2="0.5" width="0.03" layer="21"/>
 <wire x1="0.5" y1="0.5" x2="0.5" y2="-0.5" width="0.03" layer="21"/>
 <wire x1="0.5" y1="-0.5" x2="-0.5" y2="-0.5" width="0.03" layer="21"/>
 <wire x1="-0.5" y1="-0.5" x2="-0.5" y2="0.5" width="0.03" layer="21"/>
-<circle x="-0.9" y="0.9" radius="0.0725625" width="0.05" layer="21"/>
+<wire x1="-0.43" y1="0.22" x2="0.43" y2="0.22" width="0.01" layer="47"/>
+<wire x1="0" y1="0" x2="0" y2="0.41" width="0.01" layer="47"/>
+<wire x1="-0.338996875" y1="-0.30899375" x2="-0.183434375" y2="-0.15343125" width="0.01" layer="47"/>
+<circle x="-0.762" y="0.762" radius="0.0725625" width="0.05" layer="21"/>
 </package>
 </packages>
 <packages3d>
@@ -5766,7 +5770,7 @@ Cream is an estimate.</text>
 <packageinstance name="SON45P300X300X80-13T160X250N"/>
 </packageinstances>
 </package3d>
-<package3d name="4-XDFN-EP" urn="urn:adsk.eagle:package:38978642/1" type="model">
+<package3d name="4-XDFN-EP" urn="urn:adsk.eagle:package:38978642/2" type="model">
 <packageinstances>
 <packageinstance name="4-XDFN-EP"/>
 </packageinstances>
@@ -5877,7 +5881,7 @@ Cream is an estimate.</text>
 </device>
 </devices>
 </deviceset>
-<deviceset name="TPS7A02" urn="urn:adsk.eagle:component:38978644/1" prefix="VR" library_version="7">
+<deviceset name="TPS7A02" urn="urn:adsk.eagle:component:38978644/2" prefix="VR" library_version="8">
 <gates>
 <gate name="G$1" symbol="TPS7A02" x="0" y="0"/>
 </gates>
@@ -5890,7 +5894,7 @@ Cream is an estimate.</text>
 <connect gate="G$1" pin="OUT" pad="1"/>
 </connects>
 <package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:38978642/1"/>
+<package3dinstance package3d_urn="urn:adsk.eagle:package:38978642/2"/>
 </package3dinstances>
 <technologies>
 <technology name="">
@@ -7857,7 +7861,7 @@ FIDUCIAL</description>
 <part name="+1V9" library="regulators" library_urn="urn:adsk.eagle:library:20878889" deviceset="+1V8" device=""/>
 <part name="JP7" library="SparkFun-Jumpers" library_urn="urn:adsk.eagle:library:528" deviceset="JUMPER-SMT_2_NC_TRACE" device="_SILK" package3d_urn="urn:adsk.eagle:package:39281/1"/>
 <part name="TP7" library="headers" deviceset="TEST-POINT" device=""/>
-<part name="VR2" library="regulators" library_urn="urn:adsk.eagle:library:20878889" deviceset="TPS7A02" device="18PDQNR" package3d_urn="urn:adsk.eagle:package:38978642/1"/>
+<part name="VR2" library="regulators" library_urn="urn:adsk.eagle:library:20878889" deviceset="TPS7A02" device="18PDQNR" package3d_urn="urn:adsk.eagle:package:38978642/2"/>
 <part name="SUPPLY21" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R28" library="passives" deviceset="RESISTOR" device="0402_RES" value="100k">
 <attribute name="MPN" value="RT0402BRE07100KL"/>
@@ -9941,7 +9945,6 @@ EN &gt; 0.3V</text>
 <junction x="238.76" y="58.42"/>
 </segment>
 <segment>
-<pinref part="VR2" gate="G$1" pin="GND"/>
 <wire x1="60.96" y1="27.94" x2="58.42" y2="27.94" width="0.1524" layer="91"/>
 <wire x1="58.42" y1="27.94" x2="58.42" y2="20.32" width="0.1524" layer="91"/>
 <pinref part="SUPPLY21" gate="1" pin="GND"/>
@@ -9950,6 +9953,7 @@ EN &gt; 0.3V</text>
 <wire x1="53.34" y1="22.86" x2="53.34" y2="20.32" width="0.1524" layer="91"/>
 <wire x1="53.34" y1="20.32" x2="58.42" y2="20.32" width="0.1524" layer="91"/>
 <junction x="58.42" y="20.32"/>
+<pinref part="VR2" gate="G$1" pin="GND"/>
 </segment>
 <segment>
 <pinref part="SUPPLY22" gate="1" pin="GND"/>
@@ -10518,9 +10522,9 @@ EN &gt; 0.3V</text>
 <wire x1="96.52" y1="27.94" x2="99.06" y2="27.94" width="0.1524" layer="91"/>
 <wire x1="99.06" y1="27.94" x2="99.06" y2="33.02" width="0.1524" layer="91"/>
 <junction x="99.06" y="33.02"/>
-<pinref part="VR2" gate="G$1" pin="IN"/>
 <wire x1="83.82" y1="33.02" x2="99.06" y2="33.02" width="0.1524" layer="91"/>
 <junction x="114.3" y="33.02"/>
+<pinref part="VR2" gate="G$1" pin="IN"/>
 </segment>
 </net>
 <net name="VR1_FB2" class="0">
@@ -10603,17 +10607,16 @@ EN &gt; 0.3V</text>
 <net name="V1P8_CLEAN" class="0">
 <segment>
 <wire x1="50.8" y1="33.02" x2="53.34" y2="33.02" width="0.1524" layer="91"/>
-<pinref part="VR2" gate="G$1" pin="OUT"/>
 <label x="50.8" y="33.02" size="1.27" layer="95" font="fixed" rot="R180" xref="yes"/>
 <pinref part="C65" gate="G$1" pin="1"/>
 <wire x1="53.34" y1="33.02" x2="60.96" y2="33.02" width="0.1524" layer="91"/>
 <wire x1="53.34" y1="30.48" x2="53.34" y2="33.02" width="0.1524" layer="91"/>
 <junction x="53.34" y="33.02"/>
+<pinref part="VR2" gate="G$1" pin="OUT"/>
 </segment>
 </net>
 <net name="V1P8_CLEAN_EN" class="0">
 <segment>
-<pinref part="VR2" gate="G$1" pin="EN"/>
 <wire x1="83.82" y1="27.94" x2="86.36" y2="27.94" width="0.1524" layer="91"/>
 <pinref part="R28" gate="G$1" pin="2"/>
 <wire x1="86.36" y1="27.94" x2="88.9" y2="27.94" width="0.1524" layer="91"/>
@@ -10621,6 +10624,7 @@ EN &gt; 0.3V</text>
 <wire x1="86.36" y1="20.32" x2="88.9" y2="20.32" width="0.1524" layer="91"/>
 <label x="88.9" y="20.32" size="1.27" layer="95" font="fixed" xref="yes"/>
 <junction x="86.36" y="27.94"/>
+<pinref part="VR2" gate="G$1" pin="EN"/>
 </segment>
 </net>
 <net name="VR1_2P5_EN" class="0">
