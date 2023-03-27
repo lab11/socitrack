@@ -9,7 +9,7 @@
     "long": "^4.0.0",
     "mime": "^2.4.0",
     "noble": "^1.9.1",
-    "socket.io": "^2.4.0",
+    "socket.io": "^2.5.0",
     "strftime": "^0.10.0"
   },
   "devDependencies": {},
