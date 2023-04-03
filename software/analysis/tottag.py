@@ -8,6 +8,8 @@ from bleak import BleakClient, BleakScanner
 import asyncio
 import struct
 import sys
+from datetime import datetime, timezone
+from dateutil import tz
 
 
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
@@ -99,7 +101,11 @@ async def fetch_current_timestamp(device):
           if characteristic.uuid == TIMESTAMP_SERVICE_UUID:
             try:
               timestamp = bytes(await client.read_gatt_char(characteristic))
-              print('    Timestamp: {}'.format(struct.unpack('<I', timestamp)[0]))
+              unpacked_timestamp = struct.unpack('<I', timestamp)[0]
+              utc_time = datetime.utcfromtimestamp(unpacked_timestamp).strftime('%Y-%m-%d %H:%M:%S')
+              local_time = datetime.utcfromtimestamp(unpacked_timestamp).replace(tzinfo=timezone.utc).astimezone(tz.gettz()).strftime('%Y-%m-%d %H:%M:%S')
+              print('    Timestamp: {}'.format(unpacked_timestamp))
+              print(f'    UTC: {utc_time}  LOCAL: {local_time}')
             except Exception as e:
               print('    ERROR: Unable to read timestamp from the TotTag!')
               print('           {}'.format(e))
@@ -148,12 +154,26 @@ async def manage_tottag_storage(device):
   while await storage_management_menu(device):
     print()
 
+async def return_to_device_selection(_):
+    print('\nChoose the index of the TotTag to connect to:\n')
+    for idx, device_option in enumerate(device_list):
+        print('   [{}]: {}'.format(idx, device_option.address))
+    idx = await prompt_user('\nDesired TotTag index: ', len(device_list))
+    device = device_list[idx]
+    print('\nConnecting to TotTag {}...'.format(device.address))
+
+    # Display main menu and wait until user selects 'Exit'
+    while await main_menu(device):
+      print()
+    
+        
 
 async def exit_dashboard(_):
-  return
+  print('Exiting TotTag Dashboard\n')
+  exit()
 
 operations = [find_my_tottag, fetch_current_timestamp, fetch_current_voltage,
-              subscribe_to_realtime_location_updates, manage_tottag_storage, exit_dashboard]
+              subscribe_to_realtime_location_updates, manage_tottag_storage, return_to_device_selection,exit_dashboard]
 
 
 # STORAGE OPERATIONS --------------------------------------------------------------------------------------------------
@@ -370,16 +390,35 @@ async def prompt_user(prompt, num_options):
   return idx
 
 
+async def parse_file_listing(listing):
+  file_names = []
+  file_sizes = []
+  idx = file_name_start = 0
+  while idx < (len(listing) - 3):
+    if listing[idx] == 78 and listing[idx+1] == 69 and listing[idx+2] == 87:
+      if file_name_start != 0:
+        file_names.append(listing[file_name_start:file_name_end].decode('latin-1'))
+      file_sizes.append(struct.unpack('<I', listing[(idx+3):(idx+7)])[0])
+      file_name_start = idx + 7
+    idx += 1
+    file_name_end = idx
+  if len(file_sizes) != 0:
+    file_names.append(listing[file_name_start:file_name_end+3].decode('latin-1'))
+  return file_sizes, file_names
+
+
 async def main_menu(device):
 
   # Create the main menu prompt
   menu_string = '\nMAIN MENU\n---------\n\n'
+      
   for idx, operation in enumerate(operations):
     menu_string += '[{}]: {}\n'.format(idx, operation.__name__.replace('_', ' ').title().replace('Tottag', 'TotTag'))
   menu_string += '\nEnter index of desired operation: '
 
   # Continually display the main menu
   idx = -1
+      
   while idx != (len(operations) - 1):
     idx = await prompt_user(menu_string, len(operations))
     await operations[idx](device)
@@ -418,11 +457,15 @@ async def run():
   await scanner.stop()
 
   # Prompt user about which TotTag to connect to
+  global device_list 
   device_list = [device for device in scanner.discovered_devices if device.name == 'TotTag']
   if len(device_list) == 0:
     print('No devices found!\n')
     return
   elif len(device_list) == 1:
+    # For single device, remove the manu item for device selection
+    if len(device_list)==1:
+        operations.remove(return_to_device_selection)
     device = device_list[0]
   else:
     print('\nChoose the index of the TotTag to connect to:\n')
@@ -435,7 +478,6 @@ async def run():
   # Display main menu and wait until user selects 'Exit'
   while await main_menu(device):
     print()
-  print('Exiting TotTag Dashboard\n')
 
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
