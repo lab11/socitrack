@@ -14,17 +14,18 @@ import sys
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
 
-LOCATION_SERVICE_UUID = 'd68c3153-a23f-ee90-0c45-5231395e5d2e'
-FIND_MY_TOTTAG_SERVICE_UUID = 'd68c3154-a23f-ee90-0c45-5231395e5d2e'
-STORAGE_COMMAND_SERVICE_UUID = 'd68c3155-a23f-ee90-0c45-5231395e5d2e'
-STORAGE_DATA_SERVICE_UUID = 'd68c3156-a23f-ee90-0c45-5231395e5d2e'
-VOLTAGE_SERVICE_UUID = 'd68c3157-a23f-ee90-0c45-5231395e5d2e'
-TIMESTAMP_SERVICE_UUID = 'd68c3158-a23f-ee90-0c45-5231395e5d2e'
+LOCATION_SERVICE_UUID = 'd68c3156-a23f-ee90-0c45-5231395e5d2e'
+FIND_MY_TOTTAG_SERVICE_UUID = 'd68c3155-a23f-ee90-0c45-5231395e5d2e'
+TIMESTAMP_SERVICE_UUID = 'd68c3154-a23f-ee90-0c45-5231395e5d2e'
+VOLTAGE_SERVICE_UUID = 'd68c3153-a23f-ee90-0c45-5231395e5d2e'
+EXPERIMENT_SERVICE_UUID = 'd68c3162-a23f-ee90-0c45-5231395e5d2e'
+MAINTENANCE_COMMAND_SERVICE_UUID = 'd68c3162-a23f-ee90-0c45-5231395e5d2e'
+MAINTENANCE_DATA_SERVICE_UUID = 'd68c3163-a23f-ee90-0c45-5231395e5d2e'
 
-STORAGE_COMMAND_LIST_FILES = 0x01
-STORAGE_COMMAND_DOWNLOAD_FILE = 0x02
-STORAGE_COMMAND_DELETE_FILE = 0x03
-STORAGE_COMMAND_DELETE_ALL = 0x04
+MAINTENANCE_NEW_EXPERIMENT = 0x01
+MAINTENANCE_DELETE_EXPERIMENT = 0x02
+MAINTENANCE_DOWNLOAD_LOG = 0x03
+MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
 
 # GLOBAL VARIABLES ----------------------------------------------------------------------------------------------------
@@ -61,12 +62,11 @@ def location_received_callback(_sender_uuid, data):
 
   global num_seconds_elapsed
   num_seconds_elapsed -= 1
-  num_ranges, from_eui = struct.unpack('<BB', data[:2])
-  timestamp = struct.unpack('<I', data[(2+num_ranges*5):(6+num_ranges*5)])[0]
-  print('Range from Device {} to {} device(s) @ {}:'.format(hex(from_eui)[2:], num_ranges, timestamp))
+  num_ranges = struct.unpack('<B', data[:1])
+  print('Range to {} device(s):'.format(num_ranges))
   for i in range(num_ranges):
-    to_eui, range_mm = struct.unpack('<BI', data[(2+i*5):(2+(i+1)*5)])
-    print('\tDevice {} with millimeter range {}'.format(hex(to_eui)[2:], range_mm))
+    to_eui, range_mm = struct.unpack('<Bh', data[(1+i*3):(1+(i+1)*3)])
+    print('\tDevice {} with millimeter range {}'.format(hex(to_eui), range_mm))
   if num_seconds_elapsed <= 0:
     print('To unsubscribe from location updates, type 0 and press ENTER')
     num_seconds_elapsed = 10
@@ -368,23 +368,6 @@ async def prompt_user(prompt, num_options):
       except (TypeError, ValueError):
         idx = -1
   return idx
-
-
-async def parse_file_listing(listing):
-  file_names = []
-  file_sizes = []
-  idx = file_name_start = 0
-  while idx < (len(listing) - 3):
-    if listing[idx] == 78 and listing[idx+1] == 69 and listing[idx+2] == 87:
-      if file_name_start != 0:
-        file_names.append(listing[file_name_start:file_name_end].decode())
-      file_sizes.append(struct.unpack('<I', listing[(idx+3):(idx+7)])[0])
-      file_name_start = idx + 7
-    idx += 1
-    file_name_end = idx
-  if len(file_sizes) != 0:
-    file_names.append(listing[file_name_start:file_name_end+3].decode())
-  return file_sizes, file_names
 
 
 async def main_menu(device):
