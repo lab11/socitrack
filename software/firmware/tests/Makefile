@@ -3,7 +3,7 @@ CONFIG := bin
 SHELL := /bin/bash
 
 ifdef BOARD_REV
-REVISION := BOARD_REV
+REVISION := $(BOARD_REV)
 else
 REVISION := EVB
 endif
@@ -203,7 +203,6 @@ SRC += heap_4.c
 SRC += l2c_main.c
 SRC += l2c_master.c
 SRC += l2c_slave.c
-SRC += lfs.c
 SRC += list.c
 SRC += port.c
 SRC += queue.c

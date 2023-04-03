@@ -3,8 +3,12 @@
 
 // Application Configuration -------------------------------------------------------------------------------------------
 
+#ifdef AM_DEBUG_PRINTF
+
 #define ENABLE_LEDS
 #define ENABLE_LOGGING
+
+#endif
 
 
 // Common Header Inclusions --------------------------------------------------------------------------------------------
