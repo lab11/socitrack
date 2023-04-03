@@ -11,12 +11,6 @@ __pycache__/
 *.sw*
 *.emSession
 
-# IDE project files
-.cproject
-.project
-.settings
-.settings/
-
 # Distribution / packaging
 .Python
 env/
