@@ -32,8 +32,15 @@ ifdef ID
   ID_SECON = $(word 3,$(ID_BYTES))$(word 4,$(ID_BYTES))$(word 5,$(ID_BYTES))$(word 6,$(ID_BYTES))
 endif
 
+# ID-Only Flash Rule
+.PHONY: UID flash
+UID: $(CONFIG)
+	printf "r\n" > $(CONFIG)/flash.jlink
+	printf "w4 $(ID_FLASH_LOCATION), 0x$(ID_SECON) 0x$(ID_FIRST)\n" >> $(CONFIG)/flash.jlink
+	printf "exit\n" >> $(CONFIG)/flash.jlink
+	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
+
 # Code Flash Rule
-.PHONY: flash
 flash: all
 	printf "r\n" > $(CONFIG)/flash.jlink
 ifdef ID
