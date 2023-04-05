@@ -26,7 +26,7 @@ void run_tasks(void)
    static uint8_t uid[EUI_LEN];
    system_read_UID(uid, sizeof(uid));
 
-   // Initialize all required peripherals
+   // Initialize all required peripherals and enable interrupts
    battery_monitor_init();
    bluetooth_init(uid);
    buzzer_init();
@@ -34,6 +34,7 @@ void run_tasks(void)
    leds_init();
    rtc_init();
    storage_init();
+   system_enable_interrupts(true);
 
    // Initialize the ranging radio and put it into deep sleep
    ranging_radio_init(uid);
@@ -63,6 +64,7 @@ void run_tasks(void)
    }
 
    // Enter power-down mode upon low voltage or unscheduled timestamp
+   system_enable_interrupts(false);
    if (power_off)
    {
       system_enter_power_off_mode(PIN_BATTERY_INPUT_POWER_GOOD, wake_on_timestamp);
