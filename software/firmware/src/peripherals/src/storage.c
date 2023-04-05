@@ -220,6 +220,15 @@ static void add_bad_block(uint16_t block_address)
       spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
       spi_write(COMMAND_WRITE_BBM_LUT, NULL, 0, &destination_address, sizeof(destination_address));
       wait_until_not_busy();
+
+      // Update the bad block lookup table
+      for (uint32_t i = 0; i < BBM_INTERNAL_LUT_NUM_ENTRIES; ++i)
+         if ((bad_block_lookup_table_internal[i].pba == 0) && (bad_block_lookup_table_internal[i].lba == 0))
+         {
+            bad_block_lookup_table_internal[i].lba = block_address;
+            bad_block_lookup_table_internal[i].pba = workaround_block;
+            break;
+         }
    }
 }
 
