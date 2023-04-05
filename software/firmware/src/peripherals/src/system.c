@@ -9,6 +9,7 @@
 #include "logging.h"
 #include "ranging.h"
 #include "rtc.h"
+#include "scheduler.h"
 #include "storage.h"
 #include "system.h"
 
@@ -69,6 +70,17 @@ void am_gpio0_607f_isr(void)
    am_hal_gpio_interrupt_service(GPIO0_607F_IRQn, status);
 }
 
+void am_rtc_isr(void)
+{
+   static am_hal_rtc_alarm_repeat_e repeat_interval;
+   AM_CRITICAL_BEGIN
+   am_hal_rtc_alarm_get(NULL, &repeat_interval);
+   am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
+   AM_CRITICAL_END
+   if (repeat_interval == AM_HAL_RTC_ALM_RPT_SEC)
+      scheduler_rtc_isr();
+}
+
 uint32_t am_freertos_sleep(uint32_t idleTime)
 {
    am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
@@ -118,6 +130,42 @@ void setup_hardware(void)
    am_hal_sysctrl_fpu_enable();
    am_hal_sysctrl_fpu_stacking_enable(true);
 
+   // Configure the board to operate in low-power mode
+   am_hal_pwrctrl_low_power_init();
+   am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);
+
+   // Turn on all necessary memory
+   am_hal_pwrctrl_dsp_memory_config_t dsp_mem_config =
+   {
+      .bEnableICache = false,
+      .bRetainCache = false,
+      .bEnableRAM = false,
+      .bActiveRAM = false,
+      .bRetainRAM = false
+   };
+   am_hal_pwrctrl_mcu_memory_config_t mcu_mem_config =
+   {
+      .eCacheCfg    = AM_HAL_PWRCTRL_CACHE_ALL,
+      .bRetainCache = false,
+      .eDTCMCfg     = AM_HAL_PWRCTRL_DTCM_384K,
+      .eRetainDTCM  = AM_HAL_PWRCTRL_DTCM_384K,
+      .bEnableNVM0  = true,
+      .bRetainNVM0  = false
+   };
+   am_hal_pwrctrl_sram_memcfg_t sram_mem_config =
+   {
+      .eSRAMCfg           = AM_HAL_PWRCTRL_SRAM_NONE,
+      .eActiveWithMCU     = AM_HAL_PWRCTRL_SRAM_NONE,
+      .eActiveWithGFX     = AM_HAL_PWRCTRL_SRAM_NONE,
+      .eActiveWithDISP    = AM_HAL_PWRCTRL_SRAM_NONE,
+      .eActiveWithDSP     = AM_HAL_PWRCTRL_SRAM_NONE,
+      .eSRAMRetain        = AM_HAL_PWRCTRL_SRAM_NONE
+   };
+   am_hal_pwrctrl_dsp_memory_config(AM_HAL_DSP0, &dsp_mem_config);
+   am_hal_pwrctrl_dsp_memory_config(AM_HAL_DSP1, &dsp_mem_config);
+   am_hal_pwrctrl_mcu_memory_config(&mcu_mem_config);
+   am_hal_pwrctrl_sram_config(&sram_mem_config);
+
    // Set up the cache configuration
    const am_hal_cachectrl_config_t cachectrl_config =
    {
@@ -127,41 +175,6 @@ void setup_hardware(void)
    };
    am_hal_cachectrl_config(&cachectrl_config);
    am_hal_cachectrl_enable();
-
-   // Configure the board to operate in low-power mode
-   am_hal_pwrctrl_low_power_init();
-   am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);
-
-   // Turn on all necessary memory
-   am_hal_pwrctrl_dsp_memory_config_t dsp_mem_config = // TODO: MINIMIZE THESE AS POSSIBLE
-   {
-      .bEnableICache = false,
-      .bRetainCache = false,
-      .bEnableRAM = true,
-      .bActiveRAM = false,
-      .bRetainRAM = false
-   };
-   am_hal_pwrctrl_mcu_memory_config_t mcu_mem_config = // TODO: MINIMIZE THESE AS POSSIBLE
-   {
-      .eCacheCfg    = AM_HAL_PWRCTRL_CACHE_ALL,
-      .bRetainCache = false,
-      .eDTCMCfg     = AM_HAL_PWRCTRL_DTCM_384K,
-      .eRetainDTCM  = AM_HAL_PWRCTRL_DTCM_NONE,
-      .bEnableNVM0  = true,
-      .bRetainNVM0  = false
-   };
-   am_hal_pwrctrl_sram_memcfg_t sram_mem_config = // TODO: MINIMIZE THESE AS POSSIBLE
-   {
-      .eSRAMCfg           = AM_HAL_PWRCTRL_SRAM_ALL,
-      .eActiveWithMCU     = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithGFX     = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithDISP    = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithDSP     = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eSRAMRetain        = AM_HAL_PWRCTRL_SRAM_NONE
-   };
-   am_hal_pwrctrl_dsp_memory_config(AM_HAL_DSP0, &dsp_mem_config);
-   am_hal_pwrctrl_mcu_memory_config(&mcu_mem_config);
-   am_hal_pwrctrl_sram_config(&sram_mem_config);
 
    // Turn on the power rails to all external peripherals
    configASSERT0(am_hal_gpio_pinconfig(PIN_EXTERNAL_PERIPH_POWER_ENABLE, am_hal_gpio_pincfg_output));
@@ -205,18 +218,6 @@ void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timesta
    // Power down the crypto module followed by all peripherals
    am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_CRYPTO_POWERDOWN, NULL);
    am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_DIS_PERIPHS_ALL, NULL);
-
-   // Minimize SRAM memory usage
-   am_hal_pwrctrl_sram_memcfg_t sram_mem_config =
-   {
-      .eSRAMCfg           = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithMCU     = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithGFX     = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithDISP    = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eActiveWithDSP     = AM_HAL_PWRCTRL_SRAM_NONE,
-      .eSRAMRetain        = AM_HAL_PWRCTRL_SRAM_NONE
-   };
-   am_hal_pwrctrl_sram_config(&sram_mem_config);
 
    // Optionally allow a change on a GPIO pin to wake up the device
    if (wake_on_gpio)
