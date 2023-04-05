@@ -199,16 +199,20 @@ static void add_bad_block(uint16_t block_address)
    for (uint32_t page = BBM_LUT_BASE_ADDRESS; !workaround_block && (page < MEMORY_PAGE_COUNT); page += MEMORY_PAGES_PER_BLOCK)
       if (read_page(transfer_buffer, page) && (transfer_buffer[0] == 0xFF))
       {
-         // Ensure that the candidate page is not already in use
-         workaround_block = (uint16_t)page;
+         // Ensure that the candidate block is not already in use
+         workaround_block = (uint16_t)((page & 0x0000FFC0) >> 6);
          for (uint32_t i = 0; i < BBM_INTERNAL_LUT_NUM_ENTRIES; ++i)
-            if (bad_block_lookup_table_internal[i].pba == page)
+            if (bad_block_lookup_table_internal[i].pba == workaround_block)
+            {
                workaround_block = 0;
+               break;
+            }
       }
 
    // Update LUT with the workaround block
    if (workaround_block)
    {
+      block_address = (uint16_t)(((uint32_t)block_address & 0x0000FFC0) >> 6);
       bbm_lut_t destination_address = {
          .lba = ((block_address << 8) & 0xFF00) | ((block_address >> 8) & 0x00FF),
          .pba = ((workaround_block << 8) & 0xFF00) | ((workaround_block >> 8) & 0x00FF)
@@ -246,7 +250,7 @@ static void write_page(uint16_t data_length)
          // Transfer any already-written pages in the current block to the next block
          uint32_t next_block = ((current_page + MEMORY_PAGES_PER_BLOCK) & 0x0000FFC0) % BBM_LUT_BASE_ADDRESS;
          transfer_block(original_page & 0x0000FFC0, next_block, current_page & 0x003F);
-         add_bad_block(current_page & 0x0000FFC0);
+         add_bad_block(current_page);
          current_page = (current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
       }
    }
@@ -382,8 +386,8 @@ void storage_init(void)
    spi_read(COMMAND_READ_BBM_LUT, &dummy_value, 1, &bad_block_lookup_table_internal, sizeof(bad_block_lookup_table_internal));
    for (uint32_t i = 0; i < BBM_INTERNAL_LUT_NUM_ENTRIES; ++i)
    {
-      bad_block_lookup_table_internal[i].lba = ((bad_block_lookup_table_internal[i].lba << 8) & 0xFF00) | ((bad_block_lookup_table_internal[i].lba >> 8) & 0x00FF);
-      bad_block_lookup_table_internal[i].pba = ((bad_block_lookup_table_internal[i].pba << 8) & 0xFF00) | ((bad_block_lookup_table_internal[i].pba >> 8) & 0x00FF);
+      bad_block_lookup_table_internal[i].lba = (((bad_block_lookup_table_internal[i].lba << 8) & 0xFF00) | ((bad_block_lookup_table_internal[i].lba >> 8) & 0x00FF)) & 0x3FF;
+      bad_block_lookup_table_internal[i].pba = (((bad_block_lookup_table_internal[i].pba << 8) & 0xFF00) | ((bad_block_lookup_table_internal[i].pba >> 8) & 0x00FF)) & 0x3FF;
    }
 
    // Check for bad storage blocks if this is the first boot
@@ -507,7 +511,7 @@ void storage_store_experiment_details(const experiment_details_t *details)
          if (!success)
          {
             erase_block(starting_page, starting_page);
-            add_bad_block(starting_page & 0x0000FFC0);
+            add_bad_block(starting_page);
             starting_page = (starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
             current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
          }
