@@ -31,17 +31,20 @@ int main(void)
    rtc_init();
    storage_init();
    rtc_set_time_to_compile_time();
+   system_enable_interrupts(true);
 
    // Initialize the ranging radio and put it into deep sleep
    ranging_radio_init(uid);
    ranging_radio_sleep(true);
 
-   // Flash the red LED for 2 seconds to show that we are awake
+   // Flash the red LED and buzzer for 2 seconds to show that we are awake
    led_on(LED_RED);
+   buzzer_indicate_plugged_in();
    am_hal_delay_us(2000000);
    led_off(LED_RED);
 
    // Enter power-down mode until awoken 5 seconds in the future (or by a change in charging status)
+   system_enable_interrupts(false);
    system_enter_power_off_mode(wakeup_pin, (wake_criteria == WAKE_WITH_RTC) ? rtc_get_timestamp() + 5 : 0);
    system_reset();
 
