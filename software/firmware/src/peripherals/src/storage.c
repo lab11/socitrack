@@ -464,6 +464,7 @@ void storage_deinit(void)
 {
    // Disable all SPI communications
    while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+   am_hal_iom_uninitialize(spi_handle);
    is_reading = in_maintenance_mode = false;
 }
 

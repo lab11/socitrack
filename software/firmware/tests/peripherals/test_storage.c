@@ -7,6 +7,7 @@ int main(void)
    // Set up system hardware
    setup_hardware();
    storage_init();
+   system_enable_interrupts(true);
 
    // Write some random stuff to storage
    storage_exit_maintenance_mode();

@@ -188,6 +188,7 @@ void ranging_radio_deinit(void)
    // Ensure that the radio is in deep sleep mode and disable all SPI communications
    ranging_radio_sleep(true);
    while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+   am_hal_iom_uninitialize(spi_handle);
 
    // Disable all radio-based interrupts
    uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;

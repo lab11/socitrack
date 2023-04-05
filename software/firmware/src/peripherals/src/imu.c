@@ -388,6 +388,7 @@ void imu_deinit(void)
 
    // Disable all I2C communications
    while (am_hal_iom_disable(i2c_handle) != AM_HAL_STATUS_SUCCESS);
+   am_hal_iom_uninitialize(i2c_handle);
 }
 
 void imu_register_motion_change_callback(motion_change_callback_t callback)
