@@ -90,6 +90,36 @@ uint32_t am_freertos_sleep(uint32_t idleTime)
 void am_freertos_wakeup(uint32_t idleTime) { return; }
 
 
+// Helpful Debugging Functions and Macros ------------------------------------------------------------------------------
+
+typedef struct __attribute__((packed)) ContextStateFrame
+{ uint32_t r0, r1, r2, r3, r12, lr, return_address, xpsr; } sContextStateFrame;
+
+#define HARDFAULT_HANDLING_ASM(_x)               \
+  __asm volatile(                                \
+      "tst lr, #4 \n"                            \
+      "ite eq \n"                                \
+      "mrseq r0, msp \n"                         \
+      "mrsne r0, psp \n"                         \
+      "b system_hard_fault_handler \n"           )
+
+__attribute__((optimize("O0")))
+void system_hard_fault_handler(sContextStateFrame *frame)
+{
+#ifdef DEBUGGING
+   do {
+      if (CoreDebug->DHCSR & (1 << 0))
+         __asm("bkpt 1");
+   } while (0);
+#else
+   NVIC_SystemReset();
+   while (true) {}
+#endif
+}
+
+void HardFault_Handler(void) { HARDFAULT_HANDLING_ASM(); }
+
+
 // FreeRTOS Debugging Functions ----------------------------------------------------------------------------------------
 
 void vApplicationMallocFailedHook(void)
