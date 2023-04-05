@@ -14,7 +14,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static scheduler_phase_t ranging_phase;
-static TaskHandle_t notification_handle = 0;
+static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint8_t read_buffer[768], device_eui, schedule_reception_timeout;
@@ -77,23 +77,19 @@ static void handle_range_computation_phase(bool is_master)
 
 // Interrupt Service Routines and Callbacks ----------------------------------------------------------------------------
 
-void am_rtc_isr(void)
-{
-   // Notify the main task to handle the interrupt
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-   am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
-   if (notification_handle)
-   {
-      xTaskNotifyFromISR(notification_handle, RANGING_NEW_ROUND_START, eSetBits, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-   }
-}
-
 void am_timer02_isr(void)
 {
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
+   xTaskNotifyFromISR(notification_handle, RANGING_NEW_ROUND_START, eSetBits, &xHigherPriorityTaskWoken);
+   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void scheduler_rtc_isr(void)
+{
+   // Notify the main task to handle the interrupt
+   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    xTaskNotifyFromISR(notification_handle, RANGING_NEW_ROUND_START, eSetBits, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -136,11 +132,14 @@ static void rx_timeout_callback(const dwt_cb_data_t *rxData)
 void scheduler_init(uint8_t *uid)
 {
    // Store the device EUI
-   memcpy(eui, uid, EUI_LEN);
-   device_eui = eui[0];
+   if (uid)
+   {
+      memcpy(eui, uid, EUI_LEN);
+      device_eui = eui[0];
 
-   // Set the DW3000 callback configuration
-   ranging_radio_register_callbacks(tx_callback, rx_callback, rx_timeout_callback, rx_timeout_callback);
+      // Set the DW3000 callback configuration
+      ranging_radio_register_callbacks(tx_callback, rx_callback, rx_timeout_callback, rx_timeout_callback);
+   }
 }
 
 void scheduler_run(schedule_role_t role, uint32_t timestamp)

@@ -114,7 +114,7 @@ bool rtc_set_time_from_timestamp(uint32_t timestamp)
 void rtc_set_wakeup_timestamp(uint32_t timestamp)
 {
    am_hal_rtc_time_t wakeup_time = to_rtc_time(timestamp);
-   am_hal_rtc_alarm_set(&wakeup_time, RTC_RTCCTL_RPT_YEAR);
+   am_hal_rtc_alarm_set(&wakeup_time, AM_HAL_RTC_ALM_RPT_YR);
    am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
    am_hal_rtc_interrupt_enable(AM_HAL_RTC_INT_ALM);
    NVIC_SetPriority(RTC_IRQn, AM_IRQ_PRIORITY_DEFAULT);

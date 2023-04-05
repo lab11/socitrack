@@ -44,5 +44,6 @@ void scheduler_init(uint8_t *uid);
 void scheduler_run(schedule_role_t role, uint32_t timestamp);
 void scheduler_add_device(uint8_t eui);
 void scheduler_stop(void);
+void scheduler_rtc_isr(void);
 
 #endif  // #ifndef __SCHEDULER_HEADER_H__
