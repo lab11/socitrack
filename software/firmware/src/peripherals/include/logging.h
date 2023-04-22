@@ -5,7 +5,7 @@
 
 #include "app_config.h"
 
-#if (REVISION_ID == REVISION_I) //|| (REVISION_ID == REVISION_APOLLO4_EVB) 
+#if (REVISION_ID == REVISION_I) || (REVISION_ID == REVISION_APOLLO4_EVB) 
 #include "SEGGER_RTT.h"
 #endif
 
@@ -17,7 +17,7 @@ void logging_disable(void);
 
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
 
-#if (REVISION_ID == REVISION_I) //|| (REVISION_ID == REVISION_APOLLO4_EVB)
+#if (REVISION_ID == REVISION_I) || (REVISION_ID == REVISION_APOLLO4_EVB)
 #define print(...) SEGGER_RTT_printf(0, __VA_ARGS__)
 #else
 #define print(...) am_util_stdio_printf(__VA_ARGS__)
