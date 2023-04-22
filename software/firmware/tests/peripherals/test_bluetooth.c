@@ -59,11 +59,13 @@ int main(void)
 {
    // Set up system hardware
    setup_hardware();
-
+   
+   print("please print this!");
    // Fetch the device UID and initialize the Bluetooth hardware
    static uint8_t uid[EUI_LEN];
    system_read_UID(uid, sizeof(uid));
    bluetooth_init(uid);
+   //am_hal_delay_us(5000000);
 
    // Create the BLE task and start the task scheduler
    static TaskHandle_t ble_task_handle;

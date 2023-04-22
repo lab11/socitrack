@@ -215,6 +215,10 @@ ifeq ($(REVISION), I)
 SRC += SEGGER_RTT.c
 SRC += SEGGER_RTT_printf.c
 endif
+ifeq ($(REVISION), EVB)
+SRC += SEGGER_RTT.c
+SRC += SEGGER_RTT_printf.c
+endif
 SRC += smp_main.c
 SRC += startup_gcc.c
 SRC += tasks.c
@@ -275,6 +279,14 @@ ifneq ($(BUILT_BY), eclipse)
 	printf "loadfile $(CONFIG)/$(TARGET).bin $(FLASH_START)\nr\ng\nexit\n" >> $(CONFIG)/flash.jlink
 	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
 endif
+
+minimal_ble: TARGET = TestMinimalBLE
+minimal_ble: SRC += test_minimal_ble.c
+minimal_ble: $(CONFIG) $(CONFIG)/test_minimal_ble.o $(CONFIG)/$$(TARGET).bin program
+
+minimal: TARGET = TestMinimal
+minimal: SRC += test_minimal.c
+minimal: $(CONFIG) $(CONFIG)/test_minimal.o $(CONFIG)/$$(TARGET).bin program
 
 battery: TARGET = TestBattery
 battery: SRC += test_battery.c

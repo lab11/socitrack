@@ -74,8 +74,8 @@ void delayed_write_test(void)
    assert(dwt_writetxdata(packet_size, (uint8_t*)&packet, 0) == DWT_SUCCESS);
    assert(dwt_starttx(DWT_START_TX_DELAYED) == DWT_SUCCESS);
 
-   // Sleep for 5 seconds
-   am_hal_delay_us(5000000);
+   // Sleep for 2 seconds
+   am_hal_delay_us(2000000);
 }
 
 void read_test(void)
@@ -97,15 +97,15 @@ int main(void)
    system_read_UID(eui, EUI_LEN);
    ranging_radio_init(eui);
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_error_callback, rx_error_callback);
-
+   print("please print this!");
    // Loop forever running whichever test is uncommented
    while (true)
    {
       //reset_test();
       //regular_sleep_test();
       //deep_sleep_test();
-      //delayed_write_test();
-      read_test();
+	   delayed_write_test();
+	   //read_test();
    }
 
    // Should never reach this point

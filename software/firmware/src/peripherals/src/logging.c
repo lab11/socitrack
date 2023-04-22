@@ -9,15 +9,15 @@ void logging_init(void)
 {
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
 
-#if REVISION_ID == REVISION_I
+#if (REVISION_ID == REVISION_I) //|| (REVISION_ID == REVISION_APOLLO4_EVB)
    SEGGER_RTT_ConfigUpBuffer(0, NULL, NULL, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #else
    am_bsp_itm_printf_enable();
 #endif  // #if REVISION_ID == REVISION_I
 
-#elif REVISION_ID != REVISION_I
+   //#elif (REVISION_ID != REVISION_I) //&& (REVISION_ID != REVISION_APOLLO4_EVB)
 
-   am_bsp_itm_printf_disable();
+   //am_bsp_itm_printf_disable();
 
 #endif
 }
@@ -25,7 +25,7 @@ void logging_init(void)
 void logging_disable(void)
 {
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
-#if REVISION_ID != REVISION_I
+#if (REVISION_ID != REVISION_I) //&& (REVISION_ID != REVISION_APOLLO4_EVB)
    am_bsp_itm_printf_disable();
 #endif  // #if REVISION_ID == REVISION_I
 #endif
