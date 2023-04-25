@@ -51,6 +51,10 @@
 #define PIN_LED2_RED                                76
 #define PIN_LED2_YELLOW                             81
 
+// Logging
+#define PIN_SWO                                     67
+#define PIN_SWO_FUNCTION                            AM_HAL_PIN_67_SWO
+
 // Memory Storage (SPI)
 #define STORAGE_SPI_NUMBER                          3
 #define PIN_STORAGE_SPI_SCK                         31

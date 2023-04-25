@@ -9,26 +9,44 @@ void logging_init(void)
 {
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
 
-#if REVISION_ID == REVISION_I
-   SEGGER_RTT_ConfigUpBuffer(0, NULL, NULL, 0, SEGGER_RTT_MODE_NO_BLOCK_SKIP);
+   // Enable SWO
+   {
+      if ((PWRCTRL->DEVPWRSTATUS_b.PWRSTCRYPTO == 1) && (CRYPTO->HOSTCCISIDLE_b.HOSTCCISIDLE == 1))
+      {
+         uint32_t ui32dcuVal;
+         am_hal_dcu_get(&ui32dcuVal);
+         if (!(ui32dcuVal & AM_HAL_DCU_CPUTRC_TPIU_SWO) && (am_hal_dcu_update(true, AM_HAL_DCU_CPUTRC_TPIU_SWO) != AM_HAL_STATUS_SUCCESS))
+            configASSERT0(1);
+      }
+      else
+         configASSERT0(1);
+   }
+
+   // Enable the ITM interface and the SWO pin
+   am_hal_itm_enable();
+   am_hal_tpiu_enable(AM_HAL_TPIU_BAUD_1M);
+   am_hal_gpio_pincfg_t swo_pinconfig = g_AM_BSP_GPIO_ITM_SWO;
+   swo_pinconfig.GP.cfg_b.uFuncSel = PIN_SWO_FUNCTION;
+   am_hal_gpio_pinconfig(PIN_SWO, swo_pinconfig);
+
+   // Attach the ITM to the STDIO driver
+   am_util_stdio_printf_init(am_hal_itm_print);
+
 #else
-   am_bsp_itm_printf_enable();
-#endif  // #if REVISION_ID == REVISION_I
 
-#elif REVISION_ID != REVISION_I
-
-   am_bsp_itm_printf_disable();
+   logging_disable();
 
 #endif
 }
 
 void logging_disable(void)
 {
-#if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
-#if REVISION_ID != REVISION_I
-   am_bsp_itm_printf_disable();
-#endif  // #if REVISION_ID == REVISION_I
-#endif
+   // Disable the ITM/TPIU and detach the ITM interface from the STDIO driver
+   am_hal_itm_disable();
+   am_util_stdio_printf_init(0);
+
+   // Disconnect the SWO pin
+   am_hal_gpio_pinconfig(PIN_SWO, am_hal_gpio_pincfg_disabled);
 }
 
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))

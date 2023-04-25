@@ -55,6 +55,10 @@
 #define PIN_LED2_RED                                AM_BSP_GPIO_LED0
 #define PIN_LED2_YELLOW                             AM_BSP_GPIO_LED2
 
+// Logging
+#define PIN_SWO                                     28
+#define PIN_SWO_FUNCTION                            AM_HAL_PIN_28_SWO
+
 // Memory Storage (SPI)
 #define STORAGE_SPI_NUMBER                          1
 #define PIN_STORAGE_SPI_SCK                         8

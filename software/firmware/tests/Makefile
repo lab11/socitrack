@@ -98,7 +98,6 @@ INCLUDES += -I../src/app
 INCLUDES += -I../src/boards
 INCLUDES += -I../src/boards/rev$(REVISION)
 INCLUDES += -I../src/external/decadriver
-INCLUDES += -I../src/external/segger
 INCLUDES += -I../src/peripherals/include
 INCLUDES += -I../src/tasks
 INCLUDES += -I../src/tasks/bluetooth
@@ -133,7 +132,6 @@ VPATH += ../src/app
 VPATH += ../src/boards
 VPATH += ../src/boards/rev$(REVISION)
 VPATH += ../src/external/decadriver
-VPATH += ../src/external/segger
 VPATH += ../src/peripherals/src
 VPATH += ../src/tasks
 VPATH += ../src/tasks/bluetooth
@@ -211,10 +209,6 @@ SRC += sec_aes.c
 SRC += sec_cmac_hci.c
 SRC += sec_ecc_hci.c
 SRC += sec_main.c
-ifeq ($(REVISION), I)
-SRC += SEGGER_RTT.c
-SRC += SEGGER_RTT_printf.c
-endif
 SRC += smp_main.c
 SRC += startup_gcc.c
 SRC += tasks.c
