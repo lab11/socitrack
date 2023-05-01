@@ -126,6 +126,7 @@ VPATH += ../AmbiqSDK/cordio/ble-profiles/sources/apps/app/common
 VPATH += ../AmbiqSDK/cordio/ble-profiles/sources/profiles/gap
 VPATH += ../AmbiqSDK/cordio/ble-profiles/sources/profiles/gatt
 VPATH += ../AmbiqSDK/cordio/ble-profiles/sources/services
+#VPATH += ../AmbiqSDK/mcu/$(PART)/hal/mcu
 VPATH += ../AmbiqSDK/FreeRTOSv10.1.1/Source
 VPATH += ../AmbiqSDK/FreeRTOSv10.1.1/Source/portable/MemMang
 VPATH += ../AmbiqSDK/FreeRTOSv10.1.1/Source/portable/GCC/AMapollo4
@@ -143,6 +144,7 @@ VPATH += ./tasks
 VPATH += ./tools
 
 SRC =
+#SRC += am_hal_iom.c
 SRC += am_devices_cooper.c
 SRC += am_devices_led.c
 SRC += am_resources.c

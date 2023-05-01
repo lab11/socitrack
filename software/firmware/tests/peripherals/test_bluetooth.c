@@ -60,17 +60,33 @@ int main(void)
    // Set up system hardware
    setup_hardware();
    
-   print("please print this!");
+   //print("please print this!\n");
+   //print("please print this!\n");
+   //print("please print this!\n");
+   
    // Fetch the device UID and initialize the Bluetooth hardware
    static uint8_t uid[EUI_LEN];
    system_read_UID(uid, sizeof(uid));
+   
+   //print("please print this!\n");
+   //print("please print this!\n");
+   //print("please print this!\n");
+   
    bluetooth_init(uid);
    //am_hal_delay_us(5000000);
+   //print("please print this!\n");
+   //print("please print this!\n");
+   //print("please print this!\n");
+   
+  
+   
 
    // Create the BLE task and start the task scheduler
    static TaskHandle_t ble_task_handle;
    configASSERT1(xTaskCreate(BLETask, "BLETask", 512, NULL, 3, &ble_task_handle));
    bluetooth_start_advertising();
+   //1.21 4p EVB: 1.2V here 
+ 
    vTaskStartScheduler();
 
    // Should never reach this point
