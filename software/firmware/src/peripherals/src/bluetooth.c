@@ -247,14 +247,18 @@ void bluetooth_init(uint8_t* uid)
    is_scanning = is_advertising = is_connected = ranges_requested = quick_scanning = false;
    memcpy(device_id, uid, EUI_LEN);
    discovery_callback = NULL;
-
-   // Set the Bluetooth address and boot the BLE radio
-   HciVscSetCustom_BDAddr(uid);
-   configASSERT0(HciDrvRadioBoot(false));
-
+   
    // Setup BLE interrupt priorities
    NVIC_SetPriority(COOPER_IOM_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
    NVIC_SetPriority(AM_COOPER_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+
+   // Set the Bluetooth address and boot the BLE radio
+   print("should see this before boot!\n");
+   HciVscSetCustom_BDAddr(uid);
+   configASSERT0(HciDrvRadioBoot(false));
+   print("should see this after boot!\n");
+
+
 
    // Store all BLE configuration pointers
    pAppAdvCfg = (appAdvCfg_t*)&ble_adv_cfg;

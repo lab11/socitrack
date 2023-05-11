@@ -160,6 +160,7 @@ void setup_hardware(void)
    am_hal_sysctrl_fpu_enable();
    am_hal_sysctrl_fpu_stacking_enable(true);
 
+   //am_hal_pwrctrl_settings_restore(); //for testing
    // Configure the board to operate in low-power mode
    am_hal_pwrctrl_low_power_init();
    am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);

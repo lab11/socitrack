@@ -6,6 +6,7 @@
 #include "ranging.h"
 
 
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static void *spi_handle;
@@ -183,6 +184,235 @@ void ranging_radio_init(uint8_t *uid)
    dwt_setcallbacks(NULL, NULL, NULL, NULL, NULL, ranging_radio_spi_ready, NULL);
 }
 
+void ranging_radio_init_cw(void){
+    // Convert the device UID into the necessary 64-bit EUI format
+    spi_ready = false;
+    //eui64_array[0] = uid[0]; eui64_array[1] = uid[1]; eui64_array[2] = uid[2];
+    //eui64_array[3] = 0xFE; eui64_array[4] = 0xFF;
+    //eui64_array[5] = uid[3]; eui64_array[6] = uid[4]; eui64_array[7] = uid[5];
+
+    // Set up the DW3000 reset pin as a high-impedance output
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET, am_hal_gpio_pincfg_tristate));
+    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+    am_hal_gpio_output_clear(PIN_RADIO_RESET);
+
+    // Set up the DW3000 wake-up pin as an output, initially set to low
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP, am_hal_gpio_pincfg_output));
+    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
+
+    // Set up the DW3000 antenna selection pins
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT1, am_hal_gpio_pincfg_output));
+    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT2, am_hal_gpio_pincfg_output));
+    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
+
+    // Set up incoming interrupts from the DW3000
+    uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;
+    am_hal_gpio_pincfg_t interrupt_pin_config = AM_HAL_GPIO_PINCFG_INPUT;
+    interrupt_pin_config.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLDOWN_50K;
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT, interrupt_pin_config));
+    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
+    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
+
+    // Initialize the SPI module and enable all relevant SPI pins
+    am_hal_gpio_pincfg_t sck_config = g_AM_BSP_GPIO_IOM0_SCK;
+    am_hal_gpio_pincfg_t miso_config = g_AM_BSP_GPIO_IOM0_MISO;
+    am_hal_gpio_pincfg_t mosi_config = g_AM_BSP_GPIO_IOM0_MOSI;
+    am_hal_gpio_pincfg_t cs_config = g_AM_BSP_GPIO_IOM0_CS;
+    sck_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_SCK_FUNCTION;
+    miso_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_MISO_FUNCTION;
+    mosi_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_MOSI_FUNCTION;
+    cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
+    cs_config.GP.cfg_b.uNCE = 4 * RADIO_SPI_NUMBER;
+    configASSERT0(am_hal_iom_initialize(RADIO_SPI_NUMBER, &spi_handle));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_SCK, sck_config));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MISO, miso_config));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MOSI, mosi_config));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, cs_config));
+	
+    ranging_radio_spi_fast();
+	
+	
+	
+	
+	
+	
+	
+
+    // Reset and initialize the DW3000 radio
+    // Assert the DW3000 reset pin for 1us to manually reset the device
+    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
+    am_hal_delay_us(1);
+    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+    am_hal_delay_us(2000);
+
+    // Initialize the DW3000 driver and transceiver
+    while (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
+       am_hal_delay_us(2000);
+	
+    configASSERT0(dwt_initialise(DWT_DW_IDLE));
+
+    // Set up the DW3000 interrupts and overall configuration
+    dw_config = (dwt_config_t){ .chan = 5, .txPreambLength = DWT_PLEN_1024, .rxPAC = DWT_PAC32,
+       .txCode = 9, .rxCode = 9, .sfdType = 1, .dataRate = DWT_BR_850K, .phrMode = DWT_PHRMODE_STD,
+       .phrRate = DWT_PHRRATE_STD, .sfdTO = (1025 + 8 - 32), .stsMode = DWT_STS_MODE_OFF, .stsLength = DWT_STS_LEN_64,
+       .pdoaMode = DWT_PDOA_M0 };
+    configASSERT0(dwt_configure(&dw_config));
+    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT, ranging_radio_isr, NULL));
+    dwt_setinterrupt(DWT_INT_TXFRS_BIT_MASK | DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXPHE_BIT_MASK |
+          DWT_INT_RXFCE_BIT_MASK | DWT_INT_RXFSL_BIT_MASK | DWT_INT_RXFTO_BIT_MASK |
+          DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK  |
+          DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
+    dwt_writesysstatuslo(DWT_INT_RCINIT_BIT_MASK | DWT_INT_SPIRDY_BIT_MASK);
+    dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch5);
+    /* Activate continuous wave mode. */
+    
+	
+    dwt_configciadiag(DW_CIA_DIAG_LOG_ALL);
+    dwt_configmrxlut(5);
+
+    // Set this node's PAN ID and EUI
+    //dwt_setpanid(MODULE_PANID);
+    //dwt_seteui(eui64_array);
+
+    // Disable double-buffer mode, receive timeouts, and auto-ack mode
+    dwt_setdblrxbuffmode(DBL_BUF_STATE_DIS, DBL_BUF_MODE_MAN);
+    dwt_enableautoack(0, 0);
+    dwt_setrxtimeout(0);
+
+    // Set this device so that it only receives regular and extended data packets
+    //dwt_configureframefilter(DWT_FF_ENABLE_802_15_4, DWT_FF_DATA_EN);
+
+    // Clear the internal TX/RX antenna delays
+    dwt_settxantennadelay(0);
+    dwt_setrxantennadelay(0);
+	//--------
+    dwt_setcallbacks(NULL, NULL, NULL, NULL, NULL, ranging_radio_spi_ready, NULL);
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+void ranging_radio_init_cf(void){
+    // Convert the device UID into the necessary 64-bit EUI format
+    spi_ready = false;
+    //eui64_array[0] = uid[0]; eui64_array[1] = uid[1]; eui64_array[2] = uid[2];
+    //eui64_array[3] = 0xFE; eui64_array[4] = 0xFF;
+    //eui64_array[5] = uid[3]; eui64_array[6] = uid[4]; eui64_array[7] = uid[5];
+
+    // Set up the DW3000 reset pin as a high-impedance output
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET, am_hal_gpio_pincfg_tristate));
+    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+    am_hal_gpio_output_clear(PIN_RADIO_RESET);
+
+    // Set up the DW3000 wake-up pin as an output, initially set to low
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP, am_hal_gpio_pincfg_output));
+    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
+
+    // Set up the DW3000 antenna selection pins
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT1, am_hal_gpio_pincfg_output));
+    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT2, am_hal_gpio_pincfg_output));
+    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
+
+    // Set up incoming interrupts from the DW3000
+    uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;
+    am_hal_gpio_pincfg_t interrupt_pin_config = AM_HAL_GPIO_PINCFG_INPUT;
+    interrupt_pin_config.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLDOWN_50K;
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT, interrupt_pin_config));
+    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
+    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
+    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
+
+    // Initialize the SPI module and enable all relevant SPI pins
+    am_hal_gpio_pincfg_t sck_config = g_AM_BSP_GPIO_IOM0_SCK;
+    am_hal_gpio_pincfg_t miso_config = g_AM_BSP_GPIO_IOM0_MISO;
+    am_hal_gpio_pincfg_t mosi_config = g_AM_BSP_GPIO_IOM0_MOSI;
+    am_hal_gpio_pincfg_t cs_config = g_AM_BSP_GPIO_IOM0_CS;
+    sck_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_SCK_FUNCTION;
+    miso_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_MISO_FUNCTION;
+    mosi_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_MOSI_FUNCTION;
+    cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
+    cs_config.GP.cfg_b.uNCE = 4 * RADIO_SPI_NUMBER;
+    configASSERT0(am_hal_iom_initialize(RADIO_SPI_NUMBER, &spi_handle));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_SCK, sck_config));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MISO, miso_config));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MOSI, mosi_config));
+    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, cs_config));
+	
+    ranging_radio_spi_fast();
+	
+	
+	
+	
+	
+	
+	
+
+    // Reset and initialize the DW3000 radio
+    // Assert the DW3000 reset pin for 1us to manually reset the device
+    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
+    am_hal_delay_us(1);
+    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+    am_hal_delay_us(2000);
+
+    // Initialize the DW3000 driver and transceiver
+    while (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
+       am_hal_delay_us(2000);
+	
+    configASSERT0(dwt_initialise(DWT_DW_IDLE));
+
+    // Set up the DW3000 interrupts and overall configuration
+    dw_config = (dwt_config_t){ .chan = 5, .txPreambLength = DWT_PLEN_128, .rxPAC = DWT_PAC8,
+       .txCode = 9, .rxCode = 9, .sfdType = 1, .dataRate = DWT_BR_6M8, .phrMode = DWT_PHRMODE_STD,
+       .phrRate = DWT_PHRRATE_STD, .sfdTO = (129 + 8 - 8), .stsMode = DWT_STS_MODE_OFF, .stsLength = DWT_STS_LEN_64,
+       .pdoaMode = DWT_PDOA_M0 };
+    configASSERT0(dwt_configure(&dw_config));
+    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT, ranging_radio_isr, NULL));
+    dwt_setinterrupt(DWT_INT_TXFRS_BIT_MASK | DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXPHE_BIT_MASK |
+          DWT_INT_RXFCE_BIT_MASK | DWT_INT_RXFSL_BIT_MASK | DWT_INT_RXFTO_BIT_MASK |
+          DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK  |
+          DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
+    dwt_writesysstatuslo(DWT_INT_RCINIT_BIT_MASK | DWT_INT_SPIRDY_BIT_MASK);
+    dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch5);
+    
+	
+    dwt_configciadiag(DW_CIA_DIAG_LOG_ALL);
+    dwt_configmrxlut(5);
+
+    // Set this node's PAN ID and EUI
+    dwt_setpanid(MODULE_PANID);
+    dwt_seteui(eui64_array);
+
+    // Disable double-buffer mode, receive timeouts, and auto-ack mode
+    dwt_setdblrxbuffmode(DBL_BUF_STATE_DIS, DBL_BUF_MODE_MAN);
+    dwt_enableautoack(0, 0);
+    dwt_setrxtimeout(0);
+
+    // Set this device so that it only receives regular and extended data packets
+    //dwt_configureframefilter(DWT_FF_ENABLE_802_15_4, DWT_FF_DATA_EN);
+
+    // Clear the internal TX/RX antenna delays
+    dwt_settxantennadelay(0);
+    dwt_setrxantennadelay(0);
+	//--------
+    dwt_setcallbacks(NULL, NULL, NULL, NULL, NULL, ranging_radio_spi_ready, NULL);
+	
+}
+
+
+
+
 void ranging_radio_deinit(void)
 {
    // Ensure that the radio is in deep sleep mode and disable all SPI communications
@@ -247,6 +477,7 @@ void ranging_radio_register_callbacks(dwt_cb_t tx_done, dwt_cb_t rx_done, dwt_cb
 {
    // Register the DW3000 interrupt event callbacks
    dwt_setcallbacks(tx_done, rx_done, rx_timeout, rx_err, NULL, ranging_radio_spi_ready, NULL);
+   //void dwt_setcallbacks(dwt_cb_t cbTxDone, dwt_cb_t cbRxOk, dwt_cb_t cbRxTo, dwt_cb_t cbRxErr, dwt_cb_t cbSPIErr, dwt_cb_t cbSPIRdy, dwt_cb_t cbDualSPIEv);
 }
 
 void ranging_radio_choose_channel(uint8_t channel)

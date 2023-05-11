@@ -1946,13 +1946,15 @@ am_hal_iom_power_ctrl(void *pHandle,
     {
         case AM_HAL_SYSCTRL_WAKE:
             if (bRetainState && !pIOMState->registerState.bValid)
-            {
+            {   
+				//print("am_hal_iom.c: AM_HAL_STATUS_INVALID_OPERATION\n");
                 return AM_HAL_STATUS_INVALID_OPERATION;
             }
 
             //
             // Enable power control.
             //
+			//print("am_hal_iom.c: before enable power control\n");
             am_hal_pwrctrl_periph_enable((am_hal_pwrctrl_periph_e)(AM_HAL_PWRCTRL_PERIPH_IOM0 + pIOMState->ui32Module));
 
             if (bRetainState)

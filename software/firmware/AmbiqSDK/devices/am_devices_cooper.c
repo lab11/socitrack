@@ -56,6 +56,8 @@
 #include "am_bsp.h"
 #include "am_devices_cooper.h"
 #include "am_hal_mcuctrl.h"
+#include "logging.h"
+#include "ble_fw_image.h"
 
 //*****************************************************************************
 //
@@ -94,13 +96,22 @@ static am_devices_cooper_sbl_update_state_t gsSblUpdateState;
 //
 //!
 //
-static am_devices_cooper_sbl_update_data_t     g_sFwImage =
+/*static am_devices_cooper_sbl_update_data_t     g_sFwImage =
 {
     0,
     0,
     AM_DEVICES_COOPER_SBL_UPDATE_IMAGE_TYPE_FW,
     0
 
+};*/
+
+static am_devices_cooper_sbl_update_data_t     g_sFwImage = 
+
+{
+    (uint8_t*)&ble_fw_image_bin,
+    sizeof(ble_fw_image_bin),
+    AM_DEVICES_COOPER_SBL_UPDATE_IMAGE_TYPE_FW,
+    0
 };
 
 //
@@ -221,9 +232,20 @@ static uint32_t sbl_status = 0;
 void
 am_devices_cooper_pins_enable(void)
 {
+    am_hal_gpio_output_set(AM_DEVICES_COOPER_RESET_PIN);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_RESET_PIN, am_hal_gpio_pincfg_output);
+	//am_util_stdio_printf("after:AM_DEVICES_COOPER_RESET_PIN\n");
+	//without preset, already drops here!
+	//with preset, not dropping here
+	while(1){
+		;
+	}
+
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_IRQ_PIN, am_hal_gpio_pincfg_input);
+	//am_util_stdio_printf("after: AM_DEVICES_COOPER_IRQ_PIN\n"); //already drops here!
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_CLKREQ_PIN, g_AM_DEVICES_COOPER_CLKREQ);
+	//am_util_stdio_printf("after: AM_DEVICES_COOPER_CLKREQ_PIN\n"); //already drops here!
+
 #if (!AM_DEVICES_COOPER_QFN_PART)
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SWDIO, am_hal_gpio_pincfg_output);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SWCLK, am_hal_gpio_pincfg_output);
@@ -327,10 +349,15 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
             am_hal_iom_configure(pBleHandle, &stIOMCOOPERSettings) ||
             am_hal_iom_enable(pBleHandle))
     {
+		am_util_stdio_printf("am_hal_iom_initialize: ERROR\n");
         return AM_DEVICES_COOPER_STATUS_ERROR;
     }
     else
     {
+		am_util_stdio_printf("am_hal_iom_initialize: NO ERROR\n");
+		//pause here: stays at 1.2V
+		//1.21 version: 1.2V
+
         //
         // Configure the IOM pins.
         //
@@ -341,14 +368,29 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
 #endif
 #endif
         am_bsp_iom_pins_enable(ui32Module, AM_HAL_IOM_SPI_MODE);
+		am_util_stdio_printf("after bsp iom pins are enabled!\n"); //pause here: stays at 1.2V
         am_devices_cooper_pins_enable();
+		am_util_stdio_printf("after cooper pins are enabled!\n"); //pause here: 1.2V -> 1.0V -> 0.8V -> 0.6V -> 0.4V -> 0.2V
+		
+		
 #if (!AM_DEVICES_COOPER_QFN_PART)
+		
+		//pause here: drop from 1.V to  0.2V slowly
+		//1.21 version: 1.2V
+		
         // Enable crystals for Cooper
         am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_ENABLE, 0);
 
         am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, 0);
 #endif
+		//pause here: drop from 1.V to  0.2V slowly
+		//1.21 version: 1.2V
+
         am_devices_cooper_reset();
+		am_util_stdio_printf("after cooper pins are reset!\n");
+		//after fix: still 1.2V here
+		
+		//1.21version: drops to 800mV then rise again to 1.2V
 
         gAmCooper[ui32Index].pfnCallback = NULL;
         gAmCooper[ui32Index].pCallbackCtxt = NULL;
@@ -362,11 +404,39 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
         gAmCooper[ui32Index].ui32CSDuration = 100;
         *ppBleHandle = gAmCooper[ui32Index].pBleHandle = pBleHandle;
         *ppHandle = (void*)&gAmCooper[ui32Index];
+		
+	
+		static am_devices_cooper_sbl_update_data_t new_firmware =
+		{
+		    (uint8_t*)&ble_fw_image_bin,
+		    sizeof(ble_fw_image_bin),
+		    AM_DEVICES_COOPER_SBL_UPDATE_IMAGE_TYPE_FW,
+		    0
+		};
+		// and this you can put in some function that gets called-- this should make it so that the firmware struct is updated
+		//am_devices_cooper_get_FwImage(&new_firmware);
+		//new firmware is in g_sFwImage anyway
+		
+		//0.0 ?????
+        //am_util_stdio_printf("Received new BLE Controller FW version = %d.%d.%d.%d Going for upgrade\n", (g_sFwImage.version & 0xFF000000) >> 24, (g_sFwImage.version & 0xFF0000) >> 16,(g_sFwImage.version & 0xFF00) >> 8, g_sFwImage.version & 0xFF);
+		
+		
         // SBL checking
         am_devices_cooper_image_update_init(*ppHandle, pDevConfig->pNBTxnBuf);
+		am_util_stdio_printf("after image update init\n");
+		//after fix: still 1.2V here
+		//1.21 4p EVB: 1.2V here
+		//1.21 revI: 1.2V -> drop(during reset clear) -> 1.2V
+		//BYPASS ALL
+		//return AM_DEVICES_COOPER_STATUS_SUCCESS;
+	
+
         sbl_status = AM_DEVICES_COOPER_SBL_STATUS_INIT;
         sbl_status = am_devices_cooper_update_image();
-
+		am_util_stdio_printf("after first image update\n");
+		//after fix: still 1.2V here
+		//1.21 4p EVB: 1.2V here
+        
         while ( (sbl_status != AM_DEVICES_COOPER_SBL_STATUS_OK) &&
                 ( sbl_status != AM_DEVICES_COOPER_SBL_STATUS_FAIL) )
         {
@@ -374,11 +444,21 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
             {
                 am_hal_delay_us(50);
             }
+			
+			//1.21 4p EVB: still 1.2V here (the first outer loop)
             sbl_status = am_devices_cooper_update_image();
+			//1.21 4p EVB: already rise to 1.4-1.6v then falls back to 1.2V (the first outer loop)
+			//1.21 revI: 1.2V -> drop (during reset clear) -> 1.2V -> drop
+			
         }
+		am_util_stdio_printf("after image update is done\n");
+		//after fix: voltage drops
+		//1.21 4p evb: rise to ~1.4V and returns to 1.2V here
         //
         // Return the status.
         //
+		
+		//sbl_status = AM_DEVICES_COOPER_SBL_STATUS_OK; //used as bypass
         if (sbl_status == AM_DEVICES_COOPER_SBL_STATUS_OK)
         {
             // The CS assertation duration optimization only takes effect after V1.14
@@ -390,6 +470,9 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
             // need to wait a bit to jump from SBL to Cooper application firmware
             am_util_delay_ms(10);
             am_util_stdio_printf("BLE Controller Init Done\r\n");
+			//already drops here
+			//after fix: already drops here
+
             return AM_DEVICES_COOPER_STATUS_SUCCESS;
         }
         else
@@ -463,11 +546,14 @@ am_devices_cooper_reset(void)
 {
     am_hal_gpio_output_set(AM_DEVICES_COOPER_RESET_PIN);
     am_util_delay_ms(20);
-    am_hal_gpio_output_clear(AM_DEVICES_COOPER_RESET_PIN);
-    am_util_delay_ms(20);
+	//firmware 1.21: 1.2V here
+	am_hal_gpio_output_clear(AM_DEVICES_COOPER_RESET_PIN);
+    am_util_delay_ms(2000); //test with 2000
+	//firmware 1.21: slowly drop to 0
     am_hal_gpio_output_set(AM_DEVICES_COOPER_RESET_PIN);
     // Give some delay for the 32K clock stablization
     am_util_delay_ms(700);
+	//firmware 1.21: 1.2V -> drop -> 1.2V
 }
 
 //*****************************************************************************
@@ -555,6 +641,7 @@ uint32_t
 am_devices_cooper_blocking_write(void* pHandle, uint8_t ui8Type, uint32_t* pui32Data,
                                  uint32_t ui32NumBytes, bool bWaitReady)
 {
+	am_util_stdio_printf("blocking_write called\n");
     uint32_t ui32ErrorStatus = AM_DEVICES_COOPER_STATUS_SUCCESS;
     uint32_t ui32WaitReadyCount = 0;
     memset(&sLengthBytes.bytes, 0, 2);
@@ -821,6 +908,7 @@ am_devices_cooper_blocking_read(void* pHandle, uint32_t* pui32Data,
 uint32_t
 am_devices_cooper_command_write(void* pHandle, uint32_t* pui32Cmd, uint32_t ui32Length, uint32_t* pui32Response, uint32_t* pui32BytesReceived)
 {
+	am_util_stdio_printf("command write called!\n");
     uint32_t ui32ErrorStatus = AM_DEVICES_COOPER_STATUS_SUCCESS;
     if ( !pui32Cmd || !pui32Response || !pui32BytesReceived )
     {
@@ -989,6 +1077,8 @@ void send_update(void* pHandle, uint32_t imgBlobSize)
     {
         msg.maxPacketSize = AM_DEVICES_COOPER_SBL_UPADTE_MAX_SPI_PKT_SIZE;
     }
+	
+	am_util_stdio_printf("send_update called\n!");
     //
     // Compute CRC
     //
@@ -1012,6 +1102,7 @@ void send_data(void* pHandle, uint32_t address, uint32_t size, uint32_t pktNumbe
     //
     // Compute CRC
     //
+	am_util_stdio_printf("send_data called!\n");
     am_hal_crc32((uint32_t) & (msg->msgHdr.msgType), msg->msgHdr.msgLength - sizeof(uint32_t), &msg->msgHdr.msgCrc);
     am_devices_cooper_blocking_write(pHandle, AM_DEVICES_COOPER_RAW, (uint32_t*)msg, (sizeof(am_sbl_host_msg_data_t) + size), true);
 }
@@ -1022,7 +1113,8 @@ void send_data(void* pHandle, uint32_t address, uint32_t size, uint32_t pktNumbe
 //
 //*****************************************************************************
 void send_reset(void* pHandle)
-{
+{   
+	am_util_stdio_printf("send_reset called!\n");
     am_sbl_host_msg_reset_t msg;
     msg.msgHdr.msgType = AM_SBL_HOST_MSG_RESET;
     msg.msgHdr.msgLength = sizeof(am_sbl_host_msg_reset_t);
@@ -1047,6 +1139,7 @@ void send_fwContinue(void* pHandle)
     // Compute CRC
     //
     am_hal_crc32((uint32_t)&msg.msgHdr.msgType, msg.msgHdr.msgLength - sizeof(uint32_t), &msg.msgHdr.msgCrc);
+	//after fix: still 1.2V here
     am_devices_cooper_blocking_write(pHandle, AM_DEVICES_COOPER_RAW, (uint32_t*)&msg, sizeof(msg), true);
 }
 
@@ -1169,6 +1262,7 @@ uint32_t am_devices_cooper_update_image(void)
             //
             // Send the "HELLO" message to connect to the interface.
             //
+		    am_util_stdio_printf("init case!\n");
             send_hello(gsSblUpdateState.pHandle);
             gsSblUpdateState.ui32SblUpdateState = AM_DEVICES_COOPER_SBL_UPDATE_STATE_HELLO;
             // Tell application that we are not done with SBL
@@ -1176,6 +1270,7 @@ uint32_t am_devices_cooper_update_image(void)
             break;
         case AM_DEVICES_COOPER_SBL_UPDATE_STATE_HELLO:
             // Read the "STATUS" response from the IOS and check for CRC Error
+		    am_util_stdio_printf("hello case!\n");
             if ( iom_slave_read(gsSblUpdateState.pHandle, (uint32_t*)gsSblUpdateState.pWorkBuf, &ui32Size) == false )
             {
                 // Increment the Error Counter
@@ -1220,7 +1315,7 @@ uint32_t am_devices_cooper_update_image(void)
                  * To restructure the Cooper firmware version to a.b.c.d from a.b may solve this problem.
                  * The higher 16-bit is used to identify the major and minor version of based release firmware.
                  * The lower 16-bit is used to identify the version for testing before next release.
-                 * Originally the code only prints the lower 16-bit of FW version, need to print all the bytes
+                 * Originally the code only am_util_stdio_printfs the lower 16-bit of FW version, need to am_util_stdio_printf all the bytes
                  * based on new structure of firmware version now.
                  */
                 if ((psStatusMsg->versionNumber & 0xFFFF0000) == 0)
@@ -1265,6 +1360,8 @@ uint32_t am_devices_cooper_update_image(void)
                 am_util_stdio_printf("BLE Controller SBL Status:  0x%x\n", sbl_status);
                 am_util_stdio_printf("bootStatus 0x%x\n", psStatusMsg->bootStatus);
                 #endif
+                am_util_stdio_printf("before the boot status success section\n");
+                //after fix: still 1.2V here
                 // check if the Boot Status is success
                 if ( psStatusMsg->bootStatus == AM_DEVICES_COOPER_SBL_STAT_RESP_SUCCESS )
                 {
@@ -1295,9 +1392,11 @@ uint32_t am_devices_cooper_update_image(void)
                         // Not done yet
                         ui32Ret = AM_DEVICES_COOPER_SBL_STATUS_IN_PROGRESS;
                         am_util_stdio_printf("No new image to upgrade\n");
+						//after fix: still 1.2V here
                         // Send the command to continue to FW
                         send_fwContinue(gsSblUpdateState.pHandle);
                         am_util_stdio_printf("BLE Controller FW Auth Passed, Continue with FW\n");
+						//after fix: voltage drops here
                     }
                 }
                 else if ( psStatusMsg->bootStatus == AM_DEVICES_COOPER_SBL_STAT_RESP_FW_UPDATE_REQ )
@@ -1342,6 +1441,8 @@ uint32_t am_devices_cooper_update_image(void)
                     ui32Ret = AM_DEVICES_COOPER_SBL_STATUS_FAIL;
                 }
             }
+			am_util_stdio_printf("after boot status success section");
+			//after fix: already drops here
             if (  (ui32Ret == AM_DEVICES_COOPER_SBL_STATUS_OK) || (ui32Ret == AM_DEVICES_COOPER_SBL_STATUS_FAIL) ||
                   (gsSblUpdateState.ui32SblUpdateState == AM_DEVICES_COOPER_SBL_UPDATE_STATE_IMAGE_OK) )
             {

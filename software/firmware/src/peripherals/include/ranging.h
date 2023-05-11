@@ -38,7 +38,8 @@ typedef struct  __attribute__ ((__packed__))
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
-
+void ranging_radio_init_cw(void);
+void ranging_radio_init_cf(void);
 void ranging_radio_init(uint8_t *uid);
 void ranging_radio_deinit(void);
 void ranging_radio_reset(void);

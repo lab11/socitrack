@@ -221,6 +221,10 @@ ifeq ($(REVISION), EVB)
 SRC += SEGGER_RTT.c
 SRC += SEGGER_RTT_printf.c
 endif
+ifeq ($(REVISION), 4B)
+SRC += SEGGER_RTT.c
+SRC += SEGGER_RTT_printf.c
+endif
 SRC += smp_main.c
 SRC += startup_gcc.c
 SRC += tasks.c
@@ -340,6 +344,14 @@ ranging: $(CONFIG) $(CONFIG)/test_ranging_task.o $(CONFIG)/$$(TARGET).bin progra
 ranging_radio: TARGET = TestRangingRadio
 ranging_radio: SRC += test_ranging_radio.c
 ranging_radio: $(CONFIG) $(CONFIG)/test_ranging_radio.o $(CONFIG)/$$(TARGET).bin program
+	
+cw: TARGET = TestCW
+cw: SRC += test_cw.c
+cw: $(CONFIG) $(CONFIG)/test_cw.o $(CONFIG)/$$(TARGET).bin program
+	
+cf: TARGET = TestCF
+cf: SRC += test_cf.c
+cf: $(CONFIG) $(CONFIG)/test_cf.o $(CONFIG)/$$(TARGET).bin program
 
 rtc_set: TARGET = TestRTCSet
 rtc_set: SRC += test_rtc.c

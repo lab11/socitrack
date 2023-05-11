@@ -78,6 +78,8 @@ int main(void)
    //print("please print this!\n");
    //print("please print this!\n");
    
+   //without preset, voltage already drops here
+   //with preset fix, voltage already drops here
   
    
 

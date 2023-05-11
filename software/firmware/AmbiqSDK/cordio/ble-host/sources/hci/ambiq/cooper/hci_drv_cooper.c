@@ -67,6 +67,7 @@
 #include "hci_dbg_trc.h"
 
 #include <string.h>
+#include "logging.h"
 
 //*****************************************************************************
 //
@@ -244,6 +245,7 @@ static void ClkReqIntService(void *pArg)
 uint32_t
 HciDrvRadioBoot(bool bColdBoot)
 {
+	//print("hci drv radio boot!\n");
     uint32_t ui32Status = AM_DEVICES_COOPER_STATUS_SUCCESS;
 
     am_devices_cooper_config_t stCooperConfig;
@@ -255,11 +257,17 @@ HciDrvRadioBoot(bool bColdBoot)
     //
     ui32Status = am_devices_cooper_init(SPI_MODULE, &stCooperConfig, &g_IomDevHdl, &pvHciSpiHandle);
     ERROR_RETURN(ui32Status, ui32Status);
+	
+	//1.21 4p EVB: 1.2V here 
+	
+	//print("ui32Status %d!\n", ui32Status);
 
     //
     // Set the default BLE TX Output power.
     //
     am_util_ble_tx_power_set(g_IomDevHdl, TX_POWER_LEVEL_DEFAULT);
+	
+	//1.21 4p EVB: 1.2V here 
 
     uint32_t IntNum = AM_DEVICES_COOPER_IRQ_PIN;
     am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, IntNum, HciDrvIntService, NULL);
@@ -288,7 +296,9 @@ HciDrvRadioBoot(bool bColdBoot)
         g_BLEMacAddress[4] = (sDevice.ui32ChipID0 >> 8) & 0xFF;
         g_BLEMacAddress[5] = (sDevice.ui32ChipID0 >> 16) & 0xFF;
     }
-
+	
+	//1.21 4p EVB: 1.2V here 
+	
     return AM_DEVICES_COOPER_STATUS_SUCCESS;
 }
 
