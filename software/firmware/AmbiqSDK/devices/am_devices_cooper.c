@@ -232,15 +232,11 @@ static uint32_t sbl_status = 0;
 void
 am_devices_cooper_pins_enable(void)
 {
-    am_hal_gpio_output_set(AM_DEVICES_COOPER_RESET_PIN);
+    //am_hal_gpio_output_set(AM_DEVICES_COOPER_RESET_PIN);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_RESET_PIN, am_hal_gpio_pincfg_output);
 	//am_util_stdio_printf("after:AM_DEVICES_COOPER_RESET_PIN\n");
 	//without preset, already drops here!
 	//with preset, not dropping here
-	while(1){
-		;
-	}
-
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_IRQ_PIN, am_hal_gpio_pincfg_input);
 	//am_util_stdio_printf("after: AM_DEVICES_COOPER_IRQ_PIN\n"); //already drops here!
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_CLKREQ_PIN, g_AM_DEVICES_COOPER_CLKREQ);
@@ -444,7 +440,6 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
             {
                 am_hal_delay_us(50);
             }
-			
 			//1.21 4p EVB: still 1.2V here (the first outer loop)
             sbl_status = am_devices_cooper_update_image();
 			//1.21 4p EVB: already rise to 1.4-1.6v then falls back to 1.2V (the first outer loop)
@@ -548,7 +543,7 @@ am_devices_cooper_reset(void)
     am_util_delay_ms(20);
 	//firmware 1.21: 1.2V here
 	am_hal_gpio_output_clear(AM_DEVICES_COOPER_RESET_PIN);
-    am_util_delay_ms(2000); //test with 2000
+    am_util_delay_ms(20); //test with 2000
 	//firmware 1.21: slowly drop to 0
     am_hal_gpio_output_set(AM_DEVICES_COOPER_RESET_PIN);
     // Give some delay for the 32K clock stablization

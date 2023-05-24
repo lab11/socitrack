@@ -72,8 +72,8 @@ void cw_tx_test(uint8_t antenna, uint8_t channel){
 	
     // Select the appropriate antenna and channel
     ranging_radio_disable();
-    ranging_radio_choose_antenna(0);
-    ranging_radio_choose_channel(5);
+    ranging_radio_choose_antenna(antenna);
+    ranging_radio_choose_channel(channel);
 	
 	dwt_configcwmode();
 	
@@ -93,6 +93,8 @@ int main(void)
    print("before init!\n");
    
    ranging_radio_init_cw();
+   
+   dwt_setxtaltrim(40);
    //dwt_setxtaltrim(46);
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_timeout_callback, rx_error_callback);
    print("please print this!\n");

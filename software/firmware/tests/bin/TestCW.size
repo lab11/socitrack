@@ -1,5 +1,5 @@
    text	   data	    bss	    dec	    hex	filename
- 151356	     76	     68	 151500	  24fcc	bin/am_devices_cooper.o
+ 151436	     76	     68	 151580	  2501c	bin/am_devices_cooper.o
    1142	      0	      0	   1142	    476	bin/am_devices_led.o
     132	     64	      0	    196	     c4	bin/am_resources.o
    2748	      0	      0	   2748	    abc	bin/am_util_ble_cooper.o
@@ -112,7 +112,7 @@
    2541	      0	     36	   2577	    a11	bin/status_phase.o
     890	      0	    584	   1474	    5c2	bin/storage_task.o
      96	      0	      0	     96	     60	bin/time_aligned_task.o
-   1786	     29	   1030	   2845	    b1d	bin/test_ranging_radio.o
+   1440	      0	   1030	   2470	    9a6	bin/test_cw.o
    5484	    144	   2053	   7681	   1e01	am_bsp.o (ex ../AmbiqSDK/bsp/apollo4_blue_pro/gcc/bin/libam_bsp.a)
       0	    612	     28	    640	    280	am_bsp_pins.o (ex ../AmbiqSDK/bsp/apollo4_blue_pro/gcc/bin/libam_bsp.a)
      40	      0	      0	     40	     28	am_hal_bootrom_helper.o (ex ../AmbiqSDK/mcu/apollo4p/hal/mcu/gcc/bin/libam_hal.a)
@@ -157,4 +157,4 @@
    2728	      0	      0	   2728	    aa8	am_hal_timer.o (ex ../AmbiqSDK/mcu/apollo4p/hal/mcu/gcc/bin/libam_hal.a)
    5844	      0	    264	   6108	   17dc	am_hal_usb.o (ex ../AmbiqSDK/mcu/apollo4p/hal/mcu/gcc/bin/libam_hal.a)
     808	      0	      0	    808	    328	am_hal_wdt.o (ex ../AmbiqSDK/mcu/apollo4p/hal/mcu/gcc/bin/libam_hal.a)
-  84268	   2236	  33992	 120496	  1d6b0	bin/TestRangingRadio.axf
+  84084	   2236	  33984	 120304	  1d5f0	bin/TestCW.axf

@@ -83,6 +83,7 @@ void deep_sleep_test(void)
    am_hal_delay_us(3000000);
 }
 
+static uint8_t seq = 0;
 void delayed_write_test(uint8_t antenna, uint8_t channel)
 {
    // Create a test packet for sending
@@ -91,6 +92,11 @@ void delayed_write_test(uint8_t antenna, uint8_t channel)
       .message_type = SCHEDULE_PACKET, .epoch_time_unix = 12345678, .num_devices = 0,
       .schedule = { 0 }, .footer = { { 0 } } };
    static uint16_t packet_size = sizeof(packet);
+   
+   seq+=1;
+   if (seq==10){seq = 0;}
+   
+ 
 
    // Select the appropriate antenna and channel
    ranging_radio_disable();
@@ -125,7 +131,8 @@ int main(void)
    system_enable_interrupts(true);
    system_read_UID(eui, EUI_LEN);
    ranging_radio_init(eui);
-   //dwt_setxtaltrim(46);
+   //dwt_setxtaltrim(0);
+   dwt_setxtaltrim(40);
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_timeout_callback, rx_error_callback);
    print("please print this!");
    // Loop forever running whichever test is uncommented

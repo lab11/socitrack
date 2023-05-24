@@ -12,10 +12,24 @@ ifeq ($(REVISION), EVB)
 BSP = apollo4_blue_pro
 PART = apollo4p
 PART_DEF = AM_PART_APOLLO4P
-else
+endif
+
+ifeq ($(REVISION), I)
 BSP = apollo4_blue
 PART = apollo4b
 PART_DEF = AM_PART_APOLLO4B
+endif
+
+ifeq ($(REVISION), 4B)
+BSP = apollo4_blue
+PART = apollo4b
+PART_DEF = AM_PART_APOLLO4B
+endif
+
+ifeq ($(REVISION), IP)
+BSP = apollo4_blue_pro
+PART = apollo4p
+PART_DEF = AM_PART_APOLLO4P
 endif
 
 TOOLCHAIN ?= arm-none-eabi
@@ -214,6 +228,10 @@ SRC += sec_cmac_hci.c
 SRC += sec_ecc_hci.c
 SRC += sec_main.c
 ifeq ($(REVISION), I)
+SRC += SEGGER_RTT.c
+SRC += SEGGER_RTT_printf.c
+endif
+ifeq ($(REVISION), IP)
 SRC += SEGGER_RTT.c
 SRC += SEGGER_RTT_printf.c
 endif
