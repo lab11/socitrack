@@ -52,7 +52,10 @@ def plot_all(foldername):
     fig, axs = plt.subplots(len(tagpairs), 2, sharex=True)
     
     fig_together, axs_together = plt.subplots(len(tagpairs), 1, sharex=True)
-    
+    #dealing with the special case where the axes are not enclosed in a list
+    if len(tagpairs)==1:
+        axs_together=[axs_together]
+
     print('READING FILES......')
 
     for index, log in enumerate(filelists):
