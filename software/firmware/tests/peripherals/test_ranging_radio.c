@@ -134,7 +134,7 @@ int main(void)
    //dwt_setxtaltrim(0);
    dwt_setxtaltrim(40);
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_timeout_callback, rx_error_callback);
-   print("please print this!");
+   print("test_ranging_radio!");
    // Loop forever running whichever test is uncommented
    while (true)
    {
@@ -143,7 +143,7 @@ int main(void)
 	   //deep_sleep_test();
 	   
 	   
-	   //delayed_write_test(0,5);
+	   //delayed_write_test(0,9);
 	   //delayed_write_test(1,5);
 	   //delayed_write_test(2,5);
 	   
@@ -151,11 +151,11 @@ int main(void)
 	   //delayed_write_test(1,9);
 	   //delayed_write_test(2,9);
 	   
-	   read_test(0,5);
+	   //read_test(0,5);
 	   //read_test(1,5);
 	   //read_test(2,5);
 	   
-	   //read_test(0,9);
+	   read_test(0,9);
 	   //read_test(1,9);
 	   //read_test(2,9);
 	   
