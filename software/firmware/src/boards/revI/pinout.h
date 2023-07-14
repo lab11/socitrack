@@ -4,7 +4,6 @@
 // Hardware Revision ID
 #include "revisions.h"
 #define REVISION_ID                                 REVISION_I
-#define EXTERNAL_PERIPHERAL_POWER_OFF_ENABLED       false
 
 // Battery
 #define PIN_BATTERY_VOLTAGE                         18
@@ -67,25 +66,6 @@
 #define PIN_STORAGE_SPI_CS_FUNCTION                 AM_HAL_PIN_63_NCE63
 #define PIN_STORAGE_WRITE_PROTECT                   66
 #define PIN_STORAGE_HOLD                            67
-
-// Memory Storage (MSPI)
-#define STORAGE_MSPI_NUMBER                         0
-#define PIN_STORAGE_MSPI_CLK                        72
-#define PIN_STORAGE_MSPI_IO0                        64
-#define PIN_STORAGE_MSPI_IO1                        65
-#define PIN_STORAGE_MSPI_IO2                        66
-#define PIN_STORAGE_MSPI_IO3                        67
-#define PIN_STORAGE_MSPI_CS                         63
-#define PIN_STORAGE_MSPI_CLK_FUNCTION               AM_HAL_PIN_72_MSPI0_8
-#define PIN_STORAGE_MSPI_IO0_FUNCTION               AM_HAL_PIN_64_MSPI0_0
-#define PIN_STORAGE_MSPI_IO1_FUNCTION               AM_HAL_PIN_65_MSPI0_1
-#define PIN_STORAGE_MSPI_IO2_FUNCTION               AM_HAL_PIN_66_MSPI0_2
-#define PIN_STORAGE_MSPI_IO3_FUNCTION               AM_HAL_PIN_67_MSPI0_3
-#define PIN_STORAGE_MSPI_CS_FUNCTION                AM_HAL_PIN_63_NCE63
-
-// Power
-#define PIN_BLE_PERIPH_POWER_ENABLE                 61
-#define PIN_EXTERNAL_PERIPH_POWER_ENABLE            85
 
 // Timers
 #define BUZZER_TIMER_NUMBER                         0

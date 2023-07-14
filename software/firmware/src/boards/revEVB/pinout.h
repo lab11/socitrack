@@ -4,7 +4,6 @@
 // Hardware Revision ID
 #include "revisions.h"
 #define REVISION_ID                                 REVISION_APOLLO4_EVB
-#define EXTERNAL_PERIPHERAL_POWER_OFF_ENABLED       false
 
 // Battery
 #define PIN_BATTERY_VOLTAGE                         18
@@ -71,25 +70,6 @@
 #define PIN_STORAGE_SPI_CS_FUNCTION                 AM_HAL_PIN_11_NCE11
 #define PIN_STORAGE_WRITE_PROTECT                   12
 #define PIN_STORAGE_HOLD                            13
-
-// Memory Storage (MSPI)
-#define STORAGE_MSPI_NUMBER                         1
-#define PIN_STORAGE_MSPI_CLK                        82
-#define PIN_STORAGE_MSPI_IO0                        74
-#define PIN_STORAGE_MSPI_IO1                        75
-#define PIN_STORAGE_MSPI_IO2                        76
-#define PIN_STORAGE_MSPI_IO3                        77
-#define PIN_STORAGE_MSPI_CS                         11
-#define PIN_STORAGE_MSPI_CLK_FUNCTION               AM_HAL_PIN_82_MSPI1_8
-#define PIN_STORAGE_MSPI_IO0_FUNCTION               AM_HAL_PIN_74_MSPI1_0
-#define PIN_STORAGE_MSPI_IO1_FUNCTION               AM_HAL_PIN_75_MSPI1_1
-#define PIN_STORAGE_MSPI_IO2_FUNCTION               AM_HAL_PIN_76_MSPI1_2
-#define PIN_STORAGE_MSPI_IO3_FUNCTION               AM_HAL_PIN_77_MSPI1_3
-#define PIN_STORAGE_MSPI_CS_FUNCTION                AM_HAL_PIN_11_NCE11
-
-// Power
-#define PIN_BLE_PERIPH_POWER_ENABLE                 85
-#define PIN_EXTERNAL_PERIPH_POWER_ENABLE            85
 
 // Timers
 #define BUZZER_TIMER_NUMBER                         0

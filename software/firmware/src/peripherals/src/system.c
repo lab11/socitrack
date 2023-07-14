@@ -206,12 +206,6 @@ void setup_hardware(void)
    am_hal_cachectrl_config(&cachectrl_config);
    am_hal_cachectrl_enable();
 
-   // Turn on the power rails to all external peripherals
-   configASSERT0(am_hal_gpio_pinconfig(PIN_EXTERNAL_PERIPH_POWER_ENABLE, am_hal_gpio_pincfg_output));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_BLE_PERIPH_POWER_ENABLE, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_EXTERNAL_PERIPH_POWER_ENABLE);
-   am_hal_gpio_output_set(PIN_BLE_PERIPH_POWER_ENABLE);
-
    // Set up printing to the console
    logging_init();
    print_reset_reason(&reset_reason);
@@ -264,13 +258,6 @@ void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timesta
       am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &wakeup_pin);
       NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(wakeup_pin), AM_IRQ_PRIORITY_DEFAULT);
       NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(wakeup_pin));
-   }
-
-   // Turn off the power rails to all external peripherals
-   if (EXTERNAL_PERIPHERAL_POWER_OFF_ENABLED)
-   {
-      am_hal_gpio_output_clear(PIN_EXTERNAL_PERIPH_POWER_ENABLE);
-      am_hal_gpio_output_clear(PIN_BLE_PERIPH_POWER_ENABLE);
    }
 
    // Optionally, configure the RTC to wake the device at a specific timestamp

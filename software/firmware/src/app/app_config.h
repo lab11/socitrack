@@ -46,7 +46,7 @@
 typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 3700, BATTERY_FULL = 4200 } battery_status_t;
 
 
-// Dw3000 Ranging Radio Configuration ----------------------------------------------------------------------------------
+// DW3000 Ranging Radio Configuration ----------------------------------------------------------------------------------
 
 #define DW_PREAMBLE_LENGTH                          DWT_PLEN_128
 #define DW_PAC_SIZE                                 DWT_PAC8

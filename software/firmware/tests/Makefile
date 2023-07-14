@@ -5,18 +5,23 @@ SHELL := /bin/bash
 ifdef BOARD_REV
 REVISION := $(BOARD_REV)
 else
-REVISION := EVB
+REVISION := K
 endif
 
-ifeq ($(REVISION), EVB)
-BSP = apollo4_blue_pro
-PART = apollo4p
-PART_DEF = AM_PART_APOLLO4P
-else
+ifeq ($(REVISION), I)
 BSP = apollo4_blue
 PART = apollo4b
 PART_DEF = AM_PART_APOLLO4B
+else
+BSP = apollo4_blue_pro
+PART = apollo4p
+PART_DEF = AM_PART_APOLLO4P
 endif
+
+$(info Building test for Revision $(REVISION):)
+$(info BSP = $(BSP))
+$(info PART = $(PART))
+$(info PART_DEF = $(PART_DEF))
 
 TOOLCHAIN ?= arm-none-eabi
 CPU = cortex-m4
