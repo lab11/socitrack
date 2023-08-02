@@ -17,6 +17,7 @@ void ranging_begin(schedule_role_t role)
 {
    // Notify the ranging task to start with the indicated role
    is_ranging = true;
+   scheduler_prepare();
    xTaskNotify(ranging_task_handle, role, eSetValueWithOverwrite);
 }
 

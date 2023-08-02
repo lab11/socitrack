@@ -19,7 +19,7 @@ static am_hal_timer_config_t wakeup_timer_config;
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint8_t read_buffer[768], device_eui, schedule_reception_timeout;
 static uint8_t empty_round_timeout, eui[EUI_LEN];
-static volatile bool is_running;
+static volatile bool is_running, is_starting;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -140,6 +140,12 @@ void scheduler_init(uint8_t *uid)
       // Set the DW3000 callback configuration
       ranging_radio_register_callbacks(tx_callback, rx_callback, rx_timeout_callback, rx_timeout_callback);
    }
+   is_running = is_starting = false;
+}
+
+void scheduler_prepare(void)
+{
+   is_starting = true;
 }
 
 void scheduler_run(schedule_role_t role, uint32_t timestamp)
@@ -161,6 +167,7 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
 
    // Initialize the scheduler or wakeup timers based on the device role
    is_running = true;
+   is_starting = false;
    if (role == ROLE_MASTER)
    {
       // Initialize the scheduler timer
@@ -260,6 +267,15 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
 
 void scheduler_add_device(uint8_t eui)
 {
+   // Only schedule a device if currently running or about to start
+   if (!is_running)
+   {
+      if (!is_starting)
+         return;
+      while (!is_running)
+         vTaskDelay(1);
+   }
+
    // Ensure that schedule changes only occur while not actively ranging
    while (ranging_phase != UNSCHEDULED_TIME_PHASE)
       vTaskDelay(pdMS_TO_TICKS(2));
