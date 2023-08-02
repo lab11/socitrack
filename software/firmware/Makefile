@@ -101,7 +101,6 @@ INCLUDES += -Isrc/app
 INCLUDES += -Isrc/boards
 INCLUDES += -Isrc/boards/rev$(REVISION)
 INCLUDES += -Isrc/external/decadriver
-INCLUDES += -Isrc/external/segger
 INCLUDES += -Isrc/peripherals/include
 INCLUDES += -Isrc/tasks
 INCLUDES += -Isrc/tasks/bluetooth
