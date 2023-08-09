@@ -96,6 +96,7 @@ int main(void)
    system_enable_interrupts(true);
    system_read_UID(eui, EUI_LEN);
    ranging_radio_init(eui);
+   dwt_setxtaltrim(40);
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_error_callback, rx_error_callback);
 
    // Loop forever running whichever test is uncommented
@@ -104,8 +105,8 @@ int main(void)
       //reset_test();
       //regular_sleep_test();
       //deep_sleep_test();
-      //delayed_write_test();
-      read_test();
+	   delayed_write_test();
+      //read_test();
    }
 
    // Should never reach this point
