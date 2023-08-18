@@ -211,10 +211,28 @@ void ranging_radio_reset(void)
    configASSERT0(dwt_initialise(DWT_DW_IDLE));
 
    // Set up the DW3000 interrupts and overall configuration
-   dw_config = (dwt_config_t){ .chan = 9, .txPreambLength = DW_PREAMBLE_LENGTH, .rxPAC = DW_PAC_SIZE,
+   /*dw_config = (dwt_config_t){ .chan = 9, .txPreambLength = DW_PREAMBLE_LENGTH, .rxPAC = DW_PAC_SIZE,
       .txCode = 9, .rxCode = 9, .sfdType = DWT_SFD_IEEE_4Z, .dataRate = DW_DATA_RATE, .phrMode = DWT_PHRMODE_STD,
       .phrRate = DWT_PHRRATE_DTA, .sfdTO = DW_SFD_TO, .stsMode = DWT_STS_MODE_OFF, .stsLength = DWT_STS_LEN_32,
-      .pdoaMode = DWT_PDOA_M0 };
+      .pdoaMode = DWT_PDOA_M0 };*/
+
+   //850K data rate
+   dw_config = (dwt_config_t){
+	.chan = 5,
+	.txPreambLength = DWT_PLEN_128,
+	.rxPAC = DWT_PAC16,
+	.txCode = 9,
+	.rxCode = 9,
+	.sfdType = 2,//0 to use standard 8 symbol SFD, 1 to use non-standard 8 symbol, 2 for non-standard 16 symbol SFD and 3 for 4z 8 symbol SDF type
+	.dataRate = DWT_BR_850K,
+	.phrMode = DWT_PHRMODE_STD,
+	.phrRate = DWT_PHRMODE_STD,
+	.sfdTO = (128 + 1 + 16 - 16), //preamble length + 1 + SFD length - PAC size
+	.stsMode = DWT_STS_MODE_OFF,
+	.stsLength = DWT_STS_LEN_32,
+	.pdoaMode = DWT_PDOA_M0
+	};
+
    configASSERT0(dwt_configure(&dw_config));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT, ranging_radio_isr, NULL));
    dwt_setinterrupt(DWT_INT_TXFRS_BIT_MASK | DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXPHE_BIT_MASK |
