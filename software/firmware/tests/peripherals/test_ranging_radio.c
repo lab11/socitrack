@@ -54,7 +54,7 @@ void deep_sleep_test(void)
    am_hal_delay_us(3000000);
 }
 
-void delayed_write_test(void)
+void delayed_write_test(uint8_t antenna, uint8_t channel)
 {
    // Create a test packet for sending
    static schedule_packet_t packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0xC8 }, .seqNum = 0,
@@ -65,8 +65,8 @@ void delayed_write_test(void)
 
    // Select the appropriate antenna and channel
    ranging_radio_disable();
-   ranging_radio_choose_antenna(0);
-   ranging_radio_choose_channel(9);
+   ranging_radio_choose_antenna(antenna);
+   ranging_radio_choose_channel(channel);
 
    // Transmit the packet 2ms in the future
    dwt_writetxfctrl(packet_size, 0, 0);
@@ -78,11 +78,11 @@ void delayed_write_test(void)
    am_hal_delay_us(5000000);
 }
 
-void read_test(void)
+void read_test(uint8_t antenna, uint8_t channel)
 {
    // Enable packet reception
-   ranging_radio_choose_antenna(0);
-   ranging_radio_choose_channel(9);
+   ranging_radio_choose_antenna(antenna);
+   ranging_radio_choose_channel(channel);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
 
    // Sleep for 60 seconds
@@ -105,7 +105,7 @@ int main(void)
       //reset_test();
       //regular_sleep_test();
       //deep_sleep_test();
-	   delayed_write_test();
+	   delayed_write_test(0,5);
       //read_test();
    }
 
