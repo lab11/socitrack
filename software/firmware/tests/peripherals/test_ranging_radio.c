@@ -74,8 +74,8 @@ void delayed_write_test(uint8_t antenna, uint8_t channel)
    assert(dwt_writetxdata(packet_size, (uint8_t*)&packet, 0) == DWT_SUCCESS);
    assert(dwt_starttx(DWT_START_TX_DELAYED) == DWT_SUCCESS);
 
-   // Sleep for 5 seconds
-   am_hal_delay_us(5000000);
+   // Sleep for 2 seconds
+   am_hal_delay_us(2000000);
 }
 
 void read_test(uint8_t antenna, uint8_t channel)
@@ -105,8 +105,8 @@ int main(void)
       //reset_test();
       //regular_sleep_test();
       //deep_sleep_test();
-	   delayed_write_test(0,5);
-      //read_test();
+	  //delayed_write_test(0,5);
+	   read_test(0,9);
    }
 
    // Should never reach this point
