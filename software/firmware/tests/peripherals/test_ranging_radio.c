@@ -20,7 +20,7 @@ static void rx_done_callback(const dwt_cb_data_t *rxData)
    print("Callback 'rx_callback' fired at %lu us\n", APP_DEVICETIMEU64_TO_US(rx_timestamp));
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
-   print("Message Length: %u, Type: %u, Seq: %u\n", (uint32_t)rxData->datalength, (uint32_t)read_buffer[sizeof(ieee154_header_t)], (uint32_t)read_buffer[2]);
+   print("Rx Xtrim: %d, Message Length: %u, Type: %u, Seq: %u, Status Flags: %u, RX Flags: %u\n", dwt_getxtaltrim(), (uint32_t)rxData->datalength, (uint32_t)read_buffer[sizeof(ieee154_header_t)], (uint32_t)read_buffer[2], rxData->status, (uint32_t)rxData->rx_flags);
 }
 
 static void rx_error_callback(const dwt_cb_data_t *rxData)
@@ -28,7 +28,7 @@ static void rx_error_callback(const dwt_cb_data_t *rxData)
    // Re-enable packet reception upon error
    volatile uint64_t rx_timestamp = ranging_radio_readrxtimestamp();
    print("Callback 'rx_error_callback' fired at %lu us\n", APP_DEVICETIMEU64_TO_US(rx_timestamp));
-   print("Status Flags: %u, RX Flags: %u\n", rxData->status, (uint32_t)rxData->rx_flags);
+   print("Rx Xtrim: %d, Status Flags: %u, RX Flags: %u\n", dwt_getxtaltrim(), rxData->status, (uint32_t)rxData->rx_flags);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
 }
 
@@ -96,7 +96,7 @@ int main(void)
    system_enable_interrupts(true);
    system_read_UID(eui, EUI_LEN);
    ranging_radio_init(eui);
-   dwt_setxtaltrim(40);
+   dwt_setxtaltrim(44);
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_error_callback, rx_error_callback);
 
    // Loop forever running whichever test is uncommented
@@ -105,8 +105,8 @@ int main(void)
       //reset_test();
       //regular_sleep_test();
       //deep_sleep_test();
-	  //delayed_write_test(0,5);
-	   read_test(0,9);
+	   delayed_write_test(0,5);
+	   //read_test(0,9);
    }
 
    // Should never reach this point
