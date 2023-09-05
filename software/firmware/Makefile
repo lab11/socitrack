@@ -6,7 +6,7 @@ SHELL := /bin/bash
 ifdef BOARD_REV
 REVISION := $(BOARD_REV)
 else
-REVISION := K
+REVISION := L
 endif
 
 ifeq ($(REVISION), I)
