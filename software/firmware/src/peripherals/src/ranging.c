@@ -147,10 +147,17 @@ void ranging_radio_init(uint8_t *uid)
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
 
    // Set up the DW3000 antenna selection pins
+#if REVISION_ID < REVISION_L
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT1, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);   // TODO: THIS IS INVERTED BECAUSE OF REMAPPING OF PINS OF REVL
+   am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT2, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);   // TODO: THIS IS INVERTED BECAUSE OF REMAPPING OF PINS OF REVL
+   am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
+#else
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_RADIO_SPI_CS2);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_RADIO_SPI_CS3);
+#endif
 
    // Set up incoming interrupts from the DW3000
    uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;
@@ -268,7 +275,8 @@ void ranging_radio_choose_channel(uint8_t channel)
 void ranging_radio_choose_antenna(uint8_t antenna_number)
 {
    // Enable the desired antenna
-   /*switch (antenna_number)
+#if REVISION_ID < REVISION_L
+   switch (antenna_number)
    {
       case 0:
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
@@ -284,8 +292,8 @@ void ranging_radio_choose_antenna(uint8_t antenna_number)
          break;
       default:
          break;
-   }*/
-   // TODO: COMMENTED OUT BECAUSE NO ANTENNA ON REVL
+   }
+#endif
 }
 
 void ranging_radio_disable(void)
@@ -297,9 +305,10 @@ void ranging_radio_disable(void)
 void ranging_radio_sleep(bool deep_sleep)
 {
    // Disable all antennas
-   // TODO: COMMENTED OUT BECAUSE NO ANTENNAS ON REVL
-   //am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
-   //am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
+#if REVISION_ID < REVISION_L
+   am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
+   am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
+#endif
 
    // Make sure the radio is disabled and clear the interrupt mask to disable unwanted events
    dwt_forcetrxoff();
