@@ -27,8 +27,12 @@
 #define PIN_RADIO_SPI_CS2                           24
 #define PIN_RADIO_SPI_CS3                           25
 #define PIN_RADIO_INTERRUPT                         27
+#define PIN_RADIO_INTERRUPT2                        51
+#define PIN_RADIO_INTERRUPT3                        79
 #define PIN_RADIO_RESET                             50
 #define PIN_RADIO_WAKEUP                            26
+#define PIN_RADIO_WAKEUP2                           53
+#define PIN_RADIO_WAKEUP3                           88
 #define PIN_RADIO_SPI_SCK_FUNCTION                  AM_HAL_PIN_31_M3SCK
 #define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_33_M3MISO
 #define PIN_RADIO_SPI_MOSI_FUNCTION                 AM_HAL_PIN_32_M3MOSI
