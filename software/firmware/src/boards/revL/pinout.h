@@ -45,10 +45,10 @@
 #define PIN_IMU_RESET                               65
 
 // LEDs
-#define PIN_LED1_RED                                52
-#define PIN_LED1_GREEN                              51
-#define PIN_LED2_RED                                76
-#define PIN_LED2_YELLOW                             88
+#define PIN_LED1_RED                                11  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED1_GREEN                              12  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED2_RED                                15  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED2_YELLOW                             16  // INCORRECT MAPPING DUE TO SHARED PINS
 
 // Logging
 #define PIN_SWO                                     3
