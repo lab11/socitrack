@@ -24,11 +24,15 @@
 #define PIN_RADIO_SPI_MISO                          33
 #define PIN_RADIO_SPI_MOSI                          32
 #define PIN_RADIO_SPI_CS                            29
+#define PIN_RADIO_SPI_CS2                           24
+#define PIN_RADIO_SPI_CS3                           25
 #define PIN_RADIO_INTERRUPT                         27
+#define PIN_RADIO_INTERRUPT2                        51
+#define PIN_RADIO_INTERRUPT3                        79
 #define PIN_RADIO_RESET                             50
 #define PIN_RADIO_WAKEUP                            26
-#define PIN_RADIO_ANTENNA_SELECT1                   24
-#define PIN_RADIO_ANTENNA_SELECT2                   25
+#define PIN_RADIO_WAKEUP2                           53
+#define PIN_RADIO_WAKEUP3                           88
 #define PIN_RADIO_SPI_SCK_FUNCTION                  AM_HAL_PIN_31_M3SCK
 #define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_33_M3MISO
 #define PIN_RADIO_SPI_MOSI_FUNCTION                 AM_HAL_PIN_32_M3MOSI
@@ -45,10 +49,10 @@
 #define PIN_IMU_RESET                               65
 
 // LEDs
-#define PIN_LED1_RED                                52
-#define PIN_LED1_GREEN                              51
-#define PIN_LED2_RED                                76
-#define PIN_LED2_YELLOW                             88
+#define PIN_LED1_RED                                11  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED1_GREEN                              12  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED2_RED                                15  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED2_YELLOW                             16  // INCORRECT MAPPING DUE TO SHARED PINS
 
 // Logging
 #define PIN_SWO                                     3
