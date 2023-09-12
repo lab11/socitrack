@@ -16,7 +16,7 @@
 #define VOLTAGE_DIVIDER_UPPER                       510
 
 // Buzzer
-#define PIN_BUZZER_DRIVER                           54
+#define PIN_BUZZER_DRIVER                           55
 
 // DecaWave Radio
 #define RADIO_SPI_NUMBER                            3
