@@ -4173,148 +4173,6 @@ on the KXR Package</text>
 </deviceset>
 </devicesets>
 </library>
-<library name="switches" urn="urn:adsk.eagle:library:20878764">
-<description>&lt;b&gt;LAB11&lt;/b&gt; - Switches.</description>
-<packages>
-<package name="MM8030-2610" urn="urn:adsk.eagle:footprint:40585161/2" library_version="7">
-<smd name="IN" x="0" y="0.95" dx="0.5" dy="0.4" layer="1" stop="no" cream="no"/>
-<smd name="OUT" x="0" y="-0.95" dx="0.5" dy="0.4" layer="1" stop="no" cream="no"/>
-<smd name="G2" x="0.8" y="0" dx="0.5" dy="0.4" layer="1" rot="R90" stop="no" cream="no"/>
-<smd name="G1" x="-0.8" y="0" dx="0.5" dy="0.4" layer="1" rot="R90" stop="no" cream="no"/>
-<polygon width="0.1524" layer="29" pour="solid">
-<vertex x="0.7115625" y="-0.4738"/>
-<vertex x="1.0738" y="-0.4738"/>
-<vertex x="1.0738" y="0.4738"/>
-<vertex x="0.7115625" y="0.4738"/>
-<vertex x="0.5262" y="0.2884375"/>
-<vertex x="0.5262" y="-0.2884375"/>
-</polygon>
-<polygon width="0.1524" layer="1" pour="solid">
-<vertex x="0.7115625" y="-0.4738"/>
-<vertex x="1.0738" y="-0.4738"/>
-<vertex x="1.0738" y="0.4738"/>
-<vertex x="0.7115625" y="0.4738"/>
-<vertex x="0.5262" y="0.2884375"/>
-<vertex x="0.5262" y="-0.2884375"/>
-</polygon>
-<polygon width="0.1524" layer="1" pour="solid">
-<vertex x="-1.0738" y="-0.4738"/>
-<vertex x="-0.7115625" y="-0.4738"/>
-<vertex x="-0.5262" y="-0.2884375"/>
-<vertex x="-0.5262" y="0.2884375"/>
-<vertex x="-0.7115625" y="0.4738"/>
-<vertex x="-1.0738" y="0.4738"/>
-</polygon>
-<polygon width="0.1524" layer="29" pour="solid">
-<vertex x="-1.0738" y="-0.4738"/>
-<vertex x="-0.7115625" y="-0.4738"/>
-<vertex x="-0.5262" y="-0.2884375"/>
-<vertex x="-0.5262" y="0.2884375"/>
-<vertex x="-0.7115625" y="0.4738"/>
-<vertex x="-1.0738" y="0.4738"/>
-</polygon>
-<polygon width="0.1524" layer="1" pour="solid">
-<vertex x="-0.3738" y="-0.2438"/>
-<vertex x="0.3738" y="-0.2438"/>
-<vertex x="0.3738" y="0.2438"/>
-<vertex x="-0.3738" y="0.2438"/>
-</polygon>
-<polygon width="0.1524" layer="29" pour="solid">
-<vertex x="-0.220278125" y="0.3962"/>
-<vertex x="0.220278125" y="0.3962"/>
-<vertex x="0.4238" y="0.583440625"/>
-<vertex x="0.4238" y="1.0738"/>
-<vertex x="-0.4238" y="1.0738"/>
-<vertex x="-0.4238" y="0.583440625"/>
-</polygon>
-<polygon width="0.1524" layer="41" pour="solid">
-<vertex x="-0.4184375" y="0.4262"/>
-<vertex x="0.4184375" y="0.4262"/>
-<vertex x="0.6160375" y="0.6238"/>
-<vertex x="-0.6160375" y="0.6238"/>
-</polygon>
-<polygon width="0.1524" layer="29" pour="solid">
-<vertex x="-0.4238" y="-1.0738"/>
-<vertex x="0.4238" y="-1.0738"/>
-<vertex x="0.4238" y="-0.583440625"/>
-<vertex x="0.220278125" y="-0.3962"/>
-<vertex x="-0.220278125" y="-0.3962"/>
-<vertex x="-0.4238" y="-0.583440625"/>
-</polygon>
-<polygon width="0.1524" layer="41" pour="solid">
-<vertex x="-0.6160375" y="-0.6238"/>
-<vertex x="0.6160375" y="-0.6238"/>
-<vertex x="0.4184375" y="-0.4262"/>
-<vertex x="-0.4184375" y="-0.4262"/>
-</polygon>
-<circle x="1.25" y="1.25" radius="0.180275" width="0.1524" layer="21"/>
-<text x="1.27" y="0" size="0.6096" layer="25" font="vector" ratio="12" rot="R270" align="bottom-center">&gt;NAME</text>
-<wire x1="0" y1="0.508" x2="0" y2="-0.508" width="0.1524" layer="51"/>
-<wire x1="0" y1="-0.508" x2="-0.25" y2="-0.258" width="0.1524" layer="51"/>
-<wire x1="0.254" y1="-0.254" x2="0" y2="-0.508" width="0.1524" layer="51"/>
-<wire x1="-1" y1="1" x2="1" y2="1" width="0.127" layer="21"/>
-<wire x1="1" y1="1" x2="1" y2="-1" width="0.127" layer="21"/>
-<wire x1="1" y1="-1" x2="-1" y2="-1" width="0.127" layer="21"/>
-<wire x1="-1" y1="-1" x2="-1" y2="1" width="0.127" layer="21"/>
-</package>
-</packages>
-<packages3d>
-<package3d name="MM8030-2610" urn="urn:adsk.eagle:package:40585162/2" type="box">
-<packageinstances>
-<packageinstance name="MM8030-2610"/>
-</packageinstances>
-</package3d>
-</packages3d>
-<symbols>
-<symbol name="SPST" urn="urn:adsk.eagle:symbol:20878838/1" library_version="6">
-<circle x="-2.54" y="0" radius="0.762" width="0.254" layer="94"/>
-<circle x="2.54" y="2.54" radius="0.762" width="0.254" layer="94"/>
-<wire x1="-2.54" y1="0" x2="2.032" y2="4.064" width="0.254" layer="94"/>
-<pin name="IN" x="-5.08" y="0" visible="off" length="short"/>
-<pin name="A" x="5.08" y="2.54" visible="off" length="short" rot="R180"/>
-<text x="4.064" y="2.794" size="1.016" layer="94" align="bottom-center">A</text>
-<text x="-5.08" y="-5.08" size="1.27" layer="95">&gt;NAME</text>
-<text x="-5.08" y="-7.62" size="1.27" layer="96">&gt;VALUE</text>
-</symbol>
-<symbol name="GND" urn="urn:adsk.eagle:symbol:40585160/1" library_version="6">
-<pin name="GND" x="-2.54" y="0" visible="off" length="point"/>
-<wire x1="-2.54" y1="0" x2="2.54" y2="0" width="0.254" layer="94"/>
-<wire x1="2.54" y1="0" x2="2.54" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="2.54" y1="-2.54" x2="0.635" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="2.54" y1="-2.54" x2="4.445" y2="-2.54" width="0.254" layer="94"/>
-<wire x1="1.27" y1="-3.175" x2="3.81" y2="-3.175" width="0.254" layer="94"/>
-<wire x1="1.905" y1="-3.81" x2="3.175" y2="-3.81" width="0.254" layer="94"/>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="MM8030-2610" urn="urn:adsk.eagle:component:40585163/2" prefix="S" library_version="7">
-<gates>
-<gate name="G$1" symbol="SPST" x="0" y="0"/>
-<gate name="G$2" symbol="GND" x="0" y="-2.54"/>
-</gates>
-<devices>
-<device name="" package="MM8030-2610">
-<connects>
-<connect gate="G$1" pin="A" pad="OUT"/>
-<connect gate="G$1" pin="IN" pad="IN"/>
-<connect gate="G$2" pin="GND" pad="G1 G2"/>
-</connects>
-<package3dinstances>
-<package3dinstance package3d_urn="urn:adsk.eagle:package:40585162/2"/>
-</package3dinstances>
-<technologies>
-<technology name="">
-<attribute name="DURABILITY" value="100 Cycles" constant="no"/>
-<attribute name="FREQ-MAX" value="11 GHz" constant="no"/>
-<attribute name="MANUFACTURER" value="Murata" constant="no"/>
-<attribute name="MPN" value="MM8030-2610" constant="no"/>
-</technology>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="Inductor">
 <description>&lt;B&gt;Inductors - Fixed, Variable, Coupled</description>
 <packages>
@@ -5314,7 +5172,6 @@ FIDUCIAL</description>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="TP2" library="headers" deviceset="TEST-POINT" device="" value="VDDP"/>
 <part name="TP3" library="headers" deviceset="TEST-POINT" device="" value="VDDF"/>
-<part name="S4" library="switches" library_urn="urn:adsk.eagle:library:20878764" deviceset="MM8030-2610" device="" package3d_urn="urn:adsk.eagle:package:40585162/2"/>
 <part name="L3" library="Inductor" deviceset="L" device="CHIP-0402(1006-METRIC)" package3d_urn="urn:adsk.eagle:package:16378468/1" technology="_" value="2.0nH">
 <spice>
 <pinmapping spiceprefix="L">
@@ -5397,7 +5254,6 @@ FIDUCIAL</description>
 <attribute name="MPN" value="GCM1555C1H6R0BA16D"/>
 </part>
 <part name="SJ1" library="jumper" library_urn="urn:adsk.eagle:library:252" deviceset="SJ" device="" package3d_urn="urn:adsk.eagle:package:15471/1"/>
-<part name="AGND1" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="AGND" device=""/>
 <part name="AGND2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="AGND" device=""/>
 <part name="CX5" library="Capacitor" deviceset="C" device="CHIP-0402(1005-METRIC)" package3d_urn="urn:adsk.eagle:package:16290895/2" technology="_" value="DNP">
 <spice>
@@ -5841,11 +5697,6 @@ to reduce BOM count.</text>
 <instance part="TP3" gate="G$1" x="134.62" y="7.62" smashed="yes" rot="R180">
 <attribute name="NAME" x="135.255" y="7.62" size="1.016" layer="95" ratio="12" rot="R180" align="center-right"/>
 </instance>
-<instance part="S4" gate="G$1" x="238.76" y="40.64" smashed="yes">
-<attribute name="NAME" x="233.68" y="38.1" size="1.27" layer="95"/>
-<attribute name="VALUE" x="233.68" y="35.56" size="1.27" layer="96"/>
-</instance>
-<instance part="S4" gate="G$2" x="243.84" y="38.1" smashed="yes"/>
 <instance part="L3" gate="G$1" x="205.74" y="40.64" smashed="yes">
 <attribute name="NAME" x="205.74" y="43.18" size="1.778" layer="95" align="center"/>
 <attribute name="VALUE" x="205.74" y="38.1" size="1.778" layer="96" align="center"/>
@@ -5879,9 +5730,6 @@ to reduce BOM count.</text>
 <instance part="C3" gate="G$1" x="53.34" y="160.02" smashed="yes">
 <attribute name="NAME" x="53.086" y="160.02" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="53.086" y="157.734" size="1.778" layer="96" rot="R270" align="top-left"/>
-</instance>
-<instance part="AGND1" gate="VR1" x="238.76" y="33.02" smashed="yes">
-<attribute name="VALUE" x="238.76" y="32.004" size="1.778" layer="96" align="top-center"/>
 </instance>
 <instance part="AGND2" gate="VR1" x="187.96" y="25.4" smashed="yes">
 <attribute name="VALUE" x="187.96" y="24.384" size="1.778" layer="96" align="top-center"/>
@@ -6432,19 +6280,11 @@ to reduce BOM count.</text>
 <pinref part="C1" gate="G$1" pin="1"/>
 </segment>
 </net>
-<net name="N$18" class="2">
-<segment>
-<pinref part="L4" gate="G$1" pin="2"/>
-<wire x1="231.14" y1="40.64" x2="233.68" y2="40.64" width="0.1524" layer="91"/>
-<pinref part="S4" gate="G$1" pin="IN"/>
-</segment>
-</net>
 <net name="BLE_RFOUT" class="2">
 <segment>
-<pinref part="S4" gate="G$1" pin="A"/>
-<wire x1="243.84" y1="43.18" x2="246.38" y2="43.18" width="0.1524" layer="91"/>
-<wire x1="246.38" y1="43.18" x2="246.38" y2="45.72" width="0.1524" layer="91"/>
-<label x="246.38" y="45.72" size="1.27" layer="95" font="fixed" rot="R90" xref="yes"/>
+<wire x1="231.14" y1="40.64" x2="233.68" y2="40.64" width="0.1524" layer="91"/>
+<label x="233.68" y="40.64" size="1.27" layer="95" font="fixed" xref="yes"/>
+<pinref part="L4" gate="G$1" pin="2"/>
 </segment>
 </net>
 <net name="AP4_USB0_P" class="1">
@@ -6462,12 +6302,6 @@ to reduce BOM count.</text>
 </segment>
 </net>
 <net name="AGND" class="0">
-<segment>
-<pinref part="S4" gate="G$2" pin="GND"/>
-<wire x1="241.3" y1="38.1" x2="238.76" y2="38.1" width="0.1524" layer="91"/>
-<wire x1="238.76" y1="38.1" x2="238.76" y2="35.56" width="0.1524" layer="91"/>
-<pinref part="AGND1" gate="VR1" pin="AGND"/>
-</segment>
 <segment>
 <pinref part="C12" gate="G$1" pin="2"/>
 <wire x1="177.8" y1="38.1" x2="177.8" y2="33.02" width="0.1524" layer="91"/>
