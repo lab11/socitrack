@@ -52,7 +52,7 @@ int main(void)
    print("\n");
 
    // Choose which test to run
-   //idle_cpu_power_test();
+   idle_cpu_power_test();
    //idle_cpu_with_rtos_power_test();
    //active_cpu_with_rtos_power_test();
 

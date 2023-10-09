@@ -141,6 +141,14 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET, am_hal_gpio_pincfg_tristate));
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
    am_hal_gpio_output_clear(PIN_RADIO_RESET);
+#if REVISION_ID >= REVISION_M
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_tristate));
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
+   am_hal_gpio_output_clear(PIN_RADIO_RESET2);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_tristate));
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
+   am_hal_gpio_output_clear(PIN_RADIO_RESET3);
+#endif
 
    // Set up the DW3000 wake-up pin as an output, initially set to low
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP, am_hal_gpio_pincfg_output));
@@ -177,6 +185,7 @@ void ranging_radio_init(uint8_t *uid)
    radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT2, interrupt_pin_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
+   // TODO: Enable interrupts from other DWM modules at some point
    //NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
    //NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2));
    radio_interrupt_pin = PIN_RADIO_INTERRUPT3;
@@ -202,6 +211,10 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MOSI, mosi_config));
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, cs_config));
    ranging_radio_spi_fast();
+
+   // TODO: Reset the extra DWMs and put them into deep-sleep mode
+#if REVISION_ID >= REVISION_L
+#endif
 
    // Reset and initialize the DW3000 radio
    ranging_radio_reset();
