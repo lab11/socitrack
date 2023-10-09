@@ -57,11 +57,11 @@ void deep_sleep_test(void)
 void delayed_write_test(void)
 {
    // Create a test packet for sending
-   static schedule_packet_t packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0xC8 }, .seqNum = 0,
+   schedule_packet_t packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0xC8 }, .seqNum = 0,
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
       .message_type = SCHEDULE_PACKET, .epoch_time_unix = 12345678, .num_devices = 0,
       .schedule = { 0 }, .footer = { { 0 } } };
-   static uint16_t packet_size = sizeof(packet);
+   uint16_t packet_size = sizeof(packet);
 
    // Select the appropriate antenna and channel
    ranging_radio_disable();

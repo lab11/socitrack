@@ -167,6 +167,8 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT2, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
 #else
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_RADIO_SPI_CS);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_set(PIN_RADIO_SPI_CS2);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
@@ -185,14 +187,13 @@ void ranging_radio_init(uint8_t *uid)
    radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT2, interrupt_pin_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
-   // TODO: Enable interrupts from other DWM modules at some point
-   //NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
-   //NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2));
+   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
+   NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2));
    radio_interrupt_pin = PIN_RADIO_INTERRUPT3;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT3, interrupt_pin_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
-   //NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT3), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
-   //NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT3));
+   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT3), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
+   NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT3));
 #endif
 
    // Initialize the SPI module and enable all relevant SPI pins
@@ -209,16 +210,50 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_SCK, sck_config));
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MISO, miso_config));
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_MOSI, mosi_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, cs_config));
-   ranging_radio_spi_fast();
 
-   // TODO: Reset the extra DWMs and put them into deep-sleep mode
+   // Put all DWMs into reset mode
+   am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
+   am_hal_delay_us(1);
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+   am_hal_delay_us(2000);
+#if REVISION_ID >= REVISION_M
+   am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET2);
+   am_hal_delay_us(1);
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
+   am_hal_delay_us(2000);
+   am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET3);
+   am_hal_delay_us(1);
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
+   am_hal_delay_us(2000);
+#endif
+
+   // Reset the extra DWMs and put them into deep-sleep mode
 #if REVISION_ID >= REVISION_L
+   cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS2_FUNCTION;
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, cs_config));
+   ranging_radio_spi_slow();
+   ranging_radio_reset();
+   ranging_radio_sleep(true);
+   while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_RADIO_SPI_CS2);
+   cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS3_FUNCTION;
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, cs_config));
+   ranging_radio_spi_slow();
+   ranging_radio_reset();
+   ranging_radio_sleep(true);
+   while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_RADIO_SPI_CS3);
+   cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
 #endif
 
    // Reset and initialize the DW3000 radio
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, cs_config));
+   ranging_radio_spi_slow();
    ranging_radio_reset();
    dwt_setcallbacks(NULL, NULL, NULL, NULL, NULL, ranging_radio_spi_ready, NULL);
+   ranging_radio_spi_fast();
 }
 
 void ranging_radio_deinit(void)
@@ -231,17 +266,28 @@ void ranging_radio_deinit(void)
    // Disable all radio-based interrupts
    uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
-   am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, radio_interrupt_pin, NULL, (void*)radio_interrupt_pin);
+   am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT, NULL, NULL);
    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &radio_interrupt_pin);
+#if REVISION_ID >= REVISION_L
+   radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
+   NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2));
+   am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT2, NULL, NULL);
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &radio_interrupt_pin);
+   radio_interrupt_pin = PIN_RADIO_INTERRUPT3;
+   NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT3));
+   am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT3, NULL, NULL);
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &radio_interrupt_pin);
+#endif
 }
 
 void ranging_radio_reset(void)
 {
    // Assert the DW3000 reset pin for 1us to manually reset the device
-   am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
-   am_hal_delay_us(1);
-   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
-   am_hal_delay_us(2000);
+   // TODO: SOMEHOW CLEAN ALL THIS UP ONCE THE HW STOPS CHANGING
+   //am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
+   //am_hal_delay_us(1);
+   //am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+   //am_hal_delay_us(2000);
 
    // Initialize the DW3000 driver and transceiver
    while (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)

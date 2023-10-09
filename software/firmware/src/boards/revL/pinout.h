@@ -37,6 +37,8 @@
 #define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_33_M3MISO
 #define PIN_RADIO_SPI_MOSI_FUNCTION                 AM_HAL_PIN_32_M3MOSI
 #define PIN_RADIO_SPI_CS_FUNCTION                   AM_HAL_PIN_29_NCE29
+#define PIN_RADIO_SPI_CS2_FUNCTION                  AM_HAL_PIN_24_NCE24
+#define PIN_RADIO_SPI_CS3_FUNCTION                  AM_HAL_PIN_25_NCE25
 
 // IMU
 #define IMU_I2C_NUMBER                              1

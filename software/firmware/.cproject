@@ -347,7 +347,7 @@
 			</target>
 			<target name="UID" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>ID=c0:98:e5:42:05:51</buildArguments>
+				<buildArguments>ID=c0:98:e5:42:05:52</buildArguments>
 				<buildTarget>UID</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>false</useDefaultCommand>
