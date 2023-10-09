@@ -27,8 +27,8 @@
 #define PIN_RADIO_SPI_CS2                           24
 #define PIN_RADIO_SPI_CS3                           25
 #define PIN_RADIO_INTERRUPT                         27
-#define PIN_RADIO_INTERRUPT2                        51
-#define PIN_RADIO_INTERRUPT3                        79
+#define PIN_RADIO_INTERRUPT2                        72
+#define PIN_RADIO_INTERRUPT3                        76
 #define PIN_RADIO_RESET                             50
 #define PIN_RADIO_RESET2                            82
 #define PIN_RADIO_RESET3                            83
