@@ -3,7 +3,7 @@
 
 // Hardware Revision ID
 #include "revisions.h"
-#define REVISION_ID                                 REVISION_L
+#define REVISION_ID                                 REVISION_M
 
 // Battery
 #define PIN_BATTERY_VOLTAGE                         18
@@ -30,8 +30,10 @@
 #define PIN_RADIO_INTERRUPT2                        51
 #define PIN_RADIO_INTERRUPT3                        79
 #define PIN_RADIO_RESET                             50
+#define PIN_RADIO_RESET2                            82
+#define PIN_RADIO_RESET3                            83
 #define PIN_RADIO_WAKEUP                            26
-#define PIN_RADIO_WAKEUP2                           53
+#define PIN_RADIO_WAKEUP2                           63
 #define PIN_RADIO_WAKEUP3                           88
 #define PIN_RADIO_SPI_SCK_FUNCTION                  AM_HAL_PIN_31_M3SCK
 #define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_33_M3MISO
@@ -49,22 +51,12 @@
 #define PIN_IMU_RESET                               65
 
 // LEDs
-#define PIN_LED1_RED                                11  // INCORRECT MAPPING DUE TO SHARED PINS
-#define PIN_LED1_GREEN                              12  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED1_RED                                11
+#define PIN_LED1_GREEN                              12
 
 // Logging
 #define PIN_SWO                                     3
 #define PIN_SWO_FUNCTION                            AM_HAL_PIN_3_SWO
-#define PIN_SWTRACE_CLK                             38
-#define PIN_SWTRACE_CLK_FUNCTION                    AM_HAL_PIN_38_SWTRACECLK
-#define PIN_SWTRACE_0                               80
-#define PIN_SWTRACE_0_FUNCTION                      AM_HAL_PIN_80_SWTRACE0
-#define PIN_SWTRACE_1                               81
-#define PIN_SWTRACE_1_FUNCTION                      AM_HAL_PIN_81_SWTRACE1
-#define PIN_SWTRACE_2                               82
-#define PIN_SWTRACE_2_FUNCTION                      AM_HAL_PIN_82_SWTRACE2
-#define PIN_SWTRACE_3                               83
-#define PIN_SWTRACE_3_FUNCTION                      AM_HAL_PIN_83_SWTRACE3
 
 // Memory Storage (SPI)
 #define STORAGE_SPI_NUMBER                          5

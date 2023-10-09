@@ -5,6 +5,7 @@
 #define REVISION_I                          0x10
 #define REVISION_K                          0x11
 #define REVISION_L                          0x12
+#define REVISION_M                          0x13
 
 #endif  // #ifndef __REVISIONS_HEADER_H__
 
