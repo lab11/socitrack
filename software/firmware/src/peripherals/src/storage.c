@@ -152,7 +152,7 @@ static void wait_until_not_busy(void)
 
 static bool write_page_raw(const uint8_t *data, uint32_t page_number)
 {
-   static const uint16_t byte_offset = 0;
+   const uint16_t byte_offset = 0;
    const uint16_t page_number_reordered = (uint16_t)(((page_number & 0x0000FF00) >> 8) | ((page_number & 0x000000FF) << 8));
    for (uint8_t retry_index = 0; retry_index < MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL; ++retry_index)
    {
@@ -170,7 +170,7 @@ static bool write_page_raw(const uint8_t *data, uint32_t page_number)
 
 static bool read_page(uint8_t *buffer, uint32_t page_number)
 {
-   static const uint32_t byte_offset = 0;
+   const uint32_t byte_offset = 0;
    const uint16_t page_number_reordered = (uint16_t)(((page_number & 0x0000FF00) >> 8) | ((page_number & 0x000000FF) << 8));
    wait_until_not_busy();
    spi_write(COMMAND_PAGE_DATA_READ, &byte_offset, 1, &page_number_reordered, 2);

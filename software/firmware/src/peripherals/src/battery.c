@@ -30,7 +30,7 @@ static void plugged_in_status_changed(void *args)
    bool is_plugged_in = battery_monitor_is_plugged_in();
 
    // Toggle the interrupt direction (dual-edge interrupts not available due to errata)
-   static am_hal_gpio_pincfg_t pin_config = AM_HAL_GPIO_PINCFG_INPUT;
+   am_hal_gpio_pincfg_t pin_config = AM_HAL_GPIO_PINCFG_INPUT;
    pin_config.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLUP_100K;
    pin_config.GP.cfg_b.eIntDir = is_plugged_in ? AM_HAL_GPIO_PIN_INTDIR_LO2HI : AM_HAL_GPIO_PIN_INTDIR_HI2LO;
    am_hal_gpio_pinconfig(PIN_BATTERY_INPUT_POWER_GOOD, pin_config);
@@ -49,7 +49,7 @@ static void charging_status_changed(void *args)
    bool is_charging = battery_monitor_is_charging();
 
    // Toggle the interrupt direction (dual-edge interrupts not available due to errata)
-   static am_hal_gpio_pincfg_t pin_config = AM_HAL_GPIO_PINCFG_INPUT;
+   am_hal_gpio_pincfg_t pin_config = AM_HAL_GPIO_PINCFG_INPUT;
    pin_config.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLUP_100K;
    pin_config.GP.cfg_b.eIntDir = is_charging ? AM_HAL_GPIO_PIN_INTDIR_LO2HI : AM_HAL_GPIO_PIN_INTDIR_HI2LO;
    am_hal_gpio_pinconfig(PIN_BATTERY_CHARGING_STATUS, pin_config);
