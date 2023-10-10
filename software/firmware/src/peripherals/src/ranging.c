@@ -10,7 +10,7 @@
 
 static void *spi_handle;
 static dwt_config_t dw_config;
-static const dwt_txconfig_t tx_config_ch5 = { 0x34, 0xFDFDFDFD, 0x0 }, tx_config_ch9 = { 0x34, 0xFEFEFEFE, 0x0 };
+static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
 static volatile bool spi_ready;
 static uint8_t eui64_array[8];
 
@@ -36,7 +36,7 @@ static void ranging_radio_isr(void *args)
 
 static void ranging_radio_spi_slow(void)
 {
-   static const am_hal_iom_config_t spi_slow_config = {
+   const am_hal_iom_config_t spi_slow_config = {
       .eInterfaceMode = AM_HAL_IOM_SPI_MODE, .ui32ClockFreq = AM_HAL_IOM_6MHZ, .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
       .pNBTxnBuf = NULL, .ui32NBTxnBufLength = 0 };
    am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false);
@@ -46,7 +46,7 @@ static void ranging_radio_spi_slow(void)
 
 static void ranging_radio_spi_fast(void)
 {
-   static const am_hal_iom_config_t spi_fast_config = {
+   const am_hal_iom_config_t spi_fast_config = {
       .eInterfaceMode = AM_HAL_IOM_SPI_MODE, .ui32ClockFreq = AM_HAL_IOM_24MHZ, .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
       .pNBTxnBuf = NULL, .ui32NBTxnBufLength = 0 };
    am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false);
@@ -117,9 +117,8 @@ static void wakeup_device_with_io(void)
 
 // DW3000 Required Driver Function Implementations ---------------------------------------------------------------------
 
-static const struct dwt_spi_s spi_functions = { .readfromspi = readfromspi, .writetospi = writetospi,
-   .writetospiwithcrc = NULL, .setslowrate = ranging_radio_spi_slow, .setfastrate = ranging_radio_spi_fast };
-static const struct dwt_probe_s driver_interface = { .dw = NULL, .spi = (void*)&spi_functions, .wakeup_device_with_io = NULL };
+static struct dwt_spi_s spi_functions;
+static struct dwt_probe_s driver_interface;
 
 decaIrqStatus_t decamutexon(void) { return (decaIrqStatus_t)am_hal_interrupt_master_disable(); }
 void decamutexoff(decaIrqStatus_t status) { am_hal_interrupt_master_set((uint32_t)status); }
@@ -131,6 +130,13 @@ void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 
 void ranging_radio_init(uint8_t *uid)
 {
+   // Initialize static variables
+   tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFDFDFDFD, 0x0 };
+   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
+   spi_functions = (struct dwt_spi_s){ .readfromspi = readfromspi, .writetospi = writetospi,
+      .writetospiwithcrc = NULL, .setslowrate = ranging_radio_spi_slow, .setfastrate = ranging_radio_spi_fast };
+   driver_interface = (struct dwt_probe_s){ .dw = NULL, .spi = (void*)&spi_functions, .wakeup_device_with_io = NULL };
+
    // Convert the device UID into the necessary 64-bit EUI format
    spi_ready = false;
    eui64_array[0] = uid[0]; eui64_array[1] = uid[1]; eui64_array[2] = uid[2];

@@ -9,8 +9,8 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static TaskHandle_t ranging_task_handle, test_task_handle;
-static uint8_t uid[EUI_LEN], test_state = 0;
-static volatile bool is_ranging = false;
+static uint8_t uid[EUI_LEN], test_state;
+static volatile bool is_ranging;
 
 static void button_pressed(void *button_number)
 {
@@ -70,7 +70,9 @@ void TestTask(void *uid)
 void RangeTask(void *uid)
 {
    // Initialize the ranging scheduler
-   static uint32_t desired_role_bits;
+   test_state = 0;
+   is_ranging = false;
+   uint32_t desired_role_bits;
    scheduler_init(uid);
 
    // Loop forever

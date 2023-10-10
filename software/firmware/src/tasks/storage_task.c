@@ -24,6 +24,7 @@ typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; 
 
 static QueueHandle_t storage_queue;
 static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
+static uint32_t range_data_index;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -96,7 +97,6 @@ void storage_write_motion_status(bool in_motion)
 
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len)
 {
-   static uint32_t range_data_index = 0;
    storage_item_t storage_item = { .timestamp = timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
    memcpy(range_data[range_data_index].data, ranging_data, ranging_data_len);
    range_data[range_data_index].length = ranging_data_len;
@@ -108,6 +108,7 @@ void StorageTask(void *params)
 {
    // Create a queue to hold pending storage items
    storage_item_t item;
+   range_data_index = 0;
    storage_queue = xQueueCreate(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t));
 
    // Set whether the storage peripheral should be in maintenance mode

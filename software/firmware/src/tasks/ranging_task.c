@@ -8,7 +8,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static TaskHandle_t ranging_task_handle;
-static volatile bool is_ranging = false;
+static volatile bool is_ranging;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -46,6 +46,7 @@ void RangingTask(void *uid)
    ranging_task_handle = xTaskGetCurrentTaskHandle();
    uint32_t desired_role_bits = 0;
    scheduler_init(uid);
+   is_ranging = false;
 
    // Loop forever
    while (true)

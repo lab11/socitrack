@@ -6,6 +6,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static void *i2c_handle;
+static bool previously_in_motion;
 static motion_change_callback_t motion_change_callback;
 
 
@@ -260,7 +261,6 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
 static void imu_isr(void *args)
 {
    // Read the device motion status and trigger the registered callback
-   static bool previously_in_motion = false;
    bool in_motion = i2c_read8(BNO055_INTR_STAT_ADDR) & 0x40;
    i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
    if (in_motion != previously_in_motion)
@@ -322,6 +322,7 @@ static void enable_motion_interrupts(void)
 void imu_init(void)
 {
    // Initialize static variables
+   previously_in_motion = false;
    motion_change_callback = NULL;
 
    // Create an I2C configuration structure

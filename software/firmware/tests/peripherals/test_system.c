@@ -2,7 +2,7 @@
 #include "system.h"
 
 static volatile int i;
-static uint8_t uid[EUI_LEN] = { 0 };
+static uint8_t uid[EUI_LEN];
 static TaskHandle_t rtos_task_handle;
 
 void RtosIdleTask(void *param)

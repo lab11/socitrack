@@ -9,6 +9,7 @@ int main(void)
    rtc_init();
 #ifdef SET_RTC
    rtc_set_time_to_compile_time();
+   int i = 0;
 #endif
 
    // Output timestamp every second
@@ -17,7 +18,6 @@ int main(void)
       uint32_t timestamp = rtc_get_timestamp();
       print("Current Timestamp: %u\n", timestamp);
 #ifdef SET_RTC
-      static int i = 0;
       if (i++ == 15)
       {
          i = 0;

@@ -25,8 +25,7 @@ static volatile bool data_requested, expected_scanning, expected_advertising, is
 static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
 static uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN];
-static uint8_t current_ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
-static uint8_t device_id[EUI_LEN], requesting_id[EUI_LEN];
+static uint8_t current_ranging_role[3], device_id[EUI_LEN], requesting_id[EUI_LEN];
 static ble_discovery_callback_t discovery_callback;
 
 
@@ -243,6 +242,8 @@ static void cccCallback(attsCccEvt_t *pEvt)
 void bluetooth_init(uint8_t* uid)
 {
    // Initialize static variables
+   const uint8_t ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
+   memcpy(current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
    is_scanning = is_advertising = is_connected = ranges_requested = quick_scanning = false;
    memcpy(device_id, uid, EUI_LEN);

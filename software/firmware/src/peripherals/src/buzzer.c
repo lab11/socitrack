@@ -8,7 +8,7 @@
 static am_hal_timer_config_t timer_config;
 static volatile const uint16_t *current_frequency, *current_duration;
 static volatile uint32_t interrupt_counter_index, interrupt_counter_max;
-static const uint32_t buzzer_clock_hz = AM_HAL_CLKGEN_FREQ_MAX_HZ / 256;
+static uint32_t buzzer_clock_hz;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -86,6 +86,7 @@ void am_timer00_isr(void)
 void buzzer_init(void)
 {
    // Initialize static variables
+   buzzer_clock_hz = AM_HAL_CLKGEN_FREQ_MAX_HZ / 256;
    current_frequency = NULL;
    current_duration = NULL;
 
