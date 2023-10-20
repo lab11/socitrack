@@ -12,6 +12,7 @@ static TaskHandle_t ranging_task_handle, test_task_handle;
 static uint8_t uid[EUI_LEN], test_state;
 static volatile bool is_ranging;
 
+#if REVISION_ID == REVISION_APOLLO4_EVB
 static void button_pressed(void *button_number)
 {
    // Notify the Test Task that a button was pressed
@@ -19,10 +20,14 @@ static void button_pressed(void *button_number)
    vTaskNotifyGiveFromISR(test_task_handle, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
+#else
+static const schedule_role_t desired_role = ROLE_MASTER;
+#endif
 
 void TestTask(void *uid)
 {
    // Initiate interrupt-based button press detection
+#if REVISION_ID == REVISION_APOLLO4_EVB
    button_press_register_callback(PIN_BUTTON_1, button_pressed);
    button_press_register_callback(PIN_BUTTON_2, button_pressed);
 
@@ -65,6 +70,19 @@ void TestTask(void *uid)
          }
       }
    }
+#else
+   if (desired_role == ROLE_MASTER)
+   {
+      scheduler_prepare();
+      xTaskNotify(ranging_task_handle, ROLE_MASTER, eSetValueWithOverwrite);
+      for (uint8_t i = 3; i < 8; ++i)
+         scheduler_add_device(i);
+      scheduler_add_device(0x52);
+   }
+   else
+      xTaskNotify(ranging_task_handle, ROLE_PARTICIPANT, eSetValueWithOverwrite);
+   vTaskSuspend(test_task_handle);
+#endif
 }
 
 void RangeTask(void *uid)
