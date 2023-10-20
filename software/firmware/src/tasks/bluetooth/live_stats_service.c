@@ -35,7 +35,7 @@ static const uint16_t findMyTottagDescLen = sizeof(findMyTottagDesc);
 static const uint8_t rangingChUuid[] = { BLE_LIVE_STATS_RANGING_CHAR };
 static const uint8_t rangesChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(RANGES_HANDLE), BLE_LIVE_STATS_RANGING_CHAR };
 static const uint16_t rangesCharLen = sizeof(rangesChar);
-static uint8_t ranges[] = { 0 };
+static uint8_t ranges[20] = { 0 };
 static const uint16_t rangesLen = sizeof(ranges);
 static const uint8_t rangesDesc[] = "LiveRangingResults";
 static const uint16_t rangesDescLen = sizeof(rangesDesc);
@@ -158,7 +158,7 @@ static const attsAttr_t liveStatsList[] =
    }
 };
 
-static attsGroup_t liveStatsGroup = { 0, (attsAttr_t*)liveStatsList, 0, 0, LIVE_STATS_SERVICE_HANDLE, LIVE_STATS_MAX_HANDLE-1 };
+static attsGroup_t liveStatsGroup;
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
@@ -170,6 +170,7 @@ void liveStatsAddGroup(void)
 
 void liveStatsRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t writeCallback)
 {
-   liveStatsGroup.readCback = readCallback;
-   liveStatsGroup.writeCback = writeCallback;
+   timestamp = findMyTottagDuration = batteryLevel = 0;
+   memset(ranges, 0, sizeof(ranges));
+   liveStatsGroup = (attsGroup_t){ 0, (attsAttr_t*)liveStatsList, readCallback, writeCallback, LIVE_STATS_SERVICE_HANDLE, LIVE_STATS_MAX_HANDLE-1 };
 }

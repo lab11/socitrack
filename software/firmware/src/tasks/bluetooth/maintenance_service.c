@@ -127,7 +127,7 @@ static const attsAttr_t maintenanceList[] =
    }
 };
 
-static attsGroup_t maintenanceGroup = { 0, (attsAttr_t*)maintenanceList, 0, 0, MAINTENANCE_SERVICE_HANDLE, MAINTENANCE_MAX_HANDLE-1 };
+static attsGroup_t maintenanceGroup;
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
@@ -139,6 +139,9 @@ void deviceMaintenanceAddGroup(void)
 
 void deviceMaintenanceRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t writeCallback)
 {
-   maintenanceGroup.readCback = readCallback;
-   maintenanceGroup.writeCback = writeCallback;
+   memset(&experimentDetails, 0, sizeof(experimentDetails));
+   memset(maintenanceCommand, 0, sizeof(maintenanceCommand));
+   memset(maintenanceResult, 0, sizeof(maintenanceResult));
+   memset(maintenanceResultCcc, 0, sizeof(maintenanceResultCcc));
+   maintenanceGroup = (attsGroup_t){ 0, (attsAttr_t*)maintenanceList, readCallback, writeCallback, MAINTENANCE_SERVICE_HANDLE, MAINTENANCE_MAX_HANDLE-1 };
 }

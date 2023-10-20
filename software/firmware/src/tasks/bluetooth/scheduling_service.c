@@ -55,7 +55,7 @@ static const attsAttr_t schedulingList[] =
    }
 };
 
-static attsGroup_t schedulingGroup = { 0, (attsAttr_t*)schedulingList, 0, 0, SCHEDULING_SERVICE_HANDLE, SCHEDULING_MAX_HANDLE-1 };
+static attsGroup_t schedulingGroup;
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
@@ -67,6 +67,6 @@ void schedulingAddGroup(void)
 
 void schedulingRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t writeCallback)
 {
-   schedulingGroup.readCback = readCallback;
-   schedulingGroup.writeCback = writeCallback;
+   memset(networkRequest, 0, sizeof(networkRequest));
+   schedulingGroup = (attsGroup_t){ 0, (attsAttr_t*)schedulingList, readCallback, writeCallback, SCHEDULING_SERVICE_HANDLE, SCHEDULING_MAX_HANDLE-1 };
 }

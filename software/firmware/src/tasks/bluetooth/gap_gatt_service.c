@@ -84,7 +84,7 @@ static const attsAttr_t gapList[] =
    },
 };
 
-static attsGroup_t gapGroup = { 0, (attsAttr_t*)gapList, 0, 0, GAP_SERVICE_HANDLE, GAP_MAX_HANDLE-1 };
+static attsGroup_t gapGroup;
 
 
 // GATT Services and Characteristics -----------------------------------------------------------------------------------
@@ -174,7 +174,7 @@ static const attsAttr_t gattList[] =
    }
 };
 
-static attsGroup_t gattGroup = { 0, (attsAttr_t*)gattList, 0, 0, GATT_SERVICE_HANDLE, GATT_MAX_HANDLE-1 };
+static attsGroup_t gattGroup;
 
 void SvcCoreGapCentAddrResUpdate(bool_t value) { gapCentralAddrRes[0] = value; }
 
@@ -189,6 +189,10 @@ void gapGattAddGroup(void)
 
 void gapGattRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t writeCallback)
 {
-   gattGroup.readCback = readCallback;
-   gattGroup.writeCback = writeCallback;
+   memset(gapCentralAddrRes, 0, sizeof(gapCentralAddrRes));
+   memset(gattServiceChangedCcc, 0, sizeof(gattServiceChangedCcc));
+   memset(gattCsf, 0, sizeof(gattCsf));
+   memset(gattDbHash, 0, sizeof(gattDbHash));
+   gapGroup = (attsGroup_t){ 0, (attsAttr_t*)gapList, 0, 0, GAP_SERVICE_HANDLE, GAP_MAX_HANDLE-1 };
+   gattGroup = (attsGroup_t){ 0, (attsAttr_t*)gattList, readCallback, writeCallback, GATT_SERVICE_HANDLE, GATT_MAX_HANDLE-1 };
 }
