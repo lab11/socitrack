@@ -53,8 +53,8 @@
 #define PIN_IMU_RESET                               65
 
 // LEDs
-#define PIN_LED1_RED                                11
-#define PIN_LED1_GREEN                              12
+#define PIN_LED1_RED                                53
+#define PIN_LED1_GREEN                              51
 
 // Logging
 #define PIN_SWO                                     3
