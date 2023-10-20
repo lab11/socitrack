@@ -37,38 +37,62 @@ void reset_computation_phase(void)
    memset(&state, 0, sizeof(state));
 }
 
-void add_roundtrip1_time(uint8_t eui, uint8_t sequence_number, uint32_t roundtrip_time)
+void add_roundtrip0_times(uint8_t eui, uint8_t sequence_number, uint32_t poll_rx_time)
 {
    bool response_found = false;
    for (uint8_t i = 0; i < state.num_responses; ++i)
       if (state.responses[i].device_eui == eui)
       {
-         state.responses[i].round_trip1_times[sequence_number] = roundtrip_time;
+         state.responses[i].poll_rx_times[sequence_number] = poll_rx_time;
          response_found = true;
          break;
       }
    if (!response_found)
    {
       state.responses[state.num_responses].device_eui = eui;
-      state.responses[state.num_responses].round_trip1_times[sequence_number] = roundtrip_time;
+      state.responses[state.num_responses].poll_rx_times[sequence_number] = poll_rx_time;
       ++state.num_responses;
    }
 }
 
-void add_roundtrip2_time(uint8_t eui, uint8_t sequence_number, uint32_t roundtrip_time)
+void add_roundtrip1_times(uint8_t eui, uint8_t sequence_number, uint32_t poll_tx_time, uint32_t resp_rx_time, uint32_t final_tx_time)
 {
    bool response_found = false;
    for (uint8_t i = 0; i < state.num_responses; ++i)
       if (state.responses[i].device_eui == eui)
       {
-         state.responses[i].round_trip2_times[sequence_number] = roundtrip_time;
+         state.responses[i].poll_tx_times[sequence_number] = poll_tx_time;
+         state.responses[i].resp_rx_times[sequence_number] = resp_rx_time;
+         state.responses[i].final_tx_times[sequence_number] = final_tx_time;
          response_found = true;
          break;
       }
    if (!response_found)
    {
       state.responses[state.num_responses].device_eui = eui;
-      state.responses[state.num_responses].round_trip2_times[sequence_number] = roundtrip_time;
+      state.responses[state.num_responses].poll_tx_times[sequence_number] = poll_tx_time;
+      state.responses[state.num_responses].resp_rx_times[sequence_number] = resp_rx_time;
+      state.responses[state.num_responses].final_tx_times[sequence_number] = final_tx_time;
+      ++state.num_responses;
+   }
+}
+
+void add_roundtrip2_times(uint8_t eui, uint8_t sequence_number, uint32_t resp_tx_time, uint32_t final_rx_time)
+{
+   bool response_found = false;
+   for (uint8_t i = 0; i < state.num_responses; ++i)
+      if (state.responses[i].device_eui == eui)
+      {
+         state.responses[i].resp_tx_times[sequence_number] = resp_tx_time;
+         state.responses[i].final_rx_times[sequence_number] = final_rx_time;
+         response_found = true;
+         break;
+      }
+   if (!response_found)
+   {
+      state.responses[state.num_responses].device_eui = eui;
+      state.responses[state.num_responses].resp_tx_times[sequence_number] = resp_tx_time;
+      state.responses[state.num_responses].final_rx_times[sequence_number] = final_rx_time;
       ++state.num_responses;
    }
 }
@@ -84,12 +108,14 @@ void compute_ranges(uint8_t *ranging_results)
       uint8_t num_valid_distances = 0;
       memset(distances_millimeters, 0, sizeof(distances_millimeters));
       for (uint8_t i = 0; i < RANGING_NUM_SEQUENCES; ++i)
-         if (state.responses[dev_index].round_trip1_times[i] && state.responses[dev_index].round_trip2_times[i])
+         if (state.responses[dev_index].resp_rx_times[i] && state.responses[dev_index].final_rx_times[i])
          {
             // Compute the device range from the two-way round-trip times
-            const double broadcast_interval_dwt = APP_US_TO_DEVICETIMEU64(RANGING_BROADCAST_INTERVAL_US);
-            const double TOF = (((double)state.responses[dev_index].round_trip1_times[i] * state.responses[dev_index].round_trip2_times[i]) - (broadcast_interval_dwt * broadcast_interval_dwt)) /
-                  ((double)state.responses[dev_index].round_trip1_times[i] + state.responses[dev_index].round_trip2_times[i] + broadcast_interval_dwt + broadcast_interval_dwt);
+            const double Ra = state.responses[dev_index].resp_rx_times[i] - state.responses[dev_index].poll_tx_times[i];
+            const double Rb = state.responses[dev_index].final_rx_times[i] - state.responses[dev_index].resp_tx_times[i];
+            const double Da = state.responses[dev_index].final_tx_times[i] - state.responses[dev_index].resp_rx_times[i];
+            const double Db = state.responses[dev_index].resp_tx_times[i] - state.responses[dev_index].poll_rx_times[i];
+            const double TOF = ((Ra * Rb) - (Da * Db)) / (Ra + Rb + Da + Db);
             const int distance_millimeters = ranging_radio_time_to_millimeters(TOF);
 
             // Check that the distance we have at this point is at all reasonable

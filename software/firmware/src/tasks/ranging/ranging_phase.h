@@ -12,7 +12,7 @@ typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
    uint8_t message_type;
-   uint32_t round_trip_time;
+   uint32_t poll_time, resp_time, final_time;
    ieee154_footer_t footer;
 } ranging_packet_t;
 

@@ -24,7 +24,7 @@ void ranging_phase_initialize(const uint8_t *uid)
    // Initialize all Ranging Phase parameters
    ranging_packet = (ranging_packet_t){ .header = { .frameCtrl = { 0x41, 0x98 }, .seqNum = 0,
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .message_type = RANGING_PACKET, .round_trip_time = 0, .footer = { { 0 } } };
+      .message_type = RANGING_PACKET, .poll_time = 0, .resp_time = 0, .final_time = 0, .footer = { { 0 } } };
    memcpy(ranging_packet.header.sourceAddr, uid, sizeof(ranging_packet.header.sourceAddr));
    scheduled_slot = 0xFF;
 }
@@ -70,8 +70,8 @@ scheduler_phase_t ranging_phase_begin(uint8_t ranging_slot, uint8_t num_slots, u
    {
       current_slot = 0;
       ranging_packet.header.seqNum = 0;
-      dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-      dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+      dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+      dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(start_delay_us));
       if (dwt_starttx(start_relative_to_transmit ? DWT_START_TX_DLY_TS : DWT_START_TX_DLY_RS) != DWT_SUCCESS)
       {
@@ -115,8 +115,8 @@ scheduler_phase_t ranging_phase_tx_complete(void)
       if ((++current_slot <= initiator_slot_first) && (initiator_slot_first < responder_slots[responder_slot_index]))
       {
          ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
          dwt_setdelayedtrxtime(DW_DELAY_FROM_US(RANGING_BROADCAST_INTERVAL_US + ((initiator_slot_first - current_slot) * RANGING_ITERATION_INTERVAL_US)));
          current_slot = initiator_slot_first;
          if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
@@ -175,21 +175,30 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
       ranging_radio_choose_antenna(++antenna_index);
 
    // Compute the roundtrip transmission time when appropriate
-   if ((packet->header.seqNum == 1) || (packet->header.seqNum == 5) || (packet->header.seqNum == 9))
+   if ((packet->header.seqNum == 0) || (packet->header.seqNum == 4) || (packet->header.seqNum == 8))
    {
-      const uint64_t range_bias_correction = ranging_radio_compute_correction_for_signal_level(ranging_radio_received_signal_level());
-      ranging_packet.round_trip_time = (uint32_t)(ranging_radio_readrxtimestamp() - ranging_radio_readtxtimestamp() - range_bias_correction);
-      add_roundtrip1_time(packet->header.sourceAddr[0], (packet->header.seqNum - 1) / 4, ranging_packet.round_trip_time);
+      uint32_t rx_timestamp = (uint32_t)ranging_radio_readrxtimestamp();
+      ranging_packet.poll_time = rx_timestamp;
+      add_roundtrip0_times(packet->header.sourceAddr[0], packet->header.seqNum / 4, rx_timestamp);
+   }
+   else if ((packet->header.seqNum == 1) || (packet->header.seqNum == 5) || (packet->header.seqNum == 9))
+   {
+      uint64_t rx_timestamp = ranging_radio_readrxtimestamp();
+      ranging_packet.poll_time = (uint32_t)ranging_radio_readtxtimestamp();
+      ranging_packet.resp_time = (uint32_t)rx_timestamp;
+      ranging_packet.final_time = (uint32_t)(rx_timestamp + APP_US_TO_DEVICETIMEU64(RANGING_BROADCAST_INTERVAL_US)) & 0xFFFFFE00UL;
+      add_roundtrip0_times(packet->header.sourceAddr[0], (packet->header.seqNum - 1) / 4, packet->poll_time);
+      add_roundtrip1_times(packet->header.sourceAddr[0], (packet->header.seqNum - 1) / 4, ranging_packet.poll_time, ranging_packet.resp_time, ranging_packet.final_time);
    }
    else if ((packet->header.seqNum == 2) || (packet->header.seqNum == 6) || (packet->header.seqNum == 10))
    {
-      const uint64_t range_bias_correction = ranging_radio_compute_correction_for_signal_level(ranging_radio_received_signal_level());
-      ranging_packet.round_trip_time = (uint32_t)(ranging_radio_readrxtimestamp() - ranging_radio_readtxtimestamp() - range_bias_correction);
-      add_roundtrip1_time(packet->header.sourceAddr[0], (packet->header.seqNum - 2) / 4, packet->round_trip_time);
-      add_roundtrip2_time(packet->header.sourceAddr[0], (packet->header.seqNum - 2) / 4, ranging_packet.round_trip_time);
+      ranging_packet.resp_time = (uint32_t)ranging_radio_readtxtimestamp();
+      ranging_packet.final_time = (uint32_t)ranging_radio_readrxtimestamp();
+      add_roundtrip1_times(packet->header.sourceAddr[0], (packet->header.seqNum - 2) / 4, packet->poll_time, packet->resp_time, packet->final_time);
+      add_roundtrip2_times(packet->header.sourceAddr[0], (packet->header.seqNum - 2) / 4, ranging_packet.resp_time, ranging_packet.final_time);
    }
    else if ((packet->header.seqNum == 3) || (packet->header.seqNum == 7) || (packet->header.seqNum == 11))
-      add_roundtrip2_time(packet->header.sourceAddr[0], (packet->header.seqNum - 3) / 4, packet->round_trip_time);
+      add_roundtrip2_times(packet->header.sourceAddr[0], (packet->header.seqNum - 3) / 4, packet->resp_time, packet->final_time);
 
    // Handle the ranging phase based on the sequence number of the packet that was just received
    if (packet->header.seqNum == 11)
@@ -199,8 +208,8 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
       antenna_index = ranging_packet.header.seqNum = 0;
       if (++current_slot <= initiator_slot_last)
       {
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
          dwt_setdelayedtrxtime(DW_DELAY_FROM_US(RANGING_BROADCAST_INTERVAL_US));
          if (dwt_starttx(DWT_START_TX_DLY_RS) != DWT_SUCCESS)
          {
@@ -214,10 +223,10 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    {
       // Received non-terminal packet...send response
       ranging_packet.header.seqNum = packet->header.seqNum + 1;
-      if ((packet->header.seqNum == 0) || (packet->header.seqNum == 4) || (packet->header.seqNum == 8) || (packet->header.seqNum == 3) || (packet->header.seqNum == 7))
+      if ((packet->header.seqNum == 3) || (packet->header.seqNum == 7))
       {
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
       }
       else
       {
@@ -254,8 +263,8 @@ scheduler_phase_t ranging_phase_rx_error(void)
       if (++current_slot <= initiator_slot_last)
       {
          ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
          dwt_setdelayedtrxtime(DW_DELAY_FROM_US(delay_time_us));
          if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
          {
@@ -278,8 +287,8 @@ scheduler_phase_t ranging_phase_rx_error(void)
       uint8_t next_sequence_num = 4 * ((4 + ranging_packet.header.seqNum) / 4);
       uint32_t delay_time_us = (uint32_t)(next_sequence_num - ranging_packet.header.seqNum) * RANGING_BROADCAST_INTERVAL_US;
       ranging_packet.header.seqNum = next_sequence_num;
-      dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-      dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+      dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+      dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(delay_time_us));
       if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
       {
@@ -298,8 +307,8 @@ scheduler_phase_t ranging_phase_rx_error(void)
       if ((++current_slot <= initiator_slot_first) && (initiator_slot_first < responder_slots[responder_slot_index]))
       {
          ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
          dwt_setdelayedtrxtime(DW_DELAY_FROM_US(delay_time_us + ((initiator_slot_first - current_slot) * RANGING_ITERATION_INTERVAL_US)));
          current_slot = initiator_slot_first;
          if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
@@ -321,6 +330,8 @@ scheduler_phase_t ranging_phase_rx_error(void)
          }
          return RANGING_PHASE;
       }
+      else
+         last_rx_delay_time_us += delay_time_us;
    }
    else if ((antenna_index + 1) == NUM_ANTENNAS)
    {
@@ -332,8 +343,8 @@ scheduler_phase_t ranging_phase_rx_error(void)
       if ((++current_slot <= initiator_slot_first) && (initiator_slot_first < responder_slots[responder_slot_index]))
       {
          ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ranging_packet.round_trip_time), (uint8_t*)&ranging_packet, 0);
+         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
+         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
          dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us + RECEIVE_EARLY_START_US + ((initiator_slot_first - current_slot) * RANGING_ITERATION_INTERVAL_US)));
          current_slot = initiator_slot_first;
          if (dwt_starttx(last_rx_relative_to_transmit ? DWT_START_TX_DLY_TS : DWT_START_TX_DLY_RS) != DWT_SUCCESS)

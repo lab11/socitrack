@@ -51,7 +51,7 @@ scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uin
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(start_delay_us));
       if (dwt_starttx(start_relative_to_transmit ? DWT_START_TX_DLY_TS : DWT_START_TX_DLY_RS) != DWT_SUCCESS)
       {
-         print("ERROR: Failed to transmit STATUS packet\n");
+         print("ERROR: Failed to transmit initial STATUS packet\n");
          return RANGE_COMPUTATION_PHASE;
       }
    }
