@@ -2,7 +2,7 @@
 //
 //! @file am_hal_usbcharger.h
 //!
-//! @brief
+//! @brief HAL for the USB Charger Functionality
 //!
 //! @addtogroup usb_charger_4b USB Charger Functionality
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -158,7 +158,6 @@ static inline void am_hal_usb_hardware_unreset(void)
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************
-
 static inline void am_hal_usb_hardware_reset(void)
 {
     //
@@ -175,7 +174,6 @@ static inline void am_hal_usb_hardware_reset(void)
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-
 static inline void  am_hal_usb_charger_enable_data_pin_contact_detection(void)
 {
     //

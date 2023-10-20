@@ -10,16 +10,16 @@
  *            Health Thermometer profile collector
  *            Pulse Oximeter profile collector
  *
- *  Copyright (c) 2012-2019 Arm Ltd.
+ *  Copyright (c) 2012-2020 Arm Ltd. All Rights Reserved.
  *
- *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  Copyright (c) 2019-2020 Packetcraft, Inc.
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -105,7 +105,7 @@ const appMasterCfg_t medcMasterCfg =
 /*! configurable parameters for security */
 static const appSecCfg_t medcSecCfg =
 {
-  DM_AUTH_BOND_FLAG,                      /*! Authentication and bonding flags */
+  DM_AUTH_BOND_FLAG | DM_AUTH_MITM_FLAG,  /*! Authentication and bonding flags */
   0,                                      /*! Initiator key distribution flags */
   DM_KEY_DIST_LTK,                        /*! Responder key distribution flags */
   FALSE,                                  /*! TRUE if Out-of-band pairing data is present */
@@ -116,7 +116,7 @@ static const appSecCfg_t medcSecCfg =
 static const smpCfg_t medcSmpCfg =
 {
   500,                                    /*! 'Repeated attempts' timeout in msec */
-  SMP_IO_DISP_ONLY,                       /*! I/O Capability */
+  SMP_IO_KEY_DISP,                        /*! I/O Capability */
   7,                                      /*! Minimum encryption key length */
   16,                                     /*! Maximum encryption key length */
   1,                                      /*! Attempts to trigger 'repeated attempts' timeout */
@@ -218,7 +218,13 @@ static const attcDiscCfg_t medcCfgDisList[] =
   {NULL, 0, DIS_SRS_HDL_IDX},
 
   /* Read:  DIS System ID */
-  {NULL, 0, DIS_SID_HDL_IDX}
+  {NULL, 0, DIS_SID_HDL_IDX},
+
+  /* Read:  DIS Registration certificate data */
+  {NULL, 0, DIS_RCD_HDL_IDX},
+
+  /* Read:  DIS PnP ID */
+  {NULL, 0, DIS_PNP_ID_HDL_IDX}
 };
 
 /* List of GATT characteristics to configure after service discovery */

@@ -19,11 +19,16 @@ MEMORY
 
 SECTIONS
 {
-    .text :
-    {
+	.isr_vector :
+	{
         . = ALIGN(4);
         KEEP(*(.isr_vector))
         KEEP(*(.patch))
+        . = ALIGN(4);
+	}
+
+    .text :
+    {
         . = ALIGN(4);
         __dw_drivers_start = .;
         KEEP(*(.dw_drivers))

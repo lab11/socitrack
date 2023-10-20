@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the M4F system control registers
 //!
-//! @addtogroup sysctrl4 SYSCTRL - System Control
+//! @addtogroup sysctrl4_4p SYSCTRL - System Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -213,10 +213,7 @@ am_hal_sysctrl_sleep(bool bSleepDeep)
 
 //*****************************************************************************
 //
-//! @brief Enable the floating point module.
-//!
-//! Call this function to enable the ARM hardware floating point module.
-//!
+// Enable the floating point module.
 //
 //*****************************************************************************
 void
@@ -232,10 +229,7 @@ am_hal_sysctrl_fpu_enable(void)
 
 //*****************************************************************************
 //
-//! @brief Disable the floating point module.
-//!
-//! Call this function to disable the ARM hardware floating point module.
-//!
+// Disable the floating point module.
 //
 //*****************************************************************************
 void
@@ -252,33 +246,7 @@ am_hal_sysctrl_fpu_disable(void)
 
 //*****************************************************************************
 //
-//! @brief Enable stacking of FPU registers on exception entry.
-//!
-//! @param bLazy - Set to "true" to enable "lazy stacking".
-//!
-//! This function allows the core to save floating-point information to the
-//! stack on exception entry. Setting the bLazy option enables "lazy stacking"
-//! for interrupt handlers.  Normally, mixing floating-point code and interrupt
-//! driven routines causes increased interrupt latency, because the core must
-//! save extra information to the stack upon exception entry. With the lazy
-//! stacking option enabled, the core will skip the saving of floating-point
-//! registers when possible, reducing average interrupt latency.
-//!
-//! @note At reset of the Cortex M4, the ASPEN and LSPEN bits are set to 1,
-//! enabling Lazy mode by default. Therefore this function will generally
-//! only have an affect when setting for full-context save (or when switching
-//! from full-context to lazy mode).
-//!
-//! @note See also:
-//! infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0298a/DAFGGBJD.html
-//!
-//! @note Three valid FPU context saving modes are possible.
-//! 1. Lazy           ASPEN=1 LSPEN=1 am_hal_sysctrl_fpu_stacking_enable(true)
-//!                                   and default.
-//! 2. Full-context   ASPEN=1 LSPEN=0 am_hal_sysctrl_fpu_stacking_enable(false)
-//! 3. No FPU state   ASPEN=0 LSPEN=0 am_hal_sysctrl_fpu_stacking_disable()
-//! 4. Invalid        ASPEN=0 LSPEN=1
-//!
+// Enable stacking of FPU registers on exception entry.
 //
 //*****************************************************************************
 void
@@ -300,12 +268,7 @@ am_hal_sysctrl_fpu_stacking_enable(bool bLazy)
 
 //*****************************************************************************
 //
-//! @brief Disable FPU register stacking on exception entry.
-//!
-//! This function disables all stacking of floating point registers for
-//! interrupt handlers.  This mode should only be used when it is absolutely
-//! known that no FPU instructions will be executed in an ISR.
-//!
+// Disable FPU register stacking on exception entry.
 //
 //*****************************************************************************
 void
@@ -321,10 +284,7 @@ am_hal_sysctrl_fpu_stacking_disable(void)
 
 //*****************************************************************************
 //
-//! @brief Issue a system wide reset using the AIRCR bit in the M4 system ctrl.
-//!
-//! This function issues a system wide reset (Apollo4P POR level reset).
-//!
+// Issue a system wide reset using the AIRCR bit in the M4 system ctrl.
 //
 //*****************************************************************************
 void

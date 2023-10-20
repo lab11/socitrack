@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the SYSTICK
 //!
-//! @addtogroup systick4 SYSTICK - System Tick Timer
+//! @addtogroup systick4_4p SYSTICK - System Tick Timer
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -62,15 +62,9 @@
 
 //*****************************************************************************
 //
-//! @brief Start the SYSTICK.
-//!
-//! This function starts the systick timer.
-//!
-//! @note This timer does not run in deep-sleep mode as it runs from the core
-//! clock, which is gated in deep-sleep. If a timer is needed in deep-sleep use
-//! one of the ctimers instead. Also to note is this timer will consume higher
-//! power than the ctimers.
-//!
+// Start the SYSTICK.
+//
+// This function starts the systick timer.
 //
 //*****************************************************************************
 void
@@ -84,15 +78,9 @@ am_hal_systick_start(void)
 
 //*****************************************************************************
 //
-//! @brief Stop the SYSTICK.
-//!
-//! This function stops the systick timer.
-//!
-//! @note This timer does not run in deep-sleep mode as it runs from the core
-//! clock, which is gated in deep-sleep. If a timer is needed in deep-sleep use
-//! one of the ctimers instead. Also to note is this timer will consume higher
-//! power than the ctimers.
-//!
+// Stop the SYSTICK.
+//
+// This function stops the systick timer.
 //
 //*****************************************************************************
 void
@@ -106,10 +94,9 @@ am_hal_systick_stop(void)
 
 //*****************************************************************************
 //
-//! @brief Enable the interrupt in the SYSTICK.
-//!
-//! This function enables the interupt in the systick timer.
-//!
+// Enable the interrupt in the SYSTICK.
+//
+// This function enables the interupt in the systick timer.
 //
 //*****************************************************************************
 void
@@ -123,10 +110,9 @@ am_hal_systick_int_enable(void)
 
 //*****************************************************************************
 //
-//! @brief Disable the interrupt in the SYSTICK.
-//!
-//! This function disables the interupt in the systick timer.
-//!
+// Disable the interrupt in the SYSTICK.
+//
+// This function disables the interupt in the systick timer.
 //
 //*****************************************************************************
 void
@@ -140,11 +126,9 @@ am_hal_systick_int_disable(void)
 
 //*****************************************************************************
 //
-//! @brief Reads the interrupt status.
-//!
-//! This function reads the interrupt status in the systick timer.
-//!
-//! @return the interrupt status.
+// Reads the interrupt status.
+//
+// This function reads the interrupt status in the systick timer.
 //
 //*****************************************************************************
 uint32_t
@@ -158,11 +142,10 @@ am_hal_systick_int_status_get(void)
 
 //*****************************************************************************
 //
-//! @brief Reset the interrupt in the SYSTICK.
-//!
-//! This function resets the systick timer by clearing out the configuration
-//! register.
-//!
+// Reset the interrupt in the SYSTICK.
+//
+// This function resets the systick timer by clearing out the configuration
+// register.
 //
 //*****************************************************************************
 void
@@ -176,13 +159,9 @@ am_hal_systick_reset(void)
 
 //*****************************************************************************
 //
-//! @brief Load the value into the SYSTICK.
-//!
-//! @param ui32LoadVal the desired load value for the systick. Maximum value is
-//! 0x00FF.FFFF.
-//!
-//! This function loads the desired value into the systick timer.
-//!
+// Load the value into the SYSTICK.
+//
+// This function loads the desired value into the systick timer.
 //
 //*****************************************************************************
 void
@@ -202,11 +181,9 @@ am_hal_systick_load(uint32_t ui32LoadVal)
 
 //*****************************************************************************
 //
-//! @brief Get the current count value in the SYSTICK.
-//!
-//! This function gets the current count value in the systick timer.
-//!
-//! @return Current count value.
+// Get the current count value in the SYSTICK.
+//
+// This function gets the current count value in the systick timer.
 //
 //*****************************************************************************
 uint32_t
@@ -220,14 +197,9 @@ am_hal_systick_count(void)
 
 //*****************************************************************************
 //
-//! @brief Wait the specified number of ticks.
-//!
-//! This function delays for the given number of SysTick ticks.
-//!
-//! @note If the SysTick timer is being used elsewhere, it will be corrupted
-//! by calling this function.
-//!
-//! @return 0 if successful.
+// Wait the specified number of ticks.
+//
+// This function delays for the given number of SysTick ticks.
 //
 //*****************************************************************************
 uint32_t
@@ -274,16 +246,11 @@ am_hal_systick_wait_ticks(uint32_t ui32Ticks)
 
 //*****************************************************************************
 //
-//! @brief Delay the specified number of microseconds.
-//!
-//! This function will use the SysTick timer to delay until the specified
-//!  number of microseconds have elapsed.  It uses the processor clocks and
-//!  takes into account the current CORESEL setting.
-//!
-//! @note If the SysTick timer is being used elsewhere, it will be corrupted
-//! by calling this function.
-//!
-//! @return Total number of SysTick ticks delayed.
+// Delay the specified number of microseconds.
+//
+// This function will use the SysTick timer to delay until the specified
+//  number of microseconds have elapsed.  It uses the processor clocks and
+//  takes into account the current CORESEL setting.
 //
 //*****************************************************************************
 uint32_t

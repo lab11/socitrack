@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the SDHC.
 //!
-//! @addtogroup sdhc SDHC host controller
+//! @addtogroup sdhc_4p SDHC host controller
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SDHC_H
@@ -222,6 +222,14 @@ extern uint32_t am_hal_sdhc_set_uhs_mode(void *pHandle, am_hal_host_uhs_mode_e e
 //*****************************************************************************
 extern uint32_t am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS);
 
+//*****************************************************************************
+//
+//! @brief SDHC Set TxRx Delays
+//!
+//! @param pHandle        - handle for the interface.
+//! @param ui8TxRxDelays  - delay values to set
+//
+//*****************************************************************************
 extern void am_hal_sdhc_set_txrx_delay(void *pHandle, uint8_t ui8TxRxDelays[2]);
 
 //*****************************************************************************

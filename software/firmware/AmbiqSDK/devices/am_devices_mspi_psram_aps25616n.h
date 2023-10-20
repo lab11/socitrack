@@ -2,9 +2,9 @@
 //
 //! @file am_devices_mspi_psram_aps25616n.h
 //!
-//! @brief Micron Serial SPI PSRAM driver.
+//! @brief APM DDR HEX and Octal SPI PSRAM driver.
 //!
-//! @addtogroup mspi_psram_aps25616n APS25616N MSPI PSRAM Driver
+//! @addtogroup mspi_psram_aps25616n APS25616N MSPI PSRAM 1.8V Driver
 //! @ingroup devices
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
@@ -59,7 +59,8 @@ extern "C"
 
 //*****************************************************************************
 //
-// Global definitions for psram commands
+//! @name Global definitions for psram commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_PSRAM_DDR_GLOBAL_RESET 0xFFFF
@@ -68,25 +69,36 @@ extern "C"
 #define AM_DEVICES_MSPI_PSRAM_DDR_READ_REGISTER 0x4040
 #define AM_DEVICES_MSPI_PSRAM_DDR_WRITE_REGISTER 0xC0C0
 
+//! @}
+
+//*****************************************************************************
 //
-// The following definitions are typically specific to a multibit spi psram device.
-// They should be tailored
+//! @name Global definitions for psram
+//! @{
+//!
+//! @note The following definitions are typically specific to a multibit spi psram device.
+//! They should be tailored
 //
 //*****************************************************************************
 //
-// Device specific identification.
+//! @name Device specific identification.
+//! @{
 //
 //*****************************************************************************
 // Page size - limits the bust write/read
 #define AM_DEVICES_MSPI_PSRAM_PAGE_SIZE         1024
 #define AM_DEVICES_MSPI_PSRAM_TEST_BLOCK_SIZE   8*1024
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for the MSPI instance to use.
+//! @name Global definitions for the MSPI instance to use.
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_PSRAM_MAX_DEVICE_NUM    2
+//! @}
+//! @}
 
 //*****************************************************************************
 //
@@ -99,14 +111,42 @@ typedef enum
     AM_DEVICES_MSPI_PSRAM_STATUS_ERROR
 } am_devices_mspi_psram_status_t;
 
+typedef enum
+{
+    AM_DEVICES_MSPI_PSRAM_APS25616n_RLC_3,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_RLC_4,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_RLC_5,  //device power up default
+    AM_DEVICES_MSPI_PSRAM_APS25616n_RLC_6,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_RLC_7,
+}am_devices_mspi_psram_aps25616n_rlc_e;
+
+typedef enum
+{
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_3,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_7,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_5,  //device power up default
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_RSV3,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_4,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_RSV5,
+    AM_DEVICES_MSPI_PSRAM_APS25616n_WLC_6,
+}am_devices_mspi_psram_aps25616n_wlc_e;
+
 typedef struct
 {
-    am_hal_mspi_device_e eDeviceConfig;
-    am_hal_mspi_clock_e eClockFreq;
-    uint32_t *pNBTxnBuf;
-    uint32_t ui32NBTxnBufLength;
-    uint32_t ui32ScramblingStartAddr;
-    uint32_t ui32ScramblingEndAddr;
+    uint8_t     ui8VendorId;
+    uint8_t     ui8DeviceId;
+    uint32_t    ui32BaseAddr;
+    uint32_t    ui32DeviceSizeKb;
+} am_devices_mspi_psram_info_t;
+
+typedef struct
+{
+    am_hal_mspi_device_e                    eDeviceConfig;
+    am_hal_mspi_clock_e                     eClockFreq;
+    uint32_t                                *pNBTxnBuf;
+    uint32_t                                ui32NBTxnBufLength;
+    uint32_t                                ui32ScramblingStartAddr;
+    uint32_t                                ui32ScramblingEndAddr;
 } am_devices_mspi_psram_config_t;
 
 typedef struct
@@ -116,6 +156,7 @@ typedef struct
     uint32_t ui32Rxdqsdelay;
     uint32_t ui32Txdqsdelay;
 } am_devices_mspi_psram_ddr_timing_config_t;
+
 //*****************************************************************************
 //
 // External function definitions.
@@ -219,6 +260,8 @@ extern uint32_t am_devices_mspi_psram_aps25616n_ddr_read_adv(void *pHandle,
 //! @param pui8RxBuffer - Buffer to store the received data from the psram
 //! @param ui32ReadAddress - Address of desired data in external psram
 //! @param ui32NumBytes - Number of bytes to read from external psram
+//! @param pfnCallback
+//! @param pCallbackCtxt
 //!
 //! This function reads the external psram at the provided address and stores
 //! the received data into the provided buffer location. This function will
@@ -242,6 +285,8 @@ extern uint32_t am_devices_mspi_psram_aps25616n_ddr_read_hiprio(void *pHandle,
 //! @param pui8RxBuffer - Buffer to store the received data from the psram
 //! @param ui32ReadAddress - Address of desired data in external psram
 //! @param ui32NumBytes - Number of bytes to read from external psram
+//! @param pfnCallback
+//! @param pCallbackCtxt
 //!
 //! This function reads the external psram at the provided address and stores
 //! the received data into the provided buffer location. This function will
@@ -432,15 +477,30 @@ extern uint32_t am_devices_mspi_psram_aps25616n_ddr_reset(void *pHandle);
 //
 //! @brief Reads the ID of the external psram and returns the value.
 //!
-//! @param pDeviceID - Pointer to the return buffer for the Device ID.
+//! @param pHandle  - Pointer to the psram device handle
 //!
 //! This function reads the device ID register of the external psram, and returns
 //! the result as an 32-bit unsigned integer value.
 //!
-//! @return 32-bit status
+//! @return 32-bit status or 16-bit ID
 //
 //*****************************************************************************
 extern uint32_t am_devices_mspi_psram_aps25616n_ddr_id(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief Reads the information of the external psram and returns the value.
+//!
+//! @param pHandle  - Pointer to the psram device handle
+//! @param pPsramInfo - Pointer to the psram info struct
+//!
+//! This function reads the device information registers of the external psram, and returns
+//! the result in am_devices_mspi_psram_info_t
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
+extern uint32_t am_devices_mspi_psram_aps25616n_ddr_info(void *pHandle, am_devices_mspi_psram_info_t *pPsramInfo);
 
 //*****************************************************************************
 //
@@ -477,6 +537,21 @@ extern uint32_t am_devices_mspi_psram_aps25616n_ddr_init_timing_check(uint32_t m
 //*****************************************************************************
 extern uint32_t am_devices_mspi_psram_aps25616n_apply_ddr_timing(void *pHandle,
                        am_devices_mspi_psram_ddr_timing_config_t *pDevDdrCfg);
+
+//*****************************************************************************
+//
+//! @brief Verify the External Chip Configuration matches Device settings
+//!
+//! @param pHandle - Handle to the PSRAM.
+//! @param ui8RLC  - Read Latency Code
+//! @param ui8WLC  - Write LAtency Code
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
+extern uint32_t am_devices_mspi_psram_aps25616n_verify_config(void *pHandle,
+                                                                uint8_t ui8RLC,
+                                                                uint8_t ui8WLC);
 
 //*****************************************************************************
 //
@@ -528,9 +603,9 @@ extern uint32_t am_devices_mspi_psram_aps25616n_exit_halfsleep(void *pHandle);
 #if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION < 6000000)
 extern __asm void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
 #elif (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION >= 6000000)
-extern void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
+extern __attribute__((always_inline)) void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
 #elif defined(__GNUC_STDC_INLINE__)
-extern __attribute__((naked)) void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
+extern void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
 #elif defined(__IAR_SYSTEMS_ICC__)
 #pragma diag_suppress = Pe940   // Suppress IAR compiler warning about missing
                                 // return statement on a non-void function
@@ -552,4 +627,3 @@ extern __stackless inline void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
 //! @}
 //
 //*****************************************************************************
-

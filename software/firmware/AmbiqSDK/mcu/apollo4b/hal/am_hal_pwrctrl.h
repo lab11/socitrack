@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -213,6 +213,25 @@ extern "C"
 
 //*****************************************************************************
 //
+//! Option for shorting VDDC to VDDC_LV During normal operation
+//!
+//! @note During normal operation in active and deep-sleep, VDDC_LV is
+//!       disconnected from VDDC. While the VDDC_LV rail is disconnected from
+//!       VDDC, the VDDC_LV capacitor slowly discharges due to leakage.
+//!       A deeply discharged VDDC_LV capacitor can cause a large drop in VDDC
+//!       voltage when VDDC_LV and VDDC are shorted together. When the device
+//!       switches from SIMOBUCK to LDO mode, VDDC_LV and VDDC are shorted.
+//!       this happens prior to deepsleep and in am_hal_settings_restore call.
+//! 
+//!  AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+//!      Set trims to short. Uses extra power in Deepsleep.
+//!  Default: undefined
+//
+//*****************************************************************************
+//#define AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+
+//*****************************************************************************
+//
 //! Define the structure for preserving various trim registers
 //! including SIMOBUCK trim and other related registers.
 //
@@ -251,28 +270,37 @@ struct trim_regs_s
 //
 extern struct trim_regs_s g_trim_reg_origvals;
 
-
 //*****************************************************************************
 //
-//! Performace mode enums.
+//! @name Performace mode enums.
+//! @{
 //
 //*****************************************************************************
+//
+//! Peripheral MCU Mode power enum.
+//
 typedef enum
 {
     AM_HAL_PWRCTRL_MCU_MODE_LOW_POWER        = PWRCTRL_MCUPERFREQ_MCUPERFSTATUS_LP, // 96 MHz
     AM_HAL_PWRCTRL_MCU_MODE_HIGH_PERFORMANCE = PWRCTRL_MCUPERFREQ_MCUPERFSTATUS_HP, // 192 MHz
 } am_hal_pwrctrl_mcu_mode_e;
 
+//
+//! Peripheral DSP Mode power enum.
+//
 typedef enum
 {
     AM_HAL_PWRCTRL_DSP_MODE_ULTRA_LOW_POWER,  // 48 MHz
     AM_HAL_PWRCTRL_DSP_MODE_LOW_POWER,        // 192 MHz
     AM_HAL_PWRCTRL_DSP_MODE_HIGH_PERFORMANCE, // 384 MHz
 } am_hal_pwrctrl_dsp_mode_e;
+//
+//! @}
+//
 
 //*****************************************************************************
 //
-//! Peripheral power enums.
+//! Peripheral power enum.
 //
 //*****************************************************************************
 typedef enum
@@ -365,7 +393,6 @@ typedef struct
     bool                                bRetainNVM0;
 } am_hal_pwrctrl_mcu_memory_config_t;
 
-
 //
 //! Miscellaneous power controls.
 //
@@ -381,7 +408,7 @@ typedef enum
 
 //*****************************************************************************
 //
-// DSP memory control settings.
+//! DSP memory control settings.
 //
 //*****************************************************************************
 #if 0
@@ -399,6 +426,9 @@ typedef enum
 #error DSP IRAM Register Definitions do not support enum defintion!
 #endif
 
+//
+//! DSP IRAM Select
+//
 typedef enum
 {
     AM_HAL_PWRCTRL_DSP_IRAM_NONE        = PWRCTRL_DSP0MEMPWREN_PWRENDSP0IRAM_NONE,
@@ -422,6 +452,9 @@ am_hal_pwrctrl_dsp_iram_select_e;
 #error DSP IRAM Register Definitions do not support enum defintion!
 #endif
 
+//
+//! DPS DRAM Select
+//
 typedef enum
 {
     AM_HAL_PWRCTRL_DSP_DRAM_NONE        = PWRCTRL_DSP0MEMPWREN_PWRENDSP0DRAM_NONE,
@@ -430,6 +463,11 @@ typedef enum
 } am_hal_pwrctrl_dsp_dram_select_e;
 #endif
 
+//*****************************************************************************
+//
+//! DSP memory config settings.
+//
+//*****************************************************************************
 typedef struct
 {
     bool        bEnableICache;
@@ -441,62 +479,76 @@ typedef struct
 
 //*****************************************************************************
 //
-//! Shared memory control settings.
+//! Shared memory select settings.
 //
 //*****************************************************************************
 typedef enum
 {
-    AM_HAL_PWRCTRL_SRAM_NONE      = 0,  // No SSRAM
-    AM_HAL_PWRCTRL_SRAM_512K_GRP0 = 1,  // Lower 512K
-    AM_HAL_PWRCTRL_SRAM_512K_GRP1 = 2,  // Upper 512K
-    AM_HAL_PWRCTRL_SRAM_ALL       = 3,  // All shared SRAM (1M)
+    AM_HAL_PWRCTRL_SRAM_NONE      = 0,  //!< No SSRAM
+    AM_HAL_PWRCTRL_SRAM_512K_GRP0 = 1,  //!< Lower 512K
+    AM_HAL_PWRCTRL_SRAM_512K_GRP1 = 2,  //!< Upper 512K
+    AM_HAL_PWRCTRL_SRAM_ALL       = 3,  //!< All shared SRAM (1M)
     // Legacy naming
     AM_HAL_PWRCTRL_SRAM_512K      = AM_HAL_PWRCTRL_SRAM_512K_GRP0,
     AM_HAL_PWRCTRL_SRAM_1M        = AM_HAL_PWRCTRL_SRAM_ALL
 } am_hal_pwrctrl_sram_select_e;
 
+//*****************************************************************************
+//
+//! Shared memory config settings.
+//
+//*****************************************************************************
 typedef struct
 {
     //
-    //! SRAM banks to enable.
+    //! Shared SRAM (SSRAM) banks to enable.
+    //!  AM_HAL_PWRCTRL_SRAM_NONE    = No SSRAM enabled.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Lower 1M enabled, upper 1M disabled.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Upper 1M enabled, lower 1M disabled.
+    //!  AM_HAL_PWRCTRL_SRAM_ALL     = ALL SSRAM enabled.
+    //! These bits are written to SSRAMPWREN.PWRENSSRAM.
     //
     am_hal_pwrctrl_sram_select_e        eSRAMCfg;
 
     //
-    //! For each of the eActiveWithXxx settings:
-    //!  AM_HAL_PWRCTRL_SRAM_NONE    = This component has no association with SSRAM.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Group1 ignored by this component. Group0 is active when this component is powered on.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Group0 ignored by this component. Group1 is active when this component is powered on.
-    //!  AM_HAL_PWRCTRL_SRAM_ALL     = All SRAM active when this component is powered on.
+    //! For each of the eActiveWithXxx settings (which apply to each master).
+    //!  AM_HAL_PWRCTRL_SRAM_NONE    = Allow SSRAM to go to retention during deep sleep.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Lower 1M forced on, upper 1M allowed to retention in deep sleep.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Upper 1M forced on, lower 1M allowed to retention in deep sleep.
+    //!  AM_HAL_PWRCTRL_SRAM_ALL     = SSRAM forced on even in deep sleep.
     //
-
-    //
-    //! Activate SRAM when the MCU is active.
+    //! Activate SSRAM when the MCU is active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTMCU.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithMCU;
 
     //
-    //! Activate SRAM when the Graphics is active.
+    //! Activate SSRAM when the Graphics is active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTGFX.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithGFX;
 
     //
-    //! Activate SRAM when the DISPLAY is active.
+    //! Activate SSRAM when the DISPLAY is active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTDISP.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithDISP;
 
     //
-    //! Activate SRAM when either of the DSPs are active.
+    //! Activate SSRAM when either of the DSPs are active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTDSP.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithDSP;
 
     //
-    //! Retain SRAM in deep sleep.
-    //! For SRAM retention:
-    //!  AM_HAL_PWRCTRL_SRAM_NONE    = Retain all SRAM in deepsleep.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Retain Group0, power down Group1 in deepsleep.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Retain Group1, power down Group0 in deepsleep.
-    //!  AM_HAL_PWRCTRL_SRAM_ALL     = Retain all SRAM in deepsleep.
+    //! Retain SSRAM in deep sleep.
+    //! For SSRAM retention:
+    //!  AM_HAL_PWRCTRL_SRAM_NONE    = Power down all SSRAM in deepsleep (no retention).
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Retain lower 1M, power down upper 1M in deepsleep.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Retain upper 1M, power down lower 1M in deepsleep.
+    //!  AM_HAL_PWRCTRL_SRAM_ALL     = Retain all SSRAM in deepsleep.
+    //! The HAL writes the INVERSE of these bits to SSRAMRETCFG.SSRAMPWDSLP in order to
+    //! provide the desired action.
     //
     am_hal_pwrctrl_sram_select_e        eSRAMRetain;
 

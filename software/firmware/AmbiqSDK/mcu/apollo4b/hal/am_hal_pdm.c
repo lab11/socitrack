@@ -2,7 +2,7 @@
 //
 //! @file am_hal_pdm.c
 //!
-//! @brief HAL implementation for the PDM module.
+//! @brief HAL implementation for the Pulse Density Modulation module.
 //!
 //! @addtogroup pdm_4b PDM - Pulse Density Modulation
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -64,7 +64,9 @@
     ((h) &&                                                                   \
      ((am_hal_handle_prefix_t *)(h))->s.bInit &&                              \
      (((am_hal_handle_prefix_t *)(h))->s.magic == AM_HAL_MAGIC_PDM))
+//
 //! @}
+//
 
 //*****************************************************************************
 //
@@ -115,7 +117,9 @@
     {                                                                         \
         am_hal_delay_us(us);                                                  \
     }
+//
 //! @}
+//
 
 //*****************************************************************************
 //
@@ -350,6 +354,11 @@ am_hal_pdm_configure(void *pHandle, am_hal_pdm_config_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Configure the PDM Ctrl Register
+//
+//*****************************************************************************
 uint32_t
 am_hal_pdm_config_ctrlReg(void *pHandle, am_hal_pdm_config_t *psConfig)
 {
@@ -397,6 +406,11 @@ am_hal_pdm_enable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Enable the PDM Control
+//
+//*****************************************************************************
 uint32_t
 am_hal_pdm_ctrl_enable(void *pHandle)
 {
@@ -413,6 +427,11 @@ am_hal_pdm_ctrl_enable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Enable the PDM CLK
+//
+//*****************************************************************************
 uint32_t
 am_hal_pdm_clk_enable(void *pHandle)
 {
@@ -429,6 +448,11 @@ am_hal_pdm_clk_enable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Reset the PDM.
+//
+//*****************************************************************************
 uint32_t
 am_hal_pdm_reset(void *pHandle)
 {
@@ -460,6 +484,11 @@ am_hal_pdm_disable(void *pHandle)
 
     am_hal_pdm_state_t *pState = (am_hal_pdm_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
+
+    if (am_hal_pdm_dma_disable(pHandle) != AM_HAL_STATUS_SUCCESS)
+    {
+        PDMn(ui32Module)->DMACFG_b.DMAEN = 0;
+    }
 
     PDMn(ui32Module)->CTRL_b.EN    = 0;
     PDMn(ui32Module)->CTRL_b.CLKEN = 0;
@@ -609,7 +638,6 @@ am_hal_pdm_fifo_flush(void *pHandle)
 // set the PDM FIFO Threshold value
 //
 //*****************************************************************************
-
 uint32_t
 am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value)
 {
@@ -834,6 +862,50 @@ uint32_t am_hal_pdm_dma_state(void *pHandle)
     uint32_t ui32Module = pState->ui32Module;
 
     return PDMn(ui32Module)->DMASTAT;
+}
+
+//*****************************************************************************
+//
+// disable PDM DMA
+//
+//*****************************************************************************
+uint32_t
+am_hal_pdm_dma_disable(void *pHandle)
+{
+    //
+    // Check the handle.
+    //
+    AM_HAL_PDM_HANDLE_CHECK(pHandle);
+    am_hal_pdm_state_t *pState = (am_hal_pdm_state_t *) pHandle;
+    uint32_t ui32Module = pState->ui32Module;
+
+    //
+    // disable this pdm module while disabling DMA
+    //
+    uint32_t ui32CtrlSaved = PDMn(ui32Module)->CTRL;
+
+    PDMn(ui32Module)->CTRL = ui32CtrlSaved & ~PDM0_CTRL_CLKEN_Msk;
+    PDMn(ui32Module)->DMACFG_b.DMAEN = 0;
+
+    //
+    // disable dma interrupts
+    //
+    PDMn(ui32Module)->INTEN &= ~(AM_HAL_PDM_INT_DERR | AM_HAL_PDM_INT_DCMP);
+
+    //
+    // clear interrupts
+    //
+    PDMn(ui32Module)->INTCLR = (AM_HAL_PDM_INT_DERR | AM_HAL_PDM_INT_DCMP);
+
+
+    PDMn(ui32Module)->DMATOTCOUNT = 0;
+
+    //
+    // restore control register
+    //
+    PDMn(ui32Module)->CTRL = ui32CtrlSaved;
+
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************

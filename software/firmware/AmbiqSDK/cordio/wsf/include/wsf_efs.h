@@ -143,7 +143,7 @@ typedef uint8_t wsfMediaInitFunc_t(void);
  *  \return Status of the operation.
  */
 /*************************************************************************************************/
-typedef uint8_t wsfMediaEraseFunc_t(uint32_t address, uint32_t size);
+typedef uint8_t wsfMediaEraseFunc_t(uint8_t *pAddress, uint32_t size);
 
 /*************************************************************************************************/
 /*!
@@ -158,7 +158,7 @@ typedef uint8_t wsfMediaEraseFunc_t(uint32_t address, uint32_t size);
  *  \return Status of the operation.
  */
 /*************************************************************************************************/
-typedef uint8_t wsfMediaReadFunc_t(uint8_t *pBuf, uint32_t address, uint32_t size);
+typedef uint8_t wsfMediaReadFunc_t(uint8_t *pBuf, uint8_t *pAddress, uint32_t size);
 
 /*************************************************************************************************/
 /*!
@@ -173,7 +173,7 @@ typedef uint8_t wsfMediaReadFunc_t(uint8_t *pBuf, uint32_t address, uint32_t siz
  *  \return Status of the operation.
  */
 /*************************************************************************************************/
-typedef uint8_t wsfMediaWriteFunc_t(const uint8_t *pBuf, uint32_t address, uint32_t size);
+typedef uint8_t wsfMediaWriteFunc_t(const uint8_t *pBuf, uint8_t *pAddress, uint32_t size);
 
 /*************************************************************************************************/
 /*!

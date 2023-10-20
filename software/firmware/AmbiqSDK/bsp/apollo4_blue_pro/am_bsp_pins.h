@@ -13,7 +13,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -512,7 +512,7 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_IOM5_SDA;
 // IOM6_CS pin: I/O Master 6 chip select.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_IOM6_CS                 47
+#define AM_BSP_GPIO_IOM6_CS                 30
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_IOM6_CS;
 #define AM_BSP_IOM6_CS_CHNL                 0
 
@@ -816,6 +816,14 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_MSPI2_D3;
 //*****************************************************************************
 #define AM_BSP_GPIO_MSPI2_D4                78
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_MSPI2_D4;
+
+//*****************************************************************************
+//
+// MSPI2_D4_CLK pin: MSPI2 data 4 replace MSPI2_8(CLK).
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_MSPI2_D4_CLK            78
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_MSPI2_D4_CLK;
 
 //*****************************************************************************
 //
@@ -1134,7 +1142,7 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ETM_TRACECTL;
 // I2S0_DATA pin: I2S0 Bidirectional Data.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_I2S0_DATA               6
+#define AM_BSP_GPIO_I2S0_DATA               12
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_DATA;
 
 //*****************************************************************************
@@ -1142,7 +1150,7 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_DATA;
 // I2S0_SDOUT pin: I2S0 Bidirectional Data.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_I2S0_SDOUT              6
+#define AM_BSP_GPIO_I2S0_SDOUT              12
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_SDOUT;
 
 //*****************************************************************************
@@ -1150,7 +1158,7 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_SDOUT;
 // I2S0_CLK pin: I2S0 Bit Clock.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_I2S0_CLK                5
+#define AM_BSP_GPIO_I2S0_CLK                11
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_CLK;
 
 //*****************************************************************************
@@ -1158,7 +1166,7 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_CLK;
 // I2S0_WS pin: I2S0 L/R Clock.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_I2S0_WS                 7
+#define AM_BSP_GPIO_I2S0_WS                 49
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_WS;
 
 //*****************************************************************************
@@ -1179,6 +1187,14 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_DATA;
 
 //*****************************************************************************
 //
+// I2S1_SDOUT pin: I2S1 Bidirectional Data.
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_I2S1_SDOUT              17
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_SDOUT;
+
+//*****************************************************************************
+//
 // I2S1_CLK pin: I2S1 Bit Clock.
 //
 //*****************************************************************************
@@ -1192,6 +1208,14 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_CLK;
 //*****************************************************************************
 #define AM_BSP_GPIO_I2S1_WS                 18
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_WS;
+
+//*****************************************************************************
+//
+// I2S1_SDIN pin: I2S1 Data In.
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_I2S1_SDIN               19
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_SDIN;
 
 //*****************************************************************************
 //

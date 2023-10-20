@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GLOBAL_H
@@ -75,14 +75,16 @@ extern "C"
 
 //*****************************************************************************
 //
-// Macro definitions
+//! @name Macro definitions
+//! Utility for compile time assertions
+//! Will cause divide by 0 error at build time
+//! @{
 //
 //*****************************************************************************
-// Utility for compile time assertions
-// Will cause divide by 0 error at build time
 #define _AM_ASSERT_CONCAT_(a, b) a##b
 #define _AM_ASSERT_CONCAT(a, b) _AM_ASSERT_CONCAT_(a, b)
 #define am_ct_assert(e) enum { _AM_ASSERT_CONCAT(assert_line_, __LINE__) = 1/(!!(e)) }
+//! @}
 
 //*****************************************************************************
 //
@@ -111,7 +113,7 @@ extern "C"
 //! @{
 //
 //*****************************************************************************
-#if defined(keil)
+#if defined(keil) || defined(keil6)
 #define AM_SHARED_RW      __attribute__((section("SHARED_RW"))) __attribute__((used))
 #define AM_RESOURCE_TABLE __attribute__((section("RESOURCE_TABLE"))) __attribute__((used))
 #define AM_USED           __attribute__((used))
@@ -233,16 +235,23 @@ am_hal_dsp_select_e;
 
 //*****************************************************************************
 //
-// Some Ambiqsuite workaround implementations use a TIMER interrupt
-// AM_HAL_WRITE_WAIT_TIMER (TIMER13 used for this in default SDK).
-// The interrupt is configured as the highest priority (0) interrupt to prevent
-// unintentional break out due to other interrupts. In order for this to work
-// reliably, it is required that all the other interrupts in the system are set
-// at a lower priority, reserving the highest priority interrupt exclusively
-// for AmbiqSuite workaround.
+//! Some Ambiqsuite workaround implementations use a TIMER interrupt
+//! AM_HAL_WRITE_WAIT_TIMER (TIMER13 used for this in default SDK).
+//! The interrupt is configured as the highest priority (0) interrupt to prevent
+//! unintentional break out due to other interrupts. In order for this to work
+//! reliably, it is required that all the other interrupts in the system are set
+//! at a lower priority, reserving the highest priority interrupt exclusively
+//! for AmbiqSuite workaround.
 //
 #define AM_HAL_WRITE_WAIT_TIMER  13
 //*****************************************************************************
+
+//******************************************************************************
+//
+//! @name Global typedefs
+//! @{
+//
+//******************************************************************************
 
 //*****************************************************************************
 //
@@ -278,13 +287,13 @@ typedef union
         uint32_t    resv    : 6;
     } s;
 } am_hal_handle_prefix_t;
+//! @}
 
 //*****************************************************************************
 //
 // Global Variables extern declarations.
 //
 //*****************************************************************************
-extern volatile uint32_t g_ui32HALflags;
 extern const    uint8_t  g_ui8HALcompiler[];
 extern const    am_hal_version_t g_ui32HALversion;
 #ifdef APOLLO4_FPGA

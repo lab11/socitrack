@@ -4,16 +4,16 @@
  *
  *  \brief  DM local device management module.
  *
- *  Copyright (c) 2009-2018 Arm Ltd.
+ *  Copyright (c) 2009-2018 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -102,6 +102,21 @@ static void dmDevHciEvtReset(hciEvt_t *pEvent)
 
 /*************************************************************************************************/
 /*!
+ *  \brief  Handle a vendor specific command complete event from HCI.
+ *
+ *  \param  pEvent  Pointer to HCI callback event structure.
+ *
+ *  \return None.
+ */
+/*************************************************************************************************/
+static void dmDevHciEvtVendorSpecCmdCmpl(hciEvt_t *pEvent)
+{
+  pEvent->hdr.event = DM_VENDOR_SPEC_CMD_CMPL_IND;
+  (*dmCb.cback)((dmEvt_t *) pEvent);
+}
+
+/*************************************************************************************************/
+/*!
  *  \brief  Handle a vendor specific event from HCI.
  *
  *  \param  pEvent  Pointer to HCI callback event structure.
@@ -148,6 +163,9 @@ void dmDevHciHandler(hciEvt_t *pEvent)
       break;
 
     case HCI_VENDOR_SPEC_CMD_CMPL_CBACK_EVT:
+      dmDevHciEvtVendorSpecCmdCmpl(pEvent);
+      break;
+
     case HCI_VENDOR_SPEC_CBACK_EVT:
       dmDevHciEvtVendorSpec(pEvent);
       break;

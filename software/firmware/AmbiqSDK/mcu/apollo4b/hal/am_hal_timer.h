@@ -2,7 +2,7 @@
 //
 //! @file am_hal_timer.h
 //!
-//! @brief
+//! @brief Functions for interfacing with the timer (TIMER).
 //!
 //! @addtogroup timer_4b Timer Functionality
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_TIMER_H
@@ -286,6 +286,11 @@ typedef enum
 }
 am_hal_timer_clock_e;
 
+//*****************************************************************************
+//
+//! TIMER Function enum
+//
+//*****************************************************************************
 typedef enum
 {
     AM_HAL_TIMER_FN_CONTINUOUS      = TIMER_CTRL0_TMR0FN_CONTINUOUS,
@@ -299,6 +304,11 @@ typedef enum
 }
 am_hal_timer_function_e;
 
+//*****************************************************************************
+//
+//! TIMER Compare Selection
+//
+//*****************************************************************************
 typedef enum
 {
     AM_HAL_TIMER_COMPARE0 = 1,
@@ -307,6 +317,11 @@ typedef enum
 }
 am_hal_timer_compare_e;
 
+//*****************************************************************************
+//
+//! TIMER Trigger Type
+//
+//*****************************************************************************
 typedef enum
 {
     AM_HAL_TIMER_TRIGGER_DIS  = TIMER_CTRL0_TMR0TMODE_DIS,
@@ -316,6 +331,11 @@ typedef enum
 }
 am_hal_timer_trigger_type_e;
 
+//*****************************************************************************
+//
+//! TIMER Trigger pins
+//
+//*****************************************************************************
 typedef enum
 {
     AM_HAL_TIMER_TRIGGER_TMR0_OUT0  = TIMER_MODE0_TMR0TRIGSEL_TMR00,
@@ -482,6 +502,11 @@ typedef enum
 }
 am_hal_timer_trigger_source_e;
 
+//*****************************************************************************
+//
+//! TIMER Output
+//
+//*****************************************************************************
 typedef enum
 {
     AM_HAL_TIMER_OUTPUT_TMR0_OUT0   =   TIMER_OUTCFG0_OUTCFG0_TIMER00,
@@ -696,7 +721,7 @@ extern uint32_t am_hal_timer_disable_sync(uint32_t ui32TimerMask);
 //!
 //
 //*****************************************************************************
-#define am_hal_timer_start(ui32TimerNumber)    am_hal_timer_enable(ui32TimerNumber)
+#define am_hal_timer_start(ui32TimerNumber)   am_hal_timer_enable(ui32TimerNumber)
 
 //*****************************************************************************
 //
@@ -704,8 +729,7 @@ extern uint32_t am_hal_timer_disable_sync(uint32_t ui32TimerMask);
 //!
 //! @param ui32TimerNumber is the number of the timer to use.
 //!
-//! Call this definition to stop the timer.
-//!
+//! This definition will stop the timer.
 //
 //*****************************************************************************
 #define am_hal_timer_stop(ui32TimerNumber)    am_hal_timer_disable(ui32TimerNumber)

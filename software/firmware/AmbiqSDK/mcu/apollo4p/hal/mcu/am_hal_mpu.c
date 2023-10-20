@@ -2,9 +2,9 @@
 //
 //! @file am_hal_mpu.c
 //!
-//! @brief Hardware abstraction for the MPU.
+//! @brief Hardware abstraction for the Memory Protection Unit.
 //!
-//! @addtogroup mpu MPU - Memory Protection Unit
+//! @addtogroup mpu_4p MPU - Memory Protection Unit
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,157 +44,158 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "am_mcu_apollo.h"
 #include "am_hal_mpu.h"
 
 //*****************************************************************************
 //
-//! @brief Returns the contents of the MPU_TYPE register
-//!
-//! This function accesses the ARM MPU_TYPE register. It can be used to check
-//! for the presence of an MPU, and to obtain basic information about the
-//! implementation of the MPU.
-//!
-//! @return 32-bit unsigned integer representing the contents of MPU_TYPE
+// Returns the contents of the MPU_TYPE register
 //
 //*****************************************************************************
 uint32_t
-mpu_type_get(void)
+am_hal_mpu_type_get(uint32_t *pui32Type)
 {
-    return REGVAL(MPU_TYPE);
+    *pui32Type = MPU->TYPE ;
+
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
 //
-//! @brief Sets the global configuration of the MPU
-//!
-//! @param bMPUEnable - Enable the MPU
-//! @param bPrivelegedDefault - Enable the default priveleged memory map
-//! @param bFaultNMIProtect - Enable the MPU during fault handlers
-//!
-//! This function is a wrapper for the MPU_CTRL register, which controls the
-//! global configuration of the MPU. This function can enable or disable the
-//! MPU overall with the \e bMPUEnable parameter, and also controls how fault
-//! handlers, NMI service routines, and priveleged-mode execution is handled by
-//! the MPU.
-//!
-//! Setting \e bPrivelegedDefault will enable the default memory map for
-//! priveleged accesses. If the MPU is enabled with this value set, only
-//! priveleged code can execute from the system address map
-//!
-//! Setting \e bFaultNMIProtect leaves the MPU active during the execution of
-//! NMI and Hard Fault handlers. Clearing this value will disable the MPU
-//! during these procedures.
+// Sets the global configuration of the MPU
 //
 //*****************************************************************************
-void
-mpu_global_configure(bool bMPUEnable, bool bPrivelegedDefault,
-                     bool bFaultNMIProtect)
+uint32_t
+am_hal_mpu_global_configure(bool bMPUEnable,
+                            bool bPrivilegedDefault,
+                            bool bFaultNMIProtect)
 {
     __DMB();
-    REGVAL(MPU_CTRL) = ((bMPUEnable * 0x1) |
-                        (bFaultNMIProtect * 0x2) |
-                        (bPrivelegedDefault * 0x4));
+
+    MPU->CTRL =  _VAL2FLD(MPU_CTRL_ENABLE,   (uint32_t)bMPUEnable ) |
+                 _VAL2FLD(MPU_CTRL_HFNMIENA, (uint32_t)bFaultNMIProtect ) |
+                 _VAL2FLD(MPU_CTRL_PRIVDEFENA,  (uint32_t)bPrivilegedDefault ) ;
+
 
     SCB->SHCSR |= SCB_SHCSR_MEMFAULTENA_Msk;
+
     __DSB();
     __ISB();
+
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
 //
-//! @brief Configures an MPU region.
-//!
-//! @param psConfig
-//! @param bEnableNow
-//!
-//! This function performs the necessary configuration for the MPU region
-//! described by the \e psConfig structure, and will also enable the region if
-//! the \e bEnableNow option is true.
+// Configures an MPU region.
 //
 //*****************************************************************************
-void
-mpu_region_configure(tMPURegion *psConfig, bool bEnableNow)
+uint32_t
+am_hal_mpu_region_configure(tMPURegion *psConfig, bool bEnableNow)
 {
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+
+    if (psConfig->ui8RegionNumber > _FLD2VAL( MPU_RBAR_REGION , 0xFFFFFFFF ) ) //(MPU_RBAR_REGION_Msk >>MPU_RBAR_REGION_Pos) )
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+    if (psConfig->eAccessPermission > _FLD2VAL( MPU_RASR_AP, 0xFFFFFFFF)) // (MPU_RASR_AP_Msk >> MPU_RASR_AP_Pos))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+    if (psConfig->ui16SubRegionDisable > _FLD2VAL(MPU_RASR_SRD, 0xFFFFFFFF)) // (MPU_RASR_SRD_Msk >> MPU_RASR_SRD_Pos))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+    if (psConfig->ui8Size > _FLD2VAL(MPU_RASR_SIZE, 0xFFFFFFFF)) // (MPU_RASR_SIZE_Msk >> MPU_RASR_SIZE_Pos))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
     //
     // Set the new base address for the specified region.
     //
-    REGVAL(MPU_RBAR) = ((psConfig->ui32BaseAddress & 0xFFFFFFE0) |
-                        (psConfig->ui8RegionNumber) |
-                        (0x00000010));
+    MPU->RBAR = (psConfig->ui32BaseAddress & MPU_RBAR_ADDR_Msk)             |
+                 _VAL2FLD(MPU_RBAR_REGION, psConfig->ui8RegionNumber )      |
+                 _VAL2FLD(MPU_RBAR_VALID, 1 ) ;
 
     //
     // Set the attributes for this region based on the input structure.
     //
-    REGVAL(MPU_RASR) = ((psConfig->bExecuteNever * 0x10000000) |
-                        (psConfig->eAccessPermission << 24) |
-                        (psConfig->ui16SubRegionDisable << 8) |
-                        (psConfig->ui8Size << 1) |
-                        (bEnableNow) |
-                        (MPU_DEFAULT_TEXSCB));
+    MPU->RASR =  _VAL2FLD(MPU_RASR_XN, (uint32_t) psConfig->bExecuteNever ) |
+                 _VAL2FLD(MPU_RASR_AP, psConfig->eAccessPermission)         |
+                 _VAL2FLD(MPU_RASR_SRD, psConfig->ui16SubRegionDisable)     |
+                 _VAL2FLD(MPU_RASR_SIZE, psConfig->ui8Size )                |
+                 _VAL2FLD(MPU_RASR_ENABLE, (uint32_t) bEnableNow )          |
+                 MPU_DEFAULT_TEXSCB;
 
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************
 //
-//! @brief Enable an MPU region.
-//!
-//! @param ui8RegionNumber
-//!
-//! Enable the MPU region referred to by \e ui8RegionNumber.
-//!
-//! @note This function should only be called after the desired region has
-//! already been configured.
-//
-//*****************************************************************************
-void
-mpu_region_enable(uint8_t ui8RegionNumber)
-{
-    //
-    // Set the region number in the MPU_RNR register, and set the enable bit.
-    //
-    REGVAL(MPU_RNR) = ui8RegionNumber;
-    REGVAL(MPU_RASR) |= 0x1;
-}
-
-//*****************************************************************************
-//
-//! @brief Disable an MPU region.
-//!
-//! @param ui8RegionNumber
-//!
-//! Disable the MPU region referred to by \e ui8RegionNumber.
-//
-//*****************************************************************************
-void
-mpu_region_disable(uint8_t ui8RegionNumber)
-{
-    //
-    // Set the region number in the MPU_RNR register, and clear the enable bit.
-    //
-    REGVAL(MPU_RNR) = ui8RegionNumber;
-    REGVAL(MPU_RASR) &= ~(0x1);
-}
-
-//*****************************************************************************
-//
-//! @brief Get the MPU region number.
-//!
-//! Get the MPU region number from MPU_RNR register.
-//!
-//! @return MPU_RNR register value.
+// Enable an MPU region.
 //
 //*****************************************************************************
 uint32_t
-mpu_get_region_number(void)
+am_hal_mpu_region_enable(uint8_t ui8RegionNumber)
 {
-    return REGVAL(MPU_RNR);
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if (ui8RegionNumber > _FLD2VAL(MPU_RBAR_REGION, 0xFFFFFFFF))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif
+    //
+    // Set the region number in the MPU_RNR register, and set the enable bit.
+    //
+
+    MPU->RNR = _VAL2FLD(MPU_RBAR_REGION, ui8RegionNumber);
+    MPU->RASR |= MPU_RASR_ENABLE_Msk;
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// Disable an MPU region.
+//
+//*****************************************************************************
+uint32_t
+am_hal_mpu_region_disable(uint8_t ui8RegionNumber)
+{
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if (ui8RegionNumber > _FLD2VAL(MPU_RBAR_REGION, 0xFFFFFFFF))
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif
+    //
+    // Set the region number in the MPU_RNR register, and clear the enable bit.
+    //
+    MPU->RNR  = _VAL2FLD(MPU_RBAR_REGION, ui8RegionNumber);
+    MPU->RASR &= ~(MPU_RASR_ENABLE_Msk);
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// Get the MPU region number.
+//
+//*****************************************************************************
+uint32_t
+am_hal_mpu_get_region_number(uint32_t *ui32pMpuRNR)
+{
+    *ui32pMpuRNR = _FLD2VAL( MPU_RBAR_REGION, MPU->RNR);
+
+    return AM_HAL_STATUS_SUCCESS;
 }
 
 //*****************************************************************************

@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for enabling and disabling power domains.
 //!
-//! @addtogroup pwrctrl4 PWRCTRL - Power Control
+//! @addtogroup pwrctrl4_4p PWRCTRL - Power Control
 //! @ingroup apollo4p_hal
 //! @{
 
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -86,8 +86,8 @@ extern "C"
 //!      0 = Do not turn on LDOs in parallel with simobuck.
 //!      1 = Turn on LDOs in parallel with simobuck and set their voltage levels
 //!          ~35mV lower than minimum buck voltages.
-//  Default: 1
-//  NOTE: FOR Apollo4P - this must be 1
+//!  Default: 1
+//!  NOTE: FOR Apollo4P - this must be 1
 //
 //*****************************************************************************
 #define AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL    1
@@ -134,7 +134,7 @@ extern "C"
 //! Option to connect MCU core to VDDC_LV for increased power efficiency. Ambiq
 //! recommends this option be enabled for all new applications
 //
-// 
+//
 //! Default: 1 for RevC
 //*****************************************************************************
 #define AM_HAL_PWRCTRL_CORE_PWR_OPTIMAL_EFFICIENCY      1
@@ -155,6 +155,73 @@ extern "C"
 //
 #define AM_HAL_TEMPCO_NUMSAMPLES  5
 #endif // AM_HAL_TEMPCO_LP
+
+//*****************************************************************************
+//
+//! Option for using the 70C workarounds
+//!  AM_HAL_PWRCTRL_70C_WA
+//!      0 = Leave inactive.
+//!      1 = enable 2 workarounds
+//!          AM_HAL_PWRCTL_HPLP_WA
+//!          AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+//!  Default: 0
+//
+//*****************************************************************************
+#define AM_HAL_PWRCTRL_70C_WA    0
+
+//*****************************************************************************
+//
+//! AM_HAL_PWRCTL_HPLP_WA workaround implementation uses a TIMER interrupt
+//! AM_HAL_WRITE_WAIT_TIMER (TIMER13) defined in am_hal_global.h. The interrupt
+//! is configured as the highest priority (0) interrupt to prevent unintentional
+//! break out due to other interrupts.
+//!
+//! @note In order for this to work reliably, it is required that all the other
+//! interrupts in the system are set at a lower priority, reserving the highest
+//! priority interrupt exclusively for AmbiqSuite workaround.
+//
+//*****************************************************************************
+#if (AM_HAL_PWRCTRL_70C_WA == 1)
+#define AM_HAL_PWRCTL_HPLP_WA
+#endif
+
+#ifdef AM_HAL_PWRCTL_HPLP_WA
+#define AM_HAL_PWRCTL_HPLP_DELAY   10
+#endif
+
+//*****************************************************************************
+//
+//! Option for shorting VDDC to VDDC_LV During normal operation
+//!
+//! @note During normal operation in active and deep-sleep, VDDC_LV is
+//!       disconnected from VDDC. While the VDDC_LV rail is disconnected from
+//!       VDDC, the VDDC_LV capacitor slowly discharges due to leakage.
+//!       A deeply discharged VDDC_LV capacitor can cause a large drop in VDDC
+//!       voltage when VDDC_LV and VDDC are shorted together. When the device
+//!       switches from SIMOBUCK to LDO mode, VDDC_LV and VDDC are shorted.
+//!
+//!  AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+//!      Set trims to short. Uses extra power in Deepsleep.
+//!  Default: undefined
+//
+//*****************************************************************************
+#if (AM_HAL_PWRCTRL_70C_WA == 1)
+#define AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+#endif
+
+//*****************************************************************************
+//
+//! Due to the nature of these two macros, they cannot be defined together
+//!  - AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV shorts VDDC and VDDC_LV
+//!  - AM_HAL_PWRCTRL_CORE_PWR_OPTIMAL_EFFICIENCY turns on VDDC_LV for
+//!    power savings
+//
+//*****************************************************************************
+#ifdef AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+    #if (AM_HAL_PWRCTRL_CORE_PWR_OPTIMAL_EFFICIENCY == 1)
+        #undef AM_HAL_PWRCTRL_CORE_PWR_OPTIMAL_EFFICIENCY
+    #endif
+#endif
 
 //*****************************************************************************
 //
@@ -180,7 +247,9 @@ typedef enum
     AM_HAL_PWRCTRL_DSP_MODE_LOW_POWER,        // 192 MHz
     AM_HAL_PWRCTRL_DSP_MODE_HIGH_PERFORMANCE, // 384 MHz
 } am_hal_pwrctrl_dsp_mode_e;
+//
 //! @}
+//
 
 //*****************************************************************************
 //
@@ -292,6 +361,9 @@ typedef enum
 } am_hal_pwrctrl_control_e;
 
 
+//
+//! DSP memory config settings.
+//
 typedef struct
 {
     bool        bEnableICache;
@@ -317,48 +389,62 @@ typedef enum
     AM_HAL_PWRCTRL_SRAM_2M        = AM_HAL_PWRCTRL_SRAM_ALL
 } am_hal_pwrctrl_sram_select_e;
 
+//*****************************************************************************
+//
+//! Shared memory config settings.
+//
+//*****************************************************************************
 typedef struct
 {
     //
-    //! SRAM banks to enable.
+    //! Shared SRAM (SSRAM) banks to enable.
+    //!  AM_HAL_PWRCTRL_SRAM_NONE    = No SSRAM enabled.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Lower 1M enabled, upper 1M disabled.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Upper 1M enabled, lower 1M disabled.
+    //!  AM_HAL_PWRCTRL_SRAM_ALL     = ALL SSRAM enabled.
+    //! These bits are written to SSRAMPWREN.PWRENSSRAM.
     //
     am_hal_pwrctrl_sram_select_e        eSRAMCfg;
 
     //
-    //! For each of the eActiveWithXxx settings:
-    //!  AM_HAL_PWRCTRL_SRAM_NONE    = This component has no association with SSRAM.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Group1 ignored by this component. Group0 is active when this component is powered on.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Group0 ignored by this component. Group1 is active when this component is powered on.
-    //!  AM_HAL_PWRCTRL_SRAM_ALL     = All SRAM active when this component is powered on.
+    //! For each of the eActiveWithXxx settings (which apply to each master).
+    //!  AM_HAL_PWRCTRL_SRAM_NONE    = Allow SSRAM to go to retention during deep sleep.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Lower 1M forced on, upper 1M allowed to retention in deep sleep.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Upper 1M forced on, lower 1M allowed to retention in deep sleep.
+    //!  AM_HAL_PWRCTRL_SRAM_ALL     = SSRAM forced on even in deep sleep.
     //
-
-    //
-    //! Activate SRAM when the MCU is active.
+    //! Activate SSRAM when the MCU is active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTMCU.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithMCU;
 
     //
-    //! Activate SRAM when the Graphics is active.
+    //! Activate SSRAM when the Graphics is active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTGFX.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithGFX;
 
     //
-    //! Activate SRAM when the DISPLAY is active.
+    //! Activate SSRAM when the DISPLAY is active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTDISP.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithDISP;
 
     //
-    //! Activate SRAM when either of the DSPs are active.
+    //! Activate SSRAM when either of the DSPs are active.
+    //! These bits are written to SSRAMRETCFG.SSRAMACTDSP.
     //
     am_hal_pwrctrl_sram_select_e        eActiveWithDSP;
 
     //
-    //! Retain SRAM in deep sleep.
-    //! For SRAM retention:
-    //!  AM_HAL_PWRCTRL_SRAM_NONE    = Retain all SRAM in deepsleep.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Retain Group0, power down Group1 in deepsleep.
-    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Retain Group1, power down Group0 in deepsleep.
-    //!  AM_HAL_PWRCTRL_SRAM_ALL     = Retain all SRAM in deepsleep.
+    //! Retain SSRAM in deep sleep.
+    //! For SSRAM retention:
+    //!  AM_HAL_PWRCTRL_SRAM_NONE    = Power down all SSRAM in deepsleep (no retention).
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP0 = Retain lower 1M, power down upper 1M in deepsleep.
+    //!  AM_HAL_PWRCTRL_SRAM_1M_GRP1 = Retain upper 1M, power down lower 1M in deepsleep.
+    //!  AM_HAL_PWRCTRL_SRAM_ALL     = Retain all SSRAM in deepsleep.
+    //! The HAL writes the INVERSE of these bits to SSRAMRETCFG.SSRAMPWDSLP in order to
+    //! provide the desired action.
     //
     am_hal_pwrctrl_sram_select_e        eSRAMRetain;
 

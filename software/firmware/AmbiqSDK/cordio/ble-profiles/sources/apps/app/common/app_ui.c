@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework user interface.
  *
- *  Copyright (c) 2011-2018 Arm Ltd.
+ *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,11 +28,11 @@
 #include "app_ui.h"
 
 /**************************************************************************************************
-  Global Variables
+  Local Variables
 **************************************************************************************************/
 
 /*! \brief Callback struct */
-appUiCback_t appUiCbackTbl;
+static appUiCback_t appUiCbackTbl;
 
 /*************************************************************************************************/
 /*!
@@ -157,7 +157,7 @@ void AppUiAction(uint8_t event)
 
   if (appUiCbackTbl.actionCback)
   {
-    (*appUiCbackTbl.actionCback)(event);
+    (*appUiCbackTbl.actionCback)(event, 0);
   }
 }
 
@@ -173,6 +173,11 @@ void AppUiAction(uint8_t event)
 void AppUiDisplayPasskey(uint32_t passkey)
 {
   APP_TRACE_INFO1(">>> Passkey: %d <<<", passkey);
+
+  if (appUiCbackTbl.actionCback)
+  {
+    (*appUiCbackTbl.actionCback)(APP_UI_DISPLAY_PASSKEY, passkey);
+  }
 }
 
 /*************************************************************************************************/
@@ -187,6 +192,11 @@ void AppUiDisplayPasskey(uint32_t passkey)
 void AppUiDisplayConfirmValue(uint32_t confirm)
 {
   APP_TRACE_INFO1(">>> Confirm Value: %d <<<", confirm);
+
+  if (appUiCbackTbl.actionCback)
+  {
+    (*appUiCbackTbl.actionCback)(APP_UI_DISPLAY_CONFIRM, confirm);
+  }
 }
 
 /*************************************************************************************************/
@@ -201,6 +211,11 @@ void AppUiDisplayConfirmValue(uint32_t confirm)
 void AppUiDisplayRssi(int8_t rssi)
 {
   APP_TRACE_INFO1(">>> RSSI: %d dBm <<<", rssi);
+
+  if (appUiCbackTbl.actionCback)
+  {
+    (*appUiCbackTbl.actionCback)(APP_UI_DISPLAY_RSSI, rssi);
+  }
 }
 
 /*************************************************************************************************/

@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for operating the instrumentation trace macrocell
 //!
-//! @addtogroup itm4 ITM - Instrumentation Trace Macrocell
+//! @addtogroup itm4_4p ITM - Instrumentation Trace Macrocell
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -60,11 +60,7 @@
 
 //*****************************************************************************
 //
-//! @brief Enables the ITM
-//!
-//! This function enables the ARM ITM by setting the TRCENA bit in the DEMCR
-//! register.
-//!
+// Enables the ITM
 //
 //*****************************************************************************
 void
@@ -106,11 +102,7 @@ am_hal_itm_enable(void)
 
 //*****************************************************************************
 //
-//! @brief Disables the ITM
-//!
-//! This function completely disables the ARM ITM by resetting the TRCENA bit
-//! in the DEMCR register.
-//!
+// Disables the ITM
 //
 //*****************************************************************************
 void
@@ -164,11 +156,7 @@ am_hal_itm_disable(void)
 
 //*****************************************************************************
 //
-//! @brief Checks if itm is busy and provides a delay to flush the fifo
-//!
-//! This function disables the ARM ITM by resetting the TRCENA bit in the DEMCR
-//! register.
-//!
+// Checks if itm is busy and provides a delay to flush the fifo
 //
 //*****************************************************************************
 void
@@ -187,19 +175,7 @@ am_hal_itm_not_busy(void)
 
 //*****************************************************************************
 //
-//! @brief Enables tracing on a given set of ITM ports
-//!
-//! @param ui8portNum - Set ports to be enabled
-//!
-//! Enables tracing on the ports referred to by \e ui8portNum by writing the
-//! associated bit in the Trace Privilege Register in the ITM. The value for
-//! ui8portNum should be the logical OR one or more of the following values:
-//!
-//! \e ITM_PRIVMASK_0_7 - enable ports 0 through 7
-//! \e ITM_PRIVMASK_8_15 - enable ports 8 through 15
-//! \e ITM_PRIVMASK_16_23 - enable ports 16 through 23
-//! \e ITM_PRIVMASK_24_31 - enable ports 24 through 31
-//!
+// Enables tracing on a given set of ITM ports
 //
 //*****************************************************************************
 void
@@ -210,19 +186,7 @@ am_hal_itm_trace_port_enable(uint8_t ui8portNum)
 
 //*****************************************************************************
 //
-//! @brief Disable tracing on the given ITM stimulus port.
-//!
-//! @param ui8portNum
-//!
-//! Disables tracing on the ports referred to by \e ui8portNum by writing the
-//! associated bit in the Trace Privilege Register in the ITM. The value for
-//! ui8portNum should be the logical OR one or more of the following values:
-//!
-//! \e ITM_PRIVMASK_0_7 - disable ports 0 through 7
-//! \e ITM_PRIVMASK_8_15 - disable ports 8 through 15
-//! \e ITM_PRIVMASK_16_23 - disable ports 16 through 23
-//! \e ITM_PRIVMASK_24_31 - disable ports 24 through 31
-//!
+// Disable tracing on the given ITM stimulus port.
 //
 //*****************************************************************************
 void
@@ -233,11 +197,7 @@ am_hal_itm_trace_port_disable(uint8_t ui8portNum)
 
 //*****************************************************************************
 //
-//! @brief Poll the given ITM stimulus register until not busy.
-//!
-//! @param ui32StimReg - stimulus register
-//!
-//! @return true if not busy, false if busy (timed out or other error).
+// Poll the given ITM stimulus register until not busy.
 //
 //*****************************************************************************
 bool
@@ -255,13 +215,7 @@ am_hal_itm_stimulus_not_busy(uint32_t ui32StimReg)
 
 //*****************************************************************************
 //
-//! @brief Writes a 32-bit value to the given ITM stimulus register.
-//!
-//! @param ui32StimReg - stimulus register
-//! @param ui32Value - value to be written.
-//!
-//! Write a word to the desired stimulus register.
-//!
+// Writes a 32-bit value to the given ITM stimulus register.
 //
 //*****************************************************************************
 void
@@ -282,13 +236,7 @@ am_hal_itm_stimulus_reg_word_write(uint32_t ui32StimReg, uint32_t ui32Value)
 
 //*****************************************************************************
 //
-//! @brief Writes a short to the given ITM stimulus register.
-//!
-//! @param ui32StimReg - stimulus register
-//! @param ui16Value - short to be written.
-//!
-//! Write a short to the desired stimulus register.
-//!
+// Writes a short to the given ITM stimulus register.
 //
 //*****************************************************************************
 void
@@ -309,13 +257,7 @@ am_hal_itm_stimulus_reg_short_write(uint32_t ui32StimReg, uint16_t ui16Value)
 
 //*****************************************************************************
 //
-//! @brief Writes a byte to the given ITM stimulus register.
-//!
-//! @param ui32StimReg - stimulus register
-//! @param ui8Value - byte to be written.
-//!
-//! Write a byte to the desired stimulus register.
-//!
+// Writes a byte to the given ITM stimulus register.
 //
 //*****************************************************************************
 void
@@ -336,11 +278,7 @@ am_hal_itm_stimulus_reg_byte_write(uint32_t ui32StimReg, uint8_t ui8Value)
 
 //*****************************************************************************
 //
-//! @brief Sends a Sync Packet.
-//!
-//! Sends a sync packet. This can be useful for external software should it
-//! become out of sync with the ITM stream.
-//!
+// Sends a Sync Packet.
 //
 //*****************************************************************************
 void
@@ -355,9 +293,7 @@ am_hal_itm_sync_send(void)
 
 //*****************************************************************************
 //
-//! @brief Poll the print stimulus registers until not busy.
-//!
-//! @return true if not busy, false if busy (timed out or other error).
+// Poll the print stimulus registers until not busy.
 //
 //*****************************************************************************
 bool
@@ -373,12 +309,7 @@ am_hal_itm_print_not_busy(void)
 
 //*****************************************************************************
 //
-//! @brief Prints a char string out of the ITM.
-//!
-//! @param pcString pointer to the character sting
-//!
-//! This function prints a sting out of the ITM.
-//!
+// Prints a char string out of the ITM.
 //
 //*****************************************************************************
 void

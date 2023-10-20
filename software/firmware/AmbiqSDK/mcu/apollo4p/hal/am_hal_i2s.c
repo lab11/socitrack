@@ -2,9 +2,9 @@
 //
 //! @file am_hal_i2s.c
 //!
-//! @brief HAL implementation for the I2S module.
+//! @brief HAL implementation for the Inter-IC Sound module.
 //!
-//! @addtogroup i2s4 I2S - Inter-IC Sound
+//! @addtogroup i2s4_4p I2S - Inter-IC Sound
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -198,15 +198,8 @@ am_hal_i2s_deinitialize(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief I2S control function
-//!
-//! @param pHandle       - handle for the I2S.
-//! @param eReq         - device specific special request code.
-//! @param pArgs        - pointer to the request specific arguments.
-//!
-//! This function allows advanced settings
-//!
-//! @return status      - generic or interface specific status.
+// I2S control function
+// This function allows advanced settings
 //
 //*****************************************************************************
 uint32_t am_hal_i2s_control(void *pHandle, am_hal_i2s_request_e eReq, void *pArgs)

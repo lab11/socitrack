@@ -2,7 +2,7 @@
 //
 //! @file am_hal_security.h
 //!
-//! @brief Functions for security functions
+//! @brief Functions for on-chip security features
 //!
 //! @addtogroup security_4b Security Functionality
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -53,6 +53,9 @@
 
 #define AM_HAL_SECURITY_SOCID_NUMWORDS  8
 
+//
+//! Security Device LCS
+//
 typedef enum
 {
     AM_HAL_SECURITY_LCS_CM = 0,
@@ -62,6 +65,9 @@ typedef enum
     AM_HAL_SECURITY_LCS_UNDEFINED = 0xff
 } am_hal_security_device_lcs_e;
 
+//
+//! Security Info
+//
 typedef struct
 {
     bool                            bInfo0Valid;
@@ -73,13 +79,18 @@ typedef struct
     uint32_t                        sblStagingAddr;
 } am_hal_security_info_t;
 
-// LOCK Definitions
+//
+//! Security Lock Type Definitions
+//
 typedef enum
 {
     AM_HAL_SECURITY_LOCKTYPE_CUSTOTP_PROG   = 0x1,
     AM_HAL_SECURITY_LOCKTYPE_CUSTOTP_READ   = 0x2,
 } am_hal_security_locktype_t;
 
+//
+//! Security 128b Key
+//
 typedef union
 {
     uint32_t keyword[4];
@@ -92,6 +103,9 @@ typedef union
     } keys;
 } am_hal_security_128bkey_t;
 
+//
+//! Security SOC Id
+//
 typedef struct
 {
     uint32_t socid[AM_HAL_SECURITY_SOCID_NUMWORDS];

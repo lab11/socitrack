@@ -4,7 +4,7 @@
 //!
 //! @brief BootROM Helper Function Table
 //!
-//! @addtogroup mram4 MRAM Functionality
+//! @addtogroup mram4_4p MRAM Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MRAM_H
@@ -60,15 +60,18 @@ extern "C"
 
 //*****************************************************************************
 //
-// MRAM Program keys.
+//! @name MRAM Program keys.
+//! @{
 //
 //*****************************************************************************
 #define AM_HAL_MRAM_PROGRAM_KEY            0x12344321
 #define AM_HAL_MRAM_INFO_KEY               0xD894E09E
+//! @}
 
 //*****************************************************************************
 //
-// Some helpful SRAM values and macros.
+//! @name Some helpful SRAM values and macros.
+//! @{
 //
 //*****************************************************************************
 #define AM_HAL_MRAM_SRAM_ADDR                  SRAM_BASEADDR
@@ -76,10 +79,12 @@ extern "C"
 #define AM_HAL_MRAM_SRAM_LARGEST_VALID_ADDR    (AM_HAL_MRAM_SRAM_ADDR + AM_HAL_MRAM_SRAM_SIZE - 1)
 #define AM_HAL_MRAM_DTCM_START                 AM_HAL_MRAM_SRAM_ADDR
 #define AM_HAL_MRAM_DTCM_END                   (AM_HAL_MRAM_SRAM_ADDR + (384 * 1024) - 1)
+//! @}
 
 //*****************************************************************************
 //
-// Some helpful mram values and macros.
+//! @name Some helpful MRAM values and macros.
+//! @{
 //
 //*****************************************************************************
 #define AM_HAL_MRAM_ADDR                   MRAM_BASEADDR
@@ -87,6 +92,7 @@ extern "C"
 #define AM_HAL_MRAM_NUM_INSTANCES          2
 #define AM_HAL_MRAM_TOTAL_SIZE             ( AM_HAL_MRAM_INSTANCE_SIZE * AM_HAL_MRAM_NUM_INSTANCES )
 #define AM_HAL_MRAM_LARGEST_VALID_ADDR     ( AM_HAL_MRAM_ADDR + AM_HAL_MRAM_TOTAL_SIZE - 1 )
+//! @}
 
 #define AM_HAL_INFO0_SIZE_BYTES            (2 * 1024)
 #define AM_HAL_INFO1_SIZE_BYTES            (6 * 1024)
@@ -123,6 +129,7 @@ extern "C"
 //*****************************************************************************
 extern int am_hal_mram_main_program(uint32_t ui32ProgramKey, uint32_t *pui32Src,
                             uint32_t *pui32Dst, uint32_t ui32NumWords);
+
 //*****************************************************************************
 //
 //! @brief This Fills up to N words of the Main MRAM
@@ -253,20 +260,19 @@ extern int am_hal_mram_main_words_program(uint32_t ui32ProgramKey, uint32_t *pui
 //! @param pui32Dst      - Pointer to the location where the INFO data
 //!                        is to be copied to.
 //!
-//! @return 0 for success, non-zero for failure.                                                6
+//! @return 0 for success, non-zero for failure.
 //
 //*****************************************************************************
-extern int am_hal_mram_info_read(uint32_t ui32InfoSpace, uint32_t ui32Offset,
+extern int am_hal_mram_info_read(uint32_t ui32InfoSpace, uint32_t ui32WordOffset,
                                  uint32_t ui32NumWords, uint32_t *pui32Dst);
 
 //*****************************************************************************
 //
 //! @brief Initialize MRAM for DeepSleep.
 //!
-//! This function implements a workaround required for Apollo4 B0 parts in
-//! order to fix the MRAM DeepSleep config params.
+//! This function is currently hollow for the apollo4p
 //!
-//! @return 0 for success, non-zero for failure.                                                6
+//! @return 0 for success, non-zero for failure.
 //
 //*****************************************************************************
 extern int am_hal_mram_ds_init(void);

@@ -50,18 +50,25 @@ extern "C" {
 #define DM_ID_SYNC                    11
 #define DM_ID_PAST                    12
 #define DM_ID_CONN_CTE                13
-#define DM_NUM_IDS                    14
-#define DM_ID_CIS                     15
-#define DM_ID_REQ_SCA                 16
+#define DM_ID_CONN_UPD                14
+#define DM_ID_PRIV_AES                15
+#define DM_ID_CIS                     16
+#define DM_ID_CIS_CIG                 17
+#define DM_ID_BIS                     18
+#define DM_ID_BIS_SYNC                19
+#define DM_ID_ISO                     20
+#define DM_NUM_IDS                    21
+
+#define DM_ID_REQ_SCA                 22
 
 /* Start of component message enumeration */
-#define DM_MSG_START(id)              ((id) << 4)
+#define DM_MSG_START(id)              ((id) << 3)
 
 /* Get the component ID from a message ID */
-#define DM_ID_FROM_MSG(msg)           ((msg) >> 4)
+#define DM_ID_FROM_MSG(msg)           ((msg) >> 3)
 
 /* Mask off the ID from the message ID */
-#define DM_MSG_MASK(msg)              ((msg) & 0x0F)
+#define DM_MSG_MASK(msg)              ((msg) & 0x07)
 
 /* Length of hash part of private resolvable address */
 #define DM_PRIV_HASH_LEN              3

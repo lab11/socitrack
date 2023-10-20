@@ -1,6 +1,6 @@
 //*****************************************************************************
 //
-//! @file am_devices_mspi_da35x1ga.h
+//! @file am_devices_mspi_ds35x1ga.h
 //!
 //! @brief Multibit SPI ds35x1ga NAND flash driver.
 //!
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -58,7 +58,8 @@ extern "C"
 
 //*****************************************************************************
 //
-// Global definitions for flash commands
+//! @name  Global definitions for flash commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_DS35X1GA_PROGRAM_LOAD_X1 0x02
@@ -84,17 +85,21 @@ extern "C"
 #define AM_DEVICES_MSPI_DS35X1GA_FEATURE_A0      0xA0
 
 #define AM_DEVICES_MSPI_DS35X1GA_RESET           0xFF
+//! @}
 
 //*****************************************************************************
 //
-// Device specific identification.
+//! @name  Device specific identification.
+//! @{
 //
 //*****************************************************************************
-#define AM_DEVICES_MSPI_DS35X1GA_ID      0xE521
-#define AM_DEVICES_MSPI_DS35X1GA_ID_MASK 0x00FFFF
+#define AM_DEVICES_MSPI_DS35X1GA_ID      0xE500
+#define AM_DEVICES_MSPI_DS35X1GA_ID_MASK 0x00FF00
+//! @}
 //*****************************************************************************
 //
-// Device specific definitions for the flash size information
+//! @name  Device specific definitions for the flash size information
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE 2048
@@ -103,9 +108,11 @@ extern "C"
 #define AM_DEVICES_MSPI_DS35X1GA_BLOCK_SIZE     0x20000  //128K bytes
 #define AM_DEVICES_MSPI_DS35X1GA_MAX_BLOCKS     1024
 #define AM_DEVICES_MSPI_DS35X1GA_MAX_PAGES      65536
+//! @}
 //*****************************************************************************
 //
-// Global definitions for the flash status register
+//! @name Global definitions for the flash status register
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_DS35X1GA_ECCS  0x30  // ECC Status[1:0]
@@ -118,36 +125,47 @@ extern "C"
 #define AM_DEVICES_DS35X1GA_ECCS_BIT_FLIPS_CORRECTED     0x10
 #define AM_DEVICES_DS35X1GA_ECCS_BIT_FLIPS_NOT_CORRECTED 0x20
 #define AM_DEVICES_DS35X1GA_ECCS_BIT_FLIPS_CORRECTED_THR 0x30 // more than the threshold bit
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for the flash OTP register
+//! @name Global definitions for the flash OTP register
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_DS35X1GA_OTP_PRT    0x80
 #define AM_DEVICES_DS35X1GA_OTP_EN     0x40
 #define AM_DEVICES_DS35X1GA_OTP_ECC_EN 0x10
 #define AM_DEVICES_DS35X1GA_OTP_QC_EN  0x01
+//! @}
 
 
 //*****************************************************************************
 //
-// Global definitions for the MSPI instance to use.
+//! @name Global definitions for the MSPI instance to use.
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_DS35X1GA_MSPI_INSTANCE  0
 #define AM_DEVICES_MSPI_DS35X1GA_MAX_DEVICE_NUM 1
+//! @}
 //*****************************************************************************
 //
 // Global type definitions.
 //
 //*****************************************************************************
+//
+//!
+//
 typedef enum
 {
     AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS,
     AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR
 } am_devices_mspi_ds35x1ga_status_t;
 
+//
+//!
+//
 typedef struct
 {
     am_hal_mspi_device_e eDeviceConfig;
@@ -158,6 +176,21 @@ typedef struct
     uint32_t ui32ScramblingEndAddr;
 } am_devices_mspi_ds35x1ga_config_t;
 
+typedef struct
+{
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
+    uint32_t ui32Turnaround;
+    uint32_t ui32Rxneg;
+    uint32_t ui32Rxdqsdelay;
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+    bool            bTxNeg;
+    bool            bRxNeg;
+    bool            bRxCap;
+    uint8_t         ui8TxDQSDelay;
+    uint8_t         ui8RxDQSDelay;
+    uint8_t         ui8Turnaround;
+#endif
+} am_devices_mspi_ds35x1ga_sdr_timing_config_t;
 typedef enum
 {
     AM_DEVICES_MSPI_DS35X1GA_ECC_STATUS_NO_BIT_FLIPS = 0,
@@ -169,10 +202,31 @@ typedef enum
 // External function definitions.
 //
 //*****************************************************************************
+// ****************************************************************************
+//
+//! @brief
+//!
+//! @param ui32Module
+//! @param psMSPISettings
+//! @param ppHandle
+//! @param ppMspiHandle
+//!
+//! @return
+//
+// ****************************************************************************
 extern uint32_t am_devices_mspi_ds35x1ga_init(uint32_t ui32Module,
                                                 const am_devices_mspi_ds35x1ga_config_t *psMSPISettings,
                                                 void **ppHandle, void **ppMspiHandle);
 
+// ****************************************************************************
+//
+//! @brief
+//!
+//! @param pHandle
+//!
+//! @return
+//
+// ****************************************************************************
 extern uint32_t am_devices_mspi_ds35x1ga_deinit(void *pHandle);
 
 //*****************************************************************************
@@ -183,7 +237,7 @@ extern uint32_t am_devices_mspi_ds35x1ga_deinit(void *pHandle);
 //! @param pui32DeviceID - a variable pointer to store the ID of the NAND flash.
 //!
 //! This function reads ID of the external flash.
-//
+//!
 //! @return 32-bit status
 //
 //*****************************************************************************
@@ -206,7 +260,7 @@ extern uint32_t am_devices_mspi_ds35x1ga_id(void *pHandle, uint32_t *pui32Device
 //! This function reads the external flash at the certain page and stores
 //! the received data into the provided buffer location. This function will
 //! only store ui32DataLen bytes of data region and ui32OobLen bytes of oob region.
-//
+//!
 //! @return 32-bit status
 //
 //*****************************************************************************
@@ -230,11 +284,10 @@ extern uint32_t am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNu
 //! @param ui32OobLen - Number of bytes to write to the NAND oob region.
 //!
 //! This function writes the data to the certain page on the external flash.
-//
+//!
 //! @return 32-bit status
 //
 //*****************************************************************************
-
 extern uint32_t am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageNum,
                                                 uint8_t *pui8DataBuffer,
                                                 uint32_t ui32DataLen,
@@ -249,11 +302,50 @@ extern uint32_t am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageN
 //! @param ui32BlockNum - block number, for this NAND, valid value from 0 to 1024.
 //!
 //! This function erases a certain block of the external flash.
-//
+//!
 //! @return 32-bit status
 //
 //*****************************************************************************
 extern uint32_t am_devices_mspi_ds35x1ga_block_erase(void *pHandle, uint32_t ui32BlockNum);
+
+
+//*****************************************************************************
+//
+//! @brief Apply given SDR timing settings to target MSPI instance.
+//!
+//! @param pHandle - Handle to the NandFlash.
+//! @param pDevSdrCfg - Pointer to the ddr timing config structure
+//!
+//! This function applies the ddr timing settings to the selected mspi instance.
+//! This function must be called after MSPI instance is initialized into
+//! ENABLEFINEDELAY0 = 1 mode.
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
+extern uint32_t
+am_devices_mspi_ds35x1ga_apply_sdr_timing(void *pHandle,
+                                         am_devices_mspi_ds35x1ga_sdr_timing_config_t *pDevSdrCfg);
+
+//*****************************************************************************
+//
+//! @brief Checks DS35X1GA timing and determine a delay setting.
+//!
+//! @param module
+//! @param pDevCfg
+//! @param pDevSdrCfg
+//!
+//! This function scans through the delay settings of MSPI SDR mode and selects
+//! the best parameter to use by tuning TURNAROUND/RXNEG/RXDQSDELAY0 values.
+//! This function is only valid in SDR mode and ENABLEDQS0 = 0.
+//!
+//! @return 32-bit status, scan result in structure type
+//
+//*****************************************************************************
+extern uint32_t
+am_devices_mspi_ds35x1ga_sdr_init_timing_check(uint32_t module,
+                                              const am_devices_mspi_ds35x1ga_config_t *pDevCfg,
+                                              am_devices_mspi_ds35x1ga_sdr_timing_config_t *pDevSdrCfg);
 
 #ifdef __cplusplus
 }
@@ -267,4 +359,3 @@ extern uint32_t am_devices_mspi_ds35x1ga_block_erase(void *pHandle, uint32_t ui3
 //! @}
 //
 //*****************************************************************************
-

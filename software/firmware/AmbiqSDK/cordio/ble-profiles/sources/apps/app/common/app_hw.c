@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework hardware interfaces.
  *
- *  Copyright (c) 2011-2018 Arm Ltd.
+ *  Copyright (c) 2011-2018 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -160,6 +160,11 @@ static const uint16_t appHwWeightKg[APP_NUM_WSM] =
 /* simulated measurement index */
 static uint8_t appHwWsmIdx = 0;
 
+#if defined(keil6)
+  #pragma clang diagnostic push
+  #pragma clang diagnostic ignored "-Wshift-negative-value"
+#endif
+
 /* simulated temperature measurements in C */
 static const uint32_t appHwTempC[APP_NUM_TM] =
 {
@@ -181,6 +186,10 @@ static const uint32_t appHwTempF[APP_NUM_TM] =
   FLT_TO_UINT32(989, -1),
   FLT_TO_UINT32(990, -1)
 };
+
+#if defined(keil6)
+  #pragma clang diagnostic pop
+#endif
 
 /* simulated measurement index */
 static uint8_t appHwTmIdx = 0;

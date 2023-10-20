@@ -2,7 +2,7 @@
 #
 # Makefile - Rules for building the libraries, examples and docs.
 #
-# Copyright (c) 2022, Ambiq Micro, Inc.
+# Copyright (c) 2023, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 #
 #******************************************************************************
 TARGET := libam_hal
@@ -86,16 +86,16 @@ all clean:
 	$(RM) -rf bin
 else
 
-DEFINES = -DAM_PART_APOLLO4B
-DEFINES+= -DAM_DEBUG_ASSERT
+DEFINES = -DAM_DEBUG_ASSERT
 DEFINES+= -DAM_ASSERT_INVALID_THRESHOLD=0
+DEFINES+= -DAM_PART_APOLLO4B
 DEFINES+= -Dgcc
 
-INCLUDES = -I../../../../../mcu/apollo4b/hal
-INCLUDES+= -I../../../../../CMSIS/ARM/Include
+INCLUDES = -I../../../../../CMSIS/ARM/Include
 INCLUDES+= -I../../../../../utils
-INCLUDES+= -I../../../../../CMSIS/AmbiqMicro/Include
 INCLUDES+= -I../../../../../mcu/apollo4b
+INCLUDES+= -I../../../../../CMSIS/AmbiqMicro/Include
+INCLUDES+= -I../../../../../mcu/apollo4b/hal
 
 VPATH = ../../../../../mcu/apollo4b/hal
 VPATH+=:../../../../../mcu/apollo4b/hal/mcu

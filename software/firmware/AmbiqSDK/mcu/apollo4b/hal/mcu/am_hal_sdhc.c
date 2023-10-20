@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1135,8 +1135,8 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
     //
     // Wait util the internal clock to be stablized
     //
-    uint32_t ui32Timeout = 10;
-    while (pSDHC->CLOCKCTRL_b.CLKSTABLE)
+    uint32_t ui32Timeout = 1000;
+    while ( pSDHC->CLOCKCTRL_b.CLKSTABLE == 0 )
     {
         if ( ui32Timeout == 0 )
         {
@@ -1144,7 +1144,7 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
             return AM_HAL_STATUS_FAIL;
         }
         ui32Timeout--;
-        am_util_delay_ms(1);
+        am_util_delay_us(10);
     }
 
     //

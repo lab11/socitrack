@@ -2,9 +2,9 @@
 //
 //! @file am_hal_audadc.c
 //!
-//! @brief Functions for interfacing with the Analog to Digital Converter.
+//! @brief Functions for interfacing with the Audio Analog to Digital Converter.
 //!
-//! @addtogroup audadc4_4b AUDADC - Analog-to-Digital Converter
+//! @addtogroup audadc4_4b AUDADC - Audio Analog-to-Digital Converter
 //! @ingroup apollo4b_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -63,18 +63,20 @@
 
 // ****************************************************************************
 //
-// Default coefficients (used when trims not provided):
-//  TEMP_DEFAULT    = Temperature in deg K (e.g. 299.5 - 273.15 = 26.35)
-//  AMBIENT_DEFAULT = Voltage measurement at default temperature.
-//  OFFSET_DEFAULT  = Default AUDADC offset at 1v.
+//! @name Default coefficients (used when trims not provided):
+//!  TEMP_DEFAULT    = Temperature in deg K (e.g. 299.5 - 273.15 = 26.35)
+//!  AMBIENT_DEFAULT = Voltage measurement at default temperature.
+//!  OFFSET_DEFAULT  = Default AUDADC offset at 1v.
+//! @{
 //
 // ****************************************************************************
 #define AM_HAL_AUDADC_CALIB_TEMP_DEFAULT            (299.5F)
 #define AM_HAL_AUDADC_CALIB_AMBIENT_DEFAULT         (1.02809F)
 #define AM_HAL_AUDADC_CALIB_AUDADC_OFFSET_DEFAULT   (-0.004281F)
+//! @}
 
 //
-// AUDADC configuration registers structure.
+//! @brief AUDADC configuration registers structure.
 //
 typedef struct
 {
@@ -94,30 +96,32 @@ typedef struct
 } am_hal_audadc_register_state_t;
 
 //
-// AUDADC State structure.
+//! @brief AUDADC State structure.
 //
 typedef struct
 {
     //
-    // Handle validation prefix.
+    //! Handle validation prefix.
     //
     am_hal_handle_prefix_t      prefix;
 
     //
-    // Physical module number.
+    //! Physical module number.
     //
     uint32_t                    ui32Module;
 
     //
-    // AUDADC Capabilities.
+    //! AUDADC Capabilities.
     //
     am_hal_audadc_capabilities_t   capabilities;
 
-    // Power Save-Restore register state
+    //
+    //! Power Save-Restore register state
+    //
     am_hal_audadc_register_state_t registerState;
 
     //
-    // DMA transaction Tranfer Control Buffer.
+    //! DMA transaction Tranfer Control Buffer.
     //
     uint32_t            ui32BufferPing;
     uint32_t            ui32BufferPong;

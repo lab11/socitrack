@@ -2,7 +2,7 @@
 //
 //! @file am_hal_mspi.h
 //!
-//! @brief Functions for interfacing with the MSPI.
+//! @brief Functions for interfacing with the Multi-bit SPI.
 //!
 //! @addtogroup mspi4_4b MSPI - Multi-bit SPI
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MSPI_H
@@ -418,6 +418,10 @@ typedef enum
     AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN,
     // Set writlatncy when write date to nand flash
     AM_HAL_MSPI_REQ_NAND_FLASH_SET_WLAT,
+    // disable xip send address
+    AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS,
+    // restore xip send address
+    AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_EN,
 
     AM_HAL_MSPI_REQ_MAX
 } am_hal_mspi_request_e;

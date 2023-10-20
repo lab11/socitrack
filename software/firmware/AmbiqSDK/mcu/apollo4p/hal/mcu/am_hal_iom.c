@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with IO Master serial (SPI/I2C) modules.
 //!
-//! @addtogroup iom4 IOM - IO Master (SPI/I2C)
+//! @addtogroup iom4_4p IOM - IO Master (SPI/I2C)
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -68,6 +68,7 @@
 //! @name IOM Un/Pausing Selections
 //! @{
 //! For IOM - Need to clear the flag for unpausing
+//
 //*****************************************************************************
 #define AM_HAL_IOM_SC_PAUSE_CQ         AM_HAL_IOM_SC_PAUSE(AM_HAL_IOM_PAUSE_FLAG_CQ)
 #define AM_HAL_IOM_SC_PAUSE_SEQLOOP    AM_HAL_IOM_SC_PAUSE(AM_HAL_IOM_PAUSE_FLAG_SEQLOOP)
@@ -75,10 +76,12 @@
 #define AM_HAL_IOM_SC_UNPAUSE_SEQLOOP  AM_HAL_IOM_SC_UNPAUSE(AM_HAL_IOM_PAUSE_FLAG_SEQLOOP)
 #define AM_HAL_IOM_SC_PAUSE_BLOCK      AM_HAL_IOM_SC_PAUSE(AM_HAL_IOM_PAUSE_FLAG_BLOCK)
 #define AM_HAL_IOM_SC_UNPAUSE_BLOCK    AM_HAL_IOM_SC_UNPAUSE(AM_HAL_IOM_PAUSE_FLAG_BLOCK)
-
-//! Max time to wait when attempting to pause the command queue
-#define AM_HAL_IOM_MAX_PAUSE_DELAY     (100*1000) // 100ms
 //! @}
+
+//
+//! Max time to wait when attempting to pause the command queue
+//
+#define AM_HAL_IOM_MAX_PAUSE_DELAY     (100*1000) // 100ms
 
 //*****************************************************************************
 //
@@ -100,12 +103,17 @@
 // Only keep IOM interrupts we're interested in
 //
 // Necessary interrupts for respective modes
-// For CQ - we rely only on the CQUPD interrupt
+//! For CQ - we rely only on the CQUPD interrupt
 #define AM_HAL_IOM_INT_CQMODE   (AM_HAL_IOM_INT_CQUPD | AM_HAL_IOM_INT_ERR)
-// Need both CMDCMP & DCMP, as for Read we need to wait for DCMP after CMDCMP
+
+//
+//! Need both CMDCMP & DCMP, as for Read we need to wait for DCMP after CMDCMP
+//
 #define AM_HAL_IOM_INT_DMAMODE  (AM_HAL_IOM_INT_CMDCMP | AM_HAL_IOM_INT_DCMP | AM_HAL_IOM_INT_ERR)
 
-// Configures the interrupts to provided coniguration - clearing all pending interrupts
+//
+//! Configures the interrupts to provided coniguration - clearing all pending interrupts
+//
 #define IOM_SET_INTEN(ui32Module, intCfg)                               \
     do                                                                  \
     {                                                                   \
@@ -355,12 +363,16 @@ get_pause_val(am_hal_iom_state_t *pIOMState, uint32_t pause)
     switch (pIOMState->block)
     {
         case 1:
+            //
             // Pause the CQ till the whole block is built
+            //
             retval = pause | AM_HAL_IOM_CQP_PAUSE_DEFAULT | AM_HAL_IOM_PAUSE_FLAG_BLOCK;
             pIOMState->block = 2;
             break;
         case 2:
+            //
             // No pausing allowed
+            //
             retval = AM_HAL_IOM_PAUSE_DEFAULT;
             break;
         default: // case 0
@@ -480,6 +492,7 @@ build_txn_cmdlist(am_hal_iom_state_t       *pIOMState,
 
     pCQEntry->ui32DCXAddr = (uint32_t)&IOMn(ui32Module)->DCXCTRL;
     pCQEntry->ui32DCXVal = (pIOMState->eInterfaceMode == AM_HAL_IOM_SPI_MODE)  ? pIOMState->dcx[psTransaction->uPeerInfo.ui32SpiChipSelect] : 0;
+
     //
     // Command to start the transfer.
     //
@@ -553,29 +566,41 @@ internal_iom_get_int_err(uint32_t ui32Module, uint32_t ui32IntStatus)
 
     if (ui32IntStatus & AM_HAL_IOM_INT_SWERR)
     {
+        //
         // Error in hardware command issued or illegal access by SW
+        //
         ui32Status = AM_HAL_IOM_ERR_INVALID_OPER;
     }
     else if (ui32IntStatus & AM_HAL_IOM_INT_I2CARBERR)
     {
+        //
         // Loss of I2C multi-master arbitration
+        //
         ui32Status = AM_HAL_IOM_ERR_I2C_ARB;
     }
     else if (ui32IntStatus & AM_HAL_IOM_INT_NAK)
     {
+        //
         // I2C NAK
+        //
         ui32Status = AM_HAL_IOM_ERR_I2C_NAK;
     }
     else if (ui32IntStatus & AM_HAL_IOM_INT_INTERR)
     {
+        //
         // Other Error
+        //
         ui32Status = AM_HAL_STATUS_FAIL;
     }
 
     return ui32Status;
-
 } // internal_iom_get_int_err()
 
+//*****************************************************************************
+//
+// Reset on Error handling.
+//
+//*****************************************************************************
 static void
 internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask)
 {
@@ -584,12 +609,16 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
     uint32_t curIntCfg = IOMn(ui32Module)->INTEN;
     IOMn(ui32Module)->INTEN = 0;
 
+    //
     // Disable interrupts temporarily
+    //
     if (ui32IntMask & AM_HAL_IOM_INT_DERR)
     {
         if ((IOMn(ui32Module)->DMACFG & IOM0_DMACFG_DMADIR_Msk) == _VAL2FLD(IOM0_DMACFG_DMADIR, IOM0_DMACFG_DMADIR_M2P))
         {
+            //
             // Write
+            //
             uint32_t dummy = 0xDEADBEEF;
             uint32_t numBytesRemaining = IOMn(ui32Module)->DMATOTCOUNT;
 
@@ -597,7 +626,9 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
             {
                 if (IOMn(ui32Module)->FIFOPTR_b.FIFO0REM >= 4)
                 {
+                    //
                     // Write one 4-byte word to FIFO
+                    //
                     IOMn(ui32Module)->FIFOPUSH = dummy;
                     if (numBytesRemaining > 4)
                     {
@@ -609,32 +640,46 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
                     }
                 }
             }
+            //
             // Now wait for command to finish
+            //
             while ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk);
         }
         else
         {
+            //
             // Read
             // Let command finish
+            //
             while (IOMn(ui32Module)->STATUS_b.CMDACT)
             {
                 while (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ >= 4)
                 {
+                    //
                     // Read one 4-byte word from FIFO
+                    //
                     IOMn(ui32Module)->FIFOPOP;
 #if MANUAL_POP
                     IOMn(ui32Module)->FIFOPOP = 0x11111111;
 #endif
                 }
             }
+
+            //
             // Now wait for command to finish
+            //
             while ((IOMn(ui32Module)->STATUS & (IOM0_STATUS_IDLEST_Msk | IOM0_STATUS_CMDACT_Msk)) != IOM0_STATUS_IDLEST_Msk);
+
+            //
             // Flush any remaining data from FIFO
+            //
             while  (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ)
             {
                 while (IOMn(ui32Module)->FIFOPTR_b.FIFO1SIZ >= 4)
                 {
+                    //
                     // Read one 4-byte word from FIFO
+                    //
                     IOMn(ui32Module)->FIFOPOP;
 #if MANUAL_POP
                     IOMn(ui32Module)->FIFOPOP = 0x11111111;
@@ -646,6 +691,7 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
     if (ui32IntMask & (AM_HAL_IOM_INT_NAK | AM_HAL_IOM_INT_ARB))
     {
         uint32_t iomDbg = IOMn(ui32Module)->IOMDBG;
+
         //
         // Wait for Idle
         //
@@ -657,25 +703,40 @@ internal_iom_reset_on_error(am_hal_iom_state_t  *pIOMState, uint32_t ui32IntMask
         // Disable the submodules
         //
         IOMn(ui32Module)->SUBMODCTRL_b.SMOD1EN = 0;
+
+        //
         // Reset Fifo
+        //
         IOMn(ui32Module)->FIFOCTRL_b.FIFORSTN = 0;
 
+        //
         // Disable Clock gating
+        //
         IOMn(ui32Module)->IOMDBG |= IOM0_IOMDBG_IOCLKON_Msk;
+
+        //
         // Wait for few IO clock cycles
+        //
         am_hal_delay_us(usToWait);
+
+        //
         // Revert
+        //
         IOMn(ui32Module)->IOMDBG = iomDbg;
 
         IOMn(ui32Module)->FIFOCTRL_b.FIFORSTN = 1;
 
+        //
         // Enable submodule
+        //
         IOMn(ui32Module)->SUBMODCTRL_b.SMOD1EN = 1;
     }
 
     IOMn(ui32Module)->INTCLR = AM_HAL_IOM_INT_ALL;
 
+    //
     // Restore interrupts
+    //
     IOMn(ui32Module)->INTEN = curIntCfg;
 }
 
@@ -928,18 +989,10 @@ am_hal_IOM_CQReset(void *pHandle)
 
 //*****************************************************************************
 //
-// @brief Adds a transaction the IOM Command Queue.
-//
-// @param pHandle       - handle for the interface.
-// @param psTransaction  - transaction to add to the CQ
-// @param pfnCallback   - pointer the callback function to be executed when
-//                       transaction is complete.
-// @param pCallbackCtxt - pointer to the context to the callback (could be NULL)
+// Adds a transaction the IOM Command Queue.
 //
 // This function copies data from the IOM FIFO into the array \e pui32Data.
 // This is how input data from SPI or I2C transactions may be retrieved.
-//
-// @return HAL status of the operation.
 //
 //*****************************************************************************
 uint32_t
@@ -986,15 +1039,9 @@ am_hal_iom_CQAddTransaction(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Enable the Command Queue operation.
-//!
-//! @param pHandle       - handle for the interface.
+//! @ Enable the Command Queue operation.
 //!
 //! This function enables Command Queue operation.
-//!
-//!
-//! @return HAL status of the operation.
-//
 //
 //*****************************************************************************
 uint32_t
@@ -2767,20 +2814,8 @@ am_hal_iom_nonblocking_transfer(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Perform a simple full-duplex transaction to the SPI interface.
-//!
-//! This function performs SPI full-duplex operation to a selected SPI device.
-//!
-//! @note The actual SPI and I2C interfaces operate in BYTES, not 32-bit words.
-//! This means that you will need to byte-pack the \e pui32TxData array with the
-//! data you intend to send over the interface. One easy way to do this is to
-//! declare the array as a 32-bit integer array, but use an 8-bit pointer to
-//! put your actual data into the array. If there are not enough bytes in your
-//! desired message to completely fill the last 32-bit word, you may pad that
-//! last word with bytes of any value. The IOM hardware will only read the
-//! first \e ui32NumBytes in the \e pui32TxData array.
-//!
-//! @return returns AM_HAL_IOM_SUCCESS on successful execution.
+// Perform a simple full-duplex transaction to the SPI interface.
+// This function performs SPI full-duplex operation to a selected SPI device.
 //
 //*****************************************************************************
 uint32_t
@@ -3043,15 +3078,8 @@ am_hal_iom_spi_blocking_fullduplex(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief IOM control function
-//!
-//! @param pHandle      - handle for the IOM.
-//! @param eReq         - device specific special request code.
-//! @param pArgs - Pointer to arguments for Control Switch Case
-//!
-//! This function allows advanced settings
-//!
-//! @return status      - generic or interface specific status.
+// IOM control function
+// This function allows advanced settings
 //
 //*****************************************************************************
 uint32_t am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArgs)
@@ -3097,16 +3125,6 @@ uint32_t am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArg
             if (pArgs)
             {
                 IOMn(ui32Module)->MSPICFG_b.SPILSB = *((uint32_t *)pArgs);
-            }
-            else
-            {
-                status = AM_HAL_STATUS_INVALID_ARG;
-            }
-            break;
-        case AM_HAL_IOM_REQ_SPI_FULLDUPLEX:
-            if (pArgs)
-            {
-                IOMn(ui32Module)->MSPICFG_b.FULLDUP = *((uint32_t *)pArgs);
             }
             else
             {
@@ -3567,9 +3585,11 @@ uint32_t am_hal_iom_control(void *pHandle, am_hal_iom_request_e eReq, void *pArg
     return status;
 }
 
+//*****************************************************************************
 //
 // IOM High Priority transfer function
 //
+//*****************************************************************************
 uint32_t am_hal_iom_highprio_transfer(void *pHandle,
                                       am_hal_iom_transfer_t *psTransaction,
                                       am_hal_iom_callback_t pfnCallback,

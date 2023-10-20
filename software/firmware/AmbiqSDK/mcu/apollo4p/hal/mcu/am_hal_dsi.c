@@ -4,7 +4,7 @@
 //!
 //! @brief Hardware abstraction for the Display Serial Interface
 //!
-//! @addtogroup dsi DSI - Display Serial Interface
+//! @addtogroup dsi_4p DSI - Display Serial Interface
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -152,6 +152,7 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     //                   [15:13]     [12:10]   [9:7]      [6:5]     [4:3]     [2:0]
     //
     uint32_t ui32DSIFuncPrg = 0;
+
     //
     // check number of lanes parameters
     //
@@ -168,6 +169,7 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
         default:
           return AM_HAL_STATUS_OUT_OF_RANGE;
     }
+
     //
     // check DBI bus width parameter
     //
@@ -190,30 +192,37 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     }
 
     DSI->RSTENBDFE = _VAL2FLD(DSI_RSTENBDFE_ENABLE, 0);
+
     //
     // Add 1ms delay to avoid low contention.
     //
     am_hal_delay_us(1000);
+
     //
     // write into DSI functional programming register
     //
     DSI->DSIFUNCPRG = ui32DSIFuncPrg;
+
     //
     // write into HIGH SPEED RECEIVE TIMEOUT REGISTER
     //
     DSI->HSTXTIMEOUT = _VAL2FLD(DSI_HSTXTIMEOUT_MAXDURTOCNT, 0x00FFFFFF);
+
     //
     //write into LOW POWER RECEIVE TIMEOUT REGISTER
     //
     DSI->LPRXTO = _VAL2FLD(DSI_LPRXTO_TOCHKRVS, 0xFF);
+
     //
     // write into TURN AROUND TIMEOUT REGISTER
     //
     DSI->TURNARNDTO = _VAL2FLD(DSI_TURNARNDTO_TIMOUT, 0x1F);
+
     //
     // write into DEVICE RESET TIMER REGISTER
     //
     DSI->DEVICERESETTIMER = _VAL2FLD(DSI_DEVICERESETTIMER_TIMOUT, 0xFF);
+
     //
     // write into HIGH TO LOW SWITCH COUNT REGISTER
     //
@@ -226,16 +235,19 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     DSI->AFETRIM2 = _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x10000000);
     DSI->AFETRIM2 |= _VAL2FLD(DSI_AFETRIM2_AFETRIM2, 0x00480000); // trim_2<22> and trim_2<19> need to be set for DSI TX in 1-lane configuration.
     DSI->AFETRIM1 |= _VAL2FLD(DSI_AFETRIM1_AFETRIM1, 0x00002000); // trim_1<13> needs to be set
+
     //
     // enable DSI TX and DPHY
     //
     DSI->AFETRIM3 |= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, 0x00030000);
     DSI->RSTENBDFE = _VAL2FLD(DSI_RSTENBDFE_ENABLE, 1);
     DSI->DEVICEREADY |= _VAL2FLD(DSI_DEVICEREADY_READY, 1);
+
     //
     // Wait for DPHY init
     //
     am_hal_delay_us(400);
+
     //
     // ULPS Exit sequence
     //
@@ -245,6 +257,7 @@ am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui3
     DSI->AFETRIM3 &= _VAL2FLD(DSI_AFETRIM3_AFETRIM3, ~0x00030000);
     am_hal_delay_us(1010);
     DSI->DEVICEREADY_b.ULPS = DSI_DEVICEREADY_ULPS_This;
+
     //
     // Return the status.
     //
@@ -262,6 +275,7 @@ am_hal_dsi_init(void)
     am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
     DSI->RSTENBDFE = _VAL2FLD(DSI_RSTENBDFE_ENABLE, 0);
     //DSI->DEVICEREADY = _VAL2FLD(DSI_DEVICEREADY_READY, 0);
+
     //
     // vdd18 enable
     //
@@ -269,6 +283,7 @@ am_hal_dsi_init(void)
     {
         external_vdd18_callback(true);
     }
+
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_DPHYPLL, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DCCLK_ENABLE, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC12, NULL);
@@ -289,6 +304,7 @@ am_hal_dsi_deinit(void)
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_DCCLK_DISABLE, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_OFF, NULL);
     am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_PLLCLK_DISABLE, NULL);
+
     //
     // vdd18 disable
     //
@@ -296,7 +312,9 @@ am_hal_dsi_deinit(void)
     {
         external_vdd18_callback(false);
     }
+
     am_hal_pwrctrl_periph_disable(AM_HAL_PWRCTRL_PERIPH_DISPPHY);
+
     return AM_HAL_STATUS_SUCCESS;
 }
 
@@ -347,6 +365,7 @@ am_hal_dsi_napping(void)
 {
     am_hal_dsi_ulps_entry();
     am_hal_dsi_deinit();
+
     return AM_HAL_STATUS_SUCCESS;
 }
 
@@ -359,10 +378,26 @@ uint32_t
 am_hal_dsi_wakeup(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim)
 {
     am_hal_dsi_init();
+
     if ( am_hal_dsi_para_config(ui8LanesNum, ui8DBIBusWidth, ui32FreqTrim) != 0 )
     {
         return AM_HAL_STATUS_FAIL;
     }
+
+    return AM_HAL_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// DSI set return packet size (bytes)
+//
+//*****************************************************************************
+uint32_t
+am_hal_dsi_set_return_size(uint8_t ui8DataLen, bool bHS)
+{
+    DSI->MAXRETPACSZE_b.COUNTVAL = ui8DataLen;
+    DSI->MAXRETPACSZE_b.HSLP = (uint32_t) (!bHS);
+
     return AM_HAL_STATUS_SUCCESS;
 }
 

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -59,7 +59,8 @@ extern "C"
 
 //*****************************************************************************
 //
-// Device specific definitions for the flash size information
+//! @name Device specific definitions for the flash size information
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_PAGE_SIZE       0x100         //256 bytes, minimum program unit
@@ -67,18 +68,22 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_SECTOR_SHIFT    17            //128K bytes per sector
 #define AM_DEVICES_MSPI_IS25WX064_MAX_BLOCKS      256
 #define AM_DEVICES_MSPI_IS25WX064_MAX_SECTORS     128           // Sectors within 4-byte address range.
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for Serial SPI flash commands
+//! @name Global definitions for Serial SPI flash commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_PAGE_PROGRAM                              0x02
+#define AM_DEVICES_MSPI_IS25WX064_PAGE_PROGRAM_4B                           0x12
 #define AM_DEVICES_MSPI_IS25WX064_READ                                      0x03
 #define AM_DEVICES_MSPI_IS25WX064_WRITE_DISABLE                             0x04
 #define AM_DEVICES_MSPI_IS25WX064_READ_STATUS                               0x05
 #define AM_DEVICES_MSPI_IS25WX064_WRITE_ENABLE                              0x06
 #define AM_DEVICES_MSPI_IS25WX064_FAST_READ                                 0x0B
+#define AM_DEVICES_MSPI_IS25WX064_FAST_READ_4B                              0x0C
 #define AM_DEVICES_MSPI_IS25WX064_READ_4B                                   0x13
 #define AM_DEVICES_MSPI_IS25WX064_SUBSECTOR_ERASE                           0x20
 #define AM_DEVICES_MSPI_IS25WX064_RESET_ENABLE                              0x66
@@ -92,13 +97,27 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_WRITE_VOLATILE_CR                         0x81
 #define AM_DEVICES_MSPI_IS25WX064_READ_NONVOLATILE_CR                       0xB5
 #define AM_DEVICES_MSPI_IS25WX064_WRITE_NONVOLATILE_CR                      0xB1
-#define AM_DEVICES_MSPI_IS25WX064_ENTER_4BYTE_ADDRESS_MODE                  0xB7 
-#define AM_DEVICES_MSPI_IS25WX064_EXIT_4BYTE_ADDRESS_MODE                   0xE9 
-#define AM_DEVICES_MSPI_IS25WX064_READ_FLAG_STATUS_REGISTER                 0x70 
+#define AM_DEVICES_MSPI_IS25WX064_ENTER_4BYTE_ADDRESS_MODE                  0xB7
+#define AM_DEVICES_MSPI_IS25WX064_EXIT_4BYTE_ADDRESS_MODE                   0xE9
+#define AM_DEVICES_MSPI_IS25WX064_READ_FLAG_STATUS_REGISTER                 0x70
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for Octal DDR SPI flash commands
+//! @name Global definitions for 1-8-8 SPI flash commands
+//! @{
+//
+//*****************************************************************************
+#define AM_DEVICES_MSPI_IS25WX064_OCTAL_1_1_8_FAST_READ_4B                  0x7C
+#define AM_DEVICES_MSPI_IS25WX064_OCTAL_1_8_8_FAST_READ_4B                  0xCC
+#define AM_DEVICES_MSPI_IS25WX064_OCTAL_1_1_8_FAST_PGM_4B                   0x84
+#define AM_DEVICES_MSPI_IS25WX064_OCTAL_1_8_8_FAST_PGM_4B                   0x8E
+//! @}
+
+//*****************************************************************************
+//
+//! @name  Global definitions for Octal DDR SPI flash commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_FAST_READ                            0x0B0BU  /*!< Octa IO Read DTR                                 */
@@ -108,10 +127,12 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_SECTOR_ERASE_128K_4BYTE              0xDCDCU  /*!< Octa Sector Erase 128KB 3                        */
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_CHIP_ERASE_CMD                       0x6060U  /*!< Octa Bulk Erase                                  */
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_SECTOR_ERASE_128K                    0xD8D8U  /*!< Octa IO Read DTR                                 */
+//! @}
 
 //*****************************************************************************
 //
-// Setting commands
+//! @name  Setting commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_WRITE_ENABLE_CMD                     0x0606U   /*!< Octa Write Enable                               */
@@ -119,19 +140,23 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_PROG_ERASE_SUSPEND_CMD               0x7575U   /*!< Octa Program/Erase suspend                      */
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_PROG_ERASE_RESUME_CMD                0x7A7AU   /*!< Octa Program/Erase resume                       */
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_ENTER_DEEP_POWER_DOWN_CMD            0xB9B9U   /*!< Octa Enter deep power down                      */
+//! @}
 
 //*****************************************************************************
 //
-// Reset commands
+//! @name  Reset commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_NOP_CMD                              0x0000U   /*!< Octa No operation                               */ //NOP becasue 00h is invalid cmd for IS25LX512
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_RESET_ENABLE_CMD                     0x6666U   /*!< Octa Reset Enable                               */
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_RESET_MEMORY_CMD                     0x9999U   /*!< Octa Reset Memory                               */
+//! @}
 
 //*****************************************************************************
 //
-// Register Commands (OPI)
+//! @name  Register Commands (OPI)
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_READ_ID_CMD                          0x9F9FU   /*!< Octa Read IDentification                        */
@@ -161,21 +186,26 @@ extern "C"
 
 #define AM_DEVICES_MSPI_IS25WX064_3BYTE_ADDRESS                         0xFF
 #define AM_DEVICES_MSPI_IS25WX064_4BYTE_ADDRESS                         0xFE
+//! @}
+
 
 //*****************************************************************************
 //
-// Status Register
+//! @name  Status Register
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_SR_WIP                               0x01U   /*!< Write in progress                                       */
 #define AM_DEVICES_MSPI_IS25WX064_SR_WEL                               0x02U   /*!< Write enable latch                                      */
 #define AM_DEVICES_MSPI_IS25WX064_SR_TB                                0x20U   /*!< Top / bottom  selected                                  */
 #define AM_DEVICES_MSPI_IS25WX064_SR_PB                                0x5CU   /*!< Block protected against program and erase operations    */
+//! @}
 
 //*****************************************************************************
 //
-// Non-volatile and Volatile Configuration Register
-// Address : 0x00 IO mode
+//! @name Non-volatile and Volatile Configuration Register
+//! Address : 0x00 IO mode
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_CR_REG_ADDR_00                       0x00U  /*!< Volatile CR register address 0x00            */
@@ -183,9 +213,12 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_CR_IO_MODE_EXTENDED_SPI_WO_DQS       0xDFU        /*!< Extended SPI without DQS                           */
 #define AM_DEVICES_MSPI_IS25WX064_CR_IO_MODE_OCTAL_DDR                 0xE7U        /*!< Octal DDR                                          */
 #define AM_DEVICES_MSPI_IS25WX064_CR_IO_MODE_OCTAL_DDR_WO_DQS          0xC7U        /*!< Octal DDR without DQS                              */
+//! @}
+
 //*****************************************************************************
 //
-// Address : 0x01 Dummy cycle
+//! @name  Address : 0x01 Dummy cycle
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_CR_REG_ADDR_01                       0x01U  /*!< VCR register address 0x01                    */
@@ -221,39 +254,62 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_CR_DC_1C_CYCLES                      0x1CU        /*!< 28 Dummy cycles                                    */
 #define AM_DEVICES_MSPI_IS25WX064_CR_DC_1D_CYCLES                      0x1DU        /*!< 29 Dummy cycles                                    */
 #define AM_DEVICES_MSPI_IS25WX064_CR_DC_1E_CYCLES                      0x1EU        /*!< 30 Dummy cycles                                    */
+//! @}
+
+//*****************************************************************************
 //
-// Address : 0x02 Reserved
-// Address : 0x03 ODS
+//! @name Address : 0x03 ODS
+//! @{
 //
+//*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_CR_REG_ADDR_03                       0x03U  /*!< VCR register address 0x03                    */
 #define AM_DEVICES_MSPI_IS25WX064_CR_ODS_50_OHM                        0xFFU        /*!< 50_OHM ODS                                         */
 #define AM_DEVICES_MSPI_IS25WX064_CR_ODS_35_OHM                        0xFEU        /*!< 35_OHM ODS                                         */
 #define AM_DEVICES_MSPI_IS25WX064_CR_ODS_25_OHM                        0xFDU        /*!< 25_OHM ODS                                         */
 #define AM_DEVICES_MSPI_IS25WX064_CR_ODS_18_OHM                        0xFCU        /*!< 18_OHM ODS                                         */
+//! @}
+
+//*****************************************************************************
 //
-// Address : 0x04 Reserved
-// Address : 0x05 Address mode
+//! @name Address : 0x05 Address mode
+//! @{
 //
+//*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_CR_REG_ADDR_05                       0x05U  /*!< VCR register address 0x05                    */
 #define AM_DEVICES_MSPI_IS25WX064_CR_ADDR_MODE_3_BYTE                  0xFFU        /*!< 3-Byte address mode                                */
 #define AM_DEVICES_MSPI_IS25WX064_CR_ADDR_MODE_4_BYTE                  0xFEU        /*!< 4-Byte address mode                                */
+//! @}
+
+//*****************************************************************************
 //
-// Address : Address : 0x06 XIP configuration
+//! @name Address : Address : 0x06 XIP configuration
+//! @{
 //
+//*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_CR_REG_ADDR_06                       0x06U  /*!< VCR register address 0x06                    */
 #define AM_DEVICES_MSPI_IS25WX064_CR_XIP_DISABLE                       0xFFU        /*!< XIP disable                                        */
 #define AM_DEVICES_MSPI_IS25WX064_CR_XIP_ENABLE                        0xFEU        /*!< XIP enable                                         */
+//! @}
+
+//*****************************************************************************
 //
-// Address : 0x07 Wrap configuration
+//! @name Address : 0x07 Wrap configuration
+//! @{
 //
+//*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_CR_REG_ADDR_07                       0x07U  /*!< VCR register address 0x07                    */
 #define AM_DEVICES_MSPI_IS25WX064_CR_WRAP_CONTINUOUS                   0xFFU        /*!< Continuous                                         */
 #define AM_DEVICES_MSPI_IS25WX064_CR_WRAP_64_BYTE                      0xFEU        /*!< 64 Byte wrap                                       */
 #define AM_DEVICES_MSPI_IS25WX064_CR_WRAP_32_BYTE                      0xFDU        /*!< 32 Byte wrap                                       */
 #define AM_DEVICES_MSPI_IS25WX064_CR_WRAP_16_BYTE                      0xFCU        /*!< 16 Byte wrap                                       */
+//! @}
+
+//*****************************************************************************
 //
-// Flag Status Register
+//! @name Flag Status Register
+//! @{
 //
+//*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_FLAGSR_ADDRESSING                    0x01U        /*!< 3-byte / 4-byte addressing                          */
 #define AM_DEVICES_MSPI_IS25WX064_FLAGSR_PROT_ERR                      0x02U        /*!< Protection Error Bit                                */
 #define AM_DEVICES_MSPI_IS25WX064_FLAGSR_PSB                           0x04U        /*!< Program suspend bit                                 */
@@ -261,40 +317,49 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_FLAGSR_P_FAIL                        0x10U        /*!< Program fail flag                                   */
 #define AM_DEVICES_MSPI_IS25WX064_FLAGSR_E_FAIL                        0x20U        /*!< Erase fail flag                                     */
 #define AM_DEVICES_MSPI_IS25WX064_FLAGSR_WIPB                          0x80U        /*!< WIP# (0 is BUSY)                              */
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for the flash status register
+//! @name Global definitions for the flash status register
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_WEL       0x00000002        // Write enable latch
 #define AM_DEVICES_MSPI_IS25WX064_WIP       0x00000001        // Write in progress
+//! @}
 
 //*****************************************************************************
 //
-// Device specific identification.
+//! @name Device specific identification.
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_ID        0x009D5B17
 #define AM_DEVICES_MSPI_IS25WX064_ID_MASK   0x00FFFFFF
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for the flash status register
+//! @name Global definitions for the flash status register
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_IS25WX064_RSTE           0x00000010        // Reset enable
 #define AM_DEVICES_IS25WX064_WEL            0x00000002        // Write enable latch
 #define AM_DEVICES_IS25WX064_WIP            0x00000001        // Operation in progress
+//! @}
 
 //*****************************************************************************
 //
-// Global definitions for the MSPI instance to use.
+//! @name Global definitions for the MSPI instance to use.
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_MSPI_IS25WX064_MSPI_INSTANCE     0
 
 #define AM_DEVICES_MSPI_IS25WX064_MAX_DEVICE_NUM    1
+//! @}
 
 //*****************************************************************************
 //
@@ -308,7 +373,7 @@ extern "C"
 typedef enum
 {
     AM_DEVICES_MSPI_IS25WX064_STATUS_SUCCESS,
-    AM_DEVICES_MSPI_IS25WX064_STATUS_ERROR,    
+    AM_DEVICES_MSPI_IS25WX064_STATUS_ERROR,
     AM_DEVICES_MSPI_IS25WX064_STATUS_BUSY,
     AM_DEVICES_MSPI_IS25WX064_STATUS_READY
 } am_devices_mspi_is25wx064_status_t;
@@ -359,7 +424,7 @@ typedef struct
 //! @brief Initialize the mspi_flash driver.
 //!
 //! @param ui32Module - MSPI instance
-//! @param pDevCfg - MSPI device structure describing the target spi flash.
+//! @param psMSPISettings - MSPI device structure describing the target spi flash.
 //! @param ppHandle - Device handle which needs to be return
 //! @param ppMspiHandle - MSPI handle which needs to be return
 //!
@@ -370,12 +435,11 @@ typedef struct
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_init(uint32_t ui32Module,
+extern uint32_t am_devices_mspi_is25wx064_init(uint32_t ui32Module,
                                am_devices_mspi_is25wx064_config_t *psMSPISettings,
-                               void **ppHandle, 
+                               void **ppHandle,
                                void **ppMspiHandle);
-                                              
+
 //*****************************************************************************
 //
 //! @brief DeInitialize the mspi_flash driver.
@@ -385,8 +449,7 @@ am_devices_mspi_is25wx064_init(uint32_t ui32Module,
 //! @return status.
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_deinit(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_deinit(void *pHandle);
 
 //*****************************************************************************
 //
@@ -397,8 +460,7 @@ am_devices_mspi_is25wx064_deinit(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_id(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_id(void *pHandle);
 
 //*****************************************************************************
 //! @brief Reset the external flash.
@@ -411,8 +473,8 @@ am_devices_mspi_is25wx064_id(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_reset(void *pHandle, am_hal_mspi_dev_config_t *pDevCconfig);
+extern uint32_t am_devices_mspi_is25wx064_reset(void *pHandle,
+                                        am_hal_mspi_dev_config_t *pDevCconfig);
 
 //*****************************************************************************
 //
@@ -431,12 +493,11 @@ am_devices_mspi_is25wx064_reset(void *pHandle, am_hal_mspi_dev_config_t *pDevCco
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_read(void *pHandle, 
-                               uint8_t *pui8RxBuffer,
-                               uint32_t ui32ReadAddress,
-                               uint32_t ui32NumBytes,
-                               bool bWaitForCompletion);
+extern uint32_t am_devices_mspi_is25wx064_read(void *pHandle,
+                                               uint8_t *pui8RxBuffer,
+                                               uint32_t ui32ReadAddress,
+                                               uint32_t ui32NumBytes,
+                                               bool bWaitForCompletion);
 
 //*****************************************************************************
 //
@@ -457,12 +518,11 @@ am_devices_mspi_is25wx064_read(void *pHandle,
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_write(void *pHandle, 
-                                uint8_t *ui8TxBuffer,
-                                uint32_t ui32WriteAddress,
-                                uint32_t ui32NumBytes,
-                                bool bWaitForCompletion);
+extern uint32_t am_devices_mspi_is25wx064_write(void *pHandle,
+                                                uint8_t *pui8TxBuffer,
+                                                uint32_t ui32WriteAddress,
+                                                uint32_t ui32NumBytes,
+                                                bool bWaitForCompletion);
 
 //*****************************************************************************
 //
@@ -476,8 +536,7 @@ am_devices_mspi_is25wx064_write(void *pHandle,
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_mass_erase(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_mass_erase(void *pHandle);
 
 //*****************************************************************************
 //
@@ -493,8 +552,8 @@ am_devices_mspi_is25wx064_mass_erase(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_sector_erase(void *pHandle, uint32_t ui32SectorAddress);
+extern uint32_t am_devices_mspi_is25wx064_sector_erase(void *pHandle,
+                                                    uint32_t ui32SectorAddress);
 
 //*****************************************************************************
 //
@@ -507,8 +566,7 @@ am_devices_mspi_is25wx064_sector_erase(void *pHandle, uint32_t ui32SectorAddress
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_enable_xip(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_enable_xip(void *pHandle);
 
 //*****************************************************************************
 //
@@ -521,8 +579,7 @@ am_devices_mspi_is25wx064_enable_xip(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_disable_xip(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_disable_xip(void *pHandle);
 
 //*****************************************************************************
 //
@@ -535,8 +592,7 @@ am_devices_mspi_is25wx064_disable_xip(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_enable_scrambling(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_enable_scrambling(void *pHandle);
 
 //*****************************************************************************
 //
@@ -549,8 +605,7 @@ am_devices_mspi_is25wx064_enable_scrambling(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t 
-am_devices_mspi_is25wx064_disable_scrambling(void *pHandle);
+extern uint32_t am_devices_mspi_is25wx064_disable_scrambling(void *pHandle);
 
 //*****************************************************************************
 //
@@ -572,15 +627,14 @@ am_devices_mspi_is25wx064_disable_scrambling(void *pHandle);
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t
-am_devices_mspi_is25wx064_read_adv(void *pHandle, 
-                                   uint8_t *pui8RxBuffer,
-                                   uint32_t ui32ReadAddress,
-                                   uint32_t ui32NumBytes,
-                                   uint32_t ui32PauseCondition,
-                                   uint32_t ui32StatusSetClr,
-                                   am_hal_mspi_callback_t pfnCallback,
-                                   void *pCallbackCtxt);
+extern uint32_t am_devices_mspi_is25wx064_read_adv(void *pHandle,
+                                           uint8_t *pui8RxBuffer,
+                                           uint32_t ui32ReadAddress,
+                                           uint32_t ui32NumBytes,
+                                           uint32_t ui32PauseCondition,
+                                           uint32_t ui32StatusSetClr,
+                                           am_hal_mspi_callback_t pfnCallback,
+                                           void *pCallbackCtxt);
 
 //*****************************************************************************
 //
@@ -599,12 +653,11 @@ am_devices_mspi_is25wx064_read_adv(void *pHandle,
 //! @return 32-bit status
 //
 //*****************************************************************************
-extern uint32_t
-am_devices_mspi_is25wx064_read_hiprio(void *pHandle, 
-                                      uint8_t *pui8RxBuffer,
-                                      uint32_t ui32ReadAddress,
-                                      uint32_t ui32NumBytes,
-                                      bool bWaitForCompletion);
+extern uint32_t am_devices_mspi_is25wx064_read_hiprio(void *pHandle,
+                                                      uint8_t *pui8RxBuffer,
+                                                      uint32_t ui32ReadAddress,
+                                                      uint32_t ui32NumBytes,
+                                                      bool bWaitForCompletion);
 
 //*****************************************************************************
 //
@@ -621,10 +674,9 @@ am_devices_mspi_is25wx064_read_hiprio(void *pHandle,
 //! @return 32-bit status, scan result in structure type
 //
 //*****************************************************************************
-extern uint32_t
-am_devices_mspi_is25wx064_init_timing_check(uint32_t module,
-                am_devices_mspi_is25wx064_config_t *pDevCfg,
-                am_devices_mspi_is25wx064_timing_config_t *psDevTimingCfg);
+extern uint32_t am_devices_mspi_is25wx064_init_timing_check(uint32_t module,
+                    am_devices_mspi_is25wx064_config_t *pDevCfg,
+                    am_devices_mspi_is25wx064_timing_config_t *psDevTimingCfg);
 
 //*****************************************************************************
 //
@@ -637,11 +689,10 @@ am_devices_mspi_is25wx064_init_timing_check(uint32_t module,
 //! This function must be called after MSPI instance is initialized into
 //! ENABLEFINEDELAY0 = 1 mode.
 //!
-//! @return 32-bit status
+//! @return status
 //
 //*****************************************************************************
-extern uint32_t
-am_devices_mspi_is25wx064_apply_ddr_timing(void *pHandle,
+extern uint32_t am_devices_mspi_is25wx064_apply_ddr_timing(void *pHandle,
                 am_devices_mspi_is25wx064_timing_config_t *psDevTimingCfg);
 
 
@@ -656,4 +707,3 @@ am_devices_mspi_is25wx064_apply_ddr_timing(void *pHandle,
 //! @}
 //
 //*****************************************************************************
-

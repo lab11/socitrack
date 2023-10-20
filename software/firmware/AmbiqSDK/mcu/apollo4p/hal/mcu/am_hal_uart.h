@@ -4,7 +4,7 @@
 //!
 //! @brief Hardware abstraction for the UART
 //!
-//! @addtogroup uart UART Functionality
+//! @addtogroup uart_4p UART Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -103,9 +103,7 @@ am_hal_uart_errors_t;
 //! @name UART Flag Register
 //! @{
 //! Macro definitions for UART Flag Register Bits.
-//!
 //! They may be used with the \e am_hal_uart_flags_get() function.
-//!
 //
 //*****************************************************************************
 #define AM_HAL_UART_FR_TX_EMPTY             UART0_FR_TXFE_Msk
@@ -199,21 +197,17 @@ am_hal_uart_config_t;
 
 //*****************************************************************************
 //
-//! UART transfer structure.
-//
-//*****************************************************************************
-
-//
 //! @brief The type of transfer to execute.
 //!
 //! For blocking transfers, the CPU will poll until the requested number of
 //! bytes have been transferred, or the timeout interval elapses, whichever
 //! happens first.
-//
+//!
 //! For non-blocking transfers, the CPU will read or write as many bytes as
 //! possible immediately, and then the interrupt service routine will handle the
 //! rest.
 //
+//*****************************************************************************
 typedef enum
 {
     AM_HAL_UART_BLOCKING_WRITE,
@@ -223,6 +217,11 @@ typedef enum
 }
 am_hal_uart_transfer_type_e;
 
+//*****************************************************************************
+//
+//! UART transfer structure.
+//
+//*****************************************************************************
 typedef struct
 {
     //
@@ -273,7 +272,7 @@ typedef struct
 am_hal_uart_transfer_t;
 
 //
-//! A few helpful UART transfer defaults.
+//! UART Blocking Write Defaults.
 //
 #define AM_HAL_UART_BLOCKING_WRITE_DEFAULTS                                   \
 {                                                                             \
@@ -287,6 +286,9 @@ am_hal_uart_transfer_t;
     .ui32ErrorStatus = 0,                                                     \
 };
 
+//
+//! UART Blocking Read Defaults.
+//
 #define AM_HAL_UART_BLOCKING_READ_DEFAULTS                                    \
 {                                                                             \
     .eType = AM_HAL_UART_BLOCKING_READ,                                       \
@@ -299,6 +301,9 @@ am_hal_uart_transfer_t;
     .ui32ErrorStatus = 0,                                                     \
 }
 
+//
+//! UART Non-Blocking Write Defaults.
+//
 #define AM_HAL_UART_NONBLOCKING_WRITE_DEFAULTS                                \
 {                                                                             \
     .eType = AM_HAL_UART_NONBLOCKING_WRITE,                                   \
@@ -311,6 +316,9 @@ am_hal_uart_transfer_t;
     .ui32ErrorStatus = 0,                                                     \
 }
 
+//
+//! UART Non-Blocking Read Defaults.
+//
 #define AM_HAL_UART_NONBLOCKING_READ_DEFAULTS                                 \
 {                                                                             \
     .eType = AM_HAL_UART_NONBLOCKING_READ,                                    \
@@ -324,7 +332,7 @@ am_hal_uart_transfer_t;
 }
 
 //
-// Use this value if you want to keep a UART transaction blocking forever.
+//! Use this value if you want to keep a UART transaction blocking forever.
 //
 #define AM_HAL_UART_WAIT_FOREVER            0xFFFFFFFF
 
@@ -671,10 +679,8 @@ extern uint32_t am_hal_uart_interrupt_clear(void *pHandle,
 //! @brief Read interrupt status.
 //!
 //! @param pHandle is the handle for the UART to operate on.
-//!
 //! @param pui32Status is the returned interrupt status (all bits OR'ed
 //! together)
-//!
 //! @param bEnabledOnly determines whether to read interrupts that were not
 //! enabled.
 //!
@@ -712,7 +718,6 @@ extern uint32_t am_hal_uart_interrupt_status_get(void *pHandle,
 //! @brief Check to see which interrupts are enabled.
 //!
 //! @param pHandle is the handle for the UART to operate on.
-//!
 //! @param pui32IntMask is the current set of interrupt enable bits (all bits
 //!                     OR'ed together)
 //!
@@ -747,7 +752,6 @@ extern uint32_t am_hal_uart_interrupt_enable_get(void *pHandle, uint32_t *pui32I
 //! @brief transfer data between hardware and software queue in the background.
 //!
 //! @param pHandle is the handle for the UART to operate on.
-//!
 //! @param ui32Status is the interrupt flag and can be any combination of
 //!  AM_HAL_UART_INT_RX, AM_HAL_UART_INT_RX_TMOUT, or AM_HAL_UART_INT_TX.
 //!

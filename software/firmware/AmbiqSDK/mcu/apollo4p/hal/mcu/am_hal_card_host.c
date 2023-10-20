@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the SDHC or SPI SD/MMC/SDIO card host.
 //!
-//! @addtogroup card_host Card Host for SD/MMC/eMMC/SDIO
+//! @addtogroup card_host_4p Card Host for SD/MMC/eMMC/SDIO
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -63,6 +63,13 @@
 //
 // Internal functions
 //
+
+//*****************************************************************************
+//
+// Initialize the SDHC as a Host
+// Sets up the power, clock, and capabilities
+//
+//*****************************************************************************
 static uint32_t am_hal_sdhc_host_init(am_hal_card_host_t *pHost)
 {
     //
@@ -117,6 +124,12 @@ static uint32_t am_hal_sdhc_host_init(am_hal_card_host_t *pHost)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Denitializes the SDHC as a Host
+// Disables the SDHC and power capabilities
+//
+//*****************************************************************************
 static uint32_t am_hal_sdhc_host_deinit(void *pHandle)
 {
     if (am_hal_sdhc_disable(pHandle) != AM_HAL_STATUS_SUCCESS)
@@ -137,6 +150,11 @@ static uint32_t am_hal_sdhc_host_deinit(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// A wrapper for the retries of the am_hal_sdhc_execute_cmd function
+//
+//*****************************************************************************
 static uint32_t am_hal_sdhc_host_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     uint32_t ui32Status;
@@ -156,6 +174,11 @@ static uint32_t am_hal_sdhc_host_execute_cmd(void *pHandle, am_hal_card_cmd_t *p
     return ui32Status;
 }
 
+//*****************************************************************************
+//
+// A wrapper for the am_hal_sdhc_power_control function
+//
+//*****************************************************************************
 static uint32_t am_hal_card_host_power_control(void *pHandle, bool bOnOff)
 {
   return am_hal_sdhc_power_control(pHandle, bOnOff ? AM_HAL_SYSCTRL_WAKE : AM_HAL_SYSCTRL_NORMALSLEEP, true);

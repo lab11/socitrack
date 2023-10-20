@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for enabling and disabling power domains.
 //!
-//! @addtogroup pwrctrl4 PWRCTRL - Power Control
+//! @addtogroup pwrctrl4_4p PWRCTRL - Power Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -95,8 +95,15 @@
 #define MAX_MEMLDOACTIVETRIM    _FLD2VAL(MCUCTRL_LDOREG2_MEMLDOACTIVETRIM, 0xFFFFFFFF)  // LDO VDDF
 #define MAX_LPTRIMVDDF          _FLD2VAL(MCUCTRL_SIMOBUCK12_LPTRIMVDDF, 0xFFFFFFFF)     // VDDF LP
 #define MAX_MEMLPLDOTRIM        _FLD2VAL(MCUCTRL_LDOREG2_MEMLPLDOTRIM, 0xFFFFFFFF)      // MEM LP LDO
-#define MAX_BUCKVDDCTRIM        _FLD2VAL(MCUCTRL_VREFGEN2_TVRGVREFTRIM, 0xFFFFFFFF)     // Buck VDDC
+#define MAX_TVRGVREFTRIM        _FLD2VAL(MCUCTRL_VREFGEN2_TVRGVREFTRIM, 0xFFFFFFFF)     // Buck VDDC
+#define MAX_CORELDOACTIVETRIM   _FLD2VAL(MCUCTRL_LDOREG1_CORELDOACTIVETRIM, 0xFFFFFFFF) // Buck VDDC
 //! @}
+
+//
+// Internal non-published function, since Timer13 is reserved for a workaround.
+//
+extern uint32_t internal_timer_config(uint32_t ui32TimerNumber,
+                                      am_hal_timer_config_t *psTimerConfig);
 
 // ****************************************************************************
 //
@@ -127,6 +134,7 @@ static uint32_t g_orig_MEMLDOACTIVETRIM     = 0;
 static uint32_t g_orig_LPTRIMVDDF           = 0;
 static uint32_t g_orig_MEMLPLDOTRIM         = 0;
 static uint32_t g_orig_TVRGVREFTRIM         = 0;
+static uint32_t g_orig_CORELDOACTIVETRIM    = 0;
 //! @}
 
 #if AM_HAL_PWRCTL_OPTIMIZE_ACTIVE_TRIMS_CRYPTO
@@ -549,6 +557,14 @@ const am_hal_pwrctrl_mcu_memory_config_t    g_DefaultMcuMemCfg =
 
 const am_hal_pwrctrl_sram_memcfg_t          g_DefaultSRAMCfg =
 {
+    //
+    //! Default configuration for Shared SRAM:
+    //! Enable all SSRAM
+    //! All active bits = 0.
+    //!   Active bits 0 allow memory to go to retention in deepsleep.
+    //!   Active bits 1 force the memory to stay on, requiring more power.
+    //! Retain all SSRAM in deepsleep.
+    //
     .eSRAMCfg           = AM_HAL_PWRCTRL_SRAM_ALL,
     .eActiveWithMCU     = AM_HAL_PWRCTRL_SRAM_NONE,
     .eActiveWithGFX     = AM_HAL_PWRCTRL_SRAM_NONE,
@@ -611,6 +627,256 @@ TrimVersionGet(uint32_t *pui32TrimVer)
 
 } // TrimVersionGet()
 
+#if defined(AM_HAL_PWRCTL_HPLP_WA)
+//*****************************************************************************
+//
+// Function to initialize Timer 13 to interrupt after ui32Delayus.
+//
+//*****************************************************************************
+static uint32_t
+am_hal_util_write_and_wait_timer_init(uint32_t ui32Delayus)
+{
+    am_hal_timer_config_t       TimerConfig;
+    uint32_t ui32Status         = AM_HAL_STATUS_SUCCESS;
+
+    //
+    // Set the timer configuration
+    //
+    am_hal_timer_default_config_set(&TimerConfig);
+    TimerConfig.eFunction = AM_HAL_TIMER_FN_EDGE;
+    TimerConfig.ui32Compare0 = 0xFFFFFFFF;
+    TimerConfig.ui32PatternLimit = 0;
+    TimerConfig.ui32Compare1 = ui32Delayus * 6000000 / 1000000;
+    ui32Status = internal_timer_config(AM_HAL_WRITE_WAIT_TIMER, &TimerConfig);
+    if ( ui32Status != AM_HAL_STATUS_SUCCESS )
+    {
+       return ui32Status;
+    }
+
+    am_hal_timer_clear(AM_HAL_WRITE_WAIT_TIMER);
+    am_hal_timer_stop(AM_HAL_WRITE_WAIT_TIMER);
+
+    //
+    // Clear the timer Interrupt
+    //
+    ui32Status = am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(AM_HAL_WRITE_WAIT_TIMER, AM_HAL_TIMER_COMPARE1));
+    if ( ui32Status != AM_HAL_STATUS_SUCCESS )
+    {
+        return ui32Status;
+    }
+
+    //
+    // Enable the timer Interrupt.
+    //
+    ui32Status = am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(AM_HAL_WRITE_WAIT_TIMER, AM_HAL_TIMER_COMPARE1));
+    if ( ui32Status != AM_HAL_STATUS_SUCCESS )
+    {
+       return ui32Status;
+    }
+
+    //
+    // Enable the timer interrupt in the NVIC.
+    //
+    // This interrupt needs to be set as the highest priority (0)
+    //
+    NVIC_SetPriority((IRQn_Type)((uint32_t)TIMER0_IRQn + AM_HAL_WRITE_WAIT_TIMER), 0);
+    NVIC_EnableIRQ((IRQn_Type)((uint32_t)TIMER0_IRQn + AM_HAL_WRITE_WAIT_TIMER));
+
+    //
+    // No need to enable interrupt as we just need to get out of WFI
+    // We just need to clear the NVIC pending
+    // am_hal_interrupt_master_enable();
+    //
+
+    return ui32Status;
+
+} // am_hal_util_write_and_wait_timer_init()
+
+//*****************************************************************************
+//
+// Define a simple function that will write a value to register (or other
+// memory location) and then go to sleep.
+// The opcodes are aligned on a 16-byte boundary to guarantee that
+// the write and the WFI are in the same M4 line buffer.
+//
+//*****************************************************************************
+//
+// Prototype the assembly function.
+//
+typedef void (*storeAndWFIfunc_t)(uint32_t ui32Val, uint32_t *pAddr);
+
+#if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION < 6000000)
+__align(16)
+#define WA_ATTRIB
+#elif (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION >= 6000000)
+#warning This attribute is not yet tested on ARM6.
+#define WA_ATTRIB   __attribute__ ((aligned (16)))
+#elif defined(__GNUC_STDC_INLINE__)
+#define WA_ATTRIB   __attribute__ ((aligned (16)))
+#elif defined(__IAR_SYSTEMS_ICC__)
+#pragma data_alignment = 16
+#define WA_ATTRIB
+#else
+#error Unknown compiler.
+#endif
+
+static
+uint16_t storeAndWFIRAM[16] WA_ATTRIB =
+{
+    //
+    // r0: Value to be written to the location specified in the 2nd argument.
+    // r1: Address of the location to be written.
+    //
+    // Begin 1st line buffer
+    0x6008,             // str r0, [r1]
+    0xF3BF, 0x8F4F,     // DSB
+    0xBF30,             // WFI
+    0xF3BF, 0x8F6F,     // ISB
+    0x4770,             // bx lr
+    0xBF00,             // nop
+};
+
+//
+// Prototype the assembly function.
+//
+storeAndWFIfunc_t storeAndWFIfuncRAM = (storeAndWFIfunc_t)((uint8_t *)storeAndWFIRAM + 1);
+
+//*****************************************************************************
+//
+// am_hal_util_write_and_wait()
+// Function to perform the RevC HP/LP mode switch.
+//
+//*****************************************************************************
+uint32_t
+am_hal_util_write_and_wait(uint32_t *pAddr, uint32_t ui32Mask, uint32_t ui32Val, uint32_t ui32Delayus)
+
+{
+    uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
+    uint32_t origBasePri;
+    uint32_t basePrioGrouping;
+
+    //
+    // Begin critical section
+    //
+    AM_CRITICAL_BEGIN
+
+    ui32Status = am_hal_util_write_and_wait_timer_init(ui32Delayus);
+    if (ui32Status == AM_HAL_STATUS_SUCCESS)
+    {
+
+        basePrioGrouping = NVIC_GetPriorityGrouping();
+        if (basePrioGrouping == 7)
+        {
+            //
+            // We cannot implement this workaround
+            //
+            ui32Status = AM_HAL_STATUS_FAIL;
+        }
+        else
+        {
+            //
+            // Before executing WFI as required later, flush any buffered core and peripheral writes.
+            //
+            am_hal_sysctrl_bus_write_flush();
+
+            //
+            // Mask off all other interrupts
+            //
+            origBasePri = __get_BASEPRI();
+            if (basePrioGrouping >= (8 - __NVIC_PRIO_BITS))
+            {
+                __set_BASEPRI(1 << (basePrioGrouping + 1));
+            }
+            else
+            {
+                __set_BASEPRI(1 << (8 - __NVIC_PRIO_BITS));
+            }
+
+            //
+            // Compute the value to write
+            //
+            if (ui32Mask != 0xFFFFFFFF)
+            {
+                ui32Val |= (AM_REGVAL((uint32_t)pAddr) & ~ui32Mask);
+            }
+
+            //
+            // Clear the timer.
+            //
+            am_hal_timer_clear(AM_HAL_WRITE_WAIT_TIMER);
+
+            //
+            // Set for normal sleep before calling storeAndWFIfunc()
+            //
+            SCB->SCR &= ~_VAL2FLD(SCB_SCR_SLEEPDEEP, 1);
+
+            //
+            // Call the function to switch the performance mode and WFI.
+            //
+            storeAndWFIfuncRAM(ui32Val, pAddr);
+
+            //
+            // Stop/Disable the timer
+            //
+            am_hal_timer_stop(AM_HAL_WRITE_WAIT_TIMER);
+
+            //
+            // Clear the timer Interrupt
+            //
+            am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(AM_HAL_WRITE_WAIT_TIMER, AM_HAL_TIMER_COMPARE_BOTH));
+
+            //
+            // Before clearing the NVIC pending, avoid a race condition by
+            // making sure the interrupt clear has propagated by reading
+            // the INTSTAT register.
+            //
+            volatile uint32_t ui32IntStat;
+            am_hal_timer_interrupt_status_get(true, (uint32_t*)&ui32IntStat);
+
+            //
+            // Clear pending NVIC interrupt for the timer-specific IRQ.
+            //
+            NVIC_ClearPendingIRQ((IRQn_Type)((uint32_t)TIMER0_IRQn + AM_HAL_WRITE_WAIT_TIMER));
+
+            //
+            // There is also a pending on the timer common IRQ. But it should
+            // only be cleared if the workaround timer is the only interrupt.
+            //
+            if ( !(ui32IntStat &
+                        ~AM_HAL_TIMER_MASK(AM_HAL_WRITE_WAIT_TIMER, AM_HAL_TIMER_COMPARE_BOTH)) )
+            {
+                NVIC_ClearPendingIRQ(TIMER_IRQn);
+
+                //
+                // One more race to consider.
+                // If a different timer interrupt occurred while clearing the
+                // common IRQ, set the timer common IRQ back to pending.
+                //
+                am_hal_timer_interrupt_status_get(true, (uint32_t*)&ui32IntStat);
+                if ( ui32IntStat &
+                        ~AM_HAL_TIMER_MASK(AM_HAL_WRITE_WAIT_TIMER, AM_HAL_TIMER_COMPARE_BOTH) )
+                {
+                    NVIC_SetPendingIRQ(TIMER_IRQn);
+                }
+            }
+
+            //
+            // Restore interrupts
+            //
+            __set_BASEPRI(origBasePri);
+        }
+    }
+
+    //
+    // End critical section
+    //
+    AM_CRITICAL_END
+
+    return ui32Status;
+
+} // am_hal_util_write_and_wait()
+#endif // defined(AM_HAL_PWRCTL_HPLP_WA)
+
 // ****************************************************************************
 //
 //  am_hal_pwrctrl_mcu_mode_status()
@@ -669,7 +935,21 @@ am_hal_pwrctrl_mcu_mode_select(am_hal_pwrctrl_mcu_mode_e ePowerMode)
     //
     // Set the MCU power mode.
     //
+#ifdef AM_HAL_PWRCTL_HPLP_WA
+    ui32Status = am_hal_util_write_and_wait((uint32_t*)&PWRCTRL->MCUPERFREQ,
+                                            0xFFFFFFFF, (uint32_t)ePowerMode,
+                                            AM_HAL_PWRCTL_HPLP_DELAY);
+    if ( ui32Status != AM_HAL_STATUS_SUCCESS )
+    {
+        //
+        // This means that there is another interrupt with the highest
+        // priority and the AM_HAL_PWRCTL_HPLP_WA will not work.
+        //
+        return ui32Status;
+    }
+#else
     PWRCTRL->MCUPERFREQ_b.MCUPERFREQ = ePowerMode;
+#endif // AM_HAL_PWRCTL_HPLP_WA
 
     //
     // Wait for the ACK
@@ -1994,6 +2274,7 @@ am_hal_pwrctrl_low_power_init(void)
         g_orig_LPTRIMVDDF           = MCUCTRL->SIMOBUCK12_b.LPTRIMVDDF;
         g_orig_MEMLPLDOTRIM         = MCUCTRL->LDOREG2_b.MEMLPLDOTRIM;
         g_orig_TVRGVREFTRIM         = MCUCTRL->VREFGEN2_b.TVRGVREFTRIM;
+        g_orig_CORELDOACTIVETRIM    = MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM;
         g_bOrigTrimsStored          = true;
     }
 
@@ -2197,6 +2478,14 @@ am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *pArgs)
             }
 #endif // AM_HAL_PWRCTRL_CORE_PWR_OPTIMAL_EFFICIENCY
 
+#ifdef AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
+        //
+        // This keeps the VDDC_LV cap from charging and discharging
+        //
+        MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVOREN  = 1; //<! bit 28
+        MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVORVAL = 1; //<! bit 29
+#endif
+
             //
             // Enable the SIMOBUCK
             //
@@ -2287,7 +2576,6 @@ am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *pArgs)
             {
                 *((float*)pArgs) = g_pfTempMeasured;
             }
-            break;
 #endif // AM_HAL_TEMPCO_LP
 
         default:
@@ -2313,11 +2601,12 @@ restore_factory_trims(void)
         //
         // Restore the original factory trim values
         //
-        MCUCTRL->SIMOBUCK12_b.ACTTRIMVDDF   = g_orig_ACTTRIMVDDF;
-        MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = g_orig_MEMLDOACTIVETRIM;
-        MCUCTRL->SIMOBUCK12_b.LPTRIMVDDF    = g_orig_LPTRIMVDDF;
-        MCUCTRL->LDOREG2_b.MEMLPLDOTRIM     = g_orig_MEMLPLDOTRIM;
-        MCUCTRL->VREFGEN2_b.TVRGVREFTRIM    = g_orig_TVRGVREFTRIM;
+        MCUCTRL->SIMOBUCK12_b.ACTTRIMVDDF    = g_orig_ACTTRIMVDDF;
+        MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM  = g_orig_MEMLDOACTIVETRIM;
+        MCUCTRL->SIMOBUCK12_b.LPTRIMVDDF     = g_orig_LPTRIMVDDF;
+        MCUCTRL->LDOREG2_b.MEMLPLDOTRIM      = g_orig_MEMLPLDOTRIM;
+        MCUCTRL->VREFGEN2_b.TVRGVREFTRIM     = g_orig_TVRGVREFTRIM;
+        MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = g_orig_CORELDOACTIVETRIM;
     }
 } // restore_factory_trims()
 
@@ -2335,6 +2624,10 @@ restore_factory_trims(void)
 //   as the case of a secondary bootloader transistioning to an application.
 // - If previously enabled, TempCo must be disabled before this function is
 //   called.
+//
+// - This function switches from SIMOBUCK to LDO which is known to affect
+//   VDDC and VDDC_LV
+//   Please see AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV in am_hal_pwrctrl.h.
 //
 //*****************************************************************************
 uint32_t
@@ -2487,6 +2780,14 @@ am_hal_pwrctrl_tempco_init(void *pADCHandle,
 //  2: Trim code adjust
 //
 
+const static int8_t
+g_VDDC_trimstbl[][3] =
+{
+    { -20, 60,    0},
+    {  60, 90,  -16},   // Last actual table entry
+    { 127, 127,   0}    // End of table: Probably bogus temp, do no adjustment
+};
+
 //
 //! Trim adjust table for VDDF
 //
@@ -2501,7 +2802,8 @@ g_VDDF_trimstbl[][3] =
     {  26,  35,  -5},
     {  35,  44,  -6},
     {  44,  53,  -7},
-    {  53,  60,  -8},   // Last actual table entry
+    {  53,  60,  -8},
+    {  60,  90,  -9},   // Last actual table entry
     { 127, 127,   0}    // End of table: Probably bogus temp, do no adjustment
 };
 
@@ -2519,7 +2821,8 @@ g_VDDFLP_trimstbl[][3] =
     {  26,  35,  -5},
     {  35,  44,  -6},
     {  44,  53,  -7},
-    {  53,  60,  -8},   // Last actual table entry
+    {  53,  60,  -8},
+    {  60,  90,  -9},   // Last actual table entry
     { 127, 127,   0}    // End of table: Probably bogus temp, do no adjustment
 };
 
@@ -2541,7 +2844,8 @@ g_memlpldo_trimstbl[][3] =
     {  18,  22,  -1},
     {  22,  26,  -2},
     {  26,  42,  -3},
-    {  42,  60,  -4},   // Last actual table entry
+    {  42,  60,  -4},
+    {  60,  90,  -5},   // Last actual table entry
     { 127, 127,   0}    // End of table: Probably bogus temp, do no adjustment
 };
 
@@ -2594,19 +2898,22 @@ lookup_trim(int8_t i8Temp, const int8_t pi8Tbl[][3])
 static void
 tempco_set_trims(int32_t i32VDDFtrim,
                  int32_t i32VDDFLPtrim,
-                 int32_t i32MemlpLDOtrim)
+                 int32_t i32MemlpLDOtrim,
+                 int32_t i32VDDCtrim)
 {
-    int32_t i32SimoVDDFact, i32Memldoact, i32SimoVDDFlp, i32Memlpldo;
+    int32_t i32SimoVDDFact, i32Memldoact, i32SimoVDDFlp, i32Memlpldo, i32TvrgVref, i32CoreMemldoact;
 
     if ( !g_bOrigTrimsStored )
     {
         return;
     }
 
-    i32SimoVDDFact = g_orig_ACTTRIMVDDF      + i32VDDFtrim;
-    i32Memldoact   = g_orig_MEMLDOACTIVETRIM + i32VDDFtrim;
-    i32SimoVDDFlp  = g_orig_LPTRIMVDDF       + i32VDDFLPtrim;
-    i32Memlpldo    = g_orig_MEMLPLDOTRIM     + i32MemlpLDOtrim;
+    i32SimoVDDFact   = g_orig_ACTTRIMVDDF       + i32VDDFtrim;
+    i32Memldoact     = g_orig_MEMLDOACTIVETRIM  + i32VDDFtrim;
+    i32SimoVDDFlp    = g_orig_LPTRIMVDDF        + i32VDDFLPtrim;
+    i32Memlpldo      = g_orig_MEMLPLDOTRIM      + i32MemlpLDOtrim;
+    i32TvrgVref      = g_orig_TVRGVREFTRIM      + i32VDDCtrim;
+    i32CoreMemldoact = g_orig_CORELDOACTIVETRIM + i32VDDCtrim;
 
     //
     // If Crypto is currently off, adjust the VDDF active trim.
@@ -2667,13 +2974,33 @@ tempco_set_trims(int32_t i32VDDFtrim,
         i32Memlpldo = MAX_MEMLPLDOTRIM;
     }
 
+    if ( i32TvrgVref  < 0 )
+    {
+        i32TvrgVref  = 0;
+    }
+    else if ( i32TvrgVref > MAX_TVRGVREFTRIM )
+    {
+        i32TvrgVref = MAX_TVRGVREFTRIM;
+    }
+
+    if ( i32CoreMemldoact  < 0 )
+    {
+        i32CoreMemldoact  = 0;
+    }
+    else if ( i32CoreMemldoact > MAX_CORELDOACTIVETRIM )
+    {
+        i32CoreMemldoact = MAX_CORELDOACTIVETRIM;
+    }
+
     //
     // Now set the new values
     //
-    MCUCTRL->SIMOBUCK12_b.ACTTRIMVDDF   = i32SimoVDDFact;
-    MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM = i32Memldoact;
-    MCUCTRL->SIMOBUCK12_b.LPTRIMVDDF    = i32SimoVDDFlp;
-    MCUCTRL->LDOREG2_b.MEMLPLDOTRIM     = i32Memlpldo;
+    MCUCTRL->SIMOBUCK12_b.ACTTRIMVDDF    = i32SimoVDDFact;
+    MCUCTRL->LDOREG2_b.MEMLDOACTIVETRIM  = i32Memldoact;
+    MCUCTRL->SIMOBUCK12_b.LPTRIMVDDF     = i32SimoVDDFlp;
+    MCUCTRL->LDOREG2_b.MEMLPLDOTRIM      = i32Memlpldo;
+    MCUCTRL->VREFGEN2_b.TVRGVREFTRIM     = i32TvrgVref;
+    MCUCTRL->LDOREG1_b.CORELDOACTIVETRIM = i32CoreMemldoact;
 
     AM_CRITICAL_END
 } // tempco_set_trims()
@@ -2747,7 +3074,7 @@ am_hal_pwrctrl_tempco_sample_handler(uint32_t ui32NumSamples, am_hal_adc_sample_
     uint32_t ui32Retval;
     float fVT[3];
     float fADCTempVolts, fADCTempDegreesC;
-    int32_t i32VDDFtrim, i32VDDFLPtrim, i32MemlpLDOtrim;
+    int32_t i32VDDFtrim, i32VDDFLPtrim, i32MemlpLDOtrim, i32VDDCtrim;
 
     if ( (g_bTempcoValid == false) || (ui32NumSamples < AM_HAL_TEMPCO_NUMSAMPLES) )
     {
@@ -2766,7 +3093,8 @@ am_hal_pwrctrl_tempco_sample_handler(uint32_t ui32NumSamples, am_hal_adc_sample_
         //
         tempco_set_trims(g_VDDF_trimstbl[0][2],
                          g_VDDFLP_trimstbl[0][2],
-                         g_memlpldo_trimstbl[0][2]);
+                         g_memlpldo_trimstbl[0][2],
+                         g_VDDC_trimstbl[0][2]);
         return ui32Retval;
     }
 
@@ -2787,7 +3115,7 @@ am_hal_pwrctrl_tempco_sample_handler(uint32_t ui32NumSamples, am_hal_adc_sample_
         //
         // Error, restore default values.
         //
-        tempco_set_trims(0, 0, 0);
+        tempco_set_trims(0, 0, 0, 0);
         g_pfTempMeasured = 0.0F;
         return ui32Retval;
     }
@@ -2808,14 +3136,15 @@ am_hal_pwrctrl_tempco_sample_handler(uint32_t ui32NumSamples, am_hal_adc_sample_
     //
     // Look up the 3 trim adjustments.
     //
-    i32VDDFtrim     = (int32_t)lookup_trim(i8Temp, g_VDDF_trimstbl);
-    i32VDDFLPtrim   = (int32_t)lookup_trim(i8Temp, g_VDDFLP_trimstbl);
-    i32MemlpLDOtrim = (int32_t)lookup_trim(i8Temp, g_memlpldo_trimstbl);
+    i32VDDFtrim      = (int32_t)lookup_trim(i8Temp, g_VDDF_trimstbl);
+    i32VDDFLPtrim    = (int32_t)lookup_trim(i8Temp, g_VDDFLP_trimstbl);
+    i32MemlpLDOtrim  = (int32_t)lookup_trim(i8Temp, g_memlpldo_trimstbl);
+    i32VDDCtrim      = (int32_t)lookup_trim(i8Temp, g_VDDC_trimstbl);
 
     //
     // Now, set the trims appropriately.
     //
-    tempco_set_trims(i32VDDFtrim, i32VDDFLPtrim, i32MemlpLDOtrim);
+    tempco_set_trims(i32VDDFtrim, i32VDDFLPtrim, i32MemlpLDOtrim, i32VDDCtrim);
 
     return AM_HAL_STATUS_SUCCESS;
 } // am_hal_pwrctrl_tempco_sample_handler()

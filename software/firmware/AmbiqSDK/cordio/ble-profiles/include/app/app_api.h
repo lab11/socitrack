@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework API.
  *
- *  Copyright (c) 2011-2019 Arm Ltd.
+ *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -1125,6 +1125,27 @@ void AppDiscReadDatabaseHash(dmConnId_t connId);
 */
 /*************************************************************************************************/
 void AppAddDevToResList(dmEvt_t *pMsg, dmConnId_t connId);
+
+/*************************************************************************************************/
+/*!
+ *  \brief  Add next device to resolving list. For the first device, the function should be
+ *          called with 'hdl' set to 'APP_DB_HDL_NONE'.
+ *
+ *  \param  hdl     The last handle returned by AppAddNextDevToResList or APP_DB_HDL_NONE to begin.
+ *
+ *  \return The handle being restored or APP_DB_HDL_NONE when the operation is complete.
+ *
+ *  \note   Applications supporting address resolution should call this functions after DmDevReset.
+ *          This function will restore the resolving list in the Controller using information in the
+ *          app device database.
+ *
+ *  \note   After each device is added to resolving list, the DM will send
+ *          DM_PRIV_ADD_DEV_TO_RES_LIST_IND to the application.  The application must call
+ *          AppAddNextDevToResList again to continue the restore process until
+ *          AppAddNextDevToResList returns APP_DB_HDL_NONE.
+ */
+/*************************************************************************************************/
+appDbHdl_t AppAddNextDevToResList(appDbHdl_t hdl);
 
 /*************************************************************************************************/
 /*!

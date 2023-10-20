@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -61,7 +61,8 @@ extern "C"
 
 //*****************************************************************************
 //
-// Some helpful macros defining addresses and sizes.
+//! @name Some helpful macros defining addresses and sizes.
+//! @{
 //
 //*****************************************************************************
 #define AM_HAL_SYSTEM_NVRAM_ADDR                (0x00000000 + AM_HAL_SYSTEM_NVRAM_SBL_OFFSET)
@@ -75,6 +76,7 @@ extern "C"
 #define AM_HAL_SYSTEM_SSRAM_ADDR                (0x10000000 + (384 * 1024))
 #define AM_HAL_SYSTEM_SSRAM_SIZE                (1024 * 1024)
 #define AM_HAL_SYSTEM_SSRAM_NWDS                (AM_HAL_SYSTEM_SSRAM_SIZE / 4)
+//! @}
 
 #ifdef __cplusplus
 }

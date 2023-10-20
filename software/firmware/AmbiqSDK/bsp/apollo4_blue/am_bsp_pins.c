@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2944,7 +2944,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_DISP_DSI_TE =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3222,12 +3222,12 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ETM_TRACECTL =
 
 //*****************************************************************************
 //
-// I2S0_DATA (6) - I2S0 Bidirectional Data.
+// I2S0_DATA (12) - I2S0 Bidirectional Data.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_DATA =
 {
-    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_6_I2S0_DATA,
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_12_I2S0_DATA,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
@@ -3246,12 +3246,12 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_DATA =
 
 //*****************************************************************************
 //
-// I2S0_SDOUT (6) - I2S0 Bidirectional Data.
+// I2S0_SDOUT (12) - I2S0 Bidirectional Data.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_SDOUT =
 {
-    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_6_I2S0_SDOUT,
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_12_I2S0_SDOUT,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
@@ -3270,12 +3270,12 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_SDOUT =
 
 //*****************************************************************************
 //
-// I2S0_CLK (5) - I2S0 Bit Clock.
+// I2S0_CLK (11) - I2S0 Bit Clock.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_CLK =
 {
-    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_5_I2S0_CLK,
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_11_I2S0_CLK,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
@@ -3294,12 +3294,12 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_CLK =
 
 //*****************************************************************************
 //
-// I2S0_WS (7) - I2S0 L/R Clock.
+// I2S0_WS (49) - I2S0 L/R Clock.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S0_WS =
 {
-    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_7_I2S0_WS,
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_49_I2S0_WS,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
@@ -3366,6 +3366,30 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_DATA =
 
 //*****************************************************************************
 //
+// I2S1_SDOUT (17) - I2S1 Bidirectional Data.
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_SDOUT =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_17_I2S1_SDOUT,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
 // I2S1_CLK (16) - I2S1 Bit Clock.
 //
 //*****************************************************************************
@@ -3414,6 +3438,30 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_WS =
 
 //*****************************************************************************
 //
+// I2S1_SDIN (19) - I2S1 Data In.
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_I2S1_SDIN =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_19_I2S1_SDIN,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
 // PDM0_CLK (50) - PDM 0 Clock Signal. Note: ETM_TRACECLK cannot be used simultaneously with this signal.
 //
 //*****************************************************************************
@@ -3424,7 +3472,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM0_CLK =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3448,7 +3496,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM0_DATA =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3472,7 +3520,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM1_CLK =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3496,7 +3544,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM1_DATA =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3520,7 +3568,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM2_CLK =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3544,7 +3592,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM2_DATA =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3568,7 +3616,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM3_CLK =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
@@ -3592,7 +3640,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM3_DATA =
     .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
-    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,

@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the CLKGEN.
 //!
-//! @addtogroup clkgen4 CLKGEN - Clock Generator
+//! @addtogroup clkgen4_4p CLKGEN - Clock Generator
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CLKGEN_H
@@ -65,9 +65,7 @@ extern "C"
 //! @name System Clock max frequency
 //! @{
 //! Defines the maximum clock frequency for this device.
-//!
 //! These macros provide a definition of the maximum clock frequency.
-//!
 //
 //*****************************************************************************
 #ifdef APOLLO4_FPGA
@@ -86,16 +84,13 @@ extern "C"
 //
 typedef enum
 {
-    AM_HAL_CLKGEN_CONTROL_XTAL_START,
-    AM_HAL_CLKGEN_CONTROL_LFRC_START,
-    AM_HAL_CLKGEN_CONTROL_XTAL_STOP,
-    AM_HAL_CLKGEN_CONTROL_LFRC_STOP,
     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL,
     AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC,
     AM_HAL_CLKGEN_CONTROL_HFADJ_ENABLE,
     AM_HAL_CLKGEN_CONTROL_HFADJ_DISABLE,
     AM_HAL_CLKGEN_CONTROL_HF2ADJ_ENABLE,
     AM_HAL_CLKGEN_CONTROL_HF2ADJ_DISABLE,
+    AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE,
     AM_HAL_CLKGEN_CONTROL_HFRC2_START,
     AM_HAL_CLKGEN_CONTROL_HFRC2_STOP,
     AM_HAL_CLKGEN_CONTROL_XTAL24M_ENABLE,
@@ -192,6 +187,43 @@ typedef enum
 
 #define AM_HAL_CLKGEN_CLKOUT_MAX        CLKGEN_CLKOUT_CKSEL_HFRC2_24MHz     // Highest valid CKSEL enum value
 
+//
+//! enum for HFCR2 FLL computation
+//
+typedef enum
+{
+    //
+    //! compute the hf2adj parameters from input and output freqs
+    //
+    AM_HAL_CLKGEN_HF2ADJ_COMP_COMP_FREQ = 1 ,
+    //
+    //! use passed in values directory
+    //
+    AM_HAL_CLKGEN_HF2ADJ_COMP_DIRECT_ARG = 2,
+    //
+    //! force this enum to be sizeof 4 bytes
+    //
+    AM_HAL_CLKGEN_HF2ADJ_COMP_ALIGH = 0x70000000,
+
+} am_hal_clockgen_hf2adj_compute_e;
+
+//
+//! struct used to pass data for AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE
+//
+typedef struct
+{
+    am_hal_clockgen_hf2adj_compute_e eHF2AdjType;
+    //
+    //! the xref oscillator frequency in hz
+    //
+    uint32_t ui32Source_freq_in_hz;
+    //
+    //! the target(output) frequency in hz
+    //
+    uint32_t ui32Target_freq_in_hz;
+
+} am_hal_clockgen_hf2adj_compute_t;
+
 
 //
 //! Status structure.
@@ -200,27 +232,27 @@ typedef struct
 {
     //
     // ui32SysclkFreq
-    //  Returns the current system clock frequency, in hertz.
+    //!  Returns the current system clock frequency, in hertz.
     //
     uint32_t    ui32SysclkFreq;
 
     //
-    // ui32RTCoscillator
+    // eRTCOSC
     //
-    //  Returns the current RTC oscillator as one of:
-    //  AM_HAL_CLKGEN_STATUS_RTCOSC_LFRC
-    //  AM_HAL_CLKGEN_STATUS_RTCOSC_XTAL
+    //!  Returns the current RTC oscillator as one of:
+    //!  AM_HAL_CLKGEN_STATUS_RTCOSC_LFRC
+    //!  AM_HAL_CLKGEN_STATUS_RTCOSC_XTAL
     //
     uint32_t    eRTCOSC;
 
     //
     // bXtalFailure
-    //  true = XTAL has failed (is enabled but not oscillating).  Also if the
-    //         LFRC is selected as the oscillator in OCTRL.OSEL.
+    //!  true = XTAL has failed (is enabled but not oscillating).  Also if the
+    //!         LFRC is selected as the oscillator in OCTRL.OSEL.
     //
     bool        bXtalFailure;
 
-     //
+    //
     // enable status for all the peripheral clocks.
     //  1: enable
     //  0: disable
@@ -342,147 +374,6 @@ extern uint32_t am_hal_clkgen_status_get(am_hal_clkgen_status_t *psStatus);
 // ****************************************************************************
 extern uint32_t am_hal_clkgen_clkout_enable(bool bEnable,
                                             am_hal_clkgen_clkout_e eClkSelect);
-
-// ****************************************************************************
-//
-//! @brief Enable XTAL 24MHz.
-//!
-//! This function is used to enable XTAL 24MHz and select drive strength.
-//!
-//! @param bEnable: true to enable, false to disable.
-//! @param eDSSelect - One of the following:
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_0
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_1
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_2
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_3
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_4
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_5
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_6
-//!     AM_HAL_CLKGEN_XTAL24MCTRL_XTAL24MDS_7
-//!
-//! @return status      - generic or interface specific status.
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_xtal24mctrl_enable(bool bEnable,
-                                               //am_hal_clkgen_xtal24mctrl_e eDSSelect);
-
-// ****************************************************************************
-//
-//! @brief Enable DCCLK.
-//!
-//! This function is used to enable DCCLK and select clock source.
-//!
-//! @param bEnable: true to enable, false to disable.
-//! @param eDSSelect - One of the following:
-//!     CLKGEN_DISPCLKCTRL_DISPCLKSEL_OFF
-//!     CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC48
-//!     CLKGEN_DISPCLKCTRL_DISPCLKSEL_HFRC96
-//!     CLKGEN_DISPCLKCTRL_DISPCLKSEL_DPHYPLL
-//!
-//! @return status      - generic or interface specific status.
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_dcclk_enable(bool bEnable,
-                                           //CLKGEN_DISPCLKCTRL_DISPCLKSEL_Enum eDispclkSelect);
-
-// ****************************************************************************
-//
-//! @brief Enable PLLCLK.
-//!
-//! This function is used to enable PLLCLK and select pll reference clock.
-//!
-//! @param bEnable: true to enable, false to disable.
-//! @param eDSSelect - One of the following:
-//!     CLKGEN_DISPCLKCTRL_PLLCLKSEL_OFF
-//!     CLKGEN_DISPCLKCTRL_PLLCLKSEL_HFRC12
-//!     CLKGEN_DISPCLKCTRL_PLLCLKSEL_HFRC24
-//!     CLKGEN_DISPCLKCTRL_PLLCLKSEL_HFXT
-//!
-//! @return status      - generic or interface specific status.
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_pllclk_enable(bool bEnable,
-                                          //CLKGEN_DISPCLKCTRL_PLLCLKSEL_Enum ePllclkSelect);
-
-// ****************************************************************************
-//
-//! @brief Enable selected CLKGEN Interrupts.
-//!
-//! Use this function to enable the interrupts.
-//!
-//! @param ui32IntMask - One or more of the following bitmasks.
-//!     AM_HAL_CLKGEN_INTERRUPT_OF
-//!     AM_HAL_CLKGEN_INTERRUPT_ACC
-//!     AM_HAL_CLKGEN_INTERRUPT_ACF
-//!
-//! @return status      - generic or interface specific status.
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_interrupt_enable(am_hal_clkgen_interrupt_e ui32IntMask);
-
-// ****************************************************************************
-//
-//! @brief Disable selected CLKGEN Interrupts.
-//!
-//! Use this function to disable the CLKGEN interrupts.
-//!
-//! @param ui32IntMask - One or more of the following bitmasks.
-//!     AM_HAL_CLKGEN_INTERRUPT_OF
-//!     AM_HAL_CLKGEN_INTERRUPT_ACC
-//!     AM_HAL_CLKGEN_INTERRUPT_ACF
-//!
-//! @return status      - generic or interface specific status.
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_interrupt_disable(am_hal_clkgen_interrupt_e ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief IOM interrupt clear
-//!
-//! @param ui32IntMask  - interface specific interrupt mask.
-//!
-//! This function clears the interrupts for the given peripheral.
-//!
-//! The following are valid clear bits, any of which can be ORed together.
-//!     AM_HAL_CLKGEN_INTERRUPT_OF
-//!     AM_HAL_CLKGEN_INTERRUPT_ACC
-//!     AM_HAL_CLKGEN_INTERRUPT_ACF
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
-//extern uint32_t am_hal_clkgen_interrupt_clear(am_hal_clkgen_interrupt_e ui32IntMask);
-
-// ****************************************************************************
-//
-//! @brief Return CLKGEN interrupts.
-//!
-//! Use this function to get all CLKGEN interrupts, or only the interrupts
-//! that are enabled.
-//!
-//! @return status
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_interrupt_status_get(bool bEnabledOnly,
-//                                                   uint32_t *pui32IntStatus);
-
-// ****************************************************************************
-//
-//! @brief Sets the interrupt status.
-//!
-//! This function sets the CLKGEN interrupts.
-//!
-//! @param ui32IntMask - One or more of the following bitmasks.
-//!     AM_HAL_CLKGEN_INTERRUPT_OF
-//!     AM_HAL_CLKGEN_INTERRUPT_ACC
-//!     AM_HAL_CLKGEN_INTERRUPT_ACF
-//!
-//! @return status
-//
-// ****************************************************************************
-//extern uint32_t am_hal_clkgen_interrupt_set(am_hal_clkgen_interrupt_e ui32IntMask);
-
 #ifdef __cplusplus
 }
 #endif

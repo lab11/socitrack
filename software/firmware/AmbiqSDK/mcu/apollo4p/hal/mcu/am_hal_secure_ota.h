@@ -2,9 +2,9 @@
 //
 //! @file am_hal_secure_ota.h
 //!
-//! @brief Functions for secure over-the-air.
+//! @brief Implementation for Secure OTA Functionality.
 //!
-//! @addtogroup secure_ota Secure OTA Functionality
+//! @addtogroup secure_ota_4p Secure OTA Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,14 +44,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
 #ifndef AM_HAL_SECURE_OTA_H
 #define AM_HAL_SECURE_OTA_H
-// Ambiq Standard Image Format related definitions
-// Magic Numbers
+//
+//! @name Ambiq Standard Image Format related definitions
+//! Magic Numbers
+//! @{
+//
 #define AM_IMAGE_MAGIC_SBL                0xA3
 #define AM_IMAGE_MAGIC_SECURE             0xC0
 #define AM_IMAGE_MAGIC_OEM_CHAIN          0xCC
@@ -60,7 +63,11 @@
 #define AM_IMAGE_MAGIC_CONTAINER          0xC1
 #define AM_IMAGE_MAGIC_KEYREVOKE          0xCE
 #define AM_IMAGE_MAGIC_DOWNLOAD           0xCD
+//! @}
 
+//
+//! OTA Image HDR Info
+//
 typedef struct
 {
     union
@@ -98,6 +105,9 @@ typedef struct
     } w3;
 } am_image_hdr_common_t;
 
+//
+//! OTA Image Encryption 2
+//
 typedef union
 {
     uint32_t        ui32Words[12];
@@ -125,12 +135,18 @@ typedef union
 #endif
 } am_image_enc_info_t;
 
+//
+//! OTA Image Authentication Info
+//
 typedef union
 {
     uint8_t        ui8Signature[384];
     uint32_t       ui32Signature[96];
 } am_image_auth_info_t;
 
+//
+//! OTA Image Option 0
+//
 typedef union
 {
     uint32_t   ui32;
@@ -151,6 +167,9 @@ typedef union
     } wired;
 } am_image_opt0_t;
 
+//
+//! OTA Image Option 1
+//
 typedef union
 {
     uint32_t   ui32;
@@ -172,17 +191,26 @@ typedef union
     } wired;
 } am_image_opt1_t;
 
+//
+//! OTA Image Option 2
+//
 typedef union
 {
     uint32_t   ui32;
     uint32_t   ui32Key;
 } am_image_opt2_t;
 
+//
+//! OTA Image Option 3
+//
 typedef union
 {
     uint32_t   ui32;
 } am_image_opt3_t;
 
+//
+//! OTA Image Info
+//
 typedef struct
 {
    am_image_opt0_t  opt0;
@@ -192,7 +220,9 @@ typedef struct
 } am_image_opt_info_t;
 
 
-// Maximum number of OTAs
+//
+//! Maximum number of OTAs
+//
 #define AM_HAL_SECURE_OTA_MAX_OTA           8
 
 typedef struct
@@ -210,7 +240,9 @@ typedef struct
                                   ((x) == AM_IMAGE_MAGIC_OEM_CHAIN)     ||  \
                                   ((x) == AM_IMAGE_MAGIC_CONTAINER))
 
-// OTA Upgrade related definitions
+//
+//! OTA Upgrade related definitions
+//
 #define AM_HAL_SECURE_OTA_OTA_LIST_END_MARKER           0xFFFFFFFF
 
 // OTA Protocol between OTA application and SecureBoot
@@ -239,8 +271,14 @@ typedef struct
 #define AM_HAL_OTA_DONE_STATUS_FAILURE         0x2
 #define AM_HAL_OTA_DONE_STATUS_SUCCESS         0x0
 
-// This batch is used as bitmask - more than one can be set - Used only for OTAPOINTER register status
+//
+//! This batch is used as bitmask - more than one can be set - Used only for OTAPOINTER register status
+//
 #define AM_HAL_OTADESC_STATUS_MASK      0xE8000001
+
+//
+//! OTA Descriptor Status
+//
 typedef enum
 {
     AM_HAL_OTADESC_STATUS_SUCCESS           =          0x00000000,
@@ -250,7 +288,9 @@ typedef enum
     AM_HAL_OTADESC_STATUS_MAX_OTA_EXCEED    =          0x20000000,
 } am_hal_otadesc_status_e;
 
-// OTA Status
+//
+//! OTA Status
+//
 typedef enum
 {
     //
@@ -279,14 +319,18 @@ typedef enum
     AM_HAL_OTA_STATUS_INTERRUPTED           = (int32_t)0xA8000002,
 } am_hal_ota_status_e;
 
-// Per Image OTA Status information
+//
+//! Per Image OTA Status information
+//
 typedef struct
 {
     uint32_t            *pImage;
     am_hal_ota_status_e status;
 } am_hal_ota_status_t;
 
-// 3 stage Certificate Chain
+//
+//! 3 stage Certificate Chain
+//
 typedef struct
 {
     void       *pRootCert;
@@ -299,18 +343,42 @@ extern "C"
 {
 #endif
 
-// pOtaDesc should be start of OTA Descriptor
-// It will also initialize the OTAPOINTER to point to this descriptor, with LSB indicating it as invalid
-uint32_t am_hal_ota_init(uint32_t ui32ProgramKey, am_hal_otadesc_t *pOtaDesc);
+//*****************************************************************************
+//
+//! @brief  Initialize OTA state
+//!
+//! Initializes the OTA state. This should be called before doing any other operation
+//!
+//! @param  ui32ProgramKey - The Flash programming key
+//! @param  pOtaDesc should be start of a flash page designated for OTA Descriptor
+//!
+//! This call will erase the flash page, which will then be incrementally
+//! populated as OTA's are added.  It will also initialize the OTAPOINTER to point
+//! to this descriptor, marking it as invalid at the same time
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
+//
+//*****************************************************************************
+extern uint32_t am_hal_ota_init(uint32_t ui32ProgramKey, am_hal_otadesc_t *pOtaDesc);
 
-// Add a new OTA to descriptor
-// This will program the next available entry in OTA descriptor
-// Will also set the valid/sbl flags in OTA pointer register
-uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pImage);
+//*****************************************************************************
+//
+//! @brief  Add a new image for OTA
+//!
+//! Adds a new image to the OTA Descriptor.
+//!
+//! @param  ui32ProgamKey - The Flash programming key
+//! @param  imageMagic image magic# identifying type of image being added to OTA descr
+//! @param  pImage should point to the start of new image to be added to descr
+//!
+//! This will program the next available entry in OTA descriptor. It will also set
+//! appropriate state in the OTA pointer register
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
+//
+//*****************************************************************************
+extern uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pImage);
 
-// Get OTA Status
-// Can be called anytime (generally after coming back from reset to check the status of OTA
-// Will be also used by sbl_main to identify list of OTA's left for it (would show up as PENDING)
 //*****************************************************************************
 //
 //! @brief  Get Current OTA Descriptor state
@@ -326,7 +394,7 @@ uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pI
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-uint32_t am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, uint32_t *pOtaDescStatus);
+extern uint32_t am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, uint32_t *pOtaDescStatus);
 
 #ifdef __cplusplus
 }

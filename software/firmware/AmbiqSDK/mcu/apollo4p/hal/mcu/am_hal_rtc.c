@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the Real-Time Clock (RTC).
 //!
-//! @addtogroup rtc4 RTC - Real-Time Clock
+//! @addtogroup rtc4_4p RTC - Real-Time Clock
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -75,6 +75,7 @@ dec_to_bcd(uint8_t ui8DecimalByte)
 }
 
 //*****************************************************************************
+//
 //! @brief Validates the user defined date & time
 //!
 //! @param *pTime - A pointer to the time structure.
@@ -82,6 +83,7 @@ dec_to_bcd(uint8_t ui8DecimalByte)
 //! Validates the input required to have the time set to a specific period
 //!
 //! @return returns true if the pTime structure input values are with in range
+//
 //*****************************************************************************
 static bool
 time_input_validate(am_hal_rtc_time_t *pTime)
@@ -140,16 +142,13 @@ time_input_validate(am_hal_rtc_time_t *pTime)
     return bValidateStatus;
 
 }
+
 //*****************************************************************************
 //
-//! @brief Configures the RTC
-//!
-//! @param psConfig is a pointer to a configuration structure for the RTC.
-//!
-//! Configures the oscillator and 12/24hr settings for the RTC. See the \e
-//! am_hal_rtc_config_t structure for more information.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Configures the RTC
+//
+// Configures the oscillator and 12/24hr settings for the RTC. See the \e
+// am_hal_rtc_config_t structure for more information.
 //
 //*****************************************************************************
 uint32_t
@@ -183,11 +182,9 @@ am_hal_rtc_config(const am_hal_rtc_config_t *psConfig)
 
 //*****************************************************************************
 //
-//! @brief Enable/Start the RTC oscillator.
-//!
-//! Starts the RTC oscillator.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Enable/Start the RTC oscillator.
+//
+// Starts the RTC oscillator.
 //
 //*****************************************************************************
 uint32_t
@@ -203,11 +200,9 @@ am_hal_rtc_osc_enable(void)
 
 //*****************************************************************************
 //
-//! @brief Disable/Stop the RTC oscillator.
-//!
-//! Stops the RTC oscillator.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Disable/Stop the RTC oscillator.
+//
+// Stops the RTC oscillator.
 //
 //*****************************************************************************
 uint32_t
@@ -223,13 +218,9 @@ am_hal_rtc_osc_disable(void)
 
 //*****************************************************************************
 //
-//! @brief Set the Real Time Clock counter registers.
-//!
-//! @param *pTime - A pointer to the time structure.
-//!
-//! Sets the RTC counter registers to the supplied values.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Set the Real Time Clock counter registers.
+//
+// Sets the RTC counter registers to the supplied values.
 //
 //*****************************************************************************
 uint32_t
@@ -278,13 +269,9 @@ am_hal_rtc_time_set(am_hal_rtc_time_t *pTime)
 
 //*****************************************************************************
 //
-//! @brief Get the Real Time Clock current time.
-//!
-//! @param *pTime - A pointer to the time structure to store the current time.
-//!
-//! Gets the RTC's current time
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Get the Real Time Clock current time.
+//
+// Gets the RTC's current time
 //
 //*****************************************************************************
 uint32_t
@@ -358,21 +345,19 @@ am_hal_rtc_time_get(am_hal_rtc_time_t *pTime)
 
 //*****************************************************************************
 //
-//! @brief Selects the clock source for the RTC.
-//!
-//! @param ui32OSC the clock source for the RTC.
-//!
-//! This function selects the clock source for the RTC.
-//!
-//! Valid values for ui32OSC are:
-//!
-//!     AM_HAL_RTC_OSC_LFRC
-//!     AM_HAL_RTC_OSC_XT
-//!
-//! @note After selection of the RTC oscillator, a 2 second delay occurs before
-//! the new setting is reflected in status. Therefore the CLKGEN.STATUS.OMODE
-//! bit will not reflect the new status until after the 2s wait period.
-//!
+// Selects the clock source for the RTC.
+//
+// This function selects the clock source for the RTC.
+//
+// Valid values for ui32OSC are:
+//
+//     AM_HAL_RTC_OSC_LFRC
+//     AM_HAL_RTC_OSC_XT
+//
+// @note After selection of the RTC oscillator, a 2 second delay occurs before
+// the new setting is reflected in status. Therefore the CLKGEN.STATUS.OMODE
+// bit will not reflect the new status until after the 2s wait period.
+//
 //
 //*****************************************************************************
 void
@@ -387,25 +372,23 @@ am_hal_rtc_osc_select(uint32_t ui32OSC)
 
 //*****************************************************************************
 //
-//! @brief Sets the alarm repeat interval.
-//!
-//! @param ui32RepeatInterval the desired repeat interval.
-//!
-//! Sets the alarm repeat interval.
-//!
-//! Valid values for ui32RepeatInterval:
-//!
-//!     AM_HAL_RTC_ALM_RPT_DIS
-//!     AM_HAL_RTC_ALM_RPT_YR
-//!     AM_HAL_RTC_ALM_RPT_MTH
-//!     AM_HAL_RTC_ALM_RPT_WK
-//!     AM_HAL_RTC_ALM_RPT_DAY
-//!     AM_HAL_RTC_ALM_RPT_HR
-//!     AM_HAL_RTC_ALM_RPT_MIN
-//!     AM_HAL_RTC_ALM_RPT_SEC
-//!     AM_HAL_RTC_ALM_RPT_10TH
-//!     AM_HAL_RTC_ALM_RPT_100TH
-//!
+// Sets the alarm repeat interval.
+//
+// Sets the alarm repeat interval.
+//
+// Valid values for ui32RepeatInterval:
+//
+//     AM_HAL_RTC_ALM_RPT_DIS
+//     AM_HAL_RTC_ALM_RPT_YR
+//     AM_HAL_RTC_ALM_RPT_MTH
+//     AM_HAL_RTC_ALM_RPT_WK
+//     AM_HAL_RTC_ALM_RPT_DAY
+//     AM_HAL_RTC_ALM_RPT_HR
+//     AM_HAL_RTC_ALM_RPT_MIN
+//     AM_HAL_RTC_ALM_RPT_SEC
+//     AM_HAL_RTC_ALM_RPT_10TH
+//     AM_HAL_RTC_ALM_RPT_100TH
+//
 //
 //*****************************************************************************
 void
@@ -466,14 +449,9 @@ am_hal_rtc_alarm_interval_set(uint32_t ui32RepeatInterval)
 
 //*****************************************************************************
 //
-//! @brief Sets the RTC's Alarm.
-//!
-//! @param *pTime - A pointer to the time structure.
-//! @param eRepeatInterval - the desired alarm repeat interval.
-//!
-//! Set the Real Time Clock Alarm Parameters.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Sets the RTC's Alarm.
+//
+// Set the Real Time Clock Alarm Parameters.
 //
 //*****************************************************************************
 uint32_t
@@ -521,14 +499,9 @@ am_hal_rtc_alarm_set(am_hal_rtc_time_t *pTime,
 
 //*****************************************************************************
 //
-//! @brief Get the Real Time Clock Alarm Parameters
-//!
-//! @param *pTime - A pointer to the time structure to store the current alarm.
-//! @param peRepeatInterval - pointer to the desired alarm repeat interval.
-//!
-//! Retrieves the RTC's current alarm time and repeat interval settings.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Get the Real Time Clock Alarm Parameters
+//
+// Retrieves the RTC's current alarm time and repeat interval settings.
 //
 //*****************************************************************************
 uint32_t
@@ -617,16 +590,12 @@ am_hal_rtc_alarm_get(am_hal_rtc_time_t *pTime,
 
 //*****************************************************************************
 //
-//! @brief Enable selected RTC interrupts.
-//!
-//! @param ui32InterruptMask - desired interrupts
-//!
-//! Enables the RTC interrupts. \e ui32InterruptMask should be set to a
-//! logical OR of one or more of the following:
-//!
-//!     AM_HAL_RTC_INT_ALM
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Enable selected RTC interrupts.
+//
+// Enables the RTC interrupts. \e ui32InterruptMask should be set to a
+// logical OR of one or more of the following:
+//
+//     AM_HAL_RTC_INT_ALM
 //
 //*****************************************************************************
 uint32_t
@@ -639,18 +608,13 @@ am_hal_rtc_interrupt_enable(uint32_t ui32InterruptMask)
 
 //*****************************************************************************
 //
-//! @brief Return the enabled RTC interrupts.
-//!
-//! @param pui32InterruptMask is a pointer where the current RTC interrupt
-//!        enable mask will be written.
-//!
-//! Returns the enabled RTC interrupts. \e pui32InterruptMask will be set to a
-//! logical OR of one or more of the following:
-//!
-//!     AM_HAL_RTC_INT_ALM
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
-//!
+// Return the enabled RTC interrupts.
+//
+// Returns the enabled RTC interrupts. \e pui32InterruptMask will be set to a
+// logical OR of one or more of the following:
+//
+//     AM_HAL_RTC_INT_ALM
+//
 //
 //*****************************************************************************
 uint32_t
@@ -663,17 +627,13 @@ am_hal_rtc_interrupt_enable_get(uint32_t *pui32InterruptMask)
 
 //*****************************************************************************
 //
-//! @brief Disable selected RTC interrupts.
-//!
-//! @param ui32InterruptMask - desired interrupts
-//!
-//! Disables the RTC interrupts.
-//!
-//! ui32Interrupt should be an OR of the following:
-//!
-//!     AM_HAL_RTC_INT_ALM
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Disable selected RTC interrupts.
+//
+// Disables the RTC interrupts.
+//
+// ui32Interrupt should be an OR of the following:
+//
+//     AM_HAL_RTC_INT_ALM
 //
 //*****************************************************************************
 uint32_t
@@ -686,17 +646,13 @@ am_hal_rtc_interrupt_disable(uint32_t ui32InterruptMask)
 
 //*****************************************************************************
 //
-//! @brief Clear selected RTC interrupts.
-//!
-//! @param ui32InterruptMask - desired interrupts
-//!
-//! Clears the RTC interrupts.
-//!
-//! ui32Interrupt should be an OR of the following:
-//!
-//!     AM_HAL_RTC_INT_ALM
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Clear selected RTC interrupts.
+//
+// Clears the RTC interrupts.
+//
+// ui32Interrupt should be an OR of the following:
+//
+//     AM_HAL_RTC_INT_ALM
 //
 //*****************************************************************************
 uint32_t
@@ -709,17 +665,13 @@ am_hal_rtc_interrupt_clear(uint32_t ui32InterruptMask)
 
 //*****************************************************************************
 //
-//! @brief Sets the selected RTC interrupts.
-//!
-//! @param ui32InterruptMask - desired interrupts
-//!
-//! Sets the RTC interrupts causing them to immediately trigger.
-//!
-//! ui32Interrupt should be an OR of the following:
-//!
-//!     AM_HAL_RTC_INT_ALM
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Sets the selected RTC interrupts.
+//
+// Sets the RTC interrupts causing them to immediately trigger.
+//
+// ui32Interrupt should be an OR of the following:
+//
+//     AM_HAL_RTC_INT_ALM
 //
 //*****************************************************************************
 uint32_t
@@ -732,19 +684,13 @@ am_hal_rtc_interrupt_set(uint32_t ui32InterruptMask)
 
 //*****************************************************************************
 //
-//! @brief Returns the RTC interrupt status.
-//!
-//! @param bEnabledOnly if true, return the status of enabled interrupts only.
-//! @param pui32InterruptMask pointer where the interrupt status will be
-//!        written.
-//!
-//! This function will write the current RTC interrupt status to \e
-//! pui32InterruptMask. The interrupt status value will be the logical OR of
-//! one or more of the following:
-//!
-//!     AM_HAL_RTC_INT_ALM
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
+// Returns the RTC interrupt status.
+//
+// This function will write the current RTC interrupt status to \e
+// pui32InterruptMask. The interrupt status value will be the logical OR of
+// one or more of the following:
+//
+//     AM_HAL_RTC_INT_ALM
 //
 //*****************************************************************************
 uint32_t

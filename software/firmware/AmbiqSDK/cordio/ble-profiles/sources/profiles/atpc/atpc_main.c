@@ -4,16 +4,16 @@
  *
  *  \brief  Asset Tracking profile client.
  *
- *  Copyright (c) 2018-2019 Arm Ltd.
+ *  Copyright (c) 2018-2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,14 +30,6 @@
 #include "app_api.h"
 #include "atpc_api.h"
 #include "svc_cte.h"
-
-/**************************************************************************************************
-  Macros
-**************************************************************************************************/
-
-/*! Asset tracking profile connection states. */
-#define ATPC_CONN_STATE_ENABLING                0
-#define ATPC_CONN_STATE_DISABLING               1
 
 /**************************************************************************************************
   Local Variables
@@ -140,17 +132,18 @@ static void atpcProcWriteRsp(attEvt_t *pEvt)
   {
     atpcConnCb_t *pCcb = &atpcCb.connCb[connId-1];
 
-    switch (pCcb->state)
+    switch (DmConnCteGetReqState(connId))
     {
-      case ATPC_CONN_STATE_ENABLING:
+      case DM_CONN_CTE_STATE_IDLE:
         DmConnCteRxSampleStart(connId, HCI_CTE_SLOT_DURATION_2_US, pCcb->numAntenna, pCcb->pAntennaIds);
         break;
 
-      case ATPC_CONN_STATE_DISABLING:
+      case DM_CONN_CTE_STATE_INITIATING:
         DmConnCteRxSampleStop(connId);
         break;
 
       default:
+        APP_TRACE_WARN0("ATPC CTE enable response in unexpected state.");
         break;
     }
   }
@@ -314,15 +307,17 @@ void AtpcCteAclEnableReq(dmConnId_t connId, uint16_t handle, uint8_t length, uin
   WSF_ASSERT((connId > DM_CONN_ID_NONE) && (connId <= DM_CONN_MAX));
   WSF_ASSERT(handle != ATT_HANDLE_NONE)
 
-  /* Store the enable handle and CTE configuration */
-  pCcb = &atpcCb.connCb[connId-1];
-  pCcb->enableHandle = handle;
-  pCcb->length = length;
-  pCcb->interval = interval;
-  pCcb->cteType = cteType;
-  pCcb->state = ATPC_CONN_STATE_ENABLING;
+  if (DmConnCteGetReqState(connId) == DM_CONN_CTE_STATE_IDLE)
+  {
+    /* Store the enable handle and CTE configuration */
+    pCcb = &atpcCb.connCb[connId-1];
+    pCcb->enableHandle = handle;
+    pCcb->length = length;
+    pCcb->interval = interval;
+    pCcb->cteType = cteType;
 
   AtpcCteWriteEnable(connId, handle, CTE_ENABLE_ACL_BIT, cteType);
+  }
 }
 
 /*************************************************************************************************/
@@ -342,12 +337,14 @@ void AtpcCteAclDisableReq(dmConnId_t connId, uint16_t handle)
   WSF_ASSERT((connId > DM_CONN_ID_NONE) && (connId <= DM_CONN_MAX));
   WSF_ASSERT(handle != ATT_HANDLE_NONE)
 
-  /* Set the enableHandle to ATT_HANDLE_NONE to prevent CTE rx req on ATTC_WRITE_RSP. */
-  pCcb = &atpcCb.connCb[connId-1];
-  pCcb->enableHandle = handle;
-  pCcb->state = ATPC_CONN_STATE_DISABLING;
+  if (DmConnCteGetReqState(connId) == DM_CONN_CTE_STATE_INITIATING)
+  {
+    /* Store the enable handle */
+    pCcb = &atpcCb.connCb[connId-1];
+    pCcb->enableHandle = handle;
 
   AtpcCteWriteEnable(connId, handle, CTE_ENABLE_NONE, 0);
+  }
 }
 
 /*************************************************************************************************/
@@ -405,15 +402,15 @@ void AtpcProcMsg(wsfMsgHdr_t *pEvt)
       break;
 
     case DM_CONN_CTE_RX_SAMPLE_START_IND:
-      if ((pEvt->status == HCI_SUCCESS) && (pCcb->state == ATPC_CONN_STATE_ENABLING))
-      {      
+      if (pEvt->status == HCI_SUCCESS)
+      {
         //DmConnCteReqStart((dmConnId_t) pEvt->param, pCcb->interval, pCcb->length, HCI_CTE_TYPE_REQ_AOA);
         DmConnCteReqStart((dmConnId_t) pEvt->param, pCcb->interval, pCcb->length, pCcb->cteType);
       }
       break;
 
     case DM_CONN_CTE_RX_SAMPLE_STOP_IND:
-      if ((pEvt->status == HCI_SUCCESS) && (pCcb->state == ATPC_CONN_STATE_DISABLING))
+      if (pEvt->status == HCI_SUCCESS)
       {
         DmConnCteReqStop((dmConnId_t) pEvt->param);
       }

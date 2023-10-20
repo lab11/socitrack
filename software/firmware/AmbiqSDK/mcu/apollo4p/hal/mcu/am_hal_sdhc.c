@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the SDHC.
 //!
-//! @addtogroup sdhc SDHC host controller
+//! @addtogroup sdhc_4p SDHC host controller
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -273,14 +273,15 @@ static uint32_t am_hal_sdhc_prepare_cmd(SDIO_Type *pSDHC, am_hal_card_cmd_t *pCm
 #define AM_HAL_ADMA_MAX_BLKS_PER_ENTRY  127     //  (AM_HAL_ADMA_MAX_LEN/512)
 
 //
-// Maximum block number for one ADMA2 is limited to 127*AM_HAL_ADMA_TABLE_NO_ENTRIES.
-// enlarging the entry number if want to transfer more blocks
-// in one ADMA2 transaction.
+//! Maximum block number for one ADMA2 is limited to 127*AM_HAL_ADMA_TABLE_NO_ENTRIES.
+//! enlarging the entry number if want to transfer more blocks
+//! in one ADMA2 transaction.
 //
 #define AM_HAL_ADMA_TABLE_NO_ENTRIES 16  // 127*16*512 = 1016KB
 
 //
-// Decriptor table defines
+//! @name Decriptor table defines
+//! @{
 //
 #define AM_HAL_ADMA_DESC_ATTR_VALID     (0x1 << 0)
 #define AM_HAL_ADMA_DESC_ATTR_END       (0x1 << 1)
@@ -291,6 +292,7 @@ static uint32_t am_hal_sdhc_prepare_cmd(SDIO_Type *pSDHC, am_hal_card_cmd_t *pCm
 
 #define AM_HAL_ADMA_DESC_TRANSFER_DATA  AM_HAL_ADMA_DESC_ATTR_ACT2
 #define AM_HAL_ADMA_DESC_LINK_DESC      (AM_HAL_ADMA_DESC_ATTR_ACT1 | AM_HAL_ADMA_DESC_ATTR_ACT2)
+//! @}
 
 typedef uint32_t dma_addr_t;
 
@@ -752,9 +754,11 @@ static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
 //
 //*****************************************************************************
 
+//*****************************************************************************
 //
 // SDHC initialization function
 //
+//*****************************************************************************
 uint32_t am_hal_sdhc_initialize(uint32_t ui32Module, void **ppHandle)
 {
 
@@ -802,9 +806,11 @@ uint32_t am_hal_sdhc_initialize(uint32_t ui32Module, void **ppHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // SDHC Deinitialize function
 //
+//*****************************************************************************
 uint32_t am_hal_sdhc_deinitialize(void *pHandle)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
@@ -831,9 +837,13 @@ uint32_t am_hal_sdhc_deinitialize(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
-// sdhc power control function
+// SDHC power control function
 //
+// This function updates the peripheral to a given power state.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
@@ -917,6 +927,15 @@ uint32_t am_hal_sdhc_power_control(void *pHandle, am_hal_sysctrl_power_state_e e
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC setup card host function
+//
+// This function updates pHost related settings by checking the capabilites of underlying
+// SDHC host controller. These settings are important for validate the arguments to the card
+// block read, write, erase, speed, bus width.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_setup_host(void *pHandle, am_hal_card_host_t *pHost)
 {
     SDIO_Type *pSDHC;
@@ -971,6 +990,13 @@ uint32_t am_hal_sdhc_setup_host(void *pHandle, am_hal_card_host_t *pHost)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC detects the card function
+//
+// This function detects the present of card in the slot.
+//
+//*****************************************************************************
 bool am_hal_sdhc_get_cd(void *pHandle)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
@@ -993,6 +1019,13 @@ bool am_hal_sdhc_get_cd(void *pHandle)
     return SDHCn(pSDHCState->ui32Module)->PRESENT_b.CARDINSERTED;
 }
 
+//*****************************************************************************
+//
+// SDHC sets the SDIO bus IO volage
+//
+// This function sets the bus voltage needed to communiate with the card.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_set_bus_voltage(void *pHandle, am_hal_host_bus_voltage_e eBusVoltage)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
@@ -1035,6 +1068,13 @@ uint32_t am_hal_sdhc_set_bus_voltage(void *pHandle, am_hal_host_bus_voltage_e eB
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC sets the SDIO bus width
+//
+// This function sets the bus width needed to communiate with the card.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_set_bus_width(void *pHandle, am_hal_host_bus_width_e eBusWidth)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
@@ -1073,6 +1113,13 @@ uint32_t am_hal_sdhc_set_bus_width(void *pHandle, am_hal_host_bus_width_e eBusWi
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC sets the SDIO bus clock speed
+//
+// This function sets the bus clock speed needed to communiate with the card.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
 {
     uint32_t ui32Divider;
@@ -1140,8 +1187,8 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
     //
     // Wait util the internal clock to be stablized
     //
-    uint32_t ui32Timeout = 10;
-    while (pSDHC->CLOCKCTRL_b.CLKSTABLE)
+    uint32_t ui32Timeout = 1000;
+    while ( pSDHC->CLOCKCTRL_b.CLKSTABLE == 0 )
     {
         if ( ui32Timeout == 0 )
         {
@@ -1149,7 +1196,7 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
             return AM_HAL_STATUS_FAIL;
         }
         ui32Timeout--;
-        am_util_delay_ms(1);
+        am_util_delay_us(10);
     }
 
     //
@@ -1162,6 +1209,13 @@ uint32_t am_hal_sdhc_set_bus_clock(void *pHandle, uint32_t ui32Clock)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC sets the SDIO UHS Mode
+//
+// This function sets the bus clock speed needed to communiate with the card.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_set_uhs_mode(void *pHandle, am_hal_host_uhs_mode_e eUHSMode)
 {
     SDIO_Type *pSDHC;
@@ -1197,6 +1251,13 @@ uint32_t am_hal_sdhc_set_uhs_mode(void *pHandle, am_hal_host_uhs_mode_e eUHSMode
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC checks the SDIO bus busy DAT0 line
+//
+// This function checks if DAT0 line is busy or not.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS)
 {
     uint32_t ui32Dat0BusyMask;
@@ -1245,6 +1306,11 @@ uint32_t am_hal_sdhc_card_busy(void *pHandle, uint32_t ui32TimeoutMS)
     return ui32Status;
 }
 
+//*****************************************************************************
+//
+// SDHC Set TxRx Delays
+//
+//*****************************************************************************
 void am_hal_sdhc_set_txrx_delay(void *pHandle, uint8_t ui8TxRxDelays[2])
 {
     // Adjust TX CLK delay
@@ -1401,6 +1467,17 @@ uint32_t am_hal_sdhc_disable(void *pHandle)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// SDHC send command function
+//
+// This function sends a command to SD/MMC/eMMC/SDIO card and gets the response. if this command
+// is using synchronous transfer mode, it will be blocked until the data in the buffer has been
+// transmited or received. if this command is using asynchronous transfer mode, it will return immediately
+// after sending the command, data transfer completion done event will be notified by registered callback
+// function in the ISR.
+//
+//*****************************************************************************
 uint32_t am_hal_sdhc_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_card_cmd_data_t *pCmdData)
 {
     am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;

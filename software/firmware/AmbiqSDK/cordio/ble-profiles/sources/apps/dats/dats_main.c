@@ -164,7 +164,7 @@ static const uint8_t datsAdvDataDisc[] =
   /*! manufacturer specific data */
   3,                                      /*! length */
   DM_ADV_TYPE_MANUFACTURER,               /*! AD type */
-  UINT16_TO_BYTES(HCI_ID_ARM)             /*! company ID */
+  UINT16_TO_BYTES(HCI_ID_PACKETCRAFT)     /*! company ID */
 };
 
 /*! scan data, discoverable mode */

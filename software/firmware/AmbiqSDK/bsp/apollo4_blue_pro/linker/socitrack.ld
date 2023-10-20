@@ -19,11 +19,16 @@ MEMORY
 
 SECTIONS
 {
-    .text :
-    {
+	.isr_vector :
+	{
         . = ALIGN(4);
         KEEP(*(.isr_vector))
         KEEP(*(.patch))
+        . = ALIGN(4);
+	}
+
+    .text :
+    {
         . = ALIGN(4);
         __dw_drivers_start = .;
         KEEP(*(.dw_drivers))
@@ -36,13 +41,14 @@ SECTIONS
         . = ALIGN(4);
         _etext = .;
     } > MCU_MRAM
-    
+
     .ARM.exidx :
     {
         __exidx_start = .;
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
         __exidx_end = .;
     } > MCU_MRAM
+    _etext = .;
 
     /* User stack section initialized by startup code. */
     .stack (NOLOAD):
@@ -53,7 +59,7 @@ SECTIONS
         . = ALIGN(8);
     } > MCU_TCM
 
-    .heap : {
+    .heap (NOLOAD): {
         __heap_start__ = .;
         end = __heap_start__;
         _end = end;
@@ -69,6 +75,7 @@ SECTIONS
         _sdata = .;
         *(.data)
         *(.data*)
+        *(.ramfunc)
         . = ALIGN(4);
         _edata = .;
     } > MCU_TCM AT>MCU_MRAM
@@ -87,7 +94,7 @@ SECTIONS
         _ebss = .;
     } > MCU_TCM
 
-    .shared :
+    .shared (NOLOAD):
     {
         . = ALIGN(4);
         KEEP(*(.resource_table))

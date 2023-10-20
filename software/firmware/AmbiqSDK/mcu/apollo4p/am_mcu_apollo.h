@@ -8,7 +8,7 @@
 //!
 //! @addtogroup hal Hardware Abstraction Layer (HAL)
 //
-//! @defgroup apollo4p_hal HAL for Apollo4p
+//! @defgroup apollo4p_hal apollo4p
 //! @ingroup hal
 //! @{
 //
@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -62,15 +62,14 @@ extern "C"
 
 //*****************************************************************************
 //
-// AM_PART_APOLLO4_API indicates that this device uses the Apollo4 API.
+//! AM_PART_APOLLO4_API indicates that this device uses the Apollo4 API.
 //
 //*****************************************************************************
 #define AM_PART_APOLLO4_API     1
-#define AM_PART_APOLLO4P_FNC    1   // Apollo4P functionality
 
 //*****************************************************************************
 //
-// Define AM_CMSIS_REGS to indicate that CMSIS registers are supported.
+//! Define AM_CMSIS_REGS to indicate that CMSIS registers are supported.
 //
 //*****************************************************************************
 #define AM_CMSIS_REGS           1

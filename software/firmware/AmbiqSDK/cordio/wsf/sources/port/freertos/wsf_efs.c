@@ -316,7 +316,7 @@ uint8_t WsfEfsErase(wsfEfsHandle_t handle)
         uint32_t address = pFile->address;
         uint32_t size = pFile->maxSize;
 
-        status = wsfEfsMediaTbl[media]->erase(address, size);
+        status = wsfEfsMediaTbl[media]->erase((uint8_t *) address, size);
         pFile->size = 0;
       }
     }
@@ -415,7 +415,7 @@ uint16_t WsfEfsGet(wsfEfsHandle_t handle, uint32_t offset, uint8_t *pBuffer, uin
             len = (uint16_t) (pFile->size - offset);
           }
 
-          wsfEfsMediaTbl[media]->read(pBuffer, address, len);
+          wsfEfsMediaTbl[media]->read(pBuffer, (uint8_t *) address, len);
 
           return len;
         }
@@ -466,7 +466,7 @@ uint16_t WsfEfsPut(wsfEfsHandle_t handle, uint32_t offset, const uint8_t *pBuffe
             len = (uint16_t) (pFile->maxSize - offset);
           }
 
-          wsfEfsMediaTbl[media]->write(pBuffer, address, len);
+          wsfEfsMediaTbl[media]->write(pBuffer, (uint8_t *) address, len);
 
           /* If writing to the end of the file, update the file size */
           if (offset + len > pFile->size)

@@ -6,7 +6,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -96,8 +96,14 @@
 #define AM_REG_INFO1_TEMP_CAL_MEASURED_ADDR 0x42003304
 #define AM_REG_INFO1_TEMP_CAL_ADC_OFFSET_O 0x00001308
 #define AM_REG_INFO1_TEMP_CAL_ADC_OFFSET_ADDR 0x42003308
+#define AM_REG_INFO1_CHIPSUBREV_O 0x0000130c
+#define AM_REG_INFO1_CHIPSUBREV_ADDR 0x4200330c
 #define AM_REG_INFO1_TRIM_REV_O 0x00001310
 #define AM_REG_INFO1_TRIM_REV_ADDR 0x42003310
+#define AM_REG_INFO1_FT1_GDR1_O 0x00001314
+#define AM_REG_INFO1_FT1_GDR1_ADDR 0x42003314
+#define AM_REG_INFO1_FT2_GDR1_O 0x00001318
+#define AM_REG_INFO1_FT2_GDR1_ADDR 0x42003318
 #define AM_REG_INFO1_LVT_TRIMCODE_O 0x0000131c
 #define AM_REG_INFO1_LVT_TRIMCODE_ADDR 0x4200331c
 #define AM_REG_INFO1_EHVT_TRIMCODE_O 0x00001320
@@ -287,12 +293,33 @@
 #define AM_REG_INFO1_TEMP_CAL_ADC_OFFSET_VOLTS_Pos 0
 #define AM_REG_INFO1_TEMP_CAL_ADC_OFFSET_VOLTS_Msk 0xFFFFFFFF
 
+// CHIPSUBREV - 
+#define AM_REG_INFO1_CHIPSUBREV_VOLTS_S 0
+#define AM_REG_INFO1_CHIPSUBREV_VOLTS_M 0xFFFFFFFF
+#define AM_REG_INFO1_CHIPSUBREV_VOLTS(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
+#define AM_REG_INFO1_CHIPSUBREV_VOLTS_Pos 0
+#define AM_REG_INFO1_CHIPSUBREV_VOLTS_Msk 0xFFFFFFFF
+
 // TRIM_REV - Contains the trim revision number.
 #define AM_REG_INFO1_TRIM_REV_REVNUM_S 0
 #define AM_REG_INFO1_TRIM_REV_REVNUM_M 0xFFFFFFFF
 #define AM_REG_INFO1_TRIM_REV_REVNUM(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
 #define AM_REG_INFO1_TRIM_REV_REVNUM_Pos 0
 #define AM_REG_INFO1_TRIM_REV_REVNUM_Msk 0xFFFFFFFF
+
+// FT1_GDR1 - Copy of FT1 GDR1
+#define AM_REG_INFO1_FT1_GDR1_FTVAL_S 0
+#define AM_REG_INFO1_FT1_GDR1_FTVAL_M 0xFFFFFFFF
+#define AM_REG_INFO1_FT1_GDR1_FTVAL(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
+#define AM_REG_INFO1_FT1_GDR1_FTVAL_Pos 0
+#define AM_REG_INFO1_FT1_GDR1_FTVAL_Msk 0xFFFFFFFF
+
+// FT2_GDR1 - Copy of FT2 GDR1
+#define AM_REG_INFO1_FT2_GDR1_FTVAL_S 0
+#define AM_REG_INFO1_FT2_GDR1_FTVAL_M 0xFFFFFFFF
+#define AM_REG_INFO1_FT2_GDR1_FTVAL(n) (((uint32_t)(n) << 0) & 0xFFFFFFFF)
+#define AM_REG_INFO1_FT2_GDR1_FTVAL_Pos 0
+#define AM_REG_INFO1_FT2_GDR1_FTVAL_Msk 0xFFFFFFFF
 
 // LVT_TRIMCODE - LVT trim code value.
 #define AM_REG_INFO1_LVT_TRIMCODE_HIGH_S 16

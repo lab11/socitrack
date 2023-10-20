@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -164,20 +164,10 @@ am_hal_interrupt_master_disable(void)
 
 //*****************************************************************************
 //
-//! Sets the master interrupt state based on the input.
-//!
-//! This function directly writes the PRIMASK register in the ARM core. A value
-//! of 1 will disable interrupts, while a value of zero will enable them.
-//!
-//! This function may be used along with am_hal_interrupt_master_disable() to
-//! implement a nesting critical section. To do this, call
-//! am_hal_interrupt_master_disable() to start the critical section, and save
-//! its return value. To complete the critical section, call
-//! am_hal_interrupt_master_set() using the saved return value as \e
-//! ui32InterruptState. This will safely restore PRIMASK to the value it
-//! contained just before the start of the critical section.
-//!
-//! @param ui32InterruptState - Desired PRIMASK value.
+// Sets the master interrupt state based on the input.
+//
+// This function directly writes the PRIMASK register in the ARM core. A value
+// of 1 will disable interrupts, while a value of zero will enable them.
 //
 //*****************************************************************************
 #if (defined (__ARMCC_VERSION)) && (__ARMCC_VERSION <  6000000)

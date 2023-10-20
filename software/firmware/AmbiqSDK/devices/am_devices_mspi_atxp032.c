@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -62,10 +62,7 @@
 //*****************************************************************************
 //#define ATXP032_QUAD_CLKON4_MODE_EN
 
-//#define ATXP032_APOLLO4P_NON_DQS_ENABLE
-#if defined(APOLLO4_FPGA)
-#define ATXP032_APOLLO4P_NON_DQS_ENABLE
-#endif
+//#define USE_NON_DQS_MODE
 
 #define AM_DEVICES_MSPI_ATXP032_TIMEOUT                     1000000
 #define AM_DEVICES_MSPI_ATXP032_ERASE_TIMEOUT               1000000
@@ -109,7 +106,7 @@ am_hal_mspi_xip_config_t gXipConfig[] =
     .eAPSize              = AM_HAL_MSPI_AP_SIZE64M,
     .scramblingStartAddr  = 0,
     .scramblingEndAddr    = 0,
-  }
+  },
 };
 
 am_hal_mspi_config_t gMspiCfg =
@@ -150,8 +147,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Serial_CE0_MSPIConfig =
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#endif
-#if defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4_API)
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
@@ -192,8 +188,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Serial_CE1_MSPIConfig =
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#endif
-#if defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4_API)
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
@@ -234,16 +229,12 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Quad_CE0_MSPIConfig =
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#endif
-#if defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4_API)
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#if defined(AM_PART_APOLLO4)
-    .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
-#endif
 #else
     .ui32TCBSize          = 0,
     .pTCB                 = NULL,
@@ -276,8 +267,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Quad_CE1_MSPIConfig =
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#endif
-#if defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4_API)
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
@@ -318,8 +308,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Octal_CE0_MSPIConfig =
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#endif
-#if defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4_API)
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
@@ -360,8 +349,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Octal_CE1_MSPIConfig =
     .bEmulateDDR          = false,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#endif
-#if defined(AM_PART_APOLLO4_API)
+#elif defined(AM_PART_APOLLO4_API)
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
@@ -446,7 +434,7 @@ am_hal_mspi_rxcfg_t gAtxp032MspiRxCfg =
 am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
 {
   {
-#ifdef ATXP032_APOLLO4P_NON_DQS_ENABLE
+#ifdef USE_NON_DQS_MODE
     .bDQSEnable             = 0,
 #else
     .bDQSEnable             = 1,
@@ -462,7 +450,7 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
     .bRxDQSDelayHiEN        = 0,
   },
   {
-#ifdef ATXP032_APOLLO4P_NON_DQS_ENABLE
+#ifdef USE_NON_DQS_MODE
     .bDQSEnable             = 0,
 #else
     .bDQSEnable             = 1,
@@ -478,7 +466,7 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
     .bRxDQSDelayHiEN        = 0,
   },
   {
-#ifdef ATXP032_APOLLO4P_NON_DQS_ENABLE
+#ifdef USE_NON_DQS_MODE
     .bDQSEnable             = 0,
 #else
     .bDQSEnable             = 1,
@@ -492,7 +480,7 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
     .ui8RxDQSDelayHi        = 0,
     .ui8RxDQSDelayNegHi     = 0,
     .bRxDQSDelayHiEN        = 0,
-  }
+  },
 };
 #endif
 
@@ -505,7 +493,7 @@ static const IRQn_Type mspi_interrupts[] =
     MSPI2_IRQn,
 };
 
-static const uint32_t ui32MspiXipBaseAddress[3] =
+static const uint32_t ui32MspiXipBaseAddress[] =
 {
     0x14000000, // mspi0
     0x18000000, // mspi1
@@ -548,7 +536,7 @@ am_device_init_flash(void *pHandle)
     // Set the Dummy Cycles in Status/Control register 3 to 8 for clock <96MHz and 10 for clock = 96MHz
     //
     am_devices_mspi_atxp032_command_write(pHandle, AM_DEVICES_MSPI_ATXP032_WRITE_ENABLE, false, 0, ui32PIOBuffer, 0);
-#ifndef APOLLO4_FPGA
+
 #if defined(AM_PART_APOLLO4_API)
     if ( pFlash->stSetting.eClockFreq == AM_HAL_MSPI_CLK_96MHZ )
     {
@@ -556,7 +544,7 @@ am_device_init_flash(void *pHandle)
     }
     else
 #endif
-#endif
+
     {
         ui32PIOBuffer[0] = 0x00000003;
     }
@@ -700,8 +688,7 @@ am_devices_mspi_atxp032_command_write(void *pHandle, uint8_t ui8Instr, bool bSen
         sInstAddrCfg.eInstrCfg = pFlash->stSetting.eInstrCfg;   // keep instruction setting the same
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
-#endif
-#ifndef APOLLO4_FPGA
+
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
     // do not use enable fine delay for command read
     dqsCfg.bDQSEnable           = false;
@@ -737,6 +724,7 @@ am_devices_mspi_atxp032_command_write(void *pHandle, uint8_t ui8Instr, bool bSen
     am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &timingCfg);
 #endif
 #endif
+
 
     // Execute the transction over MSPI.
     ui32Status = am_hal_mspi_blocking_transfer(pFlash->pMspiHandle, &stMSPIFlashPIOTransaction,
@@ -836,7 +824,7 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
     {
         stMSPIFlashPIOTransaction.bTurnaround    = false;
     }
-#ifndef APOLLO4_FPGA
+
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
     // do not use enable fine delay for command read
     dqsCfg.bDQSEnable           = false;
@@ -871,7 +859,7 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
     timingCfg.ui8Turnaround     = 4;
     am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &timingCfg);
 #endif
-#endif
+
 #if 0 // Deprecate MSPI CONT
     stMSPIFlashPIOTransaction.bContinue          = false;   // MSPI CONT is deprecated for Apollo4
 #endif //
@@ -936,22 +924,7 @@ pfnMSPI_ATXP032_Callback(void *pCallbackCtxt, uint32_t status)
 
 //*****************************************************************************
 //
-//! @brief Initialize the mspi_flash driver.
-//!
-//! @param psIOMSettings - IOM device structure describing the target spiflash.
-//! @param pfnWriteFunc - Function to use for spi writes.
-//! @param pfnReadFunc - Function to use for spi reads.
-//!
-//! This function should be called before any other am_devices_spiflash
-//! functions. It is used to set tell the other functions how to communicate
-//! with the external spiflash hardware.
-//!
-//! The \e pfnWriteFunc and \e pfnReadFunc variables may be used to provide
-//! alternate implementations of SPI write and read functions respectively. If
-//! they are left set to 0, the default functions am_hal_iom_spi_write() and
-//! am_hal_iom_spi_read() will be used.
-//!
-//! @return None.
+//  Initialize the mspi_flash driver.
 //
 //*****************************************************************************
 uint32_t
@@ -981,20 +954,28 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
+    bool bFound = false;
     for ( uint32_t i = 0; i < (sizeof(g_ATXP032_DevConfig) / sizeof(g_ATXP032_DevConfig[0])); i++ )
     {
         if ( psMSPISettings->eDeviceConfig == g_ATXP032_DevConfig[i].eHalDeviceEnum )
         {
             psConfig = g_ATXP032_DevConfig[i].psDevConfig;
             psConfig->eClockFreq = psMSPISettings->eClockFreq;
-#if !defined(AM_PART_APOLLO4) && !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
+#if !defined(AM_PART_APOLLO4_API)
             psConfig->pTCB = psMSPISettings->pNBTxnBuf;
             psConfig->ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
             psConfig->scramblingStartAddr = psMSPISettings->ui32ScramblingStartAddr;
             psConfig->scramblingEndAddr = psMSPISettings->ui32ScramblingEndAddr;
 #endif
+            bFound = true;
             break;
         }
+    }
+
+    if ( !bFound )
+    {
+        am_util_debug_printf("Error - Incorrect eDeviceConfig.\n");
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
     //
@@ -1002,13 +983,35 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
     //
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#else
-#if AM_APOLLO3_MCUCTRL
+#elif AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
-#else // AM_APOLLO3_MCUCTRL
+#else
     am_hal_mcuctrl_fault_capture_enable();
-#endif // AM_APOLLO3_MCUCTRL
-#endif // !AM_PART_APOLLO4
+#endif
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
+    {
+        am_util_debug_printf("Error - Failed to initialize MSPI.\n");
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_power_control(pMspiHandle, AM_HAL_SYSCTRL_WAKE, false))
+    {
+        am_util_debug_printf("Error - Failed to power on MSPI.\n");
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+
+#if defined(AM_PART_APOLLO4_API)
+    {
+        am_hal_mspi_config_t    mspiCfg = gMspiCfg;
+        mspiCfg.ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
+        mspiCfg.pTCB = psMSPISettings->pNBTxnBuf;
+        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_configure(pMspiHandle, &mspiCfg))
+        {
+            am_util_debug_printf("Error - Failed to configure MSPI device.\n");
+            return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        }
+    }
+#endif
 
     //
     // Configure the MSPI for Serial or Quad-Paired Serial operation during initialization.
@@ -1019,115 +1022,53 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         case AM_HAL_MSPI_FLASH_QUAD_CE0:
         case AM_HAL_MSPI_FLASH_OCTAL_CE0:
             gAmAtxp032[ui32Index].stSetting = MSPI_ATXP032_Serial_CE0_MSPIConfig;
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
-            {
-                am_util_debug_printf("Error - Failed to initialize MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_power_control(pMspiHandle, AM_HAL_SYSCTRL_WAKE, false))
-            {
-                am_util_debug_printf("Error - Failed to power on MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
             tempDevCfg = MSPI_ATXP032_Serial_CE0_MSPIConfig;
-#if defined(AM_PART_APOLLO4_API)
-            {
-              am_hal_mspi_config_t    mspiCfg = gMspiCfg;
-              mspiCfg.ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
-              mspiCfg.pTCB = psMSPISettings->pNBTxnBuf;
-              if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_configure(pMspiHandle, &mspiCfg))
-              {
-                am_util_debug_printf("Error - Failed to configure MSPI device.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-              }
-            }
-#endif
-#ifndef APOLLO4_FPGA
+
 #if defined(AM_PART_APOLLO4_API)
             // Adjust turnaround for the highest clock speed as part of MSPI SW Workaround.
-            if (AM_HAL_MSPI_CLK_96MHZ == MSPI_ATXP032_Serial_CE0_MSPIConfig.eClockFreq)
+            if (AM_HAL_MSPI_CLK_96MHZ == tempDevCfg.eClockFreq)
             {
-              tempDevCfg.ui8TurnAround++;
+                tempDevCfg.ui8TurnAround++;
             }
 #endif
-#endif
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pMspiHandle, &tempDevCfg))
-            {
-                am_util_debug_printf("Error - Failed to configure MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
 
-
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pMspiHandle))
-            {
-                am_util_debug_printf("Error - Failed to enable MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
-
-#if defined(ATXP032_QUAD_CLKON4_MODE_EN)
-            am_bsp_mspi_clkond4_pins_enable(ui32Module, MSPI_ATXP032_Serial_CE0_MSPIConfig.eDeviceConfig);
-#else
-            am_bsp_mspi_pins_enable(ui32Module, MSPI_ATXP032_Serial_CE0_MSPIConfig.eDeviceConfig);
-#endif
             break;
+
         case AM_HAL_MSPI_FLASH_SERIAL_CE1:
         case AM_HAL_MSPI_FLASH_QUAD_CE1:
         case AM_HAL_MSPI_FLASH_OCTAL_CE1:
             gAmAtxp032[ui32Index].stSetting = MSPI_ATXP032_Serial_CE1_MSPIConfig;
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
-            {
-                am_util_debug_printf("Error - Failed to initialize MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
-
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_power_control(pMspiHandle, AM_HAL_SYSCTRL_WAKE, false))
-            {
-                am_util_debug_printf("Error - Failed to power on MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
             tempDevCfg = MSPI_ATXP032_Serial_CE1_MSPIConfig;
-#if defined(AM_PART_APOLLO4_API)
-            {
-              am_hal_mspi_config_t    mspiCfg = gMspiCfg;
-              mspiCfg.ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
-              mspiCfg.pTCB = psMSPISettings->pNBTxnBuf;
-              if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_configure(pMspiHandle, &mspiCfg))
-              {
-                am_util_debug_printf("Error - Failed to configure MSPI device.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-              }
-            }
-#endif
-#ifndef APOLLO4_FPGA
+
 #if defined(AM_PART_APOLLO4_API)
             // Adjust turnaround for the highest clock speed as part of MSPI SW Workaround.
-            if (AM_HAL_MSPI_CLK_96MHZ == MSPI_ATXP032_Serial_CE1_MSPIConfig.eClockFreq)
+            if (AM_HAL_MSPI_CLK_96MHZ == tempDevCfg.eClockFreq)
             {
               tempDevCfg.ui8TurnAround++;
             }
 #endif
-#endif
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pMspiHandle, &tempDevCfg))
-            {
-                am_util_debug_printf("Error - Failed to configure MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
-            if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pMspiHandle))
-            {
-                am_util_debug_printf("Error - Failed to enable MSPI.\n");
-                return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            }
-
-#if defined(ATXP032_QUAD_CLKON4_MODE_EN)
-            am_bsp_mspi_clkond4_pins_enable(ui32Module, MSPI_ATXP032_Serial_CE1_MSPIConfig.eDeviceConfig);
-#else
-            am_bsp_mspi_pins_enable(ui32Module, MSPI_ATXP032_Serial_CE1_MSPIConfig.eDeviceConfig);
-#endif
-            break;
         default:
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
             //break;
     }
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pMspiHandle, &tempDevCfg))
+    {
+        am_util_debug_printf("Error - Failed to configure MSPI.\n");
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pMspiHandle))
+    {
+        am_util_debug_printf("Error - Failed to enable MSPI.\n");
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+
+#if defined(ATXP032_QUAD_CLKON4_MODE_EN)
+    am_bsp_mspi_clkond4_pins_enable(ui32Module, tempDevCfg.eDeviceConfig);
+#else
+    am_bsp_mspi_pins_enable(ui32Module, tempDevCfg.eDeviceConfig);
+#endif
 
     gAmAtxp032[ui32Index].pMspiHandle = pMspiHandle;
     gAmAtxp032[ui32Index].ui32Module = ui32Module;
@@ -1155,13 +1096,12 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
     }
     // Adjust turnaround for the highest clock speed as part of MSPI SW Workaround.
     am_hal_mspi_dev_config_t psTempConfig = *psConfig;  // We cannot change the static global config.
-#ifndef APOLLO4_FPGA
+
 #if defined(AM_PART_APOLLO4_API)
     if (AM_HAL_MSPI_CLK_96MHZ == psTempConfig.eClockFreq)
     {
       psTempConfig.ui8TurnAround++;
     }
-#endif
 #endif
 
     //
@@ -1238,22 +1178,7 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
 
 //*****************************************************************************
 //
-//! @brief De-Initialization the mspi_flash driver.
-//!
-//! @param psIOMSettings - IOM device structure describing the target spiflash.
-//! @param pfnWriteFunc - Function to use for spi writes.
-//! @param pfnReadFunc - Function to use for spi reads.
-//!
-//! This function should be called before any other am_devices_spiflash
-//! functions. It is used to set tell the other functions how to communicate
-//! with the external spiflash hardware.
-//!
-//! The \e pfnWriteFunc and \e pfnReadFunc variables may be used to provide
-//! alternate implementations of SPI write and read functions respectively. If
-//! they are left set to 0, the default functions am_hal_iom_spi_write() and
-//! am_hal_iom_spi_read() will be used.
-//!
-//! @return None.
+//  De-Initialization the mspi_flash driver.
 //
 //*****************************************************************************
 uint32_t
@@ -1320,7 +1245,7 @@ am_devices_mspi_atxp032_deinit(void *pHandle)
     //
     // Clear the Flash Caching.
     //
-#if !defined(AM_PART_APOLLO4) && !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
+#if !defined(AM_PART_APOLLO4_API)
 #if AM_CMSIS_REGS
     CACHECTRL->CACHECFG = 0;
 #else // AM_CMSIS_REGS
@@ -1335,14 +1260,7 @@ am_devices_mspi_atxp032_deinit(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Reads the current status of the external flash
-//!
-//! @param ui32DeviceNumber - Device number of the external flash
-//!
-//! This function reads the device ID register of the external flash, and returns
-//! the result as an 32-bit unsigned integer value.
-//!
-//! @return 32-bit status
+//  Reads the current status of the external flash
 //
 //*****************************************************************************
 uint32_t
@@ -1385,7 +1303,7 @@ am_devices_mspi_atxp032_reset(void *pHandle)
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
 //*****************************************************************************
 //
-//! @brief Test signal integrity and delays on IO lines using echo with inversion command .
+//!  Test signal integrity and delays on IO lines using echo with inversion command .
 //!
 //! @param pHandle - handle to the mspi instance.
 //! @param pattern - data pattern to be used for the test.
@@ -1434,14 +1352,7 @@ am_devices_mspi_atxp032_echo_with_inversion(void *pHandle,
 
 //*****************************************************************************
 //
-//! @brief Reads the ID of the external flash and returns the value.
-//!
-//! @param pDeviceID - Pointer to the return buffer for the Device ID.
-//!
-//! This function reads the device ID register of the external flash, and returns
-//! the result as an 32-bit unsigned integer value.
-//!
-//! @return 32-bit status
+//  Reads the ID of the external flash and returns the value.
 //
 //*****************************************************************************
 uint32_t
@@ -1469,17 +1380,7 @@ am_devices_mspi_atxp032_id(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Reads the current status of the external flash
-//!
-//! This function reads the status register of the external flash, and returns
-//! the result as an 8-bit unsigned integer value. The processor will block
-//! during the data transfer process, but will return as soon as the status
-//! register had been read.
-//!
-//! Macro definitions for interpreting the contents of the status register are
-//! included in the header file.
-//!
-//! @return 8-bit status register contents
+//  Reads the current status of the external flash
 //
 //*****************************************************************************
 uint32_t
@@ -1499,6 +1400,11 @@ am_devices_mspi_atxp032_status(void *pHandle, uint32_t *pStatus)
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+//
+//
+//*****************************************************************************
 uint32_t
 am_devices_mspi_atxp032_read_adv(void *pHandle, uint8_t *pui8RxBuffer,
                                  uint32_t ui32ReadAddress,
@@ -1553,17 +1459,7 @@ am_devices_mspi_atxp032_read_adv(void *pHandle, uint8_t *pui8RxBuffer,
 
 //*****************************************************************************
 //
-//! @brief Reads the contents of the external flash into a buffer.
-//!
-//! @param pui8RxBuffer - Buffer to store the received data from the flash
-//! @param ui32ReadAddress - Address of desired data in external flash
-//! @param ui32NumBytes - Number of bytes to read from external flash
-//!
-//! This function reads the external flash at the provided address and stores
-//! the received data into the provided buffer location. This function will
-//! only store ui32NumBytes worth of data.
-//
-//! @return 32-bit status
+//  Reads the contents of the external flash into a buffer.
 //
 //*****************************************************************************
 uint32_t
@@ -1616,13 +1512,17 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
 #if defined(AM_PART_APOLLO4_API)
-          if ( (AM_HAL_STATUS_SUCCESS == ui32DMAStatus) || (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus) )
-#else
-          if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
-#endif
+            if ( (AM_HAL_STATUS_SUCCESS == ui32DMAStatus) || (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus) )
             {
                 break;
             }
+#else
+            if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+            {
+                break;
+            }
+#endif
+
             //
             // Call the BOOTROM cycle function to delay for about 1 microsecond.
             //
@@ -1636,12 +1536,15 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
             return AM_HAL_MSPI_FIFO_FULL_CONDITION;
         }
         else if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
-#else
-        if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
-#endif
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
         }
+#else
+        if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+        {
+            return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
+        }
+#endif
         else
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -1718,13 +1621,17 @@ mspi_atxp032_dma_read(void *pHandle, uint8_t *pui8RxBuffer,
         am_hal_mspi_interrupt_service(pFlash->pMspiHandle, ui32Status);
 
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-      if ( (AM_HAL_STATUS_SUCCESS == ui32DMAStatus) || (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus) )
-#else
-      if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
-#endif
+        if ( (AM_HAL_STATUS_SUCCESS == ui32DMAStatus) || (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus) )
         {
             break;
         }
+#else
+        if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+        {
+            break;
+        }
+#endif
+
         //
         // Call the BOOTROM cycle function to delay for about 1 microsecond.
         //
@@ -1737,12 +1644,15 @@ mspi_atxp032_dma_read(void *pHandle, uint8_t *pui8RxBuffer,
         return AM_HAL_MSPI_FIFO_FULL_CONDITION;
     }
     else if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
-#else
-    if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
-#endif
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
     }
+#else
+    if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+    {
+        return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
+    }
+#endif
     else
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -1751,20 +1661,9 @@ mspi_atxp032_dma_read(void *pHandle, uint8_t *pui8RxBuffer,
 #endif // defined(AM_PART_APOLLO4_API)
 
 
-
 //*****************************************************************************
 //
-//! @brief Reads the contents of the external flash into a buffer.
-//!
-//! @param pui8RxBuffer - Buffer to store the received data from the flash
-//! @param ui32ReadAddress - Address of desired data in external flash
-//! @param ui32NumBytes - Number of bytes to read from external flash
-//!
-//! This function reads the external flash at the provided address and stores
-//! the received data into the provided buffer location. This function will
-//! only store ui32NumBytes worth of data.
-//
-//! @return 32-bit status
+//  Reads the contents of the external flash into a buffer.
 //
 //*****************************************************************************
 uint32_t
@@ -1853,20 +1752,7 @@ am_devices_mspi_atxp032_read_hiprio(void *pHandle, uint8_t *pui8RxBuffer,
 
 //*****************************************************************************
 //
-//! @brief Programs the given range of flash addresses.
-//!
-//! @param ui32DeviceNumber - Device number of the external flash
-//! @param pui8TxBuffer - Buffer to write the external flash data from
-//! @param ui32WriteAddress - Address to write to in the external flash
-//! @param ui32NumBytes - Number of bytes to write to the external flash
-//!
-//! This function uses the data in the provided pui8TxBuffer and copies it to
-//! the external flash at the address given by ui32WriteAddress. It will copy
-//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
-//! user is responsible for ensuring that they do not overflow the target flash
-//! memory or underflow the pui8TxBuffer array
-//
-//! @return 32-bit status
+//  Programs the given range of flash addresses.
 //
 //*****************************************************************************
 uint32_t
@@ -2184,14 +2070,7 @@ mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
 
 //*****************************************************************************
 //
-//! @brief Erases the entire contents of the external flash
-//!
-//! @param ui32DeviceNumber - Device number of the external flash
-//!
-//! This function uses the "Bulk Erase" instruction to erase the entire
-//! contents of the external flash.
-//
-//! @return 32-bit status
+//  Erases the entire contents of the external flash
 //
 //*****************************************************************************
 uint32_t
@@ -2259,16 +2138,7 @@ am_devices_mspi_atxp032_mass_erase(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Erases the contents of a single sector of flash
-//!
-//! @param ui32DeviceNumber - Device number of the external flash
-//! @param ui32SectorAddress - Address to erase in the external flash
-//!
-//! This function erases a single sector of the external flash as specified by
-//! ui32EraseAddress. The entire sector where ui32EraseAddress will
-//! be erased.
-//
-//! @return 32-bit status
+//  Erases the contents of a single sector of flash
 //
 //*****************************************************************************
 uint32_t
@@ -2386,11 +2256,7 @@ am_devices_mspi_atxp032_sector_erase(void *pHandle, uint32_t ui32SectorAddress)
 
 //*****************************************************************************
 //
-//! @brief Sets up the MSPI and external FLASH into XIP mode.
-//!
-//! This function sets the external psram device and the MSPI into XIP mode.
-//
-//! @return 32-bit status
+//  Sets up the MSPI and external FLASH into XIP mode.
 //
 //*****************************************************************************
 uint32_t
@@ -2439,11 +2305,7 @@ am_devices_mspi_atxp032_enable_xip(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Removes the MSPI and external FLASH from XIP mode.
-//!
-//! This function removes the external device and the MSPI from XIP mode.
-//
-//! @return 32-bit status
+//  Removes the MSPI and external FLASH from XIP mode.
 //
 //*****************************************************************************
 uint32_t
@@ -2480,11 +2342,7 @@ am_devices_mspi_atxp032_disable_xip(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Sets up the MSPI and external FLASH into scrambling mode.
-//!
-//! This function sets the external psram device and the MSPI into scrambling mode.
-//
-//! @return 32-bit status
+//  Sets up the MSPI and external FLASH into scrambling mode.
 //
 //*****************************************************************************
 uint32_t
@@ -2510,11 +2368,7 @@ am_devices_mspi_atxp032_enable_scrambling(void *pHandle)
 
 //*****************************************************************************
 //
-//! @brief Removes the MSPI and external FLASH from scrambling mode.
-//!
-//! This function removes the external device and the MSPI from scrambling mode.
-//
-//! @return 32-bit status
+//  Removes the MSPI and external FLASH from scrambling mode.
 //
 //*****************************************************************************
 uint32_t
@@ -2549,7 +2403,7 @@ am_devices_mspi_atxp032_disable_scrambling(void *pHandle)
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
 
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P)  || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4_API)
 
 
 static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t len)
@@ -2661,7 +2515,8 @@ flash_write(void* flashHandle, uint32_t length)
     return false;
 }
 
-#if !defined(AM_PART_APOLLO4P)
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#else
 static uint32_t
 mspi_atxp032_disable_xip(void *pHandle)
 {
@@ -2720,13 +2575,12 @@ flash_check(void* flashHandle, uint32_t length)
         //
         // Read back data
         //
-#if defined(AM_PART_APOLLO4P)
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
         ui32Status = mspi_atxp032_dma_read(flashHandle, ui8RxBuffer,
                                     (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + ui32AddressOffset,
                                     ui32TestBytes);
 #else
         am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)flashHandle;
-        
         if ( pFlash->stSetting.eClockFreq == AM_HAL_MSPI_CLK_96MHZ )
         {
             //
@@ -2870,23 +2724,10 @@ find_mid_point(uint32_t* pVal)
 
 
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-//*****************************************************************************
-//
-//! @brief Checks PSRAM timing and determine a delay setting.
-//!
-//! @param pDeviceID - Pointer to the return buffer for the Device ID.
-//!
-//! This function scans through the delay settings of MSPI DDR mode and selects
-//! the best parameter to use by tuning TURNAROUND/RXNEG/RXDQSDELAY0 values.
-//! This function is only valid in DDR mode and ENABLEDQS0 = 0.
-//!
-//! @return 32-bit status, scan result in structure type
-//
-//*****************************************************************************
 
 //
-// If you uncomment out lines, the test will automatically include them.
-// No need to change any code below.
+//! @note If you uncomment out lines, the test will automatically include them.
+//! No need to change any code below.
 //
 const am_devices_mspi_atxp032_sdr_timing_config_t atxp032_sConfigArray[] =
 {
@@ -2906,6 +2747,11 @@ const am_devices_mspi_atxp032_sdr_timing_config_t atxp032_sConfigArray[] =
     {12, 1, 1}, // Turnaround=12, RXNEG=1, RXDQSDELAY=Dummy
 };
 
+//*****************************************************************************
+//
+//  Checks PSRAM timing and determine a delay setting.
+//
+//*****************************************************************************
 uint32_t
 am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
                                               am_devices_mspi_atxp032_config_t *pDevCfg,
@@ -3071,16 +2917,7 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
 
 //*****************************************************************************
 //
-//! @brief Apply given SDR timing settings to target MSPI instance.
-//!
-//! @param pHandle - Handle to the PSRAM.
-//! @param pDevSdrCfg - Pointer to the ddr timing config structure
-//!
-//! This function applies the ddr timing settings to the selected mspi instance.
-//! This function must be called after MSPI instance is initialized into
-//! ENABLEFINEDELAY0 = 1 mode.
-//!
-//! @return 32-bit status
+//  Apply given SDR timing settings to target MSPI instance.
 //
 //*****************************************************************************
 uint32_t
@@ -3120,19 +2957,7 @@ am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
 #endif
 
 #if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-//*****************************************************************************
-//
-//! @brief Checks PSRAM timing and determine a delay setting.
-//!
-//! @param pDeviceID - Pointer to the return buffer for the Device ID.
-//!
-//! This function scans through the delay settings of MSPI DDR mode and selects
-//! the best parameter to use by tuning TURNAROUND/RXNEG/RXDQSDELAY0 values.
-//! This function is only valid in DDR mode and ENABLEDQS0 = 0.
-//!
-//! @return 32-bit status, scan result in structure type
-//
-//*****************************************************************************
+
 const am_devices_mspi_atxp032_sdr_timing_config_t atxp032_sConfigArray[] =
 {
 //TXNEG RXNEG RXCAP TXDLY RXDLY TURNAROUND
@@ -3327,6 +3152,11 @@ const am_devices_mspi_atxp032_sdr_timing_config_t atxp032_sConfigArray[] =
     {1 ,  1,   1,    9,    1,     11},
 };
 
+//*****************************************************************************
+//
+//  Checks PSRAM timing and determine a delay setting.
+//
+//*****************************************************************************
 uint32_t
 am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
                                               am_devices_mspi_atxp032_config_t *pDevCfg,
@@ -3523,16 +3353,7 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
 
 //*****************************************************************************
 //
-//! @brief Apply given SDR timing settings to target MSPI instance.
-//!
-//! @param pHandle - Handle to the PSRAM.
-//! @param pDevSdrCfg - Pointer to the ddr timing config structure
-//!
-//! This function applies the ddr timing settings to the selected mspi instance.
-//! This function must be called after MSPI instance is initialized into
-//! ENABLEFINEDELAY0 = 1 mode.
-//!
-//! @return 32-bit status
+//  Apply given SDR timing settings to target MSPI instance.
 //
 //*****************************************************************************
 uint32_t

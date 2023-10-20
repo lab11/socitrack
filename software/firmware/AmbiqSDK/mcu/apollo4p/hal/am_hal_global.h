@@ -8,7 +8,7 @@
 //! but not necessarily those designated as const (which typically end up in
 //! flash). Consolidating globals here will make it easier to manage them.
 //!
-//! @addtogroup globals Globals - HAL globals
+//! @addtogroup globals_4p Globals - HAL globals
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GLOBAL_H
@@ -72,6 +72,18 @@ extern "C"
 //
 //*****************************************************************************
 #define AM_HAL_DEVICE_NAME      "Apollo4"
+
+//*****************************************************************************
+//
+//! Some Ambiqsuite workaround implementations use a TIMER interrupt
+//! AM_HAL_WRITE_WAIT_TIMER (TIMER13 used for this in default SDK).
+//! The interrupt is configured as the highest priority (0) interrupt to prevent
+//! unintentional break out due to other interrupts. In order for this to work
+//! reliably, it is required that all the other interrupts in the system are set
+//! at a lower priority, reserving the highest priority interrupt exclusively
+//! for AmbiqSuite workaround.
+//
+#define AM_HAL_WRITE_WAIT_TIMER  13
 
 //*****************************************************************************
 //
@@ -113,7 +125,7 @@ extern "C"
 //! @{
 //
 //*****************************************************************************
-#if defined(keil)
+#if defined(keil) || defined(keil6)
 #define AM_SHARED_RW      __attribute__((section("SHARED_RW"))) __attribute__((used))
 #define AM_RESOURCE_TABLE __attribute__((section("RESOURCE_TABLE"))) __attribute__((used))
 #define AM_USED           __attribute__((used))
@@ -280,7 +292,6 @@ typedef union
 // Global Variables extern declarations.
 //
 //*****************************************************************************
-extern volatile uint32_t g_ui32HALflags;
 extern const    uint8_t  g_ui8HALcompiler[];
 extern const    am_hal_version_t g_ui32HALversion;
 #ifdef APOLLO4_FPGA

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -55,7 +55,6 @@
 #include "am_mcu_apollo.h"
 #include "am_bsp.h"
 #include "am_devices_cooper.h"
-#include "am_hal_mcuctrl.h"
 
 //*****************************************************************************
 //
@@ -125,11 +124,40 @@ static am_devices_cooper_sbl_update_data_t     g_sInfo1PatchImage =
     0
 };
 
-#if !defined(APOLLO4P_BLUE_KXR)
-#if (!AM_DEVICES_COOPER_QFN_PART)
+
+
+
 //*****************************************************************************
 //
-//! BLE_32M_CLK (46) - BLE 32M CLK OUT.
+// COOPER_CS (54) - COOPER Master chip select.
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_SPI_CS =
+{
+#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_54_NCE54,
+#else
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_43_NCE43,
+#endif
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_LO2HI,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = AM_HAL_GPIO_NCE_IOM4CE0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+//  BLE_32M_CLK (46) - BLE 32M CLK OUT.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_32M_CLK =
@@ -153,12 +181,12 @@ am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_32M_CLK =
 
 //*****************************************************************************
 //
-//! BLE_32K_CLK (45) - BLE 32K CLK OUT.
+//  BLE_32K_CLK (45) - BLE 32K CLK OUT.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_32K_CLK =
 {
-#ifdef AM_PART_APOLLO4L
+#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_4_32KHzXT,
 #else
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_45_32KHzXT,
@@ -178,16 +206,15 @@ am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_32K_CLK =
     .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
     .GP.cfg_b.uRsvd_1              = 0,
 };
-#endif
 
 //*****************************************************************************
 //
-//! BLE_CLKREQ (40) - BLE CLK request pin.
+// BLE_CLKREQ (40) - BLE CLK request pin.
 //
 //*****************************************************************************
 am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_CLKREQ =
 {
-#ifdef AM_PART_APOLLO4L
+#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_52_GPIO,
 #else
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_40_GPIO,
@@ -207,15 +234,12 @@ am_hal_gpio_pincfg_t g_AM_DEVICES_COOPER_CLKREQ =
     .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
     .GP.cfg_b.uRsvd_1              = 0,
 };
-#endif
 
 static uint32_t sbl_status = 0;
 
 //*****************************************************************************
 //
-// @brief Set up pins for Cooper.
-//
-// This function configures SPI, IRQ, SCK pins for Cooper
+//  Set up pins for Cooper.
 //
 //*****************************************************************************
 void
@@ -223,12 +247,14 @@ am_devices_cooper_pins_enable(void)
 {
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_RESET_PIN, am_hal_gpio_pincfg_output);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_IRQ_PIN, am_hal_gpio_pincfg_input);
-    am_hal_gpio_pinconfig(AM_DEVICES_COOPER_CLKREQ_PIN, g_AM_DEVICES_COOPER_CLKREQ);
+    am_hal_gpio_pinconfig(AM_DEVICES_COOPER_CLKREQ_PIN, am_hal_gpio_pincfg_input);
 #if (!AM_DEVICES_COOPER_QFN_PART)
+#if !defined(AM_PART_APOLLO4L)
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SWDIO, am_hal_gpio_pincfg_output);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SWCLK, am_hal_gpio_pincfg_output);
     am_hal_gpio_output_clear(AM_DEVICES_COOPER_SWDIO);
     am_hal_gpio_output_clear(AM_DEVICES_COOPER_SWCLK);
+#endif
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_32M_CLK, g_AM_DEVICES_COOPER_32M_CLK);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_32K_CLK, g_AM_DEVICES_COOPER_32K_CLK);
 #else
@@ -240,9 +266,7 @@ am_devices_cooper_pins_enable(void)
 
 //*****************************************************************************
 //
-// @brief Disable pins for Cooper.
-//
-// This function configures SPI, IRQ, SCK pins for Cooper
+//  Disable pins for Cooper.
 //
 //*****************************************************************************
 void
@@ -252,10 +276,12 @@ am_devices_cooper_pins_disable(void)
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_IRQ_PIN, am_hal_gpio_pincfg_disabled);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_CLKREQ_PIN, am_hal_gpio_pincfg_disabled);
 #if (!AM_DEVICES_COOPER_QFN_PART)
+#if !defined(AM_PART_APOLLO4L)
     am_hal_gpio_output_clear(AM_DEVICES_COOPER_SWDIO);
     am_hal_gpio_output_clear(AM_DEVICES_COOPER_SWCLK);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SWDIO, am_hal_gpio_pincfg_disabled);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SWCLK, am_hal_gpio_pincfg_disabled);
+#endif
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_32M_CLK, am_hal_gpio_pincfg_disabled);
     am_hal_gpio_pinconfig(AM_DEVICES_COOPER_32K_CLK, am_hal_gpio_pincfg_disabled);
 #else
@@ -266,18 +292,7 @@ am_devices_cooper_pins_disable(void)
 
 //*****************************************************************************
 //
-// @brief Initialize the BLE controller driver.
-//
-// @param ui32Module   - BLE Controller Module#
-// @param pDevConfig   - BLE Controller device structure describing the target.
-// @param ppHandle     - BLE Controller device state structure.
-// @param ppBleHandle  - BLE Controller device handler.
-//
-// @note This function should be called before any other am_devices_cooper
-// functions. It is used to set tell the other functions how to communicate
-// with the BLE controller hardware.
-//
-// @return Status.
+//  Initialize the BLE controller driver.
 //
 //*****************************************************************************
 uint32_t
@@ -334,19 +349,30 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
         //
         // Configure the IOM pins.
         //
-#if (AM_DEVICES_COOPER_QFN_PART)
-#if defined(AM_BSP_GPIO_IOM2_CS)
+
+#if (SPI_MODULE == 2) && defined(AM_BSP_GPIO_IOM2_CS)
 #undef AM_BSP_GPIO_IOM2_CS
 #define AM_BSP_GPIO_IOM2_CS  AM_DEVICES_COOPER_SPI_CS // BGA&SIP share the same CS pin(NCE72) on the QFN shiled board
-#endif
+#elif (SPI_MODULE == 4) && defined(AM_BSP_GPIO_IOM4_CS)
+#undef AM_BSP_GPIO_IOM4_CS
+#define AM_BSP_GPIO_IOM4_CS  AM_DEVICES_COOPER_SPI_CS
 #endif
         am_bsp_iom_pins_enable(ui32Module, AM_HAL_IOM_SPI_MODE);
         am_devices_cooper_pins_enable();
 #if (!AM_DEVICES_COOPER_QFN_PART)
+        //
         // Enable crystals for Cooper
+        //
         am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_ENABLE, 0);
 
-        am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, 0);
+        //
+        // Enable the 32Mnz HF XTAL clock
+        //
+
+
+        am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, (void *)&g_amHalMcuctrlArgBLEDefault );
+
+
 #endif
         am_devices_cooper_reset();
 
@@ -405,13 +431,7 @@ am_devices_cooper_init(uint32_t ui32Module, am_devices_cooper_config_t* pDevConf
 
 //*****************************************************************************
 //
-// @brief De-Initialize the BLE controller driver.
-//
-// @param pHandle  - BLE Controller device handler.
-//
-// This function reverses the initialization
-//
-// @return Status.
+//  De-Initialize the BLE controller driver.
 //
 //*****************************************************************************
 uint32_t
@@ -425,7 +445,8 @@ am_devices_cooper_term(void* pHandle)
 #if (!AM_DEVICES_COOPER_QFN_PART)
     // Disable crystals
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_DISABLE, 0);
-    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE, 0);
+
+    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE, (void *)&g_amHalMcuctrlArgBLEDefault);
 #endif
     // Disable the pins
     am_bsp_iom_pins_disable(pBle->ui32Module, AM_HAL_IOM_SPI_MODE);
@@ -453,9 +474,7 @@ am_devices_cooper_term(void* pHandle)
 
 //*****************************************************************************
 //
-// @brief Reset BLE Controller.
-//
-// This function asserts reset pin to reset the BLE controller
+//  Reset BLE Controller.
 //
 //*****************************************************************************
 void
@@ -472,13 +491,7 @@ am_devices_cooper_reset(void)
 
 //*****************************************************************************
 //
-// @brief Enable the IOM bus
-//
-// This function enables IOM module before any HCI operation take effect
-//
-// @param pHandle  - BLE Controller device handler.
-//
-// @return Status.
+//  Enable the IOM bus
 //
 //*****************************************************************************
 uint32_t
@@ -506,13 +519,7 @@ am_devices_cooper_bus_enable(void* pHandle)
 
 //*****************************************************************************
 //
-// @brief Disable the IOM bus
-//
-// This function disables IOM module after HCI operation done to save power
-//
-// @param pHandle  - BLE Controller device handler.
-//
-// @return Status.
+//  Disable the IOM bus
 //
 //*****************************************************************************
 uint32_t
@@ -538,17 +545,7 @@ am_devices_cooper_bus_disable(void* pHandle)
 
 //*****************************************************************************
 //
-// @brief Execute HCI blocking write to the BLE controller
-//
-// @param pHandle      - BLE Controller device handler.
-// @param ui8Type      - HCI packet type.
-// @param pui32Data    - Buffer to write the data from
-// @param ui32NumBytes - Number of bytes to write
-// @param bWaitReady
-//     - True  means need to loop for the controller ready,
-//     - False will return and wait for the IRQ interrupt
-//
-// @return 32-bit status
+//  Execute HCI blocking write to the BLE controller
 //
 //*****************************************************************************
 uint32_t
@@ -617,6 +614,12 @@ am_devices_cooper_blocking_write(void* pHandle, uint8_t ui8Type, uint32_t* pui32
                 //
                 am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SPI_CS, am_hal_gpio_pincfg_output);
                 am_hal_gpio_output_set(AM_DEVICES_COOPER_SPI_CS);
+
+#if (!AM_DEVICES_COOPER_QFN_PART)
+                // If the CS PIN is pulled high and then pulled low too quickly, Cooper may not be able to detect it.
+                am_util_delay_us(pBle->ui32CSDuration);
+#endif
+
                 am_hal_gpio_pinconfig(AM_DEVICES_COOPER_SPI_CS, g_AM_DEVICES_COOPER_SPI_CS);
                 am_util_delay_us(1700);
                 //
@@ -692,13 +695,7 @@ am_devices_cooper_blocking_write(void* pHandle, uint8_t ui8Type, uint32_t* pui32
 
 //*****************************************************************************
 //
-// @brief Execute HCI blocking read from the BLE controller
-//
-// @param pHandle      - BLE Controller device handler.
-// @param pui32Data    - Buffer to store the received data from the BLE controller
-// @param pui32BytesReceived - Actually received number of bytes
-//
-// @return 32-bit status
+//  Execute HCI blocking read from the BLE controller
 //
 //*****************************************************************************
 uint32_t
@@ -805,17 +802,7 @@ am_devices_cooper_blocking_read(void* pHandle, uint32_t* pui32Data,
 
 //*****************************************************************************
 //
-// @brief Send HCI raw command to the BLE controller
-// @note This function should only be used in non-IRQ-interrupt mode, and
-//        used to to send raw packet
-//
-// @param pHandle          - BLE Controller device handler.
-// @param pui32Cmd         - Buffer to write the command from
-// @param ui32Length       - Length of the command including the header
-// @param pui32Response    - Buffer to store the response from the BLE controller
-// @param pui32BytesReceived - Actually received number of bytes
-//
-// @return 32-bit status
+//  Send HCI raw command to the BLE controller
 //
 //*****************************************************************************
 uint32_t
@@ -845,10 +832,14 @@ am_devices_cooper_command_write(void* pHandle, uint32_t* pui32Cmd, uint32_t ui32
             ui32ErrorStatus = AM_DEVICES_COOPER_STATUS_NO_RESPONSE;
             break;
         }
-        ui32ErrorStatus = am_devices_cooper_blocking_read(pHandle, pui32Response, pui32BytesReceived);
-        if (ui32ErrorStatus)
+        while(1)
         {
-            break;
+            ui32ErrorStatus = am_devices_cooper_blocking_read(pHandle, pui32Response, pui32BytesReceived);
+            // Keep reading until we get the corresponding response
+            if ((ui32ErrorStatus) || ((UINT32_TO_BYTE0(pui32Response[1]) == UINT32_TO_BYTE1(pui32Cmd[0])) && (UINT32_TO_BYTE1(pui32Response[1]) == UINT32_TO_BYTE2(pui32Cmd[0]))))
+            {
+                break;
+            }
         }
     } while (0);
     //
@@ -881,16 +872,7 @@ am_devices_cooper_clkreq_read(void* pHandle)
 
 //*****************************************************************************
 //
-// @brief Set the 32M crystal frequency based on the tested values at customer side.
-//
-// Set trim value smaller in case of negative frequency offset
-//
-// @param pHandle          - Pointer to device handle
-// @param ui32TrimValue    - TrimValue : default is 0x1EC
-//
-// @note Refer to App Note Apollo4 Blue 32MHz Crystal Calibration
-//
-// @return  status from am_devices_cooper_status_t
+//  Set the 32M crystal frequency based on the tested values at customer side.
 //
 //*****************************************************************************
 uint32_t
@@ -1105,10 +1087,7 @@ static bool am_devices_cooper_sbl_update_state_data(uint32_t ui32updateType)
 }
 //*****************************************************************************
 //
-// @brief Initialize the Image Update state machine
-// @param pHandle
-// @param pWorkBuf
-// @return 0 is success
+//  Initialize the Image Update state machine
 //
 //*****************************************************************************
 uint32_t am_devices_cooper_image_update_init(void* pHandle, uint32_t* pWorkBuf)
@@ -1610,11 +1589,7 @@ uint32_t am_devices_cooper_update_image(void)
 
 //*****************************************************************************
 //
-// @brief Get cooper firmware image from local binary
-//
-// @param pFwImage
-//
-// @return true if pFwImage isn't null
+//  Get cooper firmware image from local binary
 //
 //*****************************************************************************
 bool am_devices_cooper_get_FwImage(am_devices_cooper_sbl_update_data_t *pFwImage )
@@ -1631,11 +1606,7 @@ bool am_devices_cooper_get_FwImage(am_devices_cooper_sbl_update_data_t *pFwImage
 
 //*****************************************************************************
 //
-// @brief Get cooper info1 image from local binary
-//
-// @param pInfo1Image
-//
-// @return true if pInfo1Image isn't null
+//  Get cooper info1 image from local binary
 //
 //*****************************************************************************
 bool am_devices_cooper_get_info1_patch(am_devices_cooper_sbl_update_data_t *pInfo1Image)
@@ -1650,11 +1621,7 @@ bool am_devices_cooper_get_info1_patch(am_devices_cooper_sbl_update_data_t *pInf
 
 //*****************************************************************************
 //
-// @brief Get cooper info0 image from local binary
-//
-// @param pInfo0Image
-//
-// @return true if  pInfo0Image isn't null
+//  Get cooper info0 image from local binary
 //
 //*****************************************************************************
 bool am_devices_cooper_get_info0_patch(am_devices_cooper_sbl_update_data_t *pInfo0Image)
@@ -1669,12 +1636,7 @@ bool am_devices_cooper_get_info0_patch(am_devices_cooper_sbl_update_data_t *pInf
 
 //*****************************************************************************
 //
-// @brief Reset the BLE controller and check if there's request to update
-//
-// @param pHandle
-// @param pDevConfig
-//
-// @return status from am_devices_cooper_status_t
+//  Reset the BLE controller and check if there's request to update
 //
 //*****************************************************************************
 uint32_t am_devices_cooper_reset_with_sbl_check(void* pHandle, am_devices_cooper_config_t* pDevConfig)

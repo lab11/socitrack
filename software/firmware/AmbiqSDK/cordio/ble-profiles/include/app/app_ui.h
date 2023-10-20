@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework user interface.
  *
- *  Copyright (c) 2011-2018 Arm Ltd.
+ *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,6 +53,9 @@ enum
   APP_UI_SEC_ENCRYPT,                     /*!< \brief Connection encrypted */
   APP_UI_SEC_ENCRYPT_FAIL,                /*!< \brief Encryption failed */
   APP_UI_PASSKEY_PROMPT,                  /*!< \brief Prompt user to enter passkey */
+  APP_UI_DISPLAY_PASSKEY,                 /*!< \brief Display passkey */
+  APP_UI_DISPLAY_CONFIRM,                 /*!< \brief Display confirm value */
+  APP_UI_DISPLAY_RSSI,                    /*!< \brief Display rssi */
   APP_UI_ALERT_CANCEL,                    /*!< \brief Cancel a low or high alert */
   APP_UI_ALERT_LOW,                       /*!< \brief Low alert */
   APP_UI_ALERT_HIGH,                      /*!< \brief High alert */
@@ -103,7 +106,7 @@ enum
 typedef void (*appUiBtnCback_t)(uint8_t btn);
 
 /*! \brief Action event callback */
-typedef void (*appUiActionCback_t)(uint8_t event);
+typedef void (*appUiActionCback_t)(uint8_t event, uint32_t param);
 
 /*! \brief Button Poll callback */
 typedef void (*appUiBtnPollCback_t)(void);

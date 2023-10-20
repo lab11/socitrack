@@ -4,7 +4,7 @@
 //!
 //! @brief Hardware abstraction layer for the Reset Generator module.
 //!
-//! @addtogroup rstgen2 Reset - Reset Generator (RSTGEN)
+//! @addtogroup rstgen2_4p Reset - Reset Generator (RSTGEN)
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_RSTGEN_H
@@ -66,7 +66,9 @@ extern "C"
 //
 //*****************************************************************************
 //**************************************
+//
 //! Reset Generator configuration values
+//
 //**************************************
 typedef enum
 {
@@ -77,7 +79,9 @@ typedef enum
 } am_hal_reset_configure_e;
 
 //**************************************
+//
 //! Reset Generator control operations
+//
 //**************************************
 typedef enum
 {
@@ -86,7 +90,9 @@ typedef enum
 } am_hal_reset_control_e;
 
 //**************************************
+//
 //! Reset Status
+//
 //**************************************
 typedef enum
 {
@@ -108,7 +114,9 @@ typedef enum
 #define AM_HAL_RESET_STATUS_MASK    0x7FF
 
 //**************************************
+//
 //! RESET status structure
+//
 //**************************************
 typedef struct
 {
@@ -129,7 +137,7 @@ typedef struct
 } am_hal_reset_status_t;
 
 //
-// Define interrupt bit(s)
+//! Define interrupt bit(s)
 //
 #define AM_HAL_RESET_INTERRUPT_BODH     RSTGEN_INTEN_BODH_Msk
 

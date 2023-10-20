@@ -2,7 +2,7 @@
 //
 //! @file am_hal_timer.c
 //!
-//! @brief
+//! @brief Functions for interfacing with the timer (TIMER).
 //!
 //! @addtogroup timer_4b Timer Functionality
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -60,9 +60,11 @@ static struct
     bool  bUseInt1;
 } TimerFlags[AM_REG_NUM_TIMERS];
 
+//*****************************************************************************
 //
 // Configure a TIMER
 //
+//*****************************************************************************
 static uint32_t timer_config_b0(uint32_t ui32TimerNumber,
                                 am_hal_timer_config_t *psTimerConfig)
 {
@@ -108,6 +110,11 @@ static uint32_t timer_config_b0(uint32_t ui32TimerNumber,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
+//
+// Configure b1 TIMER
+//
+//*****************************************************************************
 uint32_t timer_config_b1(uint32_t ui32TimerNumber,
                          am_hal_timer_config_t *psTimerConfig)
 {
@@ -309,9 +316,11 @@ uint32_t timer_config_b1(uint32_t ui32TimerNumber,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Not declared as static as this function can be used from within HAL
 //
+//*****************************************************************************
 uint32_t
 internal_timer_config(uint32_t ui32TimerNumber,
                       am_hal_timer_config_t *psTimerConfig)
@@ -356,7 +365,11 @@ internal_timer_config(uint32_t ui32TimerNumber,
     }
 } // internal_timer_config()
 
-
+//*****************************************************************************
+//
+// Not declared as static as this function can be used from within HAL
+//
+//*****************************************************************************
 uint32_t
 am_hal_timer_config(uint32_t ui32TimerNumber,
                     am_hal_timer_config_t *psTimerConfig)
@@ -373,9 +386,11 @@ am_hal_timer_config(uint32_t ui32TimerNumber,
     return internal_timer_config(ui32TimerNumber, psTimerConfig);
 }
 
+//*****************************************************************************
 //
 // Initialize a timer configuration structure with default values.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_default_config_set(am_hal_timer_config_t *psTimerConfig)
 {
@@ -393,9 +408,11 @@ am_hal_timer_default_config_set(am_hal_timer_config_t *psTimerConfig)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Reset the timer to the default state.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_reset_config(uint32_t ui32TimerNumber)
 {
@@ -443,9 +460,11 @@ am_hal_timer_reset_config(uint32_t ui32TimerNumber)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Enable a single TIMER
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_enable(uint32_t ui32TimerNumber)
 {
@@ -472,9 +491,11 @@ am_hal_timer_enable(uint32_t ui32TimerNumber)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Disable a single TIMER
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_disable(uint32_t ui32TimerNumber)
 {
@@ -496,9 +517,11 @@ am_hal_timer_disable(uint32_t ui32TimerNumber)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Enable a group of TIMERS all at once
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_enable_sync(uint32_t ui32TimerMask)
 {
@@ -539,9 +562,11 @@ am_hal_timer_enable_sync(uint32_t ui32TimerMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Disable a group of TIMERS all at once
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_disable_sync(uint32_t ui32TimerMask)
 {
@@ -575,10 +600,12 @@ am_hal_timer_disable_sync(uint32_t ui32TimerMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Clear a single TIMER and start the timer.
 // For Apollo4b, TIMERs are started via the AUXEN.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_clear(uint32_t ui32TimerNumber)
 {
@@ -614,10 +641,12 @@ am_hal_timer_clear(uint32_t ui32TimerNumber)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Clear a single TIMER but don't start it.
 // For Apollo4b, TIMERs are started via the AUXEN.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_clear_stop(uint32_t ui32TimerNumber)
 {
@@ -648,9 +677,11 @@ am_hal_timer_clear_stop(uint32_t ui32TimerNumber)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Read the current value of a timer.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_read(uint32_t ui32TimerNumber)
 {
@@ -681,9 +712,11 @@ am_hal_timer_read(uint32_t ui32TimerNumber)
     }
 }
 
+//*****************************************************************************
 //
 // Set the COMPARE0 value for a single timer.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_compare0_set(uint32_t ui32TimerNumber,
                           uint32_t ui32CompareValue)
@@ -696,9 +729,11 @@ am_hal_timer_compare0_set(uint32_t ui32TimerNumber,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Set the COMPARE1 value for a single timer.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_compare1_set(uint32_t ui32TimerNumber,
                           uint32_t ui32CompareValue)
@@ -711,9 +746,11 @@ am_hal_timer_compare1_set(uint32_t ui32TimerNumber,
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Enable timer interrupts.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_interrupt_enable(uint32_t ui32InterruptMask)
 {
@@ -736,9 +773,11 @@ am_hal_timer_interrupt_enable(uint32_t ui32InterruptMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Disable timer interrupts.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_interrupt_disable(uint32_t ui32InterruptMask)
 {
@@ -747,9 +786,11 @@ am_hal_timer_interrupt_disable(uint32_t ui32InterruptMask)
     return AM_HAL_STATUS_SUCCESS;
 }
 
+//*****************************************************************************
 //
 // Get the timer interrupt status.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_interrupt_status_get(bool bEnabledOnly, uint32_t *pui32IntStatus)
 {
@@ -769,9 +810,11 @@ am_hal_timer_interrupt_status_get(bool bEnabledOnly, uint32_t *pui32IntStatus)
     DIAG_DEFAULT_VOLATILE_ORDER()
 }
 
+//*****************************************************************************
 //
 // Clear timer interrupts.
 //
+//*****************************************************************************
 uint32_t
 am_hal_timer_interrupt_clear(uint32_t ui32InterruptMask)
 {

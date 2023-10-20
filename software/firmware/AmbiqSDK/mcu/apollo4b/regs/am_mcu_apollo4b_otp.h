@@ -6,7 +6,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -38,7 +38,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -1096,21 +1096,21 @@
 #define AM_REG_OTP_SEC_POL_AUTH_ENFORCE_Msk 0x03800000
 
 // BOOT_OVERRIDE - This 32-bit word contains the boot override configuration.
-#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_S 8
-#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_M 0x00000100
-#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE(n) (((uint32_t)(n) << 8) & 0x00000100)
-#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_Pos 8
-#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_Msk 0x00000100
-#define AM_REG_OTP_BOOT_OVERRIDE_POL_S 7
-#define AM_REG_OTP_BOOT_OVERRIDE_POL_M 0x00000080
-#define AM_REG_OTP_BOOT_OVERRIDE_POL(n) (((uint32_t)(n) << 7) & 0x00000080)
-#define AM_REG_OTP_BOOT_OVERRIDE_POL_Pos 7
-#define AM_REG_OTP_BOOT_OVERRIDE_POL_Msk 0x00000080
+#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_S 9
+#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_M 0x00000200
+#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE(n) (((uint32_t)(n) << 9) & 0x00000200)
+#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_Pos 9
+#define AM_REG_OTP_BOOT_OVERRIDE_ENABLE_Msk 0x00000200
+#define AM_REG_OTP_BOOT_OVERRIDE_POL_S 8
+#define AM_REG_OTP_BOOT_OVERRIDE_POL_M 0x00000100
+#define AM_REG_OTP_BOOT_OVERRIDE_POL(n) (((uint32_t)(n) << 8) & 0x00000100)
+#define AM_REG_OTP_BOOT_OVERRIDE_POL_Pos 8
+#define AM_REG_OTP_BOOT_OVERRIDE_POL_Msk 0x00000100
 #define AM_REG_OTP_BOOT_OVERRIDE_GPIO_S 0
-#define AM_REG_OTP_BOOT_OVERRIDE_GPIO_M 0x0000007F
-#define AM_REG_OTP_BOOT_OVERRIDE_GPIO(n) (((uint32_t)(n) << 0) & 0x0000007F)
+#define AM_REG_OTP_BOOT_OVERRIDE_GPIO_M 0x000000FF
+#define AM_REG_OTP_BOOT_OVERRIDE_GPIO(n) (((uint32_t)(n) << 0) & 0x000000FF)
 #define AM_REG_OTP_BOOT_OVERRIDE_GPIO_Pos 0
-#define AM_REG_OTP_BOOT_OVERRIDE_GPIO_Msk 0x0000007F
+#define AM_REG_OTP_BOOT_OVERRIDE_GPIO_Msk 0x000000FF
 
 // WIRED_CONFIG - This 32-bit word contains the configuration for Wired Updates.
 #define AM_REG_OTP_WIRED_CONFIG_UARTMODULE_S 16

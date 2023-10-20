@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -59,16 +59,20 @@ extern "C"
 
 //*****************************************************************************
 //
-// Display Dimensions
+//! @name Display Dimensions
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_RM67162_NUM_ROWS                      400
 #define AM_DEVICES_RM67162_NUM_COLUMNS                   400
 #define AM_DEVICES_RM67162_PIXEL_SIZE                    1
 
+//! @}
+
 //*****************************************************************************
 //
-// Global definitions for the commands
+//! @name Global definitions for the commands
+//! @{
 //
 //*****************************************************************************
 #define AM_DEVICES_RM67162_SWRESET                       0x01
@@ -105,10 +109,12 @@ extern "C"
 #define AM_DEVICES_RM67162_BOOSTER_ENABLE                0xD1
 #define AM_DEVICES_RM67162_4SPI_INPUT_DATA_SEL           0xE4
 #define AM_DEVICES_RM67162_MTP_LOAD_CTRL                 0xEB
+//! @}
 
 //*****************************************************************************
 //
-// Global type definitions.
+//! @name Global type definitions.
+//! @{
 //
 //*****************************************************************************
 typedef enum
@@ -116,6 +122,9 @@ typedef enum
     AM_DEVICES_RM67162_STATUS_SUCCESS,
     AM_DEVICES_RM67162_STATUS_ERROR
 } am_devices_rm67162_status_t;
+
+//! @}
+
 
 #define AM_DEVICES_RM67162_SPI_WRAM                     0x80
 #define AM_DEVICES_RM67162_DSPI_WRAM                    0x81
@@ -161,19 +170,122 @@ typedef struct
 // External function definitions.
 //
 //*****************************************************************************
+//*****************************************************************************
+//
+//! @brief Reads the current status of the external display
+//!
+//! @param pHandle
+//!
+//! This function reads the device ID register of the external display, and returns
+//! the result as an 32-bit unsigned integer value.
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_reset(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief
+//! @param pHandle
+//! @return
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_display_off(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief
+//! @param pHandle
+//! @return
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_display_on(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief Programs the given range of flash addresses.
+//!
+//! @param pHandle
+//! @param pui8TxBuffer - Buffer to write the external flash data from
+//! @param ui32NumBytes - Number of bytes to write to the external flash
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external flash at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target flash
+//! memory or underflow the pui8TxBuffer array
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_blocking_write(void *pHandle,
                                                 uint8_t *pui8TxBuffer,
                                                 uint32_t ui32NumBytes);
+
+//*****************************************************************************
+//
+//! @brief Reads the contents of the fram into a buffer.
+//!
+//! @param pHandle -
+//! @param pui8RxBuffer - Address of desired data in external flash
+//! @param ui32NumBytes - Number of bytes to read from external flash
+//!
+//! This function reads the external flash at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_blocking_read(void *pHandle,
                                                uint8_t *pui8RxBuffer,
                                                uint32_t ui32NumBytes);
+
+//*****************************************************************************
+//
+//! @brief Programs the given range of display addresses.
+//!
+//! @param pHandle - MSPI Instance
+//! @param pui8TxBuffer - Buffer to write the data from
+//! @param ui32NumBytes - Number of bytes to write to the display memory
+//! @param bWaitForCompletion - Waits for CQ/DMA to complete before return.
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external flash at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target flash
+//! memory or underflow the pui8TxBuffer array
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_nonblocking_write(void *pHandle,
                                                    uint8_t *pui8TxBuffer,
                                                    uint32_t ui32NumBytes,
                                                    bool bWaitForCompletion);
+
+//*****************************************************************************
+//
+//! @brief Programs the given range of display addresses.
+//!
+//! @param pHandle       -
+//! @param pui8TxBuffer - Buffer to write the data from
+//! @param ui32NumBytes - Number of bytes to write to the display memory
+//! @param ui32PauseCondition - CQ Pause condition before execution.
+//! @param ui32StatusSetClr - CQ Set/Clear condition after execution.
+//! @param pfnCallback - Callback function after execution.
+//! @param pCallbackCtxt - Callback context after execution.
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external display the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target display
+//! memory or underflow the pui8TxBuffer array
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_nonblocking_write_adv(void *pHandle,
                                                        uint8_t *pui8TxBuffer,
                                                        uint32_t ui32NumBytes,
@@ -181,20 +293,106 @@ extern uint32_t am_devices_rm67162_nonblocking_write_adv(void *pHandle,
                                                        uint32_t ui32StatusSetClr,
                                                        am_hal_mspi_callback_t pfnCallback,
                                                        void *pCallbackCtxt);
+
+//*****************************************************************************
+//
+//! @brief Reads the contents of the display into a buffer.
+//!
+//! @param pHandle - MSPI Instance
+//! @param pui8RxBuffer - Buffer to store the received data from the flash
+//! @param ui32NumBytes - Number of bytes to read from external flash
+//! @param bWaitForCompletion - Waits for CQ/DMA to complete before return.
+//!
+//! This function reads the external display at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//!
+//! @return 32-bit status
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_nonblocking_read(void *pHandle,
                                                   uint8_t *pui8RxBuffer,
                                                   uint32_t ui32NumBytes,
                                                   bool bWaitForCompletion);
+
+//*****************************************************************************
+//
+//! @brief
+//! @param pHandle
+//! @param pdata
+//! @return
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_read_id(void *pHandle,
                                          uint32_t *pdata);
-extern uint32_t am_devices_mspi_rm67162_init(uint32_t ui32Module, am_devices_mspi_rm67162_config_t *psMSPISettings, void **ppHandle, void **ppMspiHandle);
+
+//*****************************************************************************
+//
+//! @brief Initialize the rm67162 driver.
+//!
+//! @param ui32Module      - MSPI module ID.
+//! @param psMSPISettings  - MSPI device structure describing the target spiflash.
+//! @param ppHandle
+//! @param ppMspiHandle    - MSPI handler.
+//!
+//! This function should be called before any other am_devices_rm67162
+//! functions. It is used to set tell the other functions how to communicate
+//! with the TFT display hardware.
+//!
+//! @return Status.
+//
+//*****************************************************************************
+extern uint32_t am_devices_mspi_rm67162_init(uint32_t ui32Module,
+                                             am_devices_mspi_rm67162_config_t *psMSPISettings,
+                                             void **ppHandle,
+                                             void **ppMspiHandle);
+
+//*****************************************************************************
+//
+//! @brief De-Initialize the rm67162 driver.
+//!
+//! @param pHandle     -
+//!
+//! This function reverses the initialization
+//!
+//! @return Status.
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_term(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief Generic Command Write function.
+//!
+//! @param pHandle
+//! @param ui32Instr
+//! @param pData
+//! @param ui32NumBytes
+//!
+//! @return
+//
+//*****************************************************************************
 extern uint32_t am_devices_rm67162_command_write(void *pHandle,
                                                uint32_t ui32Instr,
                                                uint8_t *pData,
                                                uint32_t ui32NumBytes);
-//  extern uint32_t am_devices_mspi_rm67162_row_col_reset(uint32_t ui32Module);
-extern uint32_t am_devices_mspi_rm67162_set_transfer_window(void *pHandle, uint32_t startRow, uint32_t startCol, uint32_t endRow, uint32_t endCol);
+
+//*****************************************************************************
+//
+//! @brief
+//! @param pHandle
+//! @param startRow
+//! @param startCol
+//! @param endRow
+//! @param endCol
+//! @return
+//
+//*****************************************************************************
+extern uint32_t am_devices_mspi_rm67162_set_transfer_window(void *pHandle,
+                                                            uint32_t startRow,
+                                                            uint32_t startCol,
+                                                            uint32_t endRow,
+                                                            uint32_t endCol);
 #ifdef __cplusplus
 }
 #endif

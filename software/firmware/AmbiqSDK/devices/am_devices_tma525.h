@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -101,7 +101,8 @@ extern "C"
 // chip code
 #define ZTW523_CHIP_CODE                0xE628
 
-// Register Map
+//! @name Register Map
+//! @{
 #define ZINITIX_SWRESET_CMD             0x0000
 #define ZINITIX_WAKEUP_CMD              0x0001
 #define ZINITIX_IDLE_CMD                0x0004
@@ -191,7 +192,11 @@ extern "C"
 #define SUB_BIT_UPDATE                  4
 #define SUB_BIT_WAIT                    5
 
-// Test Mode (Monitoring Raw Data)
+//! @}
+
+
+//! @name Test Mode (Monitoring Raw Data)
+//! @{
 #define SEC_DND_N_COUNT                 10
 #define SEC_DND_U_COUNT                 2
 #define SEC_DND_FREQUENCY               99
@@ -203,8 +208,10 @@ extern "C"
 #define SEC_PDND_N_COUNT_119_42         41
 #define SEC_PDND_U_COUNT_119_42         9
 #define SEC_PDND_FREQUENCY_119_42       37
+//! @}
 
-// preriod raw data interval
+
+//! preriod raw data interval
 #define RAWDATA_DELAY_FOR_HOST      100
 
 #define zinitix_bit_set(val, n)     ((val) &= ~(1 << (n)), (val) |= (1 << (n)))
@@ -223,8 +230,10 @@ typedef struct
     void        *pIomHandle;
     bool        bOccupied;
 } am_devices_iom_tma525_t;
-
-// do not need to modify the alignment
+//
+//!
+//! @note do not need to modify the alignment
+//
 struct _ts_zinitix_coord
 {
     uint16_t    x;
@@ -247,7 +256,7 @@ struct _ts_zinitix_point_info
 
 struct ztw_touch_drivers
 {
-    // struct touch_drivers driver;
+    //! struct touch_drivers driver;
     struct _ts_zinitix_point_info touch_info;
 };
 typedef struct ztw_touch_drivers *ztw_touch_drv_t;
@@ -325,7 +334,6 @@ typedef enum
 //!
 //! @param pui8RxBuffer - rx buffer.
 //! @param RxNumBytes - read byte size.
-//! @param touch_released - touch status.
 //!
 //! This function disables power to the IOM module on tma525
 //!
@@ -395,7 +403,10 @@ extern uint32_t am_devices_tma525_deinit(uint32_t ui32Module);
 //! @return status - generic or interface specific status.
 //
 //*****************************************************************************
-extern uint32_t am_devices_tma525_multidrop_iom_init(uint32_t ui32Module, am_hal_iom_config_t *psIOMSettings, void **ppHandle, void **ppIomHandle);
+extern uint32_t am_devices_tma525_multidrop_iom_init(uint32_t ui32Module,
+                                                     am_hal_iom_config_t *psIOMSettings,
+                                                     void **ppHandle,
+                                                     void **ppIomHandle);
 
 //*****************************************************************************
 //

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ADC_H
@@ -59,7 +59,6 @@
 
 // ****************************************************************************
 //
-//! @ingroup adc4
 //! @name Default VREF
 //! @{
 //!
@@ -78,7 +77,6 @@
 
 //*****************************************************************************
 //
-//! @ingroup adc4
 //! @name ADC Samples
 //! @{
 //! ADC Sample Macros
@@ -124,11 +122,11 @@
 // ****************************************************************************
 typedef enum
 {
-    AM_HAL_ADC_CLKSEL_HFRC        = 0,
-    AM_HAL_ADC_CLKSEL_HFRC_48MHZ  = 0,
-    AM_HAL_ADC_CLKSEL_HFRC_48MHZ1 = 1,
-    AM_HAL_ADC_CLKSEL_HFRC_24MHZ  = 2,
-    AM_HAL_ADC_CLKSEL_HFRC2_48MHZ = 3
+    //AM_HAL_ADC_CLKSEL_HFRC        = 0,
+    AM_HAL_ADC_CLKSEL_HFRC_48MHZ  = ADC_CFG_CLKSEL_HFRC_48MHZ,
+    AM_HAL_ADC_CLKSEL_HFRC_48MHZ1 = ADC_CFG_CLKSEL_HFRC_48MHZ1,
+    AM_HAL_ADC_CLKSEL_HFRC_24MHZ  = ADC_CFG_CLKSEL_HFRC_24MHZ,
+    AM_HAL_ADC_CLKSEL_HFRC2_48MHZ = ADC_CFG_CLKSEL_HFRC2_48MHZ
 } am_hal_adc_clksel_e;
 
 // ****************************************************************************
@@ -719,12 +717,12 @@ extern uint32_t am_hal_adc_configure_dma(void *pHandle,
 //
 //! @brief ADC device specific control function.
 //!
-//! @param pHandle   - handle for the module instance.
-//! @param eRequest - One of:
+//! @param[in] pHandle   - handle for the module instance.
+//! @param[in] eRequest - One of:
 //!      AM_HAL_ADC_REQ_WINDOW_CONFIG
 //!   @n AM_HAL_ADC_REQ_TEMP_CELSIUS_GET (pArgs is required, see enums).
 //!   @n AM_HAL_ADC_REQ_TEMP_TRIMS_GET   (pArgs is required, see enums).
-//! @param pArgs - Pointer to arguments for Control Switch Case
+//! @param[in] pArgs - Pointer to arguments for Control Switch Case
 //!
 //! This function provides for special control functions for the ADC operation.
 //!

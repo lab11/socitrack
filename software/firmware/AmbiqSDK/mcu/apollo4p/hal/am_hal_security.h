@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for security functions
 //!
-//! @addtogroup security Security Functionality
+//! @addtogroup security_4p Security Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -186,7 +186,7 @@ uint32_t am_hal_security_get_lock_status(am_hal_security_locktype_t lockType, bo
 //! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
-uint32_t am_hal_crc32(uint32_t startAddr, uint32_t sizeBytes, uint32_t *pCrc);
+uint32_t am_hal_crc32(uint32_t ui32StartAddr, uint32_t ui32SizeBytes, uint32_t *pui32Crc);
 
 #ifdef __cplusplus
 }

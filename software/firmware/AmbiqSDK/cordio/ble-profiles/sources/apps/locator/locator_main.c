@@ -4,16 +4,16 @@
  *
  *  \brief  Proprietary asset tracking locator sample application.
  *
- *  Copyright (c) 2018 - 2019 Arm Ltd.
+ *  Copyright (c) 2018 - 2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -482,7 +482,7 @@ static void locatorExtScanReport(dmEvt_t *pMsg)
                                  pMsg->extScanReport.pData)) != NULL)
   {
     /* check length and vendor ID */
-    if (pData[DM_AD_LEN_IDX] >= 3 && BYTES_UINT16_CMP(&pData[DM_AD_DATA_IDX], HCI_ID_ARM))
+    if (pData[DM_AD_LEN_IDX] >= 3 && BYTES_UINT16_CMP(&pData[DM_AD_DATA_IDX], HCI_ID_PACKETCRAFT))
     {
       //connect = TRUE;
     }

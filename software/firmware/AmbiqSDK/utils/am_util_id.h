@@ -15,7 +15,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_ID_H
@@ -100,7 +100,6 @@ extern "C"
 #define AM_ID_APOLLO4L
 #endif
 
-
 //
 //! Handle AM_ID_APOLLO_ALL
 //
@@ -145,6 +144,11 @@ typedef struct
     am_hal_mcuctrl_device_t sMcuCtrlDevice;
 
     //
+    //! Contains the HAL hardware information about the device.
+    //
+    am_hal_mcuctrl_feature_t sMcuCtrlFeature;
+
+    //
     //! Device type (derived value, not a hardware value)
     //
     uint32_t ui32Device;
@@ -168,6 +172,17 @@ typedef struct
     //! Minor chip revision (e.g. char '0', '1', ' ')
     //
     uint8_t ui8ChipRevMin;
+
+    //
+    //! Package Type (defined at factory)
+    //
+    const uint8_t *pui8PackageType;
+
+    //
+    //! Temperature Range
+    //
+    const uint8_t *pui8TempRange;
+
 }
 am_util_id_t;
 
@@ -178,14 +193,14 @@ am_util_id_t;
 //! @{
 //
 //*****************************************************************************
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_VOYAGER     0x04000000
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLOHC    0x02000000
-#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4     0x08000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4L    0x09000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4     0x08000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO3P    0x07000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO3     0x06000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLOBL    0x05000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_VOYAGER     0x04000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO2     0x03000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLOHC    0x02000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO      0x01000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_PN_M        0xFF000000
 //! @}

@@ -2,9 +2,9 @@
 //
 //! @file am_hal_timer.c
 //!
-//! @brief
+//! @brief Functions for interfacing with the timer (TIMER).
 //!
-//! @addtogroup timer Timer Functionality
+//! @addtogroup timer_4p Timer Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -142,6 +142,15 @@ uint32_t
 am_hal_timer_config(uint32_t ui32TimerNumber,
                     am_hal_timer_config_t *psTimerConfig)
 {
+#if defined(AM_HAL_PWRCTL_HPLP_WA)
+    //
+    // Check for internal timers which we don't want the customer to use.
+    //
+    if ( AM_HAL_WRITE_WAIT_TIMER == ui32TimerNumber )
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif // defined(AM_HAL_PWRCTL_HPLP_WA)
     return internal_timer_config(ui32TimerNumber, psTimerConfig);
 }
 

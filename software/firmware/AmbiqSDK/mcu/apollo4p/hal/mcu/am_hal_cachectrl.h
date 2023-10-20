@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the CACHE controller.
 //!
-//! @addtogroup cachectrl4 CACHE - Cache Control
+//! @addtogroup cachectrl4_4p CACHE - Cache Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 // ****************************************************************************
 //
-// Copyright (c) 2022, Ambiq Micro, Inc.
+// Copyright (c) 2023, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
 //
 // ****************************************************************************
 #ifndef AM_HAL_CACHECTRL_H
@@ -121,9 +121,9 @@ typedef enum
 } am_hal_cachectrl_control_e;
 
 //! Cache config values used for ui8Mode.
+//! @note this enum ordering is critical, do not modify.
 typedef enum
 {
-    // Note - this enum ordering is critical, do not modify.
     AM_HAL_CACHECTRL_CONFIG_MODE_DISABLE,
     AM_HAL_CACHECTRL_CONFIG_MODE_INSTR,
     AM_HAL_CACHECTRL_CONFIG_MODE_DATA,
@@ -152,6 +152,7 @@ typedef struct
     //!     Two way set associative, 128-bit linesize, 2048 entries (64KB cache)
     //! AM_HAL_CACHECTRL_DESCR_1WAY_128B_4096E
     //!     Direct-mapped set associative, 128-bit linesize, 4096 entries (64KB cache)
+    //
     am_hal_cachectrl_descr_e eDescript;
 
     //
@@ -160,6 +161,7 @@ typedef struct
     //! AM_HAL_CACHECTRL_CONFIG_MODE_INSTR       - Enable instr caching only
     //! AM_HAL_CACHECTRL_CONFIG_MODE_DATA        - Enable data caching only
     //! AM_HAL_CACHECTRL_CONFIG_MODE_INSTR_DATA  - Enable both instr and data caching
+    //
     am_hal_cachectrl_config_mode_e eMode;
 
     //

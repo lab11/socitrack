@@ -121,6 +121,15 @@ bool_t hciCmdSend(uint8_t *pData)
     /* if queue not empty */
     if ((p = WsfMsgPeek(&hciCmdCb.cmdQueue, &handlerId)) != NULL)
     {
+      // Ambiq: there is chance that BLE core crashes
+      // and no response to HCI command anymore,
+      // so start the timer whenever writing HCI command to transport.
+      /* store opcode of command we're sending */
+      BYTES_TO_UINT16(hciCmdCb.cmdOpcode, p);
+
+      /* start command timeout */
+      WsfTimerStartSec(&hciCmdCb.cmdTimer, HCI_CMD_TIMEOUT);
+
       /* send command to transport */
       if (hciTrSendCmd(p) == TRUE)
       {
@@ -131,14 +140,9 @@ bool_t hciCmdSend(uint8_t *pData)
         /* decrement controller command packet count */
         hciCmdCb.numCmdPkts--;
 
-        /* store opcode of command we're sending */
-        BYTES_TO_UINT16(hciCmdCb.cmdOpcode, p);
-
         /* Free buffer here after dequeue */
         WsfMsgFree(p);
 
-        /* start command timeout */
-        WsfTimerStartSec(&hciCmdCb.cmdTimer, HCI_CMD_TIMEOUT);
         return TRUE;
       }
     }
@@ -1709,6 +1713,72 @@ void HciVendorSpecificCmd(uint16_t opcode, uint8_t len, uint8_t *pData)
   {
     p = pBuf + HCI_CMD_HDR_LEN;
     memcpy(p, pData, len);
+    hciCmdSend(pBuf);
+  }
+}
+
+/*************************************************************************************************/
+/*!
+ *  \brief      HCI LE request peer SCA command.
+ *
+ *  \param      handle    Connection handle.
+ *
+ *  \return     None.
+ */
+/*************************************************************************************************/
+void HciLeRequestPeerScaCmd(uint16_t handle)
+{
+  uint8_t *pBuf;
+  uint8_t *p;
+
+  if ((pBuf = hciCmdAlloc(HCI_OPCODE_LE_REQUEST_PEER_SCA, HCI_LEN_LE_REQUEST_PEER_SCA)) != NULL)
+  {
+    p = pBuf + HCI_CMD_HDR_LEN;
+    UINT16_TO_BSTREAM(p, handle);
+    hciCmdSend(pBuf);
+  }
+}
+
+/*************************************************************************************************/
+/*!
+ *  \brief  HCI LE read buffer size version 2 command.
+ *
+ *  \return None.
+ */
+/*************************************************************************************************/
+void HciLeReadBufSizeCmdV2(void)
+{
+  uint8_t *pBuf;
+
+  if ((pBuf = hciCmdAlloc(HCI_OPCODE_LE_READ_BUF_SIZE_V2, HCI_LEN_LE_READ_BUF_SIZE)) != NULL)
+  {
+    hciCmdSend(pBuf);
+  }
+}
+
+/*************************************************************************************************/
+/*!
+ *  \brief      HCI LE set host feature command.
+ *
+ *  \param      bitNum    Bit position in the FeatureSet.
+ *  \param      bitVal    Enable or disable feature.
+ *
+ *  \return     None.
+ *
+ *  \note Set or clear a bit in the feature controlled by the Host in the Link Layer FeatureSet
+ *  stored in the Controller.
+ */
+/*************************************************************************************************/
+void HciLeSetHostFeatureCmd(uint8_t bitNum, bool_t bitVal)
+{
+  uint8_t *pBuf;
+  uint8_t *p;
+
+  if ((pBuf = hciCmdAlloc(HCI_OPCODE_LE_SET_HOST_FEATURE, HCI_LEN_LE_SET_HOST_FEATURE)) != NULL)
+  {
+    p = pBuf + HCI_CMD_HDR_LEN;
+    UINT8_TO_BSTREAM(p, bitNum);
+    UINT8_TO_BSTREAM(p, bitVal);
     hciCmdSend(pBuf);
   }
 }

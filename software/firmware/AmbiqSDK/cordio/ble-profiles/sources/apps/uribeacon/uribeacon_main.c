@@ -4,16 +4,16 @@
  *
  *  \brief  UriBeacon sample application.
  *
- *  Copyright (c) 2011-2019 Arm Ltd.
+ *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *
+ *  
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *
+ *  
  *      http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,6 +43,7 @@
 #include "wsf_types.h"
 // #include "wsf_nvm.h"
 #include "uribeacon/uribeacon_api.h"
+#include "atts_main.h"
 
 #define WsfNvmWriteData(A, B, C, D) 0
 #define WsfNvmReadData(A, B, C, D) 0
@@ -408,6 +409,17 @@ static void uriBeaconDmCback(dmEvt_t *pDmEvt)
 
   len = DmSizeOfEvt(pDmEvt);
 
+  if (pDmEvt->hdr.event == DM_SEC_ECC_KEY_IND)
+  {
+    DmSecSetEccKey(&pDmEvt->eccMsg.data.key);
+
+    // Only calculate database hash if the calculating status is in progress
+    if( attsCsfGetHashUpdateStatus() )
+    {
+      AttsCalculateDbHash();
+    }
+  }
+
   if ((pMsg = WsfMsgAlloc(len)) != NULL)
   {
     memcpy(pMsg, pDmEvt, len);
@@ -426,6 +438,15 @@ static void uriBeaconDmCback(dmEvt_t *pDmEvt)
 /*************************************************************************************************/
 static void uriBeaconAttCback(attEvt_t *pEvt)
 {
+  attEvt_t *pMsg;
+
+  if ((pMsg = WsfMsgAlloc(sizeof(attEvt_t) + pEvt->valueLen)) != NULL)
+  {
+    memcpy(pMsg, pEvt, sizeof(attEvt_t));
+    pMsg->pValue = (uint8_t *) (pMsg + 1);
+    memcpy(pMsg->pValue, pEvt->pValue, pEvt->valueLen);
+    WsfMsgSend(uriBeaconHandlerId, pMsg);
+  }
 
 }
 
@@ -549,7 +570,7 @@ static void uriBeaconAttWriteCback(uint16_t handle, uint16_t valueLen, const uin
     }
   }
 
-  if (!WsfNvmWriteData(id, pValue, valueLen, NULL))
+  if (!WsfNvmWriteData((uint64_t)id, pValue, valueLen, NULL))
   {
     APP_TRACE_ERR0("URI failed to wr hostcfg");
   }
@@ -578,14 +599,14 @@ static void uriBeaconLockChangeCback(uint8_t lockState, const uint8_t lock[URICF
   /* only update lock if locking */
   if (lockState)
   {
-    if (!WsfNvmWriteData(URI_BEACON_PARAM_LOCK, lock, URICFG_SIZE_LOCK_ATT, NULL))
+    if (!WsfNvmWriteData((uint64_t)URI_BEACON_PARAM_LOCK, lock, URICFG_SIZE_LOCK_ATT, NULL))
     {
       APP_TRACE_ERR0("URI failed to wr lock state");
       return;
     }
   }
   /* always update lock state */
-  if (!WsfNvmWriteData(URI_BEACON_PARAM_LOCK_STATE, &lockState, sizeof(lockState), NULL))
+  if (!WsfNvmWriteData((uint64_t)URI_BEACON_PARAM_LOCK_STATE, &lockState, sizeof(lockState), NULL))
   {
     APP_TRACE_ERR0("URI failed to wr lcok state");
     return;
@@ -712,9 +733,25 @@ static void uriBeaconProcMsg(wsfMsgHdr_t *pMsg)
       break;
 
     case DM_RESET_CMPL_IND:
-      AttsCalculateDbHash();
-      uriBeaconSetup(pMsg);
+      // set database hash calculating status to true until a new hash is generated after reset
+      attsCsfSetHashUpdateStatus(TRUE);
+
+      // Generate ECC key if configured support secure connection,
+      // else will calcualte ATT database hash
+      if( uriBeaconSecCfg.auth & DM_AUTH_SC_FLAG )
+      {
+          DmSecGenerateEccKeyReq();
+      }
+      else
+      {
+          AttsCalculateDbHash();
+      }
+
       uiEvent = APP_UI_RESET_CMPL;
+      break;
+
+    case ATTS_DB_HASH_CALC_CMPL_IND:
+      uriBeaconSetup(pMsg);
       break;
 
     /* stop advertising timeout */

@@ -1,26 +1,44 @@
 
-Last updated: June 05, 2020
+Last updated: Jun 09 2023
 
 This file contains origination information about the various
 CMSIS header and library files located in this folder.
+Prebuilt libraries are no longer provided by Arm beginning with CMSIS v5.8.0.
+These Ambiq-built libraries were built from source code provided in the CMSIS
+pack indicated below, and are provided here for convenience only.
+Ambiq urges the user to obtain the library source directly from their preferred
+CMSIS pack version and build their own libraries.
 
 
 ARM/Include/:
 AmbiqSuite SDK file:                Pack Origination:
-cmsis*.h                            CMSIS/5.7.0/CMSIS/Core/Include/
-core_cm4.h                          CMSIS/5.7.0/CMSIS/Core/Include/
-mpu_armv7.h                         CMSIS/5.7.0/CMSIS/Core/Include/
-arm_math.h                          CMSIS/5.7.0/CMSIS/Include/
-
+cmsis*.h                            CMSIS/5.9.0/CMSIS/Core/Include/
+core_cm4.h                          CMSIS/5.9.0/CMSIS/Core/Include/
+arm_math.h                          CMSIS/5.9.0/CMSIS/Include/
+arm_math_memory.h                   CMSIS/5.9.0/CMSIS/DSP/Include/
+arm_math_types.h                    CMSIS/5.9.0/CMSIS/DSP/Include/
+arm_math_types_f16.h                CMSIS/5.9.0/CMSIS/DSP/Include/
+cachel1_armv7.h                     CMSIS/5.9.0/CMSIS/Core/Include/
+core_armv81mml.h                    CMSIS/5.9.0/CMSIS/Core/Include/
+core_cm4.h                          CMSIS/5.9.0/CMSIS/Core/Include/
+core_cm55.h                         CMSIS/5.9.0/CMSIS/Core/Include/
+dsp/                                CMSIS/5.9.0/CMSIS/DSP/Include/
+mpu_armv7.h                         CMSIS/5.9.0/CMSIS/Core/Include/
+mpu_armv8.h                         CMSIS/5.9.0/CMSIS/Core/Include/
+pac_armv81.h                        CMSIS/5.9.0/CMSIS/Core/Include/
+pmu_armv8.h                         CMSIS/5.9.0/CMSIS/Core/Include/
 
 ARM/Lib/ARM/:
 AmbiqSuite SDK file:                Pack Origination:
-arm_cortexM4lf_math.lib             CMSIS/5.7.0/CMSIS/DSP/Lib/ARM/
-arm_cortexM4l_math.lib              CMSIS/5.7.0/CMSIS/DSP/Lib/ARM/
-libarm_cortexM4lf_math.a            CMSIS/5.7.0/CMSIS/DSP/Lib/GCC/
-libarm_cortexM4l_math.a             CMSIS/5.7.0/CMSIS/DSP/Lib/GCC/
-iar_cortexM4lf_math.a               CMSIS/5.7.0/CMSIS/DSP/Lib/IAR/
-iar_cortexM4l_math.a                CMSIS/5.7.0/CMSIS/DSP/Lib/IAR/
+
+arm_cortexM4lf_math.lib             Built from CMSIS 5.9.0 in cmsis-dsp repo
+arm_cortexM4l_math.lib              Built from CMSIS 5.9.0 in cmsis-dsp repo
+libarm_cortexM4lf_math.a            Built from CMSIS 5.9.0 in cmsis-dsp repo
+libarm_cortexM4l_math.a             Built from CMSIS 5.9.0 in cmsis-dsp repo
+iar_cortexM4lf_math.a               Built from CMSIS 5.9.0 in cmsis-dsp repo
+iar_cortexM4l_math.a                Built from CMSIS 5.9.0 in cmsis-dsp repo
+libCMSISDSP_m4.a                    Built from CMSIS 5.9.0 in cmsis-dsp repo
+libCMSISDSP_m55.a                   Built from CMSIS 5.9.0 in cmsis-dsp repo
 
 
 
