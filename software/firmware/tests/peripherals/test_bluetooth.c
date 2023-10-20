@@ -1,6 +1,8 @@
 #include "app_tasks.h"
+#include "battery.h"
 #include "bluetooth.h"
 #include "logging.h"
+#include "rtc.h"
 #include "system.h"
 
 
@@ -59,6 +61,8 @@ int main(void)
 {
    // Set up system hardware
    setup_hardware();
+   battery_monitor_init();
+   rtc_init();
 
    // Fetch the device UID and initialize the Bluetooth hardware
    static uint8_t uid[EUI_LEN];
