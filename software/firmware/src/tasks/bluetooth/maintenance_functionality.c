@@ -14,8 +14,12 @@
 uint8_t handleDeviceMaintenanceRead(dmConnId_t connId, uint16_t handle, uint8_t operation, uint16_t offset, attsAttr_t *pAttr)
 {
    print("TotTag BLE: Device Maintenance Read: connID = %d, handle = %d, operation = %d\n", connId, handle, operation);
+#ifdef _TEST_BLUETOOTH
+   memset(pAttr->pValue, 0, sizeof(experiment_details_t));
+#else
    if (handle == MAINTENANCE_EXPERIMENT_HANDLE)
       storage_retrieve_experiment_details((experiment_details_t*)pAttr->pValue);
+#endif
    return ATT_SUCCESS;
 }
 
