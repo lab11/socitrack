@@ -196,15 +196,15 @@ void setup_hardware(void)
    am_hal_pwrctrl_mcu_memory_config(&mcu_mem_config);
    am_hal_pwrctrl_sram_config(&sram_mem_config);
 
-   // Set up the cache configuration
+   // TODO: Set up the cache configuration
    const am_hal_cachectrl_config_t cachectrl_config =
    {
       .bLRU                       = false,
       .eDescript                  = AM_HAL_CACHECTRL_DESCR_1WAY_128B_512E,
       .eMode                      = AM_HAL_CACHECTRL_CONFIG_MODE_INSTR,
    };
-   am_hal_cachectrl_config(&cachectrl_config);
-   am_hal_cachectrl_enable();
+   //am_hal_cachectrl_config(&cachectrl_config);
+   //am_hal_cachectrl_enable();
 
    // Set up printing to the console
    logging_init();
