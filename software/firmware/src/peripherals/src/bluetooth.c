@@ -249,14 +249,6 @@ void bluetooth_init(uint8_t* uid)
    memcpy(device_id, uid, EUI_LEN);
    discovery_callback = NULL;
 
-   // Set the Bluetooth address and boot the BLE radio
-   HciVscSetCustom_BDAddr(uid);
-   configASSERT0(HciDrvRadioBoot(false));
-
-   // Setup BLE interrupt priorities
-   NVIC_SetPriority(COOPER_IOM_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
-   NVIC_SetPriority(AM_COOPER_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
-
    // Store all BLE configuration pointers
    pAppAdvCfg = (appAdvCfg_t*)&ble_adv_cfg;
    pAppMasterCfg = (appMasterCfg_t*)&ble_master_cfg;
@@ -264,6 +256,14 @@ void bluetooth_init(uint8_t* uid)
    pAppSecCfg = (appSecCfg_t*)&ble_sec_cfg;
    pAppUpdateCfg = (appUpdateCfg_t*)&ble_update_cfg;
    pAttCfg = (attCfg_t*)&ble_att_cfg;
+
+   // Setup BLE interrupt priorities
+   NVIC_SetPriority(COOPER_IOM_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+   NVIC_SetPriority(AM_COOPER_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+
+   // Set the Bluetooth address and boot the BLE radio
+   HciVscSetCustom_BDAddr(uid);
+   configASSERT0(HciDrvRadioBoot(false));
 }
 
 void bluetooth_deinit(void)
