@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the CACHE controller.
 //!
-//! @addtogroup cachectrl4_4p CACHE - Cache Control
+//! @addtogroup cachectrl4 CACHE - Cache Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -79,11 +79,7 @@ const am_hal_daxi_config_t am_hal_daxi_defaults =
     .eNumFreeBuf              = AM_HAL_DAXI_CONFIG_NUMFREEBUF_3,
 };
 
-//*****************************************************************************
-//
 //! Initialize gDaxiConfig as default
-//
-//*****************************************************************************
 am_hal_daxi_config_t gDaxiConfig =
 {
     .bDaxiPassThrough         = false,
@@ -101,32 +97,21 @@ daxi_flush_invalidate(bool bFlush)
         return;
     }
 
-    //
     // Call DSB
-    //
     __DSB();
 
     if (bFlush)
     {
-        //
         // Call DAXI Flush
-        //
         CPU->DAXICTRL_b.DAXIFLUSHWRITE = 1;
-
-        //
         // APB_SYNC
-        //
         am_hal_sysctrl_sysbus_write_flush();
     }
 
-    //
     // Call DAXI Invalidate
-    //
     CPU->DAXICTRL_b.DAXIINVALIDATE = 1;
 
-    //
     // APB_SYNC
-    //
     am_hal_sysctrl_sysbus_write_flush();
 
 } // daxi_flush_invalidate()
@@ -144,10 +129,7 @@ daxi_flush_complete(void)
 {
     AM_CRITICAL_BEGIN
     daxi_flush_invalidate(true);
-
-    //
     // flush any buffered core and peripheral writes.
-    //
     while ( !CPU->DAXICTRL_b.DAXIREADY );
     AM_CRITICAL_END
 
@@ -250,13 +232,12 @@ am_hal_cachectrl_control(am_hal_cachectrl_control_e eControl, void *pArgs)
     switch ( eControl )
     {
         case AM_HAL_CACHECTRL_CONTROL_MRAM_CACHE_INVALIDATE:
-        {
             CPU->CACHECTRL = CPU_CACHECTRL_INVALIDATE_Msk;
             am_hal_sysctrl_sysbus_write_flush();
             return am_hal_delay_us_status_change(100, (uint32_t)&CPU->CACHECTRL,
                                                  CPU_CACHECTRL_CACHEREADY_Msk,
                                                  CPU_CACHECTRL_CACHEREADY_Msk);
-        }
+            //break;      // Unreachable statement
 
         case AM_HAL_CACHECTRL_CONTROL_STATISTICS_RESET:
             if ( !_FLD2VAL(CPU_CACHECFG_ENABLEMONITOR, CPU->CACHECFG) )
@@ -297,9 +278,7 @@ am_hal_cachectrl_control(am_hal_cachectrl_control_e eControl, void *pArgs)
             am_hal_cachectrl_nc_cfg_t *pNcCfg;
             pNcCfg = (am_hal_cachectrl_nc_cfg_t *)pArgs;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
-            //
             // Make sure the addresses are valid
-            //
             if ((pNcCfg->ui32StartAddr & ~CPU_NCR0START_ADDR_Msk) ||
                 (pNcCfg->ui32EndAddr & ~CPU_NCR0START_ADDR_Msk))
             {
@@ -382,9 +361,7 @@ am_hal_daxi_config(const am_hal_daxi_config_t *psConfig)
     }
     else
     {
-        //
         // Need to set config a certain way even for PassThrough
-        //
         CPU->DAXICFG =
             _VAL2FLD(CPU_DAXICFG_FLUSHLEVEL, 0)         |
             _VAL2FLD(CPU_DAXICFG_AGINGSENABLE, 1)       |
@@ -394,12 +371,9 @@ am_hal_daxi_config(const am_hal_daxi_config_t *psConfig)
             _VAL2FLD(CPU_DAXICFG_MRUGROUPLEVEL, 0);
     }
 
-    //
     // APB_SYNC
-    //
     am_hal_sysctrl_sysbus_write_flush();
     AM_CRITICAL_END
-
     return AM_HAL_STATUS_SUCCESS;
 }
 
@@ -460,14 +434,10 @@ am_hal_daxi_config_get(am_hal_daxi_config_t *psConfig)
 //*****************************************************************************
 uint32_t am_hal_daxi_status_get(am_hal_daxi_status_t *pStatus)
 {
-    //
     // return the DAXIREADY status.
-    //
     pStatus->bDaxiReady = CPU->DAXICTRL_b.DAXIREADY;
 
-    //
     // return the DAXISHARED status.
-    //
     pStatus->bDaxiShared = CPU->DAXICTRL_b.DAXISHARED;
 
     return AM_HAL_STATUS_SUCCESS;

@@ -8,7 +8,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>
@@ -53,6 +53,7 @@
 #include "hci_api.h"
 #include "hci_main.h"
 #include "hci_cmd.h"
+#include "hci_apollo_config.h"
 #include "am_mcu_apollo.h"
 #include "hci_dbg_trc.h"
 #include "hci_drv_cooper.h"
@@ -187,11 +188,6 @@ void hciCoreResetSequence(uint8_t *pMsg)
         #ifdef ENABLE_BLE_CTRL_TRACE
         HciVscSetTraceBitMap(TRACE_BITMAP);
         #endif
-
-        #if ENABLE_SPECIFIED_EVENT_MASK
-        HciVscConfigEvtMask(CFG_EVENT_MASK);
-        #endif
-
         /* send next command in sequence */
         HciSetEventMaskCmd((uint8_t *) hciEventMask);
         break;

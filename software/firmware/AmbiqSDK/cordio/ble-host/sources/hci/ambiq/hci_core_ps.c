@@ -123,10 +123,6 @@ void hciCoreRecv(uint8_t msgType, uint8_t *pCoreRecvMsg)
   {
     HCI_PDUMP_RX_ACL(*(pCoreRecvMsg + 2) + HCI_ACL_HDR_LEN, pCoreRecvMsg);
   }
-  else if (msgType == HCI_ISO_TYPE)
-  {
-    HCI_PDUMP_RX_ISO(*(pCoreRecvMsg + 2) + HCI_ACL_HDR_LEN, pCoreRecvMsg);
-  }
 
   /* queue buffer */
   WsfMsgEnq(&hciCb.rxQueue, (wsfHandlerId_t) msgType, pCoreRecvMsg);
@@ -183,27 +179,13 @@ void HciCoreHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
         WsfMsgFree(pBuf);
       }
       /* Handle ACL data */
-      else if (handlerId == HCI_ACL_TYPE)
+      else
       {
         /* Reassemble */
         if ((pBuf = hciCoreAclReassembly(pBuf)) != NULL)
         {
           /* Call ACL callback; client will free buffer */
           hciCb.aclCback(pBuf);
-        }
-      }
-      /* Handle ISO data */
-      else
-      {
-        if (hciCb.isoCback)
-        {
-          /* Call ISO callback; client will free buffer */
-          hciCb.isoCback(pBuf);
-        }
-        else
-        {
-          /* free buffer */
-          WsfMsgFree(pBuf);
         }
       }
     }
@@ -303,7 +285,7 @@ uint8_t *HciGetSupStates(void)
  *  \return Supported features.
  */
 /*************************************************************************************************/
-uint64_t HciGetLeSupFeat(void)
+uint32_t HciGetLeSupFeat(void)
 {
   // disable LL connection parameter update feature for a better
   // interoperability with Android phones (especially older Android OS).
@@ -407,28 +389,3 @@ uint8_t HciGetPerAdvListSize(void)
 {
   return hciCoreCb.perAdvListSize;
 }
-
-/*************************************************************************************************/
-/*!
- *  \brief  Return a pointer to the local version information.
- *
- *  \return Pointer to the local version information.
- */
-/*************************************************************************************************/
-hciLocalVerInfo_t *HciGetLocalVerInfo(void)
-{
-  return &hciCoreCb.locVerInfo;
-}
-
-/*************************************************************************************************/
-/*!
- *  \brief  Return the LE supported features supported by the controller.
- *
- *  \return Supported features.
- */
-/*************************************************************************************************/
-uint32_t HciGetLeSupFeat32(void)
-{
-  return (uint32_t) hciCoreCb.leSupFeat;
-}
-

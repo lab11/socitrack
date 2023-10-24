@@ -2,9 +2,9 @@
 //
 //! @file am_hal_card.h
 //!
-//! @brief Functions for interfacing with the card host.
+//! @brief Functions for interfacing with the ambiq card host.
 //!
-//! @addtogroup card_4p Card Functionality for SD/MMC/eMMC/SDIO
+//! @addtogroup card Card Functionality for SD/MMC/eMMC/SDIO
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_H
@@ -173,8 +173,6 @@ extern "C"
 #define MMC_EXT_REGS_CACHE_CTRL          33
 #define MMC_EXT_REGS_FLUSH_CACHE         32
 #define MMC_EXT_REGS_HS_TIMING           185
-#define MMC_EXT_REGS_PARTITON_CONFIG     179
-#define MMC_EXT_REGS_RPMB_SIZE_MULT      168
 
 #define MMC_EXP_PACKED_EVENT_EN  0x8
 #define MMC_EXP_SYSPOOL_EVENT_EN 0x4
@@ -338,7 +336,6 @@ extern "C"
 #define RPMB_RSPREQ_LENGTH         2
 #define TOTAL_MAC_LEN_PER_FRAME    284
 #define MACLEN_EXCL_DATA_PER_FRAME 28
-#define RPMB_BLKCNT_MAX(x)         ((x)*128*1024/256)
 
 // EMMC ERROR CODES
 #define EMMC_INVALID_BOOT_ACK          -26
@@ -505,7 +502,6 @@ typedef struct
     bool     bUseBlkEmulation;
     uint32_t ui32NativeBlkSize;
     uint32_t ui32BlkSize;
-    uint32_t ui32RpmbSizeMult;
     uint16_t ui16CmdClass;
     am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc;
     am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy;
@@ -820,6 +816,7 @@ extern uint32_t am_hal_card_get_ext_csd_field(am_hal_card_t *pCard, uint16_t ui1
 //! @brief Get the card information function
 //!
 //! @param pCard        - pointer to the card instance.
+//!
 //! @param pCardInfo    - pointer to am_hal_card_info_t structure that contains card info.
 //!
 //! This function gets the general eMMC card info into am_hal_card_info_t structure.
@@ -834,7 +831,9 @@ extern uint32_t am_hal_card_get_info(am_hal_card_t *pCard, am_hal_card_info_t *p
 //! @brief Set the card mode function
 //!
 //! @param pCard        - pointer to the card instance.
+//!
 //! @param ui32Mode     - the card mode
+//!
 //! @param ui32Timeout  - mode switch timeout
 //!
 //! This function sets the card mode by sending CMD6.
@@ -849,11 +848,17 @@ extern uint32_t am_hal_card_mode_switch(am_hal_card_t *pCard, uint32_t ui32Mode,
 //! @brief Get the TX/RX delay setting by calibration
 //!
 //! @param eUHSMode     - card UHS mode
+//!
 //! @param ui32Clock    - card bus clock speed
+//!
 //! @param eBusWidth    - SDIO bus width.
+//!
 //! @param ui8CalibBuf  - data buffer used to do the calibration
+//!
 //! @param ui32StartBlk - eMMC start block used to do the calibration
+//!
 //! @param ui32BlkCnt   - eMMC block number used to do the calibration
+//!
 //! @param ui8TxRxDelays- an averaged the TX/RX delay values
 //!
 //! This function get the tx rx delay setting by finding all workable TX/RX delay
@@ -870,51 +875,9 @@ extern uint32_t am_hal_card_emmc_calibrate(am_hal_host_uhs_mode_e eUHSMode,
                                            uint32_t ui32BlkCnt,
                                            uint8_t ui8TxRxDelays[2]);
 
-//*****************************************************************************
-//
-//! @brief Read blocks of data from the card (GEN_CMD) asynchronously
-//!
-//! @param pCard    - pointer to the card instance.
-//! @param ui32Arg  - command arguments
-//! @param pui8Buf  - mode switch timeout
-//!
-//! @return status  - generic or interface specific status..
-//
-//*****************************************************************************
 extern uint32_t am_hal_card_cmd56_read_async(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf);
 
-//*****************************************************************************
-//
-//! @brief Read blocks of data from the card (GEN_CMD) synchronously
-//!
-//! @param pCard    - pointer to the card instance.
-//! @param ui32Arg  - command arguments
-//! @param pui8Buf  - mode switch timeout
-//!
-//! @return status  - generic or interface specific status..
-//
-//*****************************************************************************
 extern uint32_t am_hal_card_cmd56_read_sync(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf);
-
-//*****************************************************************************
-//
-//! @brief emmc rpmb read write function
-//!
-//! @param pCard        - pointer to the card instance.
-//!
-//! @param pui8Buf      - write/read buffer
-//!
-//! @param bRead        - eMMC rpmb write/read direction
-//!
-//! @param bRelWrite    - eMMC rpmb is reliable write type.
-//!
-//! This function only support for eMMC rpmb operation.
-//!
-//! @return status      - generic or interface specific status..
-//
-//*****************************************************************************
-extern uint32_t
-am_hal_card_block_rpmb_rw(am_hal_card_t *pCard, uint8_t *pui8Buf, bool bRead, bool bRelWrite);
 
 #ifdef __cplusplus
 }

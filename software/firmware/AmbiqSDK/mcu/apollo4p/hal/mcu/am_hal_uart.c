@@ -4,7 +4,7 @@
 //!
 //! @brief Hardware abstraction for the UART
 //!
-//! @addtogroup uart_4p UART Functionality
+//! @addtogroup uart UART Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -73,7 +73,7 @@
 
 //*****************************************************************************
 //
-//! Delay constant
+// Delay constant
 //
 //*****************************************************************************
 #define ONE_BYTE_DELAY(pState)                                              \
@@ -116,29 +116,19 @@ am_hal_uart_register_state_t;
 //*****************************************************************************
 typedef struct
 {
-    //
     //! For internal verification purposes
-    //
     am_hal_handle_prefix_t prefix;
 
-    //
     //! Register state for power-up/power-down
-    //
     am_hal_uart_register_state_t sRegState;
 
-    //
     //! UART module number.
-    //
     uint32_t ui32Module;
 
-    //
     //! Most recently configured baud rate. (Do we really need this?)
-    //
     uint32_t ui32BaudRate;
 
-    //
     //! State information about nonblocking transfers.
-    //
     bool bCurrentlyReading;
     am_hal_uart_transfer_t sActiveRead;
     volatile uint32_t ui32BytesRead;
@@ -147,19 +137,15 @@ typedef struct
     am_hal_uart_transfer_t sActiveWrite;
     volatile uint32_t ui32BytesWritten;
 
-    //
     //! Queued write/read implementation
-    //
     bool bEnableTxQueue;
     am_hal_queue_t sTxQueue;
 
     bool bEnableRxQueue;
     am_hal_queue_t sRxQueue;
 
-    //
     //! Cleared when any transmit transaction is started. Set after TX complete
     //! interrupt is received.
-    //
     volatile bool bLastTxComplete;
 }
 am_hal_uart_state_t;
@@ -546,7 +532,7 @@ config_baudrate(uint32_t ui32Module, uint32_t ui32DesiredBaudrate, uint32_t *pui
 
 //*****************************************************************************
 //
-// Save a transaction to the UART state.
+//! Save a transaction to the UART state.
 //
 //*****************************************************************************
 uint32_t
@@ -583,7 +569,7 @@ write_transaction_save(am_hal_uart_state_t *psState,
 
 //*****************************************************************************
 //
-// Save a transaction to the UART state.
+//! Save a transaction to the UART state.
 //
 //*****************************************************************************
 uint32_t

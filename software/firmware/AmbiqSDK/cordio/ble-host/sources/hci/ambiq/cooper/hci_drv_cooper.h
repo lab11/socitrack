@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,31 +44,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef HCI_DRV_COOPER_H
 #define HCI_DRV_COOPER_H
-
-//*****************************************************************************
-//
-//*****************************************************************************
-//
-// Disable the NOP(None Opcode) HCI event mechanism,
-// it needs to enable macro ENABLE_SPECIFIED_EVENT_MASK at the same time
-//
-// Setting this macro to 1 will disable NOP HCI event sent from controller
-// when it' awakened up. And HOST will check and send out any pending HCI
-// packets if BLE core wakeup interrupt is not coming up within
-// WAKEUP_TIMEOUT_MS milliseconds.
-
-// This feature is dsiabled by default, which means there will be NOP event coming up
-// when controller wakes up.
-//*****************************************************************************
-#define DISABLE_WAKEUP_NOP_EVENT          0
-
-// This is to enable specified event from controller, default disabled
-#define ENABLE_SPECIFIED_EVENT_MASK       0
 
 //*****************************************************************************
 //
@@ -112,26 +92,16 @@ typedef enum
     PLATFORM_RESET_TO_ROM       = 1,
 }ePlfResetReason_type;
 
-typedef enum
-{
-    EVT_MASK_NULL              = 0x00000000,
-    /// configure to disable no opreation command code event
-    DISABLE_WAKEUP_NOP_EVT_MASK  = 0x00000001,
-}eCfgEvtMsk_type;
-
-// configuration for specified event mask
-#define CFG_EVENT_MASK  (DISABLE_WAKEUP_NOP_EVT_MASK)
-
 /*! read memory variable command */
 typedef struct
 {
     ///Start address to read
     uint32_t start_addr;
-    ///Access type
+    ///Access size
     uint8_t type;
     ///Length to read
     uint8_t length;
-} __attribute__ ((__packed__))hciRdMemCmd_t;
+}hciRdMemCmd_t;
 
 
 /*! write memory variable command */
@@ -139,12 +109,12 @@ typedef struct
 {
     ///Start address to read
     uint32_t start_addr;
-    ///Access type
+    ///Access size
     uint8_t type;
     ///Length to write
     uint8_t length;
     uint8_t data[MAX_MEM_ACCESS_SIZE];
-} __attribute__ ((__packed__))hciWrMemCmd_t;
+}hciWrMemCmd_t;
 
 typedef struct
 {
@@ -152,9 +122,9 @@ typedef struct
     uint8_t flashtype;
     ///Start offset address
     uint32_t startoffset;
-    ///Length to erase
-    uint32_t length;
-} __attribute__ ((__packed__))hciErFlashCmd_t;
+    ///Size to erase
+    uint32_t size;
+}hciErFlashCmd_t;
 
 typedef struct
 {
@@ -162,10 +132,9 @@ typedef struct
     uint8_t flashtype;
     ///Start offset address
     uint32_t startoffset;
-    ///Length to write
     uint8_t length;
     uint8_t data[MAX_FLASH_ACCESS_SIZE];
-} __attribute__ ((__packed__))hciWrFlashCmd_t;
+}hciWrFlashCmd_t;
 
 typedef struct
 {
@@ -173,15 +142,15 @@ typedef struct
     uint8_t flashtype;
     ///Start offset address
     uint32_t startoffset;
-    ///Length to read
-    uint8_t length;
-} __attribute__ ((__packed__))hciRdFlashCmd_t;
+    ///Size to read
+    uint8_t size;
+}hciRdFlashCmd_t;
 
 typedef struct
 {
     /// register address
     uint32_t addr;
-} hciRegRdCmd_t;
+}hciRegRdCmd_t;
 
 typedef struct
 {
@@ -189,13 +158,13 @@ typedef struct
     uint32_t addr;
     /// register value
     uint32_t value;
-} hciRegWrCmd_t;
+}hciRegWrCmd_t;
 
 typedef struct
 {
     /// reason
     uint8_t reason;
-} hciPlfResetCmd_t;
+}hciPlfResetCmd_t;
 
 #define LL_FEATURES_BYTE0  ( HCI_LE_SUP_FEAT_ENCRYPTION  \
                                  | HCI_LE_SUP_FEAT_CONN_PARAM_REQ_PROC \
@@ -239,12 +208,12 @@ extern bool HciVscSetRfPowerLevelEx(txPowerLevel_t txPowerlevel);
 extern void HciVscUpdateFw(uint32_t update_sign);
 
 
-extern bool HciVscReadMem(uint32_t start_addr, eMemAccess_type access_type, uint8_t length);
-extern bool HciVscWriteMem(uint32_t start_addr, eMemAccess_type access_type, uint8_t length, uint8_t *data);
+extern bool HciVscReadMem(uint32_t start_addr, eMemAccess_type size,uint8_t length);
+extern bool HciVscWriteMem(uint32_t start_addr, eMemAccess_type size,uint8_t length, uint8_t *data);
 extern void HciVscGetFlashId(void);
-extern void HciVscEraseFlash(uint8_t flash_type, uint32_t offset,uint32_t length);
-extern bool HciVscWriteFlash(uint8_t flash_type, uint32_t offset, uint8_t length, uint8_t *data);
-extern bool HciVscReadFlash(uint8_t flash_type, uint32_t offset, uint8_t length);
+extern void HciVscEraseFlash(uint8_t type, uint32_t offset,uint32_t size);
+extern bool HciVscWriteFlash(uint8_t type, uint32_t offset,uint32_t length, uint8_t *data);
+extern bool HciVscReadFlash(uint8_t type, uint32_t offset,uint32_t size);
 extern void HciVscReadReg(uint32_t reg_addr);
 extern void HciVscWriteReg(uint32_t reg_addr, uint32_t value);
 extern void HciVscPlfReset(ePlfResetReason_type reason);
@@ -252,7 +221,6 @@ extern void HciVscUpdateBDAddress(void);
 extern bool_t HciVscSetCustom_BDAddr(uint8_t *bd_addr);
 void HciVscUpdateNvdsParam(void);
 void HciVscUpdateLinklayerFeature(void);
-void HciVscGetDtmRssi(void);
-void HciVscConfigEvtMask(uint32_t evt_mask);
+
 
 #endif // HCI_DRV_COOPER_H

@@ -2,9 +2,9 @@
 //
 //! @file am_hal_mspi.h
 //!
-//! @brief Functions for interfacing with the Multi-bit SPI.
+//! @brief Functions for interfacing with the MSPI.
 //!
-//! @addtogroup mspi4_4p MSPI - Multi-bit SPI
+//! @addtogroup mspi4 MSPI - Multi-bit SPI
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MSPI_H
@@ -82,23 +82,23 @@ extern "C"
 #define AM_HAL_MSPI_SC_CLEAR(flag)              ((flag) << 16)
 #define AM_HAL_MSPI_SC_SET(flag)                ((flag))
 
-// For MSPI - Need to Set the flag for unpausing
+  // For MSPI - Need to Set the flag for unpausing
 #define AM_HAL_MSPI_SC_UNPAUSE(flag)            AM_HAL_MSPI_SC_SET(flag)
 #define AM_HAL_MSPI_SC_PAUSE(flag)              AM_HAL_MSPI_SC_CLEAR(flag)
 
-// Use this macro to directly control the flags
+  // Use this macro to directly control the flags
 #define AM_HAL_MSPI_SETCLR(module, scVal)       \
   do {                                        \
     MSPIn(module)->CQSETCLEAR = (scVal);    \
   } while (0);
 
-// Flags 5, 7 & 6 are reserved by HAL
+  // Flags 5, 7 & 6 are reserved by HAL
 #define AM_HAL_MSPI_PAUSE_FLAG_RESV             (MSPI0_CQFLAGS_CQFLAGS_SWFLAG7 | MSPI0_CQFLAGS_CQFLAGS_SWFLAG6 | MSPI0_CQFLAGS_CQFLAGS_SWFLAG5)
 #define AM_HAL_MSPI_SC_RESV_MASK                (AM_HAL_MSPI_PAUSE_FLAG_RESV | (AM_HAL_MSPI_PAUSE_FLAG_RESV << 8) | (AM_HAL_MSPI_PAUSE_FLAG_RESV << 16))
 
-// We use SWFLAGEN7 to control SW pausing Command Queue - default unPause
-// We use SWFLAGEN6 to pause on the sequece loopback - default Pause
-// We use SWFLAGEN5 to pause CQ while a block is building
+  // We use SWFLAGEN7 to control SW pausing Command Queue - default unPause
+  // We use SWFLAGEN6 to pause on the sequece loopback - default Pause
+  // We use SWFLAGEN5 to pause CQ while a block is building
 #define AM_HAL_MSPI_PAUSE_FLAG_IDX      (_VAL2FLD(MSPI0_CQFLAGS_CQFLAGS, MSPI0_CQFLAGS_CQFLAGS_CQIDX))
 #define AM_HAL_MSPI_PAUSE_FLAG_CQ       (_VAL2FLD(MSPI0_CQFLAGS_CQFLAGS, MSPI0_CQFLAGS_CQFLAGS_SWFLAG7))
 #define AM_HAL_MSPI_PAUSE_FLAG_SEQLOOP  (_VAL2FLD(MSPI0_CQFLAGS_CQFLAGS, MSPI0_CQFLAGS_CQFLAGS_SWFLAG6))
@@ -108,16 +108,16 @@ extern "C"
 #define AM_HAL_MSPI_PAUSE_DEFAULT       (AM_HAL_MSPI_PAUSE_FLAG_IDX)
 #define AM_HAL_MSPI_CQP_PAUSE_DEFAULT   (AM_HAL_MSPI_PAUSE_FLAG_IDX | AM_HAL_MSPI_PAUSE_FLAG_CQ)
 
-//*****************************************************************************
-//
-//! @name MSPI Interrupts
-//! @brief Macro definitions for MSPI interrupt status bits.
-//!
-//! These macros correspond to the bits in the MSPI interrupt status register.
-//!
-//! @{
-//
-//*****************************************************************************
+  //*****************************************************************************
+  //
+  //! @name MSPI Interrupts
+  //! @brief Macro definitions for MSPI interrupt status bits.
+  //!
+  //! These macros correspond to the bits in the MSPI interrupt status register.
+  //!
+  //! @{
+  //
+  //*****************************************************************************
 #define AM_HAL_MSPI_INT_SCRERR               MSPI0_INTEN_SCRERR_Msk
 #define AM_HAL_MSPI_INT_CQERR                MSPI0_INTEN_CQERR_Msk
 #define AM_HAL_MSPI_INT_CQPAUSED             MSPI0_INTEN_CQPAUSED_Msk
@@ -167,7 +167,7 @@ typedef enum
 //
 //*****************************************************************************
 //
-//! Number of bytes in the address
+// Number of bytes in the address
 //
 typedef enum
 {
@@ -178,7 +178,7 @@ typedef enum
 } am_hal_mspi_addr_e;
 
 //
-//! Number of bytes in the instruction
+// Number of bytes in the instruction
 //
 typedef enum
 {
@@ -187,7 +187,7 @@ typedef enum
 } am_hal_mspi_instr_e;
 
 //
-//! Transmit or receive
+// Transmit or receive
 //
 typedef enum
 {
@@ -196,7 +196,7 @@ typedef enum
 } am_hal_mspi_dir_e;
 
 //
-//! Mode of Transfer.
+// Mode of Transfer.
 //
 typedef enum
 {
@@ -205,7 +205,7 @@ typedef enum
 } am_hal_mspi_trans_e;
 
 //
-//! MSPI interface mode and chip enable selection
+// MSPI interface mode and chip enable selection
 //
 typedef enum
 {
@@ -231,16 +231,12 @@ typedef enum
     AM_HAL_MSPI_FLASH_QUAD_CE1_1_4_4,
     AM_HAL_MSPI_FLASH_SERIAL_CE0_3WIRE,
     AM_HAL_MSPI_FLASH_SERIAL_CE1_3WIRE,
-    AM_HAL_MSPI_FLASH_OCTAL_CE0_1_1_8,
-    AM_HAL_MSPI_FLASH_OCTAL_CE1_1_1_8,
-    AM_HAL_MSPI_FLASH_OCTAL_CE0_1_8_8,
-    AM_HAL_MSPI_FLASH_OCTAL_CE1_1_8_8,
     AM_HAL_MSPI_FLASH_MAX
 } am_hal_mspi_device_e;
 
 //
-//! Enumerate the SPI modes.  Note that these are arranged per the ordering of
-//! SPHA (bit1) and SPOL (bit0) in the IOM.MSPICFG register.
+// Enumerate the SPI modes.  Note that these are arranged per the ordering of
+// SPHA (bit1) and SPOL (bit0) in the IOM.MSPICFG register.
 //
 typedef enum
 {
@@ -250,9 +246,6 @@ typedef enum
     AM_HAL_MSPI_SPI_MODE_3,                  // CPOL = 1; CPHA = 1
 } am_hal_mspi_spi_mode_e;
 
-//
-//! Enumerate the SPI clock speeds
-//
 typedef enum
 {
     AM_HAL_MSPI_CLK_INVALID = 0,
@@ -269,7 +262,7 @@ typedef enum
 } am_hal_mspi_clock_e;
 
 //
-//! Mode of Aperture.
+// Mode of Aperture.
 //
 typedef enum
 {
@@ -278,7 +271,7 @@ typedef enum
 } am_hal_mspi_ap_e;
 
 //
-//! Size of Aperture.
+// Size of Aperture.
 //
 typedef enum
 {
@@ -296,13 +289,10 @@ typedef enum
 } am_hal_mspi_ap_size_e;
 
 //
-//! Transfer callback function prototype
+// Transfer callback function prototype
 //
 typedef void (*am_hal_mspi_callback_t)(void *pCallbackCtxt, uint32_t status);
 
-//
-//! MSPI Timing Scan
-//
 typedef struct
 {
     bool            bTxNeg;
@@ -313,9 +303,6 @@ typedef struct
     uint8_t         ui8Turnaround;
 } am_hal_mspi_timing_scan_t;
 
-//
-//! MSPI RX Config
-//
 typedef struct
 {
     uint8_t         ui8DQSturn;
@@ -331,9 +318,6 @@ typedef struct
 
 } am_hal_mspi_rxcfg_t;
 
-//
-//! MSPI DQS Config
-//
 typedef struct
 {
     bool            bDQSEnable;
@@ -349,17 +333,11 @@ typedef struct
 
 } am_hal_mspi_dqs_t;
 
-//
-//! MSPI XIP ACK
-//
 typedef struct
 {
     MSPI0_DEV0XIP_XIPACK0_Enum  eXipAck;
 } am_hal_mspi_xipack_t;
 
-//
-//! MSPI End Sequence
-//
 typedef struct
 {
     bool                        bLoop;
@@ -370,9 +348,6 @@ typedef struct
 
 } am_hal_mspi_seq_end_t;
 
-//
-//! MSPI High Priority Config
-//
 typedef struct
 {
     uint8_t                     *pBuf; // Buffer provided to store the high priority transaction context
@@ -380,9 +355,6 @@ typedef struct
 
 } am_hal_mspi_hiprio_cfg_t;
 
-//
-//! MSPI Comand Queue Raw
-//
 typedef struct
 {
     //! Command Queue Advanced control on gating conditions for transaction to start
@@ -396,9 +368,6 @@ typedef struct
     uint32_t               *pJmpAddr;
 } am_hal_mspi_cq_raw_t;
 
-//
-//! MSPI Instruction Address config
-//
 typedef struct
 {
     //! Address Configuration
@@ -407,9 +376,6 @@ typedef struct
     am_hal_mspi_instr_e         eInstrCfg;
 } am_hal_mspi_instr_addr_t;
 
-//
-//! MSPI Request Type
-//
 typedef enum
 {
     // Pass uint32_t * as pConfig
@@ -488,9 +454,6 @@ typedef enum
     AM_HAL_MSPI_REQ_MAX
 } am_hal_mspi_request_e;
 
-//
-//! MSPI Boundary Size
-//
 typedef enum
 {
     AM_HAL_MSPI_BOUNDARY_NONE,          // Disable DMA address boundary breaks
@@ -507,9 +470,6 @@ typedef enum
     AM_HAL_MSPI_BOUNDARY_MAX
 } am_hal_mspi_dma_boundary_e;
 
-//
-//! MSPI XIP config
-//
 typedef struct
 {
     //! Scrambling Start Address
@@ -530,7 +490,7 @@ typedef struct
 } am_hal_mspi_xip_config_t;
 
 //
-//! MSPI byte enable polarity
+// MSPI byte enable polarity
 //
 typedef enum
 {
@@ -540,7 +500,7 @@ typedef enum
 } am_hal_mspi_BE_polarity_e;
 
 //
-//! MSPI miscellaneous config structure
+// MSPI miscellaneous config structure
 //
 typedef struct
 {
@@ -568,12 +528,12 @@ typedef struct
 } am_hal_mspi_xip_misc_t;
 
 //
-//! MSPI configuration structure
+// MSPI configuration structure
 //
 typedef struct
 {
     //
-    //! MSPI DMA TCB/Command Queue memory allocation.
+    // MSPI DMA TCB/Command Queue memory allocation.
     //
 
     //! DMA Transfer Control Buffer size in words.
@@ -588,12 +548,12 @@ typedef struct
 } am_hal_mspi_config_t;
 
 //
-//! Device configuration structure
+// Device configuration structure
 //
 typedef struct
 {
     //
-    //! MSPI device configuration for Polling I/O (PIO) Operation.
+    // MSPI device configuration for Polling I/O (PIO) Operation.
     //
 
     //! Number of turn around cycles between an Address write and Data read.
@@ -647,7 +607,7 @@ typedef struct
 } am_hal_mspi_dev_config_t;
 
 //
-//! Device PIO transfer structure
+// Device PIO transfer structure
 //
 typedef struct
 {
@@ -690,7 +650,7 @@ typedef struct
 } am_hal_mspi_pio_transfer_t;
 
 //
-//! DMA transfer structure
+// DMA transfer structure
 //
 typedef struct
 {
@@ -717,7 +677,7 @@ typedef struct
 } am_hal_mspi_dma_transfer_t;
 
 //
-//! MSPI DevCfg structure.
+// MSPI DevCfg structure.
 //
 typedef struct
 {
@@ -727,7 +687,7 @@ typedef struct
 } am_hal_mspi_devcfg_t;
 
 //
-//! MSPI status structure.
+// MSPI status structure.
 //
 typedef struct
 {

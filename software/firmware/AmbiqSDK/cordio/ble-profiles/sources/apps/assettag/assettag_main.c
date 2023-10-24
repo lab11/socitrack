@@ -4,16 +4,16 @@
  *
  *  \brief  Asset Tracking Tag sample application.
  *
- *  Copyright (c) 2018 - 2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2018 - 2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,7 +44,7 @@
 #include "gatt/gatt_api.h"
 #include "util/calc128.h"
 #include "assettag_api.h"
-#include "atts_main.h"
+
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -221,11 +221,6 @@ static void assetTagDmCback(dmEvt_t *pDmEvt)
   if (pDmEvt->hdr.event == DM_SEC_ECC_KEY_IND)
   {
     DmSecSetEccKey(&pDmEvt->eccMsg.data.key);
-    // Only calculate database hash if the calculating status is in progress
-    if( attsCsfGetHashUpdateStatus() )
-    {
-      AttsCalculateDbHash();
-    }
   }
   else
   {
@@ -419,7 +414,7 @@ static void assetTagSetup(dmEvt_t *pMsg)
     for(adv_set=0; adv_set<DM_NUM_ADV_SETS; adv_set++)
     {
         AppExtAdvSetData(advHandle[adv_set], APP_ADV_DATA_DISCOVERABLE, sizeof(assetTagExtAdvDataDisc), (uint8_t *) assetTagExtAdvDataDisc, HCI_EXT_ADV_DATA_LEN);
-        AppExtAdvSetData(advHandle[adv_set], APP_SCAN_DATA_DISCOVERABLE, sizeof(assetTagScanDataDisc), (uint8_t *) assetTagScanDataDisc, HCI_EXT_ADV_DATA_LEN);
+        AppExtAdvSetData(advHandle[adv_set], APP_SCAN_DATA_DISCOVERABLE, sizeof(assetTagScanDataDisc), (uint8_t *) assetTagScanDataDisc, HCI_EXT_ADV_DATA_LEN);        
     }
 
     DmAdvSetPhyParam(advHandle[0], HCI_ADV_PHY_LE_1M, 0, HCI_ADV_PHY_LE_2M);
@@ -449,25 +444,10 @@ static void assetTagProcMsg(dmEvt_t *pMsg)
       break;
 
     case DM_RESET_CMPL_IND:
-      // set database hash calculating status to true until a new hash is generated after reset
-      attsCsfSetHashUpdateStatus(TRUE);
-
-      // Generate ECC key if configured support secure connection,
-      // else will calcualte ATT database hash
-      if( assetTagSecCfg.auth & DM_AUTH_SC_FLAG )
-      {
-          DmSecGenerateEccKeyReq();
-      }
-      else
-      {
-          AttsCalculateDbHash();
-      }
-
-      uiEvent = APP_UI_RESET_CMPL;
-      break;
-
-    case ATTS_DB_HASH_CALC_CMPL_IND:
+      AttsCalculateDbHash();
+      DmSecGenerateEccKeyReq();
       assetTagSetup(pMsg);
+      uiEvent = APP_UI_RESET_CMPL;
       break;
 
     case DM_CONN_OPEN_IND:
@@ -496,7 +476,7 @@ static void assetTagProcMsg(dmEvt_t *pMsg)
 
     case DM_PHY_UPDATE_IND:
       APP_TRACE_INFO3("DM_PHY_UPDATE_IND status: %d, RX: %d, TX: %d", pMsg->phyUpdate.status,pMsg->phyUpdate.rxPhy, pMsg->phyUpdate.txPhy);
-      break;
+      break;    
 
     case DM_SEC_PAIR_CMPL_IND:
       DmSecGenerateEccKeyReq();
@@ -540,7 +520,7 @@ static void assetTagProcMsg(dmEvt_t *pMsg)
       break;
 
     case DM_ADV_SET_STOP_IND:
-    {
+    {    
         for(i = 0; i< DM_CONN_MAX; i++)
         {
           if(!appExtConnCb[i].used)

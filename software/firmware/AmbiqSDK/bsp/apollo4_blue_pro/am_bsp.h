@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -59,21 +59,11 @@
 #include "am_bsp_pins.h"
 #include "am_devices_led.h"
 #include "am_devices_button.h"
-#include "am_devices_display_generic.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#if defined (DISP_CTRL_IP)
-//*****************************************************************************
-//
-// Board level display hardware configurations
-//
-//*****************************************************************************
-extern am_devices_display_hw_config_t g_sDispCfg;
-#endif // DISP_CTRL_IP
 
 //*****************************************************************************
 //
@@ -88,13 +78,6 @@ extern am_devices_display_hw_config_t g_sDispCfg;
 //
 //*****************************************************************************
 #define AM_BSP_UART_PRINT_INST  0
-
-//*****************************************************************************
-//
-// Touch interface definitions.
-//
-//*****************************************************************************
-#define AM_BSP_TP_IOM_MODULE                 0
 
 //*****************************************************************************
 //
@@ -135,65 +118,80 @@ extern am_devices_led_t am_bsp_psLEDs[AM_BSP_NUM_LEDS];
 #endif
 
 
-//*****************************************************************************
-//
-// SDIO Bus Width definitions
-//
-//*****************************************************************************
-#define AM_BSP_SDIO_BUS_WIDTH   AM_HAL_HOST_BUS_WIDTH_8
+#define SDIF_BUS_WIDTH_1 1
+#define SDIF_BUS_WIDTH_4 4
+#define SDIF_BUS_WIDTH_8 8
 
 //*****************************************************************************
 //
 // Display interface.
 //
 //*****************************************************************************
-#define AM_BSP_MSPI_CLKOND4(inst)  \
-    ((inst == g_sDispCfg.ui32Module)?g_sDispCfg.bClockonD4:false)
+typedef enum
+{
+    IF_SPI4,
+    IF_DSPI,
+    IF_QSPI,
+    IF_DSI,
+} am_bsp_disp_if_e;
+
+//*****************************************************************************
+//
+// Display interface, resolution and flipping configurations.
+//
+//*****************************************************************************
+typedef struct
+{
+    uint32_t ui32PanelResX;
+    uint32_t ui32PanelResY;
+    bool     bFlip;
+    bool     bUseDPHYPLL;
+    am_bsp_disp_if_e        eInterface;
+} am_bsp_display_config_t;
+
+//*****************************************************************************
+//
+// Display types.
+//
+//*****************************************************************************
+typedef enum
+{
+    RM67162_SPI4 = 0,
+    RM67162_DSPI,
+    RM67162_DSI,
+    RM69330_DSPI,
+    RM69330_QSPI,
+    RM69330_DSI,
+    BOE_DSI,
+} am_bsp_display_type_e;
+
+//*****************************************************************************
+//
+// Display interface, resolution and flipping configurations.
+//
+//*****************************************************************************
+typedef struct
+{
+    am_hal_dsi_freq_trim_e  eDsiFreq;
+    am_hal_dsi_dbi_width_e  eDbiWidth;
+    uint8_t ui8NumLanes;
+} am_bsp_dsi_config_t;
+
+//*****************************************************************************
+//
+// External global variables.
+//
+//*****************************************************************************
+extern am_bsp_display_type_e g_eDispType;
+extern am_bsp_display_config_t g_sDispCfg[7];
+extern am_bsp_dsi_config_t g_sDsiCfg;
 
 //*****************************************************************************
 //
 // External function definitions.
 //
 //*****************************************************************************
-//*****************************************************************************
-//
-//! @brief Set up the display pins.
-//!
-//! This function configures reset,te,en,mode selection and clock/data pins
-//!
-//! @return None.
-//
-//*****************************************************************************
-extern void am_bsp_disp_pins_enable(void);
-//*****************************************************************************
-//
-//! @brief Deinit the display pins.
-//!
-//! This function de-configures reset,te,en,mode selection and clock/data pins
-//!
-//! @return None.
-//
-//*****************************************************************************
-extern void am_bsp_disp_pins_disable(void);
 
-//*****************************************************************************
-//
-//! @brief Set display reset pins.
-//!
-//! @return None.
-//
-//*****************************************************************************
-
-extern void am_bsp_disp_reset_pins_set(void);
-//*****************************************************************************
-//
-//! @brief clear display reset pins.
-//!
-//! @return None.
-//
-//*****************************************************************************
-
-extern void am_bsp_disp_reset_pins_clear(void);
 //*****************************************************************************
 //
 //! @brief DSI VDD18 power switch.
@@ -514,43 +512,6 @@ extern void am_bsp_ios_pins_enable(uint32_t ui32Module, uint32_t ui32IOSMode);
 //
 //*****************************************************************************
 extern void am_bsp_ios_pins_disable(uint32_t ui32Module, uint32_t ui32IOSMode);
-
-//*****************************************************************************
-//
-//! @brief Set up the I2S pins based on module.
-//!
-//! @param ui32Module - I2S module
-//! @param bBidirectionalData - Use Bidirectional Data for I2S Module
-//
-//*****************************************************************************
-extern void am_bsp_i2s_pins_enable(uint32_t ui32Module, bool bBidirectionalData);
-
-//*****************************************************************************
-//
-//! @brief Disable the I2S pins based on module.
-//!
-//! @param ui32Module - I2S module
-//
-//*****************************************************************************
-extern void am_bsp_i2s_pins_disable(uint32_t ui32Module, bool bBidirectionalData);
-
-//*****************************************************************************
-//
-//! @brief Set up the PDM pins based on module.
-//!
-//! @param ui32Module - PDM module
-//
-//*****************************************************************************
-extern void am_bsp_pdm_pins_enable(uint32_t ui32Module);
-
-//*****************************************************************************
-//
-//! @brief Disable the PDM pins based on module.
-//!
-//! @param ui32Module - PDM module
-//
-//*****************************************************************************
-extern void am_bsp_pdm_pins_disable(uint32_t ui32Module);
 
 //*****************************************************************************
 //

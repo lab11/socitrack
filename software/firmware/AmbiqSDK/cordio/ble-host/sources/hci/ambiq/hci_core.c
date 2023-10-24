@@ -126,7 +126,7 @@ const uint8_t hciEventMaskPage2[HCI_EVT_MASK_PAGE_2_LEN] =
 };
 
 /* LE supported features configuration mask */
-uint64_t hciLeSupFeatCfg =
+uint32_t hciLeSupFeatCfg =
   HCI_LE_SUP_FEAT_ENCRYPTION                 |    /* LE Encryption */
   HCI_LE_SUP_FEAT_CONN_PARAM_REQ_PROC        |    /* Connection Parameters Request Procedure */
   HCI_LE_SUP_FEAT_EXT_REJECT_IND             |    /* Extended Reject Indication */
@@ -636,7 +636,7 @@ uint8_t *hciCoreAclReassembly(uint8_t *pData)
       }
 
       /* read l2cap length */
-      if (aclLen >= L2C_HDR_LEN_SEG_LEN)
+      if (aclLen >= L2C_HDR_LEN)
       {
         BYTES_TO_UINT16(l2cLen, &pData[4]);
 
@@ -657,11 +657,7 @@ uint8_t *hciCoreAclReassembly(uint8_t *pData)
             /* build acl header and copy data */
             UINT16_TO_BSTREAM(pConn->pNextRxFrag, handle);
             UINT16_TO_BSTREAM(pConn->pNextRxFrag, l2cLen + L2C_HDR_LEN);
-            /* if the start packet includes data beside the l2cap length segment */
-            if (aclLen > L2C_HDR_LEN_SEG_LEN)
-            {
-              memcpy(pConn->pNextRxFrag, &pData[4], aclLen);
-            }
+            memcpy(pConn->pNextRxFrag, &pData[4], aclLen);
             pConn->pNextRxFrag += aclLen;
 
             /* store remaining length */
@@ -680,31 +676,6 @@ uint8_t *hciCoreAclReassembly(uint8_t *pData)
           freeData = FALSE;
         }
       }
-      else if (aclLen > 0)
-      {
-        /* Incompelete l2cap length segment is included in this packet, allocate the
-           maximum acl size buffer to store complete l2cap packet */
-        if ((pConn->pRxAclPkt = WsfMsgDataAlloc(hciCoreCb.maxRxAclLen + HCI_ACL_HDR_LEN, 0)) != NULL)
-        {
-            /* store buffer for reassembly */
-            pConn->pNextRxFrag = pConn->pRxAclPkt;
-
-            /* build acl header and copy data */
-            UINT16_TO_BSTREAM(pConn->pNextRxFrag, handle);
-            /* have not gotten l2cap length yet, write zero to the length segment of complete packet */
-            UINT16_TO_BSTREAM(pConn->pNextRxFrag, 0);
-            memcpy(pConn->pNextRxFrag, &pData[4], aclLen);
-            pConn->pNextRxFrag += aclLen;
-
-            /* store remaining length */
-            pConn->rxAclRemLen = hciCoreCb.maxRxAclLen - aclLen;
-        }
-        else
-        {
-          /* alloc failed; discard */
-          HCI_TRACE_WARN1("reassembly alloc failed len=%u", hciCoreCb.maxRxAclLen + HCI_ACL_HDR_LEN);
-        }
-      }
       else
       {
         /* invalid l2cap packet; discard */
@@ -721,30 +692,6 @@ uint8_t *hciCoreAclReassembly(uint8_t *pData)
         {
           /* copy data to start of next fragment */
           memcpy(pConn->pNextRxFrag, &pData[HCI_ACL_HDR_LEN], aclLen);
-
-          /* if the l2cap length segment has not received in the start packet completely */
-          if ((pConn->pNextRxFrag - pConn->pRxAclPkt) < (HCI_ACL_HDR_LEN + L2C_HDR_LEN_SEG_LEN))
-          {
-            /* read l2cap length */
-            BYTES_TO_UINT16(l2cLen, (pConn->pRxAclPkt + HCI_ACL_HDR_LEN));
-
-            /* check length vs. configured maximum */
-            if ((l2cLen + L2C_HDR_LEN) > hciCoreCb.maxRxAclLen)
-            {
-              HCI_TRACE_WARN1("l2c len=0x%04x to large for reassembly", l2cLen);
-              /* discard currently reassembled packet */
-              WsfMsgFree(pConn->pRxAclPkt);
-              pConn->pRxAclPkt = NULL;
-            }
-            else
-            {
-              /* update the length segment of reassembled packet */
-              UINT16_TO_BUF((pConn->pRxAclPkt + 2), (l2cLen + L2C_HDR_LEN));
-              /* update remaining length of buffer which was allocated by the maximum acl size */
-              pConn->rxAclRemLen -= (hciCoreCb.maxRxAclLen - (l2cLen + L2C_HDR_LEN));
-            }
-          }
-
           pConn->pNextRxFrag += aclLen;
 
           /* update remaining length */
@@ -760,9 +707,6 @@ uint8_t *hciCoreAclReassembly(uint8_t *pData)
         else
         {
           HCI_TRACE_WARN2("continuation pkt too long len=%u RemLen=%u", aclLen, pConn->rxAclRemLen);
-          /* discard currently reassembled packet */
-          WsfMsgFree(pConn->pRxAclPkt);
-          pConn->pRxAclPkt = NULL;
         }
       }
       else
@@ -824,12 +768,6 @@ void HciCoreInit(void)
   for (i = 0; i < DM_CONN_MAX; i++)
   {
     hciCoreCb.conn[i].handle = HCI_HANDLE_NONE;
-  }
-
-
-  for (i = 0; i < DM_CIS_MAX; i++)
-  {
-    hciCoreCb.cis[i].handle = HCI_HANDLE_NONE;
   }
 
   hciCoreCb.maxRxAclLen = HCI_MAX_RX_ACL_LEN;
@@ -955,7 +893,7 @@ void HciSetAclQueueWatermarks(uint8_t queueHi, uint8_t queueLo)
 *  \return None.
 */
 /*************************************************************************************************/
-void HciSetLeSupFeat(uint64_t feat, bool_t flag)
+void HciSetLeSupFeat(uint32_t feat, bool_t flag)
 {
   /* if asked to include feature */
   if (flag)
@@ -1025,118 +963,3 @@ void HciSendAclData(uint8_t *pData)
     HCI_TRACE_WARN1("HciSendAclData discarding buffer, handle=%u", handle);
   }
 }
-
-/*************************************************************************************************/
-/*!
- *  \brief  Allocate a CIS connection structure.
- *
- *  \param  handle  Connection handle.
- *
- *  \return None.
- */
-/*************************************************************************************************/
-static void hciCoreCisAlloc(uint16_t handle)
-{
-  uint8_t         i;
-  hciCoreCis_t   *pCis = hciCoreCb.cis;
-
-  /* find available connection struct */
-  for (i = DM_CIS_MAX; i > 0; i--, pCis++)
-  {
-    if (pCis->handle == HCI_HANDLE_NONE)
-    {
-      /* allocate and initialize */
-      pCis->handle = handle;
-
-      return;
-    }
-  }
-
-  HCI_TRACE_WARN0("HCI cis struct alloc failure");
-}
-
-/*************************************************************************************************/
-/*!
- *  \brief  Free a CIS connection structure.
- *
- *  \param  handle  Connection handle.
- *
- *  \return None.
- */
-/*************************************************************************************************/
-static void hciCoreCisFree(uint16_t handle)
-{
-  uint8_t         i;
-  hciCoreCis_t   *pCis = hciCoreCb.cis;
-
-  /* find connection struct */
-  for (i = DM_CIS_MAX; i > 0; i--, pCis++)
-  {
-    if (pCis->handle == handle)
-    {
-      /* free structure */
-      pCis->handle = HCI_HANDLE_NONE;
-
-      return;
-    }
-  }
-
-  HCI_TRACE_WARN1("hciCoreCisFree handle not found:%u", handle);
-}
-
-/*************************************************************************************************/
-/*!
- *  \brief  Get a CIS connection structure by handle
- *
- *  \param  handle  Connection handle.
- *
- *  \return Pointer to CIS connection structure or NULL if not found.
- */
-/*************************************************************************************************/
-hciCoreCis_t *hciCoreCisByHandle(uint16_t handle)
-{
-  uint8_t         i;
-  hciCoreCis_t   *pCis = hciCoreCb.cis;
-
-  /* find available connection struct */
-  for (i = DM_CIS_MAX; i > 0; i--, pCis++)
-  {
-    if (pCis->handle == handle)
-    {
-      return pCis;
-    }
-  }
-
-  return NULL;
-}
-
-/*************************************************************************************************/
-/*!
- *  \brief  Perform internal processing on HCI CIS connection open.
- *
- *  \param  handle  Connection handle.
- *
- *  \return None.
- */
-/*************************************************************************************************/
-void hciCoreCisOpen(uint16_t handle)
-{
-  /* allocate CIS connection structure */
-  hciCoreCisAlloc(handle);
-}
-
-/*************************************************************************************************/
-/*!
- *  \brief  Perform internal processing on HCI CIS connection close.
- *
- *  \param  handle  Connection handle.
- *
- *  \return None.
- */
-/*************************************************************************************************/
-void hciCoreCisClose(uint16_t handle)
-{
-  /* free CIS connection structure */
-  hciCoreCisFree(handle);
-}
-

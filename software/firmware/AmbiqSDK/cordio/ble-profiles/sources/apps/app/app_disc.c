@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework service discovery and configuration.
  *
- *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -150,8 +150,12 @@ void appDiscStart(dmConnId_t connId)
         /* Read hash before using handles */
         if (AppDbIsCacheCheckedByHash(hdl))
         {
+          pAppDiscCb->inProgress = APP_DISC_READ_DBH_IN_PROGRESS;
+
           /* Read the database hash. */
-          AppDiscReadDatabaseHash(connId);
+          AttcReadByTypeReq(connId, ATT_HANDLE_START, ATT_HANDLE_MAX, ATT_16_UUID_LEN,
+                            (uint8_t *)attGattDbhChUuid, FALSE);
+
           return;
         }
         else
@@ -421,8 +425,11 @@ static void appDiscPairFail(dmEvt_t *pMsg)
   /* Fall back to relying on database hash to verify handles if configured to do so. */
   if (pAppDiscCfg->readDbHash)
   {
+    pAppDiscCb->inProgress = APP_DISC_READ_DBH_IN_PROGRESS;
+
     /* Read the database hash instead of re-performing service discovery. */
-    AppDiscReadDatabaseHash((dmConnId_t) pMsg->hdr.param);
+    AttcReadByTypeReq((dmConnId_t) pMsg->hdr.param, ATT_HANDLE_START, ATT_HANDLE_MAX, ATT_16_UUID_LEN,
+                      (uint8_t *) attGattDbhChUuid, FALSE);
   }
 }
 
@@ -918,15 +925,12 @@ void AppDiscReadDatabaseHash(dmConnId_t connId)
 {
   appDiscCb_t *pAppDiscCb = &appDiscCb[connId - 1];
 
-  /* if discovery not in progress */
-  if (pAppDiscCb->inProgress == APP_DISC_IDLE)
-  {
-    pAppDiscCb->inProgress = APP_DISC_READ_DBH_IN_PROGRESS;
+  /* Security/bonding not used, rely on database hash for cached handles. */
+  pAppDiscCb->inProgress = APP_DISC_READ_DBH_IN_PROGRESS;
 
-    /* Read the database hash. */
-    AttcReadByTypeReq(connId, ATT_HANDLE_START, ATT_HANDLE_MAX, ATT_16_UUID_LEN,
-                      (uint8_t *) attGattDbhChUuid, FALSE);
-  }
+  /* Read the database hash. */
+  AttcReadByTypeReq(connId, ATT_HANDLE_START, ATT_HANDLE_MAX, ATT_16_UUID_LEN,
+                    (uint8_t *)attGattDbhChUuid, FALSE);
 }
 
 /*************************************************************************************************/

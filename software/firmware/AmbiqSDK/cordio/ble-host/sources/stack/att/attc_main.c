@@ -4,16 +4,16 @@
  *
  *  \brief  ATT client main module.
  *
- *  Copyright (c) 2009-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2009-2019 Arm Ltd.
  *
- *  Copyright (c) 2019-2020 Packetcraft, Inc.
- *  
+ *  Copyright (c) 2019 Packetcraft, Inc.
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,9 +51,7 @@ typedef void (*attcSendReq_t)(attcCcb_t *pCcb);
 static void attcDataCback(uint16_t handle, uint16_t len, uint8_t *pPacket);
 static void attcCtrlCback(wsfMsgHdr_t *pMsg);
 static void attcConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt);
-
-extern void attcMsgCback(attcApiMsg_t *pMsg);
-extern void attcWriteCmdCallback(dmConnId_t connId, attcCcb_t *pCcb, uint8_t status);
+static void attcMsgCback(attcApiMsg_t *pMsg);
 
 static void attcSendSimpleReq(attcCcb_t *pCcb);
 static void attcSendContinuingReq(attcCcb_t *pCcb);
@@ -89,11 +87,7 @@ static const attcSendReq_t attcSendReqTbl[] =
   attcSendSimpleReq,            /* ATTC_MSG_API_WRITE */
   attcSendWriteCmd,             /* ATTC_MSG_API_WRITE_CMD */
   attcSendPrepWriteReq,         /* ATTC_MSG_API_PREP_WRITE */
-  attcSendSimpleReq,            /* ATTC_MSG_API_EXEC_WRITE */
-  NULL,                         /* unused */
-  NULL,                         /* unused */
-  NULL,                         /* unused */
-  attcSendSimpleReq             /* ATTC_MSG_API_READ_MULT_VAR */
+  attcSendSimpleReq             /* ATTC_MSG_API_EXEC_WRITE */
 };
 
 /**************************************************************************************************
@@ -108,14 +102,14 @@ attcCb_t attcCb;
  *  \brief  Check if application callback is pending for a given write command, or the maximum
  *          number of simultaneous write commands has been reached.
  *
- *  \param  pCcb    ATTC control block.
- *  \param  handle  Connection handle.
+ *  \param  pCcb  ATTC control block.
+ *  \param  pMsg  ATTC message.
  *
  *  \return TRUE if app callback's pending or maximum number of simultaneous write commands reached.
  *          FALSE, otherwise.
  */
 /*************************************************************************************************/
-bool_t attcPendWriteCmd(attcCcb_t *pCcb, uint16_t handle)
+static bool_t attcPendWriteCmd(attcCcb_t *pCcb, attcApiMsg_t *pMsg)
 {
   uint8_t     pendRsp;
   uint8_t     i;
@@ -129,7 +123,7 @@ bool_t attcPendWriteCmd(attcCcb_t *pCcb, uint16_t handle)
     if (pCcb->pendWriteCmdHandle[i] != ATT_HANDLE_NONE)
     {
       /* if callback pending for this handle */
-      if (pCcb->pendWriteCmdHandle[i] == handle)
+      if (pCcb->pendWriteCmdHandle[i] == pMsg->handle)
       {
         /* callback pending for this write command */
         return TRUE;
@@ -180,7 +174,7 @@ static void attcSetPendWriteCmd(attcCcb_t *pCcb)
  *  \return None.
  */
 /*************************************************************************************************/
-void attcWriteCmdCallback(dmConnId_t connId, attcCcb_t *pCcb, uint8_t status)
+static void attcWriteCmdCallback(dmConnId_t connId, attcCcb_t *pCcb, uint8_t status)
 {
   uint8_t     i;
 
@@ -220,7 +214,7 @@ static void attcSendSimpleReq(attcCcb_t *pCcb)
   }
 
   /* send packet to L2CAP */
-  attL2cDataReq(pCcb->pMainCcb, pCcb->outReq.slot, pPkt->len, (uint8_t *) pPkt);
+  L2cDataReq(L2C_CID_ATT, pCcb->pMainCcb->handle, pPkt->len, (uint8_t *) pPkt);
 }
 
 /*************************************************************************************************/
@@ -250,7 +244,7 @@ static void attcSendContinuingReq(attcCcb_t *pCcb)
     else
     {
       /* free stored packet and call callback with failure status */
-      attcReqClear(pCcb->connId, &pCcb->outReq, ATT_ERR_MEMORY);
+      attcReqClear(pCcb, &pCcb->outReq, ATT_ERR_MEMORY);
       return;
     }
   }
@@ -287,7 +281,7 @@ static void attcSendContinuingReq(attcCcb_t *pCcb)
   WsfTimerStartSec(&pCcb->outReqTimer, pAttCfg->transTimeout);
 
   /* send packet to L2CAP */
-  attL2cDataReq(pCcb->pMainCcb, pCcb->outReq.slot, pPkt->len, (uint8_t *) pPkt);
+  L2cDataReq(L2C_CID_ATT, pCcb->pMainCcb->handle, pPkt->len, (uint8_t *) pPkt);
 }
 
 /*************************************************************************************************/
@@ -307,7 +301,7 @@ static void attcSendMtuReq(attcCcb_t *pCcb)
   // it will only be cleared when the current connection closes.
 
   /* if MTU already exchanged */
-  if (pCcb->pMainCcb->sccb[pCcb->outReq.slot].control & ATT_CCB_STATUS_MTU_SENT)
+  if (pCcb->pMainCcb->control & ATT_CCB_STATUS_MTU_SENT)
   {
     /* discard request */
     attcFreePkt(&pCcb->outReq);
@@ -320,7 +314,7 @@ static void attcSendMtuReq(attcCcb_t *pCcb)
   else
   {
     /* set MTU sent */
-    pCcb->pMainCcb->sccb[pCcb->outReq.slot].control |= ATT_CCB_STATUS_MTU_SENT;
+    pCcb->pMainCcb->control |= ATT_CCB_STATUS_MTU_SENT;
 
     /* send packet */
     attcSendSimpleReq(pCcb);
@@ -342,7 +336,7 @@ static void attcSendWriteCmd(attcCcb_t *pCcb)
   attcSendSimpleReq(pCcb);
 
   /* if flow not disabled */
-  if (!(pCcb->pMainCcb->sccb[pCcb->outReq.slot].control & ATT_CCB_STATUS_FLOW_DISABLED))
+  if (!(pCcb->pMainCcb->control & ATT_CCB_STATUS_FLOW_DISABLED))
   {
     /* call callback */
     attcExecCallback(pCcb->pMainCcb->connId, ATTC_WRITE_CMD_RSP, pCcb->outReq.handle, ATT_SUCCESS);
@@ -371,19 +365,18 @@ static void attcSendPrepWriteReq(attcCcb_t *pCcb)
   attcPktParam_t  *pPkt;
   uint8_t         *p;
   uint16_t        dataLen;
-  uint16_t        mtu = pCcb->pMainCcb->sccb[pCcb->slot].mtu;
 
   /* if continuing */
   if (pCcb->outReq.hdr.status == ATTC_CONTINUING)
   {
     /* determine size of buffer to allocate */
-    if (pCcb->outReqParams.w.len < (mtu - ATT_PREP_WRITE_REQ_LEN))
+    if (pCcb->outReqParams.w.len < (pCcb->pMainCcb->mtu - ATT_PREP_WRITE_REQ_LEN))
     {
       dataLen = pCcb->outReqParams.w.len;
     }
     else
     {
-      dataLen = mtu - ATT_PREP_WRITE_REQ_LEN;
+      dataLen = pCcb->pMainCcb->mtu - ATT_PREP_WRITE_REQ_LEN;
     }
 
     /* allocate new buffer */
@@ -404,7 +397,7 @@ static void attcSendPrepWriteReq(attcCcb_t *pCcb)
     else
     {
       /* free stored packet and call callback with failure status */
-      attcReqClear(pCcb->connId, &pCcb->outReq, ATT_ERR_MEMORY);
+      attcReqClear(pCcb, &pCcb->outReq, ATT_ERR_MEMORY);
       return;
     }
   }
@@ -432,7 +425,7 @@ static void attcSendPrepWriteReq(attcCcb_t *pCcb)
   WsfTimerStartSec(&pCcb->outReqTimer, pAttCfg->transTimeout);
 
   /* send packet to L2CAP */
-  attL2cDataReq(pCcb->pMainCcb, pCcb->outReq.slot, dataLen + ATT_PREP_WRITE_REQ_LEN, (uint8_t *) pPkt);
+  L2cDataReq(L2C_CID_ATT, pCcb->pMainCcb->handle, dataLen + ATT_PREP_WRITE_REQ_LEN, (uint8_t *) pPkt);
 }
 
 /*************************************************************************************************/
@@ -465,14 +458,7 @@ void attcSetupReq(attcCcb_t *pCcb, attcApiMsg_t *pMsg)
   pCcb->outReq = *pMsg;
 
   /* store parameters */
-  if (pMsg->hdr.event == ATTC_MSG_API_PREP_WRITE)
-  {
-    memcpy(&pCcb->outReqParams.w, pMsg->pPkt->pW, sizeof(attcPktParamPrepWrite_t));
-  }
-  else
-  {
-    memcpy(&pCcb->outReqParams, pMsg->pPkt, sizeof(attcPktParam_t));
-  }
+  pCcb->outReqParams = *(pMsg->pPkt);
 
   /* build and send request */
   attcSendReq(pCcb);
@@ -495,7 +481,7 @@ static void attcDataCback(uint16_t handle, uint16_t len, uint8_t *pPacket)
   attcCcb_t     *pCcb;
 
   /* get connection control block for this handle, ignore packet if not found */
-  if ((pCcb = attcCcbByHandle(handle, ATT_BEARER_SLOT_ID)) == NULL)
+  if ((pCcb = attcCcbByHandle(handle)) == NULL)
   {
     return;
   }
@@ -515,10 +501,6 @@ static void attcDataCback(uint16_t handle, uint16_t len, uint8_t *pPacket)
   else if ((opcode == ATT_PDU_VALUE_NTF) || (opcode == ATT_PDU_VALUE_IND))
   {
     attcProcInd(pCcb, len, pPacket);
-  }
-  else if (opcode == ATT_PDU_MULT_VALUE_NTF)
-  {
-    attcProcMultiVarNtf(pCcb, len, pPacket);
   }
   /* else unknown opcode */
   else
@@ -543,7 +525,7 @@ static void attcCtrlCback(wsfMsgHdr_t *pMsg)
   /* note this function is currently only called when flow is enabled */
 
   /* get CCB */
-  if ((pCcb = attcCcbByConnId((dmConnId_t) pMsg->param, ATT_BEARER_SLOT_ID)) != NULL)
+  if ((pCcb = attcCcbByConnId((dmConnId_t) pMsg->param)) != NULL)
   {
     /* if confirmation pending try sending now */
     AttcIndConfirm((dmConnId_t) pMsg->param);
@@ -568,7 +550,6 @@ static void attcConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt)
   attcCcb_t *pClient;
   uint16_t  localMtu;
   uint8_t   status;
-  uint8_t   i;
 
   /* if connection opened */
   if (pDmEvt->hdr.event == DM_CONN_OPEN_IND)
@@ -598,37 +579,34 @@ static void attcConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt)
       status = pDmEvt->connClose.hdr.status + ATT_HCI_ERR_BASE;
     }
 
+    /* get client control block directly */
+    pClient = &attcCb.ccb[pCcb->connId - 1];
+
+    /* free any out req */
+    if (pClient->outReq.hdr.event != ATTC_MSG_API_NONE)
+    {
+      WsfTimerStop(&pClient->outReqTimer);
+      attcReqClear(pClient, &pClient->outReq, status);
+    }
+
     /* free any req on deck */
-    if (attcCb.onDeck[pCcb->connId].hdr.event != ATTC_MSG_API_NONE)
+    if (pClient->onDeck.hdr.event != ATTC_MSG_API_NONE)
     {
-      attcReqClear(pCcb->connId, &attcCb.onDeck[pCcb->connId], status);
+      attcReqClear(pClient, &pClient->onDeck, status);
     }
 
-    for (i = 0; i < ATT_BEARER_MAX; i++)
+    /* initialize other control block variables */
+    pClient->flowDisabled = FALSE;
+    pClient->cnfPending = FALSE;
+
+    /* pass to connection close callback for signed data */
+    if (attcCb.pSign != NULL)
     {
-      /* get client control block directly */
-      pClient = &attcCb.ccb[pCcb->connId - 1][i];
-
-      /* free any out req */
-      if (pClient->outReq.hdr.event != ATTC_MSG_API_NONE)
-      {
-        WsfTimerStop(&pClient->outReqTimer);
-        attcReqClear(pClient->connId, &pClient->outReq, status);
-      }
-
-      /* initialize other control block variables */
-      pCcb->sccb[i].control &= ~ATT_CCB_STATUS_FLOW_DISABLED;
-      pCcb->sccb[i].control &= ~ATT_CCB_STATUS_CNF_PENDING;
-
-      /* pass to connection close callback for signed data */
-      if (attcCb.pSign != NULL)
-      {
-        (*attcCb.pSign->closeCback)(pClient, status);
-      }
-
-      /* call pending write command callback */
-      attcWriteCmdCallback(pCcb->connId, pClient, status);
+      (*attcCb.pSign->closeCback)(pClient, status);
     }
+
+    /* call pending write command callback */
+    attcWriteCmdCallback(pCcb->connId, pClient, status);
   }
 }
 
@@ -641,26 +619,12 @@ static void attcConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt)
  *  \return None.
  */
 /*************************************************************************************************/
-void attcMsgCback(attcApiMsg_t *pMsg)
+static void attcMsgCback(attcApiMsg_t *pMsg)
 {
   attcCcb_t   *pCcb;
 
-  ATT_TRACE_INFO2("attcMsgCback: msg: %#x slot: %#x", pMsg->hdr.event, pMsg->slot);
-
-  /* if signed data event */
-  if ((pMsg->hdr.event >= ATTC_MSG_API_SIGNED_WRITE_CMD) && (pMsg->hdr.event <= ATTC_MSG_CMAC_CMPL))
-  {
-    /* pass to message callback for signed data */
-    if (attcCb.pSign != NULL)
-    {
-      (*attcCb.pSign->msgCback)(NULL, pMsg);
-    }
-
-    return;
-  }
-
   /* get CCB and verify connection still in use */
-  if ((pCcb = attcCcbByConnId((dmConnId_t) pMsg->hdr.param, pMsg->slot)) == NULL)
+  if ((pCcb = attcCcbByConnId((dmConnId_t) pMsg->hdr.param)) == NULL)
   {
     /* if message has a packet buffer */
     if (pMsg->hdr.event >= ATTC_MSG_API_MTU &&
@@ -675,31 +639,40 @@ void attcMsgCback(attcApiMsg_t *pMsg)
   }
 
   /* if an API request to send packet (non-signed) */
-  if (pMsg->hdr.event <= ATTC_MSG_API_READ_MULT_VAR)
+  if (pMsg->hdr.event <= ATTC_MSG_API_EXEC_WRITE)
   {
     /* verify no API request already waiting on deck, in progress, or no pending write command
        already for this handle */
-    if (((pCcb->slot == ATT_BEARER_SLOT_ID) &&
-         (attcCb.onDeck[pCcb->connId].hdr.event != ATTC_MSG_API_NONE)) ||
+    if ((pCcb->onDeck.hdr.event != ATTC_MSG_API_NONE) ||
         (pCcb->outReq.hdr.event > ATTC_MSG_API_MTU)   ||
         ((pMsg->hdr.event == ATTC_MSG_API_WRITE_CMD)  &&
-         attcPendWriteCmd(pCcb, pMsg->handle)))
+         attcPendWriteCmd(pCcb, pMsg)))
     {
       /* free request and call callback with failure status */
-      attcReqClear(pCcb->connId, pMsg, ATT_ERR_OVERFLOW);
+      attcReqClear(pCcb, pMsg, ATT_ERR_OVERFLOW);
       return;
     }
 
     /* if MTU request in progress or flow controlled */
-    if ((pCcb->slot == ATT_BEARER_SLOT_ID) && (pCcb->outReq.hdr.event == ATTC_MSG_API_MTU))
+    if (pCcb->outReq.hdr.event == ATTC_MSG_API_MTU || pCcb->flowDisabled)
     {
       /* put request "on deck" for processing later */
-      attcCb.onDeck[pCcb->connId] = *pMsg;
+      pCcb->onDeck = *pMsg;
     }
     /* otherwise ready to send; set up request */
     else
     {
       attcSetupReq(pCcb, pMsg);
+    }
+  }
+  /* else if signed data event */
+  else if (pMsg->hdr.event >= ATTC_MSG_API_SIGNED_WRITE_CMD &&
+           pMsg->hdr.event <= ATTC_MSG_CMAC_CMPL)
+  {
+    /* pass to message callback for signed data */
+    if (attcCb.pSign != NULL)
+    {
+      (*attcCb.pSign->msgCback)(pCcb, pMsg);
     }
   }
   /* else if cancel request */
@@ -710,13 +683,12 @@ void attcMsgCback(attcApiMsg_t *pMsg)
         pCcb->outReq.hdr.event != ATTC_MSG_API_MTU)
     {
       WsfTimerStop(&pCcb->outReqTimer);
-      attcReqClear(pCcb->connId, &pCcb->outReq, ATT_ERR_CANCELLED);
+      attcReqClear(pCcb, &pCcb->outReq, ATT_ERR_CANCELLED);
     }
     /* else free any req on deck */
-    else if ((pCcb->slot == ATT_BEARER_SLOT_ID) &
-             (attcCb.onDeck[pCcb->connId].hdr.event != ATTC_MSG_API_NONE))
+    else if (pCcb->onDeck.hdr.event != ATTC_MSG_API_NONE)
     {
-      attcReqClear(pCcb->connId, &attcCb.onDeck[pCcb->connId], ATT_ERR_CANCELLED);
+      attcReqClear(pCcb, &pCcb->onDeck, ATT_ERR_CANCELLED);
     }
   }
   /* else if timeout */
@@ -725,8 +697,8 @@ void attcMsgCback(attcApiMsg_t *pMsg)
     /* free any out req */
     if (pCcb->outReq.hdr.event != ATTC_MSG_API_NONE)
     {
-      attcReqClear(pCcb->connId, &pCcb->outReq, ATT_ERR_TIMEOUT);
-      pCcb->pMainCcb->sccb[pMsg->slot].control |= ATT_CCB_STATUS_TX_TIMEOUT;
+      attcReqClear(pCcb, &pCcb->outReq, ATT_ERR_TIMEOUT);
+      pCcb->pMainCcb->control |= ATT_CCB_STATUS_TX_TIMEOUT;
     }
   }
 }
@@ -740,11 +712,11 @@ void attcMsgCback(attcApiMsg_t *pMsg)
  *  \return Pointer to connection control block or NULL if not in use.
  */
 /*************************************************************************************************/
-attcCcb_t *attcCcbByConnId(dmConnId_t connId, uint8_t slot)
+attcCcb_t *attcCcbByConnId(dmConnId_t connId)
 {
   if (DmConnInUse(connId))
   {
-    return &attcCb.ccb[connId - 1][slot];
+    return &attcCb.ccb[connId - 1];
   }
   else
   {
@@ -762,13 +734,13 @@ attcCcb_t *attcCcbByConnId(dmConnId_t connId, uint8_t slot)
  *  \return Pointer to connection control block or NULL if not found.
  */
 /*************************************************************************************************/
-attcCcb_t *attcCcbByHandle(uint16_t handle, uint8_t slot)
+attcCcb_t *attcCcbByHandle(uint16_t handle)
 {
   dmConnId_t  connId;
 
   if ((connId = DmConnIdByHandle(handle)) != DM_CONN_ID_NONE)
   {
-    return &attcCb.ccb[connId - 1][slot];
+    return &attcCb.ccb[connId - 1];
   }
 
   return NULL;
@@ -823,10 +795,10 @@ void attcExecCallback(dmConnId_t connId, uint8_t event, uint16_t handle, uint8_t
  *  \return None.
  */
 /*************************************************************************************************/
-void attcReqClear(dmConnId_t connId, attcApiMsg_t *pMsg, uint8_t status)
+void attcReqClear(attcCcb_t *pCcb, attcApiMsg_t *pMsg, uint8_t status)
 {
   attcFreePkt(pMsg);
-  attcExecCallback(connId, pMsg->hdr.event, pMsg->handle, status);
+  attcExecCallback(pCcb->pMainCcb->connId, pMsg->hdr.event, pMsg->handle, status);
   pMsg->hdr.event = ATTC_MSG_API_NONE;
 }
 
@@ -853,7 +825,7 @@ void AttcSetAutoConfirm(bool_t enable)
 /*************************************************************************************************/
 void AttcInit(void)
 {
-  uint8_t     i, j;
+  uint8_t     i;
   attcCcb_t   *pCcb;
 
   /* Initialize control block */
@@ -861,22 +833,14 @@ void AttcInit(void)
   attcCb.autoCnf = TRUE;
 
   /* Initialize control block CCBs */
-  for (i = 0; i < DM_CONN_MAX; i++)
+  for (i = 0, pCcb = attcCb.ccb; i < DM_CONN_MAX; i++, pCcb++)
   {
-    for (j = 0; j < ATT_BEARER_MAX; j++)
-    {
-      pCcb = &attcCb.ccb[i][j];
+    /* set pointer to main CCB */
+    pCcb->pMainCcb = &attCb.ccb[i];
 
-      /* set pointer to main CCB */
-      pCcb->pMainCcb = &attCb.ccb[i];
-
-      /* initialize timer */
-      pCcb->outReqTimer.handlerId = attCb.handlerId;
-      pCcb->outReqTimer.msg.param = i + 1;  /* param stores the conn id */
-
-      pCcb->slot = j;
-      pCcb->connId = i + 1;
-    }
+    /* initialize timer */
+    pCcb->outReqTimer.handlerId = attCb.handlerId;
+    pCcb->outReqTimer.msg.param = i + 1;  /* param stores the conn id */
   }
 
   /* set up callback interface */

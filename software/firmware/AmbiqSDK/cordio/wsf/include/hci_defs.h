@@ -1,26 +1,19 @@
-/*************************************************************************************************/
-/*!
- *  \file   hci_defs.h
+/* Copyright (c) 2009-2019 Arm Limited
+ * SPDX-License-Identifier: Apache-2.0
  *
- *  \brief  HCI constants and definitions from the Bluetooth specification.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  Copyright (c) 2009-2019 ARM Ltd. All Rights Reserved.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Copyright (c) 2019-2020 Packetcraft, Inc.
- *  
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
- *  
- *      http://www.apache.org/licenses/LICENSE-2.0
- *  
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
- 
+
 /*************************************************************************************************/
 /*!
  *  \brief HCI constants and definitions from the Bluetooth specification.
@@ -55,12 +48,7 @@ extern "C" {
 
 /* User can define the maximum parameter lengths of vendor specific events base on the application requirement */
 #define HCI_EVT_VENDOR_SPEC_CMD_CMPL_PARAM_MAX_LEN   1       /*!< \brief Maximum length of vendor specific command complete event parameter */
-#define HCI_EVT_VENDOR_SPEC_EVT_PARAM_MAX_LEN        1       /*!< \brief Maximum length of vendor specific event parameter */
-
-#define HCI_ISO_DL_MIN_LEN                           4       /*!< ISO Data Load header minimum length */
-#define HCI_ISO_DL_MAX_LEN                           8       /*!< ISO Data Load header maximum length */
-#define HCI_ISO_TS_LEN                               4       /*!< ISO Data Load timestamp length */
-
+#define HCI_EVt_VENDOR_SPEC_EVT_PARAM_MAX_LEN        1       /*!< \brief Maximum length of vendor specific event parameter */
 /**@}*/
 
 /** \name Packet types
@@ -189,9 +177,6 @@ extern "C" {
 #define HCI_OCF_SET_EVENT_MASK_PAGE2                 0x63
 #define HCI_OCF_READ_AUTH_PAYLOAD_TO                 0x7B
 #define HCI_OCF_WRITE_AUTH_PAYLOAD_TO                0x7C
-
-/* Version 5.2 */
-#define HCI_OCF_CONFIG_DATA_PATH                     0x83
 /**@}*/
 
 /** \name Informational commands
@@ -203,11 +188,6 @@ extern "C" {
 #define HCI_OCF_READ_LOCAL_SUP_FEAT                  0x03
 #define HCI_OCF_READ_BUF_SIZE                        0x05
 #define HCI_OCF_READ_BD_ADDR                         0x09
-
-/* Version 5.2 */
-#define HCI_OCF_READ_LOCAL_SUP_CODECS                0x0D
-#define HCI_OCF_READ_LOCAL_SUP_CODEC_CAP             0x0E
-#define HCI_OCF_READ_LOCAL_SUP_CONTROLLER_DLY        0x0F
 /**@}*/
 
 /** \name Status commands
@@ -319,8 +299,8 @@ extern "C" {
 #define HCI_OCF_LE_SET_DEFAULT_PAST_PARAM            0x5D
 #define HCI_OCF_LE_GENERATE_DHKEY_V2                 0x5E
 #define HCI_OCF_LE_MODIFY_SLEEP_CLK_ACC              0x5F
-/* Version 5.2 */
-#define HCI_OCF_LE_READ_BUF_SIZE_V2                  0x60
+/*! \brief New in version Milan */
+#define HCI_OCF_LE_READ_ISO_BUFFER_SIZE              0x60
 #define HCI_OCF_LE_READ_ISO_TX_SYNC                  0x61
 #define HCI_OCF_LE_SET_CIG_PARAMS                    0x62
 #define HCI_OCF_LE_SET_CIG_PARAMS_TEST               0x63
@@ -330,23 +310,16 @@ extern "C" {
 #define HCI_OCF_LE_REJECT_CIS_REQ                    0x67
 #define HCI_OCF_LE_CREATE_BIG                        0x68
 #define HCI_OCF_LE_CREATE_BIG_TEST                   0x69
-#define HCI_OCF_LE_TERMINATE_BIG                     0x6A
-#define HCI_OCF_LE_BIG_CREATE_SYNC                   0x6B
+#define HCI_OCF_LE_BIG_CREATE_SYNC                   0x6A
+#define HCI_OCF_LE_TERMINATE_BIG                     0x6B
 #define HCI_OCF_LE_BIG_TERMINATE_SYNC                0x6C
 #define HCI_OCF_LE_REQUEST_PEER_SCA                  0x6D
 #define HCI_OCF_LE_SETUP_ISO_DATA_PATH               0x6E
 #define HCI_OCF_LE_REMOVE_ISO_DATA_PATH              0x6F
 #define HCI_OCF_LE_ISO_TX_TEST                       0x70
 #define HCI_OCF_LE_ISO_RX_TEST                       0x71
-#define HCI_OCF_LE_ISO_READ_TEST_COUNTERS            0x72
-#define HCI_OCF_LE_ISO_TEST_END                      0x73
-#define HCI_OCF_LE_SET_HOST_FEATURE                  0x74
-#define HCI_OCF_LE_READ_ISO_LINK_QUAL                0x75
-#define HCI_OCF_LE_READ_ENHANCED_TX_POWER            0x76
-#define HCI_OCF_LE_READ_REMOTE_TX_POWER              0x77
-#define HCI_OCF_LE_SET_PATH_LOSS_REPORTING_PARAMS    0x78
-#define HCI_OCF_LE_SET_PATH_LOSS_REPORTING_ENABLE    0x79
-#define HCI_OCF_LE_SET_TX_POWER_REPORT_ENABLE        0x7A
+#define HCI_OCF_LE_ISO_READ_TEST_COUNTER             0x72
+#define HCI_OCF_LE_ISO_TERMINATE_TEST                0x73
 /**@}*/
 
 /** \name Opcode manipulation macros
@@ -373,16 +346,12 @@ extern "C" {
 #define HCI_OPCODE_SET_EVENT_MASK_PAGE2              HCI_OPCODE(HCI_OGF_CONTROLLER, HCI_OCF_SET_EVENT_MASK_PAGE2)
 #define HCI_OPCODE_READ_AUTH_PAYLOAD_TO              HCI_OPCODE(HCI_OGF_CONTROLLER, HCI_OCF_READ_AUTH_PAYLOAD_TO)
 #define HCI_OPCODE_WRITE_AUTH_PAYLOAD_TO             HCI_OPCODE(HCI_OGF_CONTROLLER, HCI_OCF_WRITE_AUTH_PAYLOAD_TO)
-#define HCI_OPCODE_CONFIG_DATA_PATH                  HCI_OPCODE(HCI_OGF_CONTROLLER, HCI_OCF_CONFIG_DATA_PATH)
 
 #define HCI_OPCODE_READ_LOCAL_VER_INFO               HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_LOCAL_VER_INFO)
 #define HCI_OPCODE_READ_LOCAL_SUP_CMDS               HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_LOCAL_SUP_CMDS)
 #define HCI_OPCODE_READ_LOCAL_SUP_FEAT               HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_LOCAL_SUP_FEAT)
 #define HCI_OPCODE_READ_BUF_SIZE                     HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_BUF_SIZE)
 #define HCI_OPCODE_READ_BD_ADDR                      HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_BD_ADDR)
-#define HCI_OPCODE_READ_LOCAL_SUP_CODECS             HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_LOCAL_SUP_CODECS)
-#define HCI_OPCODE_READ_LOCAL_SUP_CODEC_CAP          HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_LOCAL_SUP_CODEC_CAP)
-#define HCI_OPCODE_READ_LOCAL_SUP_CONTROLLER_DLY     HCI_OPCODE(HCI_OGF_INFORMATIONAL, HCI_OCF_READ_LOCAL_SUP_CONTROLLER_DLY)
 
 #define HCI_OPCODE_READ_RSSI                         HCI_OPCODE(HCI_OGF_STATUS, HCI_OCF_READ_RSSI)
 
@@ -484,8 +453,8 @@ extern "C" {
 #define HCI_OPCODE_LE_SET_DEFAULT_PAST_PARAM         HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_DEFAULT_PAST_PARAM)
 #define HCI_OPCODE_LE_GENERATE_DHKEY_V2              HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_GENERATE_DHKEY_V2)
 #define HCI_OPCODE_LE_MODIFY_SLEEP_CLK_ACC           HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_MODIFY_SLEEP_CLK_ACC)
-/* Version 5.2 */
-#define HCI_OPCODE_LE_READ_BUF_SIZE_V2               HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_READ_BUF_SIZE_V2)
+/*! \brief New in version Milan */
+#define HCI_OPCODE_LE_READ_ISO_BUFFER_SIZE           HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_READ_ISO_BUFFER_SIZE)
 #define HCI_OPCODE_LE_READ_ISO_TX_SYNC               HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_READ_ISO_TX_SYNC)
 #define HCI_OPCODE_LE_SET_CIG_PARAMS                 HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_CIG_PARAMS)
 #define HCI_OPCODE_LE_SET_CIG_PARAMS_TEST            HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_CIG_PARAMS_TEST)
@@ -495,26 +464,19 @@ extern "C" {
 #define HCI_OPCODE_LE_REJECT_CIS_REQ                 HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_REJECT_CIS_REQ)
 #define HCI_OPCODE_LE_CREATE_BIG                     HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_CREATE_BIG)
 #define HCI_OPCODE_LE_CREATE_BIG_TEST                HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_CREATE_BIG_TEST)
-#define HCI_OPCODE_LE_TERMINATE_BIG                  HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_TERMINATE_BIG)
 #define HCI_OPCODE_LE_BIG_CREATE_SYNC                HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_BIG_CREATE_SYNC)
+#define HCI_OPCODE_LE_TERMINATE_BIG                  HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_TERMINATE_BIG)
 #define HCI_OPCODE_LE_BIG_TERMINATE_SYNC             HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_BIG_TERMINATE_SYNC)
 #define HCI_OPCODE_LE_REQUEST_PEER_SCA               HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_REQUEST_PEER_SCA)
 #define HCI_OPCODE_LE_SETUP_ISO_DATA_PATH            HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SETUP_ISO_DATA_PATH)
 #define HCI_OPCODE_LE_REMOVE_ISO_DATA_PATH           HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_REMOVE_ISO_DATA_PATH)
 #define HCI_OPCODE_LE_ISO_TX_TEST                    HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_ISO_TX_TEST)
 #define HCI_OPCODE_LE_ISO_RX_TEST                    HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_ISO_RX_TEST)
-#define HCI_OPCODE_LE_ISO_READ_TEST_COUNTERS         HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_ISO_READ_TEST_COUNTERS)
-#define HCI_OPCODE_LE_ISO_TEST_END                   HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_ISO_TEST_END)
-#define HCI_OPCODE_LE_SET_HOST_FEATURE               HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_HOST_FEATURE)
-#define HCI_OPCODE_LE_READ_ISO_LINK_QUAL             HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_READ_ISO_LINK_QUAL)
-#define HCI_OPCODE_LE_READ_ENHANCED_TX_POWER         HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_READ_ENHANCED_TX_POWER)
-#define HCI_OPCODE_LE_READ_REMOTE_TX_POWER           HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_READ_REMOTE_TX_POWER)
-#define HCI_OPCODE_LE_SET_PATH_LOSS_REPORTING_PARAMS HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_PATH_LOSS_REPORTING_PARAMS)
-#define HCI_OPCODE_LE_SET_PATH_LOSS_REPORTING_ENABLE HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_PATH_LOSS_REPORTING_ENABLE)
-#define HCI_OPCODE_LE_SET_TX_POWER_REPORT_ENABLE     HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_SET_TX_POWER_REPORT_ENABLE)
+#define HCI_OPCODE_LE_ISO_READ_TEST_COUNTER          HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_ISO_READ_TEST_COUNTER)
+#define HCI_OPCODE_LE_ISO_TERMINATE_TEST             HCI_OPCODE(HCI_OGF_LE_CONTROLLER, HCI_OCF_LE_ISO_TERMINATE_TEST)
 /**@}*/
 
-/** \name Packetcraft Vendor Specific
+/** \name ARM Vendor Specific
  *
  */
 /**@{*/
@@ -537,16 +499,12 @@ extern "C" {
 #define HCI_LEN_SET_CONTROLLER_TO_HOST_FC            1
 #define HCI_LEN_HOST_BUFFER_SIZE                     8
 #define HCI_LEN_HOST_NUM_CMPL_PKTS                   1
-#define HCI_LEN_CONFIG_DATA_PATH(cLen)               (3 + (cLen))
 
 #define HCI_LEN_READ_LOCAL_VER_INFO                  0
 #define HCI_LEN_READ_LOCAL_SUP_CMDS                  0
 #define HCI_LEN_READ_LOCAL_SUP_FEAT                  0
 #define HCI_LEN_READ_BUF_SIZE                        0
 #define HCI_LEN_READ_BD_ADDR                         0
-#define HCI_LEN_READ_LOCAL_SUP_CODECS                0
-#define HCI_LEN_READ_LOCAL_SUP_CODEC_CAP             7
-#define HCI_LEN_READ_LOCAL_SUP_CONTROLLER_DLY(ccLen) (8 + (ccLen))
 
 #define HCI_LEN_READ_RSSI                            2
 #define HCI_LEN_READ_AUTH_PAYLOAD_TO                 2
@@ -651,25 +609,6 @@ extern "C" {
 #define HCI_LEN_LE_SET_PAST_PARAM                    8
 #define HCI_LEN_LE_SET_DEFAULT_PAST_PARAM            6
 #define HCI_LEN_LE_GENERATE_DHKEY_V2                 65
-
-/* Version Milan */
-#define HCI_LEN_LE_SET_CIG_PARAMS(numCis)            (15 + (9 * (numCis)))
-#define HCI_LEN_LE_CREATE_CIS(numCis)                (1 + (4 * (numCis)))
-#define HCI_LEN_LE_REMOVE_CIG                        1
-#define HCI_LEN_LE_ACCEPT_CIS_REQ                    2
-#define HCI_LEN_LE_REJECT_CIS_REQ                    3
-#define HCI_LEN_LE_REQUEST_PEER_SCA                  2
-#define HCI_LEN_LE_CREATE_BIS                        (15 + HCI_BC_LEN)
-#define HCI_LEN_LE_TERMINATE_BIG                     2
-#define HCI_LEN_LE_BIG_CREATE_SYNC(numBis)           (8 + HCI_BC_LEN + (numBis))
-#define HCI_LEN_LE_BIG_TERMINATE_SYNC                1
-#define HCI_LEN_LE_SETUP_ISO_DATA_PATH(ccLen)        (13 + (ccLen))
-#define HCI_LEN_LE_REMOVE_ISO_DATA_PATH              3
-#define HCI_LEN_LE_ISO_TX_TEST                       3
-#define HCI_LEN_LE_ISO_RX_TEST                       3
-#define HCI_LEN_LE_ISO_READ_TEST_COUNTERS            2
-#define HCI_LEN_LE_ISO_TEST_END                      2
-#define HCI_LEN_LE_SET_HOST_FEATURE                  2
 /**@}*/
 
 /** \name Events
@@ -722,220 +661,187 @@ extern "C" {
 #define HCI_LE_CONN_IQ_REPORT_EVT                    0x16
 #define HCI_LE_CTE_REQ_FAILED_EVT                    0x17
 #define HCI_LE_PER_SYNC_TRSF_RCVD_EVT                0x18
-/* Version 5.2 */
+/*! \brief New in version Milan */
 #define HCI_LE_CIS_EST_EVT                           0x19
 #define HCI_LE_CIS_REQ_EVT                           0x1A
-#define HCI_LE_CREATE_BIG_CMPL_EVT                   0x1B
-#define HCI_LE_TERMINATE_BIG_CMPL_EVT                0x1C
-#define HCI_LE_BIG_SYNC_EST_EVT                      0x1D
-#define HCI_LE_BIG_SYNC_LOST_EVT                     0x1E
-#define HCI_LE_REQ_PEER_SCA_CMPLT_EVT                0x1F
-#define HCI_LE_PATH_LOSS_REPORT_EVT                  0x20
-#define HCI_LE_POWER_REPORT_EVT                      0x21
-#define HCI_LE_BIG_INFO_ADV_REPORT_EVT               0x22
+#define HCI_LE_BIG_CMPL_EVT                          0x1B
+#define HCI_LE_BIG_SYNC_LOST_EVT                     0x1C
+#define HCI_LE_REQ_PEER_SCA_CMPLT_EVT                0x1D
 /**@}*/
 
 /** \name Event parameter lengths
  *
  */
 /**@{*/
-#define HCI_LEN_DISCONNECT_CMPL                      4       /*!< Disconnect event length. */
-#define HCI_LEN_READ_REMOTE_VER_INFO_CMPL            8       /*!< Read remove version info complete event length. */
-#define HCI_LEN_CMD_CMPL                             3       /*!< Command complete event length. */
-#define HCI_LEN_CMD_STATUS                           4       /*!< Command status event length. */
-#define HCI_LEN_HW_ERR                               1       /*!< Hardware error event length. */
-#define HCI_LEN_NUM_CMPL_PKTS(numHdls)               (1 + (4 * numHdls))    /*!< Number of completed packets event length. */
-#define HCI_LEN_ENC_CHANGE                           4       /*!< Encryption change event length. */
-#define HCI_LEN_ENC_KEY_REFRESH_CMPL                 3       /*!< Encryption key refresh complete event length. */
-#define HCI_LEN_LE_CONN_CMPL                         19      /*!< Connection complete event length. */
-#define HCI_LEN_LE_ADV_RPT_MIN                       12      /*!< Advertising report event minimum length. */
-#define HCI_LEN_LE_CONN_UPDATE_CMPL                  10      /*!< Connection update complete event length. */
-#define HCI_LEN_LE_READ_REMOTE_FEAT_CMPL             12      /*!< Read remote feature event length. */
-#define HCI_LEN_LE_LTK_REQ                           13      /*!< LTK request event length. */
-/* Version 4.1 */
-#define HCI_LEN_LE_REM_CONN_PARAM_REQ                11      /*!< Remote connection parameter event length. */
-#define HCI_LEN_LE_DATA_LEN_CHANGE                   11      /*!< Data length change event length. */
-#define HCI_LEN_LE_READ_PUB_KEY_CMPL                 66      /*!< Read local P256 public key compete event length. */
-#define HCI_LEN_LE_GEN_DHKEY_CMPL                    34      /*!< Generate DH key complete event length. */
-#define HCI_LEN_LE_ENHANCED_CONN_CMPL                31      /*!< Enhanced connection complete event length. */
-#define HCI_LEN_LE_DIRECT_ADV_REPORT                 18      /*!< Direct advertising report event length. */
-#define HCI_LEN_AUTH_PAYLOAD_TIMEOUT                 2       /*!< Authenticated payload timeout event length. */
-/* Version 5.0 */
-#define HCI_LEN_LE_PHY_UPDATE_CMPL                   6       /*!< PHY update complete event length. */
-#define HCI_LEN_LE_CH_SEL_ALGO                       4       /*!< Channel selection algorithm event length. */
-#define HCI_LEN_LE_PHY_UPDATE_CMPL                   6       /*!< PHY update complete event length. */
-#define HCI_LEN_LE_EXT_ADV_REPORT_MIN                26      /*!< Extended advertising report minimum length. */
-#define HCI_LEN_LE_PER_ADV_SYNC_EST                  16      /*!< Periodic advertising sync established event length. */
-#define HCI_LEN_LE_PER_ADV_REPORT                    8       /*!< Periodic advertising report event length. */
-#define HCI_LEN_LE_PER_ADV_SYNC_LOST                 3       /*!< Periodic advertising sync lost event length. */
-#define HCI_LEN_LE_SCAN_TIMEOUT                      1       /*!< Scan timeout event length. */
-#define HCI_LEN_LE_ADV_SET_TERM                      6       /*!< Advertising set terminated event length. */
-#define HCI_LEN_LE_SCAN_REQ_RCVD                     9       /*!< Scan request received event length. */
-/* Version 5.1 */
-#define HCI_LEN_LE_PER_SYNC_TRSF_RCVT                20      /*!< Periodic advertising sync transfer received event length. */
-/* Version 5.2 */
-#define HCI_LEN_LE_CIS_EST                           29      /*!< CIS established event length. */
-#define HCI_LEN_LE_CIS_REQ                           7       /*!< CIS request event length. */
-#define HCI_LEN_LE_PEER_SCA_CMPL                     5       /*!< Request peer SCA complete event length. */
-#define HCI_LEN_LE_CREATE_BIG_CMPL(numBis)           (19 + (2 * numBis))    /*!< Create BIG complete event length. */
-#define HCI_LEN_LE_TERMINATE_BIG_CMPL                3       /*!< Terminate BIG complete event length. */
-#define HCI_LEN_LE_BIG_SYNC_EST(numBis)              (15 + (2 * numBis))    /*!< BIG sync established event length. */
-#define HCI_LEN_LE_BIG_SYNC_LOST                     3       /*!< BIG sync lost event length. */
-#define HCI_LEN_LE_POWER_REPORT                      9       /*!< Power reporting event length. */
-#define HCI_LEN_LE_PATH_LOSS_ZONE                    5       /*!< Path loss reporting event length. */
-#define HCI_LEN_LE_BIG_INFO_ADV_REPORT               20      /*!< BIG Info advertising report length. */
-
+#define HCI_LEN_DISCONNECT_CMPL                      4       /*!< \brief Disconnect event length. */
+#define HCI_LEN_READ_REMOTE_VER_INFO_CMPL            8       /*!< \brief Read remove version info complete event length. */
+#define HCI_LEN_CMD_CMPL                             3       /*!< \brief Command complete event length. */
+#define HCI_LEN_CMD_STATUS                           4       /*!< \brief Command status event length. */
+#define HCI_LEN_HW_ERR                               1       /*!< \brief Hardware error event length. */
+#define HCI_LEN_NUM_CMPL_PKTS                        5       /*!< \brief Number of completed packets event length. */
+#define HCI_LEN_ENC_CHANGE                           4       /*!< \brief Encryption change event length. */
+#define HCI_LEN_ENC_KEY_REFRESH_CMPL                 3       /*!< \brief Encryption key refresh complete event length. */
+#define HCI_LEN_LE_CONN_CMPL                         19      /*!< \brief Connection complete event length. */
+#define HCI_LEN_LE_ADV_RPT_MIN                       12      /*!< \brief Advertising report event minimum length. */
+#define HCI_LEN_LE_CONN_UPDATE_CMPL                  10      /*!< \brief Connection update complete event length. */
+#define HCI_LEN_LE_READ_REMOTE_FEAT_CMPL             12      /*!< \brief Read remote feature event length. */
+#define HCI_LEN_LE_LTK_REQ                           13      /*!< \brief LTK request event length. */
+/*! \brief New in version 4.1 */
+#define HCI_LEN_LE_REM_CONN_PARAM_REQ                11      /*!< \brief Remote connection parameter event length. */
+#define HCI_LEN_LE_DATA_LEN_CHANGE                   11      /*!< \brief Data length change event length. */
+#define HCI_LEN_LE_READ_PUB_KEY_CMPL                 66      /*!< \brief Read local P256 public key compete event length. */
+#define HCI_LEN_LE_GEN_DHKEY_CMPL                    34      /*!< \brief Generate DH key complete event length. */
+#define HCI_LEN_LE_ENHANCED_CONN_CMPL                31      /*!< \brief Enhanced connection complete event length. */
+#define HCI_LEN_LE_DIRECT_ADV_REPORT                 18      /*!< \brief Direct advertising report event length. */
+#define HCI_LEN_AUTH_PAYLOAD_TIMEOUT                 2       /*!< \brief Authenticated payload timeout event length. */
+/*! \brief New in version 5.0 */
+#define HCI_LEN_LE_PHY_UPDATE_CMPL                   6       /*!< \brief PHY update complete event length. */
+#define HCI_LEN_LE_CH_SEL_ALGO                       4       /*!< \brief Channel selection algorithm event length. */
+#define HCI_LEN_LE_PHY_UPDATE_CMPL                   6       /*!< \brief PHY update complete event length. */
+#define HCI_LEN_LE_EXT_ADV_REPORT_MIN                26      /*!< \brief Extended advertising report minimum length. */
+#define HCI_LEN_LE_PER_ADV_SYNC_EST                  16      /*!< \brief Periodic advertising sync established event length. */
+#define HCI_LEN_LE_PER_ADV_REPORT                    8       /*!< \brief Periodic advertising report event length. */
+#define HCI_LEN_LE_PER_ADV_SYNC_LOST                 3       /*!< \brief Periodic advertising sync lost event length. */
+#define HCI_LEN_LE_SCAN_TIMEOUT                      1       /*!< \brief Scan timeout event length. */
+#define HCI_LEN_LE_ADV_SET_TERM                      6       /*!< \brief Advertising set terminated event length. */
+#define HCI_LEN_LE_SCAN_REQ_RCVD                     9       /*!< \brief Scan request received event length. */
+/*! \brief New in version 5.1 */
+#define HCI_LEN_LE_PER_SYNC_TRSF_RCVT                20      /*!< \brief Periodic advertising sync transfer received event length. */
+/*! \brief New in version Milan */
+#define HCI_LEN_LE_CIS_EST                           12      /*!< \brief CIS established event length. */
+#define HCI_LEN_LE_CIS_REQ                           7       /*!< \brief CIS request event length. */
+#define HCI_LEN_LE_PEER_SCA_CMPL                     5       /*!< \brief Request peer SCA complete event length. */
 /**@}*/
 
 /** \name Supported commands
  *
  */
 /**@{*/
-#define HCI_SUP_DISCONNECT                           0x20    /*!< Byte 0 */
-#define HCI_SUP_READ_REMOTE_VER_INFO                 0x80    /*!< Byte 2 */
-#define HCI_SUP_SET_EVENT_MASK                       0x40    /*!< Byte 5 */
-#define HCI_SUP_RESET                                0x80    /*!< Byte 5 */
-#define HCI_SUP_READ_TX_PWR_LVL                      0x04    /*!< Byte 10 */
-#define HCI_SUP_READ_LOCAL_VER_INFO                  0x08    /*!< Byte 14 */
-#define HCI_SUP_READ_LOCAL_SUP_FEAT                  0x20    /*!< Byte 14 */
-#define HCI_SUP_READ_BD_ADDR                         0x02    /*!< Byte 15 */
-#define HCI_SUP_READ_RSSI                            0x20    /*!< Byte 15 */
-#define HCI_SUP_SET_EVENT_MASK_PAGE2                 0x04    /*!< Byte 22 */
-#define HCI_SUP_LE_SET_EVENT_MASK                    0x01    /*!< Byte 25 */
-#define HCI_SUP_LE_READ_BUF_SIZE                     0x02    /*!< Byte 25 */
-#define HCI_SUP_LE_READ_LOCAL_SUP_FEAT               0x04    /*!< Byte 25 */
-#define HCI_SUP_LE_SET_RAND_ADDR                     0x10    /*!< Byte 25 */
-#define HCI_SUP_LE_SET_ADV_PARAM                     0x20    /*!< Byte 25 */
-#define HCI_SUP_LE_READ_ADV_TX_POWER                 0x40    /*!< Byte 25 */
-#define HCI_SUP_LE_SET_ADV_DATA                      0x80    /*!< Byte 25 */
-#define HCI_SUP_LE_SET_SCAN_RESP_DATA                0x01    /*!< Byte 26 */
-#define HCI_SUP_LE_SET_ADV_ENABLE                    0x02    /*!< Byte 26 */
-#define HCI_SUP_LE_SET_SCAN_PARAM                    0x04    /*!< Byte 26 */
-#define HCI_SUP_LE_SET_SCAN_ENABLE                   0x08    /*!< Byte 26 */
-#define HCI_SUP_LE_CREATE_CONN                       0x10    /*!< Byte 26 */
-#define HCI_SUP_LE_CREATE_CONN_CANCEL                0x20    /*!< Byte 26 */
-#define HCI_SUP_LE_READ_WHITE_LIST_SIZE              0x40    /*!< Byte 26 */
-#define HCI_SUP_LE_CLEAR_WHITE_LIST                  0x80    /*!< Byte 26 */
-#define HCI_SUP_LE_ADD_DEV_WHITE_LIST                0x01    /*!< Byte 27 */
-#define HCI_SUP_LE_REMOVE_DEV_WHITE_LIST             0x02    /*!< Byte 27 */
-#define HCI_SUP_LE_CONN_UPDATE                       0x04    /*!< Byte 27 */
-#define HCI_SUP_LE_SET_HOST_CHAN_CLASS               0x08    /*!< Byte 27 */
-#define HCI_SUP_LE_READ_CHAN_MAP                     0x10    /*!< Byte 27 */
-#define HCI_SUP_LE_READ_REMOTE_FEAT                  0x20    /*!< Byte 27 */
-#define HCI_SUP_LE_ENCRYPT                           0x40    /*!< Byte 27 */
-#define HCI_SUP_LE_RAND                              0x80    /*!< Byte 27 */
-#define HCI_SUP_LE_START_ENCRYPTION                  0x01    /*!< Byte 28 */
-#define HCI_SUP_LE_LTK_REQ_REPL                      0x02    /*!< Byte 28 */
-#define HCI_SUP_LE_LTK_REQ_NEG_REPL                  0x04    /*!< Byte 28 */
-#define HCI_SUP_LE_READ_SUP_STATES                   0x08    /*!< Byte 28 */
-#define HCI_SUP_LE_RECEIVER_TEST                     0x10    /*!< Byte 28 */
-#define HCI_SUP_LE_TRANSMITTER_TEST                  0x20    /*!< Byte 28 */
-#define HCI_SUP_LE_TEST_END                          0x40    /*!< Byte 28 */
-#define HCI_SUP_READ_AUTH_PAYLOAD_TO                 0x10    /*!< Byte 32 */
-#define HCI_SUP_WRITE_AUTH_PAYLOAD_TO                0x20    /*!< Byte 32 */
-/* Version 4.1 */
-#define HCI_SUP_LE_REM_CONN_PARAM_REQ_REPL           0x10    /*!< Byte 33 */
-#define HCI_SUP_LE_REM_CONN_PARAM_REQ_NEG_REPL       0x20    /*!< Byte 33 */
-/* Version 4.2 */
-#define HCI_SUP_LE_SET_DATA_LEN                      0x40    /*!< Byte 33 */
-#define HCI_SUP_LE_READ_DEF_DATA_LEN                 0x80    /*!< Byte 33 */
-#define HCI_SUP_LE_WRITE_DEF_DATA_LEN                0x01    /*!< Byte 34 */
-#define HCI_SUP_LE_READ_LOCAL_P256_PUB_KEY           0x02    /*!< Byte 34 */
-#define HCI_SUP_LE_GENERATE_DHKEY                    0x04    /*!< Byte 34 */
-#define HCI_SUP_LE_ADD_DEV_RES_LIST_EVT              0x08    /*!< Byte 34 */
-#define HCI_SUP_LE_REMOVE_DEV_RES_LIST               0x10    /*!< Byte 34 */
-#define HCI_SUP_LE_CLEAR_RES_LIST                    0x20    /*!< Byte 34 */
-#define HCI_SUP_LE_READ_RES_LIST_SIZE                0x40    /*!< Byte 34 */
-#define HCI_SUP_LE_READ_PEER_RES_ADDR                0x80    /*!< Byte 34 */
-#define HCI_SUP_LE_READ_LOCAL_RES_ADDR               0x01    /*!< Byte 35 */
-#define HCI_SUP_LE_SET_ADDR_RES_ENABLE               0x02    /*!< Byte 35 */
-#define HCI_SUP_LE_SET_RES_PRIV_ADDR_TO              0x04    /*!< Byte 35 */
-#define HCI_SUP_LE_READ_MAX_DATA_LEN                 0x08    /*!< Byte 35 */
-/* Version 5.0 */
-#define HCI_SUP_LE_READ_PHY                          0x10    /*!< Byte 35 */
-#define HCI_SUP_LE_SET_DEF_PHY                       0x20    /*!< Byte 35 */
-#define HCI_SUP_LE_SET_PHY                           0x40    /*!< Byte 35 */
-#define HCI_SUP_LE_ENHANCED_RECEIVER_TEST            0x80    /*!< Byte 35 */
-#define HCI_SUP_LE_ENHANCED_TRANSMITTER_TEST         0x01    /*!< Byte 36 */
-#define HCI_SUP_LE_SET_ADV_SET_RAND_ADDR             0x02    /*!< Byte 36 */
-#define HCI_SUP_LE_SET_EXT_ADV_PARAM                 0x04    /*!< Byte 36 */
-#define HCI_SUP_LE_SET_EXT_ADV_DATA                  0x08    /*!< Byte 36 */
-#define HCI_SUP_LE_SET_EXT_SCAN_RESP_DATA            0x10    /*!< Byte 36 */
-#define HCI_SUP_LE_SET_EXT_ADV_ENABLE                0x20    /*!< Byte 36 */
-#define HCI_SUP_LE_READ_MAX_ADV_DATA_LEN             0x40    /*!< Byte 36 */
-#define HCI_SUP_LE_READ_NUM_OF_SUP_ADV_SETS          0x80    /*!< Byte 36 */
-#define HCI_SUP_LE_REMOVE_ADV_SET                    0x01    /*!< Byte 37 */
-#define HCI_SUP_LE_CLEAR_ADV_SETS                    0x02    /*!< Byte 37 */
-#define HCI_SUP_LE_SET_PER_ADV_PARAM                 0x04    /*!< Byte 37 */
-#define HCI_SUP_LE_SET_PER_ADV_DATA                  0x08    /*!< Byte 37 */
-#define HCI_SUP_LE_SET_PER_ADV_ENABLE                0x10    /*!< Byte 37 */
-#define HCI_SUP_LE_SET_EXT_SCAN_PARAM                0x20    /*!< Byte 37 */
-#define HCI_SUP_LE_SET_EXT_SCAN_ENABLE               0x40    /*!< Byte 37 */
-#define HCI_SUP_LE_EXT_CREATE_CONN                   0x80    /*!< Byte 37 */
-#define HCI_SUP_LE_PER_ADV_CREATE_SYNC               0x01    /*!< Byte 38 */
-#define HCI_SUP_LE_PER_ADV_CREATE_SYNC_CANCEL        0x02    /*!< Byte 38 */
-#define HCI_SUP_LE_PER_ADV_TERMINATE_SYNC            0x04    /*!< Byte 38 */
-#define HCI_SUP_LE_ADD_DEV_PER_ADV_LIST              0x08    /*!< Byte 38 */
-#define HCI_SUP_LE_REMOVE_DEV_PER_ADV_LIST           0x10    /*!< Byte 38 */
-#define HCI_SUP_LE_CLEAR_PER_ADV_LIST                0x20    /*!< Byte 38 */
-#define HCI_SUP_LE_READ_PER_ADV_LIST_SIZE            0x40    /*!< Byte 38 */
-#define HCI_SUP_LE_READ_TX_POWER                     0x80    /*!< Byte 38 */
-#define HCI_SUP_LE_READ_RF_PATH_COMP                 0x01    /*!< Byte 39 */
-#define HCI_SUP_LE_WRITE_RF_PATH_COMP                0x02    /*!< Byte 39 */
-#define HCI_SUP_LE_SET_PRIVACY_MODE                  0x04    /*!< Byte 39 */
-/* Version 5.1 */
-#define HCI_SUP_LE_RECEIVER_TEST_V3                  0x08    /*!< Byte 39 */
-#define HCI_SUP_LE_TRANSMITTER_TEST_V3               0x10    /*!< Byte 39 */
-#define HCI_SUP_LE_SET_CONNLESS_CTE_TX_PARAMS        0x20    /*!< Byte 39 */
-#define HCI_SUP_LE_SET_CONNLESS_CTE_TX_ENABLE        0x40    /*!< Byte 39 */
-#define HCI_SUP_LE_SET_CONNLESS_IQ_SAMP_ENABLE       0x80    /*!< Byte 39 */
-#define HCI_SUP_LE_SET_CONN_CTE_RX_PARAMS            0x01    /*!< Byte 40 */
-#define HCI_SUP_LE_SET_CONN_CTE_TX_PARAMS            0x02    /*!< Byte 40 */
-#define HCI_SUP_LE_CONN_CTE_REQ_ENABLE               0x04    /*!< Byte 40 */
-#define HCI_SUP_LE_CONN_CTE_RSP_ENABLE               0x08    /*!< Byte 40 */
-#define HCI_SUP_LE_READ_ANTENNA_INFO                 0x10    /*!< Byte 40 */
-#define HCI_SUP_LE_SET_PER_ADV_RCV_ENABLE            0x20    /*!< Byte 40 */
-#define HCI_SUP_LE_PER_ADV_SYNC_TRANSFER             0x40    /*!< Byte 40 */
-#define HCI_SUP_LE_PER_ADV_SET_INFO_TRANSFER         0x80    /*!< Byte 40 */
-#define HCI_SUP_LE_SET_PAST_PARAM                    0x01    /*!< Byte 41 */
-#define HCI_SUP_LE_SET_DEFAULT_PAST_PARAM            0x02    /*!< Byte 41 */
-#define HCI_SUP_LE_GENERATE_DHKEY_V2                 0x04    /*!< Byte 41 */
-#define HCI_SUP_LE_MODIFY_SLEEP_CLK_ACCURACY         0x10    /*!< Byte 41 */
-/* Version 5.2 */
-#define HCI_SUP_LE_READ_BUF_SIZE_V2                  0x20    /*!< Byte 41 */
-#define HCI_SUP_LE_READ_ISO_TX_SYNC                  0x40    /*!< Byte 41 */
-#define HCI_SUP_LE_SET_CIG_PARAM                     0x80    /*!< Byte 41 */
-#define HCI_SUP_LE_SET_CIG_PARAM_TEST                0x01    /*!< Byte 42 */
-#define HCI_SUP_LE_CREATE_CIS                        0x02    /*!< Byte 42 */
-#define HCI_SUP_LE_REMOVE_CIG                        0x04    /*!< Byte 42 */
-#define HCI_SUP_LE_ACCEPT_CIS_REQ                    0x08    /*!< Byte 42 */
-#define HCI_SUP_LE_REJECT_CIS_REQ                    0x10    /*!< Byte 42 */
-#define HCI_SUP_LE_CREATE_BIG                        0x20    /*!< Byte 42 */
-#define HCI_SUP_LE_CREATE_BIG_TEST                   0x40    /*!< Byte 42 */
-#define HCI_SUP_LE_TERMINATE_BIG                     0x80    /*!< Byte 42 */
-#define HCI_SUP_LE_BIG_CREATE_SYNC                   0x01    /*!< Byte 43 */
-#define HCI_SUP_LE_BIG_TERMINATE_SYNC                0x02    /*!< Byte 43 */
-#define HCI_SUP_LE_REQ_PEER_SCA                      0x04    /*!< Byte 43 */
-#define HCI_SUP_LE_SETUP_ISO_DATA_PATH               0x08    /*!< Byte 43 */
-#define HCI_SUP_LE_REMOVE_ISO_DATA_PATH              0x10    /*!< Byte 43 */
-#define HCI_SUP_LE_ISO_TRANSMIT_TEST                 0x20    /*!< Byte 43 */
-#define HCI_SUP_LE_ISO_RECEIVE_TEST                  0x40    /*!< Byte 43 */
-#define HCI_SUP_LE_ISO_READ_TEST_COUNTERS            0x80    /*!< Byte 43 */
-#define HCI_SUP_LE_ISO_TEST_END                      0x01    /*!< Byte 44 */
-#define HCI_SUP_LE_SET_HOST_FEATURE                  0x02    /*!< Byte 44 */
-#define HCI_SUP_LE_READ_ISO_LINK_QUALITY             0x04    /*!< Byte 44 */
-#define HCI_SUP_LE_ENH_READ_TX_POWER_LEVEL           0x08    /*!< Byte 44 */
-#define HCI_SUP_LE_READ_REMOTE_TX_POWER_LEVEL        0x01    /*!< Byte 44 */
-#define HCI_SUP_LE_SET_PATH_LOSS_REPORT_PARAM        0x02    /*!< Byte 44 */
-#define HCI_SUP_LE_SET_PATH_LOSS_REPORT_ENABLE       0x04    /*!< Byte 44 */
-#define HCI_SUP_LE_SET_TX_POWER_REPORT_ENABLE        0x08    /*!< Byte 44 */
-#define HCI_SUP_LE_TRANSMITTER_TEST_V4               0x01    /*!< Byte 45 */
-#define HCI_SUP_READ_LOCAL_SUP_CODECS_V2             0x02    /*!< Byte 45 */
-#define HCI_SUP_READ_LOCAL_SUP_CODEC_CAP             0x04    /*!< Byte 45 */
-#define HCI_SUP_READ_LOCAL_SUP_CTR_DLY               0x08    /*!< Byte 45 */
-#define HCI_SUP_CONFIG_DATA_PATH                     0x10    /*!< Byte 45 */
+#define HCI_SUP_DISCONNECT                           0x20    /*!< \brief Byte 0 */
+#define HCI_SUP_READ_REMOTE_VER_INFO                 0x80    /*!< \brief Byte 2 */
+#define HCI_SUP_SET_EVENT_MASK                       0x40    /*!< \brief Byte 5 */
+#define HCI_SUP_RESET                                0x80    /*!< \brief Byte 5 */
+#define HCI_SUP_READ_TX_PWR_LVL                      0x04    /*!< \brief Byte 10 */
+#define HCI_SUP_READ_LOCAL_VER_INFO                  0x08    /*!< \brief Byte 14 */
+#define HCI_SUP_READ_LOCAL_SUP_FEAT                  0x20    /*!< \brief Byte 14 */
+#define HCI_SUP_READ_BD_ADDR                         0x02    /*!< \brief Byte 15 */
+#define HCI_SUP_READ_RSSI                            0x20    /*!< \brief Byte 15 */
+#define HCI_SUP_SET_EVENT_MASK_PAGE2                 0x04    /*!< \brief Byte 22 */
+#define HCI_SUP_LE_SET_EVENT_MASK                    0x01    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_READ_BUF_SIZE                     0x02    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_READ_LOCAL_SUP_FEAT               0x04    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_SET_RAND_ADDR                     0x10    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_SET_ADV_PARAM                     0x20    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_READ_ADV_TX_POWER                 0x40    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_SET_ADV_DATA                      0x80    /*!< \brief Byte 25 */
+#define HCI_SUP_LE_SET_SCAN_RESP_DATA                0x01    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_SET_ADV_ENABLE                    0x02    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_SET_SCAN_PARAM                    0x04    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_SET_SCAN_ENABLE                   0x08    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_CREATE_CONN                       0x10    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_CREATE_CONN_CANCEL                0x20    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_READ_WHITE_LIST_SIZE              0x40    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_CLEAR_WHITE_LIST                  0x80    /*!< \brief Byte 26 */
+#define HCI_SUP_LE_ADD_DEV_WHITE_LIST                0x01    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_REMOVE_DEV_WHITE_LIST             0x02    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_CONN_UPDATE                       0x04    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_SET_HOST_CHAN_CLASS               0x08    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_READ_CHAN_MAP                     0x10    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_READ_REMOTE_FEAT                  0x20    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_ENCRYPT                           0x40    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_RAND                              0x80    /*!< \brief Byte 27 */
+#define HCI_SUP_LE_START_ENCRYPTION                  0x01    /*!< \brief Byte 28 */
+#define HCI_SUP_LE_LTK_REQ_REPL                      0x02    /*!< \brief Byte 28 */
+#define HCI_SUP_LE_LTK_REQ_NEG_REPL                  0x04    /*!< \brief Byte 28 */
+#define HCI_SUP_LE_READ_SUP_STATES                   0x08    /*!< \brief Byte 28 */
+#define HCI_SUP_LE_RECEIVER_TEST                     0x10    /*!< \brief Byte 28 */
+#define HCI_SUP_LE_TRANSMITTER_TEST                  0x20    /*!< \brief Byte 28 */
+#define HCI_SUP_LE_TEST_END                          0x40    /*!< \brief Byte 28 */
+#define HCI_SUP_READ_AUTH_PAYLOAD_TO                 0x10    /*!< \brief Byte 32 */
+#define HCI_SUP_WRITE_AUTH_PAYLOAD_TO                0x20    /*!< \brief Byte 32 */
+/*! \brief New in version 4.1 */
+#define HCI_SUP_LE_REM_CONN_PARAM_REQ_REPL           0x10    /*!< \brief Byte 33 */
+#define HCI_SUP_LE_REM_CONN_PARAM_REQ_NEG_REPL       0x20    /*!< \brief Byte 33 */
+/*! \brief New in version 4.2 */
+#define HCI_SUP_LE_SET_DATA_LEN                      0x40    /*!< \brief Byte 33 */
+#define HCI_SUP_LE_READ_DEF_DATA_LEN                 0x80    /*!< \brief Byte 33 */
+#define HCI_SUP_LE_WRITE_DEF_DATA_LEN                0x01    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_READ_LOCAL_P256_PUB_KEY           0x02    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_GENERATE_DHKEY                    0x04    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_ADD_DEV_RES_LIST_EVT              0x08    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_REMOVE_DEV_RES_LIST               0x10    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_CLEAR_RES_LIST                    0x20    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_READ_RES_LIST_SIZE                0x40    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_READ_PEER_RES_ADDR                0x80    /*!< \brief Byte 34 */
+#define HCI_SUP_LE_READ_LOCAL_RES_ADDR               0x01    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_SET_ADDR_RES_ENABLE               0x02    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_SET_RES_PRIV_ADDR_TO              0x04    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_READ_MAX_DATA_LEN                 0x08    /*!< \brief Byte 35 */
+/*! \brief New in version 5.0 */
+#define HCI_SUP_LE_READ_PHY                          0x10    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_SET_DEF_PHY                       0x20    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_SET_PHY                           0x40    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_ENHANCED_RECEIVER_TEST            0x80    /*!< \brief Byte 35 */
+#define HCI_SUP_LE_ENHANCED_TRANSMITTER_TEST         0x01    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_SET_ADV_SET_RAND_ADDR             0x02    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_SET_EXT_ADV_PARAM                 0x04    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_SET_EXT_ADV_DATA                  0x08    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_SET_EXT_SCAN_RESP_DATA            0x10    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_SET_EXT_ADV_ENABLE                0x20    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_READ_MAX_ADV_DATA_LEN             0x40    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_READ_NUM_OF_SUP_ADV_SETS          0x80    /*!< \brief Byte 36 */
+#define HCI_SUP_LE_REMOVE_ADV_SET                    0x01    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_CLEAR_ADV_SETS                    0x02    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_SET_PER_ADV_PARAM                 0x04    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_SET_PER_ADV_DATA                  0x08    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_SET_PER_ADV_ENABLE                0x10    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_SET_EXT_SCAN_PARAM                0x20    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_SET_EXT_SCAN_ENABLE               0x40    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_EXT_CREATE_CONN                   0x80    /*!< \brief Byte 37 */
+#define HCI_SUP_LE_PER_ADV_CREATE_SYNC               0x01    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_PER_ADV_CREATE_SYNC_CANCEL        0x02    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_PER_ADV_TERMINATE_SYNC            0x04    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_ADD_DEV_PER_ADV_LIST              0x08    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_REMOVE_DEV_PER_ADV_LIST           0x10    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_CLEAR_PER_ADV_LIST                0x20    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_READ_PER_ADV_LIST_SIZE            0x40    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_READ_TX_POWER                     0x80    /*!< \brief Byte 38 */
+#define HCI_SUP_LE_READ_RF_PATH_COMP                 0x01    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_WRITE_RF_PATH_COMP                0x02    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_SET_PRIVACY_MODE                  0x04    /*!< \brief Byte 39 */
+/*! \brief New in version 5.1 */
+#define HCI_SUP_LE_RECEIVER_TEST_V3                  0x08    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_TRANSMITTER_TEST_V3               0x10    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_SET_CONNLESS_CTE_TX_PARAMS        0x20    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_SET_CONNLESS_CTE_TX_ENABLE        0x40    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_SET_CONNLESS_IQ_SAMP_ENABLE       0x80    /*!< \brief Byte 39 */
+#define HCI_SUP_LE_SET_CONN_CTE_RX_PARAMS            0x01    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_SET_CONN_CTE_TX_PARAMS            0x02    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_CONN_CTE_REQ_ENABLE               0x04    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_CONN_CTE_RSP_ENABLE               0x08    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_READ_ANTENNA_INFO                 0x10    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_SET_PER_ADV_RCV_ENABLE            0x20    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_PER_ADV_SYNC_TRANSFER             0x40    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_PER_ADV_SET_INFO_TRANSFER         0x80    /*!< \brief Byte 40 */
+#define HCI_SUP_LE_SET_PAST_PARAM                    0x01    /*!< \brief Byte 41 */
+#define HCI_SUP_LE_SET_DEFAULT_PAST_PARAM            0x02    /*!< \brief Byte 41 */
+#define HCI_SUP_LE_GENERATE_DHKEY_V2                 0x04    /*!< \brief Byte 41 */
+#define HCI_SUP_LE_MODIFY_SLEEP_CLK_ACCURACY         0x10    /*!< \brief Byte 41 */
+/*! \brief New in version Milan */
+#define HCI_SUP_LE_READ_BUF_SIZE_V2                  0x01    /*!< \brief Byte 42 */
+#define HCI_SUP_LE_SET_CIG_PARAM                     0x02    /*!< \brief Byte 42 */
+#define HCI_SUP_LE_CREATE_CIS                        0x04    /*!< \brief Byte 42 */
+#define HCI_SUP_LE_REMOVE_CIG                        0x08    /*!< \brief Byte 42 */
+#define HCI_SUP_LE_ACCEPT_CIS_REQ                    0x01    /*!< \brief Byte 43 */
+#define HCI_SUP_LE_REJECT_CIS_REQ                    0x02    /*!< \brief Byte 43 */
+#define HCI_SUP_LE_CREATE_BIG                        0x04    /*!< \brief Byte 43 */
+#define HCI_SUP_LE_BIG_CREATE_SYNC                   0x08    /*!< \brief Byte 43 */
+#define HCI_SUP_LE_TERMINATE_BIG                     0x01    /*!< \brief Byte 44 */
+#define HCI_SUP_LE_SETUP_ISO_DATA_PATH               0x02    /*!< \brief Byte 44 */
+#define HCI_SUP_LE_REMOVE_ISO_DATA_PATH              0x04    /*!< \brief Byte 44 */
+#define HCI_SUP_LE_REQ_PEER_SCA                      0x08    /*!< \brief Byte 44 */
 
-#define HCI_SUP_CMD_LEN                              64      /*!< Byte length of support cmd field. */
+#define HCI_SUP_CMD_LEN                              64      /*!< \brief Byte length of support cmd field. */
 
 /**@}*/
 
@@ -943,122 +849,104 @@ extern "C" {
  *
  */
 /**@{*/
-#define HCI_EVT_MASK_DISCONNECT_CMPL                 0x10    /*!< Byte 0 */
-#define HCI_EVT_MASK_ENC_CHANGE                      0x80    /*!< Byte 0 */
-#define HCI_EVT_MASK_READ_REMOTE_VER_INFO_CMPL       0x08    /*!< Byte 1 */
-#define HCI_EVT_MASK_HW_ERROR                        0x80    /*!< Byte 1 */
-#define HCI_EVT_MASK_DATA_BUF_OVERFLOW               0x02    /*!< Byte 3 */
-#define HCI_EVT_MASK_ENC_KEY_REFRESH_CMPL            0x80    /*!< Byte 5 */
-#define HCI_EVT_MASK_LE_META                         0x20    /*!< Byte 7 */
+#define HCI_EVT_MASK_DISCONNECT_CMPL                 0x10    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_ENC_CHANGE                      0x80    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_READ_REMOTE_VER_INFO_CMPL       0x08    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_HW_ERROR                        0x80    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_DATA_BUF_OVERFLOW               0x02    /*!< \brief Byte 3 */
+#define HCI_EVT_MASK_ENC_KEY_REFRESH_CMPL            0x80    /*!< \brief Byte 5 */
+#define HCI_EVT_MASK_LE_META                         0x20    /*!< \brief Byte 7 */
 /**@}*/
 
 /** \name Event mask page 2
  *
  */
 /**@{*/
-#define HCI_EVT_MASK_AUTH_PAYLOAD_TIMEOUT            0x80    /*!< Byte 2 */
+#define HCI_EVT_MASK_AUTH_PAYLOAD_TIMEOUT            0x80    /*!< \brief Byte 2 */
 /**@}*/
 
 /** \name LE event mask
  *
  */
 /**@{*/
-#define HCI_EVT_MASK_LE_CONN_CMPL_EVT                0x01    /*!< Byte 0 */
-#define HCI_EVT_MASK_LE_ADV_REPORT_EVT               0x02    /*!< Byte 0 */
-#define HCI_EVT_MASK_LE_CONN_UPDATE_CMPL_EVT         0x04    /*!< Byte 0 */
-#define HCI_EVT_MASK_LE_READ_REMOTE_FEAT_CMPL_EVT    0x08    /*!< Byte 0 */
-#define HCI_EVT_MASK_LE_LTK_REQ_EVT                  0x10    /*!< Byte 0 */
-/* Version 4.1 */
-#define HCI_EVT_MASK_LE_REMOTE_CONN_PARAM_REQ_EVT    0x20    /*!< Byte 0 */
-/* Version 4.2 */
-#define HCI_EVT_MASK_LE_DATA_LEN_CHANGE_EVT          0x40    /*!< Byte 0 */
-#define HCI_EVT_MASK_LE_READ_LOCAL_P256_PUB_KEY_CMPL 0x80    /*!< Byte 0 */
-#define HCI_EVT_MASK_LE_GENERATE_DHKEY_CMPL          0x01    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_ENHANCED_CONN_CMPL_EVT       0x02    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_DIRECT_ADV_REPORT_EVT        0x04    /*!< Byte 1 */
-/* Version 5.0 */
-#define HCI_EVT_MASK_LE_PHY_UPDATE_CMPL_EVT          0x08    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_EXT_ADV_REPORT_EVT           0x10    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_PER_ADV_SYNC_EST_EVT         0x20    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_PER_ADV_REPORT_EVT           0x40    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_PER_ADV_SYNC_LOST_EVT        0x80    /*!< Byte 1 */
-#define HCI_EVT_MASK_LE_SCAN_TIMEOUT_EVT             0x01    /*!< Byte 2 */
-#define HCI_EVT_MASK_LE_ADV_SET_TERM_EVT             0x02    /*!< Byte 2 */
-#define HCI_EVT_MASK_LE_SCAN_REQ_RCVD_EVT            0x04    /*!< Byte 2 */
-#define HCI_EVT_MASK_LE_CH_SEL_ALGO_EVT              0x08    /*!< Byte 2 (Bit 19) */
-/* Version 5.1 */
-#define HCI_EVT_MASK_LE_CONNLESS_IQ_REPORT_EVT       0x10    /*!< Byte 2 */
-#define HCI_EVT_MASK_LE_CONN_IQ_REPORT_EVT           0x20    /*!< Byte 2 */
-#define HCI_EVT_MASK_LE_CTE_REQ_FAILED_EVT           0x40    /*!< Byte 2 */
-#define HCI_EVT_MASK_LE_PER_SYNC_TRSF_RCVT_EVT       0x80    /*!< Byte 2 (Bit 23) */
-/* Version 5.2 */
-#define HCI_EVT_MASK_LE_CIS_EST_EVT                  0x01    /*!< Byte 3 (Bit 24) */
-#define HCI_EVT_MASK_LE_CIS_REQ_EVT                  0x02    /*!< Byte 3 */
-#define HCI_EVT_MASK_LE_CREATE_BIG_CMPL_EVT          0x04    /*!< Byte 3 */
-#define HCI_EVT_MASK_LE_TERMINATE_BIG_CMPL_EVT       0x08    /*!< Byte 3 */
-#define HCI_EVT_MASK_LE_BIG_SYNC_EST_EVT             0x10    /*!< Byte 3 */
-#define HCI_EVT_MASK_LE_BIG_SYNC_LOST_EVT            0x20    /*!< Byte 3 */
-#define HCI_EVT_MASK_LE_PEER_SCA_CMPL_EVT            0x40    /*!< Byte 3 */
-#define HCI_EVT_MASK_LE_PATH_LOSS_REPORT_EVT         0x80    /*!< Byte 3 */
-
-#define HCI_EVT_MASK_LE_TX_POWER_REPORT_EVT          0x01    /*!< Byte 4 (Bit 32)*/
-#define HCI_EVT_MASK_LE_BIG_INFO_ADV_RPT_EVT         0x02    /*!< Byte 4 */
-
+#define HCI_EVT_MASK_LE_CONN_CMPL_EVT                0x01    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_LE_ADV_REPORT_EVT               0x02    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_LE_CONN_UPDATE_CMPL_EVT         0x04    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_LE_READ_REMOTE_FEAT_CMPL_EVT    0x08    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_LE_LTK_REQ_EVT                  0x10    /*!< \brief Byte 0 */
+/*! \brief New in version 4.1 */
+#define HCI_EVT_MASK_LE_REMOTE_CONN_PARAM_REQ_EVT    0x20    /*!< \brief Byte 0 */
+/*! \brief New in version 4.2 */
+#define HCI_EVT_MASK_LE_DATA_LEN_CHANGE_EVT          0x40    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_LE_READ_LOCAL_P256_PUB_KEY_CMPL 0x80    /*!< \brief Byte 0 */
+#define HCI_EVT_MASK_LE_GENERATE_DHKEY_CMPL          0x01    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_ENHANCED_CONN_CMPL_EVT       0x02    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_DIRECT_ADV_REPORT_EVT        0x04    /*!< \brief Byte 1 */
+/*! \brief New in version 5.0 */
+#define HCI_EVT_MASK_LE_PHY_UPDATE_CMPL_EVT          0x08    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_EXT_ADV_REPORT_EVT           0x10    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_PER_ADV_SYNC_EST_EVT         0x20    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_PER_ADV_REPORT_EVT           0x40    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_PER_ADV_SYNC_LOST_EVT        0x80    /*!< \brief Byte 1 */
+#define HCI_EVT_MASK_LE_SCAN_TIMEOUT_EVT             0x01    /*!< \brief Byte 2 */
+#define HCI_EVT_MASK_LE_ADV_SET_TERM_EVT             0x02    /*!< \brief Byte 2 */
+#define HCI_EVT_MASK_LE_SCAN_REQ_RCVD_EVT            0x04    /*!< \brief Byte 2 */
+#define HCI_EVT_MASK_LE_CH_SEL_ALGO_EVT              0x08    /*!< \brief Byte 2 (Bit 19) */
+/*! \brief New in version 5.1 */
+#define HCI_EVT_MASK_LE_CONNLESS_IQ_REPORT_EVT       0x10    /*!< \brief Byte 2 */
+#define HCI_EVT_MASK_LE_CONN_IQ_REPORT_EVT           0x20    /*!< \brief Byte 2 */
+#define HCI_EVT_MASK_LE_CTE_REQ_FAILED_EVT           0x40    /*!< \brief Byte 2 */
+#define HCI_EVT_MASK_LE_PER_SYNC_TRSF_RCVT_EVT       0x80    /*!< \brief Byte 2 (Bit 23) */
+/*! \brief New in version Milan */
+#define HCI_EVT_MASK_LE_CIS_EST_EVT                  0x01    /*!< \brief Byte 3 */
+#define HCI_EVT_MASK_LE_CIS_REQ_EVT                  0x02    /*!< \brief Byte 3 */
+#define HCI_EVT_MASK_LE_BIG_CMPL_EVT                 0x04    /*!< \brief Byte 3 */
+#define HCI_EVT_MASK_LE_BIG_SYNC_LOST_EVT            0x08    /*!< \brief Byte 3 */
+#define HCI_EVT_MASK_LE_PEER_SCA_CMPL_EVT            0x10    /*!< \brief Byte 3 */
 /**@}*/
 
 /** \name LE supported features
  *
  */
 /**@{*/
-/* Version 4.0 */
-#define HCI_LE_SUP_FEAT_ENCRYPTION                   0x0000000000000001  /*!< Encryption supported */
-/* Version 4.1 */
-#define HCI_LE_SUP_FEAT_CONN_PARAM_REQ_PROC          0x0000000000000002  /*!< Connection Parameters Request Procedure supported */
-#define HCI_LE_SUP_FEAT_EXT_REJECT_IND               0x0000000000000004  /*!< Extended Reject Indication supported */
-#define HCI_LE_SUP_FEAT_SLV_INIT_FEAT_EXCH           0x0000000000000008  /*!< Slave-Initiated Features Exchange supported */
-#define HCI_LE_SUP_FEAT_LE_PING                      0x0000000000000010  /*!< LE Ping supported */
-/* Version 4.2 */
-#define HCI_LE_SUP_FEAT_DATA_LEN_EXT                 0x0000000000000020  /*!< Data Length Extension supported */
-#define HCI_LE_SUP_FEAT_PRIVACY                      0x0000000000000040  /*!< LL Privacy supported */
-#define HCI_LE_SUP_FEAT_EXT_SCAN_FILT_POLICY         0x0000000000000080  /*!< Extended Scan Filter Policy supported */
-/* Version 5.0 */
-#define HCI_LE_SUP_FEAT_LE_2M_PHY                    0x0000000000000100  /*!< LE 2M PHY supported */
-#define HCI_LE_SUP_FEAT_STABLE_MOD_IDX_TRANSMITTER   0x0000000000000200  /*!< Stable Modulation Index - Transmitter supported */
-#define HCI_LE_SUP_FEAT_STABLE_MOD_IDX_RECEIVER      0x0000000000000400  /*!< Stable Modulation Index - Receiver supported */
-#define HCI_LE_SUP_FEAT_LE_CODED_PHY                 0x0000000000000800  /*!< LE Coded PHY supported */
-#define HCI_LE_SUP_FEAT_LE_EXT_ADV                   0x0000000000001000  /*!< LE Extended Advertising supported */
-#define HCI_LE_SUP_FEAT_LE_PER_ADV                   0x0000000000002000  /*!< LE Periodic Advertising supported */
-#define HCI_LE_SUP_FEAT_CH_SEL_2                     0x0000000000004000  /*!< Channel Selection Algorithm #2 supported */
-#define HCI_LE_SUP_FEAT_LE_POWER_CLASS_1             0x0000000000008000  /*!< LE Power Class 1 supported */
-#define HCI_LE_SUP_FEAT_MIN_NUN_USED_CHAN            0x0000000000010000  /*!< Minimum Number of Used Channels Procedure supported */
-/* Version 5.1 */
-#define HCI_LE_SUP_FEAT_CONN_CTE_REQ                 0x0000000000020000  /*!< Connection CTE Request supported */
-#define HCI_LE_SUP_FEAT_CONN_CTE_RSP                 0x0000000000040000  /*!< Connection CTE Response supported */
-#define HCI_LE_SUP_FEAT_CONNLESS_CTE_TRANS           0x0000000000080000  /*!< Connectionless CTE Transmitter supported */
-#define HCI_LE_SUP_FEAT_CONNLESS_CTE_RECV            0x0000000000100000  /*!< Connectionless CTE Receiver supported */
-#define HCI_LE_SUP_FEAT_ANTENNA_SWITCH_AOD           0x0000000000200000  /*!< Anetenna Switching during CTE Transmission (AoD) supported */
-#define HCI_LE_SUP_FEAT_ANTENNA_SWITCH_AOA           0x0000000000400000  /*!< Anetenna Switching during CTE Reception (AoA) supported */
-#define HCI_LE_SUP_FEAT_RECV_CTE                     0x0000000000800000  /*!< Receive Constant Tone Extension supported */
-#define HCI_LE_SUP_FEAT_PAST_SENDER                  0x0000000001000000  /*!< Periodic Advertising Sync Transfer Sender supported */
-#define HCI_LE_SUP_FEAT_PAST_RECIPIENT               0x0000000002000000  /*!< Periodic Advertising Sync Transfer Recipient supported */
-#define HCI_LE_SUP_FEAT_SCA_UPDATE                   0x0000000004000000  /*!< Sleep Clock Accuracy Update supported */
-#define HCI_LE_SUP_FEAT_REMOTE_PUB_KEY_VALIDATION    0x0000000008000000  /*!< Remote Public Key Validation supported */
-/* Version Milan */
-#define HCI_LE_SUP_FEAT_CIS_MASTER                   0x0000000010000000  /*!< Connected Isochronous Master Role supported */
-#define HCI_LE_SUP_FEAT_CIS_SLAVE                    0x0000000020000000  /*!< Connected Isochronous Slave Role supported */
-#define HCI_LE_SUP_FEAT_ISO_BROADCASTER              0x0000000040000000  /*!< Isochronous Broadcaster Role supported */
-#define HCI_LE_SUP_FEAT_ISO_SYNC_RECEIVER            0x0000000080000000  /*!< Isochronous Synchronized Receiver Role supported */
-#define HCI_LE_SUP_FEAT_ISO_HOST_SUPPORT             0x0000000100000000  /*!< Host support for ISO Channels */
-#define HCI_LE_SUP_FEAT_POWER_CONTROL_REQUEST        0x0000000200000000  /*!< Power control requests supported */
-#define HCI_LE_SUP_FEAT_POWER_CHANGE_IND             0x0000000400000000  /*!< Power control power change indication supported */
-#define HCI_LE_SUP_FEAT_PATH_LOSS_MONITOR            0x0000000800000000  /*!< Path loss monitoring supported */
-/**@}*/
-
-/** \name LE feature bit positon in FeatureSet stored in the Controller
-*
-*/
-/**@{*/
-#define HCI_LE_FEAT_BIT_ISO_HOST_SUPPORT             32  /*!< Host support for ISO Channels */
+/*! \brief New in version 4.0 */
+#define HCI_LE_SUP_FEAT_ENCRYPTION                   0x00000001  /*!< \brief Encryption supported */
+/*! \brief New in version 4.1 */
+#define HCI_LE_SUP_FEAT_CONN_PARAM_REQ_PROC          0x00000002  /*!< \brief Connection Parameters Request Procedure supported */
+#define HCI_LE_SUP_FEAT_EXT_REJECT_IND               0x00000004  /*!< \brief Extended Reject Indication supported */
+#define HCI_LE_SUP_FEAT_SLV_INIT_FEAT_EXCH           0x00000008  /*!< \brief Slave-Initiated Features Exchange supported */
+#define HCI_LE_SUP_FEAT_LE_PING                      0x00000010  /*!< \brief LE Ping supported */
+/*! \brief New in version 4.2 */
+#define HCI_LE_SUP_FEAT_DATA_LEN_EXT                 0x00000020  /*!< \brief Data Length Extension supported */
+#define HCI_LE_SUP_FEAT_PRIVACY                      0x00000040  /*!< \brief LL Privacy supported */
+#define HCI_LE_SUP_FEAT_EXT_SCAN_FILT_POLICY         0x00000080  /*!< \brief Extended Scan Filter Policy supported */
+/*! \brief New in version 5.0 */
+#define HCI_LE_SUP_FEAT_LE_2M_PHY                    0x00000100  /*!< \brief LE 2M PHY supported */
+#define HCI_LE_SUP_FEAT_STABLE_MOD_IDX_TRANSMITTER   0x00000200  /*!< \brief Stable Modulation Index - Transmitter supported */
+#define HCI_LE_SUP_FEAT_STABLE_MOD_IDX_RECEIVER      0x00000400  /*!< \brief Stable Modulation Index - Receiver supported */
+#define HCI_LE_SUP_FEAT_LE_CODED_PHY                 0x00000800  /*!< \brief LE Coded PHY supported */
+#define HCI_LE_SUP_FEAT_LE_EXT_ADV                   0x00001000  /*!< \brief LE Extended Advertising supported */
+#define HCI_LE_SUP_FEAT_LE_PER_ADV                   0x00002000  /*!< \brief LE Periodic Advertising supported */
+#define HCI_LE_SUP_FEAT_CH_SEL_2                     0x00004000  /*!< \brief Channel Selection Algorithm #2 supported */
+#define HCI_LE_SUP_FEAT_LE_POWER_CLASS_1             0x00008000  /*!< \brief LE Power Class 1 supported */
+#define HCI_LE_SUP_FEAT_MIN_NUN_USED_CHAN            0x00010000  /*!< \brief Minimum Number of Used Channels Procedure supported */
+/*! \brief New in version 5.1 */
+#define HCI_LE_SUP_FEAT_CONN_CTE_REQ                 0x00020000  /*!< \brief Connection CTE Request supported */
+#define HCI_LE_SUP_FEAT_CONN_CTE_RSP                 0x00040000  /*!< \brief Connection CTE Response supported */
+#define HCI_LE_SUP_FEAT_CONNLESS_CTE_TRANS           0x00080000  /*!< \brief Connectionless CTE Transmitter supported */
+#define HCI_LE_SUP_FEAT_CONNLESS_CTE_RECV            0x00100000  /*!< \brief Connectionless CTE Receiver supported */
+#define HCI_LE_SUP_FEAT_ANTENNA_SWITCH_AOD           0x00200000  /*!< \brief Anetenna Switching during CTE Transmission (AoD) supported */
+#define HCI_LE_SUP_FEAT_ANTENNA_SWITCH_AOA           0x00400000  /*!< \brief Anetenna Switching during CTE Reception (AoA) supported */
+#define HCI_LE_SUP_FEAT_RECV_CTE                     0x00800000  /*!< \brief Receive Constant Tone Extension supported */
+#define HCI_LE_SUP_FEAT_PAST_SENDER                  0x01000000  /*!< \brief Periodic Advertising Sync Transfer Sender supported */
+#define HCI_LE_SUP_FEAT_PAST_RECIPIENT               0x02000000  /*!< \brief Periodic Advertising Sync Transfer Recipient supported */
+#define HCI_LE_SUP_FEAT_SCA_UPDATE                   0x04000000  /*!< \brief Sleep Clock Accuracy Update supported */
+#define HCI_LE_SUP_FEAT_REMOTE_PUB_KEY_VALIDATION    0x08000000  /*!< \brief Remote Public Key Validation supported */
+/*! \brief New in version Milan */
+#define HCI_LE_SUP_FEAT_CIS_MASTER                   0x10000000  /*!< \brief Connected Isochronous Master Role supported */
+#define HCI_LE_SUP_FEAT_CIS_SLAVE                    0x20000000  /*!< \brief Connected Isochronous Slave Role supported */
+#define HCI_LE_SUP_FEAT_ISO_BROADCASTER              0x40000000  /*!< \brief Isochronous Broadcaster Role supported */
+#define HCI_LE_SUP_FEAT_ISO_SYNC                     0x80000000  /*!< \brief Isochronous Synchronizer Role supported */
 /**@}*/
 
 /** \name Advertising command parameters
@@ -1192,15 +1080,6 @@ extern "C" {
 #define HCI_INIT_PHY_LE_1M_BIT                       (1<<0)  /*!< \brief LE 1M PHY */
 #define HCI_INIT_PHY_LE_2M_BIT                       (1<<1)  /*!< \brief LE 2M PHY */
 #define HCI_INIT_PHY_LE_CODED_BIT                    (1<<2)  /*!< \brief LE Coded PHY  */
-/**@}*/
-
-/** \name Transmitter PHY value bits
-*
-*/
-/**@{*/
-#define HCI_TRANS_PHY_LE_1M_BIT                      (1<<0)  /*!< LE 1M PHY */
-#define HCI_TRANS_PHY_LE_2M_BIT                      (1<<1)  /*!< LE 2M PHY */
-#define HCI_TRABS_PHY_LE_CODED_BIT                   (1<<2)  /*!< LE Coded PHY  */
 /**@}*/
 
 /** \name Advertising event properties type bits
@@ -1434,32 +1313,31 @@ extern "C" {
 #define HCI_VER_BT_CORE_SPEC_4_2                     0x08    /*!< Bluetooth core specification 4.2 */
 #define HCI_VER_BT_CORE_SPEC_5_0                     0x09    /*!< Bluetooth core specification 5.0 */
 #define HCI_VER_BT_CORE_SPEC_5_1                     0x0A    /*!< Bluetooth core specification 5.1 */
-#define HCI_VER_BT_CORE_SPEC_5_2                     0x0B    /*!< Bluetooth core specification 5.2 */
 /**@}*/
 
 /** \name Parameter lengths
  *
  */
 /**@{*/
-#define HCI_EVT_MASK_LEN                             8       /*!< Length of event mask byte array */
-#define HCI_EVT_MASK_PAGE_2_LEN                      8       /*!< Length of event mask page 2 byte array */
-#define HCI_LE_EVT_MASK_LEN                          8       /*!< Length of LE event mask byte array */
-#define HCI_FEAT_LEN                                 8       /*!< Length of features byte array */
-#define HCI_ADV_DATA_LEN                             31      /*!< Length of advertising data */
-#define HCI_SCAN_DATA_LEN                            31      /*!< Length of scan response data */
-#define HCI_EXT_ADV_DATA_LEN                         251     /*!< Length of extended advertising data */
-#define HCI_EXT_ADV_CONN_DATA_LEN                    191     /*!< Length of extended connectable advertising data */
-#define HCI_PER_ADV_DATA_LEN                         252     /*!< Length of periodic advertising data */
-#define HCI_EXT_ADV_RPT_DATA_LEN                     229     /*!< Length of extended advertising report data */
-#define HCI_PER_ADV_RPT_DATA_LEN                     247     /*!< Length of periodic advertising report data */
-#define HCI_CHAN_MAP_LEN                             5       /*!< Length of channel map byte array */
-#define HCI_KEY_LEN                                  16      /*!< Length of encryption key */
-#define HCI_ENCRYPT_DATA_LEN                         16      /*!< Length of data used in encryption */
-#define HCI_RAND_LEN                                 8       /*!< Length of random number */
-#define HCI_LE_STATES_LEN                            8       /*!< Length of LE states byte array */
-#define HCI_P256_KEY_LEN                             64      /*!< Length of P256 key */
-#define HCI_DH_KEY_LEN                               32      /*!< Length of DH Key */
-#define HCI_BC_LEN                                   16      /*!< Broadcast code length */
+#define HCI_EVT_MASK_LEN                             8       /*!< \brief Length of event mask byte array */
+#define HCI_EVT_MASK_PAGE_2_LEN                      8       /*!< \brief Length of event mask page 2 byte array */
+#define HCI_LE_EVT_MASK_LEN                          8       /*!< \brief Length of LE event mask byte array */
+#define HCI_FEAT_LEN                                 8       /*!< \brief Length of features byte array */
+#define HCI_ADV_DATA_LEN                             31      /*!< \brief Length of advertising data */
+#define HCI_SCAN_DATA_LEN                            31      /*!< \brief Length of scan response data */
+#define HCI_EXT_ADV_DATA_LEN                         251     /*!< \brief Length of extended advertising data */
+#define HCI_EXT_ADV_CONN_DATA_LEN                    191     /*!< \brief Length of extended connectable advertising data */
+
+#define HCI_PER_ADV_DATA_LEN                         252     /*!< \brief Length of periodic advertising data */
+#define HCI_EXT_ADV_RPT_DATA_LEN                     229     /*!< \brief Length of extended advertising report data */
+#define HCI_PER_ADV_RPT_DATA_LEN                     247     /*!< \brief Length of periodic advertising report data */
+#define HCI_CHAN_MAP_LEN                             5       /*!< \brief Length of channel map byte array */
+#define HCI_KEY_LEN                                  16      /*!< \brief Length of encryption key */
+#define HCI_ENCRYPT_DATA_LEN                         16      /*!< \brief Length of data used in encryption */
+#define HCI_RAND_LEN                                 8       /*!< \brief Length of random number */
+#define HCI_LE_STATES_LEN                            8       /*!< \brief Length of LE states byte array */
+#define HCI_P256_KEY_LEN                             64      /*!< \brief Length of P256 key */
+#define HCI_DH_KEY_LEN                               32      /*!< \brief Length of DH Key */
 
 #define HCI_EXT_ADV_RPT_DATA_LEN_OFFSET              23      /*!< \brief Length field offset of extended advertising report data */
 #define HCI_PER_ADV_RPT_DATA_LEN_OFFSET              6       /*!< \brief Length field offset of periodic advertising report data */
@@ -1483,203 +1361,18 @@ extern "C" {
 #define HCI_CONN_IQ_RPT_SAMPLE_CNT_OFFSET            12      /*!< \brief Sample count field offset of connection IQ report */
 /**@}*/
 
-/** \name CIS Count
-*
-*/
-/**@{*/
-#define HCI_MAX_CIS_COUNT                            0x10    /*!< Maximum count for CIS */
-/**@}*/
-
-/** \name BIS Count
-*
-*/
-/**@{*/
-#define HCI_MAX_BIS_COUNT                            0x10    /*!< Maximum count for BIS */
-/**@}*/
-
-/** \name CIG IDs
-*
-*/
-/**@{*/
-#define HCI_MIN_CIG_ID                               0x00    /*!< Minimum value for CIG ID. */
-#define HCI_MAX_CIG_ID                               0xEF    /*!< Maximum value for CIG ID. */
-/**@}*/
-
-/** \name CIS IDs
-*
-*/
-/**@{*/
-#define HCI_MIN_CIS_ID                               0x00    /*!< Minimum value for CIS ID. */
-#define HCI_MAX_CIS_ID                               0xEF    /*!< Maximum value for CIS ID. */
-/**@}*/
-
-/** \name Packing Scheme
-*
-*/
-/**@{*/
-#define HCI_PACKING_SEQUENTIAL                       0x00    /*!< Sequential */
-#define HCI_PACKING_INTERLEAVED                      0x01    /*!< Interleaved */
-/**@}*/
-
-/** \name Framing
-*
-*/
-/**@{*/
-#define HCI_FRAMING_UNFRAMED                         0x00    /*!< Unframed */
-#define HCI_FRAMING_FRAMED                           0x01    /*!< Framed */
-/**@}*/
-
-/** \name Slave Clock Accuracy
-*
-*/
-/**@{*/
-#define HCI_MIN_SCA                                  0x00    /*!< Minimum value for SCA. */
-#define HCI_MAX_SCA                                  0x07    /*!< Maximum value for SCA. */
-
-/** \name SDU Size
-*
-*/
-/**@{*/
-#define HCI_MIN_SDU_SIZE                             0x0000  /*!< Minimum value for SDU size. */
-#define HCI_MAX_SDU_SIZE                             0x0FFF  /*!< Maximum value for SDU size. */
-/**@}*/
-
-/** \name SDU Interval
-*
-*/
-/**@{*/
-#define HCI_MIN_SDU_INTERV                           0x0000FF /*!< Minimum value for SDU interval. */
-#define HCI_MAX_SDU_INTERV                           0x0FFFFF /*!< Maximum value for SDU interval. */
-#define HCI_DEFAULT_SDU_INTERV                       0x004E20 /*!< Default value for SDU interval. */
-/**@}*/
-
-/** \name CIS Transport Latency
-*
-*/
-/**@{*/
-#define HCI_MIN_CIS_TRANS_LAT                        0x0005  /*!< Minimum value for CIS transport latency. */
-#define HCI_MAX_CIS_TRANS_LAT                        0x0FA0  /*!< Maximum value for CIS transport latency. */
-#define HCI_DEFAULT_CIS_TRANS_LAT                    0x0028  /*!< Default value for CIS transport latency. */
-/**@}*/
-
-/** \name CIS Flush Time
-*
-*/
-/**@{*/
-#define HCI_MIN_CIS_FT                               0x01    /*!< Minimum value for CIS flush time. */
-#define HCI_MAX_CIS_FT                               0xFF    /*!< Maximum value for CIS flush time. */
-/**@}*/
-
-/** \name CIS Burst Number
-*
-*/
-/**@{*/
-#define HCI_MIN_CIS_BN                               0x00    /*!< Minimum value for CIS burst number. */
-#define HCI_MAX_CIS_BN                               0x0F    /*!< Maximum value for CIS burst number. */
-/**@}*/
-
-/** \name CIS Retransmission Number
-*
-*/
-/**@{*/
-#define HCI_MIN_CIS_RTN                              0x00    /*!< Minimum value for CIS retransmission number. */
-#define HCI_MAX_CIS_RTN                              0x0F    /*!< Maximum value for CIS retransmission number. */
-/**@}*/
-
-/** \name ISO Data Path Direction
-*
-*/
-/**@{*/
-#define HCI_ISO_DATA_DIR_INPUT                       0       /*!< Input (Host to Controller) data path. */
-#define HCI_ISO_DATA_DIR_OUTPUT                      1       /*!< Output (Controller to Host) data path. */
-/**@}*/
-
-/** \name ISO Data Path Direction Bit
-*
-*/
-/**@{*/
-#define HCI_ISO_DATA_PATH_INPUT_BIT                  (1<<HCI_ISO_DATA_DIR_INPUT)  /*!< Data path input bit. */
-#define HCI_ISO_DATA_PATH_OUTPUT_BIT                 (1<<HCI_ISO_DATA_DIR_OUTPUT) /*!< Data path output bit. */
-/**@}*/
-
-/** \name ISO Data Path ID
-*
-*/
-/**@{*/
-#define HCI_ISO_DATA_PATH_HCI                        0x00    /*!< HCI data path. */
-#define HCI_ISO_DATA_PATH_VS_I2S                     0x01    /*!< Vendor Specific: I2S data path. */
-#define HCI_ISO_DATA_PATH_DISABLED                   0xFF    /*!< Data path is disabled. */
-/**@}*/
-
-/** \name ISO test packet payload type
-*
-*/
-/**@{*/
-#define HCI_ISO_ISO_PLD_TYPE_ZERO_LEN                0x00    /*!< Zero length payload. */
-#define HCI_ISO_ISO_PLD_TYPE_VAR_LEN                 0x01    /*!< Variable length payload. */
-#define HCI_ISO_ISO_PLD_TYPE_MAX_LEN                 0x02    /*!< Maximum length payload. */
-/**@}*/
-
-/** \name Maximum number of codecs
-*
-*/
-/**@{*/
-#define HCI_MAX_CODEC                                5       /*!< Maximum number of codecs to read from the Controller. */
-/**@}*/
-
-/** \name Maximum length of codec-specific capability data
-*
-*/
-/**@{*/
-#define HCI_CODEC_CAP_DATA_LEN                       4       /*!< Maximum length of codec-specific capability data. */
-/**@}*/
-
-/** \name Codec transport types
-*
-*/
-/**@{*/
-#define HCI_CODEC_TRANS_CIS_BIT                      (1<<2)  /*!< Codec supported over LE CIS. */
-#define HCI_CODEC_TRANS_BIS_BIT                      (1<<3)  /*!< Codec supported over LE BIS. */
-/**@}*/
-
-/** \name ISO Header Packet Boundary
-*
-*/
-/**@{*/
-#define HCI_ISO_HDR_PB_START_FRAG                    0x00    /*!< Start fragment of a fragmented SDU. */
-#define HCI_ISO_HDR_PB_CONT_FRAG                     0x01    /*!< Continuation fragment of a fragmented SDU. */
-#define HCI_ISO_HDR_PB_COMP_FRAG                     0x02    /*!< Complete SDU. */
-#define HCI_ISO_HDR_PB_END_FRAG                      0x03    /*!< The end fragment of a fragmented SDU. */
-/**@}*/
-
-/** \name ISOAL Segmentation Header Start/Continuation Bit
-*
-*/
-/**@{*/
-#define HCI_ISOAL_SEG_HDR_SC_START                   0x00    /*!< ISOAL segmentation header start bit. */
-#define HCI_ISOAL_SEG_HDR_SC_CONT                    0x01    /*!< ISOAL segmentation header continue bit. */
-/**@}*/
-
 /** \name Company ID
  *
  */
 /**@{*/
-#define HCI_ID_PACKETCRAFT                           0x07E8  /*!< Packetcraft Inc. company ID */
+#define HCI_ID_ARM                                   0x005F  /*!< \brief ARM Ltd. company ID */
 /**@}*/
 
 /** \name Manufacturer location in Local version
  *
  */
 /**@{*/
-#define HCI_LOCAL_VER_MANUFACTURER_POS               4       /*!< Manufacturer location in local version */
-/**@}*/
-
-/** \name Coding Format Assigned Numbers
- *
- */
-/**@{*/
-#define HCI_ID_LC3                                   0x01    /*!< LC3 ID */
-#define HCI_ID_VS                                    0xFF    /*!< Vendor specific ID */
+#define HCI_LOCAL_VER_MANUFACTURER_POS              4        /*!< \brief Manufacturer location in local version */
 /**@}*/
 
 /* \} */    /* STACK_HCI_API */

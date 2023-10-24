@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework module for attribute server.
  *
- *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -133,7 +133,7 @@ void AppServerConnCback(dmEvt_t *pDmEvt)
 
       /* Store cached CSF information. */
       AttsCsfGetFeatures(connId, csf, sizeof(csf));
-      AppDbSetCsfRecord(dbHdl, AttsCsfGetClientChangeAwareState(connId), csf);
+      AppDbSetCsfRecord(dbHdl, AttsCsfGetChangeAwareState(connId), csf);
     }
 
     /* set peer's data signing info */
@@ -181,10 +181,10 @@ void appServerHandleDbHashUpdate(attEvt_t *pMsg)
     AppDbSetDbHash(pMsg->pValue);
 
     /* Make all bonded clients change-unaware. */
-    AppDbSetClientChangeAwareState(APP_DB_HDL_NONE, ATTS_CLIENT_CHANGE_UNAWARE);
+    AppDbSetClientsChangeAwareState(APP_DB_HDL_NONE, ATTS_CLIENT_CHANGE_UNAWARE);
 
     /* Make all active clients change-unaware. */
-    AttsCsfSetClientChangeAwareState(DM_CONN_ID_NONE, ATTS_CLIENT_CHANGE_UNAWARE);
+    AttsCsfSetClientsChangeAwarenessState(DM_CONN_ID_NONE, ATTS_CLIENT_CHANGE_UNAWARE);
 
     APP_TRACE_INFO0("Database hash updated");
 
@@ -213,8 +213,11 @@ void appServerHandleSvcChangeCnf(attEvt_t *pMsg)
     if ((dbHdl = AppDbGetHdl(connId)) != APP_DB_HDL_NONE)
     {
       /* store update in device database */
-      AppDbSetClientChangeAwareState(dbHdl, ATTS_CLIENT_CHANGE_AWARE);
+      AppDbSetClientsChangeAwareState(dbHdl, ATTS_CLIENT_CHANGE_AWARE);
     }
+
+    /* Client is now change-aware. */
+    AttsCsfSetClientsChangeAwarenessState(connId, ATTS_CLIENT_CHANGE_AWARE);
   }
 }
 

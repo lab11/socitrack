@@ -8,7 +8,7 @@
 
 # *****************************************************************************
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2022, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 #
 # *****************************************************************************
 
@@ -1096,15 +1096,6 @@ pin
     MSPInum         = 2
 
 pin
-    name            = MSPI2_D4_CLK
-    desc            = MSPI2 data 4 replace MSPI2_8(CLK).
-    pinnum          = 78
-    func_sel        = MSPI2_4
-    drvstrength     = 1P0X
-    bIomMSPIn       = MSPI
-    MSPInum         = 2
-
-pin
     name            = MSPI2_D5
     desc            = MSPI2 data 5.
     pinnum          = 79
@@ -1426,33 +1417,33 @@ pin
     drvstrength     = 1P0X
 
 # *****************************************************************************
-#  I2S0 pins. 
+#  I2S0 pins. Can be shared between I2S0 and I2S1 by switching pin's func_sel.
 # *****************************************************************************
 pin
     name            = I2S0_DATA
     desc            = I2S0 Bidirectional Data.
-    pinnum          = 12
+    pinnum          = 6
     func_sel        = I2S0_DATA
     drvstrength     = 0P5X
 
 pin
     name            = I2S0_SDOUT
     desc            = I2S0 Bidirectional Data.
-    pinnum          = 12
+    pinnum          = 6
     func_sel        = I2S0_SDOUT
     drvstrength     = 0P5X
 
 pin
     name            = I2S0_CLK
     desc            = I2S0 Bit Clock.
-    pinnum          = 11
+    pinnum          = 5
     func_sel        = I2S0_CLK
     drvstrength     = 0P5X
 
 pin
     name            = I2S0_WS
     desc            = I2S0 L/R Clock.
-    pinnum          = 49
+    pinnum          = 7
     func_sel        = I2S0_WS
     drvstrength     = 0P5X
 
@@ -1474,13 +1465,6 @@ pin
     drvstrength     = 0P5X
 
 pin
-    name            = I2S1_SDOUT
-    desc            = I2S1 Bidirectional Data.
-    pinnum          = 17
-    func_sel        = I2S1_SDOUT
-    drvstrength     = 0P5X
-
-pin
     name            = I2S1_CLK
     desc            = I2S1 Bit Clock.
     pinnum          = 16
@@ -1494,13 +1478,6 @@ pin
     func_sel        = I2S1_WS
     drvstrength     = 0P5X
 
-pin
-    name            = I2S1_SDIN
-    desc            = I2S1 Data In.
-    pinnum          = 19
-    func_sel        = I2S1_SDIN
-    drvstrength     = 0P5X
-
 # *****************************************************************************
 #  PDM0 pins.
 # *****************************************************************************
@@ -1509,14 +1486,14 @@ pin
     desc            = PDM 0 Clock Signal. Note: ETM_TRACECLK cannot be used simultaneously with this signal.
     pinnum          = 50
     func_sel        = PDM0_CLK
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 pin
     name            = PDM0_DATA
     desc            = PDM 0 Data Signal. Note: ETM_TRACE0 cannot be used simultaneously with this signal.
     pinnum          = 51
     func_sel        = PDM0_DATA
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 # *****************************************************************************
 #  PDM1 pins.
@@ -1526,14 +1503,14 @@ pin
     desc            = PDM 1 Clock Signal. Note: ETM_TRACE1 cannot be used simultaneously with this signal.
     pinnum          = 52
     func_sel        = PDM1_CLK
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 pin
     name            = PDM1_DATA
     desc            = PDM 1 Data Signal. Note: ETM_TRACE2 cannot be used simultaneously with this signal.
     pinnum          = 53
     func_sel        = PDM1_DATA
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 # *****************************************************************************
 #  PDM2 pins.
@@ -1543,14 +1520,14 @@ pin
     desc            = PDM 2 Clock Signal. Note: ETM_TRACE3 cannot be used simultaneously with this signal.
     pinnum          = 54
     func_sel        = PDM2_CLK
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 pin
     name            = PDM2_DATA
     desc            = PDM 2 Data Signal. Note: ETM_TRACECTL cannot be used simultaneously with this signal.
     pinnum          = 55
     func_sel        = PDM2_DATA
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 # *****************************************************************************
 #  PDM3 pins.
@@ -1560,14 +1537,14 @@ pin
     desc            = PDM 3 Clock Signal.
     pinnum          = 56
     func_sel        = PDM3_CLK
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 pin
     name            = PDM3_DATA
     desc            = PDM 3 Data Signal.
     pinnum          = 57
     func_sel        = PDM3_DATA
-    drvstrength     = 0P5X
+    drvstrength     = 1P0X
 
 # *****************************************************************************
 # SDIF  pins.
@@ -1659,4 +1636,3 @@ pin
     pinnum          = 20
     func_sel        = SWDCK
     drvstrength     = 0P5X
-

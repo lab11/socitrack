@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_DEVICES_LED_H
@@ -57,37 +57,34 @@ extern "C"
 
 //*****************************************************************************
 //
-//! @name LED polarity macros
-//! @{
+// LED polarity macros
 //
 //*****************************************************************************
 #define AM_DEVICES_LED_POL_POLARITY_M       0x1
 #define AM_DEVICES_LED_ON_HIGH              0x1
 #define AM_DEVICES_LED_ON_LOW               0x0
 
-//! @}
-
 //*****************************************************************************
 //
-//! @brief LED direct drive indicator macro
-//! @details Or this in with the polarity value to use the GPIO DATA register instead of
-//! the GPIO DATA ENABLE register to directly drive an LED buffer.
+// LED direct drive indicator macro
+// Or this in with the polarity value to use the GPIO DATA register instead of
+// the GPIO DATA ENABLE register to directly drive an LED buffer.
 //
 //*****************************************************************************
 #define AM_DEVICES_LED_POL_DIRECT_DRIVE_M   0x2
 
 //*****************************************************************************
 //
-//! LED OD driver macro
-//! OR this in with the polarity value to use the Open Drain version of the
-//! output driver
+// LED OD driver macro
+// OR this in with the polarity value to use the Open Drain version of the
+// output driver
 //
 //*****************************************************************************
 #define AM_DEVICES_LED_POL_OPEN_DRAIN       0x4
 
 //*****************************************************************************
 //
-//! Structure for keeping track of LEDs
+// Structure for keeping track of LEDs
 //
 //*****************************************************************************
 typedef struct
@@ -102,103 +99,13 @@ am_devices_led_t;
 // External function definitions
 //
 //*****************************************************************************
-
-//*****************************************************************************
-//
-//! @brief Configures the necessary pins for an array of LEDs
-//!
-//! @param psLED   - Pointer to an LED structure.
-//!
-//! This function configures a GPIO to drive an LED in a low-power way.
-//
-//*****************************************************************************
 extern void am_devices_led_init(am_devices_led_t *psLED);
-
-//*****************************************************************************
-//
-//! @brief Configures the necessary pins for an array of LEDs
-//!
-//! @param psLEDs       - An array of LED structures.
-//! @param ui32NumLEDs  - The total number of LEDs in the array.
-//!
-//! This function configures the GPIOs for an array of LEDs.
-//
-//*****************************************************************************
 extern void am_devices_led_array_init(am_devices_led_t *psLEDs, uint32_t ui32NumLEDs);
-
-//*****************************************************************************
-//
-//! @brief Disables an array of LEDs
-//!
-//! @param psLEDs       - An array of LED structures.
-//! @param ui32NumLEDs  - The total number of LEDs in the array.
-//!
-//! This function disables the GPIOs for an array of LEDs.
-//
-//*****************************************************************************
 extern void am_devices_led_array_disable(am_devices_led_t *psLEDs, uint32_t ui32NumLEDs);
-
-//*****************************************************************************
-//
-//! @brief Turns on the requested LED.
-//!
-//! @param psLEDs       - An array of LED structures.
-//! @param ui32LEDNum   - The LED number for the light to turn on.
-//!
-//! This function turns on a single LED.
-//
-//*****************************************************************************
 extern void am_devices_led_on(am_devices_led_t *psLEDs, uint32_t ui32LEDNum);
-
-//*****************************************************************************
-//
-//! @brief Turns off the requested LED.
-//!
-//! @param psLEDs       - An array of LED structures.
-//! @param ui32LEDNum   - The LED number for the light to turn off.
-//!
-//! This function turns off a single LED.
-//
-//*****************************************************************************
 extern void am_devices_led_off(am_devices_led_t *psLEDs, uint32_t ui32LEDNum);
-
-//*****************************************************************************
-//
-//! @brief Toggles the requested LED.
-//!
-//! @param psLEDs       - An array of LED structures.
-//! @param ui32LEDNum   - The LED number for the light to toggle.
-//!
-//! This function toggles a single LED.
-//
-//*****************************************************************************
 extern void am_devices_led_toggle(am_devices_led_t *psLEDs, uint32_t ui32LEDNum);
-
-//*****************************************************************************
-//
-//! @brief Gets the state of the requested LED.
-//!
-//! @param psLEDs     - An array of LED structures.
-//! @param ui32LEDNum - The LED to check.
-//!
-//! This function checks the state of a single LED.
-//!
-//! @return true if the LED is on.
-//
-//*****************************************************************************
 extern bool am_devices_led_get(am_devices_led_t *psLEDs, uint32_t ui32LEDNum);
-
-//*****************************************************************************
-//
-//! @brief Display a binary value using LEDs.
-//!
-//! @param psLEDs      - An array of LED structures.
-//! @param ui32NumLEDs - The number of LEDs in the array.
-//! @param ui32Value   - The value to display on the LEDs.
-//!
-//! This function displays a value in binary across an array of LEDs.
-//
-//*****************************************************************************
 extern void am_devices_led_array_out(am_devices_led_t *psLEDs, uint32_t ui32NumLEDs,
                                      uint32_t ui32Value);
 #ifdef __cplusplus

@@ -2,7 +2,7 @@
 //
 //! @file am_hal_card.c
 //!
-//! @brief Functions for interfacing with the card host.
+//! @brief Functions for interfacing with the ambiq card host.
 //!
 //! @addtogroup card_4b Card Functionality for SD/MMC/eMMC/SDIO
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -70,8 +70,7 @@
 //
 // CMD0 - go idle
 //
-static inline uint32_t
-am_hal_sdmmc_cmd0_go_idle(am_hal_card_t *pCard)
+static inline uint32_t am_hal_sdmmc_cmd0_go_idle(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
     am_hal_card_host_t *pHost = pCard->pHost;
@@ -92,8 +91,7 @@ am_hal_sdmmc_cmd0_go_idle(am_hal_card_t *pCard)
 #define SECTOR_MODE       0x4
 #define CMD1_CARD_RDY_BIT ((uint32_t)0x1 << 31)
 
-static inline uint32_t
-am_hal_sdmmc_cmd1_send_op_cond(am_hal_card_t *pCard)
+static inline uint32_t am_hal_sdmmc_cmd1_send_op_cond(am_hal_card_t *pCard)
 {
     uint32_t ui32CardOCR = 0;
     uint8_t ui8Tries = 100;
@@ -131,8 +129,7 @@ am_hal_sdmmc_cmd1_send_op_cond(am_hal_card_t *pCard)
 //
 // CMD2 - send card identification
 //
-static inline uint32_t
-am_hal_sdmmc_cmd2_send_cid(am_hal_card_t *pCard)
+static inline uint32_t am_hal_sdmmc_cmd2_send_cid(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
     am_hal_card_host_t *pHost = pCard->pHost;
@@ -156,8 +153,7 @@ am_hal_sdmmc_cmd2_send_cid(am_hal_card_t *pCard)
 //
 // CMD3 - set the relative card address
 //
-static inline uint32_t
-am_hal_sdmmc_cmd3_set_rca(am_hal_card_t *pCard, uint16_t ui16RCA)
+static inline uint32_t am_hal_sdmmc_cmd3_set_rca(am_hal_card_t *pCard, uint16_t ui16RCA)
 {
     am_hal_card_cmd_t cmd;
     am_hal_card_host_t *pHost = pCard->pHost;
@@ -180,8 +176,7 @@ am_hal_sdmmc_cmd3_set_rca(am_hal_card_t *pCard, uint16_t ui16RCA)
 //
 // CMD5 - Sleep/Awake
 //
-static uint32_t
-am_hal_sdmmc_cmd5(am_hal_card_t *pCard, bool sleep)
+static uint32_t am_hal_sdmmc_cmd5(am_hal_card_t *pCard, bool sleep)
 {
     uint32_t ui32Status;
     am_hal_card_cmd_t cmd;
@@ -222,8 +217,7 @@ am_hal_sdmmc_cmd5(am_hal_card_t *pCard, bool sleep)
 // CMD7 - select/deselect the card
 //
 
-static uint32_t
-am_hal_sdmmc_cmd7_card_select(am_hal_card_t *pCard)
+static uint32_t am_hal_sdmmc_cmd7_card_select(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
     am_hal_card_host_t *pHost = pCard->pHost;
@@ -268,8 +262,7 @@ am_hal_sdmmc_cmd7_card_select(am_hal_card_t *pCard)
     return cmd.eError;
 }
 
-static uint32_t
-am_hal_sdmmc_cmd7_card_deselect(am_hal_card_t *pCard)
+static uint32_t am_hal_sdmmc_cmd7_card_deselect(am_hal_card_t *pCard)
 {
     uint8_t ui8RCA = pCard->ui8RCA;
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -288,8 +281,7 @@ am_hal_sdmmc_cmd7_card_deselect(am_hal_card_t *pCard)
 //
 // CMD8 - get the 512 bytes ext csd
 //
-static uint32_t
-am_hal_sdmmc_cmd8_send_ext_csd(am_hal_card_t *pCard)
+static uint32_t am_hal_sdmmc_cmd8_send_ext_csd(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
     am_hal_card_cmd_data_t cmd_data;
@@ -320,8 +312,7 @@ am_hal_sdmmc_cmd8_send_ext_csd(am_hal_card_t *pCard)
 //
 // CMD9 - get the CSD
 //
-static inline uint32_t
-am_hal_sdmmc_cmd9_send_csd(am_hal_card_t *pCard)
+static inline uint32_t am_hal_sdmmc_cmd9_send_csd(am_hal_card_t *pCard)
 {
     am_hal_card_cmd_t cmd;
     am_hal_card_host_t *pHost = pCard->pHost;
@@ -346,8 +337,7 @@ am_hal_sdmmc_cmd9_send_csd(am_hal_card_t *pCard)
 //
 // CMD19 and CMD14 read EXT_CSD workaround
 //
-static inline uint32_t
-am_hal_cmd19_cmd14_read_extcsd_workaround(am_hal_card_t *pCard)
+static inline uint32_t am_hal_cmd19_cmd14_read_extcsd_workaround(am_hal_card_t *pCard)
 {
     uint32_t ui32Status;
     uint8_t ui8Testbuf[512];
@@ -399,8 +389,7 @@ am_hal_cmd19_cmd14_read_extcsd_workaround(am_hal_card_t *pCard)
 
 #endif
 
-static uint32_t
-am_hal_card_cache_ctrl(am_hal_card_t *pCard, bool bCacheEnable)
+static uint32_t am_hal_card_cache_ctrl(am_hal_card_t *pCard, bool bCacheEnable)
 {
     uint32_t ui32Mode;
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -413,28 +402,25 @@ am_hal_card_cache_ctrl(am_hal_card_t *pCard, bool bCacheEnable)
 
     if (pCard->ui32CacheSize > 0)
     {
-        ui32Mode = MMC_EXT_MODE_WRITE_BYTE | (MMC_EXT_REGS_CACHE_CTRL << 16) | (bCacheEnable ? (1 << 8) : 0);
+        ui32Mode = MMC_EXT_MODE_WRITE_BYTE | MMC_EXT_REGS_CACHE_CTRL << 16 | bCacheEnable ? (1 << 8) : 0;
         return am_hal_card_mode_switch(pCard, ui32Mode, DEFAULT_CMD6_TIMEOUT_MS);
     }
 
     return AM_HAL_STATUS_INVALID_OPERATION;
 }
 
-static inline uint32_t
-am_hal_card_cache_on(am_hal_card_t *pCard)
+static inline uint32_t am_hal_card_cache_on(am_hal_card_t *pCard)
 {
     return am_hal_card_cache_ctrl(pCard, true);
 }
 
-static inline uint32_t
-am_hal_card_cache_off(am_hal_card_t *pCard)
+static inline uint32_t am_hal_card_cache_off(am_hal_card_t *pCard)
 {
     return am_hal_card_cache_ctrl(pCard, false);
 }
 
-static uint32_t
-am_hal_card_pwr_notification(am_hal_card_t *pCard,
-                             uint8_t ui8NotifyType)
+static uint32_t am_hal_card_pwr_notification(am_hal_card_t *pCard,
+                                             uint8_t ui8NotifyType)
 {
     uint32_t ui32Mode;
     uint32_t ui32Timeout;
@@ -485,14 +471,8 @@ am_hal_card_pwr_notification(am_hal_card_t *pCard,
     return AM_HAL_STATUS_SUCCESS;
 }
 
-//
-//! Card MMC Init
-//
-static uint32_t
-am_hal_card_mmc_init(am_hal_card_t *pCard)
+static uint32_t am_hal_card_mmc_init(am_hal_card_t *pCard)
 {
-    uint32_t ui32RetVal = AM_HAL_STATUS_SUCCESS;
-
     //
     // Reset the card
     //
@@ -581,7 +561,6 @@ am_hal_card_mmc_init(am_hal_card_t *pCard)
         pCard->ui32NativeBlkSize = am_hal_unstuff_bytes(pCard->ui32ExtCSD, 63, 1) ? 4096 : 512;
         pCard->ui16CmdClass = am_hal_unstuff_bits(pCard->ui32CSD, 84, 12);
         pCard->ui8SpecVer = am_hal_unstuff_bits(pCard->ui32CSD, 122, 4);
-        pCard->ui32RpmbSizeMult = am_hal_unstuff_bytes(pCard->ui32ExtCSD, 168, 1);
         pCard->ui8ExtCSDRev = am_hal_unstuff_bytes(pCard->ui32ExtCSD, 192, 1);
         pCard->ui8DeviceType = am_hal_unstuff_bytes(pCard->ui32ExtCSD, 196, 1);
         pCard->ui32MaxBlks = am_hal_unstuff_bytes(pCard->ui32ExtCSD, 212, 4);
@@ -604,19 +583,7 @@ am_hal_card_mmc_init(am_hal_card_t *pCard)
     //
     // Always enable the cache if it's supported
     //
-    ui32RetVal = am_hal_card_cache_on(pCard);
-    if ( AM_HAL_STATUS_SUCCESS == ui32RetVal )
-    {
-        //
-        // Reread the card to get the updated cache status.
-        //
-        ui32RetVal = am_hal_card_get_ext_csd_field(pCard, MMC_EXT_REGS_CACHE_CTRL, 1);
-        AM_HAL_CARD_DEBUG("\r\nExtCsd CACHE_ON - %s\r\n", ((ui32RetVal == 1) ? "Pass" : "Fail"));
-    }
-    else
-    {
-        AM_HAL_CARD_DEBUG("\r\am_hal_card_cache_on - status %x\r\n", ui32RetVal);
-    }
+    am_hal_card_cache_on(pCard);
 
     //
     // Always enable the notifcaition if it's supported
@@ -630,22 +597,19 @@ am_hal_card_mmc_init(am_hal_card_t *pCard)
     return AM_HAL_STATUS_SUCCESS;
 }
 
-static uint32_t
-am_hal_card_sd_init(am_hal_card_t *pCard)
+static uint32_t am_hal_card_sd_init(am_hal_card_t *pCard)
 {
     AM_HAL_CARD_DEBUG("card type %d is not supported yet\n", pCard->eType);
     return AM_HAL_STATUS_FAIL;
 }
 
-static uint32_t
-am_hal_card_type_detect(am_hal_card_t *pCard)
+static uint32_t am_hal_card_type_detect(am_hal_card_t *pCard)
 {
     AM_HAL_CARD_DEBUG("card type detect is not supported yet\n");
     return AM_HAL_STATUS_FAIL;
 }
 
-static uint32_t
-am_hal_card_set_bus_width(am_hal_card_t *pCard, am_hal_host_bus_width_e eBusWidth)
+static uint32_t am_hal_card_set_bus_width(am_hal_card_t *pCard, am_hal_host_bus_width_e eBusWidth)
 {
     uint32_t ui32Mode;
     uint32_t ui32Status;
@@ -712,8 +676,7 @@ am_hal_card_set_bus_width(am_hal_card_t *pCard, am_hal_host_bus_width_e eBusWidt
     return AM_HAL_STATUS_SUCCESS;
 }
 
-static uint32_t
-am_hal_card_set_uhs_mode(am_hal_card_t *pCard, am_hal_host_uhs_mode_e eUHSMode)
+static uint32_t am_hal_card_set_uhs_mode(am_hal_card_t *pCard, am_hal_host_uhs_mode_e eUHSMode)
 {
     am_hal_card_host_t *pHost;
 
@@ -780,8 +743,7 @@ am_hal_card_set_uhs_mode(am_hal_card_t *pCard, am_hal_host_uhs_mode_e eUHSMode)
     return AM_HAL_STATUS_SUCCESS;
 }
 
-static uint32_t
-am_hal_card_set_voltage(am_hal_card_t *pCard, am_hal_host_bus_voltage_e eBusVoltage)
+static uint32_t am_hal_card_set_voltage(am_hal_card_t *pCard, am_hal_host_bus_voltage_e eBusVoltage)
 {
     am_hal_card_host_t *pHost;
 
@@ -818,8 +780,7 @@ am_hal_card_set_voltage(am_hal_card_t *pCard, am_hal_host_bus_voltage_e eBusVolt
 #define MMC_HS200_MAX_SPEED_LIMIT 96000000
 #define MMC_HS_MAX_SPEED_LIMIT 48000000
 
-static uint32_t
-am_hal_card_set_speed(am_hal_card_t *pCard, uint32_t ui32Clock)
+static uint32_t am_hal_card_set_speed(am_hal_card_t *pCard, uint32_t ui32Clock)
 {
     uint32_t ui32Status;
     uint32_t ui32Mode;
@@ -940,14 +901,13 @@ find_mid_point(uint32_t* pVal)
     return pick_point;
 }
 
-uint32_t
-am_hal_card_emmc_calibrate(am_hal_host_uhs_mode_e eUHSMode,
-                           uint32_t ui32Clock,
-                           am_hal_host_bus_width_e eBusWidth,
-                           uint8_t *ui8CalibBuf,
-                           uint32_t ui32StartBlk,
-                           uint32_t ui32BlkCnt,
-                           uint8_t ui8TxRxDelays[2])
+uint32_t am_hal_card_emmc_calibrate(am_hal_host_uhs_mode_e eUHSMode,
+                                    uint32_t ui32Clock,
+                                    am_hal_host_bus_width_e eBusWidth,
+                                    uint8_t *ui8CalibBuf,
+                                    uint32_t ui32StartBlk,
+                                    uint32_t ui32BlkCnt,
+                                    uint8_t ui8TxRxDelays[2])
 {
     am_hal_card_t eMMCard;
     am_hal_card_host_t *pSdhcCardHost;
@@ -1114,8 +1074,7 @@ am_hal_card_emmc_calibrate(am_hal_host_uhs_mode_e eUHSMode,
 // Public functions
 //
 
-uint32_t
-am_hal_card_pwrctrl_sleep(am_hal_card_t *pCard)
+uint32_t am_hal_card_pwrctrl_sleep(am_hal_card_t *pCard)
 {
     am_hal_card_host_t *pHost;
     uint32_t ui32Status = AM_HAL_STATUS_SUCCESS;
@@ -1252,8 +1211,7 @@ am_hal_card_pwrctrl_sleep(am_hal_card_t *pCard)
     return AM_HAL_STATUS_SUCCESS;
 }
 
-uint32_t
-am_hal_card_pwrctrl_wakeup(am_hal_card_t *pCard)
+uint32_t am_hal_card_pwrctrl_wakeup(am_hal_card_t *pCard)
 {
     uint32_t ui32Status;
     am_hal_card_host_t *pHost;
@@ -1347,8 +1305,7 @@ am_hal_card_pwrctrl_wakeup(am_hal_card_t *pCard)
     return AM_HAL_STATUS_SUCCESS;
 }
 
-uint32_t
-am_hal_card_host_find_card(am_hal_card_host_t *pHost, am_hal_card_t *pCard)
+uint32_t am_hal_card_host_find_card(am_hal_card_host_t *pHost, am_hal_card_t *pCard)
 {
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -1382,12 +1339,11 @@ am_hal_card_host_find_card(am_hal_card_host_t *pHost, am_hal_card_t *pCard)
     }
 }
 
-uint32_t
-am_hal_card_cfg_set(am_hal_card_t *pCard, am_hal_card_type_e eType,
-                    am_hal_host_bus_width_e eBusWidth,
-                    uint32_t ui32Clock,
-                    am_hal_host_bus_voltage_e eIoVoltage,
-                    am_hal_host_uhs_mode_e eUHSMode)
+uint32_t am_hal_card_cfg_set(am_hal_card_t *pCard, am_hal_card_type_e eType,
+                             am_hal_host_bus_width_e eBusWidth,
+                             uint32_t ui32Clock,
+                             am_hal_host_bus_voltage_e eIoVoltage,
+                             am_hal_host_uhs_mode_e eUHSMode)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( !pCard || !pCard->pHost )
@@ -1542,8 +1498,7 @@ am_hal_card_init(am_hal_card_t *pCard,
     return AM_HAL_STATUS_SUCCESS;
 }
 
-uint32_t
-am_hal_card_deinit(am_hal_card_t *pCard)
+uint32_t am_hal_card_deinit(am_hal_card_t *pCard)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( !pCard || !pCard->pHost )
@@ -1569,8 +1524,7 @@ am_hal_card_deinit(am_hal_card_t *pCard)
 
 #define ENABLE_SDHC_AUTO_CMD23_FEATURE
 
-static uint32_t
-am_hal_card_block_rw(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf, bool bRead, bool bASync)
+static uint32_t am_hal_card_block_rw(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf, bool bRead, bool bASync)
 {
     uint32_t ui32Status;
 
@@ -1667,32 +1621,27 @@ am_hal_card_block_rw(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt
     return ui32Status;
 }
 
-uint32_t
-am_hal_card_block_read_sync(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
+uint32_t am_hal_card_block_read_sync(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
 {
     return am_hal_card_block_rw(pCard, ui32Blk, ui32BlkCnt, pui8Buf, true, false);
 }
 
-uint32_t
-am_hal_card_block_write_sync(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
+uint32_t am_hal_card_block_write_sync(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
 {
     return am_hal_card_block_rw(pCard, ui32Blk, ui32BlkCnt, pui8Buf, false, false);
 }
 
-uint32_t
-am_hal_card_block_read_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
+uint32_t am_hal_card_block_read_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
 {
     return am_hal_card_block_rw(pCard, ui32Blk, ui32BlkCnt, pui8Buf, true, true);
 }
 
-uint32_t
-am_hal_card_block_write_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
+uint32_t am_hal_card_block_write_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf)
 {
     return am_hal_card_block_rw(pCard, ui32Blk, ui32BlkCnt, pui8Buf, false, true);
 }
 
-uint32_t
-am_hal_card_block_erase(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, am_hal_card_erase_type_t erasetype, uint32_t ui32TimeoutMS)
+uint32_t am_hal_card_block_erase(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, am_hal_card_erase_type_t erasetype, uint32_t ui32TimeoutMS)
 {
     uint32_t ui32Status;
     am_hal_card_host_t *pHost;
@@ -1783,8 +1732,7 @@ am_hal_card_block_erase(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32Blk
     return pHost->ops->card_busy(pHost->pHandle, ui32TimeoutMS);
 }
 
-uint32_t
-am_hal_card_status(am_hal_card_t *pCard, uint32_t *pui32Status)
+uint32_t am_hal_card_status(am_hal_card_t *pCard, uint32_t *pui32Status)
 {
     uint32_t ui32Status;
     am_hal_card_cmd_t cmd;
@@ -1823,8 +1771,7 @@ am_hal_card_status(am_hal_card_t *pCard, uint32_t *pui32Status)
     return ui32Status;
 }
 
-am_hal_card_state_e
-am_hal_card_state(am_hal_card_t *pCard)
+am_hal_card_state_e am_hal_card_state(am_hal_card_t *pCard)
 {
     uint32_t ui32Status = 0;
     uint32_t ui32State;
@@ -1862,8 +1809,7 @@ am_hal_card_state(am_hal_card_t *pCard)
 // CMD6 - Mode switch
 //
 
-uint32_t
-am_hal_card_mode_switch(am_hal_card_t *pCard, uint32_t ui32Mode, uint32_t ui32Timeout)
+uint32_t am_hal_card_mode_switch(am_hal_card_t *pCard, uint32_t ui32Mode, uint32_t ui32Timeout)
 {
     uint32_t ui32Status;
     uint32_t ui32CardStatus;
@@ -1934,8 +1880,7 @@ am_hal_card_mode_switch(am_hal_card_t *pCard, uint32_t ui32Mode, uint32_t ui32Ti
     return ui32Timeout ? AM_HAL_STATUS_SUCCESS : AM_HAL_STATUS_FAIL;
 }
 
-static uint32_t
-am_hal_card_cmd56_read(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf, bool bASync)
+static uint32_t am_hal_card_cmd56_read(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf, bool bASync)
 {
     uint32_t ui32Status;
 
@@ -1982,20 +1927,17 @@ am_hal_card_cmd56_read(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf,
     return ui32Status;
 }
 
-uint32_t
-am_hal_card_cmd56_read_async(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf)
+uint32_t am_hal_card_cmd56_read_async(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf)
 {
     return am_hal_card_cmd56_read(pCard, ui32Arg, pui8Buf, true);
 }
 
-uint32_t
-am_hal_card_cmd56_read_sync(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf)
+uint32_t am_hal_card_cmd56_read_sync(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf)
 {
     return am_hal_card_cmd56_read(pCard, ui32Arg, pui8Buf, false);
 }
 
-uint32_t
-am_hal_card_register_evt_callback(am_hal_card_t *pCard, am_hal_host_event_cb_t pfunCallback)
+uint32_t am_hal_card_register_evt_callback(am_hal_card_t *pCard, am_hal_host_event_cb_t pfunCallback)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( !pCard || !pCard->pHost )
@@ -2010,8 +1952,7 @@ am_hal_card_register_evt_callback(am_hal_card_t *pCard, am_hal_host_event_cb_t p
     return AM_HAL_STATUS_SUCCESS;
 }
 
-uint32_t
-am_hal_card_get_cid_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8Size)
+uint32_t am_hal_card_get_cid_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8Size)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( !pCard || !pCard->bCidValid )
@@ -2025,8 +1966,7 @@ am_hal_card_get_cid_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8
 
 }
 
-uint32_t
-am_hal_card_get_csd_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8Size)
+uint32_t am_hal_card_get_csd_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8Size)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( !pCard || !pCard->bCsdValid )
@@ -2039,8 +1979,7 @@ am_hal_card_get_csd_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8
 
 }
 
-uint32_t
-am_hal_card_get_ext_csd_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8Size)
+uint32_t am_hal_card_get_ext_csd_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t ui8Size)
 {
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
@@ -2065,8 +2004,7 @@ am_hal_card_get_ext_csd_field(am_hal_card_t *pCard, uint16_t ui16Offset, uint8_t
 
 }
 
-uint32_t
-am_hal_card_get_info(am_hal_card_t *pCard, am_hal_card_info_t *pCardInfo)
+uint32_t am_hal_card_get_info(am_hal_card_t *pCard, am_hal_card_info_t *pCardInfo)
 {
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     if ( !pCard || !pCard->pHost )
@@ -2093,84 +2031,6 @@ am_hal_card_get_info(am_hal_card_t *pCard, am_hal_card_info_t *pCardInfo)
     }
 
     return AM_HAL_STATUS_SUCCESS;
-}
-
-uint32_t
-am_hal_card_block_rpmb_rw(am_hal_card_t *pCard, uint8_t *pui8Buf, bool bRead, bool bRelWrite)
-{
-    uint32_t ui32Status;
-
-    am_hal_card_host_t *pHost;
-    am_hal_card_cmd_t cmd;
-    am_hal_card_cmd_data_t cmd_data;
-
-#ifndef AM_HAL_DISABLE_API_VALIDATION
-
-    if ( !pCard || !pCard->pHost )
-    {
-        return AM_HAL_STATUS_INVALID_ARG;
-    }
-
-#endif // AM_HAL_DISABLE_API_VALIDATION
-
-    if ( pCard->eState != AM_HAL_CARD_STATE_TRANS )
-    {
-        return AM_HAL_STATUS_INVALID_OPERATION;
-    }
-
-    pHost = pCard->pHost;
-
-#ifdef DSP_RAM1_WORKAROUND
-    if (bRead == false)
-    {
-        memcpy((void *)DSP_RAM1_TMP_ADDR, pui8Buf, 512);
-        pui8Buf = (uint8_t *)DSP_RAM1_TMP_ADDR;
-    }
-#endif
-
-    //
-    // Send CMD23 firstly for mulitple blocks transfer
-    //
-    memset((void *)&cmd, 0x0, sizeof(cmd));
-
-    cmd.ui8Idx = MMC_CMD_SET_BLOCK_COUNT;
-    cmd.ui32RespType = MMC_RSP_R1;
-    cmd.ui32Arg = 1;
-
-    if ( bRelWrite )
-    {
-        cmd.ui32Arg |= ((uint32_t)0x01 << 31);
-    }
-
-    if ( (ui32Status = pHost->ops->execute_cmd(pHost->pHandle, &cmd, NULL)) != AM_HAL_STATUS_SUCCESS )
-    {
-        return ui32Status;
-    }
-
-    memset((void *)&cmd, 0x0, sizeof(cmd));
-    memset((void *)&cmd_data, 0x0, sizeof(cmd_data));
-    if ( bRead )
-    {
-        cmd.ui8Idx = MMC_CMD_READ_MULTIPLE_BLOCK;
-    }
-    else
-    {
-        cmd.ui8Idx = MMC_CMD_WRITE_MULTIPLE_BLOCK;
-    }
-
-    cmd.ui32Arg = 0;
-    cmd.ui32RespType = MMC_RSP_R1;
-    cmd.bASync = false;
-    cmd.bAutoCMD23 = false;
-
-    cmd_data.ui32BlkCnt = 1;
-    cmd_data.pui8Buf = pui8Buf;
-    cmd_data.ui32BlkSize = 512;
-    cmd_data.dir = bRead ? AM_HAL_DATA_DIR_READ : AM_HAL_DATA_DIR_WRITE;
-
-    ui32Status = pHost->ops->execute_cmd(pHost->pHandle, &cmd, &cmd_data);
-
-    return ui32Status;
 }
 
 //*****************************************************************************

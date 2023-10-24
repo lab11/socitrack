@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -57,17 +57,21 @@
 #define AM_APOLLO4_API
 #endif
 
-
 //
-//! @brief Define a somewhat arbitrary maximum number of LEDs.
-//! @details No board is actually expected to have this many LEDs,
-//! the value is used for parameter validation.
+// Define a somewhat arbitrary maximum number of LEDs.  No board is actually
+// expected to have this many LEDs, the value is used for parameter validation.
 //
 #define MAX_LEDS        31
 
 //*****************************************************************************
 //
-//  Configures the necessary pins for an array of LEDs
+//! @brief Configures the necessary pins for an array of LEDs
+//!
+//! @param psLED is a pointer to an LED structure.
+//!
+//! This function configures a GPIO to drive an LED in a low-power way.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -216,7 +220,14 @@ am_devices_led_init(am_devices_led_t *psLED)
 
 //*****************************************************************************
 //
-//  Disables an array of LEDs
+//! @brief Disables an array of LEDs
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32NumLEDs is the total number of LEDs in the array.
+//!
+//! This function disables the GPIOs for an array of LEDs.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -252,7 +263,14 @@ am_devices_led_array_disable(am_devices_led_t *psLEDs, uint32_t ui32NumLEDs)
 
 //*****************************************************************************
 //
-//  Configures the necessary pins for an array of LEDs
+//! @brief Configures the necessary pins for an array of LEDs
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32NumLEDs is the total number of LEDs in the array.
+//!
+//! This function configures the GPIOs for an array of LEDs.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -277,7 +295,14 @@ am_devices_led_array_init(am_devices_led_t *psLEDs, uint32_t ui32NumLEDs)
 
 //*****************************************************************************
 //
-//  Turns on the requested LED.
+//! @brief Turns on the requested LED.
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32LEDNum is the LED number for the light to turn on.
+//!
+//! This function turns on a single LED.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -368,7 +393,14 @@ am_devices_led_on(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
 
 //*****************************************************************************
 //
-//  Turns off the requested LED.
+//! @brief Turns off the requested LED.
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32LEDNum is the LED number for the light to turn off.
+//!
+//! This function turns off a single LED.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -459,7 +491,14 @@ am_devices_led_off(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
 
 //*****************************************************************************
 //
-//  Toggles the requested LED.
+//! @brief Toggles the requested LED.
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32LEDNum is the LED number for the light to toggle.
+//!
+//! This function toggles a single LED.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -593,7 +632,14 @@ am_devices_led_toggle(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
 
 //*****************************************************************************
 //
-//  Gets the state of the requested LED.
+//! @brief Gets the state of the requested LED.
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32LEDNum is the LED to check.
+//!
+//! This function checks the state of a single LED.
+//!
+//! @return true if the LED is on.
 //
 //*****************************************************************************
 bool
@@ -669,7 +715,15 @@ am_devices_led_get(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
 
 //*****************************************************************************
 //
-//  Display a binary value using LEDs.
+//! @brief Display a binary value using LEDs.
+//!
+//! @param psLEDs is an array of LED structures.
+//! @param ui32NumLEDs is the number of LEDs in the array.
+//! @param ui32Value is the value to display on the LEDs.
+//!
+//! This function displays a value in binary across an array of LEDs.
+//!
+//! @return true if the LED is on.
 //
 //*****************************************************************************
 void

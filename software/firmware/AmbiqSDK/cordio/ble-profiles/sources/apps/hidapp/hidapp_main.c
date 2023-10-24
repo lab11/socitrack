@@ -4,16 +4,16 @@
  *
  *  \brief  HID HidApp sample application.
  *
- *  Copyright (c) 2015-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2015-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,7 +47,7 @@
 #include "bas/bas_api.h"
 #include "hid/hid_api.h"
 #include "hidapp/hidapp_api.h"
-#include "atts_main.h"
+
 /**************************************************************************************************
   Configurable Parameters
 **************************************************************************************************/
@@ -111,7 +111,7 @@ static const uint8_t hidAppAdvDataDisc[] =
   /*! manufacturer specific data */
   3,                                      /*! length */
   DM_ADV_TYPE_MANUFACTURER,               /*! AD type */
-  UINT16_TO_BYTES(HCI_ID_PACKETCRAFT),    /*! company ID */
+  UINT16_TO_BYTES(HCI_ID_ARM),            /*! company ID */
 
   /*! service UUID list */
   3,                                      /*! length */
@@ -153,7 +153,7 @@ enum
 
 /* The input report fits in one byte */
 #define HIDAPP_KEYBOARD_INPUT_REPORT_LEN  8
-#define HIDAPP_MOUSE_INPUT_REPORT_LEN     4
+#define HIDAPP_MOUSE_INPUT_REPORT_LEN     3
 #define HIDAPP_REMOTE_INPUT_REPORT_LEN    1
 #define HIDAPP_OUTPUT_REPORT_LEN          1
 #define HIDAPP_FEATURE_REPORT_LEN         1
@@ -359,12 +359,6 @@ const uint8_t hidReportMap[] =
   0x15, 0x81,                    /*     LOGICAL_MINIMUM (-127) */
   0x25, 0x7f,                    /*     LOGICAL_MAXIMUM (127) */
   0x81, 0x06,                    /*     INPUT (Data, Variable, Relative) */
-  0x09, 0x38,                    /*     AB usage wheel*/
-  0x15, 0x81,                    /*     Logical Minimum (-127) */
-  0x25, 0x7F,                    /*     Logical Maximum (127) */
-  0x75, 0x08,                    /*     Report Size (8) */
-  0x95, 0x03,                    /*     Report Count (2) AB (3) */
-  0x81, 0x06,                    /*     Input (Data, Variable, Relative) */
   0xc0,                          /*   End Collection (Physical) */
   0xc0                           /* End Collection (Application) */
 };
@@ -399,7 +393,6 @@ struct
   uint8_t buttonMask;                   /* pending button mask */
   uint8_t xDisplacement;                /* pending X Displacement */
   uint8_t yDisplacement;                /* pending Y Displacement */
-  uint8_t scroll;
   uint8_t devSpecific;                  /* pending Device Specific */
 
   /* Keyboard pending event data */
@@ -555,7 +548,6 @@ static void hidAppMouseSendData(dmConnId_t connId)
         buffer[MOUSE_BUTTON_POS] = hidAppCb.buttonMask;
         buffer[MOUSE_X_POS] = hidAppCb.xDisplacement;
         buffer[MOUSE_Y_POS] = hidAppCb.yDisplacement;
-        buffer[MOUSE_Y_POS+1] = hidAppCb.scroll;
 
         hidAppCb.txFlags &= ~(HIDAPP_TX_FLAGS_READY | HIDAPP_TX_FLAGS_PENDING);
 
@@ -766,7 +758,7 @@ static void hidAppKeyboardReportEvent(uint8_t modifiers, uint8_t keys[], uint8_t
  *  \return None.
  */
 /*************************************************************************************************/
-static void hidAppMouseReportEvent(uint8_t buttonMask, uint8_t xDisplacement, uint8_t yDisplacement, uint8_t scroll)
+static void hidAppMouseReportEvent(uint8_t buttonMask, uint8_t xDisplacement, uint8_t yDisplacement)
 {
   dmConnId_t connId;
 
@@ -776,7 +768,6 @@ static void hidAppMouseReportEvent(uint8_t buttonMask, uint8_t xDisplacement, ui
     hidAppCb.buttonMask = buttonMask;
     hidAppCb.xDisplacement = xDisplacement;
     hidAppCb.yDisplacement = yDisplacement;
-    hidAppCb.scroll= scroll;
     hidAppCb.devSpecific = 0;
     hidAppCb.reportId = HIDAPP_MOUSE_REPORT_ID;
 
@@ -885,10 +876,10 @@ static void hidAppTestSendButton(void)
     hidAppRemoteReportEvent(button);
     break;
   case HIDAPP_MOUSE_LEFT_BTN:
-    hidAppMouseReportEvent(MOUSE_BUTTON_LEFT, 0, 0, 20);
+    hidAppMouseReportEvent(MOUSE_BUTTON_LEFT, 0, 0);
     break;
   case HIDAPP_MOUSE_RIGHT_BTN:
-    hidAppMouseReportEvent(0, 0, 0, (uint8_t)-20);
+    hidAppMouseReportEvent(MOUSE_BUTTON_RIGHT, 0, 0);
     break;
   case HIDAPP_KEYBOARD_UP_BTN:
     button = KEYBOARD_USAGE_UP_ARROW;
@@ -940,7 +931,7 @@ static void hidAppTestNoButton(void)
 
   case HIDAPP_MOUSE_LEFT_BTN:
   case HIDAPP_MOUSE_RIGHT_BTN:
-    hidAppMouseReportEvent(MOUSE_USAGE_NONE, 0, 0, 0);
+    hidAppMouseReportEvent(MOUSE_USAGE_NONE, 0, 0);
     break;
 
   case HIDAPP_KEYBOARD_UP_BTN:
@@ -1061,25 +1052,10 @@ static void hidAppProcMsg(dmEvt_t *pMsg)
       break;
 
     case DM_RESET_CMPL_IND:
-      // set database hash calculating status to true until a new hash is generated after reset
-      attsCsfSetHashUpdateStatus(TRUE);
-
-      // Generate ECC key if configured support secure connection,
-      // else will calcualte ATT database hash
-      if( hidAppSecCfg.auth & DM_AUTH_SC_FLAG )
-      {
-          DmSecGenerateEccKeyReq();
-      }
-      else
-      {
-          AttsCalculateDbHash();
-      }
-
-      uiEvent = APP_UI_RESET_CMPL;
-      break;
-
-    case ATTS_DB_HASH_CALC_CMPL_IND:
+      AttsCalculateDbHash();
+      DmSecGenerateEccKeyReq();
       hidAppSetup(pMsg);
+      uiEvent = APP_UI_RESET_CMPL;
       break;
 
     case DM_CONN_OPEN_IND:
@@ -1115,11 +1091,6 @@ static void hidAppProcMsg(dmEvt_t *pMsg)
 
      case DM_SEC_ECC_KEY_IND:
       DmSecSetEccKey(&pMsg->eccMsg.data.key);
-      // Only calculate database hash if the calculating status is in progress
-      if( attsCsfGetHashUpdateStatus() )
-      {
-        AttsCalculateDbHash();
-      }
       break;
 
     case DM_SEC_COMPARE_IND:

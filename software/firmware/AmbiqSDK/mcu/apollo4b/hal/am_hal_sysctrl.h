@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SYSCTRL_H
@@ -57,17 +57,15 @@ extern "C"
 
 //*****************************************************************************
 //
-//! @name Definitions for sleep mode parameter
-//! @{
+// Definitions for sleep mode parameter
 //
 //*****************************************************************************
 #define AM_HAL_SYSCTRL_SLEEP_DEEP       true
 #define AM_HAL_SYSCTRL_SLEEP_NORMAL     false
-//! @}
 
 //*****************************************************************************
 //
-//! Definition of Global Power State enumeration
+// Definition of Global Power State enumeration
 //
 //*****************************************************************************
 typedef enum
@@ -79,26 +77,20 @@ typedef enum
 
 //*****************************************************************************
 //
-//! Define to be used with am_hal_sysctrl_sysbus_write_flush
+// Write flush - This function will hold the bus until all queued write
+// operations on System Bus have completed, thereby guaranteeing that all
+// writes to APB have been flushed.
 //
 //*****************************************************************************
 #define SYNC_READ       0x47FF0000
-
-//*****************************************************************************
-//
-//! SYSBUS Write flush - This function will hold the bus until all queued write
-//! operations on System Bus have completed, thereby guaranteeing that all
-//! writes to APB have been flushed.
-//
-//*****************************************************************************
 #define am_hal_sysctrl_sysbus_write_flush()     AM_REGVAL(SYNC_READ)
 
 //*****************************************************************************
 //
-//! SYSCTRL Write flush - This function will return once all queued write
-//! operations have completed, thereby guaranteeing that all
-//! writes have been flushed.
-//! This works across all the buses - AXI and APB
+// Write flush - This function will return once all queued write
+// operations have completed, thereby guaranteeing that all
+// writes have been flushed.
+// This works across all the buses - AXI and APB
 //
 //*****************************************************************************
 #define am_hal_sysctrl_bus_write_flush()                                \
@@ -109,22 +101,7 @@ typedef enum
 // External function definitions
 //
 //*****************************************************************************
-//*****************************************************************************
-//
-//! @brief Place the core into sleep or deepsleep.
-//!
-//! @param bSleepDeep - False for Normal or True Deep sleep.
-//!
-//! This function puts the MCU to sleep or deepsleep depending on bSleepDeep.
-//!
-//! Valid values for bSleepDeep are:
-//!
-//!     AM_HAL_SYSCTRL_SLEEP_NORMAL
-//!     AM_HAL_SYSCTRL_SLEEP_DEEP
-//
-//*****************************************************************************
 extern void am_hal_sysctrl_sleep(bool bSleepDeep);
-
 #ifdef __cplusplus
 }
 #endif

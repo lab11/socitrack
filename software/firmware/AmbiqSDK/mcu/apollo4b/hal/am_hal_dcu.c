@@ -2,7 +2,7 @@
 //
 //! @file am_hal_dcu.c
 //!
-//! @brief Implementation for Debug Control Unit functionality
+//! @brief DCU control functions
 //!
 //! @addtogroup dcu_4b DCU - Debug Control Unit
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include "am_mcu_apollo.h"
@@ -59,11 +59,6 @@ uint64_t gDcuDisable  = AM_HAL_DCURAW_DISABLE;
 volatile uint32_t *gpDcuEnable = &CRYPTO->HOSTDCUEN2;
 volatile uint32_t *gpDcuLock   = &CRYPTO->HOSTDCULOCK2;
 
-//*****************************************************************************
-//
-//! @brief Get the Current RAW DCU Mask
-//
-//*****************************************************************************
 static uint64_t
 get_raw_dcu_mask(uint32_t ui32DcuMask, uint8_t threeBitVal)
 {
@@ -83,11 +78,6 @@ get_raw_dcu_mask(uint32_t ui32DcuMask, uint8_t threeBitVal)
     return ui64Mask;
 }
 
-//*****************************************************************************
-//
-//! @brief Get the Current DCU Mask
-//
-//*****************************************************************************
 static uint32_t
 get_ui32_dcu_mask(uint64_t ui64DcuMask, uint8_t threeBitVal)
 {
@@ -105,11 +95,6 @@ get_ui32_dcu_mask(uint64_t ui64DcuMask, uint8_t threeBitVal)
     return ui32Mask;
 }
 
-//*****************************************************************************
-//
-//! @brief Copy words from Register to Register
-//
-//*****************************************************************************
 static void
 copy_words(uint32_t *pDst, uint32_t *pSrc, uint32_t numWords)
 {
@@ -294,9 +279,14 @@ uint32_t am_hal_dcu_raw_update(bool bEnable, uint64_t ui64Mask)
 
 //*****************************************************************************
 //
-// Update DCU Enable (Qualified Values)
-//
-// This will update the DCU Enable settings, if not locked
+//! @brief  Update DCU Enable (Qualified Values)
+//!
+//! @param  ui32Mask -  DCU controls to be modified
+//! @param  bEnable - Whether to enable or disable
+//!
+//! This will update the DCU Enable settings, if not locked
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_dcu_update(bool bEnable, uint32_t ui32Mask)
@@ -313,10 +303,14 @@ uint32_t am_hal_dcu_update(bool bEnable, uint32_t ui32Mask)
 
 //*****************************************************************************
 //
-// DCU Disable - Using MCUCTRL Override
-//
-// This will update the MCUCTRL DCU Disable Override settings
-// This can only further lock things if the corresponding DCU Enable was open
+//! @brief  DCU Disable - Using MCUCTRL Override
+//!
+//! @param  ui32Mask -  DCU controls to be modified (Qualified Values)
+//!
+//! This will update the MCUCTRL DCU Disable Override settings
+//! This can only further lock things if the corresponding DCU Enable was open
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_dcu_mcuctrl_override(uint32_t ui32Mask)

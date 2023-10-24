@@ -4,7 +4,7 @@
 //!
 //! @brief Helper functions supporting DSP interrupts.
 //!
-//! @addtogroup dsp_interrupt_4b Interrupt (DSP NVIC support functions)
+//! @addtogroup dsp_interrupt Interrupt (DSP NVIC support functions)
 //! @ingroup apollo4b_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -62,6 +62,7 @@
 //!
 //! This structure keeps the handler address with some information about the
 //! status register bit associated with the interrupt.
+//!
 //!
 //
 //*****************************************************************************
@@ -246,10 +247,13 @@ am_hal_interrupt_master_restore(uint32_t ui32Restoreval)
 
 //*****************************************************************************
 //
-// am_hal_interrupt_master_set set the interrupt level
-//
-// The function can change the interrupt level to any level. By changing the
-// interrupt level, all interrupts with the lower level are disabled.
+//! @brief am_hal_interrupt_master_set set the interrupt level
+//!
+//! The function can change the interrupt level to any level. By changing the
+//! interrupt level, all interrupts with the lower level are disabled.
+//!
+//! @param ui32Level - The required interrupt level
+//! @return the contents of PS register.
 //
 //*****************************************************************************
 uint32_t

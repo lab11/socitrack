@@ -6,7 +6,7 @@
 //!
 //! Provides support functions for configuring the ARM TPIU module
 //!
-//! @addtogroup tpiu4_4p TPIU - Trace Port Interface Unit
+//! @addtogroup tpiu4 TPIU - Trace Port Interface Unit
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_TPIU_H
@@ -61,8 +61,7 @@ extern "C"
 
 //*****************************************************************************
 //
-//! @name TPIU bit rate defines.
-//! @{
+// TPIU bit rate defines.
 //
 //*****************************************************************************
 #define AM_HAL_TPIU_BAUD_57600      (115200 / 2)
@@ -74,7 +73,6 @@ extern "C"
 #define AM_HAL_TPIU_BAUD_1M         (1000000 * 1)
 #define AM_HAL_TPIU_BAUD_2M         (1000000 * 2)
 #define AM_HAL_TPIU_BAUD_DEFAULT    (AM_HAL_TPIU_BAUD_1M)
-//! @}
 
 
 //*****************************************************************************
@@ -94,6 +92,7 @@ extern "C"
 //!         AM_HAL_TPIU_BAUD_460800
 //!         AM_HAL_TPIU_BAUD_500000
 //!         AM_HAL_TPIU_BAUD_1M
+//!
 //
 //*****************************************************************************
 extern void am_hal_tpiu_enable(uint32_t ui32SetItmBaud);
@@ -104,6 +103,7 @@ extern void am_hal_tpiu_enable(uint32_t ui32SetItmBaud);
 //!
 //! This function disables the ARM TPIU by disabling the TPIU clock source
 //! in MCU control register.
+//!
 //
 //*****************************************************************************
 extern void am_hal_tpiu_disable(void);

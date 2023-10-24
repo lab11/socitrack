@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the IO Slave module
 //!
-//! @addtogroup ios4_4p IOS - IO Slave (SPI/I2C)
+//! @addtogroup ios4 IOS - IO Slave (SPI/I2C)
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -88,7 +88,7 @@ typedef struct
 {
     am_hal_handle_prefix_t  prefix;
     //
-    //! Physical module number.
+    // Physical module number.
     //
     uint32_t                ui32Module;
 
@@ -560,7 +560,15 @@ uint32_t am_hal_ios_interrupt_status_get(void *pHandle, bool bEnabledOnly,
 
 //*****************************************************************************
 //
-// Check the amount of space used in the FIFO
+//! @brief Check the amount of space used in the FIFO
+//!
+//! @param pHandle - handle for the IOS.
+//! @param pui32UsedSpace is bytes used in the Overall FIFO.
+//!
+//! This function returns the available data in the overall FIFO yet to be
+//! read by the host. This takes into account the SRAM buffer and hardware FIFO
+//!
+//! @return success or error code
 //
 //*****************************************************************************
 uint32_t am_hal_ios_fifo_space_used(void *pHandle, uint32_t *pui32UsedSpace)
@@ -601,7 +609,15 @@ uint32_t am_hal_ios_fifo_space_used(void *pHandle, uint32_t *pui32UsedSpace)
 
 //*****************************************************************************
 //
-// Check the amount of space left in the FIFO
+//! @brief Check the amount of space left in the FIFO
+//!
+//! @param pHandle - handle for the IOS.
+//! @param pui32LeftSpace is bytes left in the Overall FIFO.
+//!
+//! This function returns the available space in the overall FIFO to accept
+//! new data. This takes into account the SRAM buffer and hardware FIFO
+//!
+//! @return success or error code
 //
 //*****************************************************************************
 uint32_t am_hal_ios_fifo_space_left(void *pHandle, uint32_t *pui32LeftSpace)
@@ -646,7 +662,15 @@ uint32_t am_hal_ios_fifo_space_left(void *pHandle, uint32_t *pui32LeftSpace)
 
 //*****************************************************************************
 //
-// Check the amount of space left in the hardware FIFO
+//! @brief Check the amount of space left in the hardware FIFO
+//!
+//! @param pHandle - handle for the IOS.
+//! @param pui32LeftSpace is bytes left in the IOS FIFO.
+//!
+//! This function reads the IOSLAVE FIFOPTR register and determines the amount
+//! of space left in the IOS LRAM FIFO.
+//!
+//! @return success or error code
 //
 //*****************************************************************************
 static uint32_t fifo_space_left(void *pHandle, uint32_t *pui32LeftSpace)
@@ -829,7 +853,24 @@ uint32_t am_hal_ios_interrupt_service(void *pHandle, uint32_t ui32IntMask)
 
 //*****************************************************************************
 //
-// Writes the specified number of bytes to the IOS fifo.
+//! @brief Writes the specified number of bytes to the IOS fifo.
+//!
+//! @param pHandle - handle for the IOS.
+//! @param pui8Data is a pointer to the data to be written to the fifo.
+//! @param ui32NumBytes is the number of bytes to send.
+//! @param pui32WrittenBytes is number of bytes written (could be less than ui32NumBytes, if not enough space)
+//!
+//! This function will write data from the caller-provided array to the IOS
+//! LRAM FIFO. If there is no space in the LRAM FIFO, the data will be copied
+//! to a temporary SRAM buffer instead.
+//!
+//! The maximum message size for the IO Slave is 1023 bytes.
+//!
+//! @note In order for SRAM copy operations in the function to work correctly,
+//! the \e am_hal_ios_buffer_service() function must be called in the ISR for
+//! the ioslave module.
+//!
+//! @return success or error code
 //
 //*****************************************************************************
 uint32_t am_hal_ios_fifo_write(void *pHandle, uint8_t *pui8Data, uint32_t ui32NumBytes, uint32_t *pui32WrittenBytes)
@@ -1045,7 +1086,15 @@ static void am_hal_ios_buffer_init(am_hal_ios_buffer_t *psBuffer, void *pvArray,
 
 //*****************************************************************************
 //
-// IOS control function
+//! @brief IOS control function
+//!
+//! @param pHandle       - handle for the IOS.
+//! @param eReq         - device specific special request code.
+//! @param pArgs        - pointer to the request specific arguments.
+//!
+//! This function allows advanced settings
+//!
+//! @return success or error code
 //
 //*****************************************************************************
 uint32_t am_hal_ios_control(void *pHandle, am_hal_ios_request_e eReq, void *pArgs)

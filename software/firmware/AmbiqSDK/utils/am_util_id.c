@@ -15,7 +15,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,10 +47,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
+#include <stdbool.h>
 #include "am_util_id.h"
 
 //*****************************************************************************
@@ -80,15 +81,11 @@ static const uint8_t g_DeviceNameApollo4[]    = "Apollo4 revA";
 static const uint8_t g_DeviceNameApollo4b[]   = "Apollo4b";
 #endif
 #if defined(AM_ID_APOLLO4P)
-static const uint8_t g_DeviceNameApollo4p[]        = "Apollo4 Plus";
-static const uint8_t g_DeviceNameApollo4p_blue[]   = "Apollo4 Blue Plus";
-static const uint8_t g_PackageType[][4]            = { "SIP", "SIP2", "BGA", "CSP" };
+static const uint8_t g_DeviceNameApollo4p[]   = "Apollo4 Plus";
 #endif
 #if defined(AM_ID_APOLLO4L)
 static const uint8_t g_DeviceNameApollo4l[]   = "Apollo4 Lite";
 #endif
-
-static const uint8_t g_TempRange[][11] = { "Commercial", "Military", "Automotive", "Industrial" };
 static const uint8_t g_ui8VendorNameAmbq[]    = "AMBQ";
 static const uint8_t g_ui8VendorNameUnknown[] = "????";
 static const uint8_t g_ui8DeviceNameUnknown[] = "Unknown device";
@@ -166,7 +163,6 @@ am_util_id_device(am_util_id_t *psIDDevice)
     //
 #if AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_DEVICEID, &psIDDevice->sMcuCtrlDevice);
-    am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_FEATURES_AVAIL, &psIDDevice->sMcuCtrlFeature);
 #else // AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_device_info_get(&psIDDevice->sMcuCtrlDevice);
 #endif // AM_APOLLO3_MCUCTRL
@@ -273,14 +269,7 @@ am_util_id_device(am_util_id_t *psIDDevice)
               ( revmaj_get(ui32ChipRev) == 'C' ) )
     {
         psIDDevice->ui32Device = AM_UTIL_ID_APOLLO4P;
-        if ( ((psIDDevice->sMcuCtrlDevice.ui32ChipPN & 0xc0) >> 6) >= 2 )
-        {
-            psIDDevice->pui8DeviceName = g_DeviceNameApollo4p;
-        }
-        else
-        {
-            psIDDevice->pui8DeviceName = g_DeviceNameApollo4p_blue;
-        }
+        psIDDevice->pui8DeviceName = g_DeviceNameApollo4p;
         chiprev_set(psIDDevice, 1);
     }
 #endif // AM_ID_APOLLO4P
@@ -295,20 +284,6 @@ am_util_id_device(am_util_id_t *psIDDevice)
         chiprev_set(psIDDevice, 1);
     }
 #endif // AM_ID_APOLLO4L
-
-
-    //
-    // This section defines the package type
-    //
-    // currently this is only defined for the Apollo4 Plus / Blue Plus
-    //
-#if defined(AM_PART_APOLLO4P)
-    psIDDevice->pui8PackageType = g_PackageType[((psIDDevice->sMcuCtrlDevice.ui32ChipPN & 0xC0) >> 6)];
-#else
-    psIDDevice->pui8PackageType = NULL;
-#endif
-
-    psIDDevice->pui8TempRange = g_TempRange[((psIDDevice->sMcuCtrlDevice.ui32ChipPN & 0x06) >> 1)];
 
     return psIDDevice->ui32Device;
 }

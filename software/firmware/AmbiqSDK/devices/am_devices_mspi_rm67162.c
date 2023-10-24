@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -85,7 +85,7 @@ static am_devices_rm67162_graphic_conf_t g_sGraphic_conf =
 //    .col_offset     = 100
 };
 
-//! Display MSPI configuration
+// Display MSPI configuration
 static am_hal_mspi_dev_config_t  SerialDisplayMSPICfg =
 {
     .ui8TurnAround        = 1,
@@ -122,13 +122,6 @@ am_devices_mspi_rm67162_t gAmRm67162[AM_DEVICES_MSPI_RM67162_MAX_DEVICE_NUM];
 
 am_hal_mspi_clock_e g_MaxReadFreq = AM_HAL_MSPI_CLK_8MHZ;
 
-//*****************************************************************************
-//
-//! @brief
-//! @param pCallbackCtxt
-//! @param status
-//
-//*****************************************************************************
 void pfnMSPI_RM67162_Callback(void *pCallbackCtxt, uint32_t status)
 {
     // Set the DMA complete flag.
@@ -137,6 +130,7 @@ void pfnMSPI_RM67162_Callback(void *pCallbackCtxt, uint32_t status)
 
 //*****************************************************************************
 //
+// Generic Command Write function.
 //
 //*****************************************************************************
 uint32_t
@@ -174,17 +168,6 @@ am_devices_rm67162_command_write(void *pHandle,
   return AM_DEVICES_RM67162_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//! @brief
-//! @param pHandle
-//! @param ui32Instr
-//! @param pData
-//! @param ui32NumBytes
-//! @param bTurnaround
-//! @return
-//
-//*****************************************************************************
 static uint32_t
 am_devices_rm67162_command_read(void *pHandle,
                                 uint32_t ui32Instr,
@@ -228,7 +211,14 @@ am_devices_rm67162_command_read(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the current status of the external display
+//! @brief Reads the current status of the external display
+//!
+//! @param ui32DeviceNumber - Device number of the external display
+//!
+//! This function reads the device ID register of the external display, and returns
+//! the result as an 32-bit unsigned integer value.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -252,10 +242,6 @@ am_devices_rm67162_reset(void *pHandle)
     return AM_DEVICES_RM67162_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_rm67162_display_off(void *pHandle)
 {
@@ -272,10 +258,6 @@ am_devices_rm67162_display_off(void *pHandle)
     return AM_DEVICES_RM67162_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_rm67162_display_on(void *pHandle)
 {
@@ -289,7 +271,18 @@ am_devices_rm67162_display_on(void *pHandle)
 
 //*****************************************************************************
 //
-// Programs the given range of flash addresses.
+//! @brief Programs the given range of flash addresses.
+//!
+//! @param pui8TxBuffer - Buffer to write the external flash data from
+//! @param ui32NumBytes - Number of bytes to write to the external flash
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external flash at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target flash
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -356,7 +349,17 @@ am_devices_rm67162_blocking_write(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the fram into a buffer.
+//! @brief Reads the contents of the fram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the flash
+//! @param ui32ReadAddress - Address of desired data in external flash
+//! @param ui32NumBytes - Number of bytes to read from external flash
+//!
+//! This function reads the external flash at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -430,7 +433,20 @@ am_devices_rm67162_blocking_read(void *pHandle,
 
 //*****************************************************************************
 //
-// Programs the given range of display addresses.
+//! @brief Programs the given range of display addresses.
+//!
+//! @param ui32Module - MSPI Instance
+//! @param pui8TxBuffer - Buffer to write the data from
+//! @param ui32NumBytes - Number of bytes to write to the display memory
+//! @param bWaitForCompletion - Waits for CQ/DMA to complete before return.
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external flash at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target flash
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -502,7 +518,23 @@ am_devices_rm67162_nonblocking_write(void *pHandle,
 
 //*****************************************************************************
 //
-//  Programs the given range of display addresses.
+//! @brief Programs the given range of display addresses.
+//!
+//! @param ui32Module - MSPI Instance
+//! @param pui8TxBuffer - Buffer to write the data from
+//! @param ui32NumBytes - Number of bytes to write to the display memory
+//! @param ui32PauseCondition - CQ Pause condition before execution.
+//! @param ui32StatusSetClr - CQ Set/Clear condition after execution.
+//! @param pfnCallback - Callback function after execution.
+//! @param pCallbackCtxt - Callback context after execution.
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external display the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target display
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -546,7 +578,18 @@ am_devices_rm67162_nonblocking_write_adv(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the display into a buffer.
+//! @brief Reads the contents of the display into a buffer.
+//!
+//! @param ui32Module - MSPI Instance
+//! @param pui8RxBuffer - Buffer to store the received data from the flash
+//! @param ui32NumBytes - Number of bytes to read from external flash
+//! @param bWaitForCompletion - Waits for CQ/DMA to complete before return.
+//!
+//! This function reads the external display at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -715,7 +758,17 @@ am_devices_lcm_init(void *pHandle, am_devices_rm67162_graphic_conf_t *psGraphic_
 
 //*****************************************************************************
 //
-// Initialize the rm67162 driver.
+//! @brief Initialize the rm67162 driver.
+//!
+//! @param ui32Module      - MSPI module ID.
+//! @param psMSPISettings  - MSPI device structure describing the target spiflash.
+//! @param ppMspiHandle    - MSPI handler.
+//!
+//! This function should be called before any other am_devices_rm67162
+//! functions. It is used to set tell the other functions how to communicate
+//! with the TFT display hardware.
+//!
+//! @return Status.
 //
 //*****************************************************************************
 uint32_t
@@ -847,7 +900,13 @@ am_devices_mspi_rm67162_row_col_reset(void *pHandle)
 
 //*****************************************************************************
 //
-// De-Initialize the rm67162 driver.
+//! @brief De-Initialize the rm67162 driver.
+//!
+//! @param ui32Module     - MSPI Module#
+//!
+//! This function reverses the initialization
+//!
+//! @return Status.
 //
 //*****************************************************************************
 uint32_t
@@ -887,10 +946,7 @@ am_devices_rm67162_term(void *pHandle)
     //
     return AM_DEVICES_RM67162_STATUS_SUCCESS;
 }
-//*****************************************************************************
-//
-//
-//*****************************************************************************
+
 uint32_t
 am_devices_rm67162_read_id(void *pHandle, uint32_t *pdata)
 {
@@ -902,10 +958,6 @@ am_devices_rm67162_read_id(void *pHandle, uint32_t *pdata)
     return AM_DEVICES_RM67162_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_rm67162_set_transfer_window(void *pHandle, uint32_t startRow, uint32_t startCol, uint32_t endRow, uint32_t endCol)
 {

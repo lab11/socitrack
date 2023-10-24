@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the fault control.
 //!
-//! @addtogroup fault_4p Fault - CPU Fault Control
+//! @addtogroup fault Fault - CPU Fault Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -61,15 +61,15 @@
 uint32_t
 am_hal_fault_capture_enable(void)
 {
-    //
-    // Enable the Fault Capture registers.
-    //
-    CPU->FAULTCAPTUREEN_b.FAULTCAPTUREEN = CPU_FAULTCAPTUREEN_FAULTCAPTUREEN_EN;
+  //
+  // Enable the Fault Capture registers.
+  //
+  CPU->FAULTCAPTUREEN_b.FAULTCAPTUREEN = CPU_FAULTCAPTUREEN_FAULTCAPTUREEN_EN;
+  //
+  // Return success status.
+  //
+  return AM_HAL_STATUS_SUCCESS;
 
-    //
-    // Return success status.
-    //
-    return AM_HAL_STATUS_SUCCESS;
 } // am_hal_fault_capture_enable()
 
 // ****************************************************************************
@@ -81,15 +81,15 @@ am_hal_fault_capture_enable(void)
 uint32_t
 am_hal_fault_capture_disable(void)
 {
-    //
-    // Enable the Fault Capture registers.
-    //
-    CPU->FAULTCAPTUREEN_b.FAULTCAPTUREEN = CPU_FAULTCAPTUREEN_FAULTCAPTUREEN_DIS;
+  //
+  // Enable the Fault Capture registers.
+  //
+  CPU->FAULTCAPTUREEN_b.FAULTCAPTUREEN = CPU_FAULTCAPTUREEN_FAULTCAPTUREEN_DIS;
+  //
+  // Return success status.
+  //
+  return AM_HAL_STATUS_SUCCESS;
 
-    //
-    // Return success status.
-    //
-    return AM_HAL_STATUS_SUCCESS;
 } // am_hal_fault_capture_disable()
 
 // ****************************************************************************
@@ -102,40 +102,40 @@ am_hal_fault_capture_disable(void)
 uint32_t
 am_hal_fault_status_get(am_hal_fault_status_t *pFaultStatus)
 {
-    uint32_t  ui32FaultStat;
+  uint32_t  ui32FaultStat;
 
-    if ( pFaultStatus == NULL )
-    {
-        return AM_HAL_STATUS_INVALID_ARG;
-    }
+  if ( pFaultStatus == NULL )
+  {
+    return AM_HAL_STATUS_INVALID_ARG;
+  }
 
-    //
-    // Read the Fault Status Register.
-    //
-    ui32FaultStat = CPU->FAULTSTATUS;
-    pFaultStatus->bICODE = (bool)(ui32FaultStat & CPU_FAULTSTATUS_ICODEFAULT_Msk);
-    pFaultStatus->bDCODE = (bool)(ui32FaultStat & CPU_FAULTSTATUS_DCODEFAULT_Msk);
-    pFaultStatus->bSYS   = (bool)(ui32FaultStat & CPU_FAULTSTATUS_SYSFAULT_Msk);
+  //
+  // Read the Fault Status Register.
+  //
+  ui32FaultStat = CPU->FAULTSTATUS;
+  pFaultStatus->bICODE = (bool)(ui32FaultStat & CPU_FAULTSTATUS_ICODEFAULT_Msk);
+  pFaultStatus->bDCODE = (bool)(ui32FaultStat & CPU_FAULTSTATUS_DCODEFAULT_Msk);
+  pFaultStatus->bSYS   = (bool)(ui32FaultStat & CPU_FAULTSTATUS_SYSFAULT_Msk);
 
-    //
-    // Read the DCODE fault capture address register.
-    //
-    pFaultStatus->ui32DCODE = CPU->DCODEFAULTADDR;
+  //
+  // Read the DCODE fault capture address register.
+  //
+  pFaultStatus->ui32DCODE = CPU->DCODEFAULTADDR;
 
-    //
-    // Read the ICODE fault capture address register.
-    //
-    pFaultStatus->ui32ICODE |= CPU->ICODEFAULTADDR;
+  //
+  // Read the ICODE fault capture address register.
+  //
+  pFaultStatus->ui32ICODE |= CPU->ICODEFAULTADDR;
 
-    //
-    // Read the ICODE fault capture address register.
-    //
-    pFaultStatus->ui32SYS |= CPU->SYSFAULTADDR;
+  //
+  // Read the ICODE fault capture address register.
+  //
+  pFaultStatus->ui32SYS |= CPU->SYSFAULTADDR;
+  //
+  // Return success status.
+  //
+  return AM_HAL_STATUS_SUCCESS;
 
-    //
-    // Return success status.
-    //
-    return AM_HAL_STATUS_SUCCESS;
 } // am_hal_fault_status_get()
 
 //*****************************************************************************

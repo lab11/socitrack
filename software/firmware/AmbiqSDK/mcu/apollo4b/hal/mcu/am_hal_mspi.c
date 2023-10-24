@@ -2,7 +2,7 @@
 //
 //! @file am_hal_mspi.c
 //!
-//! @brief Functions for interfacing with the Multi-bit SPI.
+//! @brief Functions for interfacing with the MSPI.
 //!
 //! @addtogroup mspi4_4b MSPI - Multi-bit SPI
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -2723,18 +2723,6 @@ uint32_t am_hal_mspi_control(void *pHandle,
 
             break;
         }
-        case AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS:
-            //
-            // Disable send flash row address.
-            //
-            MSPIn(ui32Module)->DEV0XIP_b.XIPSENDA0 = 0;
-            break;
-        case AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_EN:
-            //
-            // Enable send flash row address.
-            //
-            MSPIn(ui32Module)->DEV0XIP_b.XIPSENDA0 = 1;
-            break;
         default:
             return AM_HAL_STATUS_INVALID_ARG;
     }

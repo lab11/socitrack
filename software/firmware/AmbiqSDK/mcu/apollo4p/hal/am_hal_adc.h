@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the Analog to Digital Converter
 //!
-//! @addtogroup adc4_4p ADC - Analog-to-Digital Converter
+//! @addtogroup adc4 ADC - Analog-to-Digital Converter
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_ADC_H
@@ -122,11 +122,11 @@
 // ****************************************************************************
 typedef enum
 {
-    //AM_HAL_ADC_CLKSEL_HFRC        = 0,
-    AM_HAL_ADC_CLKSEL_HFRC_48MHZ  = ADC_CFG_CLKSEL_HFRC_48MHZ,
-    AM_HAL_ADC_CLKSEL_HFRC_48MHZ1 = ADC_CFG_CLKSEL_HFRC_48MHZ1,
-    AM_HAL_ADC_CLKSEL_HFRC_24MHZ  = ADC_CFG_CLKSEL_HFRC_24MHZ,
-    AM_HAL_ADC_CLKSEL_HFRC2_48MHZ = ADC_CFG_CLKSEL_HFRC2_48MHZ
+    AM_HAL_ADC_CLKSEL_HFRC        = 0,
+    AM_HAL_ADC_CLKSEL_HFRC_48MHZ  = 0,
+    AM_HAL_ADC_CLKSEL_HFRC_48MHZ1 = 1,
+    AM_HAL_ADC_CLKSEL_HFRC_24MHZ  = 2,
+    AM_HAL_ADC_CLKSEL_HFRC2_48MHZ = 3
 } am_hal_adc_clksel_e;
 
 // ****************************************************************************

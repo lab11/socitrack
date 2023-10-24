@@ -4,16 +4,16 @@
  *
  *  \brief  Application framework module for master.
  *
- *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -375,18 +375,11 @@ static void appMasterSecConnClose(dmEvt_t *pMsg, appConnCb_t *pCb)
 /*************************************************************************************************/
 static void appMasterSecSlaveReq(dmEvt_t *pMsg, appConnCb_t *pCb)
 {
-  if (DmConnSecLevel((dmConnId_t) pMsg->hdr.param) == DM_SEC_LEVEL_NONE)
+  /* if master is not initiating security and not already secure */
+  if (!pAppSecCfg->initiateSec && !pCb->initiatingSec &&
+      (DmConnSecLevel((dmConnId_t) pMsg->hdr.param) == DM_SEC_LEVEL_NONE))
   {
-    /* if master is not initiating security */
-    if (!pAppSecCfg->initiateSec && !pCb->initiatingSec)
-    {
-      appMasterInitiateSec((dmConnId_t) pMsg->hdr.param, TRUE, pCb);
-    }
-  }
-  else
-  {
-    /* attempt to refresh keys */
-    appMasterInitiateSec((dmConnId_t) pMsg->hdr.param, FALSE, pCb);
+    appMasterInitiateSec((dmConnId_t) pMsg->hdr.param, TRUE, pCb);
   }
 }
 
@@ -419,7 +412,7 @@ static void appPrivSetAddrResEnableInd(dmEvt_t *pMsg)
 /*************************************************************************************************/
 static void appPrivAddDevToResListInd(dmEvt_t *pMsg, appConnCb_t *pCb)
 {
-  if ((pMsg->hdr.status == HCI_SUCCESS) && pCb && (pCb->dbHdl != APP_DB_HDL_NONE))
+  if ((pMsg->hdr.status == HCI_SUCCESS) && (pCb->dbHdl != APP_DB_HDL_NONE))
   {
     /* peer device's been added to resolving list */
     AppDbSetPeerAddedToRl(pCb->dbHdl, TRUE);
@@ -765,15 +758,8 @@ void AppMasterSecProcDmMsg(dmEvt_t *pMsg)
 {
   appConnCb_t *pCb;
 
-  if (pMsg->hdr.param != DM_CONN_ID_NONE)
-  {
-    /* look up app connection control block from DM connection ID */
-    pCb = &appConnCb[pMsg->hdr.param - 1];
-  }
-  else
-  {
-    pCb = NULL;
-  }
+  /* look up app connection control block from DM connection ID */
+  pCb = &appConnCb[pMsg->hdr.param - 1];
 
   switch(pMsg->hdr.event)
   {

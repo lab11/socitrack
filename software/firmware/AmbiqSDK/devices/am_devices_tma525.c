@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -86,11 +86,7 @@ static uint32_t tma525_master_xfer(struct rt_i2c_msg          *msgs, unsigned in
 
 //*****************************************************************************
 //
-//! @brief
-//! @param addr
-//! @param buffer
-//! @param length
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -131,11 +127,7 @@ tma525_read(uint16_t addr, uint8_t *buffer, unsigned long length)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param addr
-//! @param buffer
-//! @param length
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -174,10 +166,7 @@ tma525_write(rt_uint16_t addr, rt_uint8_t *buffer, rt_size_t length)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param addr
-//! @param data
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -195,10 +184,7 @@ tma525_write_reg(rt_uint16_t addr, rt_uint16_t data)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param addr
-//! @param data
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -216,9 +202,7 @@ tma525_read_reg(rt_uint16_t addr, rt_uint16_t *data)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param cmd
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -230,8 +214,7 @@ tma525_write_cmd(rt_uint16_t cmd)
 
 //*****************************************************************************
 //
-//! @brief
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -278,8 +261,7 @@ tma525_power_sequence(void)
 
 //*****************************************************************************
 //
-//! @brief
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -332,11 +314,7 @@ tma525_reg_init(void)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param ui32BusAddress
-//! @param pBuf
-//! @param size
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -370,11 +348,7 @@ tma525_i2c_read(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param ui32BusAddress
-//! @param pBuf
-//! @param size
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -408,10 +382,7 @@ tma525_i2c_write(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param msgs
-//! @param num
-//! @return
+// Local functions.
 //
 //*****************************************************************************
 static uint32_t
@@ -442,7 +413,8 @@ tma525_master_xfer(struct rt_i2c_msg          *msgs, rt_uint32_t num)
 
 // ****************************************************************************
 //
-//! @brief  init for the tma525
+//  tma525_finish_init()
+//  init for the tma525
 //
 // ****************************************************************************
 static void
@@ -477,13 +449,7 @@ tma525_finish_init(void)
     tma525_reg_init();
 }
 
-// ****************************************************************************
-//
-//! @brief
-//! @param p
-//! @return
-//
-// ****************************************************************************
+
 static uint16_t
 get_unaligned_le16(const void *p)
 {
@@ -493,6 +459,7 @@ get_unaligned_le16(const void *p)
 
 // ****************************************************************************
 //
+//  am_devices_tma525_data_read()
 //  request data from tma525
 //
 // ****************************************************************************
@@ -531,6 +498,7 @@ am_devices_tma525_data_read(uint8_t *pui8RxBuffer, uint32_t RxNumBytes)
 
 // ****************************************************************************
 //
+//  am_devices_tma525_get_point()
 //  Get the actual touch x coordinate and y coordinate
 //
 // ****************************************************************************
@@ -547,7 +515,7 @@ am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released)
 
     size = get_unaligned_le16(&buf[0]);
 
-    if (size > 2)
+    if (size != 0)
     {
         tma525_read(AM_DEVICES_TMA525_READ_DATA_BLOCK, buf_data, size);
 
@@ -588,6 +556,7 @@ am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released)
 
 // ****************************************************************************
 //
+//  am_devices_tma525_init()
 //  Initialize the TMA525 driver for IOM I2C and DMA
 //
 // ****************************************************************************
@@ -633,6 +602,7 @@ am_devices_tma525_init(uint32_t ui32Module, am_hal_iom_config_t *psIOMSettings, 
 
 // ****************************************************************************
 //
+//  am_devices_tma525_deinit()
 //  Deinitialize the TMA525 driver for IOM I2C and DMA
 //
 // ****************************************************************************
@@ -658,6 +628,7 @@ am_devices_tma525_deinit(uint32_t ui32Module)
 
 // ****************************************************************************
 //
+//  am_devices_tma525_multidrop_iom_init()
 //  Initialize the TMA525 driver for IOM I2C multidrop and DMA
 //
 // ****************************************************************************
@@ -719,12 +690,14 @@ am_devices_tma525_multidrop_iom_init(uint32_t ui32Module, am_hal_iom_config_t *p
     //
     // Enable fault detection.
     //
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
-    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
+#if AM_APOLLO3_MCUCTRL
+    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
+#else // AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_fault_capture_enable();
+#endif // AM_APOLLO3_MCUCTRL
 #endif
 
     //
@@ -756,6 +729,7 @@ am_devices_tma525_multidrop_iom_init(uint32_t ui32Module, am_hal_iom_config_t *p
 
 // ****************************************************************************
 //
+//  am_devices_tma525_multidrop_no_iom_init()
 //  Initialize the TMA525 driver for Multidrop if another device has already
 //  initialized the IOM for DMA and multidrop
 //
@@ -774,6 +748,7 @@ am_devices_tma525_multidrop_no_iom_init(uint32_t ui32Module, am_hal_iom_config_t
 
 // ****************************************************************************
 //
+//  am_devices_tma525_term()
 //  Deinitialize & shutdown the IOM and multidrop TMA525 driver
 //
 // ****************************************************************************

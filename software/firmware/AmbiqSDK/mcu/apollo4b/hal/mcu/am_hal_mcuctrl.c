@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,11 +44,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
-#include "am_hal_mcuctrl.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include "am_mcu_apollo.h"
 
 //*****************************************************************************
 //
@@ -99,68 +101,6 @@ g_am_hal_mcuctrl_mram_size[AM_HAL_MCUCTRL_SKU_MRAM_SIZE_N] =
 uint32_t g_ui32xtalhscap2trim = XTALHSCAP2TRIM_DEFAULT;
 uint32_t g_ui32xtalhscaptrim = XTALHSCAPTRIM_DEFAULT;
 
-//
-//! These data keeps track of number of users of the HF XTAL CLOCK
-//! and the HFXTAL padout (HFXTAL clockout)
-//! when these values are non-zero the respective settings
-//! (HFXTAL clock, and HFXTAL padout, cannot be disabled)
-//! the bits in these are set for each user module according to enum
-//! am_hal_mcuctrl_hfxtal_users_e
-//
-typedef struct
-{
-    uint32_t  g_ui32HfXtalEnFlags;
-    uint32_t  g_ui32HfXtalClockOutlags;
-    bool      b_HfXtalKickStartEnabled;
-}
-am_hal_xtal_users_t;
-
-am_hal_xtal_users_t am_hal_xtal_users  =
-{
-    .g_ui32HfXtalEnFlags = 0,
-    .b_HfXtalKickStartEnabled = 0
-};
-
-//
-//! @brief default stuct used track modifications of XTAL clock behavior
-//! default structure passed as arg (pointer) into am_hal_mcuctrl_control
-//! is's assumed the user will change the value of AM_HAL_HCXTAL_DEFAULT_EN
-//! to module name the user needs the XTAL clock
-//
-const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgDefault =
-{
-    .ui32_arg_hfxtal_user_mask = 1 << AM_HAL_HCXTAL_DEFAULT_EN,
-    .b_arg_hfxtal_in_use       = true,
-    .b_arg_apply_ext_source    = false,
-    .b_arg_force_update        = false,
-    .b_arg_enable_HfXtalClockout = false,
-};
-//
-//! default stuct used track modifications of XTAL for BLE
-//! this was needed in so many places a separate entry has been created
-//! for this. Additionally BLE will need the 32Mhz (HFXTAL) clockout enabled
-//
-const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgBLEDefault =
-{
-    .ui32_arg_hfxtal_user_mask = 1 << AM_HAL_HFXTAL_BLE_CONTROLLER_EN,
-    .b_arg_hfxtal_in_use       = true,
-    .b_arg_apply_ext_source    = false,
-    .b_arg_force_update        = false,
-    .b_arg_enable_HfXtalClockout = true,
-};
-
-
-static uint32_t
-mcuctrl_HFXTAL_clockOutPad_mask_modify(bool bClockOutEnable, uint32_t ui32ClockEnableMask );
-static uint32_t
-mcuctrl_ctrl_HFXTAL_normal(const am_hal_mcuctrl_control_arg_t *peCtrlArg );
-static uint32_t
-mcuctrl_ctrl_HFXTAL_kickstart(const am_hal_mcuctrl_control_arg_t *peCtrlArg );
-static uint32_t
-mcuctrl_ctrl_HFXTAL_disable(const am_hal_mcuctrl_control_arg_t *peCtrlArg );
-static uint32_t
-mcuctrl_HFXTAL_set_mask(bool bSet, uint32_t ui32Mask );
-
 // ****************************************************************************
 //
 //  device_info_get()
@@ -204,6 +144,7 @@ device_info_get(am_hal_mcuctrl_device_t *psDevice)
     // Qualified from Part Number.
     //
     psDevice->ui32Qualified = 1;
+
     //
     // TCM size as derived from CHIPPN register.
     // Note: Total onboard SRAM is computed as ui32DTCMSize + ui32SSRAMSize.
@@ -261,435 +202,6 @@ device_info_get(am_hal_mcuctrl_device_t *psDevice)
 
 // ****************************************************************************
 //
-//  am_hal_mcuctrl_EXTCLK_active()
-//  return true if any peripheral is using the HSXTAL clock.
-//
-// ****************************************************************************
-/******************************************************************************
-//   get usage status of HF clock
-//
-// return true if one or more users (modules) are using the HF Xtal clock
-// return false  if the xtal clock is disabled and there are no users
- *****************************************************************************/
-bool
-am_hal_mcuctrl_EXTCLK_active(void )
-{
-    return am_hal_xtal_users.g_ui32HfXtalEnFlags != 0;
-}
-
-//******************************************************************************
-//
-//! @brief set or clear bits the xtal users variable
-//!
-//! @param bSet  when true will set bits, when false will clear them
-//! @param ui32Mask  contains bits to set or clear
-//!
-//! @return always success
-//
-// *****************************************************************************
-static uint32_t
-mcuctrl_HFXTAL_set_mask(bool bSet, uint32_t ui32Mask )
-{
-    if ( bSet )
-    {
-        am_hal_xtal_users.g_ui32HfXtalEnFlags |= ui32Mask;
-    }
-    else
-    {
-        am_hal_xtal_users.g_ui32HfXtalEnFlags &= ~ui32Mask;
-    }
-    return AM_HAL_STATUS_SUCCESS;
-}
-
-//****************************************************************************
-//
-//! @brief enables HF Xtal
-//!
-//! @param peCtrlArg  pointer to struct that controls HF Xtal setups
-//!
-//! @return standard hal status
-//
-//**************************************************************************
-static uint32_t
-mcuctrl_ctrl_HFXTAL_normal(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
-{
-    if (peCtrlArg == 0)
-    {
-        //
-        // this is the legacy call and is no longer supported.
-        //
-        return AM_HAL_STATUS_INVALID_ARG;
-    }
-
-
-    //
-    // Begin critical section.
-    //
-    AM_CRITICAL_BEGIN
-
-    //
-    // remember if the hs xtal clock is enabled on entry
-    //
-    bool bHSXTAL_entry_enabled = am_hal_mcuctrl_EXTCLK_active();
-
-    if (peCtrlArg->b_arg_hfxtal_in_use)
-    {
-        //
-        // set bit(s) in RAM variable that manage HFXTAL clock enablement
-        //
-        mcuctrl_HFXTAL_set_mask(true, peCtrlArg->ui32_arg_hfxtal_user_mask);
-
-        //
-        // clear or set clock pad-out bit for this peripheral
-        //
-        mcuctrl_HFXTAL_clockOutPad_mask_modify(peCtrlArg->b_arg_enable_HfXtalClockout,
-                                               peCtrlArg->ui32_arg_hfxtal_user_mask);
-    }
-
-    bool bHSXTAL_enabled  = am_hal_mcuctrl_EXTCLK_active();
-
-    //
-    // is the HFXTAL transitioning to enabled with this call
-    //
-    bool bEnableHFXTAL    = !bHSXTAL_entry_enabled && bHSXTAL_enabled;
-
-    //
-    // if the HFXTAL needs to be enabled, and if it isn't already enabled,
-    // the code below will enable the HFXTAL
-    //
-    if (bEnableHFXTAL || peCtrlArg->b_arg_force_update)
-    {
-
-        uint32_t ui32TrimReg = _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVETRIM, 3) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVERSTRENGTH, 0) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMP2TRIM, 3) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMPTRIM, 15) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASTRIM, 127) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSRSTRIM, 0) |
-                  _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSSPARE, 0);
-        MCUCTRL->XTALHSTRIMS = ui32TrimReg;  // ok
-
-        uint32_t ui32Reg = MCUCTRL->XTALHSCTRL;
-        ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB_Msk |
-                     MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk);
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB, 1) |
-                   _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 1);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-        //
-        // Turn on xtalhs_pdnb
-        //
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 1);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-        //
-        // Apply external source
-        //
-        if (peCtrlArg->b_arg_apply_ext_source)
-        {
-            ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSPDNB_Msk |
-                         MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK_Msk);
-            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 0) |
-                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK, 1);
-        }
-        else
-        {
-            ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk |
-                         MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE_Msk);
-            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 0) |
-                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 1);
-        }
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-    } // not enabled
-
-    //
-    // End critical section.
-    //
-    AM_CRITICAL_END
-
-    return AM_HAL_STATUS_SUCCESS;
-
-}
-
-//******************************************************************************
-//! @brief enables HF Xtal with kickstart
-//!
-//! @param peCtrlArg  pointer to struct that controls HF Xtal setups
-//!
-//! @return standard hal status
-//
-//*****************************************************************************
-static uint32_t
-mcuctrl_ctrl_HFXTAL_kickstart(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
-{
-
-    if (peCtrlArg == 0)
-    {
-        //
-        // this is the legacy call and is no longer supported.
-        //
-        return AM_HAL_STATUS_INVALID_ARG;
-    }
-
-    //
-    // Begin critical section.
-    //
-    AM_CRITICAL_BEGIN
-
-    //
-    // remember if the hs xtal clock is enabled on entry
-    //
-    bool bHSXTAL_entry_enabled = am_hal_mcuctrl_EXTCLK_active();
-
-    if (peCtrlArg->b_arg_hfxtal_in_use)
-    {
-
-        //
-        // set bit(s) in RAM variable that monitor HFXTAL clock enablement
-        //
-        mcuctrl_HFXTAL_set_mask(true, peCtrlArg->ui32_arg_hfxtal_user_mask);
-
-        //
-        // clear or set clock pad-out bit for this peripheral
-        //
-        mcuctrl_HFXTAL_clockOutPad_mask_modify(peCtrlArg->b_arg_enable_HfXtalClockout,
-                                               peCtrlArg->ui32_arg_hfxtal_user_mask);
-    }
-
-    bool bHSXTAL_enabled  = am_hal_mcuctrl_EXTCLK_active();
-
-    //
-    // is the HFXTAL transitioning to enabled with this call
-    //
-    bool bEnableHFXTAL    = !bHSXTAL_entry_enabled && bHSXTAL_enabled;
-
-    //
-    // if the HFXTAL needs to be enabled, and if it isn't already enabled,
-    // the code below will enable the HFXTAL
-    //
-    if ( bEnableHFXTAL || peCtrlArg->b_arg_force_update )
-    {
-        am_hal_xtal_users.b_HfXtalKickStartEnabled = true;
-
-        // Set the default trim code for CAP1/CAP2, it impacts frequency accuracy and should be retrimmed
-        uint32_t ui32TrimReg =
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim) |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim) |
-            // Set the transconductance of crystal to maximum, it accelerates the startup sequence
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVETRIM, 3) |
-            // Choose the power of clock driver to be the cleanest one
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVERSTRENGTH, 0) |
-            // Tune the bias generator
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMP2TRIM, 3) |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMPTRIM, 15) |
-            // Set the bias of crystal to maximum
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASTRIM, 127) |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSRSTRIM, 0) |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSSPARE, 0);
-
-        MCUCTRL->XTALHSTRIMS = ui32TrimReg;
-
-        uint32_t ui32Reg = MCUCTRL->XTALHSCTRL;
-        ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB_Msk |
-                     MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk);
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB, 1) |
-                   _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 0);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-        //
-        // turn on crystal oscillator
-        //
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 1);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-        //
-        // inject HFRC clock to accelerate the startup sequence
-        //
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSINJECTIONENABLE, 1);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-        //
-        // Turn on xtalhs_ibst_enable
-        //  Maximize the bias current to accelerate the startup sequence
-        //
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 1);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-        //
-        // Wait 5us to make the setting above effective
-        // Turn off xtalhs_injection_enable (clock injection)
-        //
-        am_hal_delay_us(5);
-
-
-        ui32Reg = MCUCTRL->XTALHSCTRL ;
-        ui32Reg &= ~MCUCTRL_XTALHSCTRL_XTALHSINJECTIONENABLE_Msk;
-
-        if (peCtrlArg->b_arg_apply_ext_source)
-        {
-            ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSPDNB_Msk |
-                         MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE_Msk |
-                         MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK_Msk);
-            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 0) |
-                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 0) |
-                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK, 1);
-        }
-
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-
-
-    } // !bEnableHFXTAL || peCtrlArg->b_arg_force_update
-
-    //
-    // End critical section.
-    //
-    AM_CRITICAL_END
-
-    return AM_HAL_STATUS_SUCCESS;
-}
-
-/******************************************************************************
-//! @brief sets or clears the clockoutput pin
-//!
-//! @note if using preemptive os, this should be called from a critical section
-//!
-//! @details clockout is disabled once no no user is requesting it
-//!
-//! @param bClockOutEnable  when true clock out is enabled, false it is disabled
-//! @param ui32ClockEnableMask indicates which user is making this request
-//!
-//! @return always success
- *****************************************************************************/
-static uint32_t
-mcuctrl_HFXTAL_clockOutPad_mask_modify(bool bClockOutEnable, uint32_t ui32ClockEnableMask )
-{
-    if (bClockOutEnable)
-    {
-        //
-        // Enable the option to output clock on PAD GPIO46
-        // connecting to Cooper crystal input
-        //
-        am_hal_xtal_users.g_ui32HfXtalClockOutlags |= ui32ClockEnableMask;
-    }
-    else
-    {
-        //
-        // Disable clockout on PAD GPIO46
-        //
-        am_hal_xtal_users.g_ui32HfXtalClockOutlags &= ~ui32ClockEnableMask;
-    }
-
-    //
-    // below the actual register bit is set or cleared
-    //
-    if ( am_hal_xtal_users.g_ui32HfXtalClockOutlags )
-    {
-        MCUCTRL->XTALHSCTRL_b.XTALHSPADOUTEN = 1;
-    }
-    else
-    {
-        MCUCTRL->XTALHSCTRL_b.XTALHSPADOUTEN = 0;
-    }
-
-    return AM_HAL_STATUS_SUCCESS;
-}
-
-//****************************************************************************
-//
-//! @brief disable the HF Xtal clock when it isn't being used
-//!
-//! @param peCtrlArg  pointer to struct that controls HF Xtal setups
-//!
-//! @return always success
-//
-//*****************************************************************************
-static uint32_t
-mcuctrl_ctrl_HFXTAL_disable(const am_hal_mcuctrl_control_arg_t *peCtrlArg )
-{
-    if (peCtrlArg == 0)
-    {
-        //
-        // this is the legacy call and is no longer supported.
-        //
-        return AM_HAL_STATUS_INVALID_ARG;
-    }
-
-    //
-    // Begin critical section.
-    //
-    AM_CRITICAL_BEGIN
-
-    if (peCtrlArg->b_arg_hfxtal_in_use)
-    {
-
-        //
-        // clear bit for this peripheral
-        //
-        mcuctrl_HFXTAL_set_mask(false, peCtrlArg->ui32_arg_hfxtal_user_mask);
-
-        //
-        // clear or set clock pad-out bit for this peripheral
-        //
-        mcuctrl_HFXTAL_clockOutPad_mask_modify(peCtrlArg->b_arg_enable_HfXtalClockout,
-                                               peCtrlArg->ui32_arg_hfxtal_user_mask);
-    }
-
-    //
-    // don't disable clock until all peripherals have released it
-    // or the action is forced
-    //
-    bool HSXTAL_enabled = am_hal_mcuctrl_EXTCLK_active();
-
-    if (!HSXTAL_enabled || peCtrlArg->b_arg_force_update)
-    {
-        am_hal_xtal_users.b_HfXtalKickStartEnabled = false;
-
-        //
-        // clear all bits here, in case b_arg_force_update was used
-        //
-        mcuctrl_HFXTAL_set_mask(false, 0xFFFFFFFF);
-
-        uint32_t ui32TrimReg  =
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim)      |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVETRIM, 0)                      |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVERSTRENGTH, 7)                 |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMP2TRIM, 3)                 |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMPTRIM, 8)                  |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASTRIM, 24)                     |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSRSTRIM, 0)                         |
-            _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSSPARE, 0);
-        MCUCTRL->XTALHSTRIMS = ui32TrimReg;
-
-        uint32_t ui32Reg = MCUCTRL->XTALHSCTRL;
-        ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSPDNB_Msk |
-                     MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK_Msk |
-                     MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB_Msk |
-                     MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE_Msk |
-                     MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk);
-
-        ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 0) |
-                   _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK, 0) |
-                   _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB, 1) |
-                   _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 0) |
-                   _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 0);
-        MCUCTRL->XTALHSCTRL = ui32Reg;
-    }
-
-    //
-    // End critical section.
-    //
-    AM_CRITICAL_END
-
-    return AM_HAL_STATUS_SUCCESS;
-}
-
-
-// ****************************************************************************
-//
 //  am_hal_mcuctrl_control()
 //  Apply various specific commands/controls on the MCUCTRL module.
 //
@@ -705,12 +217,6 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
             //
             // Configure the bits in XTALCTRL that enable external 32KHz clock.
             //
-
-            //
-            // Begin critical section.
-            //
-            AM_CRITICAL_BEGIN
-
             ui32Reg  = MCUCTRL->XTALCTRL;
             ui32Reg &= ~(MCUCTRL_XTALCTRL_XTALPDNB_Msk                      |
                          MCUCTRL_XTALCTRL_XTALCOMPPDNB_Msk                  |
@@ -723,23 +229,13 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
                        _VAL2FLD(MCUCTRL_XTALCTRL_XTALCOREDISFB,  MCUCTRL_XTALCTRL_XTALCOREDISFB_EN)         |
                        _VAL2FLD(MCUCTRL_XTALCTRL_XTALSWE,        MCUCTRL_XTALCTRL_XTALSWE_OVERRIDE_EN);
             MCUCTRL->XTALCTRL = ui32Reg;
-
-            //
-            // End critical section.
-            //
-            AM_CRITICAL_END
             break;
 
         case AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_DISABLE:
             //
             // Configure the bits in XTALCTRL that disable external 32KHz
             // clock, thus re-configuring for the crystal.
-
             //
-            // Begin critical section.
-            //
-            AM_CRITICAL_BEGIN
-
             ui32Reg  = MCUCTRL->XTALCTRL;
             ui32Reg &= ~(MCUCTRL_XTALCTRL_XTALPDNB_Msk                      |
                          MCUCTRL_XTALCTRL_XTALCOMPPDNB_Msk                  |
@@ -752,28 +248,145 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
                        _VAL2FLD(MCUCTRL_XTALCTRL_XTALCOREDISFB,  MCUCTRL_XTALCTRL_XTALCOREDISFB_EN)         |
                        _VAL2FLD(MCUCTRL_XTALCTRL_XTALSWE,        MCUCTRL_XTALCTRL_XTALSWE_OVERRIDE_DIS);
             MCUCTRL->XTALCTRL = ui32Reg;
-
-            //
-            // End critical section.
-            //
-            AM_CRITICAL_END
             break;
-        case AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLOCKOUT:
-
-            if ( 0 == pArgs )
-            {
-                return AM_HAL_STATUS_INVALID_ARG;
-            }
-            return mcuctrl_HFXTAL_clockOutPad_mask_modify(*((bool *) pArgs), (1 << AM_HAL_HCXTAL_DEFAULT_EN));
 
         case AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START:
-            return mcuctrl_ctrl_HFXTAL_kickstart((am_hal_mcuctrl_control_arg_t *) pArgs);
+
+// Set the default trim code for CAP1/CAP2, it impacts frequency accuracy and should be retrimmed
+            ui32Reg = _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim)      |
+// Set the transconductance of crystal to maximum, it accelerate the startup sequence
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVETRIM, 3)                      |
+// Choose the power of clock driver to be the cleanest one
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVERSTRENGTH, 0)                 |
+// Tune the bias generator
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMP2TRIM, 3)                 |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMPTRIM, 15)                 |
+// Set the bias of crystal to maximum
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASTRIM, 127)                    |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSRSTRIM, 0)                         |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSSPARE, 0);
+            MCUCTRL->XTALHSTRIMS = ui32Reg;
+
+            ui32Reg  = MCUCTRL->XTALHSCTRL;
+            ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB_Msk              |
+                         MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk          |
+                         MCUCTRL_XTALHSCTRL_XTALHSPADOUTEN_Msk);
+// Enable the option to output clock on PAD GPIO46 connecting to Cooper crystal input
+            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB, 1)       |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 0)   |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPADOUTEN, 1);
+            MCUCTRL->XTALHSCTRL = ui32Reg;
+            //
+            // Turn on xtalhs_pdnb & xtalhs_injection_enable
+            //
+
+            // Turn on crystal oscillator
+            MCUCTRL->XTALHSCTRL_b.XTALHSPDNB = 1;
+            // inject HFRC clock to accelerate the startup sequence
+            MCUCTRL->XTALHSCTRL_b.XTALHSINJECTIONENABLE = 1;
+
+            //
+            // Turn on xtalhs_ibst_enable
+            //
+            // Maximize the bias current to accelerate the startup sequence
+            MCUCTRL->XTALHSCTRL_b.XTALHSIBSTENABLE = 1;
+
+            //
+            // Turn off xtalhs_injection_enable
+            //
+            // Wait 5us to make the setting above effective
+            am_hal_delay_us(5);
+            // Turn off the clock injection
+            MCUCTRL->XTALHSCTRL_b.XTALHSINJECTIONENABLE = 0;
+
+            // Apply external source
+            if ( (pArgs) && (*((bool *)pArgs) == true) )
+            {
+                ui32Reg = MCUCTRL->XTALHSCTRL;
+                ui32Reg &=  ~(MCUCTRL_XTALHSCTRL_XTALHSPDNB_Msk                 |
+                              MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE_Msk           |
+                              MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK_Msk);
+                ui32Reg |=  _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 0)          |
+                            _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 0)    |
+                            _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK, 1);
+                MCUCTRL->XTALHSCTRL = ui32Reg;
+            }
+
+            break;
 
         case AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL:
-            return mcuctrl_ctrl_HFXTAL_normal((am_hal_mcuctrl_control_arg_t *) pArgs);
+            ui32Reg = _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim)      |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVETRIM, 3)                      |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVERSTRENGTH, 0)                 |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMP2TRIM, 3)                 |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMPTRIM, 15)                 |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASTRIM, 127)                    |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSRSTRIM, 0)                         |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSSPARE, 0);
+            MCUCTRL->XTALHSTRIMS = ui32Reg;
+
+            ui32Reg  = MCUCTRL->XTALHSCTRL;
+            ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB_Msk                  |
+                         MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk              |
+                         MCUCTRL_XTALHSCTRL_XTALHSPADOUTEN_Msk);
+            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB, 1)           |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 1)       |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPADOUTEN, 1);
+            MCUCTRL->XTALHSCTRL = ui32Reg;
+            //
+            // Turn on xtalhs_pdnb
+            //
+            MCUCTRL->XTALHSCTRL_b.XTALHSPDNB = 1;
+            // Apply external source
+            ui32Reg = MCUCTRL->XTALHSCTRL;
+            // Apply external source
+            if ( (pArgs) && (*((bool *)pArgs) == true) )
+            {
+                ui32Reg &=  ~(MCUCTRL_XTALHSCTRL_XTALHSPDNB_Msk                 |
+                              MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK_Msk);
+                ui32Reg |=  _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 0)          |
+                            _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK, 1);
+            }
+            else
+            {
+                ui32Reg &=  ~(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk         |
+                              MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE_Msk);
+                ui32Reg |=  _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 0)  |
+                            _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 1);
+            }
+
+            MCUCTRL->XTALHSCTRL = ui32Reg;
+            break;
 
         case AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE:
-            return mcuctrl_ctrl_HFXTAL_disable((am_hal_mcuctrl_control_arg_t *) pArgs);
+            ui32Reg = _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAP2TRIM, g_ui32xtalhscap2trim)    |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSCAPTRIM, g_ui32xtalhscaptrim)      |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVETRIM, 0)                      |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSDRIVERSTRENGTH, 7)                 |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMP2TRIM, 3)                 |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASCOMPTRIM, 8)                  |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSIBIASTRIM, 24)                     |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSRSTRIM, 0)                         |
+                      _VAL2FLD(MCUCTRL_XTALHSTRIMS_XTALHSSPARE, 0);
+            MCUCTRL->XTALHSTRIMS = ui32Reg;
+
+            ui32Reg  = MCUCTRL->XTALHSCTRL;
+            ui32Reg &= ~(MCUCTRL_XTALHSCTRL_XTALHSPDNB_Msk                  |
+                         MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK_Msk         |
+                         MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB_Msk              |
+                         MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE_Msk            |
+                         MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE_Msk          |
+                         MCUCTRL_XTALHSCTRL_XTALHSPADOUTEN_Msk);
+            ui32Reg |= _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNB, 0)           |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSEXTERNALCLOCK, 0)  |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSCOMPPDNB, 1)       |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSIBSTENABLE, 0)     |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPDNPNIMPROVE, 0)   |
+                       _VAL2FLD(MCUCTRL_XTALHSCTRL_XTALHSPADOUTEN, 1);
+            MCUCTRL->XTALHSCTRL = ui32Reg;
+            break;
 
         default:
             return AM_HAL_STATUS_INVALID_ARG;
@@ -789,8 +402,8 @@ am_hal_mcuctrl_control(am_hal_mcuctrl_control_e eControl, void *pArgs)
 // ****************************************************************************
 //
 //  am_hal_mcuctrl_status_get()
-// This function returns  current status of the MCUCTRL as obtained from
-// various registers of the MCUCTRL block.
+//! This function returns  current status of the MCUCTRL as obtained from
+//! various registers of the MCUCTRL block.
 //
 // ****************************************************************************
 uint32_t
@@ -844,8 +457,8 @@ am_hal_mcuctrl_info_get(am_hal_mcuctrl_infoget_e eInfoGet, void *pInfo)
         case AM_HAL_MCUCTRL_INFO_FEATURES_AVAIL:
             psFeature = (am_hal_mcuctrl_feature_t*)pInfo;
             psFeature->eDTCMSize = AM_HAL_MCUCTRL_DTCM_384K;
-            psFeature->eSharedSRAMSize = (am_hal_mcuctrl_ssram_e)MCUCTRL->SKU_b.SKUSRAMSIZE;
-            psFeature->eMRAMSize = (am_hal_mcuctrl_mram_e)MCUCTRL->SKU_b.SKUMRAMSIZE;
+            psFeature->eSharedSRAMSize = (am_hal_mcuctrl_ssram_e)MCUCTRL->SKU_b.SKUMRAMSIZE;
+            psFeature->eMRAMSize = (am_hal_mcuctrl_mram_e)MCUCTRL->SKU_b.SKUSRAMSIZE;
             psFeature->bTurboSpot = (MCUCTRL->SKU_b.SKUTURBOSPOT > 0);
             psFeature->bDisplayCtrl = (MCUCTRL->SKU_b.SKUMIPIDSI > 0);
             psFeature->bGPU = (MCUCTRL->SKU_b.SKUGFX > 0);

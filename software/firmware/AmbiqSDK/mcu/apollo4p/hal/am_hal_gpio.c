@@ -4,7 +4,7 @@
 //!
 //! @brief General Purpose Input Output Functionality
 //!
-//! @addtogroup gpio_4p GPIO - General Purpose Input Output
+//! @addtogroup gpio GPIO - General Purpose Input Output
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -351,16 +351,16 @@ am_hal_gpio_state_write(uint32_t ui32GpioNum, am_hal_gpio_write_type_e eWriteTyp
             am_hal_gpio_output_toggle(ui32GpioNum);
             break;
 
-        case AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS:
-            am_hal_gpio_output_tristate_output_dis(ui32GpioNum);
+        case AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE:
+            am_hal_gpio_output_tristate_disable(ui32GpioNum);
             break;
 
-        case AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN:
-            am_hal_gpio_output_tristate_output_en(ui32GpioNum);
+        case AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE:
+            am_hal_gpio_output_tristate_enable(ui32GpioNum);
             break;
 
-        case AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG:
-            am_hal_gpio_output_tristate_output_tog(ui32GpioNum);
+        case AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE:
+            am_hal_gpio_output_tristate_toggle(ui32GpioNum);
             break;
     }
 
@@ -778,7 +778,7 @@ am_hal_gpio_interrupt_register(am_hal_gpio_int_channel_e eChannel,
 // A typical call sequence to the service routine might look like:
 //
 // am_hal_gpio_interrupt_irq_status_get(GPIO1_405F_IRQn, true, &ui32IntStatus);
-// am_hal_gpio_interrupt_service(GPIO1_405F_IRQn, ui32IntStatus);
+// am_hal_gpio_interrupt_service(GPIO1_405F_IRQn, ui32IntStatus, 0);
 //
 //
 //*****************************************************************************

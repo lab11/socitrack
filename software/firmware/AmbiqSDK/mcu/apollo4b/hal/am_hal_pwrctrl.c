@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -56,13 +56,11 @@
 // Local defines
 //
 //*****************************************************************************
-
 //
-//! Maximum number of checks to memory power status before declaring error
+// Maximum number of checks to memory power status before declaring error
 // (5 x 1usec = 5usec).
 //
 #define AM_HAL_PWRCTRL_MAX_WAIT_US      5
-
 #define AM_HAL_PWRCTRL_MEMPWREN_MASK    ( PWRCTRL_MEMPWREN_PWRENDTCM_Msk        |   \
                                           PWRCTRL_MEMPWREN_PWRENNVM0_Msk        |   \
                                           PWRCTRL_MEMPWREN_PWRENCACHEB0_Msk     |   \
@@ -128,11 +126,11 @@ extern uint32_t internal_timer_config(uint32_t ui32TimerNumber,
                                       am_hal_timer_config_t *psTimerConfig);
 
 
-//****************************************************************************
+// ****************************************************************************
 //
 // Global variables.
 //
-//****************************************************************************
+// ****************************************************************************
 //
 // Global State Variables for the VDDF and VDDC boosting
 //
@@ -162,7 +160,7 @@ struct trim_regs_s g_trim_reg_origvals = {0};
 //!     will fail when more than one enable in the same domain is set and the
 //!     user tries disable only one.
 //
-//****************************************************************************
+// ****************************************************************************
 
 #define PWRCTRL_HCPB_DEVPWREN_MASK       ( \
     _VAL2FLD(PWRCTRL_DEVPWREN_PWRENIOM0, PWRCTRL_DEVPWREN_PWRENIOM0_EN) | \
@@ -231,11 +229,9 @@ struct trim_regs_s g_trim_reg_origvals = {0};
     PWRCTRL_AUDSSPWRSTATUS_PWRSTI2S1_Msk)
 //! @}
 
-//**********************************************
-//
+// **********************************************
 //! Define the peripheral control structure.
-//
-//**********************************************
+// **********************************************
 struct am_pwr_s
 {
     uint32_t    ui32PwrEnRegAddr;
@@ -463,7 +459,7 @@ const struct am_pwr_s am_hal_pwrctrl_peripheral_control[AM_HAL_PWRCTRL_PERIPH_MA
 //! @param  pwr_ctrl address where the power entry is copied
 //! @param  ePeripheral the peripheral to copy
 //!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+//! @return Returns 0 on success
 //
 //*****************************************************************************
 static inline uint32_t
@@ -486,7 +482,7 @@ am_get_pwrctrl(struct am_pwr_s *pwr_ctrl, uint32_t ePeripheral)
 //! @param  pwr_ctrl address where the power entry is generated
 //! @param  ePeripheral the peripheral for which to generate:
 //!
-//! @return Returns AM_HAL_STATUS_SUCCESS on success
+//! @return Returns 0 on success
 //
 //*****************************************************************************
 static uint32_t
@@ -542,14 +538,6 @@ const am_hal_pwrctrl_mcu_memory_config_t    g_DefaultMcuMemCfg =
 
 const am_hal_pwrctrl_sram_memcfg_t          g_DefaultSRAMCfg =
 {
-    //
-    //! Default configuration for Shared SRAM:
-    //! Enable all SSRAM
-    //! All active bits = 0.
-    //!   Active bits 0 allow memory to go to retention in deepsleep.
-    //!   Active bits 1 force the memory to stay on, requiring more power.
-    //! Retain all SSRAM in deepsleep.
-    //
     .eSRAMCfg           = AM_HAL_PWRCTRL_SRAM_ALL,
     .eActiveWithMCU     = AM_HAL_PWRCTRL_SRAM_NONE,
     .eActiveWithGFX     = AM_HAL_PWRCTRL_SRAM_NONE,
@@ -568,11 +556,11 @@ const am_hal_pwrctrl_dsp_memory_config_t    g_DefaultDSPMemCfg =
 };
 //! @}
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  preserve_orig_reg_value() - Saves the SIMOBUCK registers on the first call.
 //
-//****************************************************************************
+// ****************************************************************************
 static void
 preserve_orig_reg_values(void)
 {
@@ -617,12 +605,12 @@ preserve_orig_reg_values(void)
 
 } // preserve_orig_reg_values()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  crypto_quiesce
 //  Select the MCU power mode.
 //
-//****************************************************************************
+// ****************************************************************************
 #define CRYPTO_WAIT_USEC        100
 static
 uint32_t crypto_quiesce(void)
@@ -1168,11 +1156,11 @@ am_hal_util_write_and_wait(uint32_t *pAddr, uint32_t ui32Mask, uint32_t ui32Val,
 } // am_hal_util_write_and_wait()
 #endif // defined(AM_HAL_PWRCTL_HPLP_WA) || defined(AM_HAL_PWRCTL_CRYPTO_WA)
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  VDDC_simobuck_boost()
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 VDDC_simobuck_boost(uint32_t ui32VDDCboostcode)
 {
@@ -1217,11 +1205,11 @@ VDDC_simobuck_boost(uint32_t ui32VDDCboostcode)
 
 } // VDDC_simobuck_boost()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  vddc_vddf_boost()
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 vddc_vddf_boost(void)
 {
@@ -1289,11 +1277,11 @@ vddc_vddf_boost(void)
     return AM_HAL_STATUS_SUCCESS;
 } // vddc_vddf_boost()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_mcu_mode_status()
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_mcu_mode_status(am_hal_pwrctrl_mcu_mode_e *peCurrentPowerMode)
 {
@@ -1309,12 +1297,12 @@ am_hal_pwrctrl_mcu_mode_status(am_hal_pwrctrl_mcu_mode_e *peCurrentPowerMode)
 
 } // am_hal_pwrctrl_mcu_mode_status()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_mcu_mode_select()
 //  Select the MCU power mode.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_mcu_mode_select(am_hal_pwrctrl_mcu_mode_e ePowerMode)
 {
@@ -1394,8 +1382,8 @@ am_hal_pwrctrl_mcu_mode_select(am_hal_pwrctrl_mcu_mode_e ePowerMode)
     if ( ui32Status != AM_HAL_STATUS_SUCCESS )
     {
         //
-        // This means that there is another interrupt with the highest
-        // priority and the AM_HAL_PWRCTL_HPLP_WA will not work.
+        // Caution: Reaching this point means the device is in an unpredictable
+        //          state and may not be able to recover.
         //
         return ui32Status;
     }
@@ -1486,12 +1474,12 @@ am_hal_pwrctrl_mcu_mode_select(am_hal_pwrctrl_mcu_mode_e ePowerMode)
 
 } // am_hal_pwrctrl_mcu_mode_select()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_mcu_memory_config()
 //  Configure the MCU memory.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_mcu_memory_config(am_hal_pwrctrl_mcu_memory_config_t *psConfig)
 {
@@ -1604,12 +1592,12 @@ am_hal_pwrctrl_mcu_memory_config(am_hal_pwrctrl_mcu_memory_config_t *psConfig)
 
 } // am_hal_pwrctrl_mcu_memory_config()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_mcu_memory_config_get()
 //  Get the MCU Memory configuration.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_mcu_memory_config_get(am_hal_pwrctrl_mcu_memory_config_t *psConfig)
 {
@@ -1690,12 +1678,12 @@ am_hal_pwrctrl_mcu_memory_config_get(am_hal_pwrctrl_mcu_memory_config_t *psConfi
     return AM_HAL_STATUS_SUCCESS;
 } // am_hal_pwrctrl_mcu_memory_config_get()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_sram_config()
 //  Configure the Shared RAM.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_sram_config(am_hal_pwrctrl_sram_memcfg_t *psConfig)
 {
@@ -1738,7 +1726,7 @@ am_hal_pwrctrl_sram_config(am_hal_pwrctrl_sram_memcfg_t *psConfig)
     // Configure the Shared RAM domain active based on the states of the MCU,
     // graphics, and display.
     //
-    PWRCTRL->SSRAMRETCFG_b.SSRAMACTMCU  = psConfig->eActiveWithMCU;
+    PWRCTRL->SSRAMRETCFG_b.SSRAMACTMCU = psConfig->eActiveWithMCU;
     PWRCTRL->SSRAMRETCFG_b.SSRAMACTGFX  = psConfig->eActiveWithGFX;
     PWRCTRL->SSRAMRETCFG_b.SSRAMACTDISP = psConfig->eActiveWithDISP;
     PWRCTRL->SSRAMRETCFG_b.SSRAMACTDSP  = psConfig->eActiveWithDSP;
@@ -1748,7 +1736,7 @@ am_hal_pwrctrl_sram_config(am_hal_pwrctrl_sram_memcfg_t *psConfig)
     //
     switch ( psConfig->eSRAMRetain )
     {
-        case AM_HAL_PWRCTRL_SRAM_NONE:
+        case   AM_HAL_PWRCTRL_SRAM_NONE:
             PWRCTRL->SSRAMRETCFG_b.SSRAMPWDSLP = PWRCTRL_SSRAMRETCFG_SSRAMPWDSLP_ALL;
             break;
         case AM_HAL_PWRCTRL_SRAM_512K_GRP0:
@@ -1765,12 +1753,12 @@ am_hal_pwrctrl_sram_config(am_hal_pwrctrl_sram_memcfg_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 } // am_hal_pwrctrl_sram_config()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_sram_config_get()
 //  Get the current Shared RAM configuration.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_sram_config_get(am_hal_pwrctrl_sram_memcfg_t *psConfig)
 {
@@ -1814,12 +1802,12 @@ am_hal_pwrctrl_sram_config_get(am_hal_pwrctrl_sram_memcfg_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 } // am_hal_pwrctrl_sram_config_get()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_dsp_mode_select()
 //  Select the DSP power mode.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_dsp_mode_select(am_hal_dsp_select_e eDSP,
                                am_hal_pwrctrl_dsp_mode_e ePowerMode)
@@ -1891,11 +1879,12 @@ am_hal_pwrctrl_dsp_mode_select(am_hal_dsp_select_e eDSP,
 
 } // am_hal_pwrctrl_dsp_mode_select()
 
-//****************************************************************************
+
+// ****************************************************************************
 //
 //  dsp0_memory_config()
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 dsp0_memory_config(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
 {
@@ -1981,11 +1970,11 @@ dsp0_memory_config(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 } // dsp0_memory_config()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  dsp1_memory_config()
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 dsp1_memory_config(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
 {
@@ -2071,12 +2060,12 @@ dsp1_memory_config(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 } // dsp1_memory_config()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_dsp_memory_config()
 //  Configure the DSP memory.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_dsp_memory_config(am_hal_dsp_select_e eDSP,
                                  am_hal_pwrctrl_dsp_memory_config_t *psConfig)
@@ -2096,11 +2085,11 @@ am_hal_pwrctrl_dsp_memory_config(am_hal_dsp_select_e eDSP,
     return retval;
 } // am_hal_pwrctrl_dsp_memory_config()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  dsp0_memory_get()
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 dsp0_memory_get(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
 {
@@ -2117,11 +2106,11 @@ dsp0_memory_get(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 } // dsp0_memory_get()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  dsp1_memory_get()
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 dsp1_memory_get(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
 {
@@ -2137,12 +2126,12 @@ dsp1_memory_get(am_hal_pwrctrl_dsp_memory_config_t *psConfig)
     return AM_HAL_STATUS_SUCCESS;
 } // dsp1_memory_get()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_dsp_memory_config_get()
 //  Get the current the DSP memory configuration.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_dsp_memory_config_get(am_hal_dsp_select_e eDSP,
                                      am_hal_pwrctrl_dsp_memory_config_t *psConfig)
@@ -2162,12 +2151,12 @@ am_hal_pwrctrl_dsp_memory_config_get(am_hal_dsp_select_e eDSP,
     return retval;
 } // am_hal_pwrctrl_dsp_memory_config_get()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_periph_enable()
 //  Enable power for a peripheral.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral)
 {
@@ -2249,9 +2238,10 @@ am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral)
     {
         return AM_HAL_STATUS_FAIL;
     }
+
 } // am_hal_pwrctrl_periph_enable()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_periph_disable_msk_check()
 //  Function checks the PWRCTRL->DEVPWREN
@@ -2260,7 +2250,7 @@ am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral)
 //      will fail when more than one enable in the same domain is set and the
 //      user tries disable only one.
 //
-//****************************************************************************
+// ****************************************************************************
 static uint32_t
 pwrctrl_periph_disable_msk_check(am_hal_pwrctrl_periph_e ePeripheral)
 {
@@ -2300,6 +2290,7 @@ pwrctrl_periph_disable_msk_check(am_hal_pwrctrl_periph_e ePeripheral)
             }
             break;
 
+
         case (PWRCTRL_MSPI_DEVPWRSTATUS_MASK):
             if (((AM_REGVAL(pwr_ctrl.ui32PwrEnRegAddr) & PWRCTRL_MSPI_DEVPWREN_MASK) != 0) &&
                 ((AM_REGVAL(pwr_ctrl.ui32PwrEnRegAddr) & pwr_ctrl.ui32PeriphEnable) == 0))
@@ -2323,12 +2314,12 @@ pwrctrl_periph_disable_msk_check(am_hal_pwrctrl_periph_e ePeripheral)
     return ui32Status;
 }
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_periph_disable()
 //  Disable power for a peripheral.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_periph_disable(am_hal_pwrctrl_periph_e ePeripheral)
 {
@@ -2424,12 +2415,12 @@ am_hal_pwrctrl_periph_disable(am_hal_pwrctrl_periph_e ePeripheral)
     }
 } // am_hal_pwrctrl_periph_disable()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_periph_enabled()
 //  Determine whether a peripheral is currently enabled.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_periph_enabled(am_hal_pwrctrl_periph_e ePeripheral,
                               bool *bEnabled)
@@ -2462,12 +2453,12 @@ am_hal_pwrctrl_periph_enabled(am_hal_pwrctrl_periph_e ePeripheral,
     return AM_HAL_STATUS_SUCCESS;
 } // am_hal_pwrctrl_periph_enabled()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_status_get()
 //  Get the current powercontrol status registers.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_status_get(am_hal_pwrctrl_status_t *psStatus)
 {
@@ -2524,12 +2515,12 @@ am_hal_pwrctrl_status_get(am_hal_pwrctrl_status_t *psStatus)
     return AM_HAL_STATUS_SUCCESS;
 } // am_hal_pwrctrl_status_get()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_low_power_init()
 //  Initialize the device for low power operation.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_low_power_init(void)
 {
@@ -2672,11 +2663,11 @@ am_hal_pwrctrl_low_power_init(void)
 } // am_hal_pwrctrl_low_power_init()
 
 #if AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL
-//****************************************************************************
+// ****************************************************************************
 //
 //  buck_interval_check()
 //
-//****************************************************************************
+// ****************************************************************************
 #define BUCK_PULSE_TIMER_INST               13
 #define BUCK_INTERVAL_TIMER_INST            8
 #define BUCK_CH_VDDC                        0
@@ -2847,17 +2838,17 @@ buck_interval_check(uint32_t *pui32IntervalUs, uint32_t channel)
     }
 } // buck_interval_check()
 
-//****************************************************************************
+// ****************************************************************************
 //
 // Helper functions for coreldo and memldo enable and parallel operation
 //
-//****************************************************************************
-//****************************************************************************
+// ****************************************************************************
+// ****************************************************************************
 //
 //  memldo_vddf_parallel_set()
 //  Turn on MEMLDO in parallel with VDDF SIMOBUCK.
 //
-//****************************************************************************
+// ****************************************************************************
 static void
 memldo_vddf_parallel_set(uint32_t ui32BuckIntervalUs)
 {
@@ -2962,12 +2953,12 @@ memldo_vddf_parallel_set(uint32_t ui32BuckIntervalUs)
 
 } // memldo_vddf_parallel_set()
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  coreldo_vddc_parallel_set()
 //  Turn on CORELDO in parallel with VDDC SIMOBUCK.
 //
-//****************************************************************************
+// ****************************************************************************
 static void
 coreldo_vddc_parallel_set(uint32_t ui32BuckIntervalUs)
 {
@@ -3074,11 +3065,6 @@ coreldo_vddc_parallel_set(uint32_t ui32BuckIntervalUs)
 } // coreldo_vddc_parallel_set()
 #endif // AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL
 
-//****************************************************************************
-//
-//  buck_ldo_override_init
-//
-//****************************************************************************
 void
 buck_ldo_override_init(void)
 {
@@ -3123,12 +3109,8 @@ buck_ldo_override_init(void)
 }
 
 
-//****************************************************************************
-//
 // Dynamically turn on and off the overrides for buck and LDO
 // Override configs are already set once in buck_ldo_override_init
-//
-//****************************************************************************
 void
 buck_ldo_update_override(bool bEnable)
 {
@@ -3137,14 +3119,14 @@ buck_ldo_update_override(bool bEnable)
     MCUCTRL->VRCTRL_b.CORELDOOVER    = bEnable;
     MCUCTRL->VRCTRL_b.MEMLDOOVER     = bEnable;
 #endif // AM_HAL_PWRCTL_SET_CORELDO_MEMLDO_IN_PARALLEL
-} // buck_ldo_update_override()
+}
 
-//****************************************************************************
+// ****************************************************************************
 //
 //  am_hal_pwrctrl_control()
 //  Additional miscellaneous power controls.
 //
-//****************************************************************************
+// ****************************************************************************
 uint32_t
 am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *pArgs)
 {
@@ -3257,13 +3239,6 @@ am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *pArgs)
             }
 #endif // AM_HAL_PWRCTL_KEEP_ANA_ACTIVE_IN_DS
 
-#ifdef AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
-            //
-            // This keeps the VDDC_LV cap from charging and discharging
-            //
-            MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVOREN  = 1; //<! bit 28
-            MCUCTRL->PWRSW1_b.SHORTVDDCVDDCLVORVAL = 1; //<! bit 29
-#endif
 
             //
             // Enable the SIMOBUCK
@@ -3388,22 +3363,14 @@ am_hal_pwrctrl_control(am_hal_pwrctrl_control_e eControl, void *pArgs)
 
 //*****************************************************************************
 //
-// Restore original power settings
-//
-// This function restores default power trims, reverting relative changes that
-// were done as part of am_hal_pwrctrl_low_power_init, SIMOBUCK init, and
-// dynamic updates such as are made with Temperature Compensation (TempCo)
-// and/or by enabling Crypto.
-//
-// Important:
-// - This function must be called before transition to a new application, such
-//   as the case of a secondary bootloader transistioning to an application.
-// - If previously enabled, TempCo must be disabled before this function is
-//   called.
-//
-// - This function switches from SIMOBUCK to LDO which is known to affect
-//   VDDC and VDDC_LV
-//   Please see AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV in am_hal_pwrctrl.h.
+//! @brief Restore original Power settings
+//!
+//! This function restores default power trims reverting relative
+//! changes done as part of low_power_init and SIMOBUCK init.
+//! User needs to make sure device is running in Low Power mode before calling
+//! this function.
+//!
+//! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
 uint32_t

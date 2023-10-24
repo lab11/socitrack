@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -53,14 +53,29 @@
 
 //*****************************************************************************
 //
-//! Global variables.
+// Global variables.
 //
 //*****************************************************************************
 am_devices_spiflash_t *g_psIOMSettings;
 
 //*****************************************************************************
 //
-// Initialize the spiflash driver.
+//! @brief Initialize the spiflash driver.
+//!
+//! @param psIOMSettings - IOM device structure describing the target spiflash.
+//! @param pfnWriteFunc - Function to use for spi writes.
+//! @param pfnReadFunc - Function to use for spi reads.
+//!
+//! This function should be called before any other am_devices_spiflash
+//! functions. It is used to set tell the other functions how to communicate
+//! with the external spiflash hardware.
+//!
+//! The \e pfnWriteFunc and \e pfnReadFunc variables may be used to provide
+//! alternate implementations of SPI write and read functions respectively. If
+//! they are left set to 0, the default functions am_hal_iom_spi_write() and
+//! am_hal_iom_spi_read() will be used.
+//!
+//! @return None.
 //
 //*****************************************************************************
 void
@@ -74,7 +89,19 @@ am_devices_spiflash_init(am_devices_spiflash_t *psIOMSettings)
 
 //*****************************************************************************
 //
-// Reads the current status of the external flash
+//! @brief Reads the current status of the external flash
+//!
+//! @param ui32DeviceNumber - Device number of the external flash
+//!
+//! This function reads the status register of the external flash, and returns
+//! the result as an 8-bit unsigned integer value. The processor will block
+//! during the data transfer process, but will return as soon as the status
+//! register had been read.
+//!
+//! Macro definitions for interpreting the contents of the status register are
+//! included in the header file.
+//!
+//! @return 8-bit status register contents
 //
 //*****************************************************************************
 uint8_t
@@ -98,7 +125,17 @@ am_devices_spiflash_status(void)
 
 //*****************************************************************************
 //
-// Reads the ID register for the external flash
+//! @brief Reads the ID register for the external flash
+//!
+//! @param ui32DeviceNumber - Device number of the external flash
+//!
+//! This function reads the ID register of the external flash, and returns the
+//! result as a 32-bit unsigned integer value. The processor will block during
+//! the data transfer process, but will return as soon as the ID register had
+//! been read. The ID contents for this flash only contains 24 bits of data, so
+//! the result will be stored in the lower 24 bits of the return value.
+//!
+//! @return 32-bit ID register contents
 //
 //*****************************************************************************
 uint32_t
@@ -122,7 +159,16 @@ am_devices_spiflash_id(void)
 
 //*****************************************************************************
 //
-// Reads the contents of the external flash into a buffer.
+//! @brief Reads the contents of the external flash into a buffer.
+//!
+//! @param ui32DeviceNumber - Device number of the external flash
+//! @param pui8RxBuffer - Buffer to store the received data from the flash
+//! @param ui32ReadAddress - Address of desired data in external flash
+//! @param ui32NumBytes - Number of bytes to read from external flash
+//!
+//! This function reads the external flash at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
 //
 //*****************************************************************************
 void
@@ -192,7 +238,18 @@ am_devices_spiflash_read(uint8_t *pui8RxBuffer, uint32_t ui32ReadAddress,
 
 //*****************************************************************************
 //
-// Programs the given range of flash addresses.
+//! @brief Programs the given range of flash addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external flash
+//! @param pui8TxBuffer - Buffer to write the external flash data from
+//! @param ui32WriteAddress - Address to write to in the external flash
+//! @param ui32NumBytes - Number of bytes to write to the external flash
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external flash at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target flash
+//! memory or underflow the pui8TxBuffer array
 //
 //*****************************************************************************
 void
@@ -285,7 +342,12 @@ am_devices_spiflash_write(uint8_t *pui8TxBuffer, uint32_t ui32WriteAddress,
 
 //*****************************************************************************
 //
-// Erases the entire contents of the external flash
+//! @brief Erases the entire contents of the external flash
+//!
+//! @param ui32DeviceNumber - Device number of the external flash
+//!
+//! This function uses the "Bulk Erase" instruction to erase the entire
+//! contents of the external flash.
 //
 //*****************************************************************************
 void
@@ -325,7 +387,14 @@ am_devices_spiflash_mass_erase(void)
 
 //*****************************************************************************
 //
-// Erases the contents of a single sector of flash
+//! @brief Erases the contents of a single sector of flash
+//!
+//! @param ui32DeviceNumber - Device number of the external flash
+//! @param ui32SectorAddress - Address to erase in the external flash
+//!
+//! This function erases a single sector of the external flash as specified by
+//! ui32EraseAddress. The entire sector where ui32EraseAddress will
+//! be erased.
 //
 //*****************************************************************************
 void

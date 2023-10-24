@@ -2,9 +2,9 @@
 //
 //! @file am_hal_usb.h
 //!
-//! @brief Functions for USB module
+//! @brief
 //!
-//! @addtogroup usb_4p USB Functionality
+//! @addtogroup usb USB Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -54,23 +54,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-//*****************************************************************************
-//
-//! @brief This is Used to select the HFRC2 configuration for HighSpeed USB
-//! used in function am_hal_usb_setHFRC2 arguments
-//
-//*****************************************************************************
-typedef enum
-{
-    AM_HAL_USB_HS_CLK_DISABLE,            ///< hfrc2 will be disabled, default off method
-    AM_HAL_USB_HS_CLK_DISABLE_HFRC2_ADJ,  ///< hfrc2 will be disabled, not default
-    AM_HAL_USB_HS_CLK_HFRC2,              ///< default HFRC2 will be enabled
-    AM_HAL_USB_HS_CLK_HFRC2_ADJ,          ///< HFRC2 adjust based on the internal 32Mhz
-    AM_HAL_USB_HS_CLK_HFRC2_ADJ_EXTERN_CLK, ///< HFRC2 adjust based on external clock
-    AM_HAL_USB_HS_CLK_X32  = 0x7FFFFFF,     ///< force vars derived from this enum to 4 bytes
-}
-am_hal_usb_hs_clock_type ;
 
 //*****************************************************************************
 //
@@ -159,32 +142,6 @@ typedef enum
 }
 am_hal_usb_xfer_code_e;
 
-
-//*****************************************************************************
-//
-//! @brief Enum for the USB control call
-//!
-//! The macros defined here are used to specify how the void * parameter(s)
-//! passed into the control function are interpreted.
-//!
-//
-//*****************************************************************************
-typedef enum
-{
-    //
-    //! this is used when the XTAL freq is not the default 32mhz and
-    //! high speed USB mode is needed. This will allow the caller to set a
-    //! non 32Mhz HF_XTAL freq. (The default value is 32Mhz)
-    //
-    AM_HAL_CLKGEN_CONTROL_SET_XTAL_FREQ,
-    //
-    //! this is controller by an argument of type am_hal_usb_hs_clock_type
-    //! this is how modules configure the HFRC2
-    AM_HAL_CLKGEN_CONTROL_SET_HFRC2_TYPE,
-
-
-} am_hal_usb_control_e;
-
 //*****************************************************************************
 //
 //! @brief device event callback function pointer type
@@ -231,7 +188,7 @@ typedef void (*am_hal_usb_ep_xfer_complete_callback)(uint8_t ui8EpAddr, uint16_t
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_register_dev_evt_callback(void *pHandle, am_hal_usb_dev_evt_callback cb);
+uint32_t am_hal_usb_register_dev_evt_callback(void *pHandle, am_hal_usb_dev_evt_callback cb);
 
 //*****************************************************************************
 //
@@ -246,7 +203,7 @@ extern uint32_t am_hal_usb_register_dev_evt_callback(void *pHandle, am_hal_usb_d
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_register_ep0_setup_received_callback(void *pHandle, am_hal_usb_ep0_setup_received_callback cb);
+uint32_t am_hal_usb_register_ep0_setup_received_callback(void *pHandle, am_hal_usb_ep0_setup_received_callback cb);
 
 //*****************************************************************************
 //
@@ -260,7 +217,7 @@ extern uint32_t am_hal_usb_register_ep0_setup_received_callback(void *pHandle, a
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_register_ep_xfer_complete_callback(void *pHandle, am_hal_usb_ep_xfer_complete_callback cb);
+uint32_t am_hal_usb_register_ep_xfer_complete_callback(void *pHandle, am_hal_usb_ep_xfer_complete_callback cb);
 
 //*****************************************************************************
 //
@@ -274,7 +231,7 @@ extern uint32_t am_hal_usb_register_ep_xfer_complete_callback(void *pHandle, am_
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_set_dev_state(void *pHandle, am_hal_usb_dev_state_e eDevState);
+uint32_t am_hal_usb_set_dev_state(void *pHandle, am_hal_usb_dev_state_e eDevState);
 
 //*****************************************************************************
 //
@@ -287,7 +244,7 @@ extern uint32_t am_hal_usb_set_dev_state(void *pHandle, am_hal_usb_dev_state_e e
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_start_remote_wakeup(void *pHandle);
+uint32_t am_hal_usb_start_remote_wakeup(void *pHandle);
 
 //*****************************************************************************
 //
@@ -300,7 +257,7 @@ extern uint32_t am_hal_usb_start_remote_wakeup(void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_end_remote_wakeup(void *pHandle);
+uint32_t am_hal_usb_end_remote_wakeup(void *pHandle);
 
 //*****************************************************************************
 //
@@ -315,7 +272,7 @@ extern uint32_t am_hal_usb_end_remote_wakeup(void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_set_addr(void *pHandle, uint8_t ui8EpAddr);
+uint32_t am_hal_usb_set_addr(void *pHandle, uint8_t ui8EpAddr);
 
 //*****************************************************************************
 //
@@ -326,8 +283,9 @@ extern uint32_t am_hal_usb_set_addr(void *pHandle, uint8_t ui8EpAddr);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_attach(void *pHandle);
+uint32_t am_hal_usb_attach(void *pHandle);
 
+//
 //*****************************************************************************
 //
 //! @brief soft disconnect to the USB host
@@ -337,7 +295,7 @@ extern uint32_t am_hal_usb_attach(void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_detach(void *pHandle);
+uint32_t am_hal_usb_detach(void *pHandle);
 
 //*****************************************************************************
 //
@@ -350,7 +308,7 @@ extern uint32_t am_hal_usb_detach(void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_get_frame_number(void *pHandle);
+uint32_t am_hal_get_frame_number(void *pHandle);
 
 //*****************************************************************************
 //
@@ -363,7 +321,7 @@ extern uint32_t am_hal_get_frame_number(void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_enable_sof_intr(void *pHandle);
+uint32_t am_hal_usb_enable_sof_intr(void *pHandle);
 
 //*****************************************************************************
 //
@@ -376,7 +334,7 @@ extern uint32_t am_hal_usb_enable_sof_intr(void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_disable_sof_intr(void *pHandle);
+uint32_t am_hal_usb_disable_sof_intr(void *pHandle);
 
 #define AM_HAL_USB_GET_HW_INFO_ENABLED
 #ifdef AM_HAL_USB_GET_HW_INFO_ENABLED
@@ -415,7 +373,7 @@ typedef struct
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_get_hw_infor(void *pHandle, am_hal_usb_hw_info *sHWInfo);
+uint32_t am_hal_usb_get_hw_infor(void *pHandle, am_hal_usb_hw_info *sHWInfo);
 
 #endif
 
@@ -455,7 +413,7 @@ am_hal_usb_test_mode_e;
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_enter_test_mode(const void *pHandle);
+uint32_t am_hal_usb_enter_test_mode(const void *pHandle);
 
 //*****************************************************************************
 //
@@ -470,7 +428,7 @@ extern uint32_t am_hal_usb_enter_test_mode(const void *pHandle);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_test_mode(const void *pHandle, const am_hal_usb_test_mode_e eTestMode);
+uint32_t am_hal_usb_test_mode(const void *pHandle, const am_hal_usb_test_mode_e eTestMode);
 #endif
 
 //*****************************************************************************
@@ -488,7 +446,7 @@ extern uint32_t am_hal_usb_test_mode(const void *pHandle, const am_hal_usb_test_
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_ep_init(void *pHandle, uint8_t ui8EpAddr, uint8_t ui8EpAttr, uint16_t ui16MaxPacket);
+uint32_t am_hal_usb_ep_init(void *pHandle, uint8_t ui8EpAddr, uint8_t ui8EpAttr, uint16_t ui16MaxPacket);
 
 //*****************************************************************************
 //
@@ -503,7 +461,7 @@ extern uint32_t am_hal_usb_ep_init(void *pHandle, uint8_t ui8EpAddr, uint8_t ui8
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr);
+uint32_t am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr);
 
 //*****************************************************************************
 //
@@ -519,7 +477,7 @@ extern uint32_t am_hal_usb_ep_stall(void *pHandle, uint8_t ui8EpAddr);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_ep_clear_stall(void *pHandle, uint8_t ui8EpAddr);
+uint32_t am_hal_usb_ep_clear_stall(void *pHandle, uint8_t ui8EpAddr);
 
 //*****************************************************************************
 //
@@ -537,7 +495,7 @@ extern uint32_t am_hal_usb_ep_clear_stall(void *pHandle, uint8_t ui8EpAddr);
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_usb_ep_xfer(void *pHandle, uint8_t ui8EpAddr, uint8_t *pui8Buf, uint16_t ui16Len);
+uint32_t am_hal_usb_ep_xfer(void *pHandle, uint8_t ui8EpAddr, uint8_t *pui8Buf, uint16_t ui16Len);
 
 //*****************************************************************************
 //
@@ -545,16 +503,13 @@ extern uint32_t am_hal_usb_ep_xfer(void *pHandle, uint8_t ui8EpAddr, uint8_t *pu
 //!
 //! @param pHandle - handle for the module instance.
 //!
-//! This function is used by the upper layer USB stack to get the current USB
-//! speed type
+//! This function is used by the upper layer USB stack to get the current USB speed type
 //! like full-speed or high-speed.
 //!
-//! @return one of am_hal_usb_dev_speed_e like
-//!    AM_HAL_USB_SPEED_FULL
-//!    AM_HAL_USB_SPEED_HIGH, etc.
+//! @return one of am_hal_usb_dev_speed_e like AM_HAL_USB_SPEED_FULL, AM_HAL_USB_SPEED_HIGH, etc.
 //
 //*****************************************************************************
-extern am_hal_usb_dev_speed_e am_hal_get_usb_dev_speed(void *pHandle);
+am_hal_usb_dev_speed_e am_hal_get_usb_dev_speed(void *pHandle);
 
 //*****************************************************************************
 //
@@ -568,9 +523,8 @@ extern am_hal_usb_dev_speed_e am_hal_get_usb_dev_speed(void *pHandle);
 //! high-speed capability.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_set_dev_speed(void *pHandle, am_hal_usb_dev_speed_e eSpeed);
+uint32_t am_hal_usb_set_dev_speed(void *pHandle, am_hal_usb_dev_speed_e eSpeed);
 
 //*****************************************************************************
 //
@@ -583,9 +537,8 @@ extern uint32_t am_hal_usb_set_dev_speed(void *pHandle, am_hal_usb_dev_speed_e e
 //! functions.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_initialize(uint32_t ui32Module, void **ppHandle);
+uint32_t am_hal_usb_initialize(uint32_t ui32Module, void **ppHandle);
 
 //*****************************************************************************
 //
@@ -597,9 +550,8 @@ extern uint32_t am_hal_usb_initialize(uint32_t ui32Module, void **ppHandle);
 //! device controller.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_deinitialize(void *pHandle);
+uint32_t am_hal_usb_deinitialize(void *pHandle);
 
 //*****************************************************************************
 //
@@ -613,9 +565,8 @@ extern uint32_t am_hal_usb_deinitialize(void *pHandle);
 //! successfully by 'am_hal_usb_initialize'.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState);
+uint32_t am_hal_usb_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState);
 
 //*****************************************************************************
 //
@@ -627,9 +578,8 @@ extern uint32_t am_hal_usb_power_control(void *pHandle, am_hal_sysctrl_power_sta
 //! This function is used to enable the IN endpoints' interrupt.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_in_enable(void *pHandle, uint32_t ui32IntMask);
+uint32_t am_hal_usb_intr_ep_in_enable(void *pHandle, uint32_t ui32IntMask);
 
 //*****************************************************************************
 //
@@ -641,9 +591,8 @@ extern uint32_t am_hal_usb_intr_ep_in_enable(void *pHandle, uint32_t ui32IntMask
 //! This function is used to disable the IN endpoints' interrupt.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_in_disable(void *pHandle, uint32_t ui32IntMask);
+uint32_t am_hal_usb_intr_ep_in_disable(void *pHandle, uint32_t ui32IntMask);
 
 //*****************************************************************************
 //
@@ -654,9 +603,8 @@ extern uint32_t am_hal_usb_intr_ep_in_disable(void *pHandle, uint32_t ui32IntMas
 //! This function is used to clear the IN endpoints' interrupt status.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_in_clear(void *pHandle);
+uint32_t am_hal_usb_intr_ep_in_clear(void *pHandle);
 
 //*****************************************************************************
 //
@@ -669,9 +617,8 @@ extern uint32_t am_hal_usb_intr_ep_in_clear(void *pHandle);
 //! This function is used to get IN endpoints' interrupt status.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_in_status_get(void *pHandle, uint32_t *ui32IntStatus, bool bEnabledOnly);
+uint32_t am_hal_usb_intr_ep_in_status_get(void *pHandle, uint32_t *ui32IntStatus, bool bEnabledOnly);
 
 //*****************************************************************************
 //
@@ -683,9 +630,8 @@ extern uint32_t am_hal_usb_intr_ep_in_status_get(void *pHandle, uint32_t *ui32In
 //! This function is used to enable the OUT endpoints' interrupt.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_out_enable(void *pHandle, uint32_t ui32IntMask);
+uint32_t am_hal_usb_intr_ep_out_enable(void *pHandle, uint32_t ui32IntMask);
 
 //*****************************************************************************
 //
@@ -697,9 +643,8 @@ extern uint32_t am_hal_usb_intr_ep_out_enable(void *pHandle, uint32_t ui32IntMas
 //! This function is used to disable the OUT endpoints' interrupt.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_out_disable(void *pHandle, uint32_t ui32IntMask);
+uint32_t am_hal_usb_intr_ep_out_disable(void *pHandle, uint32_t ui32IntMask);
 
 //*****************************************************************************
 //
@@ -710,9 +655,8 @@ extern uint32_t am_hal_usb_intr_ep_out_disable(void *pHandle, uint32_t ui32IntMa
 //! This function is used to clear the OUT endpoints' interrupt.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_out_clear(void *pHandle);
+uint32_t am_hal_usb_intr_ep_out_clear(void *pHandle);
 
 //*****************************************************************************
 //
@@ -725,9 +669,8 @@ extern uint32_t am_hal_usb_intr_ep_out_clear(void *pHandle);
 //! This function is used to get the OUT endpoints' interrupt status.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_ep_out_status_get(void *pHandle, uint32_t *pui32IntStatus, bool bEnabledOnly);
+uint32_t am_hal_usb_intr_ep_out_status_get(void *pHandle, uint32_t *pui32IntStatus, bool bEnabledOnly);
 
 //*****************************************************************************
 //
@@ -739,9 +682,8 @@ extern uint32_t am_hal_usb_intr_ep_out_status_get(void *pHandle, uint32_t *pui32
 //! This function is used to enable the USB bus interrupts.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_usb_enable(void *pHandle, uint32_t ui32IntMask);
+uint32_t am_hal_usb_intr_usb_enable(void *pHandle, uint32_t ui32IntMask);
 
 //*****************************************************************************
 //
@@ -753,9 +695,8 @@ extern uint32_t am_hal_usb_intr_usb_enable(void *pHandle, uint32_t ui32IntMask);
 //! This function is used to disable the USB bus interrupts.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_usb_disable(void *pHandle, uint32_t ui32IntMask);
+uint32_t am_hal_usb_intr_usb_disable(void *pHandle, uint32_t ui32IntMask);
 
 //*****************************************************************************
 //
@@ -766,9 +707,8 @@ extern uint32_t am_hal_usb_intr_usb_disable(void *pHandle, uint32_t ui32IntMask)
 //! This function is used to clear the USB bus interrupt status.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_usb_clear(void *pHandle);
+uint32_t am_hal_usb_intr_usb_clear(void *pHandle);
 
 //*****************************************************************************
 //
@@ -783,15 +723,15 @@ extern uint32_t am_hal_usb_intr_usb_clear(void *pHandle);
 //! This function is used to get the USB bus interrupt status.
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_usb_status_get(void *pHandle, uint32_t *ui32IntStatus, bool bEnabledOnly);
+uint32_t am_hal_usb_intr_usb_status_get(void *pHandle, uint32_t *ui32IntStatus, bool bEnabledOnly);
 
 //*****************************************************************************
 //
 //! @brief Enum for the USB device bus event mask bit.
 //!
 //! This Enum are just some convenient utility for easing the programming.
+//!
 //
 //*****************************************************************************
 enum
@@ -815,9 +755,8 @@ enum
 //! @param ui32IntrOutStatus - the USB OUT endpoint interrupt status
 //!
 //! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
 //*****************************************************************************
-extern uint32_t am_hal_usb_intr_status_get(void *pHandle, uint32_t *ui32IntrUsbStatus, uint32_t *ui32IntrInStatus, uint32_t *ui32IntrOutStatus);
+uint32_t am_hal_usb_intr_status_get(void *pHandle, uint32_t *ui32IntrUsbStatus, uint32_t *ui32IntrInStatus, uint32_t *ui32IntrOutStatus);
 
 //*****************************************************************************
 //
@@ -832,38 +771,7 @@ extern uint32_t am_hal_usb_intr_status_get(void *pHandle, uint32_t *ui32IntrUsbS
 //!
 //
 //*****************************************************************************
-extern void am_hal_usb_interrupt_service(void *pHandle,
-                                         uint32_t ui32IntrUsbStatus,
-                                         uint32_t ui32IntrInStatus,
-                                         uint32_t ui32IntrOutStatus);
-
-
-
-//*****************************************************************************
-//
-//! @brief Apply various specific commands / controls to the USB module
-//!
-//! @param eControl control enum
-//! @param pArgs    data used. This differs for each enum
-//!
-//! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
-//*****************************************************************************
-extern uint32_t am_hal_usb_control(am_hal_usb_control_e eControl, void *pArgs);
-
-//*****************************************************************************
-//
-//! @brief set and enable HFRC2 FLL for 24Mhz speed usb
-//!
-//! @note this is used for HIGH-SPEED usb
-//!
-//! @param tUsbHsClockType - enable or disable the HFRC2
-//!
-//! @return one of am_hal_status_e like AM_HAL_STATUS_SUCCESS
-//
-//*****************************************************************************
-extern uint32_t am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType);
-
+void am_hal_usb_interrupt_service(void *pHandle, uint32_t ui32IntrUsbStatus, uint32_t ui32IntrInStatus, uint32_t ui32IntrOutStatus);
 
 #ifdef __cplusplus
 }

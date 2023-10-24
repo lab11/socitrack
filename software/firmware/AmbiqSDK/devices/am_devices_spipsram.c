@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -69,7 +69,6 @@ typedef struct
     uint32_t                    ui32CS;
     uint32_t                    ui32MaxTransSize;
     void                        *pIomHandle;
-    am_hal_iom_config_t         sSpiPsramCfg ;
     bool                        bOccupied;
 } am_devices_iom_aps6404l_t;
 
@@ -96,39 +95,31 @@ const struct
     {AM_HAL_IOM_24MHZ, AM_DEVICES_SPIPSRAM_24MHZ_MAX_BYTES},
     {AM_HAL_IOM_16MHZ, AM_DEVICES_SPIPSRAM_16MHZ_MAX_BYTES},
     {AM_HAL_IOM_12MHZ, AM_DEVICES_SPIPSRAM_12MHZ_MAX_BYTES},
-    {AM_HAL_IOM_8MHZ,  AM_DEVICES_SPIPSRAM_8MHZ_MAX_BYTES}  //!< Leave this in for PSRAM initialization at 8MHz.
+    {AM_HAL_IOM_8MHZ,  AM_DEVICES_SPIPSRAM_8MHZ_MAX_BYTES}  // Leave this in for PSRAM initialization at 8MHz.
 };
 
 
 #define AM_DEVICES_SPIPSRAM_TIMEOUT             1000000
 
-
-//*****************************************************************************
-//
-//! @brief
-//! @param pCallbackCtxt
-//! @param status
-//
-//*****************************************************************************
 static void pfnSPI_PSRAM_Callback(void *pCallbackCtxt, uint32_t status)
 {
-    //! Set the DMA complete flag.
+    // Set the DMA complete flag.
     *(volatile bool *)pCallbackCtxt = true;
 }
 
 typedef struct
 {
    uint32_t    ui32OFFSETHIAddr;
-   uint32_t    ui32OFFSETHIVal; //!< 0
+   uint32_t    ui32OFFSETHIVal; // 0
    uint32_t    ui32DEVCFGAddr;
    uint32_t    ui32DEVCFGVal;
    uint32_t    ui32DMACFGdis1Addr;
    uint32_t    ui32DMACFGdis1Val;
    uint32_t    ui32DMATOTCOUNTAddr;
-   uint32_t    ui32DMATOTCOUNTVal; //!< Corresponding to the Read size
+   uint32_t    ui32DMATOTCOUNTVal; // Corresponding to the Read size
    uint32_t    ui32DMATARGADDRAddr;
    uint32_t    ui32DMATARGADDRVal;
-   uint32_t    ui32DMACFGAddr; //!< Configure for the Read (second transaction)
+   uint32_t    ui32DMACFGAddr; // Configure for the Read (second transaction)
    uint32_t    ui32DMACFGVal;
 #if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
    uint32_t    ui32FIFOPushAddr1;
@@ -139,7 +130,7 @@ typedef struct
    uint32_t    ui32CMD1Val; // First command which is a Write transaction with size 4 bytes, offset size 0, Continue ON
 #endif
    uint32_t    ui32CMD2Addr;
-   uint32_t    ui32CMD2Val; //!< Second command which is Read transaction with given size, offset size 0, Continue OFF
+   uint32_t    ui32CMD2Val; // Second command which is Read transaction with given size, offset size 0, Continue OFF
 } spi_psram_trans_read_txn_t;
 
 spi_psram_trans_read_txn_t  gIomTransReadTxn;
@@ -147,23 +138,23 @@ spi_psram_trans_read_txn_t  gIomTransReadTxn;
 typedef struct
 {
     uint32_t    ui32OFFSETHIAddr;
-    uint32_t    ui32OFFSETHIVal; //!< 0
+    uint32_t    ui32OFFSETHIVal; // 0
     uint32_t    ui32DEVCFGAddr;
     uint32_t    ui32DEVCFGVal;
     uint32_t    ui32DMACFGdis1Addr;
     uint32_t    ui32DMACFGdis1Val;
     uint32_t    ui32DMATOTCOUNTAddr;
-    uint32_t    ui32DMATOTCOUNTVal; //!< Corresponding to the Write size
+    uint32_t    ui32DMATOTCOUNTVal; // Corresponding to the Write size
     uint32_t    ui32DMATARGADDRAddr;
     uint32_t    ui32DMATARGADDRVal;
 #if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
     uint32_t    ui32FIFOPushAddr1;
-    uint32_t    ui32FIFOPushVal1; //!< Pointer to a variable initialized with 4 bytes value as : 1 Byte Command + 3 byte address
+    uint32_t    ui32FIFOPushVal1; // Pointer to a variable initialized with 4 bytes value as : 1 Byte Command + 3 byte address
 #endif
-    uint32_t    ui32DMACFGAddr; //!< Configure for the Write
+    uint32_t    ui32DMACFGAddr; // Configure for the Write
     uint32_t    ui32DMACFGVal;
     uint32_t    ui32CMD1Addr;
-    uint32_t    ui32CMD1Val; //!< command which is a Write transaction with size (Length + 4) bytes, offset size 0, Continue OFF
+    uint32_t    ui32CMD1Val; // command which is a Write transaction with size (Length + 4) bytes, offset size 0, Continue OFF
 } spi_psram_trans_write_txn_t;
 
 spi_psram_trans_write_txn_t  gIomTransWriteTxn;
@@ -171,19 +162,11 @@ spi_psram_trans_write_txn_t  gIomTransWriteTxn;
 
 //*****************************************************************************
 //
-//! @brief Function to build the CMD value.
-//!
-//! @param ui32CS
-//! @param ui32Dir
-//! @param ui32Cont
-//! @param ui32Offset
-//! @param ui32OffsetCnt
-//! @param ui32nBytes
-//!
-//! @note The OFFSETHI register must still be handled by the caller, e.g.
-//!      AM_REGn(IOM, ui32Module, OFFSETHI) = (uint16_t)(ui32Offset >> 8);
-//!
-//! @return Returns the CMD value, but does not set the CMD register.
+// Function to build the CMD value.
+// Returns the CMD value, but does not set the CMD register.
+//
+// The OFFSETHI register must still be handled by the caller, e.g.
+//      AM_REGn(IOM, ui32Module, OFFSETHI) = (uint16_t)(ui32Offset >> 8);
 //
 //*****************************************************************************
 static uint32_t
@@ -226,12 +209,7 @@ build_iom_cmd(uint32_t ui32CS,     uint32_t ui32Dir, uint32_t ui32Cont,
     return ui32Cmd;
 } // build_iom_cmd()
 
-//*****************************************************************************
-//
-//! @brief
-//! @param ui32Module
-//
-//*****************************************************************************
+// One time initialization
 static void
 iom_init_cq_element(uint32_t ui32Module)
 {
@@ -298,16 +276,6 @@ iom_init_cq_element(uint32_t ui32Module)
 }
 
 #if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
-//*****************************************************************************
-//
-//! @brief creates an iom read transaction
-//!
-//! @param pHandle      - pointer to iom driver struct
-//! @param pui8Buffer   - iom will save data to this buffer
-//! @param ui32Address  - the iom will read from this address
-//! @param ui32NumBytes - the iom will read this many bytes
-//
-//*****************************************************************************
 static void
 create_iom_read_transaction(void *pHandle, uint8_t *pui8Buffer,
                             uint32_t ui32Address,
@@ -352,16 +320,6 @@ create_iom_read_transaction(void *pHandle, uint8_t *pui8Buffer,
     gIomTransReadTxn.ui32DMATOTCOUNTVal = ui32NumBytes;
     gIomTransReadTxn.ui32CMD2Val   = ui32Cmd;
 }
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle      - pointer to iom driver struct
-//! @param pui8Buffer   - iom will save data to this buffer
-//! @param ui32Address  - the iom will read from this address
-//! @param ui32NumBytes - the iom will read this many bytes
-//
-//*****************************************************************************
 static void
 create_iom_write_transaction(void *pHandle, uint8_t *pui8Buffer,
                              uint32_t ui32Address,
@@ -399,19 +357,8 @@ create_iom_write_transaction(void *pHandle, uint8_t *pui8Buffer,
 }
 
 #else
-//*****************************************************************************
-//
-//! @brief creates an iom read transaction
-//!
-//! @param pHandle      - pointer to iom driver struct
-//! @param pui8Buffer   - iom will save data to this buffer
-//! @param ui32Address  - the iom will read from this address
-//! @param ui32NumBytes - the iom will read this many bytes
-//
-//*****************************************************************************
 static void
-create_iom_read_transaction(void *pHandle,
-                            uint8_t *pui8Buffer,
+create_iom_read_transaction(void *pHandle, uint8_t *pui8Buffer,
                             uint32_t ui32Address,
                             uint32_t ui32NumBytes)
 {
@@ -433,15 +380,6 @@ create_iom_read_transaction(void *pHandle,
     gIomTransReadTxn.ui32DMATOTCOUNTVal = ui32NumBytes;
     gIomTransReadTxn.ui32CMD2Val   = ui32Cmd;
 }
-//*****************************************************************************
-//
-//! @brief
-//! @param pHandle
-//! @param pui8Buffer
-//! @param ui32Address
-//! @param ui32NumBytes
-//
-//*****************************************************************************
 static void
 create_iom_write_transaction(void *pHandle, uint8_t *pui8Buffer,
                              uint32_t ui32Address,
@@ -471,19 +409,14 @@ create_iom_write_transaction(void *pHandle, uint8_t *pui8Buffer,
 
 //*****************************************************************************
 //
-//Generic Command Write function.
+// Generic Command Write function.
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_command_write(void *pHandle,
-                                  bool bHiPrio,
-                                  uint32_t ui32InstrLen,
-                                  uint64_t ui64Instr,
-                                  uint32_t *pData,
-                                  uint32_t ui32NumBytes,
-                                  bool bContinue)
+am_devices_spipsram_command_write(void *pHandle, bool bHiPrio, uint32_t ui32InstrLen, uint64_t ui64Instr,
+                                  uint32_t *pData, uint32_t ui32NumBytes, bool bContinue)
 {
-    am_hal_iom_transfer_t     Transaction;
+    am_hal_iom_transfer_t Transaction;
     am_devices_iom_aps6404l_t *pIom = (am_devices_iom_aps6404l_t *)pHandle;
 
     //
@@ -529,18 +462,9 @@ am_devices_spipsram_command_write(void *pHandle,
     return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
-am_devices_spipsram_command_read(void *pHandle,
-                                 bool bHiPrio,
-                                 uint32_t ui32InstrLen,
-                                 uint64_t ui64Instr,
-                                 uint32_t *pData,
-                                 uint32_t ui32NumBytes,
-                                 bool bContinue)
+am_devices_spipsram_command_read(void *pHandle, bool bHiPrio, uint32_t ui32InstrLen, uint64_t ui64Instr,
+                                 uint32_t *pData, uint32_t ui32NumBytes, bool bContinue)
 {
     am_hal_iom_transfer_t Transaction;
     am_devices_iom_aps6404l_t *pIom = (am_devices_iom_aps6404l_t *)pHandle;
@@ -594,7 +518,7 @@ am_devices_spipsram_command_read(void *pHandle,
 
 //*****************************************************************************
 //
-// Reset the external psram.
+// Reset the external psram
 //
 //*****************************************************************************
 uint32_t
@@ -617,7 +541,14 @@ am_devices_spipsram_reset(void *pHandle)
 
 //*****************************************************************************
 //
-// Reads the ID of the external psram and returns the value.
+//! @brief Reads the ID of the external psram and returns the value.
+//!
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
+//!
+//! This function reads the device ID register of the external psram, and returns
+//! the result as an 32-bit unsigned integer value.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -635,21 +566,28 @@ am_devices_spipsram_read_id(void *pHandle, uint32_t *pDeviceID)
 
 //*****************************************************************************
 //
-// Initialize the spipsram driver.
+//! @brief Initialize the spipsram driver.
+//!
+//! @param ui32Module     - IOM Module#
+//! @param psIOMSettings  - IOM device structure describing the target spiflash.
+//!
+//! This function should be called before any other am_devices_spipsram
+//! functions. It is used to set tell the other functions how to communicate
+//! with the external spiflash hardware.
+//!
+//! @return status.
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_init(uint32_t ui32Module,
-                         am_devices_spipsram_config_t *pDevConfig,
-                         void **ppHandle,
-                         void **ppIomHandle)
+am_devices_spipsram_init(uint32_t ui32Module, am_devices_spipsram_config_t *pDevConfig, void **ppHandle, void **ppIomHandle)
 {
     void *pIomHandle;
     uint32_t aui32Rawdata[2] = {0};
     uint32_t ui32DeviceID = 0;
     uint32_t ui32Status = AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
-#ifdef APOLLO3P_EVB_CYGNUS
+    am_hal_iom_config_t     stIOMPSRAMSettings;
     uint32_t g_CS[AM_REG_IOM_NUM_MODULES] =
+#ifdef APOLLO3P_EVB_CYGNUS
     {
         0,
         AM_BSP_IOM1_CS_CHNL,
@@ -658,7 +596,10 @@ am_devices_spipsram_init(uint32_t ui32Module,
         AM_BSP_IOM4_CS_CHNL,
         0
     };
+#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+    { 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
+
 
     uint32_t      ui32Index = 0;
 
@@ -670,7 +611,7 @@ am_devices_spipsram_init(uint32_t ui32Module,
             break;
         }
     }
-    if (ui32Index >= AM_DEVICES_APS6404L_MAX_DEVICE_NUM)
+    if ( ui32Index == AM_DEVICES_APS6404L_MAX_DEVICE_NUM )
     {
         return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
     }
@@ -680,13 +621,18 @@ am_devices_spipsram_init(uint32_t ui32Module,
         return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
     }
 
+    stIOMPSRAMSettings = g_sSpiPsramCfg;
+    stIOMPSRAMSettings.ui32NBTxnBufLength = pDevConfig->ui32NBTxnBufLength;
+    stIOMPSRAMSettings.pNBTxnBuf = pDevConfig->pNBTxnBuf;
+    stIOMPSRAMSettings.ui32ClockFreq = pDevConfig->ui32ClockFreq;
+
     //
     // Look up the Max Transaction size to fit into 8usec for CE asserted
     //
     gAmAps6404l[ui32Index].ui32MaxTransSize = 0;
     for (uint32_t i = 0; i < (sizeof(g_SPI_SpeedMax) / sizeof(g_SPI_SpeedMax[0])); i++)
     {
-        if (g_SPI_SpeedMax[i].MHz == pDevConfig->ui32ClockFreq)
+        if (g_SPI_SpeedMax[i].MHz == stIOMPSRAMSettings.ui32ClockFreq)
         {
             gAmAps6404l[ui32Index].ui32MaxTransSize = g_SPI_SpeedMax[i].MaxSize;
             break;
@@ -705,122 +651,60 @@ am_devices_spipsram_init(uint32_t ui32Module,
     //
     // Enable fault detection.
     //
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
-    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
+#if AM_APOLLO3_MCUCTRL
+    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
+#else // AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_fault_capture_enable();
+#endif // AM_APOLLO3_MCUCTRL
 #endif
 
     //
     // Initialize the IOM instance.
-    // if the iom is already inited, skip these steps
+    // Enable power to the IOM instance.
+    // Configure the IOM for Serial operation during initialization.
+    // Enable the IOM.
     //
-    void *extIomHandle = *ppIomHandle;
-    bool already_inited = false;
-
-    ui32Status = am_hal_iom_initialize(ui32Module, &pIomHandle);
-    if (ui32Status == AM_HAL_STATUS_INVALID_OPERATION)
-    {
-        //
-        // already inited
-        //
-        already_inited = true;
-        pIomHandle = extIomHandle;
-    }
-    else if (ui32Status)
-    {
-        //
-        // an error occurred
-        //
-        return ui32Status;
-    }
-
-    // populate and assign local struct (handle)
-    gAmAps6404l[ui32Index].ui32Module    = ui32Module;
-#ifdef APOLLO3P_EVB_CYGNUS
-    gAmAps6404l[ui32Index].ui32CS        = g_CS[ui32Module];
-#else
-    gAmAps6404l[ui32Index].ui32CS        = pDevConfig->ui32ChipSelectNum;
-#endif
-    gAmAps6404l[ui32Index].pIomHandle    = pIomHandle;
-
-    *ppHandle    = (void *) &gAmAps6404l[ui32Index];
-
-    gAmAps6404l[ui32Index].sSpiPsramCfg.ui32NBTxnBufLength   = pDevConfig->ui32NBTxnBufLength;
-    gAmAps6404l[ui32Index].sSpiPsramCfg.pNBTxnBuf            = pDevConfig->pNBTxnBuf;
-    gAmAps6404l[ui32Index].sSpiPsramCfg.ui32ClockFreq        = pDevConfig->ui32ClockFreq;
-    gAmAps6404l[ui32Index].sSpiPsramCfg.eInterfaceMode       = AM_HAL_IOM_SPI_MODE;
-    gAmAps6404l[ui32Index].sSpiPsramCfg.eSpiMode             = AM_HAL_IOM_SPI_MODE_0;
-
-
-    if ( !already_inited )
-    {
-        //
-        // Enable power to the IOM instance.
-        //
-        *ppIomHandle = pIomHandle;
-
-        ui32Status = am_hal_iom_power_ctrl(pIomHandle, AM_HAL_SYSCTRL_WAKE, g_IOMSave[ui32Module]);
-        if (ui32Status)
-        {
-            return ui32Status;
-        }
-
-        //
-        // Configure the IOM for Serial operation during initialization.
-        //
-        ui32Status = am_hal_iom_configure(pIomHandle, &gAmAps6404l[ui32Index].sSpiPsramCfg);
-        if (ui32Status)
-        {
-            return ui32Status;
-        }
-
-        //
-        // Enable the IOM.
-        //
-        ui32Status = am_hal_iom_enable(pIomHandle);
-        if (ui32Status)
-        {
-            return ui32Status;
-        }
-    }
-    am_util_delay_us(150);
-
-    if (AM_DEVICES_SPIPSRAM_STATUS_SUCCESS != am_devices_spipsram_reset((void *) &gAmAps6404l[ui32Index]))
+    if (am_hal_iom_initialize(ui32Module, &pIomHandle) ||
+        am_hal_iom_power_ctrl(pIomHandle, AM_HAL_SYSCTRL_WAKE, g_IOMSave[ui32Module] == true ? true : false) ||
+        am_hal_iom_configure(pIomHandle, &stIOMPSRAMSettings) ||
+        am_hal_iom_enable(pIomHandle))
     {
         return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
     }
-
-    //
-    // test the setup and the psram by reading device id
-    //
-    ui32Status   = am_devices_spipsram_read_id((void *) &gAmAps6404l[ui32Index], aui32Rawdata);
-    ui32DeviceID = ((aui32Rawdata[0] & 0xFF000000) >> 24) | ((aui32Rawdata[1] & 0xFF) << 8);
-    //am_util_stdio_printf("PSRAM ID is 0x%x\n", ui32DeviceID);
-    if ((AM_DEVICES_SPIPSRAM_KGD_PASS == ui32DeviceID) &&
-        (AM_HAL_STATUS_SUCCESS == ui32Status))
+    else
     {
-        gAmAps6404l[ui32Index].bOccupied = true;
-        iom_init_cq_element(ui32Module);
-        return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
-    }
+        am_util_delay_us(150);
+        gAmAps6404l[ui32Index].ui32Module = ui32Module;
+        gAmAps6404l[ui32Index].ui32CS = g_CS[ui32Module];
+        *ppIomHandle = gAmAps6404l[ui32Index].pIomHandle = pIomHandle;
+        *ppHandle = (void *)&gAmAps6404l[ui32Index];
 
-    return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
+        if (AM_DEVICES_SPIPSRAM_STATUS_SUCCESS != am_devices_spipsram_reset((void*)&gAmAps6404l[ui32Index]))
+        {
+            return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
+        }
+        ui32Status = am_devices_spipsram_read_id((void*)&gAmAps6404l[ui32Index], aui32Rawdata);
+        ui32DeviceID = ((aui32Rawdata[0] & 0xFF000000) >> 24) | ((aui32Rawdata[1] & 0xFF) << 8);
+        //am_util_stdio_printf("PSRAM ID is 0x%x\n", ui32DeviceID);
+        if ((AM_DEVICES_SPIPSRAM_KGD_PASS == ui32DeviceID) &&
+           (AM_HAL_STATUS_SUCCESS == ui32Status))
+        {
+            gAmAps6404l[ui32Index].bOccupied = true;
+            iom_init_cq_element(ui32Module);
+            return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
+        }
+        else
+        {
+            return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
+        }
+    }
 }
 
-
-//*****************************************************************************
-//
-//
-//
-//*****************************************************************************
 uint32_t
-am_devices_spipsram_init_no_check(uint32_t ui32Module,
-                                  am_devices_spipsram_config_t *pDevConfig,
-                                  void **ppHandle,
-                                  void **ppIomHandle)
+am_devices_spipsram_init_no_check(uint32_t ui32Module, am_devices_spipsram_config_t *pDevConfig, void **ppHandle, void **ppIomHandle)
 {
     void *pIomHandle;
     am_hal_iom_config_t     stIOMPSRAMSettings;
@@ -889,12 +773,14 @@ am_devices_spipsram_init_no_check(uint32_t ui32Module,
     //
     // Enable fault detection.
     //
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
-    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
+#if AM_APOLLO3_MCUCTRL
+    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
+#else // AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_fault_capture_enable();
+#endif // AM_APOLLO3_MCUCTRL
 #endif
 
     //
@@ -929,9 +815,14 @@ am_devices_spipsram_init_no_check(uint32_t ui32Module,
     }
 }
 
+
 //*****************************************************************************
 //
-// DeInitialize the spipsram driver.
+//! @brief DeInitialize the spipsram driver.
+//!
+//! @param ui32Module     - IOM Module#
+//!
+//! @return status.
 //
 //*****************************************************************************
 uint32_t
@@ -971,12 +862,24 @@ am_devices_spipsram_term(void *pHandle)
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_blocking_write(void *pHandle,
-                                   uint8_t *pui8TxBuffer,
+am_devices_spipsram_blocking_write(void *pHandle, uint8_t *pui8TxBuffer,
                                    uint32_t ui32WriteAddress,
                                    uint32_t ui32NumBytes)
 {
@@ -1041,14 +944,24 @@ am_devices_spipsram_blocking_write(void *pHandle,
     return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
 }
 
+
 //*****************************************************************************
 //
-// Reads the contents of the fram into a buffer.
+//! @brief Reads the contents of the fram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the flash
+//! @param ui32ReadAddress - Address of desired data in external flash
+//! @param ui32NumBytes - Number of bytes to read from external flash
+//!
+//! This function reads the external flash at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_blocking_read(void *pHandle,
-                                  uint8_t *pui8RxBuffer,
+am_devices_spipsram_blocking_read(void *pHandle, uint8_t *pui8RxBuffer,
                                   uint32_t ui32ReadAddress,
                                   uint32_t ui32NumBytes)
 {
@@ -1116,50 +1029,26 @@ am_devices_spipsram_blocking_read(void *pHandle,
     return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//! @brief Starts a non blocking read or write using PSRAM
-//!
-//! This function reads the external flash at the provided address and stores
-//! the received data into the provided buffer location. This function will
-//! only store ui32NumBytes worth of data.
-//!
-//! @param pHandle
-//! @param bWrite
-//! @param pui8Buffer
-//! @param ui32Address
-//! @param ui32NumBytes
-//! @param ui32PauseCondition
-//! @param ui32StatusSetClr
-//! @param pfnCallback
-//! @param pCallbackCtxt
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-spi_psram_nonblocking_transfer(void *pHandle,
-                               bool bWrite,
-                               uint8_t *pui8Buffer,
-                               uint32_t ui32Address,
-                               uint32_t ui32NumBytes,
-                               uint32_t ui32PauseCondition,
-                               uint32_t ui32StatusSetClr,
-                               am_hal_iom_callback_t pfnCallback,
-                               void *pCallbackCtxt)
+static uint32_t spi_psram_nonblocking_transfer(void *pHandle, bool bWrite,
+                                               uint8_t *pui8Buffer,
+                                               uint32_t ui32Address,
+                                               uint32_t ui32NumBytes,
+                                               uint32_t ui32PauseCondition,
+                                               uint32_t ui32StatusSetClr,
+                                               am_hal_iom_callback_t pfnCallback,
+                                               void *pCallbackCtxt)
 {
     bool bLast = false;
     am_hal_iom_cq_raw_t rawIomCfg;
-    am_devices_iom_aps6404l_t *pIom = (am_devices_iom_aps6404l_t *)pHandle;
-    uint32_t size;
-
-
     rawIomCfg.ui32PauseCondition = ui32PauseCondition;
     rawIomCfg.ui32StatusSetClr = 0;
+    am_devices_iom_aps6404l_t *pIom = (am_devices_iom_aps6404l_t *)pHandle;
+    uint32_t size;
 
     while (ui32NumBytes)
     {
         uint32_t maxSize = AM_DEVICES_SPIPSRAM_PAGE_SIZE - (ui32Address & (AM_DEVICES_SPIPSRAM_PAGE_SIZE - 1));
-        if (bWrite)
+        if ( bWrite )
         {
             uint32_t limit = (maxSize > pIom->ui32MaxTransSize) ? pIom->ui32MaxTransSize : maxSize;
             size = (ui32NumBytes > limit) ? limit : ui32NumBytes;
@@ -1198,12 +1087,21 @@ spi_psram_nonblocking_transfer(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the external psram into a buffer.
+//! @brief Reads the contents of the external psram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the psram
+//! @param ui32ReadAddress - Address of desired data in external psram
+//! @param ui32NumBytes - Number of bytes to read from external psram
+//!
+//! This function reads the external psram at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_read_adv(void *pHandle,
-                             uint8_t *pui8RxBuffer,
+am_devices_spipsram_read_adv(void *pHandle, uint8_t *pui8RxBuffer,
                              uint32_t ui32ReadAddress,
                              uint32_t ui32NumBytes,
                              uint32_t ui32PauseCondition,
@@ -1234,10 +1132,6 @@ am_devices_spipsram_read_adv(void *pHandle,
     return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_spipsram_write_adv(void *pHandle, uint8_t *pui8TxBuffer,
                               uint32_t ui32WriteAddress,
@@ -1272,7 +1166,17 @@ am_devices_spipsram_write_adv(void *pHandle, uint8_t *pui8TxBuffer,
 
 //*****************************************************************************
 //
-// Reads the contents of the external psram into a buffer.
+//! @brief Reads the contents of the external psram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the psram
+//! @param ui32ReadAddress - Address of desired data in external psram
+//! @param ui32NumBytes - Number of bytes to read from external psram
+//!
+//! This function reads the external psram at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1352,24 +1256,35 @@ am_devices_spipsram_read(void *pHandle, uint8_t *pui8RxBuffer,
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_write(void *pHandle,
-                          uint8_t *pui8TxBuffer,
+am_devices_spipsram_write(void *pHandle, uint8_t *pui8TxBuffer,
                           uint32_t ui32WriteAddress,
                           uint32_t ui32NumBytes,
                           bool bWaitForCompletion)
 {
-    uint32_t              ui32Status;
+    uint32_t                      ui32Status;
 
     if (bWaitForCompletion)
     {
         // Start the transaction.
         volatile bool bDMAComplete = false;
-        ui32Status = spi_psram_nonblocking_transfer(pHandle,
-                            true,
+        ui32Status = spi_psram_nonblocking_transfer(pHandle, true,
                             pui8TxBuffer,
                             ui32WriteAddress,
                             ui32NumBytes,
@@ -1403,22 +1318,16 @@ am_devices_spipsram_write(void *pHandle,
 #endif
         }
 
-        //
         // Check the status.
-        //
         if (!bDMAComplete)
         {
             return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
         }
     }
-    else // bWaitForCompletion
+    else
     {
-        //
-        // do not wait for completion
         // Check the transaction status.
-        //
-        ui32Status = spi_psram_nonblocking_transfer(pHandle,
-                            true,
+        ui32Status = spi_psram_nonblocking_transfer(pHandle, true,
                             pui8TxBuffer,
                             ui32WriteAddress,
                             ui32NumBytes,
@@ -1430,7 +1339,7 @@ am_devices_spipsram_write(void *pHandle,
         {
             return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
         }
-    } // bWaitForCompletion
+    }
 
     //
     // Return the status.
@@ -1440,12 +1349,21 @@ am_devices_spipsram_write(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the external psram into a buffer
+//! @brief Reads the contents of the external psram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the psram
+//! @param ui32ReadAddress - Address of desired data in external psram
+//! @param ui32NumBytes - Number of bytes to read from external psram
+//!
+//! This function reads the external psram at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
-am_devices_spipsram_nonblocking_read(void *pHandle,
-                                     uint8_t *pui8RxBuffer,
+am_devices_spipsram_nonblocking_read(void *pHandle, uint8_t *pui8RxBuffer,
                                      uint32_t ui32ReadAddress,
                                      uint32_t ui32NumBytes,
                                      am_hal_iom_callback_t pfnCallback,
@@ -1453,9 +1371,7 @@ am_devices_spipsram_nonblocking_read(void *pHandle,
 {
     uint32_t                      ui32Status;
 
-    //
     // Check the transaction status.
-    //
     ui32Status = spi_psram_nonblocking_transfer(pHandle, false,
                         pui8RxBuffer,
                         ui32ReadAddress,
@@ -1475,14 +1391,8 @@ am_devices_spipsram_nonblocking_read(void *pHandle,
     return AM_DEVICES_SPIPSRAM_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//
-//
-//*****************************************************************************
 uint32_t
-am_devices_spipsram_nonblocking_write(void *pHandle,
-                                      uint8_t *pui8TxBuffer,
+am_devices_spipsram_nonblocking_write(void *pHandle, uint8_t *pui8TxBuffer,
                                       uint32_t ui32WriteAddress,
                                       uint32_t ui32NumBytes,
                                       am_hal_iom_callback_t pfnCallback,
@@ -1490,9 +1400,7 @@ am_devices_spipsram_nonblocking_write(void *pHandle,
 {
     uint32_t                      ui32Status;
 
-    //
     // Check the transaction status.
-    //
     ui32Status = spi_psram_nonblocking_transfer(pHandle, true,
                         pui8TxBuffer,
                         ui32WriteAddress,

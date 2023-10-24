@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the M4F system control registers
 //!
-//! @addtogroup sysctrl4_4p SYSCTRL - System Control
+//! @addtogroup sysctrl4 SYSCTRL - System Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_SYSCTRL_H
@@ -77,8 +77,6 @@ typedef enum
   AM_HAL_SYSCTRL_DEEPSLEEP
 } am_hal_sysctrl_power_state_e;
 
-#define SYNC_READ       0x47FF0000
-
 //*****************************************************************************
 //
 //! Write flush - This function will hold the bus until all queued write
@@ -86,6 +84,7 @@ typedef enum
 //! writes to APB have been flushed.
 //
 //*****************************************************************************
+#define SYNC_READ       0x47FF0000
 #define am_hal_sysctrl_sysbus_write_flush()     AM_REGVAL(SYNC_READ)
 
 //*****************************************************************************
@@ -116,6 +115,7 @@ typedef enum
 //!
 //!     AM_HAL_SYSCTRL_SLEEP_NORMAL
 //!     AM_HAL_SYSCTRL_SLEEP_DEEP
+//!
 //
 //*****************************************************************************
 extern void am_hal_sysctrl_sleep(bool bSleepDeep);

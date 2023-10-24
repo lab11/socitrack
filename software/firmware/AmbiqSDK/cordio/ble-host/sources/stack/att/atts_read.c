@@ -4,16 +4,16 @@
  *
  *  \brief  ATT server optional read PDU processing functions.
  *
- *  Copyright (c) 2009-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2009-2019 Arm Ltd.
  *
- *  Copyright (c) 2019-2020 Packetcraft, Inc.
- *  
+ *  Copyright (c) 2019 Packetcraft, Inc.
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -170,7 +170,7 @@ uint16_t attsFindServiceGroupEnd(uint16_t startHandle)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
+void attsProcReadBlobReq(attCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 {
   uint8_t     *pBuf;
   uint8_t     *p;
@@ -180,7 +180,6 @@ void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   uint16_t    offset;
   uint16_t    readLen;
   uint8_t     err = ATT_SUCCESS;
-  uint16_t    mtu = pCcb->pMainCcb->sccb[pCcb->slot].mtu;
 
   /* parse handle and offset */
   pPacket += L2C_PAYLOAD_START + ATT_HDR_LEN;
@@ -191,7 +190,7 @@ void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   if ((pAttr = attsFindByHandle(handle, &pGroup)) != NULL)
   {
     /* verify permissions */
-    if ((err = attsPermissions(pCcb->pMainCcb->connId, ATTS_PERMIT_READ,
+    if ((err = attsPermissions(pCcb->connId, ATTS_PERMIT_READ,
                                handle, pAttr->permissions)) != ATT_SUCCESS)
     {
       /* err has been set; fail */
@@ -207,19 +206,19 @@ void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       if ((pAttr->settings & ATTS_SET_READ_CBACK) &&
           (pGroup->readCback != NULL))
       {
-        err = (*pGroup->readCback)(pCcb->pMainCcb->connId, handle, ATT_PDU_READ_BLOB_REQ, offset, pAttr);
+        err = (*pGroup->readCback)(pCcb->connId, handle, ATT_PDU_READ_BLOB_REQ, offset, pAttr);
       }
       /* else check if CCC */
       else if ((pAttr->settings & ATTS_SET_CCC) && (attsCb.cccCback != NULL))
       {
-        err = (*attsCb.cccCback)(pCcb->pMainCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
+        err = (*attsCb.cccCback)(pCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
       }
 
       if (err == ATT_SUCCESS)
       {
         /* determine length of data to read */
-        readLen = ((*pAttr->pLen - offset) < (mtu - ATT_READ_BLOB_RSP_LEN)) ?
-                   (*pAttr->pLen - offset) : (mtu - ATT_READ_BLOB_RSP_LEN);
+        readLen = ((*pAttr->pLen - offset) < (pCcb->mtu - ATT_READ_BLOB_RSP_LEN)) ?
+                   (*pAttr->pLen - offset) : (pCcb->mtu - ATT_READ_BLOB_RSP_LEN);
 
         /* Allocate response buffer */
         if ((pBuf = attMsgAlloc(L2C_PAYLOAD_START + ATT_READ_BLOB_RSP_LEN + readLen)) != NULL)
@@ -229,7 +228,7 @@ void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
           UINT8_TO_BSTREAM(p, ATT_PDU_READ_BLOB_RSP);
           memcpy(p, (pAttr->pValue + offset), readLen);
 
-          attL2cDataReq(pCcb->pMainCcb, pCcb->slot, (ATT_READ_BLOB_RSP_LEN + readLen), pBuf);
+          L2cDataReq(L2C_CID_ATT, pCcb->handle, (ATT_READ_BLOB_RSP_LEN + readLen), pBuf);
         }
       }
     }
@@ -242,7 +241,7 @@ void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 
   if (err)
   {
-    attsErrRsp(pCcb->pMainCcb, pCcb->slot, ATT_PDU_READ_BLOB_REQ, handle, err);
+    attsErrRsp(pCcb->handle, ATT_PDU_READ_BLOB_REQ, handle, err);
   }
 }
 
@@ -257,7 +256,7 @@ void attsProcReadBlobReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsProcFindTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
+void attsProcFindTypeReq(attCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 {
   uint8_t     *pBuf;
   uint8_t     *p;
@@ -269,7 +268,6 @@ void attsProcFindTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   uint16_t    handle;
   uint16_t    nextHandle;
   uint8_t     err = ATT_SUCCESS;
-  uint16_t    mtu = pCcb->pMainCcb->sccb[pCcb->slot].mtu;
 
   /* parse handles and uuid; pPacket then points to the value in the request */
   pPacket += L2C_PAYLOAD_START + ATT_HDR_LEN;
@@ -290,7 +288,7 @@ void attsProcFindTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   if (!err)
   {
     /* allocate max size buffer for response */
-    if ((pBuf = attMsgAlloc(mtu + L2C_PAYLOAD_START)) != NULL)
+    if ((pBuf = attMsgAlloc(pCcb->mtu + L2C_PAYLOAD_START)) != NULL)
     {
       p = pBuf + L2C_PAYLOAD_START;
       UINT8_TO_BSTREAM(p, ATT_PDU_FIND_TYPE_RSP);
@@ -319,10 +317,7 @@ void attsProcFindTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
           }
 
           /* copy result into response buffer; first check if it fits */
-          /* Fix the compiling issue causing service discovery failure when IAR is
-           * configured with high optimization option.
-           */
-          if (p <= (pBuf + mtu + L2C_PAYLOAD_START - (sizeof(uint16_t) * 2)))
+          if (p <= (pBuf + pCcb->mtu + L2C_PAYLOAD_START - (sizeof(uint16_t) * 2)))
           {
             UINT16_TO_BSTREAM(p, handle);
             UINT16_TO_BSTREAM(p, nextHandle);
@@ -369,11 +364,11 @@ void attsProcFindTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   /* if no error send response, else send error */
   if (!err)
   {
-    attL2cDataReq(pCcb->pMainCcb, pCcb->slot, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
+    L2cDataReq(L2C_CID_ATT, pCcb->handle, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
   }
   else
   {
-    attsErrRsp(pCcb->pMainCcb, pCcb->slot, ATT_PDU_FIND_TYPE_REQ, startHandle, err);
+    attsErrRsp(pCcb->handle, ATT_PDU_FIND_TYPE_REQ, startHandle, err);
   }
 }
 
@@ -388,10 +383,10 @@ void attsProcFindTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
+void attsProcReadTypeReq(attCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 {
-  uint8_t     *pBuf = NULL;
-  uint8_t     *p = NULL;
+  uint8_t     *pBuf;
+  uint8_t     *p;
   attsAttr_t  *pAttr;
   attsGroup_t *pGroup;
   uint16_t    startHandle;
@@ -401,7 +396,6 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   uint8_t     attLen;
   uint8_t     cbackErr = ATT_SUCCESS;
   uint8_t     err = ATT_SUCCESS;
-  uint16_t    mtu = pCcb->pMainCcb->sccb[pCcb->slot].mtu;
 
   /* parse handles; pPacket then points to the uuid */
   pPacket += L2C_PAYLOAD_START + ATT_HDR_LEN;
@@ -431,7 +425,7 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       err = ATT_ERR_NOT_FOUND;
     }
     /* check permissions */
-    else if ((err = attsPermissions(pCcb->pMainCcb->connId, ATTS_PERMIT_READ,
+    else if ((err = attsPermissions(pCcb->connId, ATTS_PERMIT_READ,
                                     handle, pAttr->permissions)) != ATT_SUCCESS)
     {
       /* err is set above */
@@ -440,12 +434,12 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
     else if ((pAttr->settings & ATTS_SET_READ_CBACK) &&
              (pGroup->readCback != NULL))
     {
-      err = (*pGroup->readCback)(pCcb->pMainCcb->connId, handle, ATT_PDU_READ_TYPE_REQ, 0, pAttr);
+      err = (*pGroup->readCback)(pCcb->connId, handle, ATT_PDU_READ_TYPE_REQ, 0, pAttr);
     }
     /* else check if CCC */
     else if ((pAttr->settings & ATTS_SET_CCC) && (attsCb.cccCback != NULL))
     {
-      err = (*attsCb.cccCback)(pCcb->pMainCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
+      err = (*attsCb.cccCback)(pCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
     }
 
     if (err == ATT_SUCCESS)
@@ -456,29 +450,29 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       if ((memcmp(pPacket, attGattDbhChUuid, ATT_16_UUID_LEN) == 0) && attsCsfGetHashUpdateStatus())
       {
         /* Store info and return */
-        pCcb->pMainCcb->pPendDbHashRsp = WsfBufAlloc(sizeof(attPendDbHashRsp_t));
-        if (pCcb->pMainCcb->pPendDbHashRsp)
+        pCcb->pPendDbHashRsp = WsfBufAlloc(sizeof(attPendDbHashRsp_t));
+        if (pCcb->pPendDbHashRsp)
         {
-          pCcb->pMainCcb->pPendDbHashRsp->startHandle = startHandle;
-          pCcb->pMainCcb->pPendDbHashRsp->handle = handle;
+          pCcb->pPendDbHashRsp->startHandle = startHandle;
+          pCcb->pPendDbHashRsp->handle = handle;
         }
         else
         {
-          attsErrRsp(pCcb->pMainCcb, pCcb->slot, ATT_PDU_READ_TYPE_REQ, startHandle, ATT_ERR_RESOURCES);
+          attsErrRsp(pCcb->handle, ATT_PDU_READ_TYPE_REQ, startHandle, ATT_ERR_RESOURCES);
         }
 
         return;
       }
 
       /* allocate max size buffer for response */
-      if ((pBuf = attMsgAlloc(mtu + L2C_PAYLOAD_START)) != NULL)
+      if ((pBuf = attMsgAlloc(pCcb->mtu + L2C_PAYLOAD_START)) != NULL)
       {
         p = pBuf + L2C_PAYLOAD_START;
         UINT8_TO_BSTREAM(p, ATT_PDU_READ_TYPE_RSP);
 
         /* get length of this first attribute */
-        attLen = (*pAttr->pLen < (mtu - ATT_READ_TYPE_RSP_LEN - sizeof(uint16_t))) ?
-                  *pAttr->pLen : (mtu - ATT_READ_TYPE_RSP_LEN - sizeof(uint16_t));
+        attLen = (*pAttr->pLen < (pCcb->mtu - ATT_READ_TYPE_RSP_LEN - sizeof(uint16_t))) ?
+                  *pAttr->pLen : (pCcb->mtu - ATT_READ_TYPE_RSP_LEN - sizeof(uint16_t));
 
         /* set length parameter in response message */
         UINT8_TO_BSTREAM(p, attLen + sizeof(uint16_t));
@@ -497,12 +491,12 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
           if ((pAttr->settings & ATTS_SET_READ_CBACK) &&
               (pGroup->readCback != NULL))
           {
-            cbackErr = (*pGroup->readCback)(pCcb->pMainCcb->connId, handle, ATT_PDU_READ_TYPE_REQ, 0, pAttr);
+            cbackErr = (*pGroup->readCback)(pCcb->connId, handle, ATT_PDU_READ_TYPE_REQ, 0, pAttr);
           }
           /* else check if CCC */
           else if ((pAttr->settings & ATTS_SET_CCC) && (attsCb.cccCback != NULL))
           {
-            cbackErr = (*attsCb.cccCback)(pCcb->pMainCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
+            cbackErr = (*attsCb.cccCback)(pCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
           }
 
           /* verify no error from read callback
@@ -511,14 +505,11 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
            */
           if ((cbackErr == ATT_SUCCESS) &&
               (*pAttr->pLen == attLen) &&
-              (attsPermissions(pCcb->pMainCcb->connId, ATTS_PERMIT_READ,
+              (attsPermissions(pCcb->connId, ATTS_PERMIT_READ,
                                handle, pAttr->permissions) == ATT_SUCCESS))
           {
             /* copy result into response buffer; first check if it fits */
-            /* Fix the compiling issue causing service discovery failure when IAR is
-             * configured with high optimization option.
-             */
-            if (p <= (pBuf + mtu + L2C_PAYLOAD_START - attLen - sizeof(uint16_t)))
+            if (p <= (pBuf + pCcb->mtu + L2C_PAYLOAD_START - attLen - sizeof(uint16_t)))
             {
               UINT16_TO_BSTREAM(p, handle);
               memcpy(p, pAttr->pValue, attLen);
@@ -560,11 +551,11 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   /* if no error send response, else send error */
   if (!err)
   {
-    attL2cDataReq(pCcb->pMainCcb, pCcb->slot, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
+    L2cDataReq(L2C_CID_ATT, pCcb->handle, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
   }
   else
   {
-    attsErrRsp(pCcb->pMainCcb, pCcb->slot, ATT_PDU_READ_TYPE_REQ, startHandle, err);
+    attsErrRsp(pCcb->handle, ATT_PDU_READ_TYPE_REQ, startHandle, err);
   }
 }
 
@@ -579,7 +570,7 @@ void attsProcReadTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
+void attsProcReadMultReq(attCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 {
   uint8_t     *pBuf;
   uint8_t     *p;
@@ -589,7 +580,6 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   uint16_t    handle = ATT_HANDLE_NONE;
   uint16_t    readLen;
   uint8_t     err = ATT_SUCCESS;
-  uint16_t    mtu = pCcb->pMainCcb->sccb[pCcb->slot].mtu;
 
   /* points to end of payload */
   pEnd = pPacket + L2C_PAYLOAD_START + len;
@@ -598,7 +588,7 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   pPacket += L2C_PAYLOAD_START + ATT_HDR_LEN;
 
   /* allocate max size buffer for response */
-  if ((pBuf = attMsgAlloc(mtu + L2C_PAYLOAD_START)) != NULL)
+  if ((pBuf = attMsgAlloc(pCcb->mtu + L2C_PAYLOAD_START)) != NULL)
   {
     p = pBuf + L2C_PAYLOAD_START;
     UINT8_TO_BSTREAM(p, ATT_PDU_READ_MULT_RSP);
@@ -617,7 +607,7 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       }
 
       /* verify permissions */
-      if ((err = attsPermissions(pCcb->pMainCcb->connId, ATTS_PERMIT_READ,
+      if ((err = attsPermissions(pCcb->connId, ATTS_PERMIT_READ,
                                  handle, pAttr->permissions)) != ATT_SUCCESS)
       {
         break;
@@ -627,7 +617,7 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       if ((pAttr->settings & ATTS_SET_READ_CBACK) &&
           (pGroup->readCback != NULL))
       {
-        err = (*pGroup->readCback)(pCcb->pMainCcb->connId, handle, ATT_PDU_READ_MULT_REQ, 0, pAttr);
+        err = (*pGroup->readCback)(pCcb->connId, handle, ATT_PDU_READ_MULT_REQ, 0, pAttr);
         if (err != ATT_SUCCESS)
         {
           break;
@@ -636,17 +626,17 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       /* else check if CCC */
       else if ((pAttr->settings & ATTS_SET_CCC) && (attsCb.cccCback != NULL))
       {
-        err = (*attsCb.cccCback)(pCcb->pMainCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
+        err = (*attsCb.cccCback)(pCcb->connId, ATT_METHOD_READ, handle, pAttr->pValue);
         if (err != ATT_SUCCESS)
         {
           break;
         }
       }
 
-      if (p < (pBuf + mtu + L2C_PAYLOAD_START))
+      if (p < (pBuf + pCcb->mtu + L2C_PAYLOAD_START))
       {
         /* calculate remaining space in response buffer */
-        readLen = (pBuf + mtu + L2C_PAYLOAD_START) - p;
+        readLen = (pBuf + pCcb->mtu + L2C_PAYLOAD_START) - p;
 
         /* actual length is minimum of remaining space and attribute length */
         readLen = (*pAttr->pLen < readLen) ? *pAttr->pLen : readLen;
@@ -666,7 +656,7 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   /* if no error send response, else send error */
   if (!err)
   {
-    attL2cDataReq(pCcb->pMainCcb, pCcb->slot, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
+    L2cDataReq(L2C_CID_ATT, pCcb->handle, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
   }
   else
   {
@@ -676,7 +666,7 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       WsfMsgFree(pBuf);
     }
 
-    attsErrRsp(pCcb->pMainCcb, pCcb->slot, ATT_PDU_READ_MULT_REQ, handle, err);
+    attsErrRsp(pCcb->handle, ATT_PDU_READ_MULT_REQ, handle, err);
   }
 }
 
@@ -691,7 +681,7 @@ void attsProcReadMultReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsProcReadGroupTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
+void attsProcReadGroupTypeReq(attCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 {
   uint8_t     *pBuf = NULL;
   uint8_t     *p = NULL;
@@ -704,7 +694,6 @@ void attsProcReadGroupTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   uint8_t     attLen;
   uint8_t     err = ATT_SUCCESS;
   uint8_t     primSvcUuid[ATT_16_UUID_LEN] = {UINT16_TO_BYTES(ATT_UUID_PRIMARY_SERVICE)};
-  uint16_t    mtu = pCcb->pMainCcb->sccb[pCcb->slot].mtu;
 
   /* parse handles; pPacket then points to the uuid */
   pPacket += L2C_PAYLOAD_START + ATT_HDR_LEN;
@@ -738,7 +727,7 @@ void attsProcReadGroupTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
       err = ATT_ERR_NOT_FOUND;
     }
     /* check permissions */
-    else if ((err = attsPermissions(pCcb->pMainCcb->connId, ATTS_PERMIT_READ,
+    else if ((err = attsPermissions(pCcb->connId, ATTS_PERMIT_READ,
                                     handle, pAttr->permissions)) != ATT_SUCCESS)
     {
       startHandle = handle;     /* this handle is returned in error response */
@@ -746,14 +735,14 @@ void attsProcReadGroupTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
     else
     {
       /* allocate max size buffer for response */
-      if ((pBuf = attMsgAlloc(mtu + L2C_PAYLOAD_START)) != NULL)
+      if ((pBuf = attMsgAlloc(pCcb->mtu + L2C_PAYLOAD_START)) != NULL)
       {
         p = pBuf + L2C_PAYLOAD_START;
         UINT8_TO_BSTREAM(p, ATT_PDU_READ_GROUP_TYPE_RSP);
 
         /* get length of this first attribute */
-        attLen = (*pAttr->pLen < (mtu - ATT_READ_GROUP_TYPE_RSP_LEN - (2 * sizeof(uint16_t)))) ?
-                  *pAttr->pLen : (mtu - ATT_READ_GROUP_TYPE_RSP_LEN - (2 * sizeof(uint16_t)));
+        attLen = (*pAttr->pLen < (pCcb->mtu - ATT_READ_GROUP_TYPE_RSP_LEN - (2 * sizeof(uint16_t)))) ?
+                  *pAttr->pLen : (pCcb->mtu - ATT_READ_GROUP_TYPE_RSP_LEN - (2 * sizeof(uint16_t)));
 
         /* set length parameter in response message */
         UINT8_TO_BSTREAM(p, attLen + (2 * sizeof(uint16_t)));
@@ -795,14 +784,11 @@ void attsProcReadGroupTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
            * verify attribute permissions
            */
           if ((*pAttr->pLen == attLen) &&
-              (attsPermissions(pCcb->pMainCcb->connId, ATTS_PERMIT_READ,
+              (attsPermissions(pCcb->connId, ATTS_PERMIT_READ,
                                handle, pAttr->permissions) == ATT_SUCCESS))
           {
             /* copy result into response buffer; first check if it fits */
-            /* Fix the compiling issue causing service discovery failure when IAR is
-             * configured with high optimization option.
-             */
-            if (p <= (pBuf + mtu + L2C_PAYLOAD_START - attLen - (2 * sizeof(uint16_t))))
+            if (p <= (pBuf + pCcb->mtu + L2C_PAYLOAD_START - attLen - (2 * sizeof(uint16_t))))
             {
               UINT16_TO_BSTREAM(p, handle);
               handle = attsFindServiceGroupEnd(handle);
@@ -837,10 +823,10 @@ void attsProcReadGroupTypeReq(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
   /* if no error send response, else send error */
   if (!err)
   {
-    attL2cDataReq(pCcb->pMainCcb, pCcb->slot, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
+    L2cDataReq(L2C_CID_ATT, pCcb->handle, (p - (pBuf + L2C_PAYLOAD_START)), pBuf);
   }
   else
   {
-    attsErrRsp(pCcb->pMainCcb, pCcb->slot, ATT_PDU_READ_GROUP_TYPE_REQ, startHandle, err);
+    attsErrRsp(pCcb->handle, ATT_PDU_READ_GROUP_TYPE_REQ, startHandle, err);
   }
 }

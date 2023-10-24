@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GPIO_H
@@ -55,63 +55,53 @@ extern "C"
 {
 #endif
 
-//*****************************************************************************
 //
-//! @name Maximum number of GPIOs on this device.
-//! @{
+// Maximum number of GPIOs on this device.
 //
 #define AM_HAL_GPIO_MAX_PADS        AM_HAL_PIN_TOTAL_GPIOS
 #define AM_HAL_GPIO_NUMWORDS        ((AM_HAL_GPIO_MAX_PADS + 31) / 32)
-//! @}
 
 //*****************************************************************************
 //
-//! @name Interrupt Register DELTA Macros
-//!   Compute some relative offsets needed in the HAL.
-//!   GPIO_INTX_DELTA:   The number of bytes between successive interrupt registers
-//!                     (i.e. INTEN0, INTEN1, INTEN2, ...).
-//!   GPIO_NXINT_DELTA:  The number of bytes between MCUN0INTxx and MCUN1INTxx regs.
-//! @{
+// Macros
+//
 //*****************************************************************************
+//
+// Compute some relative offsets needed in the HAL.
+// GPIO_INTX_DELTA:   The number of bytes between successive interrupt registers
+//                    (i.e. INTEN0, INTEN1, INTEN2, ...).
+// GPIO_NXINT_DELTA:  The number of bytes between MCUN0INTxx and MCUN1INTxx regs.
+//
 #define GPIO_INTX_DELTA         (offsetof(GPIO_Type, MCUN0INT1EN)   - offsetof(GPIO_Type, MCUN0INT0EN))
 #define GPIO_NXINT_DELTA        (offsetof(GPIO_Type, MCUN1INT0EN)   - offsetof(GPIO_Type, MCUN0INT0EN))
-//! @}
 
-//*****************************************************************************
 //
-//! @name The interrupt register order is: EN, STAT, CLR, SET.
-//! GPIO_INTCLR_DELTA:  The number of bytes between EN and CLR registers.
-//! GPIO_INTSTAT_DELTA: The number of bytes between EN and STAT registers.
-//! GPIO_INTSET_DELTA: The number of bytes between EN and SET registers.
-//! @{
+// The interrupt register order is: EN, STAT, CLR, SET.
+// GPIO_INTCLR_DELTA:  The number of bytes between EN and CLR registers.
+// GPIO_INTSTAT_DELTA: The number of bytes between EN and STAT registers.
+// GPIO_INTSET_DELTA: The number of bytes between EN and SET registers.
 //
-//*****************************************************************************
 #define GPIO_INTSTAT_DELTA      (offsetof(GPIO_Type, MCUN1INT0STAT) - offsetof(GPIO_Type, MCUN0INT0EN))
 #define GPIO_INTCLR_DELTA       (offsetof(GPIO_Type, MCUN1INT0CLR)  - offsetof(GPIO_Type, MCUN0INT0EN))
 #define GPIO_INTSET_DELTA       (offsetof(GPIO_Type, MCUN1INT0SET)  - offsetof(GPIO_Type, MCUN0INT0EN))
-//! @}
 
-//*****************************************************************************
 //
-//! @name Other GPIO helper macros.
-//! GPIO_IRQ2N()     Given an IRQ, determine N (0 or 1).
-//! GPIO_IRQ2IDX()   Given a GPIO number, determine the interrupt reg index
-//!                  relative to N (0-3).
-//! GPIO_NUM2IDX()   Given a GPIO number, compute the 32-bit index
-//!                  (e.g. 31=0, 32=1, 63=1, 64=2)
-//! GPIO_NUM2MSK()   Given a GPIO number, determine the interrupt mask for
-//!                  that bit.
-//! GPIO_NUM_IRQS    The total number of GPIO IRQs.
-//! @{
+// Other GPIO helper macros.
+// GPIO_IRQ2N()     Given an IRQ, determine N (0 or 1).
+// GPIO_IRQ2IDX()   Given a GPIO number, determine the interrupt reg index
+//                  relative to N (0-3).
+// GPIO_NUM2IDX()   Given a GPIO number, compute the 32-bit index
+//                  (e.g. 31=0, 32=1, 63=1, 64=2)
+// GPIO_NUM2MSK()   Given a GPIO number, determine the interrupt mask for
+//                  that bit.
+// GPIO_NUM_IRQS    The total number of GPIO IRQs.
 //
-//*****************************************************************************
 #define GPIO_IRQ2N(irq)     ( (irq - GPIO0_001F_IRQn) / (GPIO0_607F_IRQn - GPIO0_001F_IRQn + 1) )
 #define GPIO_IRQ2IDX(irq)   ( (irq - GPIO0_001F_IRQn) % (GPIO0_607F_IRQn - GPIO0_001F_IRQn + 1) )
 #define GPIO_NUM2IDX(num)   ( num / 32 )
 #define GPIO_NUM2MSK(num)   ( 1 << (num & 0x1F) )
 
 #define GPIO_NUM_IRQS       (GPIO1_607F_IRQn - GPIO0_001F_IRQn + 1)
-//! @}
 
 //*****************************************************************************
 //
@@ -120,10 +110,11 @@ extern "C"
 //*****************************************************************************
 
 //*****************************************************************************
-//
+//!
 //! GPIO Interrupt Channels
+//!
 //! The GPIO module generates interrupts through two "channels". l
-//
+//!
 //*****************************************************************************
 typedef enum
 {
@@ -133,10 +124,10 @@ typedef enum
 } am_hal_gpio_int_channel_e;
 
 //*****************************************************************************
-//
+//!
 //! GPIO Interrupt Control definitions.
 //! These include Enable, Disable, and Clear functions.
-//
+//!
 //*****************************************************************************
 typedef enum
 {
@@ -151,20 +142,18 @@ typedef enum
 } am_hal_gpio_int_ctrl_e;
 
 //*****************************************************************************
-//
+//!
 //! Pin configuration
-//
+//!
 //*****************************************************************************
 typedef enum
 {
     AM_HAL_GPIO_PIN_FUNCTION_DOES_NOT_EXIST = AM_HAL_STATUS_MODULE_SPECIFIC_START,
 } am_hal_gpio_status_e;
 
-//*****************************************************************************
 //
-//! Configuration structure for GPIOs.
+// Configuration structure for GPIOs.
 //
-//*****************************************************************************
 typedef struct
 {
     union
@@ -194,9 +183,9 @@ typedef struct
 
 //
 //! Drive strengths.
-//! Designated as relative full-driver strength.
-//! All physical (non-virtual) pads support 0P1X and 0P5X.
-//! Only select pads support OP75X and 1P0X.
+// Designated as relative full-driver strength.
+// All physical (non-virtual) pads support 0P1X and 0P5X.
+// Only select pads support OP75X and 1P0X.
 //
 typedef enum
 {
@@ -207,7 +196,7 @@ typedef enum
 } am_hal_gpio_drivestrength_e;
 
 //
-//! Deprecated. Please use the above enums instead.
+// Deprecated. Please use the above enums instead.
 //
 #define AM_HAL_GPIO_PIN_DRIVESTRENGTH_12MA  AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X
 #define AM_HAL_GPIO_PIN_DRIVESTRENGTH_16MA  AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X
@@ -347,9 +336,9 @@ typedef enum
 } am_hal_gpio_forceen_e;
 
 //*****************************************************************************
-//
+//!
 //! Read types for am_hal_gpio_state_read().
-//
+//!
 //*****************************************************************************
 typedef enum
 {
@@ -359,15 +348,15 @@ typedef enum
 } am_hal_gpio_read_type_e;
 
 //*****************************************************************************
-//
+//!
 //! Write types for am_hal_gpio_state_write().
 //!
 //! It's important to note that types:
-//! AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN and AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS
+//! AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE and AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE
 //! operate on the output enable of the pin.
 //! Therefore
-//!     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN enables the output,
-//!     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS puts the pin into hi-impedance.
+//!     AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE enables the output,
+//!     AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE puts the pin into hi-impedance.
 //!
 //! Given this behavior, perhaps more appropriate names might have been:
 //!     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUTEN
@@ -379,19 +368,10 @@ typedef enum
     AM_HAL_GPIO_OUTPUT_CLEAR,
     AM_HAL_GPIO_OUTPUT_SET,
     AM_HAL_GPIO_OUTPUT_TOGGLE,
-    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS,    // Disable output, i.e. Hi-Z
-    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN,     // Enable output
-    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG
+    AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE,    // Disable output, i.e. Hi-Z
+    AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE,     // Enable output
+    AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE
 } am_hal_gpio_write_type_e;
-
-//*****************************************************************************
-//
-// These enums have been deprecated due to improper naming conventions.
-//
-//*****************************************************************************
-#define AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS
-#define AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN
-#define AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG
 
 //
 //! The handler type includes a void* parameter.
@@ -400,6 +380,7 @@ typedef void (*am_hal_gpio_handler_t)(void *pArg);
 
 //*****************************************************************************
 //
+//!
 //! @name Common configurations.
 //! @{
 //
@@ -559,6 +540,7 @@ typedef void (*am_hal_gpio_handler_t)(void *pArg);
 
 //*****************************************************************************
 //
+//!
 //! @name Structures where default configurations can be accessed.
 //! @{
 //
@@ -773,9 +755,6 @@ typedef struct
 
 //*****************************************************************************
 //
-//! @name GPIO Read Macros
-//! @{
-//!
 //! @brief Macros to read GPIO values in an optimized manner.
 //!
 //! @param n - The GPIO number to be read.
@@ -796,18 +775,15 @@ typedef struct
 //!     AM_HAL_GPIO_ENABLE_READ -> am_hal_gpio_enable_read(n)
 //!
 //! @return Each macro will return a 1 or 0 per the value of the requested GPIO.
+//!
 //
 //*****************************************************************************
 #define am_hal_gpio_input_read(n)   ((*AM_HAL_GPIO_RDn((n)) >> ((n) % 32)) & 1)
 #define am_hal_gpio_output_read(n)  ((*AM_HAL_GPIO_WTn((n)) >> ((n) % 32)) & 1)
 #define am_hal_gpio_enable_read(n)  ((*AM_HAL_GPIO_ENn((n)) >> ((n) % 32)) & 1)
-//! @}
 
 //*****************************************************************************
 //
-//! @name GPIO Output Macros
-//! @{
-//!
 //! @brief Macros to write GPIO values in an optimized manner.
 //!
 //! @param n - The GPIO number to be written.
@@ -822,23 +798,23 @@ typedef struct
 //! Note that the macros are named as lower-case counterparts to the
 //! enumerations for the am_hal_gpio_state_read() function.  That is:
 //!
-//!    AM_HAL_GPIO_OUTPUT_CLEAR                -> am_hal_gpio_output_clear(n)
-//!    AM_HAL_GPIO_OUTPUT_SET                  -> am_hal_gpio_output_set(n)
-//!    AM_HAL_GPIO_OUTPUT_TOGGLE               -> am_hal_gpio_output_toggle(n)
-//!    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS  -> am_hal_gpio_output_tristate_output_dis(n)
-//!    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN   -> am_hal_gpio_output_tristate_output_en(n)
-//!    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG  -> am_hal_gpio_output_toggle(n).
+//!    AM_HAL_GPIO_OUTPUT_CLEAR            -> am_hal_gpio_output_clear(n)
+//!    AM_HAL_GPIO_OUTPUT_SET              -> am_hal_gpio_output_set(n)
+//!    AM_HAL_GPIO_OUTPUT_TOGGLE           -> am_hal_gpio_output_toggle(n)
+//!    AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE -> am_hal_gpio_output_tristate_disable(n)
+//!    AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE  -> am_hal_gpio_output_tristate_enable(n)
+//!    AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE  -> am_hal_gpio_output_toggle(n).
 //!
 //! It's important to note that the macros:
-//!     am_hal_gpio_output_tristate_output_en()
-//!     am_hal_gpio_output_tristate_output_dis()
+//!     am_hal_gpio_output_tristate_enable()
+//!     am_hal_gpio_output_tristate_disable()
 //! operate on the output enable of the pin. Therefore,
-//!     am_hal_gpio_output_tristate_output_en() enables the output,
-//!     am_hal_gpio_output_tristate_output_dis() puts the pin into hi-impedance.
+//!     am_hal_gpio_output_tristate_enable() enables the output,
+//!     am_hal_gpio_output_tristate_disable puts the pin into hi-impedance.
 //! Given this behavior, perhaps more appropriate names might have been:
 //!     am_hal_gpio_output_tristate_outputen()
 //!     am_hal_gpio_output_tristate_outputdis()
-//
+//!
 //*****************************************************************************
 #define am_hal_gpio_output_clear(n)             (*AM_HAL_GPIO_WTCn((n)) = AM_HAL_MASK32(n))
 #define am_hal_gpio_output_set(n)               (*AM_HAL_GPIO_WTSn((n)) = AM_HAL_MASK32(n))
@@ -850,25 +826,15 @@ typedef struct
         AM_CRITICAL_END                                                         \
     }
 
-#define am_hal_gpio_output_tristate_output_dis(n)  (*AM_HAL_GPIO_ENCn((n)) = AM_HAL_MASK32(n))
-#define am_hal_gpio_output_tristate_output_en(n)   (*AM_HAL_GPIO_ENSn((n)) = AM_HAL_MASK32(n))
-#define am_hal_gpio_output_tristate_output_tog(n)                               \
+#define am_hal_gpio_output_tristate_disable(n)  (*AM_HAL_GPIO_ENCn((n)) = AM_HAL_MASK32(n))
+#define am_hal_gpio_output_tristate_enable(n)   (*AM_HAL_GPIO_ENSn((n)) = AM_HAL_MASK32(n))
+#define am_hal_gpio_output_tristate_toggle(n)                                   \
     if ( 1 )                                                                    \
     {                                                                           \
         AM_CRITICAL_BEGIN                                                       \
         (*AM_HAL_GPIO_ENn((n)) ^=  AM_HAL_MASK32(n));                           \
         AM_CRITICAL_END                                                         \
     }
-
-//*****************************************************************************
-//
-// These macros have been deprecated due to improper naming conventions.
-//
-//*****************************************************************************
-#define am_hal_gpio_output_tristate_disable(n)   am_hal_gpio_output_tristate_output_dis(n)
-#define am_hal_gpio_output_tristate_enable(n)    am_hal_gpio_output_tristate_output_en(n)
-#define am_hal_gpio_output_tristate_toggle(n)    am_hal_gpio_output_tristate_output_tog(n)
-//! @}
 
 //*****************************************************************************
 //
@@ -1040,9 +1006,9 @@ extern uint32_t am_hal_gpio_interrupt_status_get(am_hal_gpio_int_channel_e eChan
 //! @brief Clear GPIO interrupts.
 //!
 //! @param eChannel - One of:
-//!     AM_HAL_GPIO_INT_CHANNEL_0,
-//!     AM_HAL_GPIO_INT_CHANNEL_1,
-//!     AM_HAL_GPIO_INT_CHANNEL_BOTH
+//!     AM_HAL_GPIO_INT_N_0,
+//!     AM_HAL_GPIO_INT_N_1,
+//!     AM_HAL_GPIO_INT_N_ALL
 //! @param pGpioIntMask - Mask of GPIO interrupts to be cleared.
 //! This mask is typically returned from am_hal_gpio_interrupt_status_get().
 //!

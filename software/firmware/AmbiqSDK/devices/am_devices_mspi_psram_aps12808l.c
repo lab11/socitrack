@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -58,22 +58,15 @@
 
 //*****************************************************************************
 //
-//! @name Global variables.
-//! @{
+// Global variables.
 //
 //*****************************************************************************
-//#define USE_NON_DQS_MODE
-
 #define AM_DEVICES_MSPI_PSRAM_TIMEOUT             1000000
 #define PSRAM_MR_DRIVE_STRENGTH                   1
-//! @note there should be at least this amount of consecutive passing settings
-//! to be accepted.
-#define PSRAM_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH   (8)
-//! @}
+#define PSRAM_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH   (8)     // there should be at least
+                                                          // this amount of consecutive
+                                                          // passing settings to be accepted.
 
-//
-//!
-//
 am_hal_mspi_xip_config_t gDDRXipConfig[] =
 {
   {
@@ -96,13 +89,10 @@ am_hal_mspi_xip_config_t gDDRXipConfig[] =
     .eAPSize              = AM_HAL_MSPI_AP_SIZE64M,
     .scramblingStartAddr  = 0,
     .scramblingEndAddr    = 0,
-  },
+  }
 };
 
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-//
-//!
-//
+#if defined(AM_PART_APOLLO4P_FNC)
 am_hal_mspi_dqs_t gDDRDqsCfg[] =
 {
     {
@@ -167,11 +157,7 @@ am_hal_mspi_dqs_t gDDRDqsCfg[] =
 am_hal_mspi_dqs_t gDDRDqsCfg[] =
 {
     {
-#ifdef USE_NON_DQS_MODE
-        .bDQSEnable             = 0,
-#else
         .bDQSEnable             = 1,
-#endif
         .bOverrideRXDQSDelay    = 1,
         .bEnableFineDelay       = 0,
         .ui8RxDQSDelay          = 28,
@@ -181,11 +167,7 @@ am_hal_mspi_dqs_t gDDRDqsCfg[] =
         .ui8DQSDelay            = 0,
     },
     {
-#ifdef USE_NON_DQS_MODE
-        .bDQSEnable             = 0,
-#else
         .bDQSEnable             = 1,
-#endif
         .bOverrideRXDQSDelay    = 1,
         .bEnableFineDelay       = 0,
         .ui8RxDQSDelay          = 28,
@@ -195,11 +177,7 @@ am_hal_mspi_dqs_t gDDRDqsCfg[] =
         .ui8DQSDelay            = 0,
     },
     {
-#ifdef USE_NON_DQS_MODE
-        .bDQSEnable             = 0,
-#else
         .bDQSEnable             = 1,
-#endif
         .bOverrideRXDQSDelay    = 1,
         .bEnableFineDelay       = 0,
         .ui8RxDQSDelay          = 28,
@@ -207,7 +185,7 @@ am_hal_mspi_dqs_t gDDRDqsCfg[] =
         .ui8TxDQSDelay          = 0,
         .bDQSSyncNeg            = 0,
         .ui8DQSDelay            = 0,
-    },
+    }
 };
 
 am_hal_mspi_dqs_t gDDREnableFineDelayCfg =
@@ -252,13 +230,10 @@ am_hal_mspi_xip_misc_t gXipMiscCfg[] =
     .bAppndOdd          = false,
     .bBEOn              = false,
     .eBEPolarity        = AM_HAL_MSPI_BE_LOW_ENABLE,
-  },
+  }
 };
 #endif
 
-//
-//!
-//
 am_hal_mspi_config_t gDDRMspiCfg =
 {
   .ui32TCBSize          = 0,
@@ -266,9 +241,6 @@ am_hal_mspi_config_t gDDRMspiCfg =
   .bClkonD4             = 0
 };
 
-//
-//!
-//
 am_hal_mspi_dev_config_t  DDROctalCE0MSPIConfig =
 {
   .ui8TurnAround        = 4,
@@ -286,7 +258,11 @@ am_hal_mspi_dev_config_t  DDROctalCE0MSPIConfig =
   .ui8WriteLatency      = 4,
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
+#if defined(APOLLO4_FPGA)
+  .ui16DMATimeLimit     = 2,
+#else
   .ui16DMATimeLimit     = 70,
+#endif
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 #if defined(AM_PART_APOLLO4)
   .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
@@ -299,9 +275,6 @@ am_hal_mspi_dev_config_t  DDROctalCE0MSPIConfig =
 #endif
 };
 
-//
-//!
-//
 am_hal_mspi_dev_config_t  DDROctalCE1MSPIConfig =
 {
   .ui8TurnAround        = 4,
@@ -319,7 +292,11 @@ am_hal_mspi_dev_config_t  DDROctalCE1MSPIConfig =
   .ui8WriteLatency      = 4,
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
+#if defined(APOLLO4_FPGA)
+  .ui16DMATimeLimit     = 2,
+#else
   .ui16DMATimeLimit     = 70,
+#endif
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 #if defined(AM_PART_APOLLO4)
   .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
@@ -333,8 +310,15 @@ am_hal_mspi_dev_config_t  DDROctalCE1MSPIConfig =
 };
 
 //
-//!
+// DDR timing default setting, scan starts from this setting
 //
+static am_devices_mspi_psram_ddr_timing_config_t DDRTimingConfigDefault =
+{
+    .ui32Turnaround     = 12,
+    .ui32Rxneg          = 0,
+    .ui32Rxdqsdelay     = 12
+};
+
 typedef struct
 {
   uint32_t                    ui32Module;
@@ -343,37 +327,17 @@ typedef struct
   bool                        bOccupied;
 } am_devices_mspi_psram_t;
 
-//
-//!
-//
 am_devices_mspi_psram_t gDDRAmPsram[AM_DEVICES_MSPI_PSRAM_MAX_DEVICE_NUM];
 
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pCallbackCtxt
-//! @param status
-//
-//*****************************************************************************
 void pfnMSPI_PSRAM_DDR_Callback(void *pCallbackCtxt, uint32_t status)
 {
-  //! Set the DMA complete flag.
+  // Set the DMA complete flag.
   *(volatile bool *)pCallbackCtxt = true;
 }
 
 //*****************************************************************************
 //
-//! @brief Generic Command Write function.
-//!
-//! @param pMspiHandle
-//! @param ui16Instr
-//! @param bSendAddr
-//! @param ui32Addr
-//! @param pData
-//! @param ui32NumBytes
-//!
-//! @return
+// Generic Command Write function.
 //
 //*****************************************************************************
 static uint32_t
@@ -415,16 +379,7 @@ am_device_command_write(void *pMspiHandle,
 
 //*****************************************************************************
 //
-//! @brief Generic Command Read function.
-//!
-//! @param pMspiHandle
-//! @param ui16Instr
-//! @param bSendAddr
-//! @param ui32Addr
-//! @param pData
-//! @param ui32NumBytes
-//!
-//! @return
+// Generic Command Read function.
 //
 //*****************************************************************************
 static uint32_t
@@ -466,11 +421,7 @@ am_device_command_read(void *pMspiHandle,
 
 //*****************************************************************************
 //
-//! @brief Reset the external psram
-//!
-//! @param pMspiHandle
-//!
-//! @return
+// Reset the external psram
 //
 //*****************************************************************************
 static uint32_t
@@ -492,7 +443,7 @@ am_devices_mspi_psram_aps12808l_reset(void *pMspiHandle)
 //
 //! @brief Reads the ID of the external psram and returns the value.
 //!
-//! @param pMspiHandle - Pointer to the return buffer for the Device ID.
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
 //!
 //! This function reads the device ID register of the external psram, and returns
 //! the result as an 32-bit unsigned integer value.
@@ -651,29 +602,16 @@ am_devices_mspi_psram_aps12808l_id(void *pMspiHandle)
     ui8RLCReg = (uint8_t)ui32Rawdata;
     am_util_debug_printf("    PSRAM Register MR8 = 0x%02X\n\n", ui8RLCReg);
 
+
+
     return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
+
 }
 
-//*****************************************************************************
-//
-//! @brief  This function takes care of splitting the transaction as needed
-//! @details if the transaction crosses PSRAM page boundary or because of
-//! tCEM restrictions, if hardware does not support it
-//!
-//! @param pPsram
-//! @param bHiPrio
-//! @param bWrite
-//! @param pui8Buffer
-//! @param ui32Address
-//! @param ui32NumBytes
-//! @param ui32PauseCondition
-//! @param ui32StatusSetClr
-//! @param pfnCallback
-//! @param pCallbackCtxt
-//!
-//! @return
-//
-//*****************************************************************************
+
+
+// This function takes care of splitting the transaction as needed, if the transaction crosses
+// PSRAM page boundary or because of tCEM restrictions, if hardware does not support it
 static uint32_t
 psram_nonblocking_transfer(am_devices_mspi_psram_t *pPsram,
                            bool bHiPrio,
@@ -695,6 +633,7 @@ psram_nonblocking_transfer(am_devices_mspi_psram_t *pPsram,
 
   // Set the transfer direction to RX (Read)
   Transaction.eDirection = bWrite ? AM_HAL_MSPI_TX: AM_HAL_MSPI_RX;
+
 
   // Initialize the CQ stimulus.
   Transaction.ui32PauseCondition = ui32PauseCondition;
@@ -760,17 +699,23 @@ psram_nonblocking_transfer(am_devices_mspi_psram_t *pPsram,
   return ui32Status;
 }
 
-//*****************************************************************************
-//
-// Initialize the mspi_psram driver.
-//
-//*****************************************************************************
 
+//*****************************************************************************
+//
+//! @brief Initialize the mspi_psram driver.
+//!
+//! @param psMSPISettings - MSPI device structure describing the target spi psram.
+//! @param pHandle - MSPI handler which needs to be return
+//!
+//! This function should be called before any other am_devices_mspi_psram
+//! functions. It is used to set tell the other functions how to communicate
+//! with the external psram hardware.
+//!
+//! @return status.
+//
+//*****************************************************************************
 uint32_t
-am_devices_mspi_psram_aps12808l_ddr_init(uint32_t ui32Module,
-                                         am_devices_mspi_psram_config_t *pDevCfg,
-                                         void **ppHandle,
-                                         void **ppMspiHandle)
+am_devices_mspi_psram_aps12808l_ddr_init(uint32_t ui32Module, am_devices_mspi_psram_config_t *pDevCfg, void **ppHandle, void **ppMspiHandle)
 {
     uint32_t                    ui32Status;
     am_hal_mspi_dev_config_t    mspiDevCfg;
@@ -943,7 +888,12 @@ am_devices_mspi_psram_aps12808l_ddr_init(uint32_t ui32Module,
 
 //*****************************************************************************
 //
-// DeInitialize the mspi_psram driver.
+//! @brief DeInitialize the mspi_psram driver.
+//!
+//! @param psMSPISettings - MSPI device structure describing the target spi psram.
+//! @param pHandle - MSPI handler.
+//!
+//! @return status.
 //
 //*****************************************************************************
 uint32_t
@@ -1002,7 +952,21 @@ am_devices_mspi_psram_aps12808l_ddr_deinit(void *pHandle)
 
 //*****************************************************************************
 //
-// Reads the contents of the external PSRAM into a buffer.
+//! @brief Reads the contents of the external PSRAM into a buffer.
+//!
+//! @param ui32Module - MSPI instance
+//! @param pui8RxBuffer - Buffer to store the received data from the PSRAM
+//! @param ui32ReadAddress - Address of desired data in external PSRAM
+//! @param ui32NumBytes - Number of bytes to read from external PSRAM
+//! @param bWaitForCompletion - Wait for transaction completion before exiting
+//!
+//! This function reads the external PSRAM at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.  If the bWaitForCompletion is true,
+//! then the function will poll for DMA completion indication flag before
+//! returning.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1077,7 +1041,24 @@ am_devices_mspi_psram_aps12808l_ddr_read(void *pHandle,
 
 //*****************************************************************************
 //
-//  Reads the contents of the external PSRAM into a buffer.
+//! @brief Reads the contents of the external PSRAM into a buffer.
+//!
+//! @param ui32Module - MSPI instance
+//! @param pui8RxBuffer - Buffer to store the received data from the PSRAM
+//! @param ui32ReadAddress - Address of desired data in external PSRAM
+//! @param ui32NumBytes - Number of bytes to read from external PSRAM
+//! @param ui32PauseCondition - Pause condition before transaction is executed
+//! @param ui32StatusSetClr - Post-transaction CQ condition
+//! @param pfnCallback - Post-transaction callback function
+//! @param pCallbackCtxt - Post-transaction callback context
+//!
+//! This function reads the external PSRAM at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.  The Command Queue pre and post
+//! transaction conditions and a callback function and context are also
+//! provided.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1116,7 +1097,17 @@ am_devices_mspi_psram_aps12808l_ddr_read_adv(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the external psram into a buffer.
+//! @brief Reads the contents of the external psram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the psram
+//! @param ui32ReadAddress - Address of desired data in external psram
+//! @param ui32NumBytes - Number of bytes to read from external psram
+//!
+//! This function reads the external psram at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1151,12 +1142,6 @@ am_devices_mspi_psram_aps12808l_ddr_read_hiprio(void *pHandle,
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
-
-//*****************************************************************************
-//
-//  nonblocking ddr read
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_aps12808l_ddr_nonblocking_read(void *pHandle,
                                                      uint8_t *pui8RxBuffer,
@@ -1191,7 +1176,20 @@ am_devices_mspi_psram_aps12808l_ddr_nonblocking_read(void *pHandle,
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1267,7 +1265,20 @@ am_devices_mspi_psram_aps12808l_ddr_write(void *pHandle,
 
 //*****************************************************************************
 //
-//  Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1306,7 +1317,20 @@ am_devices_mspi_psram_aps12808l_ddr_write_adv(void *pHandle,
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1341,11 +1365,6 @@ am_devices_mspi_psram_aps12808l_ddr_write_hiprio(void *pHandle,
   //
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
-//*****************************************************************************
-//
-// nonblocking write
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_aps12808l_ddr_nonblocking_write(void *pHandle,
                                                       uint8_t *pui8TxBuffer,
@@ -1377,9 +1396,14 @@ am_devices_mspi_psram_aps12808l_ddr_nonblocking_write(void *pHandle,
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
+
 //*****************************************************************************
 //
-//  Sets up the MSPI and external psram into XIP mode.
+//! @brief Sets up the MSPI and external psram into XIP mode.
+//!
+//! This function sets the external psram device and the MSPI into XIP mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1411,7 +1435,11 @@ am_devices_mspi_psram_aps12808l_ddr_enable_xip(void *pHandle)
 
 //*****************************************************************************
 //
-//   Removes the MSPI and external psram from XIP mode.
+//! @brief Removes the MSPI and external psram from XIP mode.
+//!
+//! This function removes the external device and the MSPI from XIP mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1434,7 +1462,11 @@ am_devices_mspi_psram_aps12808l_ddr_disable_xip(void *pHandle)
 
 //*****************************************************************************
 //
-//  Sets up the MSPI and external psram into scrambling mode.
+//! @brief Sets up the MSPI and external psram into scrambling mode.
+//!
+//! This function sets the external psram device and the MSPI into scrambling mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1456,7 +1488,11 @@ am_devices_mspi_psram_aps12808l_ddr_enable_scrambling(void *pHandle)
 
 //*****************************************************************************
 //
-//  Removes the MSPI and external psram from scrambling mode.
+//! @brief Removes the MSPI and external psram from scrambling mode.
+//!
+//! This function removes the external device and the MSPI from scrambling mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1491,7 +1527,14 @@ am_devices_mspi_psram_aps12808l_ddr_reset(void *pHandle)
 
 //*****************************************************************************
 //
-// Reads the ID of the external psram and returns the value.
+//! @brief Reads the ID of the external psram and returns the value.
+//!
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
+//!
+//! This function reads the device ID register of the external psram, and returns
+//! the result as an 32-bit unsigned integer value.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1503,13 +1546,12 @@ am_devices_mspi_psram_aps12808l_ddr_id(void *pHandle)
 }
 
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-#define PSRAM_CHECK_DATA_SIZE_BYTES  256
 //*****************************************************************************
 //
 //! @brief write and read back check.
 //!
-//! @param pattern_index -
-//! @param len           -
+//! @param psMSPISettings - MSPI device structure describing the target spi psram.
+//! @param pHandle - MSPI handler which needs to be return
 //!
 //! This function should be called before any other am_devices_mspi_psram
 //! functions. It is used to set tell the other functions how to communicate
@@ -1518,6 +1560,7 @@ am_devices_mspi_psram_aps12808l_ddr_id(void *pHandle)
 //! @return status.
 //
 //*****************************************************************************
+#define PSRAM_CHECK_DATA_SIZE_BYTES  256
 static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t len)
 {
     uint32_t *pui32TxPtr = (uint32_t*)buff;
@@ -1579,16 +1622,6 @@ static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t 
 
     return 0;
 }
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param length
-//! @param address
-//!
- //! @return
-//
-//*****************************************************************************
 bool
 psram_check(uint32_t length, uint32_t address)
 {
@@ -1649,16 +1682,10 @@ psram_check(uint32_t length, uint32_t address)
     return false;
 }
 
-//*****************************************************************************
 //
-//! @brief   Count the longest consecutive 1s in a 32bit word
-//! @details Static helper function:
-//!
-//! @param pVal
-//!
-//! @return
+// Static helper function:
+//  Count the longest consecutive 1s in a 32bit word
 //
-//*****************************************************************************
 static uint32_t
 count_consecutive_ones(uint32_t* pVal)
 {
@@ -1673,18 +1700,10 @@ count_consecutive_ones(uint32_t* pVal)
     return count;
 }
 
-//*****************************************************************************
 //
-//! @brief   Count the longest consecutive 1s in a 32bit word
-//! @details Static helper function:
-//!
-//!  Find and return the mid point of the longest continuous 1s in a 32bit word
-//!
-//! @param pVal
-//!
-//! @return
+// Static helper function:
+//  Find and return the mid point of the longest continuous 1s in a 32bit word
 //
-//*****************************************************************************
 static uint32_t
 find_mid_point(uint32_t* pVal)
 {
@@ -1740,6 +1759,19 @@ find_mid_point(uint32_t* pVal)
     return pick_point;
 }
 
+//*****************************************************************************
+//
+//! @brief Checks PSRAM timing and determine a delay setting.
+//!
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
+//!
+//! This function scans through the delay settings of MSPI DDR mode and selects
+//! the best parameter to use by tuning TURNAROUND/RXNEG/RXDQSDELAY0 values.
+//! This function is only valid in DDR mode and ENABLEDQS0 = 0.
+//!
+//! @return 32-bit status, scan result in structure type
+//
+//*****************************************************************************
 #define PSRAM_TIMING_SCAN_SIZE_BYTES (128*1024)
 static const uint32_t ui32MspiXipBaseAddress[3] =
 {
@@ -1768,12 +1800,6 @@ const am_devices_mspi_psram_ddr_timing_config_t aps12808l_sConfigArray[] =
     {13, 1, 1}, // Turnaround=13, RXNEG=1, RXDQSDELAY=Dummy
 };
 
-//*****************************************************************************
-//
-//  Checks PSRAM timing and determine a delay setting.
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
                                                       am_devices_mspi_psram_config_t *pDevCfg,
@@ -1932,7 +1958,16 @@ am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
 
 //*****************************************************************************
 //
-//  Apply given DDR timing settings to target MSPI instance.
+//! @brief Apply given DDR timing settings to target MSPI instance.
+//!
+//! @param pHandle - Handle to the PSRAM.
+//! @param pDevDdrCfg - Pointer to the ddr timing config structure
+//!
+//! This function applies the ddr timing settings to the selected mspi instance.
+//! This function must be called after MSPI instance is initialized into
+//! ENABLEFINEDELAY0 = 1 mode.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1960,15 +1995,13 @@ am_devices_mspi_psram_aps12808l_apply_ddr_timing(void *pHandle,
     return am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &applyCfg);
 
 }
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-#define PSRAM_CHECK_DATA_SIZE_BYTES  256
+#elif defined(AM_PART_APOLLO4P_FNC)
 //*****************************************************************************
 //
 //! @brief write and read back check.
 //!
-//! @param pattern_index
-//! @param buff
-//! @param len
+//! @param psMSPISettings - MSPI device structure describing the target spi psram.
+//! @param pHandle - MSPI handler which needs to be return
 //!
 //! This function should be called before any other am_devices_mspi_psram
 //! functions. It is used to set tell the other functions how to communicate
@@ -1977,6 +2010,7 @@ am_devices_mspi_psram_aps12808l_apply_ddr_timing(void *pHandle,
 //! @return status.
 //
 //*****************************************************************************
+#define PSRAM_CHECK_DATA_SIZE_BYTES  256
 static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t len)
 {
     uint32_t *pui32TxPtr = (uint32_t*)buff;
@@ -2038,17 +2072,7 @@ static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t 
 
     return 0;
 }
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param flashHandle
-//! @param length
-//! @param address
-//!
-//! @return
-//
-//*****************************************************************************
+
 static bool
 psram_check_by_dma(void* flashHandle, uint32_t length, uint32_t address)
 {
@@ -2118,17 +2142,6 @@ psram_check_by_dma(void* flashHandle, uint32_t length, uint32_t address)
 //#define MEMORY_SHORT_ACCESS
 //#define MEMORY_BYTE_ACCESS
 #define MEMORY_COPY_ACCESS
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param flashHandle
-//! @param length
-//! @param address
-//!
-//! @return
-//
-//*****************************************************************************
 static bool
 psram_check_by_xip(void* flashHandle, uint32_t length, uint32_t address)
 {
@@ -2320,16 +2333,10 @@ psram_check_by_xip(void* flashHandle, uint32_t length, uint32_t address)
     return false;
 }
 
-// ****************************************************************************
 //
-//! @brief Count the longest consecutive 1s in a 32bit word
-//!
-//! @details Static helper function:
-//! @param pVal
-//!
-//! @return
+// Static helper function:
+//  Count the longest consecutive 1s in a 32bit word
 //
-// ****************************************************************************
 static uint32_t
 count_consecutive_ones(uint32_t* pVal)
 {
@@ -2344,16 +2351,10 @@ count_consecutive_ones(uint32_t* pVal)
     return count;
 }
 
-// ****************************************************************************
 //
-//! @brief Find and return the mid point of the longest continuous 1s in a 32bit word
-//!
-//! @details Static helper function:
-//! @param pVal
-//!
-//! @return
+// Static helper function:
+//  Find and return the mid point of the longest continuous 1s in a 32bit word
 //
-// ****************************************************************************
 static uint32_t
 find_mid_point(uint32_t* pVal)
 {
@@ -2420,6 +2421,19 @@ find_mid_point(uint32_t* pVal)
     return pick_point;
 }
 
+//*****************************************************************************
+//
+//! @brief Checks PSRAM timing and determine a delay setting.
+//!
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
+//!
+//! This function scans through the delay settings of MSPI DDR mode and selects
+//! the best parameter to use by tuning TURNAROUND/RXNEG/RXDQSDELAY0 values.
+//! This function is only valid in DDR mode and ENABLEDQS0 = 0.
+//!
+//! @return 32-bit status, scan result in structure type
+//
+//*****************************************************************************
 #define PSRAM_TIMING_SCAN_SIZE_BYTES (128*1024)
 static const uint32_t ui32MspiXipBaseAddress[3] =
 {
@@ -2428,11 +2442,6 @@ static const uint32_t ui32MspiXipBaseAddress[3] =
     0x1C000000, // mspi2
 };
 
-//*****************************************************************************
-//
-// Checks PSRAM timing and determine a delay setting.
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
                                                       am_devices_mspi_psram_config_t *pDevCfg,
@@ -2490,7 +2499,6 @@ am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
         return ui32Status;
     }
 
-#if defined(AM_PART_APOLLO4P)
     if ( module == 2 )
     {
         for ( uint8_t TxDqs_Index = 0; TxDqs_Index <= 31; TxDqs_Index++ )
@@ -2561,7 +2569,6 @@ am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
         am_util_debug_printf("Selected RxDqsDelay Setting = %d\n", Rxdqsdelay);
     }
     else
-#endif
     {
 
         //
@@ -2637,13 +2644,11 @@ am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
 #else
     pDevDdrCfg->ui32Turnaround = 6;
 #endif
-#if defined(AM_PART_APOLLO4P)
     if ( module == 2 )
     {
         pDevDdrCfg->ui32Txdqsdelay = Txdqsdelay;
     }
     else
-#endif
     {
         pDevDdrCfg->ui32Txdqsdelay = 0;
     }
@@ -2653,7 +2658,16 @@ am_devices_mspi_psram_aps12808l_ddr_init_timing_check(uint32_t module,
 
 //*****************************************************************************
 //
-// Apply given DDR timing settings to target MSPI instance.
+//! @brief Apply given DDR timing settings to target MSPI instance.
+//!
+//! @param pHandle - Handle to the PSRAM.
+//! @param pDevDdrCfg - Pointer to the ddr timing config structure
+//!
+//! This function applies the ddr timing settings to the selected mspi instance.
+//! This function must be called after MSPI instance is initialized into
+//! ENABLEFINEDELAY0 = 1 mode.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t

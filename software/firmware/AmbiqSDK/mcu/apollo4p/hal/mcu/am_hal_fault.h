@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the fault control.
 //!
-//! @addtogroup fault_4p Fault - CPU Fault Control
+//! @addtogroup fault Fault - CPU Fault Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_FAULT_H
@@ -98,7 +98,7 @@ am_hal_fault_status_t;
 //
 //! @brief Enable Fault Capture.
 //!
-//! This function is used to enable fault capture on the CPU block.
+//!  This function is used to enable fault capture on the CPU block.
 //!
 //! @return status      - generic or interface specific status.
 //
@@ -109,7 +109,7 @@ extern uint32_t am_hal_fault_capture_enable(void);
 //
 //! @brief Disable Fault Capture.
 //!
-//! This function is used to disable fault capture on the CPU block.
+//!  This function is used to disable fault capture on the CPU block.
 //!
 //! @return status      - generic or interface specific status.
 //

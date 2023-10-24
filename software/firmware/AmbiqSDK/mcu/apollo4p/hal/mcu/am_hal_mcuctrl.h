@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the MCUCTRL.
 //!
-//! @addtogroup mcuctrl4_4p MCUCTRL - MCU Control
+//! @addtogroup mcuctrl4 MCUCTRL - MCU Control
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,83 +44,16 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_MCUCTRL_H
 #define AM_HAL_MCUCTRL_H
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "am_mcu_apollo.h"
-
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-//
-
-//****************************************************************************
-//! @brief but number representing a peripheral that is using the HS XTAL
-//! @details this is used by each peripheral to register the use of the HS XTAL
-//! so the HFXTAL will not be disabled when a peripheral are using it
-//****************************************************************************
-typedef enum
-{
-    AM_HAL_HFXTAL_BLE_CONTROLLER_EN = 0,
-    AM_HAL_HFXTAL_USB_PHI_EN        = 1,
-    AM_HAL_HFXTAL_ADC_EN            = 2,
-    AM_HAL_HFXTAL_AUADC_EN          = 3,
-    AM_HAL_HCXTAL_DBGCTRL_EN        = 4,
-    AM_HAL_HCXTAL_CLKGEN_MISC_EN    = 5,
-    AM_HAL_HCXTAL_CLKGEN_CLKOUT_EN  = 6,
-    AM_HAL_HCXTAL_PDM_BASE_EN       = 7,
-    AM_HAL_HCXTAL_II2S_BASE_EN      = AM_HAL_HCXTAL_PDM_BASE_EN + AM_REG_PDM_NUM_MODULES,
-    AM_HAL_HCXTAL_IOM_BASE_EN       = AM_HAL_HCXTAL_II2S_BASE_EN + AM_REG_I2S_NUM_MODULES,
-    //
-    //! this is used when setting a bit and no argument was passed (legacy)
-    //
-    AM_HAL_HCXTAL_DEFAULT_EN        = AM_HAL_HCXTAL_IOM_BASE_EN + AM_REG_IOM_NUM_MODULES,
-    AM_HAL_HCXTAL_END_EN,
-    AM_HAL_HCXTAL_X32               = 0x7FFFFFFF,
-
-}
-am_hal_mcuctrl_hfxtal_users_e;
-
-//****************************************************************************
-//! @brief this struct is used to pass data into am_hal_mcuctrl_control()
-//****************************************************************************
-typedef struct
-{
-    //
-    //! bit that identifies which peripheral is requesting modification of the
-    //! HF XTAL clock
-    //
-    uint32_t                       ui32_arg_hfxtal_user_mask ;
-    //
-    //! this is set if the hfxtal bit is being used
-    //
-    bool                           b_arg_hfxtal_in_use;
-    //
-    //! this is for legacy calls that would pass an argument with some enums
-    //
-    bool                           b_arg_apply_ext_source;
-    //
-    //! force the register modification
-    //
-    bool                           b_arg_force_update;
-    //
-    //! enable XTALHF GPIO output on clockout pin.
-    //
-    bool                           b_arg_enable_HfXtalClockout;
-
-}
-am_hal_mcuctrl_control_arg_t;
-
-
-extern const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgDefault;
-extern const am_hal_mcuctrl_control_arg_t g_amHalMcuctrlArgBLEDefault;
 
 #define MCUCTRL_CHIPPN_PARTNUM_PN_M             0xFF000000
 #define MCUCTRL_CHIPPN_PARTNUM_PN_S             24
@@ -227,26 +160,21 @@ typedef enum
     AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_DISABLE,
     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START,
     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL,
-    AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE,
-    AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLOCKOUT,
-}
-am_hal_mcuctrl_control_e;
+    AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE
+} am_hal_mcuctrl_control_e;
 
 //**************************************
-//
 //! MCUCTRL info get
-//
 //**************************************
 typedef enum
 {
     AM_HAL_MCUCTRL_INFO_FEATURES_AVAIL,
     AM_HAL_MCUCTRL_INFO_DEVICEID
-}
-am_hal_mcuctrl_infoget_e;
+} am_hal_mcuctrl_infoget_e;
 
 //*****************************************************************************
 //
-//! MCUCTRL SKU/Feature Enums
+// MCUCTRL SKU/Feature Enums
 //
 //*****************************************************************************
 typedef enum
@@ -255,8 +183,8 @@ typedef enum
 } am_hal_mcuctrl_dtcm_e;
 
 //
-//! SKU SSRAM size: 0=1MB,   1=2MB, 2=1MB,   3=2MB
-//! SKU MRAM  size: 0=0.5MB, 1=1MB, 2=1.5MB, 3=2MB,
+// SKU SSRAM size: 0=1MB,   1=2MB, 2=1MB,   3=2MB
+// SKU MRAM  size: 0=0.5MB, 1=1MB, 2=1.5MB, 3=2MB,
 //
 typedef enum
 {
@@ -265,11 +193,8 @@ typedef enum
     AM_HAL_MCUCTRL_SSRAM_1M_PLUS_EXT,   // 1024KB SSRAM + 384KB Ext
     AM_HAL_MCUCTRL_SSRAM_2M_PLUS_EXT,   // 2048KB SSRAM + 384KB Ext
 } am_hal_mcuctrl_ssram_e;
-#define AM_HAL_MCUCTRL_SSRAM_MAX    AM_HAL_MCUCTRL_SSRAM_2M_PLUS_EXT
+#define AM_HAL_MCUCTRL_SSRAM_MAX    AM_HAL_MCUCTRL_SSRAM_1M_PLUS_DSP
 
-//
-//! MRAM Size Setting
-//
 typedef enum
 {
     AM_HAL_MCUCTRL_MRAM_0P5M,
@@ -277,12 +202,8 @@ typedef enum
     AM_HAL_MCUCTRL_MRAM_1P5M,
     AM_HAL_MCUCTRL_MRAM_2M,
 } am_hal_mcuctrl_mram_e;
-
 #define AM_HAL_MCUCTRL_MRAM_MAX     AM_HAL_MCUCTRL_MRAM_2M
 
-//
-//! MRAM GP/LL Setting
-//
 typedef enum
 {
     AM_HAL_MCUCTRL_CM4F_ONLY,
@@ -296,9 +217,7 @@ typedef enum
 //
 //*****************************************************************************
 //**************************************
-//
 //! MCUCTRL device structure
-//
 //**************************************
 typedef struct
 {
@@ -368,9 +287,7 @@ typedef struct
 } am_hal_mcuctrl_device_t;
 
 //**************************************
-//
 //! MCUCTRL status structure
-//
 //**************************************
 typedef struct
 {
@@ -382,9 +299,7 @@ typedef struct
 } am_hal_mcuctrl_status_t;
 
 //**************************************
-//
 //! MCUCTRL features available structure
-//
 //**************************************
 typedef struct
 {
@@ -399,22 +314,11 @@ typedef struct
 } am_hal_mcuctrl_feature_t;
 
 //**********************************************************
-//
 //! MCUCTRL XTALHSCAP Globals for Cooper Device
 //! Refer to App Note Apollo4 Blue 32MHz Crystal Calibration
-//
 //**********************************************************
 extern uint32_t g_ui32xtalhscap2trim;
 extern uint32_t g_ui32xtalhscaptrim;
-
-
-/******************************************************************************
-//! @brief get usage status of HF XTAL clock
-//!
-//! @return true   if one or more users (modules) are using the HF XTAL clock
-//! @return false  if the XTAL clock is disabled and there are no users
- *****************************************************************************/
-extern bool am_hal_mcuctrl_EXTCLK_active(void );
 
 // ****************************************************************************
 //
@@ -423,32 +327,9 @@ extern bool am_hal_mcuctrl_EXTCLK_active(void );
 //! This function is used to apply various controls to MCUCTRL.
 //!
 //! @param eControl - One of the following:
-//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_ENABLE,
-//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_DISABLE,
-//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START,
-//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL,
-//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE,
-//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLOCKOUT,
-//!
-//! @param pArgs - Pointer to arguments for Control Switch Case, see note and example below
-//!
-//! @note pArgs: new use for SDK Rev 4.4:\n
-//! to use the HF XTAL clock this function now expects a pointer the following
-//! struct variable\n
-//!      am_hal_mcuctrl_control_arg_t\n
-//! this is needed for the following eControl keywords
-//!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START,
-//!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL,
-//!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE,
-//!      AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_CLOCKOUT,
-//!
-//! @example
-//! am_hal_mcuctrl_control_arg_t cvar = g_amHalMcuctrlArgDefault;\n
-//! // the user must choose the appropriate bit from the enum am_hal_mcuctrl_hfxtal_users_e\n
-//! // there are numerous examples that use this structure\n
-//! cvar.ui32_arg_hfxtal_user_mask = (1 \<\< AM_HAL_HFXTAL_AUADC_EN);\n
-//! // populate the remaing fields as needed or use the default values\n
-//! retStat = am_hal_mcuctrl_control( AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_NORMAL, (void *) &cvar );\n
+//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_ENABLE
+//!     AM_HAL_MCUCTRL_CONTROL_EXTCLK32K_DISABLE
+//! @param pArgs - Pointer to arguments for Control Switch Case
 //!
 //! @return status      - generic or interface specific status.
 //

@@ -2,7 +2,7 @@
 //
 //! @file am_hal_otp.c
 //!
-//! @brief Implementation for One-Time Programmable Functionality
+//! @brief Functions for OTP functions
 //!
 //! @addtogroup otp_4b OTP - One-Time Programmable
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,28 +44,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
 #include <stdbool.h>
 #include "am_mcu_apollo.h"
 
-//
-//! poll on the AIB acknowledge bit
-//
+/* poll on the AIB acknowledge bit */
 #define AM_HAL_OTP_WAIT_ON_AIB_ACK_BIT()  \
     while (CRYPTO->AIBFUSEPROGCOMPLETED_b.AIBFUSEPROGCOMPLETED == 0)
 
-//*****************************************************************************
-//
-//! @brief Validate the OTP Offset and whether it is within range
-//!
-//! @param  offset -  word aligned offset in OTP to be read
-//!
-//! @return Returns AM_HAL_STATUS_SUCCESS or OUT_OF_RANGE
-//
-//*****************************************************************************
 static uint32_t validate_otp_offset(uint32_t offset)
 {
     if ((offset & 0x3) || (offset > (AM_REG_OTP_SIZE - 4)))
@@ -80,7 +69,14 @@ static uint32_t validate_otp_offset(uint32_t offset)
 
 //*****************************************************************************
 //
-// Read OTP word
+//! @brief  Read OTP word
+//!
+//! @param  offset -  word aligned offset in OTP to be read
+//! @param  pVal -  Pointer to word for returned data
+//!
+//! This will retrieve the OTP information
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_otp_read_word(uint32_t offset, uint32_t *pVal)
@@ -128,11 +124,20 @@ uint16_t otp_write_word_asm[] =
 };
 
 typedef void (*otp_write_word_t)(uint32_t, uint32_t);
+
 otp_write_word_t otp_write_word_func = (otp_write_word_t)((uint8_t *)otp_write_word_asm + 1);
+
 
 //*****************************************************************************
 //
-// Write OTP word
+//! @brief  Write OTP word
+//!
+//! @param  offset -  word aligned offset in OTP to be read
+//! @param  value -  value to be written
+//!
+//! This will write a word to the supplied offset in the OTP
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_otp_write_word(uint32_t offset, uint32_t value)
@@ -146,20 +151,15 @@ uint32_t am_hal_otp_write_word(uint32_t offset, uint32_t value)
         return status;
     }
 #endif
-
     if ((PWRCTRL->DEVPWRSTATUS_b.PWRSTCRYPTO == 0) || (CRYPTO->HOSTCCISIDLE_b.HOSTCCISIDLE == 0))
     {
-        //
         // Crypto is not accessible
-        //
         return AM_HAL_STATUS_INVALID_OPERATION;
     }
     AM_CRITICAL_BEGIN;
     otp_write_word_func(offset, value);
 
-    //
     // Read back the value to compare
-    //
     if ((am_hal_load_ui32((uint32_t *)(AM_REG_OTP_BASEADDR + offset)) & value) != value)
     {
         status = AM_HAL_STATUS_FAIL;

@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the Analog to Digital Converter.
 //!
-//! @addtogroup adc4_4p ADC - Analog-to-Digital Converter
+//! @addtogroup adc4 ADC - Analog-to-Digital Converter
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -891,7 +891,18 @@ am_hal_adc_configure_dma(void *pHandle,
 
 //*****************************************************************************
 //
-// ADC device specific control function.
+//! @brief ADC device specific control function.
+//!
+//! @param pHandle   - handle for the module instance.
+//! @param eRequest - One of:
+//!      AM_HAL_ADC_REQ_WINDOW_CONFIG
+//!   @n AM_HAL_ADC_REQ_TEMP_CELSIUS_GET (pArgs is required, see enums).
+//!   @n AM_HAL_ADC_REQ_TEMP_TRIMS_GET   (pArgs is required, see enums).
+//! @param pArgs - Pointer to arguments for Control Switch Case
+//!
+//! This function provides for special control functions for the ADC operation.
+//!
+//! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
 uint32_t
@@ -1463,21 +1474,9 @@ sample_correction_apply(uint32_t ui32Sample, bool bApplyCorrection)
             //
             fSampleAdj = (float)(AM_HAL_ADC_FIFO_SAMPLE(ui32Sample) * AM_HAL_ADC_VREFMV / AM_HAL_ADC_SAMPLE_DIVISOR);
             fSampleAdj /= (1.0F - priv_correction_trims.flt.fADCgain);
-            
-            //
             // Convert the offset from volts to mv.
-            //
             fSampleAdj -= (priv_correction_trims.flt.fADCoffset * 1000.0F);
             fSampleAdj  = fSampleAdj * AM_HAL_ADC_SAMPLE_DIVISORF / AM_HAL_ADC_VREFMVF;
-            
-            //
-            // Check for overflow
-            //
-            if ( fSampleAdj > 4095.0F )
-            {
-                fSampleAdj = 4095.0F;
-            }
-            
             ui32Sample &= 0xFFF00000;
             ui32Sample |= ((((uint32_t)fSampleAdj) << 6) & AM_HAL_ADC_SAMPLE_MASK_FULL);
         }
@@ -1546,7 +1545,7 @@ am_hal_adc_samples_read(void *pHandle,
             //
             // Apply the sample correction.
             //
-            ui32Sample = sample_correction_apply(ui32Sample, !bTempChnl);
+            ui32Sample = sample_correction_apply(ui32Sample, bTempChnl ? false : true);
             pui32OutBuffer->ui32Slot   = AM_HAL_ADC_FIFO_SLOT(ui32Sample);
             pui32OutBuffer->ui32Sample = bFullSample                             ?
                                          AM_HAL_ADC_FIFO_FULL_SAMPLE(ui32Sample) :
@@ -1589,7 +1588,7 @@ am_hal_adc_samples_read(void *pHandle,
             ui32Sample = AM_HAL_ADC_FIFO_FULL_SAMPLE(*pui32InSampleBuffer);
             bTempChnl  = ((ui32TempMask >> ui32slot) & 1) ? true : false;
             pui32OutBuffer->ui32Sample = AM_HAL_ADC_FIFO_SAMPLE(sample_correction_apply(ui32Sample,
-                                                                !bTempChnl));
+                                                                bTempChnl ? false : true));
             pui32OutBuffer->ui32Slot   = ui32slot;
             pui32InSampleBuffer++;
             pui32OutBuffer++;

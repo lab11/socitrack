@@ -2,9 +2,9 @@
 //
 //! @file am_hal_pdm.h
 //!
-//! @brief HAL implementation for the Pulse Density Modulation module.
+//! @brief API for the PDM module
 //!
-//! @addtogroup pdm_4p PDM - Pulse Density Modulation
+//! @addtogroup pdm PDM - Pulse Density Modulation
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -395,7 +395,7 @@ typedef struct
     uint32_t ui32Module;
 
     //
-    //! DMA transaction Transfer Control Buffer.
+    //! DMA transaction Tranfer Control Buffer.
     //
     uint32_t            ui32BufferPing;
     uint32_t            ui32BufferPong;
@@ -403,309 +403,48 @@ typedef struct
 }
 am_hal_pdm_state_t;
 
-//*****************************************************************************
-//
-//! @brief initialize the PDM device controller
-//!
-//! @param ui32Module - the index to the PDM
-//! @param ppHandle   - the handle of initialized PDM instance
-//!
-//! This function should be called firstly before we use any other PDM HAL driver
-//! functions.
-//!
-//! @return status    - generic or interface specific status.
-//
-//*****************************************************************************
+// Init/De-init.
 extern uint32_t am_hal_pdm_initialize(uint32_t ui32Module, void **ppHandle);
-
-//*****************************************************************************
-//
-//! @brief Uninitialize the PDM device controller
-//!
-//! @param pHandle - the handle of initialized PDM instance
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_deinitialize(void *pHandle);
 
-//*****************************************************************************
-//
-//! @brief PDM Power control function. function
-//!
-//! @param pHandle      - handle for the PDM.
-//! @param ePowerState  - power state requested
-//! @param bRetainState - boolean on whether to retain state
-//!
-//! This function allows advanced settings
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
+// Power
 extern uint32_t am_hal_pdm_power_control(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState);
 
-//*****************************************************************************
-//
-//! @brief PDM configuration function
-//!
-//! @param pHandle  - handle for the module instance.
-//! @param psConfig - pointer to the configuration structure.
-//!
-//! This function configures the PDM for operation.
-//!
-//! @return status  - generic or interface specific status.
-//
-//*****************************************************************************
+// Config
 extern uint32_t am_hal_pdm_configure(void *pHandle, am_hal_pdm_config_t *psConfig);
 
-//*****************************************************************************
-//
-//! @brief PDM enable function
-//!
-//! @param pHandle - handle for the module instance.
-//!
-//! This function enables the PDM operation.
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
+// Enable/Disable
 extern uint32_t am_hal_pdm_enable(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief PDM disable function
-//!
-//! @param pHandle - handle for the module instance.
-//!
-//! This function disables the PDM operation.
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_disable(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief PDM Reset function
-//!
-//! @param pHandle - handle for the module instance.
-//!
-//! This function reset the PDM module
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_reset(void *pHandle);
 
-//*****************************************************************************
-//
-//! @brief PDM DMA NonBlocking Transfer Start
-//!
-//! @param pHandle - handle for the interface.
-//! @param pDmaCfg - Pointer to the PDM DMA Config
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
+// Gather PDM data.
 extern uint32_t am_hal_pdm_dma_start(void *pHandle, am_hal_pdm_transfer_t *pDmaCfg);
-
-//*****************************************************************************
-//
-//! @brief Gets the PDM DMA NonBlocking Transfer State
-//!
-//! @param pHandle - handle for the interface.
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_dma_state(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief PDM DMA Get Buffer
-//!
-//! @param pHandle - handle for the interface.
-//!
-//! @return Pointer to the DMA Buffer
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_dma_get_buffer(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief PDM DMA Reset Count function
-//!
-//! @param count - value to reset to
-//!
-//! This function reset the PDM module
-//
-//*****************************************************************************
 extern void am_hal_pdm_dma_reset_count(uint32_t count);
 
-//*****************************************************************************
-//
-//! @brief Flush the PDM FIFO.
-//!
-//! @param pHandle - handle for the interface.
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
+// Flush the PDM FIFO.
 extern uint32_t am_hal_pdm_fifo_flush(void *pHandle);
 
-//*****************************************************************************
-//
-//! @brief Read FIFO data.
-//!
-//! @param pHandle - handle for the interface.
-//!
-//! @return value of FIFOREAD
-//
-//*****************************************************************************
+// Read FIFO data.
 uint32_t am_hal_pdm_fifo_data_read(void *pHandle);
 
-//*****************************************************************************
-//
-//! @brief Read FIFO data.
-//!
-//! @param pHandle - handle for the interface.
-//! @param buffer  - Pointer to beffer for FIFOREAD
-//! @param size    - Size to read
-//!
-//! @return 0
-//
-//*****************************************************************************
 uint32_t am_hal_pdm_fifo_data_reads(void *pHandle, uint8_t* buffer, uint32_t size);
 
-//*****************************************************************************
-//
-//! @brief Read FIFO data.
-//!
-//! @param pHandle - handle for the interface.
-//!
-//! @return value of FIFOCNT
-//
-//*****************************************************************************
 uint32_t am_hal_pdm_fifo_count_get(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief Set FIFOTHR Value
-//!
-//! @param pHandle - handle for the interface.
-//! @param value   - value for the threshold.
-//!
-//! @return AM_HAL_STATUS_SUCCESS
-//
-//*****************************************************************************
 uint32_t am_hal_pdm_fifo_threshold_setup(void *pHandle, uint32_t value);
 
-//*****************************************************************************
-//
-//! @brief PDM -> I2S Passthrough enable function
-//!
-//! @param pHandle - handle for the module instance.
-//!
-//! This function enables the PDM -> I2S Passthrough operation.
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
+// I2S Passthrough
 extern uint32_t am_hal_pdm_i2s_enable(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief PDM -> I2S Passthrough disable function
-//!
-//! @param pHandle - handle for the module instance.
-//!
-//! This function disnables the PDM -> I2S Passthrough operation.
-//!
-//! @return status - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_i2s_disable(void *pHandle);
 
-//*****************************************************************************
-//
-//! @brief PDM enable interrupts function
-//!
-//! @param pHandle - handle for the module instance.
-//! @param ui32IntMask  - interface specific interrupt mask.
-//!
-//! This function enables the specific indicated interrupts (see above).
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
+// Interrupts.
 extern uint32_t am_hal_pdm_interrupt_enable(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief PDM disable interrupts function
-//!
-//! @param pHandle           - handle for the module instance.
-//! @param ui32IntMask - interface specific interrupt mask.
-//!
-//! This function disables the specified interrupts.
-//!
-//! @return status      - generic or interface specific status.
-//!
-//*****************************************************************************
 extern uint32_t am_hal_pdm_interrupt_disable(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief PDM interrupt clear
-//!
-//! @param pHandle           - handle for the module instance.
-//! @param ui32IntMask - interface specific interrupt mask.
-//!
-//! This function clears the interrupts for the given peripheral.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_interrupt_clear(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief PDM get interrupt status
-//!
-//! @param pHandle      - handle for the module instance.
-//! @param pui32Status  - pointer to a uint32_t to return the interrupt status
-//! @param bEnabledOnly - If interrupt is enabled
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_interrupt_status_get(void *pHandle, uint32_t *pui32Status, bool bEnabledOnly);
-
-//*****************************************************************************
-//
-//! @brief PDM Interrupt Service Routine
-//!
-//! @param pHandle     - handle for the module instance.
-//! @param ui32IntMask - uint32_t for interrupts to clear
-//! @param psConfig    - Pointer to the PDM Config
-//!
-//! @return AM_HAL_STATUS_SUCCESS
-//
-//*****************************************************************************
 extern uint32_t am_hal_pdm_interrupt_service(void *pHandle, uint32_t ui32IntMask, am_hal_pdm_transfer_t* psConfig);
-
-//*****************************************************************************
-//
-//! @brief PDM DMA disable
-//!
-//! @param pHandle     - handle for the module instance.
-//!
-//! @return AM_HAL_STATUS_SUCCESS
-//
-//*****************************************************************************
-extern uint32_t am_hal_pdm_dma_disable(void *pHandle);
-
-
 
 #ifdef __cplusplus
 }

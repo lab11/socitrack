@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CLKGEN_H
@@ -56,7 +56,7 @@ extern "C"
 #endif
 
 //
-//! Designate this peripheral.
+// Designate this peripheral.
 //
 #define AM_APOLLO3_CLKGEN   1
 
@@ -65,7 +65,9 @@ extern "C"
 //! @name System Clock max frequency
 //! @{
 //! Defines the maximum clock frequency for this device.
+//!
 //! These macros provide a definition of the maximum clock frequency.
+//!
 //
 //*****************************************************************************
 #ifdef APOLLO4_FPGA
@@ -80,17 +82,20 @@ extern "C"
 //! @}
 
 //
-//! Control operations.
+// Control operations.
 //
 typedef enum
 {
+    AM_HAL_CLKGEN_CONTROL_XTAL_START,
+    AM_HAL_CLKGEN_CONTROL_LFRC_START,
+    AM_HAL_CLKGEN_CONTROL_XTAL_STOP,
+    AM_HAL_CLKGEN_CONTROL_LFRC_STOP,
     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL,
     AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC,
     AM_HAL_CLKGEN_CONTROL_HFADJ_ENABLE,
     AM_HAL_CLKGEN_CONTROL_HFADJ_DISABLE,
     AM_HAL_CLKGEN_CONTROL_HF2ADJ_ENABLE,
     AM_HAL_CLKGEN_CONTROL_HF2ADJ_DISABLE,
-    AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE,
     AM_HAL_CLKGEN_CONTROL_HFRC2_START,
     AM_HAL_CLKGEN_CONTROL_HFRC2_STOP,
     AM_HAL_CLKGEN_CONTROL_XTAL24M_ENABLE,
@@ -118,7 +123,7 @@ typedef enum
 } am_hal_clkgen_control_e;
 
 //
-//! Current RTC oscillator.
+// Current RTC oscillator.
 //
 typedef enum
 {
@@ -127,7 +132,7 @@ typedef enum
 } am_hal_clkgen_status_rtcosc_e;
 
 //
-//! Clock Generation CLKOUT
+// CLKOUT
 //
 typedef enum
 {
@@ -186,72 +191,35 @@ typedef enum
 
 #define AM_HAL_CLKGEN_CLKOUT_MAX        CLKGEN_CLKOUT_CKSEL_HFRC2_24MHz     // Highest valid CKSEL enum value
 
-//
-//! enum for HFCR2 FLL computation
-//
-typedef enum
-{
-    //
-    //! compute the hf2adj parameters from input and output freqs
-    //
-    AM_HAL_CLKGEN_HF2ADJ_COMP_COMP_FREQ = 1 ,
-    //
-    //! use passed in values directory
-    //
-    AM_HAL_CLKGEN_HF2ADJ_COMP_DIRECT_ARG = 2,
-    //
-    //! force this enum to be sizeof 4 bytes
-    //
-    AM_HAL_CLKGEN_HF2ADJ_COMP_ALIGH = 0x70000000,
-
-} am_hal_clockgen_hf2adj_compute_e;
 
 //
-//! struct used to pass data for AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE
-//
-typedef struct
-{
-    am_hal_clockgen_hf2adj_compute_e eHF2AdjType;
-    //
-    //! the xref oscillator frequency in hz
-    //
-    uint32_t ui32Source_freq_in_hz;
-    //
-    //! the target(output) frequency in hz
-    //
-    uint32_t ui32Target_freq_in_hz;
-
-} am_hal_clockgen_hf2adj_compute_t;
-
-
-//
-//! Status structure.
+// Status structure.
 //
 typedef struct
 {
     //
     // ui32SysclkFreq
-    //!  Returns the current system clock frequency, in hertz.
+    //  Returns the current system clock frequency, in hertz.
     //
     uint32_t    ui32SysclkFreq;
 
     //
     // ui32RTCoscillator
     //
-    //!  Returns the current RTC oscillator as one of:
-    //!  AM_HAL_CLKGEN_STATUS_RTCOSC_LFRC
-    //!  AM_HAL_CLKGEN_STATUS_RTCOSC_XTAL
+    //  Returns the current RTC oscillator as one of:
+    //  AM_HAL_CLKGEN_STATUS_RTCOSC_LFRC
+    //  AM_HAL_CLKGEN_STATUS_RTCOSC_XTAL
     //
     uint32_t    eRTCOSC;
 
     //
     // bXtalFailure
-    //!  true = XTAL has failed (is enabled but not oscillating).  Also if the
-    //!         LFRC is selected as the oscillator in OCTRL.OSEL.
+    //  true = XTAL has failed (is enabled but not oscillating).  Also if the
+    //         LFRC is selected as the oscillator in OCTRL.OSEL.
     //
     bool        bXtalFailure;
 
-    //
+     //
     // enable status for all the peripheral clocks.
     //  1: enable
     //  0: disable
@@ -272,6 +240,11 @@ typedef struct
 //!       in order to set Apollo3 to its required operating frequency.
 //!
 //! @param eControl - One of the following:
+//!     AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX
+//!     AM_HAL_CLKGEN_CONTROL_XTAL_START
+//!     AM_HAL_CLKGEN_CONTROL_LFRC_START
+//!     AM_HAL_CLKGEN_CONTROL_XTAL_STOP
+//!     AM_HAL_CLKGEN_CONTROL_LFRC_STOP
 //!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL
 //!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC
 //!     AM_HAL_CLKGEN_CONTROL_HFADJ_ENABLE

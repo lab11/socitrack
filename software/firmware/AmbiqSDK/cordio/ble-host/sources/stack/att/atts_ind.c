@@ -4,16 +4,16 @@
  *
  *  \brief  ATT server indication and notification functions.
  *
- *  Copyright (c) 2009-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2009-2019 Arm Ltd.
  *
- *  Copyright (c) 2019-2020 Packetcraft, Inc.
- *  
+ *  Copyright (c) 2019 Packetcraft, Inc.
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -53,6 +53,35 @@ static const attFcnIf_t attsIndFcnIf =
   attsIndConnCback
 };
 
+/**************************************************************************************************
+  Global Variables
+**************************************************************************************************/
+
+/* Control block */
+attsIndCb_t attsIndCb;
+
+/*************************************************************************************************/
+/*!
+ *  \brief  Return the ATTS connection control block connection ID.
+ *
+ *  \param  connId    Connection ID.
+ *
+ *  \return Pointer to connection control block or NULL if not in use.
+ */
+/*************************************************************************************************/
+static attsIndCcb_t *attsIndCcbByConnId(dmConnId_t connId)
+{
+  if (DmConnInUse(connId))
+  {
+    return &attsIndCb.ccb[connId - 1];
+  }
+  else
+  {
+    ATT_TRACE_WARN1("atts ccb not in use: %d", connId);
+    return NULL;
+  }
+}
+
 /*************************************************************************************************/
 /*!
  *  \brief  Check if application callback is pending for indication or a given notification, or
@@ -65,7 +94,7 @@ static const attFcnIf_t attsIndFcnIf =
  *          FALSE, otherwise.
  */
 /*************************************************************************************************/
-static bool_t attsPendIndNtfHandle(attsCcb_t *pCcb, attsPktParam_t *pPkt)
+static bool_t attsPendIndNtfHandle(attsIndCcb_t *pCcb, attsPktParam_t *pPkt)
 {
   uint8_t     opcode;
   uint8_t     pendNtfs;
@@ -115,7 +144,7 @@ static bool_t attsPendIndNtfHandle(attsCcb_t *pCcb, attsPktParam_t *pPkt)
  *  \return None.
  */
 /*************************************************************************************************/
-static void attsSetPendNtfHandle(attsCcb_t *pCcb, uint16_t handle)
+static void attsSetPendNtfHandle(attsIndCcb_t *pCcb, uint16_t handle)
 {
   uint8_t     i;
 
@@ -158,7 +187,7 @@ static void attsExecCallback(dmConnId_t connId, uint16_t handle, uint8_t status)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsIndNtfCallback(dmConnId_t connId, attsCcb_t *pCcb, uint8_t status)
+static void attsIndNtfCallback(dmConnId_t connId, attsIndCcb_t *pCcb, uint8_t status)
 {
   uint8_t     i;
 
@@ -193,7 +222,7 @@ void attsIndNtfCallback(dmConnId_t connId, attsCcb_t *pCcb, uint8_t status)
  *  \return None.
  */
 /*************************************************************************************************/
-static void attsSetupMsg(attsCcb_t *pCcb, dmConnId_t connId, uint8_t slot, attsPktParam_t *pPkt)
+static void attsSetupMsg(attsIndCcb_t *pCcb, dmConnId_t connId, attsPktParam_t *pPkt)
 {
   uint8_t     opcode;
   uint16_t    handle;
@@ -205,28 +234,19 @@ static void attsSetupMsg(attsCcb_t *pCcb, dmConnId_t connId, uint8_t slot, attsP
   handle = pPkt->handle;
 
   /* send pdu */
-  attL2cDataReq(pCcb->pMainCcb, slot, pPkt->len, (uint8_t *) pPkt);
+  L2cDataReq(L2C_CID_ATT, pCcb->pMainCcb->handle, pPkt->len, (uint8_t *) pPkt);
 
   /* if indication store handle and start timer */
   if (opcode == ATT_PDU_VALUE_IND)
   {
     pCcb->outIndHandle = pCcb->pendIndHandle = handle;
     pCcb->outIndTimer.msg.event = ATTS_MSG_IND_TIMEOUT;
-    pCcb->outIndTimer.msg.param = attMsgParam(pCcb->connId, pCcb->slot);
-
     WsfTimerStartSec(&pCcb->outIndTimer, pAttCfg->transTimeout);
   }
   /* else if a notification and flow not disabled call callback now */
-  else if (!(pCcb->pMainCcb->sccb[slot].control & ATT_CCB_STATUS_FLOW_DISABLED))
+  else if (!(pCcb->pMainCcb->control & ATT_CCB_STATUS_FLOW_DISABLED))
   {
-    if (opcode == ATT_PDU_MULT_VALUE_NTF)
-    {
-      attExecCallback(connId, ATTS_MULT_VALUE_CNF, handle, ATT_SUCCESS, 0);
-    }
-    else
-    {
-      attsExecCallback(connId, handle, ATT_SUCCESS);
-    }
+    attsExecCallback(connId, handle, ATT_SUCCESS);
   }
   /* else set pending notification callback for this handle */
   else
@@ -247,9 +267,8 @@ static void attsSetupMsg(attsCcb_t *pCcb, dmConnId_t connId, uint8_t slot, attsP
 /*************************************************************************************************/
 static void attsIndConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt)
 {
-  attsCcb_t   *pAttsCcb;
+  attsIndCcb_t *pIndCcb;
   uint8_t      status;
-  uint8_t      i;
 
   /* if connection opened */
   if (pDmEvt->hdr.event == DM_CONN_OPEN_IND)
@@ -269,22 +288,19 @@ static void attsIndConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt)
       status = pDmEvt->connClose.hdr.status + ATT_HCI_ERR_BASE;
     }
 
-    for (i = 0; i < ATT_BEARER_MAX; i++)
+    /* get server control block directly */
+    pIndCcb = &attsIndCb.ccb[pCcb->connId - 1];
+
+    /* if outstanding indication */
+    if (pIndCcb->outIndHandle != ATT_HANDLE_NONE)
     {
-      /* get server control block directly */
-      pAttsCcb = &attsCb.ccb[pCcb->connId - 1][i];
-
-      /* if outstanding indication */
-      if (pAttsCcb->outIndHandle != ATT_HANDLE_NONE)
-      {
-        /* stop timer */
-        WsfTimerStop(&pAttsCcb->outIndTimer);
-        pAttsCcb->outIndHandle = ATT_HANDLE_NONE;
-      }
-
-      /* call pending indication and notification callback */
-      attsIndNtfCallback(pCcb->connId, pAttsCcb, status);
+      /* stop timer */
+      WsfTimerStop(&pIndCcb->outIndTimer);
+      pIndCcb->outIndHandle = ATT_HANDLE_NONE;
     }
+
+    /* call pending indication and notification callback */
+    attsIndNtfCallback(pCcb->connId, pIndCcb, status);
   }
 }
 
@@ -299,21 +315,24 @@ static void attsIndConnCback(attCcb_t *pCcb, dmEvt_t *pDmEvt)
 /*************************************************************************************************/
 static void attsIndMsgCback(attsApiMsg_t *pMsg)
 {
-  attsCcb_t   *pCcb;
+  attsIndCcb_t   *pCcb;
+
+  /* get CCB and verify connection still in use */
+  if ((pCcb = attsIndCcbByConnId((dmConnId_t) pMsg->hdr.param)) == NULL)
+  {
+    /* if message has a packet buffer free packet buffer */
+    if (pMsg->hdr.event == ATTS_MSG_API_VALUE_IND_NTF)
+    {
+      WsfMsgFree(pMsg->pPkt);
+    }
+
+    /* ignore if connection not in use */
+    return;
+  }
 
   /* if an API message to send packet */
   if (pMsg->hdr.event == ATTS_MSG_API_VALUE_IND_NTF)
   {
-    /* get CCB and verify connection still in use */
-    if ((pCcb = attsCcbByConnId((dmConnId_t) pMsg->hdr.param, pMsg->slot)) == NULL)
-    {
-      /* if message has a packet buffer free packet buffer */
-      WsfMsgFree(pMsg->pPkt);
-
-      /* ignore if connection not in use */
-      return;
-    }
-
     /* verify no API message already pending */
     if (attsPendIndNtfHandle(pCcb, pMsg->pPkt))
     {
@@ -324,24 +343,12 @@ static void attsIndMsgCback(attsApiMsg_t *pMsg)
     /* otherwise ready to send; set up request */
     else
     {
-      attsSetupMsg(pCcb, (dmConnId_t) pMsg->hdr.param, pMsg->slot, pMsg->pPkt);
+      attsSetupMsg(pCcb, (dmConnId_t) pMsg->hdr.param, pMsg->pPkt);
     }
   }
   /* else if indication timeout */
   else if (pMsg->hdr.event == ATTS_MSG_IND_TIMEOUT)
   {
-    dmConnId_t connId;
-    uint8_t slot;
-
-    attDecodeMsgParam(pMsg->hdr.param, &connId, &slot);
-    pMsg->hdr.param = connId;
-
-    if ((pCcb = attsCcbByConnId(connId, slot)) == NULL)
-    {
-      /* ignore if connection not in use */
-      return;
-    }
-
     /* if outstanding indication */
     if (pCcb->outIndHandle != ATT_HANDLE_NONE)
     {
@@ -349,9 +356,9 @@ static void attsIndMsgCback(attsApiMsg_t *pMsg)
       pCcb->outIndHandle = ATT_HANDLE_NONE;
 
       /* call callback with timeout error */
-      attsExecCallback(connId, pCcb->pendIndHandle, ATT_ERR_TIMEOUT);
+      attsExecCallback((dmConnId_t) pMsg->hdr.param, pCcb->pendIndHandle, ATT_ERR_TIMEOUT);
       pCcb->pendIndHandle = ATT_HANDLE_NONE;
-      pCcb->pMainCcb->sccb[pMsg->slot].control |= ATT_CCB_STATUS_TX_TIMEOUT;
+      pCcb->pMainCcb->control |= ATT_CCB_STATUS_TX_TIMEOUT;
     }
   }
 }
@@ -367,12 +374,12 @@ static void attsIndMsgCback(attsApiMsg_t *pMsg)
 /*************************************************************************************************/
 static void attsIndCtrlCback(wsfMsgHdr_t *pMsg)
 {
-  attsCcb_t *pCcb;
+  attsIndCcb_t   *pCcb;
 
   /* note this function is currently only called when flow is enabled */
 
   /* get CCB */
-  if ((pCcb = attsCcbByConnId((dmConnId_t) pMsg->param, ATT_BEARER_SLOT_ID)) != NULL)
+  if ((pCcb = attsIndCcbByConnId((dmConnId_t) pMsg->param)) != NULL)
   {
     /* call pending indication and notification callback */
     attsIndNtfCallback((dmConnId_t) pMsg->param, pCcb, ATT_SUCCESS);
@@ -385,7 +392,6 @@ static void attsIndCtrlCback(wsfMsgHdr_t *pMsg)
  *
  *  \param  connId      DM connection ID.
  *  \param  handle      Attribute handle.
- *  \param  slot        EATT/ATT slot ID.
  *  \param  valueLen    Length of value data.
  *  \param  pValue      Pointer to value data.
  *  \param  opcode      Opcode for notification or indication.
@@ -394,10 +400,10 @@ static void attsIndCtrlCback(wsfMsgHdr_t *pMsg)
  *  \return None.
  */
 /*************************************************************************************************/
-void attsHandleValueIndNtf(dmConnId_t connId, uint16_t handle, uint8_t slot, uint16_t valueLen,
+static void attsHandleValueIndNtf(dmConnId_t connId, uint16_t handle, uint16_t valueLen,
                                   uint8_t *pValue, uint8_t opcode, bool_t zeroCpy)
 {
-  attsCcb_t     *pCcb;
+  attsIndCcb_t   *pCcb;
   uint16_t       mtu;
   bool_t         transTimedOut;
   bool_t         pktSent = FALSE;
@@ -405,11 +411,11 @@ void attsHandleValueIndNtf(dmConnId_t connId, uint16_t handle, uint8_t slot, uin
   WsfTaskLock();
 
   /* get CCB and verify connection still in use */
-  if ((pCcb = attsCcbByConnId(connId, slot)) != NULL)
+  if ((pCcb = attsIndCcbByConnId(connId)) != NULL)
   {
     /* get MTU size */
-    mtu = pCcb->pMainCcb->sccb[slot].mtu;
-    transTimedOut = !!(pCcb->pMainCcb->sccb[slot].control & ATT_CCB_STATUS_TX_TIMEOUT);
+    mtu = pCcb->pMainCcb->mtu;
+    transTimedOut = !!(pCcb->pMainCcb->control & ATT_CCB_STATUS_TX_TIMEOUT);
   }
   /* else connection not in use */
   else
@@ -442,7 +448,6 @@ void attsHandleValueIndNtf(dmConnId_t connId, uint16_t handle, uint8_t slot, uin
             /* set parameters */
             pMsg->hdr.param = connId;
             pMsg->hdr.event = ATTS_MSG_API_VALUE_IND_NTF;
-            pMsg->slot = slot;
 
             if (zeroCpy)
             {
@@ -517,34 +522,30 @@ void attsHandleValueIndNtf(dmConnId_t connId, uint16_t handle, uint8_t slot, uin
  *  \return None.
  */
 /*************************************************************************************************/
-void attsProcValueCnf(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
+void attsProcValueCnf(attCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 {
-  /* if an outstanding indication */
-  if (pCcb->outIndHandle != ATT_HANDLE_NONE)
+  attsIndCcb_t    *pIndCcb;
+
+  /* get server indication CCB */
+  if ((pIndCcb = attsIndCcbByConnId(pCcb->connId)) == NULL)
   {
-    attsAttr_t  *pAttr;
-    attsGroup_t *pGroup;
+    return;
+  }
+
+  /* if an outstanding indication */
+  if (pIndCcb->outIndHandle != ATT_HANDLE_NONE)
+  {
+    /* clear outstanding indication */
+    pIndCcb->outIndHandle = ATT_HANDLE_NONE;
 
     /* stop indication timer */
-    WsfTimerStop(&pCcb->outIndTimer);
-
-    /* if client is unaware of a database update and this confirmation is for a service change
-     * indication, transition client to the change-aware state */
-    if (((pAttr = attsFindByHandle(pCcb->outIndHandle, &pGroup)) != NULL) &&
-        (memcmp(pAttr->pUuid, attScChUuid, ATT_16_UUID_LEN) == 0) &&
-        (AttsCsfGetClientChangeAwareState(pCcb->connId) != ATTS_CLIENT_CHANGE_AWARE))
-    {
-      AttsCsfSetClientChangeAwareState(pCcb->connId, ATTS_CLIENT_CHANGE_AWARE);
-    }
-
-    /* clear outstanding indication */
-    pCcb->outIndHandle = ATT_HANDLE_NONE;
+    WsfTimerStop(&pIndCcb->outIndTimer);
 
     /* call callback if flow control permits */
-    if (!(pCcb->pMainCcb->sccb[pCcb->slot].control & ATT_CCB_STATUS_FLOW_DISABLED))
+    if (!(pCcb->control & ATT_CCB_STATUS_FLOW_DISABLED))
     {
-      attsExecCallback(pCcb->connId, pCcb->pendIndHandle, ATT_SUCCESS);
-      pCcb->pendIndHandle = ATT_HANDLE_NONE;
+      attsExecCallback(pCcb->connId, pIndCcb->pendIndHandle, ATT_SUCCESS);
+      pIndCcb->pendIndHandle = ATT_HANDLE_NONE;
     }
   }
 }
@@ -558,23 +559,18 @@ void attsProcValueCnf(attsCcb_t *pCcb, uint16_t len, uint8_t *pPacket)
 /*************************************************************************************************/
 void AttsIndInit(void)
 {
-  uint8_t    i, j;
-  attsCcb_t  *pCcb;
-
-  /* Number of slots times channels cannot excede 0xFF */
-  WSF_ASSERT(((ATT_BEARER_MAX) * DM_CONN_MAX) > sizeof(uint8_t))
+  uint8_t       i;
+  attsIndCcb_t  *pCcb;
 
   /* Initialize control block CCBs */
-  for (i = 0; i < DM_CONN_MAX; i++)
+  for (i = 0, pCcb = attsIndCb.ccb; i < DM_CONN_MAX; i++, pCcb++)
   {
-    for (j = 0; j < ATT_BEARER_MAX; j++)
-    {
-      pCcb = &attsCb.ccb[i][j];
+    /* set pointer to main CCB */
+    pCcb->pMainCcb = &attCb.ccb[i];
 
-      /* initialize timer */
-      pCcb->outIndTimer.handlerId = attCb.handlerId;
-      pCcb->outIndTimer.msg.param = i + 1;  /* param stores the conn id */
-    }
+    /* initialize timer */
+    pCcb->outIndTimer.handlerId = attCb.handlerId;
+    pCcb->outIndTimer.msg.param = i + 1;  /* param stores the conn id */
   }
 
   /* set up callback interface */
@@ -595,7 +591,7 @@ void AttsIndInit(void)
 /*************************************************************************************************/
 void AttsHandleValueInd(dmConnId_t connId, uint16_t handle, uint16_t valueLen, uint8_t *pValue)
 {
-  attsHandleValueIndNtf(connId, handle, ATT_BEARER_SLOT_ID, valueLen, pValue, ATT_PDU_VALUE_IND, FALSE);
+  attsHandleValueIndNtf(connId, handle, valueLen, pValue, ATT_PDU_VALUE_IND, FALSE);
 }
 
 /*************************************************************************************************/
@@ -612,7 +608,7 @@ void AttsHandleValueInd(dmConnId_t connId, uint16_t handle, uint16_t valueLen, u
 /*************************************************************************************************/
 void AttsHandleValueNtf(dmConnId_t connId, uint16_t handle, uint16_t valueLen, uint8_t *pValue)
 {
-  attsHandleValueIndNtf(connId, handle, ATT_BEARER_SLOT_ID, valueLen, pValue, ATT_PDU_VALUE_NTF, FALSE);
+  attsHandleValueIndNtf(connId, handle, valueLen, pValue, ATT_PDU_VALUE_NTF, FALSE);
 }
 
 /*************************************************************************************************/
@@ -633,7 +629,7 @@ void AttsHandleValueNtf(dmConnId_t connId, uint16_t handle, uint16_t valueLen, u
 void AttsHandleValueIndZeroCpy(dmConnId_t connId, uint16_t handle, uint16_t valueLen,
                                uint8_t *pValue)
 {
-  attsHandleValueIndNtf(connId, handle, ATT_BEARER_SLOT_ID, valueLen, pValue, ATT_PDU_VALUE_IND, TRUE);
+  attsHandleValueIndNtf(connId, handle, valueLen, pValue, ATT_PDU_VALUE_IND, TRUE);
 }
 
 /*************************************************************************************************/
@@ -654,5 +650,5 @@ void AttsHandleValueIndZeroCpy(dmConnId_t connId, uint16_t handle, uint16_t valu
 void AttsHandleValueNtfZeroCpy(dmConnId_t connId, uint16_t handle, uint16_t valueLen,
                                uint8_t *pValue)
 {
-  attsHandleValueIndNtf(connId, handle, ATT_BEARER_SLOT_ID, valueLen, pValue, ATT_PDU_VALUE_NTF, TRUE);
+  attsHandleValueIndNtf(connId, handle, valueLen, pValue, ATT_PDU_VALUE_NTF, TRUE);
 }

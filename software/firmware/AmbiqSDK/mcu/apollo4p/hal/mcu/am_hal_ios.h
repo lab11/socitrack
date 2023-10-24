@@ -4,7 +4,7 @@
 //!
 //! @brief Functions for interfacing with the IO Slave module
 //!
-//! @addtogroup ios4_4p IOS - IO Slave (SPI/I2C)
+//! @addtogroup ios4 IOS - IO Slave (SPI/I2C)
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_IOS_H
@@ -352,220 +352,24 @@ typedef struct
 // External function definitions
 //
 //*****************************************************************************
-//*****************************************************************************
-//
-//! @brief IOS uninitialization function
-//!
-//! @param pHandle     - the handle for the module instance..
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_uninitialize(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief IOS initialization function
-//!
-//! @param ui32Module   - module instance.
-//! @param ppHandle     - returns the handle for the module instance.
-//!
-//! This function accepts a module instance, allocates the interface and then
-//! returns a handle to be used by the remaining interface functions.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_initialize(uint32_t ui32Module, void **ppHandle);
-
-//*****************************************************************************
-//
-//! @brief IOS enable function
-//!
-//! @param pHandle      - handle for the interface.
-//!
-//! This function enables the IOS for operation.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_enable(void *pHandle);
-
-//*****************************************************************************
-//
-//! @brief IOS disable function
-//!
-//! @param pHandle      - handle for the interface.
-//!
-//! This function disables the IOSlave from operation.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_disable(void *pHandle);
 
 // the following interrupts go back to the NVIC
-//*****************************************************************************
-//
-//! @brief IOS configuration function
-//!
-//! @param pHandle      - handle for the IOS.
-//! @param psConfig      - pointer to the IOS specific configuration.
-//!
-//! This function configures the interface settings for the IO Master.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_configure(void *pHandle, am_hal_ios_config_t *psConfig);
-
-//*****************************************************************************
-//
-//! @brief IOS enable interrupts function
-//!
-//! @param pHandle      - handle for the interface.
-//! @param ui32IntMask  - interface specific interrupt mask.
-//!
-//! This function enables the specific indicated interrupts.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_interrupt_enable(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief IOS disable interrupts function
-//!
-//! @param pHandle      - handle for the interface.
-//! @param ui32IntMask  - interface specific interrupt mask.
-//!
-//! This function disables the specified interrupts.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_interrupt_disable(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief IOS interrupt clear
-//!
-//! @param pHandle      - handle for the interface.
-//! @param ui32IntMask  - interface specific interrupt mask.
-//!
-//! This function clears the interrupts for the given peripheral.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_interrupt_clear(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief IOS get interrupt status
-//!
-//! @param pHandle        - handle for the interface.
-//! @param bEnabledOnly   - determines whether disabled interrupts are included
-//!                         in the status.
-//! @param pui32IntStatus - pointer to a uint32_t to return the interrupt status
-//!
-//! This function returns the interrupt status for the given peripheral.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
-extern uint32_t am_hal_ios_interrupt_status_get(void *pHandle,
-                                                bool bEnabledOnly,
-                                                uint32_t *pui32IntStatus);
-//*****************************************************************************
-//
-//! @brief IOS interrupt service
-//!
-//! @param pHandle      - handle for the interface.
-//! @param ui32IntMask  - interface specific interrupt mask.
-//!
-//! This function clears the interrupts for the given peripheral.
-//!
-//! @return status      - generic or interface specific status.
-//
-//*****************************************************************************
+extern uint32_t am_hal_ios_interrupt_status_get(void *pHandle, bool bEnabledOnly, uint32_t *pui32IntStatus);
 extern uint32_t am_hal_ios_interrupt_service(void *pHandle, uint32_t ui32IntMask);
-
-//*****************************************************************************
-//
-//! @brief Writes the specified number of bytes to the IOS fifo.
-//!
-//! @param pHandle - handle for the IOS.
-//! @param pui8Data is a pointer to the data to be written to the fifo.
-//! @param ui32NumBytes is the number of bytes to send.
-//! @param pui32WrittenBytes is number of bytes written (could be less than ui32NumBytes, if not enough space)
-//!
-//! This function will write data from the caller-provided array to the IOS
-//! LRAM FIFO. If there is no space in the LRAM FIFO, the data will be copied
-//! to a temporary SRAM buffer instead.
-//!
-//! The maximum message size for the IO Slave is 1023 bytes.
-//!
-//! @note In order for SRAM copy operations in the function to work correctly,
-//! the \e am_hal_ios_buffer_service() function must be called in the ISR for
-//! the ioslave module.
-//!
-//! @return success or error code
-//
-//*****************************************************************************
+// Returns the number of bytes actually written
 extern uint32_t am_hal_ios_fifo_write(void *pHandle, uint8_t *pui8Data, uint32_t ui32NumBytes, uint32_t *pui32WrittenBytes);
-
-//*****************************************************************************
-//
-//! @brief Check the amount of space used in the FIFO
-//!
-//! @param pHandle - handle for the IOS.
-//! @param pui32UsedSpace is bytes used in the Overall FIFO.
-//!
-//! This function returns the available data in the overall FIFO yet to be
-//! read by the host. This takes into account the SRAM buffer and hardware FIFO
-//!
-//! @return success or error code
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_fifo_space_used(void *pHandle, uint32_t *pui32UsedSpace);
-
-//*****************************************************************************
-//
-//! @brief Check the amount of space left in the FIFO
-//!
-//! @param pHandle - handle for the IOS.
-//! @param pui32LeftSpace is bytes left in the Overall FIFO.
-//!
-//! This function returns the available space in the overall FIFO to accept
-//! new data. This takes into account the SRAM buffer and hardware FIFO
-//!
-//! @return success or error code
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_fifo_space_left(void *pHandle, uint32_t *pui32LeftSpace);
 
-//*****************************************************************************
-//
-//! @brief IOS power control function
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_power_ctrl(void *pHandle, am_hal_sysctrl_power_state_e ePowerState, bool bRetainState);
-
-//*****************************************************************************
-//
-//! @brief IOS control function
-//!
-//! @param pHandle       - handle for the IOS.
-//! @param eReq         - device specific special request code.
-//! @param pArgs        - pointer to the request specific arguments.
-//!
-//! This function allows advanced settings
-//!
-//! @return success or error code
-//
-//*****************************************************************************
 extern uint32_t am_hal_ios_control(void *pHandle, am_hal_ios_request_e eReq, void *pArgs);
 
 #ifdef __cplusplus

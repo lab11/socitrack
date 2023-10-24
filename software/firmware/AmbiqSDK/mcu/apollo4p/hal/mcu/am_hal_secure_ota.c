@@ -2,9 +2,9 @@
 //
 //! @file am_hal_secure_ota.c
 //!
-//! @brief Implementation for Secure OTA Functionality.
+//! @brief Functions for secure over-the-air.
 //!
-//! @addtogroup secure_ota_4p Secure OTA Functionality
+//! @addtogroup secure_ota Secure OTA Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,21 +44,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
 #include <stdbool.h>
 #include "am_mcu_apollo.h"
 
-//
 //! Local defines
-//
 #define FLASH_INVALID               0xFFFFFFFF
 
-//
 //! Internal OTA state information
-//
 typedef struct
 {
     uint32_t mramSize;
@@ -165,9 +161,22 @@ uint32_t am_hal_ota_add(uint32_t ui32ProgamKey, uint8_t imageMagic, uint32_t *pI
     return status;
 }
 
+// Get OTA Status
+// Can be called anytime (generally after coming back from reset to check the status of OTA
+// Will be also used by sbl_main to identify list of OTA's left for it (would show up as PENDING)
 //*****************************************************************************
 //
-//  Get Current OTA Descriptor state
+//! @brief  Get Current OTA Descriptor state
+//!
+//! @param  maxOta Determines the size of the following buffer
+//! @param  pStatus - Return Parameter - populated by this function indicating the OTA
+//! status of various OTA's
+//! @param  pOtaDescStatus - Return Parameter - populated by this function indicating the overall
+//! OTA descriptor processin status
+//!
+//! This will retrieve the current OTA status of various images added to the OTA descr
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_get_ota_status(uint32_t maxOta, am_hal_ota_status_t *pStatus, uint32_t *pOtaDescStatus)

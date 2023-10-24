@@ -142,7 +142,6 @@ uint8_t WsfTokenIOWrite(uint8_t *pBuf, uint8_t len);
 #define HCI_PDUMP_EVT(len, pBuf)                    PACKET_TRACE(0x4, len, pBuf)
 #define HCI_PDUMP_TX_ACL(len, pBuf)                 PACKET_TRACE(0x2, len, pBuf)
 #define HCI_PDUMP_RX_ACL(len, pBuf)                 PACKET_TRACE(0x2, len, pBuf)
-#define HCI_PDUMP_RX_ISO(len, pBuf)                 PACKET_TRACE(0x05, len, pBuf)
 #else
 #define HCI_TRACE_INFO0(msg)                        
 #define HCI_TRACE_INFO1(msg, var1)                  
@@ -160,9 +159,7 @@ uint8_t WsfTokenIOWrite(uint8_t *pBuf, uint8_t len);
 #define HCI_PDUMP_CMD(len, pBuf)                    
 #define HCI_PDUMP_EVT(len, pBuf)                    
 #define HCI_PDUMP_TX_ACL(len, pBuf)                 
-#define HCI_PDUMP_RX_ACL(len, pBuf)
-/*! \brief HCI PDUMP on Received ISO message. */
-#define HCI_PDUMP_RX_ISO(len, pBuf)
+#define HCI_PDUMP_RX_ACL(len, pBuf)                 
 
 #endif //HCI_TRACE_ENABLED
 
@@ -213,32 +210,6 @@ uint8_t WsfTokenIOWrite(uint8_t *pBuf, uint8_t len);
 #define ATT_TRACE_ERR2(msg, var1, var2)             WSF_TRACE2("ATT", "ERR",  msg, var1, var2)
 #define ATT_TRACE_ERR3(msg, var1, var2, var3)       WSF_TRACE3("ATT", "ERR",  msg, var1, var2, var3)
 
-/*! \brief 0 argument EATT info trace. */
-#define EATT_TRACE_INFO0(msg)                       WSF_TRACE0("EATT", "INFO", msg)
-/*! \brief 1 argument EATT info trace. */
-#define EATT_TRACE_INFO1(msg, var1)                 WSF_TRACE1("EATT", "INFO", msg, var1)
-/*! \brief 2 argument EATT info trace. */
-#define EATT_TRACE_INFO2(msg, var1, var2)           WSF_TRACE2("EATT", "INFO", msg, var1, var2)
-/*! \brief 3 argument EATT info trace. */
-#define EATT_TRACE_INFO3(msg, var1, var2, var3)     WSF_TRACE3("EATT", "INFO", msg, var1, var2, var3)
-/*! \brief 0 argument EATT warning trace. */
-#define EATT_TRACE_WARN0(msg)                       WSF_TRACE0("EATT", "WARN", msg)
-/*! \brief 1 argument EATT warning trace. */
-#define EATT_TRACE_WARN1(msg, var1)                 WSF_TRACE1("EATT", "WARN", msg, var1)
-/*! \brief 2 argument EATT warning trace. */
-#define EATT_TRACE_WARN2(msg, var1, var2)           WSF_TRACE2("EATT", "WARN", msg, var1, var2)
-/*! \brief 3 argument EATT warning trace. */
-#define EATT_TRACE_WARN3(msg, var1, var2, var3)     WSF_TRACE3("EATT", "WARN", msg, var1, var2, var3)
-/*! \brief 0 argument EATT error trace. */
-#define EATT_TRACE_ERR0(msg)                        WSF_TRACE0("EATT", "ERR",  msg)
-/*! \brief 1 argument EATT error trace. */
-#define EATT_TRACE_ERR1(msg, var1)                  WSF_TRACE1("EATT", "ERR",  msg, var1)
-/*! \brief 2 argument EATT error trace. */
-#define EATT_TRACE_ERR2(msg, var1, var2)            WSF_TRACE2("EATT", "ERR",  msg, var1, var2)
-/*! \brief 3 argument EATT error trace. */
-#define EATT_TRACE_ERR3(msg, var1, var2, var3)      WSF_TRACE3("EATT", "ERR",  msg, var1, var2, var3)
-
-/*! \brief 0 argument SMP info trace. */
 #define SMP_TRACE_INFO0(msg)                        WSF_TRACE0("SMP", "INFO", msg)
 #define SMP_TRACE_INFO1(msg, var1)                  WSF_TRACE1("SMP", "INFO", msg, var1)
 #define SMP_TRACE_INFO2(msg, var1, var2)            WSF_TRACE2("SMP", "INFO", msg, var1, var2)

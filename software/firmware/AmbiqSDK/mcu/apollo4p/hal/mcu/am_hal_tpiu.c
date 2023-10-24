@@ -6,7 +6,7 @@
 //!
 //! Provides support functions for configuring the ARM TPIU module
 //!
-//! @addtogroup tpiu4_4p TPIU - Trace Port Interface Unit
+//! @addtogroup tpiu4 TPIU - Trace Port Interface Unit
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -57,10 +57,22 @@
 
 //*****************************************************************************
 //
-// Enables the TPIU
-//
-// This function enables the ARM TPIU by setting the TPIU registers and then
-// enabling the TPIU clock source in MCU control register.
+//! @brief Enables the TPIU
+//!
+//! This function enables the ARM TPIU by setting the TPIU registers and then
+//! enabling the TPIU clock source in MCU control register.
+//!
+//! @param ui32SetItmBaud - structure for configuration.
+//!     But for simplicity, ui32SetItmBaud can be set to one of the
+//!      following, in which case all other structure members are ignored.
+//!      In this case, the given BAUD rate is based on a div-by-8 HFRC clock.
+//!         AM_HAL_TPIU_BAUD_57600
+//!         AM_HAL_TPIU_BAUD_115200
+//!         AM_HAL_TPIU_BAUD_230400
+//!         AM_HAL_TPIU_BAUD_460800
+//!         AM_HAL_TPIU_BAUD_500000
+//!         AM_HAL_TPIU_BAUD_1M
+//!
 //
 //*****************************************************************************
 void
@@ -143,10 +155,11 @@ am_hal_tpiu_enable(uint32_t ui32SetItmBaud)
 
 //*****************************************************************************
 //
-// Disables the TPIU
-//
-// This function disables the ARM TPIU by disabling the TPIU clock source
-// in MCU control register.
+//! @brief Disables the TPIU
+//!
+//! This function disables the ARM TPIU by disabling the TPIU clock source
+//! in MCU control register.
+//!
 //
 //*****************************************************************************
 void

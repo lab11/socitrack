@@ -7,16 +7,16 @@
  *            Alert Notification profile client
  *            Phone Alert Status profile client
  *
- *  Copyright (c) 2011-2020 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
- *  Copyright (c) 2019-2020 Packetcraft, Inc.
- *  
+ *  Copyright (c) 2019 Packetcraft, Inc.
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,12 +48,6 @@
 #include "paspc/paspc_api.h"
 #include "hrpc/hrpc_api.h"
 #include "dis/dis_api.h"
-#include "atts_main.h"
-
-#ifdef AM_BLE_EATT
-#include "att_eatt.h"
-#include "eatt_api.h"
-#endif
 
 /**************************************************************************************************
   Local Variables
@@ -110,7 +104,7 @@ static const appSecCfg_t watchSecCfg =
   0,                                      /*! Initiator key distribution flags */
   DM_KEY_DIST_LTK,                        /*! Responder key distribution flags */
   FALSE,                                  /*! TRUE if Out-of-band pairing data is present */
-  TRUE                                    /*! TRUE to initiate security upon connection */
+  FALSE                                    /*! TRUE to initiate security upon connection */
 };
 
 /*! configurable parameters for connection parameter update */
@@ -150,20 +144,6 @@ static const smpCfg_t watchSmpCfg =
   64000,                                  /*! Time msec before attemptExp decreases */
   2                                       /*! Repeated attempts multiplier exponent */
 };
-
-#ifdef AM_BLE_EATT
-/* EATT Configuration structure */
-static const eattCfg_t watcheattCfg =
-{
-  247,                              /* MTU */
-  247,                              /* MPS */
-  TRUE,                             /* Open EATT channels automatically on connect */
-  FALSE,                            /* Authorization required */
-  DM_SEC_LEVEL_NONE,                /* Security level required */
-  2,                                /* Number of enhanced l2cap channels per connection */
-  NULL                              /* Channel priority table */
-};
-#endif
 
 /*! Configurable parameters for service and characteristic discovery */
 static const appDiscCfg_t watchDiscCfg =
@@ -209,7 +189,7 @@ static const uint8_t watchAdvDataDisc[] =
   /*! manufacturer specific data */
   3,                                      /*! length */
   DM_ADV_TYPE_MANUFACTURER,               /*! AD type */
-  UINT16_TO_BYTES(HCI_ID_PACKETCRAFT),    /*! company ID */
+  UINT16_TO_BYTES(HCI_ID_ARM),            /*! company ID */
 
   /*! service solicitation UUID list */
   7,                                      /*! length */
@@ -285,13 +265,13 @@ static uint16_t *pWatchAnsHdlList =     &watchCb.hdlSlaveList[WATCH_DISC_ANS_STA
 static uint16_t *pWatchPassHdlList =    &watchCb.hdlSlaveList[WATCH_DISC_PASS_START];
 
 /* Start of cached heart rate service handles; begins after GATT - Master Role */
-#define WATCH_DISC_DIS_START            (WATCH_DISC_GATT_START + GATT_HDL_LIST_LEN)
-#define WATCH_DISC_HRS_START            (WATCH_DISC_DIS_START + DIS_HDL_LIST_LEN)
+#define WATCH_DISC_DISC_START           (WATCH_DISC_GATT_START + GATT_HDL_LIST_LEN)
+#define WATCH_DISC_HRS_START            (WATCH_DISC_DISC_START + DIS_HDL_LIST_LEN)
 #define WATCH_DISC_MASTER_HDL_LIST_LEN  (WATCH_DISC_HRS_START + HRPC_HRS_HDL_LIST_LEN)
 
 /*! Pointers into handle list heart rate service handles - Master Role */
 static uint16_t *pWatchMstGattHdlList = &watchCb.hdlMasterList[WATCH_DISC_GATT_START];
-static uint16_t *pWatchDisHdlList =     &watchCb.hdlMasterList[WATCH_DISC_DIS_START];
+static uint16_t *pWatchDisHdlList =     &watchCb.hdlMasterList[WATCH_DISC_DISC_START];
 static uint16_t *pWatchHrsHdlList =     &watchCb.hdlMasterList[WATCH_DISC_HRS_START];
 
 /* sanity check:  make sure handle list length is <= app db handle list length */
@@ -312,8 +292,8 @@ static const uint8_t watchCccIndVal[] = {UINT16_TO_BYTES(ATT_CLIENT_CFG_INDICATE
 /* Default value for CCC notifications */
 static const uint8_t watchCccNtfVal[] = {UINT16_TO_BYTES(ATT_CLIENT_CFG_NOTIFY)};
 
-/* Default value for Client Supported Features (enable Robust Caching and Enhanced ATT Bearer) */
-static const uint8_t watchCsfVal[1] = { ATTS_CSF_ROBUST_CACHING | ATTS_CSF_EATT_BEARER };
+/* Default value for Client Supported Features (enable Robust Caching) */
+static const uint8_t watchCsfVal[1] = { ATTS_CSF_ROBUST_CACHING };
 
 /* ANS Control point value for "Enable New Alert Notification" */
 static const uint8_t watchAncpEnNewVal[] = {CH_ANCP_ENABLE_NEW, CH_ALERT_CAT_ID_ALL};
@@ -420,12 +400,6 @@ static const attcDiscCfg_t watchDiscMasterCfgList[] =
 
   /* Read:  DIS System ID */
   {NULL, 0, DIS_SID_HDL_IDX},
-
-  /* Read:  DIS Registration certificate data */
-  {NULL, 0, DIS_RCD_HDL_IDX},
-
-  /* Read:  DIS PnP ID */
-  {NULL, 0, DIS_PNP_ID_HDL_IDX},
 
   /* Read:  HRS Body sensor location */
   {NULL, 0, HRPC_HRS_BSL_HDL_IDX},
@@ -1249,33 +1223,9 @@ static void watchProcMsg(dmEvt_t *pMsg)
       break;
 
     case DM_RESET_CMPL_IND:
-      // set database hash calculating status to true until a new hash is generated after reset
-      attsCsfSetHashUpdateStatus(TRUE);
-
-      // Generate ECC key if configured support secure connection,
-      // else will calcualte ATT database hash
-      if( watchSecCfg.auth & DM_AUTH_SC_FLAG )
-      {
-          DmSecGenerateEccKeyReq();
-      }
-      else
-      {
-          AttsCalculateDbHash();
-      }
-      uiEvent = APP_UI_RESET_CMPL;
-      break;
-
-    case ATTS_DB_HASH_CALC_CMPL_IND:
+      AttsCalculateDbHash();
       watchSetup(pMsg);
-      break;
-
-    case DM_SEC_ECC_KEY_IND:
-      DmSecSetEccKey(&pMsg->eccMsg.data.key);
-      // Only calculate database hash if the calculating status is in progress
-      if( attsCsfGetHashUpdateStatus() )
-      {
-        AttsCalculateDbHash();
-      }
+      uiEvent = APP_UI_RESET_CMPL;
       break;
 
     case DM_ADV_START_IND:
@@ -1422,9 +1372,6 @@ void WatchHandlerInit(wsfHandlerId_t handlerId)
 
   /* Set stack configuration pointers */
   pSmpCfg = (smpCfg_t *) &watchSmpCfg;
-#ifdef AM_BLE_EATT
-  pEattCfg = (eattCfg_t *) &watcheattCfg;
-#endif
 
   /* Initialize application framework */
   AppMasterInit();
@@ -1496,11 +1443,6 @@ void WatchHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
 /*************************************************************************************************/
 void WatchStart(void)
 {
-  /* EATT initialization */
-#ifdef AM_BLE_EATT
-  EattInit(EATT_ROLE_INITIATOR | EATT_ROLE_ACCEPTOR);
-#endif
-
   /* Register for stack callbacks */
   DmRegister(watchDmCback);
   DmConnRegister(DM_CLIENT_ID_APP, watchDmCback);

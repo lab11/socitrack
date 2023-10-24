@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>
@@ -54,7 +54,6 @@
 #include "am_util_stdio.h"
 #include "am_bsp.h"
 #include "am_util_delay.h"
-#include "am_util.h"
 
 
 //*****************************************************************************
@@ -62,39 +61,24 @@
 // Global variables.
 //
 //*****************************************************************************
-#if defined (apollo4l_eb)
+#if defined(AM_PART_APOLLO4L)
 #define DS35X1GA_QUAD_CLKON4_MODE_EN
 #endif
 
 #define AM_DEVICES_MSPI_DS35X1GA_TIMEOUT       1000000
 #define AM_DEVICES_MSPI_DS35X1GA_ERASE_TIMEOUT 1000000
 
-
-#define NANDFLASH_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH           (8)     // there should be at least
-                                                                    // this amount of consecutive
-                                                                    // passing settings to be accepted.
-#define FLASH_CHECK_DATA_SIZE_BYTES                         2048    // Data trunk size
-#define FLASH_TIMING_SCAN_PAGE_NUM                          16      // Total scan page
-#define FLASH_TEST_START_PAGE                               0x000   //Flash check start page
-#define FLASH_TEST_END_PAGE                                 FLASH_TEST_START_PAGE + FLASH_TIMING_SCAN_PAGE_NUM   //Flash check end page number
-
-//
-//!
-//
 typedef struct
 {
     uint32_t ui32Module;
     void *pMspiHandle;
-    am_hal_mspi_dev_config_t sCurrentSetting;       //This holds current mspi setting
-    am_hal_mspi_dev_config_t sSerialSetting;        //This holds serial cmd setting
+    am_hal_mspi_dev_config_t *pCurrentSetting;
+    am_hal_mspi_dev_config_t *pSerialSetting;
     bool bOccupied;
 } am_devices_mspi_ds35x1ga_t;
 
-//
-//!
-//
 #if defined(AM_PART_APOLLO4_API)
-static am_hal_mspi_config_t gMspiCfg =
+am_hal_mspi_config_t gMspiCfg =
 {
   .ui32TCBSize          = 0,
   .pTCB                 = NULL,
@@ -106,14 +90,8 @@ static am_hal_mspi_config_t gMspiCfg =
 };
 #endif
 
-//
-//!
-//
 static am_devices_mspi_ds35x1ga_t gAmDs35x1ga[AM_DEVICES_MSPI_DS35X1GA_MAX_DEVICE_NUM];
 
-//
-//!
-//
 static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Serial_CE0_MSPIConfig =
 {
     .eSpiMode = AM_HAL_MSPI_SPI_MODE_0,
@@ -134,17 +112,17 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Serial_CE0_MSPIConfig =
 #endif
 
 #if defined(AM_PART_APOLLO3P)
-    .ui8WriteLatency      = 0,
-    .bEnWriteLatency      = false,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#elif defined(AM_PART_APOLLO4_API)
-    .ui8WriteLatency      = 0,
-    .bEnWriteLatency      = false,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
+    .ui8WriteLatency = 0,
+    .bEnWriteLatency = false,
+#else
+    .ui8WriteLatency = 0,
+    .bEnWriteLatency = false,
+#endif
+    .bEmulateDDR = false,
+    .ui16DMATimeLimit = 0,
+    .eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,
+
+#if defined(AM_PART_APOLLO4_API)
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
@@ -156,9 +134,6 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Serial_CE0_MSPIConfig =
 #endif
 };
 
-//
-//!
-//
 static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Serial_CE1_MSPIConfig =
 {
     .eSpiMode = AM_HAL_MSPI_SPI_MODE_0,
@@ -179,17 +154,17 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Serial_CE1_MSPIConfig =
 #endif
 
 #if defined(AM_PART_APOLLO3P)
-    .ui8WriteLatency      = 0,
-    .bEnWriteLatency      = false,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#elif defined(AM_PART_APOLLO4_API)
-    .ui8WriteLatency      = 0,
-    .bEnWriteLatency      = false,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
+    .ui8WriteLatency = 0,
+    .bEnWriteLatency = false,
+#else
+    .ui8WriteLatency = 0,
+    .bEnWriteLatency = false,
+#endif
+    .bEmulateDDR = false,
+    .ui16DMATimeLimit = 0,
+    .eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,
+
+#if defined(AM_PART_APOLLO4_API)
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
@@ -202,9 +177,6 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Serial_CE1_MSPIConfig =
 };
 
 
-//
-//!
-//
 static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Quad_CE0_MSPIConfig =
 {
     .eSpiMode = AM_HAL_MSPI_SPI_MODE_0,
@@ -225,17 +197,17 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Quad_CE0_MSPIConfig =
 #endif
 
 #if defined(AM_PART_APOLLO3P)
-    .ui8WriteLatency      = 6,
-    .bEnWriteLatency      = true,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#elif defined(AM_PART_APOLLO4_API)
-    .ui8WriteLatency      = 0,
-    .bEnWriteLatency      = false,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
+    .ui8WriteLatency = 6,
+    .bEnWriteLatency = true,
+#else
+    .ui8WriteLatency = 0,
+    .bEnWriteLatency = false,
+#endif
+    .bEmulateDDR = false,
+    .ui16DMATimeLimit = 0,
+    .eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,
+
+#if defined(AM_PART_APOLLO4_API)
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
@@ -248,9 +220,6 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Quad_CE0_MSPIConfig =
 };
 
 
-//
-//!
-//
 static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Quad_CE1_MSPIConfig =
 {
     .eSpiMode = AM_HAL_MSPI_SPI_MODE_0,
@@ -271,17 +240,17 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Quad_CE1_MSPIConfig =
 #endif
 
 #if defined(AM_PART_APOLLO3P)
-    .ui8WriteLatency      = 6,
-    .bEnWriteLatency      = true,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
-#elif defined(AM_PART_APOLLO4_API)
-    .ui8WriteLatency      = 0,
-    .bEnWriteLatency      = false,
-    .bEmulateDDR          = false,
-    .ui16DMATimeLimit     = 0,
-    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
+    .ui8WriteLatency = 6,
+    .bEnWriteLatency = true,
+#else
+    .ui8WriteLatency = 0,
+    .bEnWriteLatency = false,
+#endif
+    .bEmulateDDR = false,
+    .ui16DMATimeLimit = 0,
+    .eDMABoundary = AM_HAL_MSPI_BOUNDARY_NONE,
+
+#if defined(AM_PART_APOLLO4_API)
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
@@ -294,9 +263,6 @@ static am_hal_mspi_dev_config_t MSPI_DS35X1GA_Quad_CE1_MSPIConfig =
 };
 
 
-//
-//!
-//
 static struct
 {
     am_hal_mspi_device_e eHalDeviceEnum;
@@ -309,49 +275,9 @@ static struct
         { AM_HAL_MSPI_FLASH_QUAD_CE1_1_1_4,   &MSPI_DS35X1GA_Quad_CE1_MSPIConfig   },
     };
 
-#if defined(AM_PART_APOLLO4_API)
-//! MSPI interrupts.
-static const IRQn_Type mspi_interrupts[] =
-{
-    MSPI0_IRQn,
-    MSPI1_IRQn,
-    MSPI2_IRQn,
-};
-
 //
-// SDR timing default setting
+// Forward declarations.
 //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-static am_devices_mspi_ds35x1ga_sdr_timing_config_t SDRTimingConfigDefault =
-{
-    .ui32Turnaround     = 9,
-    .ui32Rxneg          = 0,
-    .ui32Rxdqsdelay     = 15
-};
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-static am_devices_mspi_ds35x1ga_sdr_timing_config_t SDRTimingConfigDefault =
-{
-    .bTxNeg            = 1,
-    .bRxNeg            = 0,
-    .bRxCap            = 0,
-    .ui8TxDQSDelay     = 4,
-    .ui8RxDQSDelay     = 16,
-    .ui8Turnaround     = 8,
-};
-#endif
-
-//
-// SDR timing stored setting
-//
-static bool bSDRTimingConfigSaved = false;
-static am_devices_mspi_ds35x1ga_sdr_timing_config_t SDRTimingConfigStored;
-#endif // defined(AM_PART_APOLLO4_API)
-
-//*****************************************************************************
-//
-// static function forward declarations.
-//
-//*****************************************************************************
 static uint32_t am_devices_mspi_ds35x1ga_command_write(void *pHandle,
                                                        uint8_t ui8Instr,
                                                        bool bSendAddr,
@@ -372,13 +298,6 @@ static uint32_t am_devices_mspi_ds35x1ga_command_read(void *pHandle,
 //*****************************************************************************
 
 #if defined(AM_PART_APOLLO3P)
-//*****************************************************************************
-//
-//! @brief
-//! @param cmd
-//! @return
-//
-//*****************************************************************************
 static uint8_t
 ds35x1ga_cmd_addr_len(uint8_t cmd)
 {
@@ -423,13 +342,25 @@ ds35x1ga_cmd_addr_len(uint8_t cmd)
 
 //*****************************************************************************
 //
-//! @brief
-//! @param pHandle
-//! @param ui8Addr
-//! @param pu8iData
-//! @return
+// Set nand flash WP and hold pin as high level in serial mode
 //
 //*****************************************************************************
+void
+am_devices_mspi_ds35x1ga_wp_hold_pinconfig(void)
+{
+#if defined(AM_PART_APOLLO4_API)
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_NAND_FLASH_WP, am_hal_gpio_pincfg_output);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_NAND_FLASH_HOLD, am_hal_gpio_pincfg_output);
+    am_hal_gpio_output_set(AM_BSP_GPIO_NAND_FLASH_WP);
+    am_hal_gpio_output_set(AM_BSP_GPIO_NAND_FLASH_HOLD);
+#else
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_NAND_FLASH_WP, g_AM_HAL_GPIO_OUTPUT);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_NAND_FLASH_HOLD, g_AM_HAL_GPIO_OUTPUT);
+    am_hal_gpio_state_write(AM_BSP_GPIO_NAND_FLASH_WP, AM_HAL_GPIO_OUTPUT_SET);
+    am_hal_gpio_state_write(AM_BSP_GPIO_NAND_FLASH_HOLD, AM_HAL_GPIO_OUTPUT_SET);
+#endif
+}
+
 static uint32_t
 am_devices_mspi_ds35x1ga_read_status(void *pHandle, uint8_t ui8Addr, uint8_t *pu8iData)
 {
@@ -450,16 +381,6 @@ am_devices_mspi_ds35x1ga_read_status(void *pHandle, uint8_t ui8Addr, uint8_t *pu
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
 }
 
-//*****************************************************************************
-//
-//! @brief
-//! @param pHandle
-//! @param ui8Data
-//! @param ui8Addr
-//! @param pui8Data
-//! @return
-//
-//*****************************************************************************
 static uint32_t
 am_devices_mspi_ds35x1ga_write_status(void *pHandle, uint8_t ui8Data, uint8_t ui8Addr, uint8_t *pui8Data)
 {
@@ -480,13 +401,6 @@ am_devices_mspi_ds35x1ga_write_status(void *pHandle, uint8_t ui8Data, uint8_t ui
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//! @brief
-//! @param pHandle
-//! @return
-//
-//*****************************************************************************
 static uint32_t
 am_devices_mspi_ds35x1ga_reset(void *pHandle)
 {
@@ -504,13 +418,9 @@ am_devices_mspi_ds35x1ga_reset(void *pHandle)
 
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
-//*****************************************************************************
 //
-//! @brief Device specific initialization function.
-//! @param pHandle
-//! @return
+// Device specific initialization function.
 //
-//*****************************************************************************
 static uint32_t
 am_device_init_flash(void *pHandle)
 {
@@ -531,12 +441,6 @@ am_device_init_flash(void *pHandle)
         return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
     }
 
-    uint32_t ui32Id;
-    if (AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS != am_devices_mspi_ds35x1ga_id(pHandle, &ui32Id))
-    {
-        am_util_stdio_printf("NAND flash ID is mismatch \r\n");
-    }
-
     //
     // the SET FEATURES command must be issued to enable the Nand flash ECC and QE (Quad 1-1-4 mode for high speed
     // reading and writing) setting with sending B0 feature address.
@@ -551,13 +455,9 @@ am_device_init_flash(void *pHandle)
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
 //
-//! @brief Device specific de-initialization function.
-//! @param pHandle
-//! @return
+// Device specific de-initialization function.
 //
-//*****************************************************************************
 static uint32_t
 am_device_deinit_flash(void *pHandle)
 {
@@ -572,12 +472,6 @@ am_device_deinit_flash(void *pHandle)
 //*****************************************************************************
 
 #if defined(AM_PART_APOLLO3P)
-//*****************************************************************************
-//! @brief
-//! @param pHandle
-//! @param ui8NewLen
-//! @return
-//*****************************************************************************
 static uint8_t
 am_devices_mspi_ds35x1ga_asize_reconfig(void * pHandle, uint8_t ui8NewLen)
 {
@@ -589,23 +483,11 @@ am_devices_mspi_ds35x1ga_asize_reconfig(void * pHandle, uint8_t ui8NewLen)
 }
 #endif
 
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pMspiHandle
-//! @param pConfig
-//!
-//! @return
-//
-//*****************************************************************************
 static uint32_t
-am_devices_mspi_device_reconfigure(void * pHandle, am_hal_mspi_dev_config_t *pConfig)
+am_devices_mspi_device_reconfigure(void * pMspiHandle, am_hal_mspi_dev_config_t *pConfig)
 {
-    am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
-
     // Disable MSPI defore re-configuring it
-    uint32_t ui32Status = am_hal_mspi_disable(pFlash->pMspiHandle);
+    uint32_t ui32Status = am_hal_mspi_disable(pMspiHandle);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         am_util_stdio_printf("Error - Failed to disble mspi.\n");
@@ -614,67 +496,71 @@ am_devices_mspi_device_reconfigure(void * pHandle, am_hal_mspi_dev_config_t *pCo
     //
     // Re-Configure the MSPI for the requested operation mode.
     //
-    ui32Status = am_hal_mspi_device_configure(pFlash->pMspiHandle, pConfig);
+    ui32Status = am_hal_mspi_device_configure(pMspiHandle, pConfig);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         am_util_stdio_printf("Error - Failed to configure mspi.\n");
         return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
     }
     // Re-Enable MSPI
-    ui32Status = am_hal_mspi_enable(pFlash->pMspiHandle);
+    ui32Status = am_hal_mspi_enable(pMspiHandle);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         am_util_stdio_printf("Error - Failed to configure mspi.\n");
         return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
     }
 
-    //Restore GPIO configuration
+    uint32_t ui32Index = 0;
+    for (ui32Index = 0; ui32Index < AM_DEVICES_MSPI_DS35X1GA_MAX_DEVICE_NUM; ui32Index++)
+    {
+        if (gAmDs35x1ga[ui32Index].bOccupied == true)
+        {
+            break;
+        }
+    }
+
+    if (ui32Index == AM_DEVICES_MSPI_DS35X1GA_MAX_DEVICE_NUM)
+    {
+        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
+    }
+
+    if ( (pConfig->eDeviceConfig == AM_HAL_MSPI_FLASH_SERIAL_CE0) || (pConfig->eDeviceConfig == AM_HAL_MSPI_FLASH_SERIAL_CE1) )
+    {
+        am_devices_mspi_ds35x1ga_wp_hold_pinconfig();
+    }
+    else
+    {
 #if defined(DS35X1GA_QUAD_CLKON4_MODE_EN)
-    am_bsp_mspi_clkond4_pins_enable(pFlash->ui32Module, pConfig->eDeviceConfig);
+        am_bsp_mspi_clkond4_pins_enable(gAmDs35x1ga[ui32Index].ui32Module, pConfig->eDeviceConfig);
 #else
-    am_bsp_mspi_pins_enable(pFlash->ui32Module, pConfig->eDeviceConfig);
+        am_bsp_mspi_pins_enable(gAmDs35x1ga[ui32Index].ui32Module, pConfig->eDeviceConfig);
 #endif
+    }
 
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
 
-static inline uint32_t
-am_devices_mspi_ds35x1ga_enter_command_mode(void *pHandle)
+static inline uint32_t am_devices_mspi_ds35x1ga_enter_command_mode(void *pHandle)
 {
     am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
-    if (pFlash->sCurrentSetting.eDeviceConfig != pFlash->sSerialSetting.eDeviceConfig || pFlash->sCurrentSetting.eClockFreq != pFlash->sSerialSetting.eClockFreq)
+    if (pFlash->pCurrentSetting != pFlash->pSerialSetting)
     {
-        return am_devices_mspi_device_reconfigure(pFlash, &pFlash->sSerialSetting);
+        return am_devices_mspi_device_reconfigure(pFlash->pMspiHandle, pFlash->pSerialSetting);
     }
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-static inline uint32_t
-am_devices_mspi_ds35x1ga_exit_command_mode(void *pHandle)
+static inline uint32_t am_devices_mspi_ds35x1ga_exit_command_mode(void *pHandle)
 {
     am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
-    if (pFlash->sCurrentSetting.eDeviceConfig != pFlash->sSerialSetting.eDeviceConfig || pFlash->sCurrentSetting.eClockFreq != pFlash->sSerialSetting.eClockFreq)
+    if (pFlash->pCurrentSetting != pFlash->pSerialSetting)
     {
-        return am_devices_mspi_device_reconfigure(pFlash, &pFlash->sCurrentSetting);
+        return am_devices_mspi_device_reconfigure(pFlash->pMspiHandle, pFlash->pCurrentSetting);
     }
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle
-//! @param ui8Instr
-//! @param bSendAddr
-//! @param ui32Addr
-//! @param pData
-//! @param ui32NumBytes
-//!
-//! @return
-//
-//*****************************************************************************
 static uint32_t
 am_devices_mspi_ds35x1ga_command_write(void *pHandle, uint8_t ui8Instr, bool bSendAddr,
                                        uint32_t ui32Addr, uint32_t *pData,
@@ -722,7 +608,7 @@ am_devices_mspi_ds35x1ga_command_write(void *pHandle, uint8_t ui8Instr, bool bSe
             sInstAddrCfg.eAddrCfg = AM_HAL_MSPI_ADDR_3_BYTE;
         }
 
-        sInstAddrCfg.eInstrCfg = pFlash->sSerialSetting.eInstrCfg;   // keep instruction setting the same
+        sInstAddrCfg.eInstrCfg = pFlash->pSerialSetting->eInstrCfg;   // keep instruction setting the same
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
 #else
@@ -747,8 +633,8 @@ am_devices_mspi_ds35x1ga_command_write(void *pHandle, uint8_t ui8Instr, bool bSe
     if ( (ui8Instr == AM_DEVICES_MSPI_DS35X1GA_PROGRAM_EXECUTE) || (ui8Instr == AM_DEVICES_MSPI_DS35X1GA_READ_CELL_ARRAY) || (ui8Instr == AM_DEVICES_MSPI_DS35X1GA_BLOCK_ERASE) || (ui8Instr == AM_DEVICES_MSPI_DS35X1GA_SET_FEATURE) )
     {
         am_hal_mspi_instr_addr_t sInstAddrCfg;
-        sInstAddrCfg.eAddrCfg = pFlash->sSerialSetting.eAddrCfg;
-        sInstAddrCfg.eInstrCfg = pFlash->sSerialSetting.eInstrCfg;
+        sInstAddrCfg.eAddrCfg = pFlash->pSerialSetting->eAddrCfg;
+        sInstAddrCfg.eInstrCfg = pFlash->pSerialSetting->eInstrCfg;
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
 #else
@@ -768,16 +654,7 @@ am_devices_mspi_ds35x1ga_command_write(void *pHandle, uint8_t ui8Instr, bool bSe
 
 //*****************************************************************************
 //
-//! @brief  Generic Command Read function.
-//!
-//! @param pHandle
-//! @param ui8Instr
-//! @param bSendAddr
-//! @param ui32Addr
-//! @param pData
-//! @param ui32NumBytes
-//!
-//! @return
+// Generic Command Read function.
 //
 //*****************************************************************************
 static uint32_t
@@ -809,7 +686,7 @@ am_devices_mspi_ds35x1ga_command_read(void *pHandle, uint8_t ui8Instr, bool bSen
 
 
         sInstAddrCfg.eAddrCfg = AM_HAL_MSPI_ADDR_1_BYTE;
-        sInstAddrCfg.eInstrCfg = pFlash->sSerialSetting.eInstrCfg;   // keep instruction setting the same
+        sInstAddrCfg.eInstrCfg = pFlash->pSerialSetting->eInstrCfg;   // keep instruction setting the same
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
 #else
@@ -846,8 +723,8 @@ am_devices_mspi_ds35x1ga_command_read(void *pHandle, uint8_t ui8Instr, bool bSen
     if ( ui8Instr == AM_DEVICES_MSPI_DS35X1GA_GET_FEATURE )
     {
         am_hal_mspi_instr_addr_t sInstAddrCfg;
-        sInstAddrCfg.eAddrCfg = pFlash->sSerialSetting.eAddrCfg;
-        sInstAddrCfg.eInstrCfg = pFlash->sSerialSetting.eInstrCfg;
+        sInstAddrCfg.eAddrCfg = pFlash->pSerialSetting->eAddrCfg;
+        sInstAddrCfg.eInstrCfg = pFlash->pSerialSetting->eInstrCfg;
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
 #else
@@ -865,15 +742,6 @@ am_devices_mspi_ds35x1ga_command_read(void *pHandle, uint8_t ui8Instr, bool bSen
     return ui32Status;
 }
 
-// ****************************************************************************
-//
-//! @brief
-//!
-//! @param pCallbackCtxt
-//!
-//! @param status
-//
-// ****************************************************************************
 static void
 pfnMSPI_DS35X1GA_Callback(void *pCallbackCtxt, uint32_t status)
 {
@@ -881,22 +749,14 @@ pfnMSPI_DS35X1GA_Callback(void *pCallbackCtxt, uint32_t status)
     *(volatile bool *)pCallbackCtxt = true;
 }
 
-// ****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle
-//!
-//! @return
-//
-// ****************************************************************************
+
 static uint32_t
 am_devices_mspi_ds35x1ga_tx_enter_ad4_mode(void *pHandle)
 {
     uint32_t ui32Status;
     am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
 
-    if ( pFlash->sCurrentSetting.eDeviceConfig == pFlash->sSerialSetting.eDeviceConfig )
+    if ( pFlash->pCurrentSetting == pFlash->pSerialSetting )
     {
         return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
     }
@@ -904,7 +764,7 @@ am_devices_mspi_ds35x1ga_tx_enter_ad4_mode(void *pHandle)
     //
     // Set writelatency after command mode in write mode in nand flash.
     //
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_NAND_FLASH_SET_WLAT, &pFlash->sCurrentSetting);
+    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_NAND_FLASH_SET_WLAT, pFlash->pCurrentSetting);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
       return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
@@ -914,20 +774,13 @@ am_devices_mspi_ds35x1ga_tx_enter_ad4_mode(void *pHandle)
 }
 
 
-// ****************************************************************************
-//
-//
-//
-// ****************************************************************************
 uint32_t
 am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1ga_config_t *psMSPISettings, void **ppHandle, void **ppMspiHandle)
 {
     uint32_t ui32Status;
-    am_hal_mspi_dev_config_t *psConfig;
-
+    am_hal_mspi_dev_config_t *psConfig = g_DS35X1GA_DevConfig[0].psDevConfig;
     void *pMspiHandle;
     uint32_t ui32Index = 0;
-    am_hal_mspi_config_t mspiCfg;
 
     if ((ui32Module >= AM_REG_MSPI_NUM_MODULES) || (psMSPISettings == NULL))
     {
@@ -939,7 +792,6 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
     {
         if (gAmDs35x1ga[ui32Index].bOccupied == false)
         {
-            psConfig = &gAmDs35x1ga[ui32Index].sCurrentSetting;
             break;
         }
     }
@@ -952,7 +804,7 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
     {
         if (psMSPISettings->eDeviceConfig == g_DS35X1GA_DevConfig[i].eHalDeviceEnum)
         {
-            *psConfig = *g_DS35X1GA_DevConfig[i].psDevConfig;
+            psConfig = g_DS35X1GA_DevConfig[i].psDevConfig;
             psConfig->eClockFreq = psMSPISettings->eClockFreq;
 #if !defined(AM_PART_APOLLO4_API)
             psConfig->pTCB = psMSPISettings->pNBTxnBuf;
@@ -969,11 +821,13 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
     //
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
-    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
+#if AM_APOLLO3_MCUCTRL
+    am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
+#else // AM_APOLLO3_MCUCTRL
     am_hal_mcuctrl_fault_capture_enable();
-#endif
+#endif // AM_APOLLO3_MCUCTRL
+#endif // !AM_PART_APOLLO4
 
     //
     // Configure the MSPI for Serial or Quad-Paired Serial operation during initialization.
@@ -982,7 +836,7 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
     {
         case AM_HAL_MSPI_FLASH_SERIAL_CE0:
         case AM_HAL_MSPI_FLASH_QUAD_CE0_1_1_4:
-            gAmDs35x1ga[ui32Index].sSerialSetting = MSPI_DS35X1GA_Serial_CE0_MSPIConfig;
+            gAmDs35x1ga[ui32Index].pSerialSetting = &MSPI_DS35X1GA_Serial_CE0_MSPIConfig;
             if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
             {
                 am_util_stdio_printf("Error - Failed to initialize MSPI.\n");
@@ -996,7 +850,7 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
             }
 
 #if defined(AM_PART_APOLLO4_API)
-            mspiCfg = gMspiCfg;
+            am_hal_mspi_config_t    mspiCfg = gMspiCfg;
             mspiCfg.ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
             mspiCfg.pTCB = psMSPISettings->pNBTxnBuf;
             if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_configure(pMspiHandle, &mspiCfg))
@@ -1023,11 +877,12 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
 #else
             am_bsp_mspi_pins_enable(ui32Module, MSPI_DS35X1GA_Serial_CE0_MSPIConfig.eDeviceConfig);
 #endif
+            am_devices_mspi_ds35x1ga_wp_hold_pinconfig();
             break;
 
         case AM_HAL_MSPI_FLASH_SERIAL_CE1:
         case AM_HAL_MSPI_FLASH_QUAD_CE1_1_1_4:
-            gAmDs35x1ga[ui32Index].sSerialSetting = MSPI_DS35X1GA_Serial_CE1_MSPIConfig;
+            gAmDs35x1ga[ui32Index].pSerialSetting = &MSPI_DS35X1GA_Serial_CE1_MSPIConfig;
             if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
             {
                 am_util_stdio_printf("Error - Failed to initialize MSPI.\n");
@@ -1068,12 +923,15 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
 #else
             am_bsp_mspi_pins_enable(ui32Module, MSPI_DS35X1GA_Serial_CE1_MSPIConfig.eDeviceConfig);
 #endif
+            am_devices_mspi_ds35x1ga_wp_hold_pinconfig();
             break;
 
         default:
             return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
     }
 
+
+    gAmDs35x1ga[ui32Index].pCurrentSetting = psConfig;
     gAmDs35x1ga[ui32Index].pMspiHandle = pMspiHandle;
     gAmDs35x1ga[ui32Index].ui32Module = ui32Module;
 
@@ -1156,11 +1014,6 @@ am_devices_mspi_ds35x1ga_init(uint32_t ui32Module, const am_devices_mspi_ds35x1g
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-// ****************************************************************************
-//
-//
-//
-// ****************************************************************************
 uint32_t
 am_devices_mspi_ds35x1ga_deinit(void *pHandle)
 {
@@ -1239,11 +1092,7 @@ am_devices_mspi_ds35x1ga_deinit(void *pHandle)
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-//  Read the ID of the NAND flash.
-//
-//*****************************************************************************
+
 uint32_t
 am_devices_mspi_ds35x1ga_id(void *pHandle, uint32_t *pui32DeviceID)
 {
@@ -1257,7 +1106,6 @@ am_devices_mspi_ds35x1ga_id(void *pHandle, uint32_t *pui32DeviceID)
     uint8_t ui8Response[3];
     ui32Status = am_devices_mspi_ds35x1ga_command_read(pHandle, AM_DEVICES_MSPI_DS35X1GA_READ_ID, false, 0, (uint32_t *)&ui8Response[0], 3);
     *pui32DeviceID = (ui8Response[1] << 8) | ui8Response[2];
-    am_util_debug_printf("Device ID: %04x\n", *pui32DeviceID);
     if (((*pui32DeviceID & AM_DEVICES_MSPI_DS35X1GA_ID_MASK) == AM_DEVICES_MSPI_DS35X1GA_ID) &&
         (AM_HAL_STATUS_SUCCESS == ui32Status))
     {
@@ -1271,29 +1119,17 @@ am_devices_mspi_ds35x1ga_id(void *pHandle, uint32_t *pui32DeviceID)
     }
 }
 
-// ****************************************************************************
-//
-//
-// ****************************************************************************
-#if defined (AM_PART_APOLLO3P)
-static uint8_t PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE];
-#elif defined (AM_PART_APOLLO4) || (AM_PART_APOLLO4B)
-AM_SHARED_RW static uint8_t PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE + 8];
-#else
-AM_SHARED_RW static uint8_t PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE];
-#endif
 
-uint32_t
-am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNum,
-                              uint8_t *pui8DataBuffer,
-                              uint32_t ui32DataLen,
-                              uint8_t *pui8OobBuffer,
-                              uint32_t ui32OobLen,
-                              uint8_t *pui32EccResult)
+uint32_t am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNum,
+                                       uint8_t *pui8DataBuffer,
+                                       uint32_t ui32DataLen,
+                                       uint8_t *pui8OobBuffer,
+                                       uint32_t ui32OobLen,
+                                       uint8_t *pui32EccResult)
 {
     am_hal_mspi_dma_transfer_t Transaction;
     uint32_t ui32Status;
-
+    uint8_t PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE];
     am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
 
 
@@ -1335,21 +1171,6 @@ am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNum,
 
     am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
 
-#if defined(AM_PART_APOLLO4_API)
-    if ( bSDRTimingConfigSaved == true)
-    {
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        ui32Status = am_devices_mspi_ds35x1ga_apply_sdr_timing(pFlash, &SDRTimingConfigStored);
-#else
-        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &SDRTimingConfigStored);
-#endif
-        if ( AM_HAL_STATUS_SUCCESS != ui32Status )
-        {
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-        }
-    }
-#endif
-
     // Set the DMA priority
     Transaction.ui8Priority = 1;
     // Set the transfer direction to RX (Read)
@@ -1386,7 +1207,6 @@ am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNum,
         {
             break;
         }
-        //
         // Call the BOOTROM cycle function to delay for about 1 microsecond.
         //
 #if defined(AM_PART_APOLLO4_API)
@@ -1410,20 +1230,16 @@ am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNum,
 }
 
 
-// ****************************************************************************
-//
-//
-// ****************************************************************************
-uint32_t
-am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageNum,
-                               uint8_t *pui8DataBuffer,
-                               uint32_t ui32DataLen,
-                               uint8_t *pui8OobBuffer,
-                               uint32_t ui32OobLen)
+
+uint32_t am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageNum,
+                                        uint8_t *pui8DataBuffer,
+                                        uint32_t ui32DataLen,
+                                        uint8_t *pui8OobBuffer,
+                                        uint32_t ui32OobLen)
 {
     am_hal_mspi_dma_transfer_t Transaction;
     uint32_t ui32Status;
-
+    uint8_t PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE];
     am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
 
     if (ui32PageNum >= AM_DEVICES_MSPI_DS35X1GA_MAX_PAGES)
@@ -1442,80 +1258,31 @@ am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageNum,
         return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
     }
 
+    // Prepare the source data buffer.
+    memcpy(PageBuffer, pui8DataBuffer, ui32DataLen);
+    memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE], pui8OobBuffer, ui32OobLen);
+
     am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
 
-#if defined(AM_PART_APOLLO3P)
     ui32Status = am_devices_mspi_ds35x1ga_tx_enter_ad4_mode(pHandle);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
     }
-#endif
-
-#if defined (AM_PART_APOLLO4) || (AM_PART_APOLLO4B)
-    uint8_t i;
-    uint16_t ui16PageOffset = 0;
-    if (pFlash->sCurrentSetting.eDeviceConfig == AM_HAL_MSPI_FLASH_QUAD_CE0_1_1_4 ||
-        pFlash->sCurrentSetting.eDeviceConfig == AM_HAL_MSPI_FLASH_QUAD_CE1_1_1_4)
-    {
-        ui16PageOffset >>= 8;
-        PageBuffer[7] = 0xEE;
-        PageBuffer[6] = 0xEE;
-        PageBuffer[5] = 0xEE;
-        PageBuffer[4] = 0xEE;
-        for ( i = 4; i > 0; i-- )
-        {
-            PageBuffer[i-1] = (ui16PageOffset & 0x01) | 0x0E;
-            ui16PageOffset >>= 1;
-            PageBuffer[i-1] |= ((ui16PageOffset & 0x01) | 0x0E) << 4;
-            ui16PageOffset >>= 1;
-        }
-
-        memcpy(&PageBuffer[8], pui8DataBuffer, ui32DataLen);
-        memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE + 8], pui8OobBuffer, ui32OobLen);
-
-        //
-        // Disable sending row address temporarily.
-        //
-        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS, NULL);
-        if (AM_HAL_STATUS_SUCCESS != ui32Status)
-        {
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-        }
-        //
-        // Set the transfer count in bytes.
-        //
-        Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE + 8;
-    }
-    else
-    {
-        memcpy(PageBuffer, pui8DataBuffer, ui32DataLen);
-        memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE], pui8OobBuffer, ui32OobLen);
-        //
-        // Set the transfer count in bytes.
-        //
-        Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE;
-    }
-#else
-    memcpy(PageBuffer, pui8DataBuffer, ui32DataLen);
-    memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE], pui8OobBuffer, ui32OobLen);
-    //
-    // Set the transfer count in bytes.
-    //
-    Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE;
-#endif
 
     // Set the DMA priority
     Transaction.ui8Priority = 1;
     // Set the transfer direction to TX (Write)
     Transaction.eDirection = AM_HAL_MSPI_TX;
-
+    // Set the transfer count in bytes.
+    Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE;
     // Program the whole page.
+
     Transaction.ui32DeviceAddress = 0x0;
 
     // Set the source SRAM buffer address.
     Transaction.ui32SRAMAddress = (uint32_t)PageBuffer;
-
+    ;
     // Clear the CQ stimulus.
     Transaction.ui32PauseCondition = 0;
     // Clear the post-processing
@@ -1588,11 +1355,7 @@ am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageNum,
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-// ****************************************************************************
-//
-//  Erase a certain page of the NAND flash.
-//
-// ****************************************************************************
+
 uint32_t
 am_devices_mspi_ds35x1ga_block_erase(void *pHandle, uint32_t ui32BlockNum)
 {
@@ -1663,1067 +1426,10 @@ am_devices_mspi_ds35x1ga_block_erase(void *pHandle, uint32_t ui32BlockNum)
     return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
 }
 
-#if defined(AM_PART_APOLLO4_API)
-static uint8_t write_oob[AM_DEVICES_MSPI_DS35X1GA_PAGE_OOB_SIZE];
-static uint8_t read_oob[AM_DEVICES_MSPI_DS35X1GA_PAGE_OOB_SIZE];
-
-static uint8_t  ui8TxBuffer[FLASH_CHECK_DATA_SIZE_BYTES];
-static uint8_t  ui8RxBuffer[FLASH_CHECK_DATA_SIZE_BYTES];
-
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-am_hal_mspi_dqs_t scanCfg =
-{
-    .bDQSEnable             = 0,
-    .bEnableFineDelay       = 1,
-    .bOverrideRXDQSDelay    = 1,
-    .ui8RxDQSDelay          = 15,
-    .bOverrideTXDQSDelay    = 0,
-    .ui8TxDQSDelay          = 0,
-    .bDQSSyncNeg            = 0,
-    .ui8DQSDelay            = 0,
-    .ui8PioTurnaround       = 8,
-    .ui8XipTurnaround       = 8,
-    .bRxNeg                 = 0,
-};
-#else
-static am_hal_mspi_timing_scan_t scanCfg =
-{
-    .bTxNeg            = 1,
-    .bRxNeg            = 0,
-    .bRxCap            = 0,
-    .ui8TxDQSDelay     = 4,
-    .ui8RxDQSDelay     = 16,
-    .ui8Turnaround     = 8,
-};
-#endif
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle
-//! @param ui32PageNum
-//! @param pui8DataBuffer
-//! @param ui32DataLen
-//! @param pui8OobBuffer
-//! @param ui32OobLen
-//! @param pDevTimgScanCfg
-//!
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-am_devices_mspi_ds35x1ga_timing_check_write(void *pHandle, uint32_t ui32PageNum,
-                                            uint8_t *pui8DataBuffer,
-                                            uint32_t ui32DataLen,
-                                            uint8_t *pui8OobBuffer,
-                                            uint32_t ui32OobLen, am_hal_mspi_dqs_t* pDevTimgScanCfg)
-#else
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle
-//! @param ui32PageNum
-//! @param pui8DataBuffer
-//! @param ui32DataLen
-//! @param pui8OobBuffer
-//! @param ui32OobLen
-//! @param pDevTimgScanCfg
-//!
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-am_devices_mspi_ds35x1ga_timing_check_write(void *pHandle, uint32_t ui32PageNum,
-                                        uint8_t *pui8DataBuffer,
-                                        uint32_t ui32DataLen,
-                                        uint8_t *pui8OobBuffer,
-                                        uint32_t ui32OobLen, am_hal_mspi_timing_scan_t* pDevTimgScanCfg)
-#endif
-{
-    am_hal_mspi_dma_transfer_t Transaction;
-    uint32_t ui32Status;
-
-    am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
-
-    if (ui32PageNum >= AM_DEVICES_MSPI_DS35X1GA_MAX_PAGES)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    am_devices_mspi_ds35x1ga_enter_command_mode(pHandle);
-
-    //
-    // Send the command sequence to enable writing.
-    //
-    ui32Status = am_devices_mspi_ds35x1ga_command_write(pHandle, AM_DEVICES_MSPI_DS35X1GA_WRITE_ENABLE, false, 0, NULL, 0);
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
-
-    ui32Status = am_devices_mspi_ds35x1ga_tx_enter_ad4_mode(pHandle);
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, pDevTimgScanCfg);
-#else
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, pDevTimgScanCfg);
-#endif
-
-#if defined (AM_PART_APOLLO4) || (AM_PART_APOLLO4B)
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, pDevTimgScanCfg);
-
-    // Prepare the source data buffer.
-    uint16_t ui16PageOffset = 0;
-    if (pFlash->sCurrentSetting.eDeviceConfig == AM_HAL_MSPI_FLASH_QUAD_CE0_1_1_4 ||
-        pFlash->sCurrentSetting.eDeviceConfig == AM_HAL_MSPI_FLASH_QUAD_CE1_1_1_4)
-    {
-        ui16PageOffset >>= 8;
-        PageBuffer[7] = 0xEE;
-        PageBuffer[6] = 0xEE;
-        PageBuffer[5] = 0xEE;
-        PageBuffer[4] = 0xEE;
-        for (uint8_t i = 4; i > 0; i-- )
-        {
-            PageBuffer[i-1] = (ui16PageOffset & 0x01) | 0x0E;
-            ui16PageOffset >>= 1;
-            PageBuffer[i-1] |= ((ui16PageOffset & 0x01) | 0x0E) << 4;
-            ui16PageOffset >>= 1;
-        }
-
-        memcpy(&PageBuffer[8], pui8DataBuffer, ui32DataLen);
-        memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE + 8], pui8OobBuffer, ui32OobLen);
-
-        //
-        // Disable sending row address temporarily.
-        //
-        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_NAND_FLASH_SENDADDR_DIS, NULL);
-        if (AM_HAL_STATUS_SUCCESS != ui32Status)
-        {
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-        }
-        //
-        // Set the transfer count in bytes.
-        //
-        Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE + 8;
-    }
-    else
-    {
-        // Prepare the source data buffer.
-        memcpy(PageBuffer, pui8DataBuffer, ui32DataLen);
-        memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE], pui8OobBuffer, ui32OobLen);
-        //
-        // Set the transfer count in bytes.
-        //
-        Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE;
-    }
-#else
-
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, pDevTimgScanCfg);
-    // Prepare the source data buffer.
-    memcpy(PageBuffer, pui8DataBuffer, ui32DataLen);
-    memcpy(&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE], pui8OobBuffer, ui32OobLen);
-    //
-    // Set the transfer count in bytes.
-    //
-    Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE;
-#endif
-
-    // Set the DMA priority
-    Transaction.ui8Priority = 1;
-    // Set the transfer direction to TX (Write)
-    Transaction.eDirection = AM_HAL_MSPI_TX;
-
-    // Program the whole page.
-
-    Transaction.ui32DeviceAddress = 0x0;
-
-    // Set the source SRAM buffer address.
-    Transaction.ui32SRAMAddress = (uint32_t)PageBuffer;
-
-    // Clear the CQ stimulus.
-    Transaction.ui32PauseCondition = 0;
-    // Clear the post-processing
-    Transaction.ui32StatusSetClr = 0;
-
-    // Start the transaction.
-    volatile bool bDMAComplete = false;
-    ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_DS35X1GA_Callback, (void *)&bDMAComplete);
-
-    // Check the transaction status.
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    // Wait for DMA Complete or Timeout
-    for (uint32_t i = 0; i < AM_DEVICES_MSPI_DS35X1GA_TIMEOUT; i++)
-    {
-
-        // check DMA status without using ISR
-        am_hal_mspi_interrupt_status_get(pFlash->pMspiHandle, &ui32Status, false);
-        am_hal_mspi_interrupt_clear(pFlash->pMspiHandle, ui32Status);
-        am_hal_mspi_interrupt_service(pFlash->pMspiHandle, ui32Status);
-
-        if (bDMAComplete)
-        {
-            // program execute here.
-            am_devices_mspi_ds35x1ga_enter_command_mode(pHandle);
-
-            ui32Status = am_devices_mspi_ds35x1ga_command_write(pHandle, AM_DEVICES_MSPI_DS35X1GA_PROGRAM_EXECUTE, true, ui32PageNum, NULL, 0);
-
-            if (AM_HAL_STATUS_SUCCESS != ui32Status)
-            {
-                am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
-                return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-            }
-
-            if (AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS == am_devices_mspi_ds35x1ga_read_status(pHandle, AM_DEVICES_MSPI_DS35X1GA_FEATURE_STATUS, (uint8_t *)&ui32Status))
-            {
-                if (((ui32Status & AM_DEVICES_DS35X1GA_PRG_F) != AM_DEVICES_DS35X1GA_PRG_F) &&
-                    ((ui32Status & AM_DEVICES_DS35X1GA_OIP) != AM_DEVICES_DS35X1GA_OIP))
-                {
-                    //
-                    // Send the command sequence to disable writing.
-                    //
-                    ui32Status = am_devices_mspi_ds35x1ga_command_write(pHandle, AM_DEVICES_MSPI_DS35X1GA_WRITE_DISABLE, false, 0, NULL, 0);
-                    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-                    {
-                        am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
-                        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-                    }
-                    break;
-                }
-            }
-            am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
-        }
-
-        //
-        // Call the BOOTROM cycle function to delay for about 1 microsecond.
-        //
-#if defined(AM_PART_APOLLO4_API)
-        am_util_delay_us(1);
-#else
-        am_hal_flash_delay(FLASH_CYCLES_US(1));
-#endif
-    }
-
-    // Check the status.
-    if (!bDMAComplete)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    //
-    // Return the status.
-    //
-    return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
-}
-
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle
-//! @param ui32PageNum
-//! @param pui8DataBuffer
-//! @param ui32DataLen
-//! @param pui8OobBuffer
-//! @param ui32OobLen
-//! @param pui32EccResult
-//! @param pDevTimgScanCfg
-//!
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-am_devices_mspi_ds35x1ga_timing_check_read(void *pHandle, uint32_t ui32PageNum,
-                                           uint8_t *pui8DataBuffer,
-                                           uint32_t ui32DataLen,
-                                           uint8_t *pui8OobBuffer,
-                                           uint32_t ui32OobLen,
-                                           uint8_t *pui32EccResult, am_hal_mspi_dqs_t* pDevTimgScanCfg)
-#else
-//*****************************************************************************
-//
-//! @brief
-//!
-//! @param pHandle
-//! @param ui32PageNum
-//! @param pui8DataBuffer
-//! @param ui32DataLen
-//! @param pui8OobBuffer
-//! @param ui32OobLen
-//! @param pui32EccResult
-//! @param pDevTimgScanCfg
-//!
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-am_devices_mspi_ds35x1ga_timing_check_read(void *pHandle, uint32_t ui32PageNum,
-                                       uint8_t *pui8DataBuffer,
-                                       uint32_t ui32DataLen,
-                                       uint8_t *pui8OobBuffer,
-                                       uint32_t ui32OobLen,
-                                       uint8_t *pui32EccResult, am_hal_mspi_timing_scan_t* pDevTimgScanCfg)
-#endif
-{
-    am_hal_mspi_dma_transfer_t Transaction;
-    uint32_t ui32Status;
-
-    am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
-
-
-    if (ui32PageNum >= AM_DEVICES_MSPI_DS35X1GA_MAX_PAGES)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    am_devices_mspi_ds35x1ga_enter_command_mode(pHandle);
-
-    ui32Status = am_devices_mspi_ds35x1ga_command_write(pHandle, AM_DEVICES_MSPI_DS35X1GA_READ_CELL_ARRAY, true, ui32PageNum, NULL, 0);
-
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    if (AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS != am_devices_mspi_ds35x1ga_read_status(pHandle, AM_DEVICES_MSPI_DS35X1GA_FEATURE_STATUS, (uint8_t *)&ui32Status))
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    switch (ui32Status & AM_DEVICES_DS35X1GA_ECCS)
-    {
-        case AM_DEVICES_DS35X1GA_ECCS_NO_BIT_FLIPS:
-            *pui32EccResult = AM_DEVICES_MSPI_DS35X1GA_ECC_STATUS_NO_BIT_FLIPS;
-            break;
-        case AM_DEVICES_DS35X1GA_ECCS_BIT_FLIPS_CORRECTED:
-        case AM_DEVICES_DS35X1GA_ECCS_BIT_FLIPS_CORRECTED_THR:
-            *pui32EccResult = AM_DEVICES_MSPI_DS35X1GA_ECC_STATUS_BIT_FLIPS_CORRECTED;
-            break;
-        case AM_DEVICES_DS35X1GA_ECCS_BIT_FLIPS_NOT_CORRECTED:
-            *pui32EccResult = AM_DEVICES_MSPI_DS35X1GA_ECC_STATUS_BIT_FLIPS_NOT_CORRECTED;
-            break;
-        default:
-            *pui32EccResult = 0xFF; // invalid ECC status
-            break;
-    }
-
-    am_devices_mspi_ds35x1ga_exit_command_mode(pHandle);
-
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, pDevTimgScanCfg);
-#else
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, pDevTimgScanCfg);
-#endif
-    // Set the DMA priority
-    Transaction.ui8Priority = 1;
-    // Set the transfer direction to RX (Read)
-    Transaction.eDirection = AM_HAL_MSPI_RX;
-    // Set the transfer count in bytes.
-    Transaction.ui32TransferCount = AM_DEVICES_MSPI_DS35X1GA_PAGE_FULL_SIZE;
-    // Read the whole page.
-    Transaction.ui32DeviceAddress = 0x0;
-    // Set the target SRAM buffer address.
-    Transaction.ui32SRAMAddress = (uint32_t)PageBuffer;
-    // Clear the CQ stimulus.
-    Transaction.ui32PauseCondition = 0;
-    // Clear the post-processing
-    Transaction.ui32StatusSetClr = 0;
-
- #if defined(AM_PART_APOLLO4)
-    Transaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
-#endif
-
-    // Start the transaction.
-    volatile bool bDMAComplete = false;
-    ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_DS35X1GA_Callback, (void *)&bDMAComplete);
-
-    // Check the transaction status.
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    // Wait for DMA Complete or Timeout
-    for (uint32_t i = 0; i < AM_DEVICES_MSPI_DS35X1GA_TIMEOUT; i++)
-    {
-
-        // check DMA status without using ISR
-        am_hal_mspi_interrupt_status_get(pFlash->pMspiHandle, &ui32Status, false);
-        am_hal_mspi_interrupt_clear(pFlash->pMspiHandle, ui32Status);
-        am_hal_mspi_interrupt_service(pFlash->pMspiHandle, ui32Status);
-
-        if (bDMAComplete)
-        {
-            break;
-        }
-
-        //
-        // Call the BOOTROM cycle function to delay for about 1 microsecond.
-        //
-#if defined(AM_PART_APOLLO4_API)
-        am_util_delay_us(1);
-#else
-        am_hal_flash_delay(FLASH_CYCLES_US(1));
-#endif
-    }
-
-    // Check the status.
-    if (!bDMAComplete)
-    {
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-
-    memcpy(pui8DataBuffer, PageBuffer, ui32DataLen);
-    memcpy(pui8OobBuffer, (&PageBuffer[AM_DEVICES_MSPI_DS35X1GA_PAGE_DATA_SIZE]), ui32OobLen);
-
-    // Return the status.
-    return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
-}
-
-//*****************************************************************************
-//
-//! @brief
-//! @param pHandle
-//! @param cacheadd
-//! @param dat
-//! @param num
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-read_from_cache(void *pHandle, uint32_t cacheadd, uint32_t *dat, uint32_t num)
-{
-    uint32_t ui32Status;
-    uint8_t ui8EccStatus;
-
-    ui32Status = am_devices_mspi_ds35x1ga_timing_check_read(pHandle, cacheadd, (uint8_t *)dat, num, &read_oob[0], 16, &ui8EccStatus, &scanCfg);
-
-    return ui32Status;
-}
-
-//*****************************************************************************
-//
-//! @brief
-//! @param pHandle
-//! @param cacheadd
-//! @param dat
-//! @param num
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-program_load(void *pHandle, uint32_t cacheadd, uint32_t *dat, uint32_t num)
-{
-    uint32_t ui32Status = 0;
-    memset(write_oob, 0x0, sizeof(write_oob));
-    ui32Status = am_devices_mspi_ds35x1ga_timing_check_write(pHandle, cacheadd, (uint8_t *)dat, num, &write_oob[0], AM_DEVICES_MSPI_DS35X1GA_PAGE_OOB_SIZE, &scanCfg);
-
-    return ui32Status;
-}
-
-//*****************************************************************************
-//
-//! @brief
-//! @param pattern_index
-//! @param buff
-//! @param len
-//! @return
-//
-//*****************************************************************************
-static int
-prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t len)
-{
-    uint32_t *pui32TxPtr = (uint32_t*)buff;
-    uint8_t  *pui8TxPtr  = (uint8_t*)buff;
-
-    // length has to be multiple of 4 bytes
-    if ( len % 4 )
-    {
-        return -1;
-    }
-
-    switch ( pattern_index )
-    {
-        case 0:
-            // 0x5555AAAA
-            for (uint32_t i = 0; i < len / 4; i++)
-            {
-               pui32TxPtr[i] = (0x5555AAAA);
-            }
-            break;
-        case 1:
-            // 0xFFFF0000
-            for (uint32_t i = 0; i < len / 4; i++)
-            {
-               pui32TxPtr[i] = (0xFFFF0000);
-            }
-            break;
-        case 2:
-            // walking
-            for (uint32_t i = 0; i < len; i++)
-            {
-               pui8TxPtr[i] = 0x01 << (i % 8);
-            }
-            break;
-        case 3:
-            // incremental from 1
-            for (uint32_t i = 0; i < len; i++)
-            {
-               pui8TxPtr[i] = ((i + 1) & 0xFF);
-            }
-            break;
-        case 4:
-            // decremental from 0xff
-            for ( uint32_t i = 0; i < len; i++ )
-            {
-                // decrement starting from 0xff
-                pui8TxPtr[i] = (0xff - i) & 0xFF;
-            }
-            break;
-        default:
-            // incremental from 1
-            for (uint32_t i = 0; i < len; i++)
-            {
-               pui8TxPtr[i] = ((i ) & 0xFF);
-            }
-            break;
-
-    }
-
-    return 0;
-}
-//*****************************************************************************
-//
-//! @brief
-//! @param flashHandle
-//! @param length
-//! @return
-//
-//*****************************************************************************
-static bool
-flash_check(void* flashHandle, uint32_t length)
-{
-    //
-    // Write to target address with test pattern with given length
-    // Use 5 patterns: 0x5555AAAA, 0xFFFF0000, Walking, incremental and decremental
-    //
-    uint8_t counter;
-    for ( counter = 0; counter < FLASH_TIMING_SCAN_PAGE_NUM; counter++ )
-    {
-        prepare_test_pattern((counter % 5), ui8TxBuffer, FLASH_CHECK_DATA_SIZE_BYTES);
-
-        //
-        // Verify the result
-        //
-        if ( program_load(flashHandle, (FLASH_TEST_START_PAGE + counter), (uint32_t *)ui8TxBuffer, FLASH_CHECK_DATA_SIZE_BYTES) )
-        {
-            break;
-        }
-        if ( read_from_cache(flashHandle, (FLASH_TEST_START_PAGE + counter), (uint32_t *)ui8RxBuffer, FLASH_CHECK_DATA_SIZE_BYTES) )
-        {
-            break;
-        }
-        if ( memcmp(ui8RxBuffer, ui8TxBuffer, FLASH_CHECK_DATA_SIZE_BYTES) !=0 )
-        {
-            // verify failed, return directly
-            break;
-        }
-    }
-    if ( counter >= FLASH_TIMING_SCAN_PAGE_NUM )
-    {
-        return true;
-    }
-
-    return false;
-}
-
-//*****************************************************************************
-//
-//! @brief Count the longest consecutive 1s in a 32bit word
-//!
-//! @param pVal
-//! @return
-//
-//*****************************************************************************
-
-static uint32_t
-count_consecutive_ones(uint32_t* pVal)
-{
-    uint32_t count = 0;
-    uint32_t data = *pVal;
-
-    while ( data )
-    {
-        data = (data & (data << 1));
-        count++;
-    }
-    return count;
-}
-
-//*****************************************************************************
-//
-//! @brief Find and return the mid point of the longest continuous 1s in a 32bit word
-//!
-//! @param pVal
-//! @return
-//
-//*****************************************************************************
-static uint32_t
-find_mid_point(uint32_t* pVal)
-{
-    uint32_t pattern_len = 0;
-    uint32_t max_len = 0;
-    uint32_t pick_point = 0;
-    bool pattern_start = false;
-    uint32_t val = *pVal;
-    uint8_t remainder = 0;
-    bool pick_point_flag = false;
-
-    for ( uint32_t i = 0; i < 32; i++ )
-    {
-        if ( val & (0x01 << i) )
-        {
-            pattern_start = true;
-            pattern_len++;
-        }
-        else
-        {
-            if ( pattern_start == true )
-            {
-                pattern_start = false;
-                pick_point_flag = true;
-            }
-        }
-        if ( (i == 31) && ( pattern_start == true ) )
-        {
-            pick_point_flag = true;
-        }
-
-        if ( pick_point_flag == true )
-        {
-            if ( pattern_len > max_len )
-            {
-                max_len = pattern_len;
-                pick_point = i - 1 - pattern_len / 2;
-                remainder = pattern_len % 2;
-            }
-            pattern_len = 0;
-            pick_point_flag = false;
-        }
-    }
-
-    //
-    // check the passing window side
-    //
-    if ( (pick_point < 16) && (val & 0x00000002) )
-    {
-        // window is likely on low side
-        pick_point = pick_point - remainder;    // minus only when pattern length is odd
-    }
-    else if ( (pick_point > 15) && (val & 0x40000000) )
-    {
-        // window is likely on high side
-        pick_point = pick_point + 1;
-    }
-    else
-    {
-        // window is in the middle, no action
-    }
-    return pick_point;
-}
-
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-const am_devices_mspi_ds35x1ga_sdr_timing_config_t ds35x1ga_sConfigArray[] =
-{
-    {6 , 0, 1}, // Turnaround=6 , RXNEG=0, RXDQSDELAY=Dummy
-    {6 , 1, 1}, // Turnaround=6 , RXNEG=1, RXDQSDELAY=Dummy
-    {7 , 0, 1}, // Turnaround=7 , RXNEG=0, RXDQSDELAY=Dummy
-    {7 , 1, 1}, // Turnaround=7 , RXNEG=1, RXDQSDELAY=Dummy
-    {8 , 0, 1}, // Turnaround=8 , RXNEG=0, RXDQSDELAY=Dummy
-    {8 , 1, 1}, // Turnaround=8 , RXNEG=1, RXDQSDELAY=Dummy
-    {9 , 0, 1}, // Turnaround=9 , RXNEG=0, RXDQSDELAY=Dummy
-    {9 , 1, 1}, // Turnaround=9 , RXNEG=1, RXDQSDELAY=Dummy
-    {10, 0, 1}, // Turnaround=10, RXNEG=0, RXDQSDELAY=Dummy
-    {10, 1, 1}, // Turnaround=10, RXNEG=1, RXDQSDELAY=Dummy
-    {11, 0, 1}, // Turnaround=11, RXNEG=0, RXDQSDELAY=Dummy
-    {11, 1, 1}, // Turnaround=11, RXNEG=1, RXDQSDELAY=Dummy
-    {12, 0, 1}, // Turnaround=12, RXNEG=0, RXDQSDELAY=Dummy
-    {12, 1, 1}, // Turnaround=12, RXNEG=1, RXDQSDELAY=Dummy
-};
-#else
-const am_devices_mspi_ds35x1ga_sdr_timing_config_t ds35x1ga_sConfigArray[] =
-{
-//TXNEG RXNEG RXCAP TXDLY RXDLY TURNAROUND
-    {0 ,  0,   1,    0,    1,     8},
-    {0 ,  0,   1,    1,    1,     8},
-    {0 ,  0,   1,    2,    1,     8},
-    {0 ,  0,   1,    3,    1,     8},
-    {0 ,  0,   1,    4,    1,     8},
-    {0 ,  0,   1,    5,    1,     8},
-    {0 ,  0,   1,    6,    1,     8},
-    {0 ,  0,   1,    7,    1,     8},
-    {0 ,  0,   1,    8,    1,     8},
-    {0 ,  0,   1,    9,    1,     8},
-    {0 ,  0,   1,    10,   1,     8},
-    {0 ,  0,   1,    11,   1,     8},
-    {0 ,  1,   1,    0,    1,     8},
-    {0 ,  1,   1,    1,    1,     8},
-    {0 ,  1,   1,    2,    1,     8},
-    {0 ,  1,   1,    3,    1,     8},
-    {0 ,  1,   1,    4,    1,     8},
-    {0 ,  1,   1,    5,    1,     8},
-    {0 ,  1,   1,    6,    1,     8},
-    {0 ,  1,   1,    7,    1,     8},
-    {0 ,  1,   1,    8,    1,     8},
-    {0 ,  1,   1,    9,    1,     8},
-    {0 ,  1,   1,    10,   1,     8},
-    {0 ,  1,   1,    11,   1,     8},
-    {1 ,  0,   0,    0,    1,     8},
-    {1 ,  0,   0,    1,    1,     8},
-    {1 ,  0,   0,    2,    1,     8},
-    {1 ,  0,   0,    3,    1,     8},
-    {1 ,  0,   0,    4,    1,     8},
-    {1 ,  0,   0,    5,    1,     8},
-    {1 ,  0,   0,    6,    1,     8},
-    {1 ,  0,   1,    0,    1,     8},
-    {1 ,  0,   1,    1,    1,     8},
-    {1 ,  0,   1,    2,    1,     8},
-    {1 ,  0,   1,    3,    1,     8},
-    {1 ,  0,   1,    4,    1,     8},
-    {1 ,  0,   1,    5,    1,     8},
-    {1 ,  0,   1,    6,    1,     8},
-    {1 ,  1,   0,    0,    1,     8},
-    {1 ,  1,   0,    1,    1,     8},
-    {1 ,  1,   0,    2,    1,     8},
-    {1 ,  1,   0,    3,    1,     8},
-    {1 ,  1,   0,    4,    1,     8},
-    {1 ,  1,   0,    5,    1,     8},
-    {1 ,  1,   0,    6,    1,     8},
-    {1 ,  1,   0,    7,    1,     8},
-    {1 ,  1,   0,    8,    1,     8},
-    {1 ,  1,   0,    9,    1,     8},
-    {1 ,  1,   0,    10,    1,    8},
-    {1 ,  1,   1,    0,    1,     8},
-    {1 ,  1,   1,    1,    1,     8},
-    {1 ,  1,   1,    2,    1,     8},
-    {1 ,  1,   1,    3,    1,     8},
-    {1 ,  1,   1,    4,    1,     8},
-    {1 ,  1,   1,    5,    1,     8},
-    {1 ,  1,   1,    6,    1,     8},
-    {1 ,  1,   1,    7,    1,     8},
-    {1 ,  1,   1,    8,    1,     8},
-    {1 ,  1,   1,    9,    1,     8},
-    {1 ,  1,   1,    10,   1,     8},
-    {1 ,  1,   1,    4,    1,     9},
-    {1 ,  1,   1,    5,    1,     9},
-    {1 ,  1,   1,    6,    1,     9},
-    {1 ,  1,   1,    7,    1,     9},
-    {1 ,  1,   1,    8,    1,     9},
-    {1 ,  1,   1,    9,    1,     9},
-    {1 ,  1,   1,    10,   1,     9},
-};
-#endif
-//*****************************************************************************
-//
-// Checks DS35X1GA timing and determine a delay setting.
-//
-//*****************************************************************************
-uint32_t
-am_devices_mspi_ds35x1ga_sdr_init_timing_check(uint32_t module,
-                                               const am_devices_mspi_ds35x1ga_config_t *pDevCfg,
-                                               am_devices_mspi_ds35x1ga_sdr_timing_config_t *pDevSdrCfg)
-{
-    uint32_t ui32Status;
-    void *pDevHandle;
-    void *pHandle;
-
-    uint32_t ui32TestSize = sizeof(ds35x1ga_sConfigArray) / sizeof(am_devices_mspi_ds35x1ga_sdr_timing_config_t);
-    uint32_t ui32ResultArray[2*(sizeof(ds35x1ga_sConfigArray) / sizeof(am_devices_mspi_ds35x1ga_sdr_timing_config_t))] = {0};
-
-    bool  bTimingConfigSaved = bSDRTimingConfigSaved;
-
-    // clear previous saved config, rescan
-    if ( bTimingConfigSaved == true )
-    {
-        bSDRTimingConfigSaved = false;
-    }
-    //
-    // initialize interface
-    //
-    ui32Status = am_devices_mspi_ds35x1ga_init(module, pDevCfg, &pDevHandle, &pHandle);
-    if (AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS != ui32Status)
-    {
-        am_util_debug_printf("    Failed to configure the MSPI and Flash Device correctly!\n");
-        return ui32Status;
-    }
-
-#if defined(FAST_TIMING_SCAN)
-    if ( bTimingConfigSaved )
-    {
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        scanCfg.ui8PioTurnaround    = scanCfg.ui8XipTurnaround = SDRTimingConfigStored.ui32Turnaround;
-        scanCfg.bRxNeg              = SDRTimingConfigStored.ui32Rxneg;
-        scanCfg.ui8RxDQSDelay       = SDRTimingConfigStored.ui32Rxdqsdelay;
-#else
-        scanCfg.bTxNeg              = SDRTimingConfigStored.bTxNeg;
-        scanCfg.bRxNeg              = SDRTimingConfigStored.bRxNeg;
-        scanCfg.bRxCap              = SDRTimingConfigStored.bRxCap;
-        scanCfg.ui8TxDQSDelay       = SDRTimingConfigStored.ui8TxDQSDelay;
-        scanCfg.ui8RxDQSDelay       = SDRTimingConfigStored.ui8RxDQSDelay;
-        scanCfg.ui8Turnaround       = SDRTimingConfigStored.ui8Turnaround;
-#endif
-
-        // erase flash before flash check
-        ui32Status = am_devices_mspi_ds35x1ga_block_erase(pDevHandle, FLASH_TEST_START_PAGE >> 6);
-        if (AM_HAL_STATUS_SUCCESS != ui32Status)
-        {
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-        }
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_DQS, &scanCfg);
-#else
-        ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &scanCfg);
-#endif
-        if ( AM_HAL_STATUS_SUCCESS != ui32Status )
-        {
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-        }
-
-        // run data check
-        if ( true == flash_check(pDevHandle, FLASH_TIMING_SCAN_PAGE_NUM) )
-        {
-            //
-            // data check pass, deinitialize the MSPI interface
-            //
-            am_devices_mspi_ds35x1ga_deinit(pDevHandle);
-            NVIC_ClearPendingIRQ(mspi_interrupts[module]);
-            am_util_debug_printf("  Skipping Timing Scan!!\n");
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
-        }
-    }
-#endif
-
-    //
-    // Start scan loop
-    //
-    am_util_debug_printf("timing scan running ");
-    for ( uint8_t i = 0; i < ui32TestSize; i++ )
-    {
-         am_util_debug_printf(".");
-        // set Timing Scan Parameters
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        scanCfg.ui8PioTurnaround    = scanCfg.ui8XipTurnaround = ds35x1ga_sConfigArray[i].ui32Turnaround;
-        scanCfg.bRxNeg              = ds35x1ga_sConfigArray[i].ui32Rxneg;
-#else
-        scanCfg.bTxNeg                = ds35x1ga_sConfigArray[i].bTxNeg;
-        scanCfg.bRxNeg                = ds35x1ga_sConfigArray[i].bRxNeg;
-        scanCfg.bRxCap                = ds35x1ga_sConfigArray[i].bRxCap;
-        scanCfg.ui8TxDQSDelay         = ds35x1ga_sConfigArray[i].ui8TxDQSDelay;
-        scanCfg.ui8Turnaround         = ds35x1ga_sConfigArray[i].ui8Turnaround;
-#endif
-        // erase flash before flash check
-        ui32Status = am_devices_mspi_ds35x1ga_block_erase(pDevHandle, FLASH_TEST_START_PAGE >> 6);
-        if (AM_HAL_STATUS_SUCCESS != ui32Status)
-        {
-            return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-        }
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        for ( uint8_t RxDqs_Index = 1; RxDqs_Index < 31; RxDqs_Index++ )
-#else
-        for ( uint8_t RxDqs_Index = 0; RxDqs_Index < 32; RxDqs_Index++ )
-#endif
-        {
-            // set RXDQSDELAY0 value
-            scanCfg.ui8RxDQSDelay   = RxDqs_Index;
-            // apply settings
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-            ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_DQS, &scanCfg);
-#else
-            ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &scanCfg);
-#endif
-            if ( AM_HAL_STATUS_SUCCESS != ui32Status )
-            {
-                return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-            }
-
-            // run data check
-            if ( true == flash_check(pDevHandle, FLASH_TIMING_SCAN_PAGE_NUM) )
-            {
-                // data check pass
-                ui32ResultArray[i] |= 0x01 << RxDqs_Index;
-            }
-            else
-            {
-                // data check failed
-            }
-        }
-    }
-
-    //
-    // Check result
-    //
-    uint32_t ui32MaxOnesIndex = 0;
-    uint32_t ui32MaxOnes = 0;
-    uint32_t ui32Result = 0;
-    for ( uint32_t i = 0; i < ui32TestSize; i++ )
-    {
-        ui32Result = count_consecutive_ones(&ui32ResultArray[i]);
-        if ( ui32Result > ui32MaxOnes )
-        {
-            ui32MaxOnes = ui32Result;
-            ui32MaxOnesIndex = i;
-        }
-    }
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-    am_util_debug_printf("Timing Scan found a window %d fine steps wide.\n", ui32MaxOnes);
-#else
-    am_util_debug_printf("\nTiming Scan found a window %d fine steps wide in setting %d.\n", ui32MaxOnes, ui32MaxOnesIndex);
-    am_util_debug_printf(" TxNeg %d, RxNeg %d, RxCap %d, TxDQSDelay %d, Turnaround %d == 0x%08X\n",
-                             ds35x1ga_sConfigArray[ui32MaxOnesIndex].bTxNeg, ds35x1ga_sConfigArray[ui32MaxOnesIndex].bRxNeg, ds35x1ga_sConfigArray[ui32MaxOnesIndex].bRxCap,
-                             ds35x1ga_sConfigArray[ui32MaxOnesIndex].ui8TxDQSDelay,
-                             ds35x1ga_sConfigArray[ui32MaxOnesIndex].ui8Turnaround, ui32ResultArray[ui32MaxOnesIndex]);
-#endif
-    //
-    // Find RXDQSDELAY Value
-    //
-    uint32_t dqsdelay = find_mid_point(&ui32ResultArray[ui32MaxOnesIndex]);
-    am_util_debug_printf("RxDQSDelay is set to %d.\n\n", dqsdelay);
-
-    //
-    // Deinitialize the MSPI interface
-    //
-    am_devices_mspi_ds35x1ga_deinit(pDevHandle);
-    NVIC_ClearPendingIRQ(mspi_interrupts[module]);
-
-    //
-    // Check consecutive passing settings
-    //
-    if ( ui32MaxOnes < NANDFLASH_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH )
-    {
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        // too short is the passing settings, use default setting
-        pDevSdrCfg->ui32Rxdqsdelay = SDRTimingConfigDefault.ui32Rxdqsdelay;
-        pDevSdrCfg->ui32Rxneg = SDRTimingConfigDefault.ui32Rxneg;
-        pDevSdrCfg->ui32Turnaround = SDRTimingConfigDefault.ui32Turnaround;
-#else
-        pDevSdrCfg->bTxNeg                = SDRTimingConfigDefault.bTxNeg;
-        pDevSdrCfg->bRxNeg                = SDRTimingConfigDefault.bRxNeg;
-        pDevSdrCfg->bRxCap                = SDRTimingConfigDefault.bRxCap;
-        pDevSdrCfg->ui8TxDQSDelay         = SDRTimingConfigDefault.ui8TxDQSDelay;
-        pDevSdrCfg->ui8RxDQSDelay         = SDRTimingConfigDefault.ui8RxDQSDelay;
-        pDevSdrCfg->ui8Turnaround         = SDRTimingConfigDefault.ui8Turnaround;
-#endif
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_ERROR;
-    }
-    else
-    {
-        //
-        // Set output values
-        //
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        pDevSdrCfg->ui32Rxdqsdelay = dqsdelay;
-        pDevSdrCfg->ui32Rxneg = ds35x1ga_sConfigArray[ui32MaxOnesIndex].ui32Rxneg;
-        pDevSdrCfg->ui32Turnaround = ds35x1ga_sConfigArray[ui32MaxOnesIndex].ui32Turnaround;
-#else
-        pDevSdrCfg->ui8RxDQSDelay         = dqsdelay;
-        pDevSdrCfg->bTxNeg                = ds35x1ga_sConfigArray[ui32MaxOnesIndex].bTxNeg;
-        pDevSdrCfg->bRxNeg                = ds35x1ga_sConfigArray[ui32MaxOnesIndex].bRxNeg;
-        pDevSdrCfg->bRxCap                = ds35x1ga_sConfigArray[ui32MaxOnesIndex].bRxCap;
-        pDevSdrCfg->ui8TxDQSDelay         = ds35x1ga_sConfigArray[ui32MaxOnesIndex].ui8TxDQSDelay;
-        pDevSdrCfg->ui8Turnaround         = ds35x1ga_sConfigArray[ui32MaxOnesIndex].ui8Turnaround;
-#endif
-        return AM_DEVICES_MSPI_DS35X1GA_STATUS_SUCCESS;
-    }
-}
-
-
-//*****************************************************************************
-//
-// Apply given SDR timing settings to target MSPI instance.
-//
-//*****************************************************************************
-uint32_t
-am_devices_mspi_ds35x1ga_apply_sdr_timing(void *pHandle,
-                                          am_devices_mspi_ds35x1ga_sdr_timing_config_t *pDevSdrCfg)
-{
-    am_devices_mspi_ds35x1ga_t *pFlash = (am_devices_mspi_ds35x1ga_t *)pHandle;
-
-    // apply timing settings: Turnaround, RXNEG and RXDQSDELAY
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-    am_hal_mspi_dqs_t applyCfg =
-    {
-        .bDQSEnable             = 0,
-        .bEnableFineDelay       = 1,
-        .bOverrideRXDQSDelay    = 1,
-        .bOverrideTXDQSDelay    = 0,
-        .ui8TxDQSDelay          = 0,
-        .bDQSSyncNeg            = 0,
-        .ui8DQSDelay            = 0,
-    };
-
-    applyCfg.ui8RxDQSDelay      = pDevSdrCfg->ui32Rxdqsdelay;
-    applyCfg.ui8PioTurnaround   = pDevSdrCfg->ui32Turnaround;
-    applyCfg.ui8XipTurnaround   = pDevSdrCfg->ui32Turnaround;
-    applyCfg.bRxNeg             = pDevSdrCfg->ui32Rxneg;
-#else
-    am_hal_mspi_timing_scan_t applyCfg =
-    {
-        .bTxNeg            = 1,
-        .bRxNeg            = 0,
-        .bRxCap            = 0,
-        .ui8TxDQSDelay     = 4,
-        .ui8RxDQSDelay     = 16,
-        .ui8Turnaround     = 8,
-    };
-
-    applyCfg.bTxNeg                = pDevSdrCfg->bTxNeg;
-    applyCfg.bRxNeg                = pDevSdrCfg->bRxNeg;
-    applyCfg.bRxCap                = pDevSdrCfg->bRxCap;
-    applyCfg.ui8TxDQSDelay         = pDevSdrCfg->ui8TxDQSDelay;
-    applyCfg.ui8RxDQSDelay         = pDevSdrCfg->ui8RxDQSDelay;
-    applyCfg.ui8Turnaround         = pDevSdrCfg->ui8Turnaround;
-#endif
-
-    // save a local copy of the timing settings
-    if ( bSDRTimingConfigSaved == false )
-    {
-        bSDRTimingConfigSaved                   = true;
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-        SDRTimingConfigStored.ui32Rxdqsdelay    = pDevSdrCfg->ui32Rxdqsdelay;
-        SDRTimingConfigStored.ui32Rxneg         = pDevSdrCfg->ui32Rxneg;
-        SDRTimingConfigStored.ui32Turnaround    = pDevSdrCfg->ui32Turnaround;
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-        SDRTimingConfigStored.bTxNeg            = pDevSdrCfg->bTxNeg;
-        SDRTimingConfigStored.bRxNeg            = pDevSdrCfg->bRxNeg;
-        SDRTimingConfigStored.bRxCap            = pDevSdrCfg->bRxCap;
-        SDRTimingConfigStored.ui8TxDQSDelay     = pDevSdrCfg->ui8TxDQSDelay;
-        SDRTimingConfigStored.ui8RxDQSDelay     = pDevSdrCfg->ui8RxDQSDelay;
-        SDRTimingConfigStored.ui8Turnaround     = pDevSdrCfg->ui8Turnaround;
-#endif
-    }
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-    return am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &applyCfg);
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-    return am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &applyCfg);
-#endif
-}
-
-#endif
-
 //*****************************************************************************
 //
 // End Doxygen group.
 //! @}
 //
 //*****************************************************************************
+

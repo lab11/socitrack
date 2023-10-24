@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_UTILS_H
@@ -57,7 +57,6 @@ extern "C"
 
 #include <stdint.h>
 #include <stdbool.h>
-
 //*****************************************************************************
 //
 //! @brief Use the bootrom to implement a spin loop.
@@ -87,9 +86,10 @@ extern "C"
 //!
 //! @note Interrupts are not disabled during execution of this function.
 //!       Therefore, any interrupt taken will affect the delay timing.
+//!
 //
 //*****************************************************************************
-extern void am_hal_delay_us(uint32_t ui32us);
+extern void     am_hal_delay_us(uint32_t ui32us);
 
 //*****************************************************************************
 //
@@ -161,9 +161,10 @@ extern uint32_t am_hal_load_ui32(uint32_t *pui32Address);
 //! Use this function to store a value to various peripheral or SRAM locations
 //! that can not be touched from code running in SRAM or FLASH.  There is no
 //! known need for this function in Apollo3 at this time.
+//!
 //
 //*****************************************************************************
-extern void am_hal_store_ui32(uint32_t *pui32Address, uint32_t ui32Data);
+extern void     am_hal_store_ui32(uint32_t *pui32Address, uint32_t ui32Data);
 
 #ifdef __cplusplus
 }

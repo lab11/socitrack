@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>
@@ -60,18 +60,14 @@
 // Global variables.
 //
 //*****************************************************************************
-
 //#define W958D6NW_USE_NON_DQS_MODE
-
+#if defined(APOLLO4_FPGA)
+#define W958D6NW_USE_NON_DQS_MODE
+#endif
 #define AM_DEVICES_W958D6NW_PSRAM_TIMEOUT              1000000
 #define PSRAM_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH   (8)     // there should be at least
                                                           // this amount of consecutive
                                                           // passing settings to be accepted.
-
-#define W958D6NW_tHS_MAX_US 3
-#define W958D6NW_tEXTHS_MIN_US 100
-#define W958D6NW_tCSHS_US 1
-
 am_hal_mspi_xip_config_t gWBDDRXipConfig[] =
 {
   {
@@ -94,7 +90,7 @@ am_hal_mspi_xip_config_t gWBDDRXipConfig[] =
     .eAPSize              = AM_HAL_MSPI_AP_SIZE64M,
     .scramblingStartAddr  = 0,
     .scramblingEndAddr    = 0,
-  },
+  }
 };
 
 am_hal_mspi_dqs_t gWBDDRDqsCfg[] =
@@ -146,7 +142,7 @@ am_hal_mspi_dqs_t gWBDDRDqsCfg[] =
     .ui8RxDQSDelayHi        = 0,
     .ui8RxDQSDelayNegHi     = 0,
     .bRxDQSDelayHiEN        = 0,
-  },
+  }
 };
 
 am_hal_mspi_xip_misc_t gWBXipMiscCfg[] =
@@ -174,7 +170,7 @@ am_hal_mspi_xip_misc_t gWBXipMiscCfg[] =
     .bAppndOdd          = false,
     .bBEOn              = false,
     .eBEPolarity        = AM_HAL_MSPI_BE_LOW_ENABLE,
-  },
+  }
 };
 
 am_hal_mspi_config_t gWBDDRMspiCfg =
@@ -219,9 +215,11 @@ am_hal_mspi_dev_config_t  WBDDROctalCE0MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
-
+#if defined(APOLLO4_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
-
+#endif
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
 
@@ -246,9 +244,11 @@ am_hal_mspi_dev_config_t  WBDDROctalCE1MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
-
+#if defined(APOLLO4_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
-
+#endif
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
 
@@ -273,9 +273,11 @@ am_hal_mspi_dev_config_t  WBDDRHEXCE0MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
-
+#if defined(APOLLO4_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
-
+#endif
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
 
@@ -300,32 +302,24 @@ am_hal_mspi_dev_config_t  WBDDRHEXCE1MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
-
+#if defined(APOLLO4_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
-
+#endif
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
 
 
 typedef struct
 {
-  uint32_t                      ui32Module;
-  void                          *pMspiHandle;
-  am_hal_mspi_device_e          eDeviceConfig;
-  bool                          bOccupied;
-  am_devices_mspi_psram_info_t  sDeviceInfo;
+  uint32_t                    ui32Module;
+  void                        *pMspiHandle;
+  am_hal_mspi_device_e        eDeviceConfig;
+  bool                        bOccupied;
 } am_devices_mspi_psram_t;
 
 am_devices_mspi_psram_t gWBDDRPsram[AM_DEVICES_MSPI_PSRAM_MAX_DEVICE_NUM];
-
-
-//*****************************************************************************
-//
-//! @brief
-//! @param pCallbackCtxt
-//! @param status
-//
-//*****************************************************************************
 
 void pfnMSPI_WBPSRAM_DDR_Callback(void *pCallbackCtxt, uint32_t status)
 {
@@ -335,14 +329,7 @@ void pfnMSPI_WBPSRAM_DDR_Callback(void *pCallbackCtxt, uint32_t status)
 
 //*****************************************************************************
 //
-//! @brief Generic Command Write function.
-//! @param pMspiHandle
-//! @param ui16Instr
-//! @param bSendAddr
-//! @param ui32Addr
-//! @param pData
-//! @param ui32NumBytes
-//! @return
+// Generic Command Write function.
 //
 //*****************************************************************************
 static uint32_t
@@ -377,14 +364,7 @@ am_device_command_write(void *pMspiHandle,
 
 //*****************************************************************************
 //
-//! @brief Generic Command Read function.
-//! @param pMspiHandle
-//! @param ui16Instr
-//! @param bSendAddr
-//! @param ui32Addr
-//! @param pData
-//! @param ui32NumBytes
-//! @return
+// Generic Command Read function.
 //
 //*****************************************************************************
 static uint32_t
@@ -417,73 +397,43 @@ am_device_command_read(void *pMspiHandle,
                                        AM_DEVICES_W958D6NW_PSRAM_TIMEOUT );
 }
 
-static inline uint8_t
-am_devices_mspi_psram_w958d6nw_get_ilc(am_devices_mspi_psram_w958d6nw_ilc_e eWLC, uint8_t *pILC)
-{
-    switch(eWLC)
-    {
-      case AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_3:
-          *pILC = 3;
-          break;
-      case AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_4:
-          *pILC = 4;
-          break;
-      case AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_5:
-          *pILC = 5;
-          break;
-      case AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_6:
-          *pILC = 6;
-          break;
-      case AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_7:
-          *pILC = 7;
-          break;
-      default:
-          return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-    }
-    return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
-}
-
-
 //*****************************************************************************
 //
-//! @brief Reset the external psram
+// Reset the external psram
 //
 //*****************************************************************************
-static void
-am_devices_mspi_psram_w958d6nw_reset(uint32_t ui32Module, am_hal_mspi_device_e eMSPIDevice)
+void
+am_devices_mspi_psram_w958d6nw_reset(void)
 {
   //
   // Pull down PSRAM reset pin low for hardware reset
   //
-  uint32_t ui32PinNum;
-  am_hal_gpio_pincfg_t sPinCfg;
-  ui32PinNum = AM_BSP_GPIO_PSRAM_RESET;
-  sPinCfg = am_hal_gpio_pincfg_output;
-  am_hal_gpio_pinconfig(ui32PinNum, sPinCfg);
-  am_hal_gpio_output_set(ui32PinNum);
+  am_hal_gpio_pinconfig(AM_BSP_GPIO_PSRAM_RESET, am_hal_gpio_pincfg_output);
+  am_hal_gpio_output_set(AM_BSP_GPIO_PSRAM_RESET);
   am_util_delay_us(200);
-  am_hal_gpio_output_clear(ui32PinNum);
+  am_hal_gpio_output_clear(AM_BSP_GPIO_PSRAM_RESET);
   am_util_delay_us(100);
-  am_hal_gpio_output_set(ui32PinNum);
+  am_hal_gpio_output_set(AM_BSP_GPIO_PSRAM_RESET);
 
 }
 
+//*****************************************************************************
+//
 
 //*****************************************************************************
 //
-//! @brief Configure the external psram and returns status.
+//! @brief Reads the ID of the external psram and returns the value.
 //!
-//! @param pMspiHandle - Pointer to MSPI instance handle.
-//! @param pPsramInfo - Pointer to device info to be returned
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
 //!
-//! This function configure the write and read latency of the
-//! psram and return status
+//! This function reads the device ID register of the external psram, and returns
+//! the result as an 32-bit unsigned integer value.
 //!
 //! @return 32-bit status
 //
 //*****************************************************************************
 static uint32_t
-am_devices_mspi_psram_w958d6nw_device_init(void *pMspiHandle, am_devices_mspi_psram_info_t *pPsramInfo)
+am_devices_mspi_psram_w958d6nw_id(void *pMspiHandle)
 {
   uint32_t     ui32Status;
   uint32_t     ui32Rawdata;
@@ -506,13 +456,6 @@ am_devices_mspi_psram_w958d6nw_device_init(void *pMspiHandle, am_devices_mspi_ps
       ui16PsramReg = (uint16_t)ui32Rawdata;
       am_util_debug_printf("PSRAM Register ID0 = 0x%04X\n", ui16PsramReg);
       ui8VendorIDReg = ui16PsramReg & 0xF;
-      pPsramInfo->ui8VendorId = ui8VendorIDReg;
-      //
-      // Density calculation
-      // * 2^(row addr bit count + column addr bit count) * 2^ [word/column, word->Byte] * 32 [bit-address] / 1024 [Byte->kB]
-      // * = 2^(row addr bit count + column addr bit count + 5 - 10)
-      // */
-      pPsramInfo->ui32DeviceSizeKb = 1UL << ((((ui16PsramReg & 0x1F00) >> 8) + 1) + (((ui16PsramReg & 0xF0) >> 4) + 1) + 5 - 10);
       if ( ui8VendorIDReg  == 0x6 )
       {
         am_util_debug_printf("PSRAM Vendor ID =  0110(Winbond)\n\n");
@@ -539,7 +482,6 @@ am_devices_mspi_psram_w958d6nw_device_init(void *pMspiHandle, am_devices_mspi_ps
       ui16PsramReg = (uint16_t)ui32Rawdata;
       am_util_debug_printf("PSRAM Register ID1 = 0x%04X\n", ui16PsramReg);
       ui8DeviceIDReg = ui16PsramReg & 0xF;
-      pPsramInfo->ui8DeviceId = ui8DeviceIDReg;
       if ( ui8DeviceIDReg  == 0x9 )
       {
         am_util_debug_printf("PSRAM Device Type =  1001(HyperIO)\n\n");
@@ -629,25 +571,8 @@ am_devices_mspi_psram_w958d6nw_device_init(void *pMspiHandle, am_devices_mspi_ps
 
 }
 
-//*****************************************************************************
-//
-//! @brief This function takes care of splitting the transaction as needed, if the transaction crosses
-//! PSRAM page boundary or because of tCEM restrictions, if hardware does not support it
-//!
-//! @param pPsram
-//! @param bHiPrio
-//! @param bWrite
-//! @param pui8Buffer
-//! @param ui32Address
-//! @param ui32NumBytes
-//! @param ui32PauseCondition
-//! @param ui32StatusSetClr
-//! @param pfnCallback
-//! @param pCallbackCtxt
-//! @return status
-//
-//*****************************************************************************
-
+// This function takes care of splitting the transaction as needed, if the transaction crosses
+// PSRAM page boundary or because of tCEM restrictions, if hardware does not support it
 static uint32_t
 psram_nonblocking_transfer(am_devices_mspi_psram_t *pPsram,
                            bool bHiPrio,
@@ -732,17 +657,26 @@ psram_nonblocking_transfer(am_devices_mspi_psram_t *pPsram,
   return ui32Status;
 }
 
+
 //*****************************************************************************
 //
-// Initialize the mspi_psram driver.
+//! @brief Initialize the mspi_psram driver.
+//!
+//! @param psMSPISettings - MSPI device structure describing the target spi psram.
+//! @param pHandle - MSPI handler which needs to be return
+//!
+//! This function should be called before any other am_devices_mspi_psram
+//! functions. It is used to set tell the other functions how to communicate
+//! with the external psram hardware.
+//!
+//! @return status.
 //
 //*****************************************************************************
 uint32_t
 am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psram_config_t *pDevCfg, void **ppHandle, void **ppMspiHandle)
 {
     uint32_t                    ui32Status;
-    am_hal_mspi_dev_config_t    *mspiMemDevCfg;
-    am_hal_mspi_dev_config_t    mspiRegDevCfg;
+    am_hal_mspi_dev_config_t    mspiMemDevCfg, mspiRegDevCfg;
     void                        *pMspiHandle;
     uint32_t                    ui32Index = 0;
 
@@ -777,26 +711,26 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     switch (pDevCfg->eDeviceConfig)
     {
         case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE0:
-            mspiMemDevCfg = &WBDDROctalCE0MSPIConfig;
+            mspiMemDevCfg = WBDDROctalCE0MSPIConfig;
             mspiRegDevCfg = WBDDROctalCE0MSPIConfig;
             break;
         case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE1:
-            mspiMemDevCfg = &WBDDROctalCE1MSPIConfig;
+            mspiMemDevCfg = WBDDROctalCE1MSPIConfig;
             mspiRegDevCfg = WBDDROctalCE1MSPIConfig;
             break;
         case AM_HAL_MSPI_FLASH_HEX_DDR_CE0:
-            mspiMemDevCfg = &WBDDRHEXCE0MSPIConfig;
+            mspiMemDevCfg = WBDDRHEXCE0MSPIConfig;
             mspiRegDevCfg = WBDDROctalCE0MSPIConfig;
             break;
         case AM_HAL_MSPI_FLASH_HEX_DDR_CE1:
-            mspiMemDevCfg = &WBDDRHEXCE1MSPIConfig;
+            mspiMemDevCfg = WBDDRHEXCE1MSPIConfig;
             mspiRegDevCfg = WBDDROctalCE1MSPIConfig;
             break;
         default:
             return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
-    mspiMemDevCfg->eClockFreq = pDevCfg->eClockFreq;
-    mspiRegDevCfg.eClockFreq = AM_HAL_MSPI_CLK_48MHZ;
+    mspiMemDevCfg.eClockFreq = pDevCfg->eClockFreq;
+    mspiRegDevCfg.eClockFreq = pDevCfg->eClockFreq;
 
     // First configure in HEX mode and reset
     if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
@@ -836,8 +770,6 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
       return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
 
-    gWBDDRPsram[ui32Index].sDeviceInfo.ui32BaseAddr = xipCfg.ui32APBaseAddr;
-
     am_hal_mspi_xip_misc_t    xipMiscCfg = gWBXipMiscCfg[ui32Module];
     ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_XIP_MISC_CONFIG, &xipMiscCfg);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
@@ -853,6 +785,10 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     }
 
     am_hal_mspi_rxcfg_t RxCfg = gWBMspiRxCfg;
+    if (AM_HAL_MSPI_CLK_96MHZ == pDevCfg->eClockFreq)
+    {
+      RxCfg.ui8RxSmp = 2;
+    }
     ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_RXCFG, &RxCfg);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
@@ -880,7 +816,7 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     //
     // Reset PSRAM
     //
-    am_devices_mspi_psram_w958d6nw_reset(ui32Module, mspiRegDevCfg.eDeviceConfig);
+    am_devices_mspi_psram_w958d6nw_reset();
 
     //
     // Switch to big endian for accessing PSRAM registers
@@ -892,9 +828,9 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     }
 
     //
-    // Initialize device
+    // Read PSRAM ID
     //
-    if (AM_HAL_STATUS_SUCCESS != am_devices_mspi_psram_w958d6nw_device_init(pMspiHandle, &gWBDDRPsram[ui32Index].sDeviceInfo))
+    if (AM_HAL_STATUS_SUCCESS != am_devices_mspi_psram_w958d6nw_id(pMspiHandle))
     {
         return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
@@ -920,20 +856,10 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     //
     // Reconfig MSPI device settings
     //
-    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pMspiHandle, mspiMemDevCfg))
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pMspiHandle, &mspiMemDevCfg))
     {
         am_util_debug_printf("Error - Failed to reconfig MSPI device.\n");
         return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-    }
-
-    if (AM_HAL_MSPI_CLK_96MHZ == pDevCfg->eClockFreq)
-    {
-      RxCfg.ui8RxSmp = 2;
-    }
-    ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_RXCFG, &RxCfg);
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-      return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
 
     //
@@ -948,7 +874,7 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     //
     // Re-config the MSPI pins.
     //
-    am_bsp_mspi_pins_enable(ui32Module, mspiMemDevCfg->eDeviceConfig);
+    am_bsp_mspi_pins_enable(ui32Module, mspiMemDevCfg.eDeviceConfig);
 
     //
     // Enable MSPI interrupts.
@@ -972,7 +898,7 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     *ppHandle = (void *)&gWBDDRPsram[ui32Index];
     *ppMspiHandle = gWBDDRPsram[ui32Index].pMspiHandle = pMspiHandle;
     gWBDDRPsram[ui32Index].ui32Module = ui32Module;
-    gWBDDRPsram[ui32Index].eDeviceConfig = mspiMemDevCfg->eDeviceConfig;
+    gWBDDRPsram[ui32Index].eDeviceConfig = mspiMemDevCfg.eDeviceConfig;
 
     //
     // Return the status.
@@ -982,7 +908,12 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
 
 //*****************************************************************************
 //
-// DeInitialize the mspi_psram driver.
+//! @brief DeInitialize the mspi_psram driver.
+//!
+//! @param psMSPISettings - MSPI device structure describing the target spi psram.
+//! @param pHandle - MSPI handler.
+//!
+//! @return status.
 //
 //*****************************************************************************
 uint32_t
@@ -1041,7 +972,21 @@ am_devices_mspi_psram_w958d6nw_ddr_deinit(void *pHandle)
 
 //*****************************************************************************
 //
-//Reads the contents of the external PSRAM into a buffer.
+//! @brief Reads the contents of the external PSRAM into a buffer.
+//!
+//! @param ui32Module - MSPI instance
+//! @param pui8RxBuffer - Buffer to store the received data from the PSRAM
+//! @param ui32ReadAddress - Address of desired data in external PSRAM
+//! @param ui32NumBytes - Number of bytes to read from external PSRAM
+//! @param bWaitForCompletion - Wait for transaction completion before exiting
+//!
+//! This function reads the external PSRAM at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.  If the bWaitForCompletion is true,
+//! then the function will poll for DMA completion indication flag before
+//! returning.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1116,7 +1061,24 @@ am_devices_mspi_psram_w958d6nw_ddr_read(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the external PSRAM into a buffer.
+//! @brief Reads the contents of the external PSRAM into a buffer.
+//!
+//! @param pHandle - MSPI instance
+//! @param pui8RxBuffer - Buffer to store the received data from the PSRAM
+//! @param ui32ReadAddress - Address of desired data in external PSRAM
+//! @param ui32NumBytes - Number of bytes to read from external PSRAM
+//! @param ui32PauseCondition - Pause condition before transaction is executed
+//! @param ui32StatusSetClr - Post-transaction CQ condition
+//! @param pfnCallback - Post-transaction callback function
+//! @param pCallbackCtxt - Post-transaction callback context
+//!
+//! This function reads the external PSRAM at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.  The Command Queue pre and post
+//! transaction conditions and a callback function and context are also
+//! provided.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1155,7 +1117,17 @@ am_devices_mspi_psram_w958d6nw_ddr_read_adv(void *pHandle,
 
 //*****************************************************************************
 //
-// Reads the contents of the external psram into a buffer.
+//! @brief Reads the contents of the external psram into a buffer.
+//!
+//! @param pui8RxBuffer - Buffer to store the received data from the psram
+//! @param ui32ReadAddress - Address of desired data in external psram
+//! @param ui32NumBytes - Number of bytes to read from external psram
+//!
+//! This function reads the external psram at the provided address and stores
+//! the received data into the provided buffer location. This function will
+//! only store ui32NumBytes worth of data.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1190,11 +1162,6 @@ am_devices_mspi_psram_w958d6nw_ddr_read_hiprio(void *pHandle,
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
-//*****************************************************************************
-//
-// Programs the given range of psram addresses.
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_w958d6nw_ddr_nonblocking_read(void *pHandle,
                                                     uint8_t *pui8RxBuffer,
@@ -1229,7 +1196,20 @@ am_devices_mspi_psram_w958d6nw_ddr_nonblocking_read(void *pHandle,
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1305,7 +1285,20 @@ am_devices_mspi_psram_w958d6nw_ddr_write(void *pHandle,
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1344,7 +1337,20 @@ am_devices_mspi_psram_w958d6nw_ddr_write_adv(void *pHandle,
 
 //*****************************************************************************
 //
-// Programs the given range of psram addresses.
+//! @brief Programs the given range of psram addresses.
+//!
+//! @param ui32DeviceNumber - Device number of the external psram
+//! @param pui8TxBuffer - Buffer to write the external psram data from
+//! @param ui32WriteAddress - Address to write to in the external psram
+//! @param ui32NumBytes - Number of bytes to write to the external psram
+//!
+//! This function uses the data in the provided pui8TxBuffer and copies it to
+//! the external psram at the address given by ui32WriteAddress. It will copy
+//! exactly ui32NumBytes of data from the original pui8TxBuffer pointer. The
+//! user is responsible for ensuring that they do not overflow the target psram
+//! memory or underflow the pui8TxBuffer array
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1379,11 +1385,6 @@ am_devices_mspi_psram_w958d6nw_ddr_write_hiprio(void *pHandle,
   //
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
-
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_w958d6nw_ddr_nonblocking_write(void *pHandle,
                                                      uint8_t *pui8TxBuffer,
@@ -1418,7 +1419,11 @@ am_devices_mspi_psram_w958d6nw_ddr_nonblocking_write(void *pHandle,
 
 //*****************************************************************************
 //
-// Sets up the MSPI and external psram into XIP mode.
+//! @brief Sets up the MSPI and external psram into XIP mode.
+//!
+//! This function sets the external psram device and the MSPI into XIP mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1450,7 +1455,11 @@ am_devices_mspi_psram_w958d6nw_ddr_enable_xip(void *pHandle)
 
 //*****************************************************************************
 //
-// Removes the MSPI and external psram from XIP mode.
+//! @brief Removes the MSPI and external psram from XIP mode.
+//!
+//! This function removes the external device and the MSPI from XIP mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1473,7 +1482,11 @@ am_devices_mspi_psram_w958d6nw_ddr_disable_xip(void *pHandle)
 
 //*****************************************************************************
 //
-// Sets up the MSPI and external psram into scrambling mode.
+//! @brief Sets up the MSPI and external psram into scrambling mode.
+//!
+//! This function sets the external psram device and the MSPI into scrambling mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1495,7 +1508,11 @@ am_devices_mspi_psram_w958d6nw_ddr_enable_scrambling(void *pHandle)
 
 //*****************************************************************************
 //
-// Removes the MSPI and external psram from scrambling mode.
+//! @brief Removes the MSPI and external psram from scrambling mode.
+//!
+//! This function removes the external device and the MSPI from scrambling mode.
+//
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1518,40 +1535,22 @@ am_devices_mspi_psram_w958d6nw_ddr_disable_scrambling(void *pHandle)
 
 //*****************************************************************************
 //
-// Reads the ID of the external psram and returns the value.
+//! @brief Reads the ID of the external psram and returns the value.
+//!
+//! @param pDeviceID - Pointer to the return buffer for the Device ID.
+//!
+//! This function reads the device ID register of the external psram, and returns
+//! the result as an 32-bit unsigned integer value.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
 am_devices_mspi_psram_w958d6nw_ddr_id(void *pHandle)
 {
   am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
-  uint32_t ui32DeviceID;
-  if ( pPsram->pMspiHandle == NULL || !pPsram->bOccupied )
-  {
-    return 0xFFFFFFFF;
-  }
 
-  ui32DeviceID = pPsram->sDeviceInfo.ui8DeviceId;
-  ui32DeviceID |= (uint32_t)pPsram->sDeviceInfo.ui8VendorId << 8;
-  return ui32DeviceID;
-}
-
-//*****************************************************************************
-//
-//   Reads the info of the external psram and returns the value.
-//
-//*****************************************************************************
-uint32_t am_devices_mspi_psram_w958d6nw_ddr_info(void *pHandle, am_devices_mspi_psram_info_t *pPsramInfo)
-{
-  am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
-  if ( pPsram->pMspiHandle == NULL || !pPsram->bOccupied )
-  {
-    return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-  }
-
-  *pPsramInfo = pPsram->sDeviceInfo;
-
-  return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
+  return am_devices_mspi_psram_w958d6nw_id(pPsram);
 }
 
 #if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
@@ -1570,15 +1569,6 @@ uint32_t am_devices_mspi_psram_w958d6nw_ddr_info(void *pHandle, am_devices_mspi_
 //
 //*****************************************************************************
 #define PSRAM_CHECK_DATA_SIZE_BYTES  256
-//*****************************************************************************
-//
-//! @brief
-//! @param pattern_index
-//! @param buff
-//! @param len
-//! @return
-//
-//*****************************************************************************
 static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t len)
 {
     uint32_t *pui32TxPtr = (uint32_t*)buff;
@@ -1641,14 +1631,6 @@ static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t 
     return 0;
 }
 
-//*****************************************************************************
-//
-//! @brief
-//! @param length
-//! @param address
-//! @return
-//
-//*****************************************************************************
 bool
 psram_check(uint32_t length, uint32_t address)
 {
@@ -1709,15 +1691,10 @@ psram_check(uint32_t length, uint32_t address)
     return false;
 }
 
-//*****************************************************************************
 //
-//!   @brief Count the longest consecutive 1s in a 32bit word
-//!
-//! @param pVal
-//!
-//! @return
+// Static helper function:
+//  Count the longest consecutive 1s in a 32bit word
 //
-//*****************************************************************************
 static uint32_t
 count_consecutive_ones(uint32_t* pVal)
 {
@@ -1732,13 +1709,10 @@ count_consecutive_ones(uint32_t* pVal)
     return count;
 }
 
-//*****************************************************************************
 //
-//! @brief Find and return the mid point of the longest continuous 1s in a 32bit word
-//! @param pVal
-//! @return
+// Static helper function:
+//  Find and return the mid point of the longest continuous 1s in a 32bit word
 //
-//*****************************************************************************
 static uint32_t
 find_mid_point(uint32_t* pVal)
 {
@@ -1819,17 +1793,13 @@ find_mid_point(uint32_t* pVal)
 //
 //*****************************************************************************
 #define PSRAM_TIMING_SCAN_SIZE_BYTES (128*1024)
-static const uint32_t ui32MspiXipBaseAddress[] =
+static const uint32_t ui32MspiXipBaseAddress[3] =
 {
-    MSPI0_APERTURE_START_ADDR, // mspi0
-    MSPI1_APERTURE_START_ADDR, // mspi1
-    MSPI2_APERTURE_START_ADDR, // mspi2
+    0x14000000, // mspi0
+    0x18000000, // mspi1
+    0x1C000000, // mspi2
 };
 
-//*****************************************************************************
-//
-//
-//*****************************************************************************
 uint32_t
 am_devices_mspi_psram_hex_ddr_init_timing_check(uint32_t module,
                                                 am_devices_mspi_psram_config_t *pDevCfg,
@@ -1962,7 +1932,16 @@ am_devices_mspi_psram_hex_ddr_init_timing_check(uint32_t module,
 
 //*****************************************************************************
 //
-// Apply given DDR timing settings to target MSPI instance.
+//! @brief Apply given DDR timing settings to target MSPI instance.
+//!
+//! @param pHandle - Handle to the PSRAM.
+//! @param pDevDdrCfg - Pointer to the ddr timing config structure
+//!
+//! This function applies the ddr timing settings to the selected mspi instance.
+//! This function must be called after MSPI instance is initialized into
+//! ENABLEFINEDELAY0 = 1 mode.
+//!
+//! @return 32-bit status
 //
 //*****************************************************************************
 uint32_t
@@ -1985,229 +1964,8 @@ am_devices_mspi_psram_apply_hex_ddr_timing(void *pHandle,
 
 //*****************************************************************************
 //
-// Enter hybrid sleep
-//
-// Send a command to enter hybrid sleep mode.
-//
-//*****************************************************************************
-uint32_t
-am_devices_mspi_psram_w958d6nw_enter_hybridsleep(void *pHandle)
-{
-    uint32_t     ui32Status;
-    uint32_t     ui32Rawdata = 0;
-    am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
-
-    //
-    // Due to MSPI check prior to transfer, user cannot write to PSRAM_W958D6NW_REG_CFG1_ADDR (0x801) in HEX Mode
-    // Device address must be word-aligned in HEX PIO mode
-    //
-    if ((pPsram->eDeviceConfig == AM_HAL_MSPI_FLASH_HEX_DDR_CE0) || (pPsram->eDeviceConfig == AM_HAL_MSPI_FLASH_HEX_DDR_CE1))
-    {
-        am_hal_mspi_device_e lcl_devCfg = pPsram->eDeviceConfig;
-
-        switch (pPsram->eDeviceConfig)
-        {
-            case AM_HAL_MSPI_FLASH_HEX_DDR_CE0:
-                lcl_devCfg = AM_HAL_MSPI_FLASH_OCTAL_DDR_CE0;
-                break;
-            case AM_HAL_MSPI_FLASH_HEX_DDR_CE1:
-                lcl_devCfg = AM_HAL_MSPI_FLASH_OCTAL_DDR_CE1;
-                break;
-            default:
-                return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Disable MSPI defore re-configuring it
-        //
-        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_disable(pPsram->pMspiHandle))
-        {
-            am_util_debug_printf("Error - Failed to Disable MSPI.\n");
-            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Reconfigure MSPI to OCTAL
-        //
-        am_hal_mspi_dev_config_t*    mspiRegDevCfg;
-        switch (pPsram->eDeviceConfig)
-        {
-            case AM_HAL_MSPI_FLASH_HEX_DDR_CE0:
-                mspiRegDevCfg = &WBDDROctalCE0MSPIConfig;
-                break;
-            case AM_HAL_MSPI_FLASH_HEX_DDR_CE1:
-                mspiRegDevCfg = &WBDDROctalCE1MSPIConfig;
-                break;
-            default:
-                return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pPsram->pMspiHandle, mspiRegDevCfg))
-        {
-            am_util_debug_printf("Error - Failed to configure Device MSPI.\n");
-            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Re-Enable MSPI
-        //
-        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pPsram->pMspiHandle))
-        {
-            am_util_debug_printf("Error - Failed to Enable MSPI!\n");
-            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Re-config the MSPI pins.
-        //
-        am_bsp_mspi_pins_enable(pPsram->ui32Module, lcl_devCfg);
-    }
-
-    //
-    // Read PSRAM Register CFG1
-    //
-    am_util_debug_printf("Read PSRAM Register CFG1\n");
-    ui32Status = am_device_command_read(pPsram->pMspiHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_READ_REGISTER, true, PSRAM_W958D6NW_REG_CFG1_ADDR, &ui32Rawdata, 2);
-    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
-    {
-        am_util_debug_printf("Failed to read PSRAM Register CFG1!\n");
-        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-    }
-    else
-    {
-        am_util_debug_printf("PSRAM Register CFG1 = 0x%04X\n\n", ui32Rawdata);
-    }
-
-    //
-    // For CR1:
-    //          [15-8] - When writing this register, these bits should keep FFh for future compatibility.
-    //          [7]    - When writing this register, these bits should keep 1b for future compatibility.
-    //          [5]    - Hybrid Sleep - 1b - Writing 1 to CR1[5] causes the device to enter Hybrid Sleep (HS) State
-    //
-    ui32Rawdata |= 0xFFa0;
-
-    //
-    // Send command to enter hybrid sleep
-    //
-    if (AM_HAL_STATUS_SUCCESS != am_device_command_write(pPsram->pMspiHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_WRITE_REGISTER, true, PSRAM_W958D6NW_REG_CFG1_ADDR, &ui32Rawdata, 2))
-    {
-        am_util_debug_printf("Failed to write PSRAM CFG1 register!\n");
-        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-    }
-
-    // tHSIN min = 3us
-    am_util_delay_us(W958D6NW_tHS_MAX_US);
-
-    return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
-}
-
-//*****************************************************************************
-//
-// Enter hybrid sleep
-//
-// This function soft-resets the device to bring it out of hybrid sleep.
-//
-//*****************************************************************************
-uint32_t
-am_devices_mspi_psram_w958d6nw_exit_hybridsleep(void *pHandle)
-{
-    am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
-    uint32_t pin_num = 0;
-    am_hal_gpio_pincfg_t gpio_pincfg = AM_HAL_GPIO_PINCFG_DEFAULT;
-
-    if ( pHandle == NULL )
-    {
-        return AM_HAL_STATUS_FAIL;
-    }
-
-    am_bsp_mspi_ce_pincfg_get(pPsram->ui32Module, pPsram->eDeviceConfig, &pin_num, &gpio_pincfg);
-
-    //
-    // Configure CE pin to output and hold high
-    //
-    am_hal_gpio_output_set(pin_num);
-    am_hal_gpio_pinconfig(pin_num, am_hal_gpio_pincfg_output);
-
-    //
-    // Start wake pulse on CE
-    //
-    am_hal_gpio_output_clear(pin_num);
-
-    //
-    // hold CE pin for 60ns - 3000ns
-    //
-    am_util_delay_us(W958D6NW_tCSHS_US);
-
-    //
-    // Set pin to high to finish wake
-    //
-    am_hal_gpio_output_set(pin_num);
-
-    //
-    // Reconfigure pin for CE on PSRAM
-    //
-    am_hal_gpio_pinconfig(pin_num, gpio_pincfg);
-
-    //
-    // Delay after setting pin high to allow for device to accept command
-    // and exit hybrid sleep mode.
-    //
-    am_util_delay_us(W958D6NW_tEXTHS_MIN_US);
-
-    if ( (pPsram->eDeviceConfig == AM_HAL_MSPI_FLASH_HEX_DDR_CE0) || (pPsram->eDeviceConfig == AM_HAL_MSPI_FLASH_HEX_DDR_CE1) )
-    {
-        //
-        // Disable MSPI defore re-configuring it
-        //
-        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_disable(pPsram->pMspiHandle))
-        {
-            am_util_debug_printf("Error - Failed to Disable MSPI.\n");
-            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Reconfigure MSPI to HEX
-        //
-        am_hal_mspi_dev_config_t*    mspiMemDevCfg;
-        switch (pPsram->eDeviceConfig)
-        {
-            case AM_HAL_MSPI_FLASH_HEX_DDR_CE0:
-                mspiMemDevCfg = &WBDDRHEXCE0MSPIConfig;
-                break;
-            case AM_HAL_MSPI_FLASH_HEX_DDR_CE1:
-                mspiMemDevCfg = &WBDDRHEXCE1MSPIConfig;
-                break;
-            default:
-                return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pPsram->pMspiHandle, mspiMemDevCfg))
-        {
-            am_util_debug_printf("Error - Failed to configure Device MSPI.\n");
-            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Re-Enable MSPI
-        //
-        if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pPsram->pMspiHandle))
-        {
-            am_util_debug_printf("Error - Failed to Enable MSPI!\n");
-            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-        }
-
-        //
-        // Re-config the MSPI pins.
-        //
-        am_bsp_mspi_pins_enable(pPsram->ui32Module, pPsram->eDeviceConfig);
-    }
-
-    return AM_HAL_STATUS_SUCCESS;
-}
-
-//*****************************************************************************
-//
 // End Doxygen group.
 //! @}
 //
 //*****************************************************************************
+

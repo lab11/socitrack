@@ -15,7 +15,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_STRING_H
@@ -213,7 +213,6 @@ extern char *am_util_string_strcpy(char *pcDst, const char *pcSrc);
 //!
 //! @param pcDst pointer to the destination string.
 //! @param pcSrc pointer to the source string to be copied to pcDst.
-//! @param uNum  length of string
 //!
 //! This function copies uNum characters of pcSrc to the location specified
 //!  by pcDst.

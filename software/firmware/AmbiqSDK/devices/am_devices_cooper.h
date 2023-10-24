@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -58,6 +58,7 @@ extern "C"
 
 #include "am_util.h"
 #include <stdlib.h>
+#include "am_bsp.h"
 
 //*****************************************************************************
 //
@@ -152,52 +153,56 @@ typedef enum
 } am_devices_cooper_status_t;
 
 #define AM_DEVICES_COOPER_QFN_PART            0
-
 #if defined(AM_DEVICES_COOPER_QFN_PART) && (AM_DEVICES_COOPER_QFN_PART > 0)
-
-#if defined(AM_PART_APOLLO4L)
-#define AM_DEVICES_COOPER_IRQ_PIN             74
-#define AM_DEVICES_COOPER_RESET_PIN           77
-#define AM_DEVICES_COOPER_CLKREQ_PIN          75
-#define AM_DEVICES_COOPER_32M_OSCEN_PIN       46
-#define AM_DEVICES_COOPER_SPI_CS              91
-#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM4_CS
-#else
 #define AM_DEVICES_COOPER_IRQ_PIN             73
 #define AM_DEVICES_COOPER_RESET_PIN           57
 #define AM_DEVICES_COOPER_CLKREQ_PIN          64
 #define AM_DEVICES_COOPER_STATUS_PIN          66
 #define AM_DEVICES_COOPER_32M_OSCEN_PIN       67
-#define AM_DEVICES_COOPER_SPI_CS              72 //!< BGA&SIP share the same CS pin(NCE72) on the QFN shiled board
+#define AM_DEVICES_COOPER_SPI_CS              72 // BGA&SIP share the same CS pin(NCE72) on the QFN shiled board
 #define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM2_CS
-#endif
-
 #else
-#define AM_DEVICES_COOPER_32M_CLK             46
-#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
-#define AM_DEVICES_COOPER_SPI_CS              54
-#define AM_DEVICES_COOPER_32K_CLK             4
-#define AM_DEVICES_COOPER_CLKREQ_PIN          52
-#else
-#define AM_DEVICES_COOPER_SPI_CS              43
-#define AM_DEVICES_COOPER_32K_CLK             45
-#define AM_DEVICES_COOPER_CLKREQ_PIN          40
-#endif
 
-#if defined(AM_PART_APOLLO4L) || defined(APOLLO4P_BLUE_KXR)
+#if defined(AM_PART_APOLLO4L)
 
 #define AM_DEVICES_COOPER_IRQ_PIN             53
+#define AM_DEVICES_COOPER_CLKREQ_PIN          52
 #define AM_DEVICES_COOPER_RESET_PIN           55
 #define AM_DEVICES_COOPER_SWDIO               97
 #define AM_DEVICES_COOPER_SWCLK               98
+#define AM_DEVICES_COOPER_32M_CLK             46
+#define AM_DEVICES_COOPER_32K_CLK             4
+#define AM_DEVICES_COOPER_SPI_CS              AM_BSP_GPIO_IOM4_CS
+#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM4_CS
+
+#elif defined(APOLLO4P_BLUE_KXR)
+
+#define AM_DEVICES_COOPER_IRQ_PIN             AM_BSP_GPIO_COOPER_IRQ_PIN
+#define AM_DEVICES_COOPER_CLKREQ_PIN          AM_BSP_GPIO_COOPER_CLKREQ
+#define g_AM_DEVICES_COOPER_CLKREQ            g_AM_BSP_GPIO_COOPER_CLKREQ
+#define AM_DEVICES_COOPER_RESET_PIN           AM_BSP_GPIO_COOPER_RESET_PIN
+#define AM_DEVICES_COOPER_SWDIO               AM_BSP_GPIO_COOPER_SWDIO
+#define AM_DEVICES_COOPER_SWCLK               AM_BSP_GPIO_COOPER_SWCLK
+#define AM_DEVICES_COOPER_32M_CLK             AM_BSP_GPIO_COOPER_32M_CLK
+#define g_AM_DEVICES_COOPER_32M_CLK           g_AM_BSP_GPIO_COOPER_32M_CLK
+#define AM_DEVICES_COOPER_32K_CLK             AM_BSP_GPIO_COOPER_32K_CLK
+#define g_AM_DEVICES_COOPER_32K_CLK           g_AM_BSP_GPIO_COOPER_32K_CLK
+#define AM_DEVICES_COOPER_SPI_CS              AM_BSP_GPIO_COOPER_CS
+#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_COOPER_CS
+
 #else
 
 #define AM_DEVICES_COOPER_IRQ_PIN             39
+#define AM_DEVICES_COOPER_CLKREQ_PIN          40
 #define AM_DEVICES_COOPER_CLKACK_PIN          41
 #define AM_DEVICES_COOPER_RESET_PIN           42
 #define AM_DEVICES_COOPER_STATUS_PIN          44
 #define AM_DEVICES_COOPER_SWDIO               97
 #define AM_DEVICES_COOPER_SWCLK               98
+#define AM_DEVICES_COOPER_32M_CLK             46
+#define AM_DEVICES_COOPER_32K_CLK             45
+#define AM_DEVICES_COOPER_SPI_CS              AM_BSP_GPIO_IOM4_CS
+#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM4_CS
 
 #endif
 
@@ -209,8 +214,8 @@ typedef enum
 //! Configurable buffer sizes.
 //
 //*****************************************************************************
-#define AM_DEVICES_COOPER_MAX_TX_PACKET       524 //!<  the max packet of SBL to controller is 512 plus 12 bytes header
-#define AM_DEVICES_COOPER_MAX_RX_PACKET       258 //!<  255 data + 3 header
+#define AM_DEVICES_COOPER_MAX_TX_PACKET       524 // the max packet of SBL to controller is 512 plus 12 bytes header
+#define AM_DEVICES_COOPER_MAX_RX_PACKET       258 // 255 data + 3 header
 
 //*****************************************************************************
 //
@@ -218,16 +223,12 @@ typedef enum
 //
 //*****************************************************************************
 #if (AM_DEVICES_COOPER_QFN_PART)
-#if defined(AM_PART_APOLLO4L)
-#define SPI_MODULE           4
-#else
 #define SPI_MODULE           2
-#endif
 #define AM_COOPER_IRQn       GPIO0_405F_IRQn
 #define am_cooper_irq_isr    am_gpio0_405f_isr
 //
-//! we need to slow down SPI clock for fly-wire case in between
-//! Apollo3/3p/4 EB/EVBB and Cooper QFN part. 8MHz is chosen conservatively.
+// we need to slow down SPI clock for fly-wire case in between
+// Apollo3/3p/4 EB/EVBB and Cooper QFN part. 8MHz is chosen conservatively.
 //
 #define COOPER_IOM_FREQ         AM_HAL_IOM_8MHZ
 #else
@@ -446,10 +447,6 @@ typedef enum
     HCI_VSC_UPDATE_NVDS_CFG_CMD_OPCODE             = 0xFC77,
     //! Ambiq Vendor Specific Command set link layer features
     HCI_VSC_UPDATE_LL_FEATURE_CFG_CMD_OPCODE       = 0xFC78,
-    //! Ambiq Vendor Specific Command get RSSI in DTM mode
-    HCI_VSC_GET_DTM_RSSI_CMD_OPCODE                = 0xFC79,
-    //! Ambiq Vendor Specific Command configure specified event mask
-    HCI_VSC_CFG_EVT_MASK_CMD_OPCODE                = 0xFC7A,
 
     // SBL use only
     //! Ambiq Vendor Specific Command store info0 trim values to RAM
@@ -457,14 +454,14 @@ typedef enum
     //! Ambiq Vendor Specific Command flash info0 trim values to cooper
     HCI_VSC_FLASH_INFO0_TRIM_CMD_OPCODE            = 0xFCC1,
     //! Ambiq Vendor Specific Command trigger Apollo4B to enter sleep
-    HCI_VSC_ENTER_SLEEP_CMD_OPCODE                 = 0xFCC2,
+    HCI_VSC_ENTER_SLEEP_CMD_OPCODE                 = 0xFCC2
 }vsc_opcode;
 
 #define HCI_VSC_RD_MEM_CMD_LENGTH                      6
-#define HCI_VSC_WR_MEM_CMD_LENGTH                      134
+#define HCI_VSC_WR_MEM_CMD_LENGTH                      136
 #define HCI_VSC_ID_FLASH_CMD_LENGTH                    0
 #define HCI_VSC_ER_FLASH_CMD_LENGTH                    9
-#define HCI_VSC_WR_FLASH_CMD_LENGTH                    134
+#define HCI_VSC_WR_FLASH_CMD_LENGTH                    140
 #define HCI_VSC_RD_FLASH_CMD_LENGTH                    6
 #define HCI_VSC_PLF_RESET_CMD_LENGTH                   1
 #define HCI_VSC_REG_RD_CMD_LENGTH                      4
@@ -480,29 +477,27 @@ typedef enum
 #define HCI_VSC_STORE_INFO0_TRIM_CMD_LENGTH            6
 #define HCI_VSC_FLASH_INFO0_TRIM_CMD_LENGTH            0
 #define HCI_VSC_ENTER_SLEEP_CMD_LENGTH                 0
-#define HCI_VSC_GET_DTM_RSSI_CMD_LENGTH                0
-#define HCI_VSC_CFG_EVT_MASK_CMD_LENGTH                4
 
 #define HCI_VSC_CMD_LENGTH(n)                          (HCI_VSC_CMD_HEADER_LENGTH + n)
-#define HCI_VSC_UPDATE_NVDS_CFG_CMD_OFFSET             (HCI_VSC_CMD_HEADER_LENGTH + 4) //!< NVDS_PARAMETER_MAGIC_NUMBER
+#define HCI_VSC_UPDATE_NVDS_CFG_CMD_OFFSET             (HCI_VSC_CMD_HEADER_LENGTH + 4) //NVDS_PARAMETER_MAGIC_NUMBER
 
 #define HCI_VSC_CMD(CMD, ...)                          {AM_DEVICES_COOPER_CMD, UINT16_TO_BYTE0(CMD##_CMD_OPCODE), UINT16_TO_BYTE1(CMD##_CMD_OPCODE), CMD##_CMD_LENGTH, ##__VA_ARGS__}
 #define HCI_RAW_CMD(OPCODE, LEN, ...)                  {AM_DEVICES_COOPER_CMD, UINT16_TO_BYTE0(OPCODE), UINT16_TO_BYTE1(OPCODE), LEN, ##__VA_ARGS__}
 
 #ifndef LPCLK_DRIFT_VALUE
 //! Radio Drift
-#define LPCLK_DRIFT_VALUE               500 //!<  PPM
+#define LPCLK_DRIFT_VALUE               500 // PPM
 #endif
 #define NVDS_PARAMETER_LPCLK_DRIFT      PARAM_ID_LPCLK_DRIFT, 0x06, 0x2, UINT16_TO_BYTE0(LPCLK_DRIFT_VALUE), UINT16_TO_BYTE1(LPCLK_DRIFT_VALUE)
 
 #ifndef EXT_WAKEUP_TIME_VALUE
 //! External wake-up time
-#define EXT_WAKEUP_TIME_VALUE           1000 //!<  microsecond
+#define EXT_WAKEUP_TIME_VALUE           1000 // microsecond
 #endif
 #define NVDS_PARAMETER_EXT_WAKEUP_TIME  PARAM_ID_EXT_WAKEUP_TIME, 0x06, 0x02, UINT16_TO_BYTE0(EXT_WAKEUP_TIME_VALUE), UINT16_TO_BYTE1(EXT_WAKEUP_TIME_VALUE)
 #ifndef OSC_WAKEUP_TIME_VALUE
 //! Oscillator wake-up time
-#define OSC_WAKEUP_TIME_VALUE           1000 //!<  microsecond
+#define OSC_WAKEUP_TIME_VALUE           1000 // microsecond
 #endif
 #define NVDS_PARAMETER_OSC_WAKEUP_TIME  PARAM_ID_OSC_WAKEUP_TIME, 0x06, 0x02, UINT16_TO_BYTE0(OSC_WAKEUP_TIME_VALUE), UINT16_TO_BYTE1(OSC_WAKEUP_TIME_VALUE)
 //! Radio wake-up time
@@ -750,9 +745,9 @@ typedef struct
     uint32_t                versionNumber;
     uint32_t                maxImageSize;
     uint32_t                bootStatus;
-    uint32_t                verRollBackStatus;  //!< Version 2
-    uint32_t                copperChipIdWord0;  //!< Version 2
-    uint32_t                copperChipIdWord1;  //!< Version 2
+    uint32_t                verRollBackStatus;  //Version 2
+    uint32_t                copperChipIdWord0;  //Version 2
+    uint32_t                copperChipIdWord1;  //Version 2
 } am_sbl_host_msg_status_t;
 
 //
@@ -815,13 +810,13 @@ typedef struct
 //
 typedef struct
 {
-    uint32_t    magicNumNSize;            //!<  0x0A500180
-    uint32_t    rsaSize;                  //!<  0x00000000
-    uint32_t    loadHdrReserved[14];      //!<  All Zeros
-    uint32_t    cmacHash[4];              //!<  All Zeros
-    uint32_t    authKeyNHashDataSize;     //!<  All Zeros
-    uint32_t    xBlock;                   //!<  0x00000000
-    uint32_t    keyDervData[4];           //!<  All Zeros
+    uint32_t    magicNumNSize;            // 0x0A500180
+    uint32_t    rsaSize;                  // 0x00000000
+    uint32_t    loadHdrReserved[14];      // All Zeros
+    uint32_t    cmacHash[4];              // All Zeros
+    uint32_t    authKeyNHashDataSize;     // All Zeros
+    uint32_t    xBlock;                   // 0x00000000
+    uint32_t    keyDervData[4];           // All Zeros
 
     uint32_t    bitMaskWord[4];
     uint32_t    reserved_0;

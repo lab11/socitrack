@@ -4,16 +4,16 @@
  *
  *  \brief  UriBeacon configuration service defines.
  *
- *  Copyright (c) 2011-2018 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2018 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -89,7 +89,7 @@ enum
  *
  */
 /**@{*/
-#define URICFG_ATT_URIFLAGS_DEFAULT      0x10                     /*!< \brief Default URI flags */
+#define URICFG_ATT_URIFLAGS_DEFAULT      0x00                     /*!< \brief Default URI flags */
 #define URICFG_ATT_TXPWRMODE_DEFAULT     URICFG_ATT_TXPWRMODE_LOW /*!< \brief Default TX power mode */
 #define URICFG_ATT_BEACONPERIOD_DEFAULT  1000                     /*!< \brief Default beacon period in milliseconds (1 second) */
 #define URICFG_ATT_LOCK_DEFAULT_BYTES    0x00, 0x00, 0x00, 0x00,  \
@@ -100,7 +100,7 @@ enum
 /**@}*/
 
 /*! \brief UriBeacon service UUID for advertising data */
-#define URICFG_SERVICE_UUID              0xFEAA
+#define URICFG_SERVICE_UUID              0xFED8
 
 /*! \} */    /* URIBEACON_CONFIGURATION_PROFILE */
 

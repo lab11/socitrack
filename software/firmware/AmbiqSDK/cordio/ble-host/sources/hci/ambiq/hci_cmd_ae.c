@@ -83,7 +83,7 @@ void HciLeSetExtAdvParamCmd(uint8_t advHandle, hciExtAdvParam_t *pExtAdvParam)
     UINT8_TO_BSTREAM(p, pExtAdvParam->priAdvPhy);
     UINT8_TO_BSTREAM(p, pExtAdvParam->secAdvMaxSkip);
     UINT8_TO_BSTREAM(p, pExtAdvParam->secAdvPhy);
-    UINT8_TO_BSTREAM(p, pExtAdvParam->advSID);
+    UINT8_TO_BSTREAM(p, pExtAdvParam->advSetId);
     UINT8_TO_BSTREAM(p, pExtAdvParam->scanReqNotifEna);
     hciCmdSend(pBuf);
   }

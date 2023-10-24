@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_QUEUE_H
@@ -79,57 +79,57 @@ am_hal_queue_t;
 //*****************************************************************************
 
 //
-//! Returns true if the queue is empty.
+// Returns true if the queue is empty.
 //
 #define am_hal_queue_empty(psQueue)                                           \
     ((psQueue)->ui32Length == 0)
 
 //
-//! Returns true if the queue is full.
+// Returns true if the queue is full.
 //
 #define am_hal_queue_full(psQueue)                                            \
     ((psQueue)->ui32Length == (psQueue)->ui32Capacity)
 
 //
-//! Returns the amount of space left in the queue (in bytes).
+// Returns the amount of space left in the queue (in bytes).
 //
 #define am_hal_queue_space_left(psQueue)                                      \
     ((psQueue)->ui32Capacity - (psQueue)->ui32Length)
 
 //
-//! Returns the number of configured items that will fit in the queue.
+// Returns the number of configured items that will fit in the queue.
 //
 #define am_hal_queue_slots_left(psQueue)                                      \
     (((psQueue)->ui32Capacity - (psQueue)->ui32Length)                        \
      / (psQueue)->ui32ItemSize)
 
 //
-//! Returns the amount of data in the queue (in bytes).
+// Returns the amount of data in the queue (in bytes).
 //
 #define am_hal_queue_data_left(psQueue)                                       \
     ((psQueue)->ui32Length)
 
 //
-//! Returns the number of configured items left in the queue.
+// Returns the number of configured items left in the queue.
 //
 #define am_hal_queue_items_left(psQueue)                                      \
     ((psQueue)->ui32Length / (psQueue)->ui32ItemSize)
 
 //
-//! Can be used as a pointer to the next item to be read from the queue.
+// Can be used as a pointer to the next item to be read from the queue.
 //
 #define am_hal_queue_peek(psQueue)                                            \
     ((void *) &((psQueue)->pui8Data[(psQueue)->ui32ReadIndex]))
 
 //
-//! Can be used as a pointer to the next available slot in the queue memory.
+// Can be used as a pointer to the next available slot in the queue memory.
 //
 #define am_hal_queue_next_slot(psQueue)                                       \
     ((void *) &((psQueue)->pui8Data[(psQueue)->ui32WriteIndex]))
 
 //*****************************************************************************
 //
-//! Use this to make sure you get the size parameters right.
+// Use this to make sure you get the size parameters right.
 //
 //*****************************************************************************
 #define am_hal_queue_from_array(queue, array)                                 \
@@ -145,109 +145,8 @@ extern "C"
 // External function definitions.
 //
 //*****************************************************************************
-//*****************************************************************************
-//
-//! @brief Initializes a queue.
-//!
-//! @param psQueue - Pointer to a queue structure.
-//! @param pvData - Pointer to a memory location to be used for data storage.
-//! @param ui32ItemSize - Number of bytes per item in the queue.
-//! @param ui32ArraySize - Number of bytes in the data array.
-//!
-//! This function initializes the members of a queue structure and attaches it
-//! to an array of memory that it can use for storage. This function should be
-//! called before the queue is used.
-//!
-//! In this example, we are creating a queue that can hold 1024 32-bit
-//! integers. The integers themselves will be stored in the array named
-//! pui32WorkingSpace, while information about the queue itself will be stored
-//! in sDataQueue.
-//!
-//! @note The caller should not modify any of the members of am_hal_queue_t
-//! structures. The queue API will handle these members in a thread-safe way.
-//!
-//! @note The queue will remember what size data is in it. Other queue API
-//! functions will perform transfers in units of "items" where one "item" is
-//! the number of bytes you specify in the \e ui32ItemSize argument upon
-//! initialization.
-//!
-//! Example usage:
-//!
-//! @code
-//!
-//! //
-//! // Declare a queue structure and an array of bytes we can use to store
-//! // data.
-//! //
-//! am_hal_queue_t sDataQueue;
-//! uint32_t pui32WorkingSpace[1024];
-//!
-//! //
-//! // Attach the queue structure to the working memory.
-//! //
-//! am_hal_queue_init(&sDataQueue, pui8WorkingSpace, sizeof(uint32_t)
-//!                   sizeof(pui32WorkingSpace));
-//!
-//! @endcode
-//!
-//! The am_hal_queue_from_array macro is a convenient shorthand for this
-//! operation. The code below does the same thing as the code above.
-//!
-//! @code
-//!
-//! //
-//! // Declare a queue structure and an array of bytes we can use to store
-//! // data.
-//! //
-//! am_hal_queue_t sDataQueue;
-//! uint32_t pui32WorkingSpace[1024];
-//!
-//! //
-//! // Attach the queue structure to the working memory.
-//! //
-//! am_hal_queue_from_array(&sDataQueue, pui8WorkingSpace);
-//!
-//! @endcode
-//
-//*****************************************************************************
 extern void am_hal_queue_init(am_hal_queue_t *psQueue, void *pvData, uint32_t ui32ItemSize, uint32_t ui32ArraySize);
-
-//*****************************************************************************
-//
-//! @brief Adds an item to the Queue
-//!
-//! @param psQueue - Pointer to a queue structure.
-//! @param pvSource - Pointer to the data to be added.
-//! @param ui32NumItems - Number of items to be added.
-//!
-//! This function will copy the data pointed to by pvSource into the queue. The
-//! \e ui32NumItems term specifies the number of items to be copied from \e
-//! pvSource. The size of an "item" depends on how the queue was initialized.
-//! Please see am_hal_queue_init() for more information on this.
-//!
-//! @return true if the add operation was successful, or false if the queue
-//! didn't have enough space.
-//
-//*****************************************************************************
 extern bool am_hal_queue_item_add(am_hal_queue_t *psQueue, const void *pvSource, uint32_t ui32NumItems);
-
-//*****************************************************************************
-//
-//! @brief Removes an item from the Queue
-//!
-//! @param psQueue - Pointer to a queue structure.
-//! @param pvDest - Pointer to the data to be added.
-//! @param ui32NumItems - Number of items to be added.
-//!
-//! This function will copy the data from the queue into the memory pointed to
-//! by pvDest. The \e ui32NumItems term specifies the number of items to be
-//! copied from the queue. The size of an "item" depends on how the queue was
-//! initialized.  Please see am_hal_queue_init() for more information on this.
-//!
-//! @return true if we were able to pull the requested number of items from the
-//! queue, or false if the queue didn't have that many items to pull.
-//
-//*****************************************************************************
 extern bool am_hal_queue_item_get(am_hal_queue_t *psQueue, void *pvDest, uint32_t ui32NumItems);
 
 #ifdef __cplusplus

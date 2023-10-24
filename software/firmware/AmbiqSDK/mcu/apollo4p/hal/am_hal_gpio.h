@@ -4,7 +4,7 @@
 //!
 //! @brief General Purpose Input Output Functionality
 //!
-//! @addtogroup gpio_4p GPIO - General Purpose Input Output
+//! @addtogroup gpio GPIO - General Purpose Input Output
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GPIO_H
@@ -364,11 +364,11 @@ typedef enum
 //! Write types for am_hal_gpio_state_write().
 //!
 //! It's important to note that types:
-//! AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN and AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS
+//! AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE and AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE
 //! operate on the output enable of the pin.
 //! Therefore
-//!     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN enables the output,
-//!     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS puts the pin into hi-impedance.
+//!     AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE enables the output,
+//!     AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE puts the pin into hi-impedance.
 //!
 //! Given this behavior, perhaps more appropriate names might have been:
 //!     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUTEN
@@ -380,19 +380,10 @@ typedef enum
     AM_HAL_GPIO_OUTPUT_CLEAR,
     AM_HAL_GPIO_OUTPUT_SET,
     AM_HAL_GPIO_OUTPUT_TOGGLE,
-    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS,    // Disable output, i.e. Hi-Z
-    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN,     // Enable output
-    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG
+    AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE,    // Disable output, i.e. Hi-Z
+    AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE,     // Enable output
+    AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE
 } am_hal_gpio_write_type_e;
-
-//*****************************************************************************
-//
-// These enums have been deprecated due to improper naming conventions.
-//
-//*****************************************************************************
-#define AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS
-#define AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN
-#define AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE     AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG
 
 //
 //! The handler type includes a void* parameter.
@@ -818,19 +809,19 @@ typedef struct
 //! Note that the macros are named as lower-case counterparts to the
 //! enumerations for the am_hal_gpio_state_read() function.  That is:
 //!
-//!    AM_HAL_GPIO_OUTPUT_CLEAR                -> am_hal_gpio_output_clear(n)
-//!    AM_HAL_GPIO_OUTPUT_SET                  -> am_hal_gpio_output_set(n)
-//!    AM_HAL_GPIO_OUTPUT_TOGGLE               -> am_hal_gpio_output_toggle(n)
-//!    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_DIS  -> am_hal_gpio_output_tristate_output_dis(n)
-//!    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_EN   -> am_hal_gpio_output_tristate_output_en(n)
-//!    AM_HAL_GPIO_OUTPUT_TRISTATE_OUTPUT_TOG  -> am_hal_gpio_output_toggle(n).
+//!    AM_HAL_GPIO_OUTPUT_CLEAR            -> am_hal_gpio_output_clear(n)
+//!    AM_HAL_GPIO_OUTPUT_SET              -> am_hal_gpio_output_set(n)
+//!    AM_HAL_GPIO_OUTPUT_TOGGLE           -> am_hal_gpio_output_toggle(n)
+//!    AM_HAL_GPIO_OUTPUT_TRISTATE_DISABLE -> am_hal_gpio_output_tristate_disable(n)
+//!    AM_HAL_GPIO_OUTPUT_TRISTATE_ENABLE  -> am_hal_gpio_output_tristate_enable(n)
+//!    AM_HAL_GPIO_OUTPUT_TRISTATE_TOGGLE  -> am_hal_gpio_output_toggle(n).
 //!
 //! It's important to note that the macros:
-//!     am_hal_gpio_output_tristate_output_en()
-//!     am_hal_gpio_output_tristate_output_dis()
+//!     am_hal_gpio_output_tristate_enable()
+//!     am_hal_gpio_output_tristate_disable()
 //! operate on the output enable of the pin. Therefore,
-//!     am_hal_gpio_output_tristate_output_en() enables the output,
-//!     am_hal_gpio_output_tristate_output_dis() puts the pin into hi-impedance.
+//!     am_hal_gpio_output_tristate_enable() enables the output,
+//!     am_hal_gpio_output_tristate_disable puts the pin into hi-impedance.
 //! Given this behavior, perhaps more appropriate names might have been:
 //!     am_hal_gpio_output_tristate_outputen()
 //!     am_hal_gpio_output_tristate_outputdis()
@@ -846,24 +837,15 @@ typedef struct
         AM_CRITICAL_END                                                         \
     }
 
-#define am_hal_gpio_output_tristate_output_dis(n)  (*AM_HAL_GPIO_ENCn((n)) = AM_HAL_MASK32(n))
-#define am_hal_gpio_output_tristate_output_en(n)   (*AM_HAL_GPIO_ENSn((n)) = AM_HAL_MASK32(n))
-#define am_hal_gpio_output_tristate_output_tog(n)                                   \
+#define am_hal_gpio_output_tristate_disable(n)  (*AM_HAL_GPIO_ENCn((n)) = AM_HAL_MASK32(n))
+#define am_hal_gpio_output_tristate_enable(n)   (*AM_HAL_GPIO_ENSn((n)) = AM_HAL_MASK32(n))
+#define am_hal_gpio_output_tristate_toggle(n)                                   \
     if ( 1 )                                                                    \
     {                                                                           \
         AM_CRITICAL_BEGIN                                                       \
         (*AM_HAL_GPIO_ENn((n)) ^=  AM_HAL_MASK32(n));                           \
         AM_CRITICAL_END                                                         \
     }
-
-//*****************************************************************************
-//
-// These macros have been deprecated due to improper naming conventions.
-//
-//*****************************************************************************
-#define am_hal_gpio_output_tristate_disable(n)   am_hal_gpio_output_tristate_output_dis(n)
-#define am_hal_gpio_output_tristate_enable(n)    am_hal_gpio_output_tristate_output_en(n)
-#define am_hal_gpio_output_tristate_toggle(n)    am_hal_gpio_output_tristate_output_tog(n)
 
 //*****************************************************************************
 //
@@ -1035,9 +1017,9 @@ extern uint32_t am_hal_gpio_interrupt_status_get(am_hal_gpio_int_channel_e eChan
 //! @brief Clear GPIO interrupts.
 //!
 //! @param eChannel - One of:
-//!     AM_HAL_GPIO_INT_CHANNEL_0,
-//!     AM_HAL_GPIO_INT_CHANNEL_1,
-//!     AM_HAL_GPIO_INT_CHANNEL_BOTH
+//!     AM_HAL_GPIO_INT_N_0,
+//!     AM_HAL_GPIO_INT_N_1,
+//!     AM_HAL_GPIO_INT_N_ALL
 //! @param pGpioIntMask - Mask of GPIO interrupts to be cleared.
 //! This mask is typically returned from am_hal_gpio_interrupt_status_get().
 //!

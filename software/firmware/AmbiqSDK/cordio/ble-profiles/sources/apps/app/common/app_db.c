@@ -4,7 +4,7 @@
  *
  *  \brief  Application framework device database example, using simple RAM-based storage.
  *
- *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
  *
@@ -85,8 +85,6 @@ typedef struct
   uint8_t     dbHash[ATT_DATABASE_HASH_LEN];      /*! Device GATT database hash */
 } appDb_t;
 
-#define NVM_REC_BYTE_LEN  (256)
-#define NVM_REC_WORD_LEN  (NVM_REC_BYTE_LEN/4)
 /**************************************************************************************************
   Local Variables
 **************************************************************************************************/
@@ -103,45 +101,19 @@ static appDbRec_t *pAppDbNewRec = appDb.rec;
 //
 //
 #ifdef AM_VOS_SDK
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P)
 appDbRec_t * pRecListNvmPointer = (appDbRec_t *)0x000FE000;
 #endif
 #else
 appDbRec_t * pRecListNvmPointer = (appDbRec_t *)0x00070000; //temporarily put the data here
 #endif // AM_VOS_SDK
 
-void AppLoadResList(void)
-{
-    appDbRec_t* p_nvm_rec = pAppDbNewRec;
-
-    for(uint8_t i=0; i<APP_DB_NUM_RECS; i++)
-    {
-        void *pPeerAddr = p_nvm_rec->peerAddr;
-
-        if ( (*(uint32_t*)pPeerAddr != 0xFFFFFFFF)
-            && (*(uint32_t*)pPeerAddr != 0x00000000) )
-        {
-            DmPrivAddDevToResList(p_nvm_rec->peerIrk.addrType, p_nvm_rec->peerAddr, p_nvm_rec->peerIrk.key,
-                          DmSecGetLocalIrk(), TRUE, 0);
-        }
-
-        p_nvm_rec++;
-    }
-}
 void AppCopyRecListInNvm(appDbRec_t *pRecord)
 {
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-    uint32_t* uint32RecListPointer =  (uint32_t *)pRecListNvmPointer;
-#else
     appDbRec_t* pNvmRec =  pRecListNvmPointer;
-#endif
     uint8_t i;
     for(i=0;i<APP_DB_NUM_RECS;i++)
     {
-    #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-        appDbRec_t* pNvmRec = (appDbRec_t*)uint32RecListPointer;
-    #endif
-
         void *pPeerAddr = pNvmRec->peerAddr;
         if ( (*(uint32_t*)pPeerAddr != 0xFFFFFFFF)  &&
              (*(uint32_t*)pPeerAddr != 0x00000000) )
@@ -151,11 +123,8 @@ void AppCopyRecListInNvm(appDbRec_t *pRecord)
 
             //pRecord->inUse = FALSE;
             //pRecord->valid = TRUE;
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-            uint32RecListPointer += NVM_REC_WORD_LEN;
-#else
+
             pNvmRec++;
-#endif
             pRecord++;
         }
         else
@@ -164,15 +133,10 @@ void AppCopyRecListInNvm(appDbRec_t *pRecord)
         }
     }
 }
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-
 // sizeof(appDbRec_t) = 176 bytes of buffer
-uint8_t ui8DbRamBuffer[APP_DB_NUM_RECS * NVM_REC_BYTE_LEN];
-uint16_t ui16DbRamBufferSize = APP_DB_NUM_RECS * NVM_REC_BYTE_LEN;
-#else
 uint8_t ui8DbRamBuffer[APP_DB_NUM_RECS * sizeof(appDbRec_t)];
 uint16_t ui16DbRamBufferSize = APP_DB_NUM_RECS * sizeof(appDbRec_t);
-#endif
+
 static void updateRecordInNVM(uint32_t* pDest, uint32_t* pSrc, uint32_t* pFlashAddr)
 {
     uint16_t ui16Size = sizeof(appDbRec_t);
@@ -187,7 +151,7 @@ static void updateRecordInNVM(uint32_t* pDest, uint32_t* pSrc, uint32_t* pFlashA
     am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY,
                               (uint32_t *)ui8DbRamBuffer,
                               (uint32_t *)pFlashAddr,
-                              ui16DbRamBufferSize/4);
+                              ui16DbRamBufferSize%4?((ui16DbRamBufferSize/4) + 1):(ui16DbRamBufferSize/4));
 #else
     // erase the page
     uint32_t ui32CurrentPage =  AM_HAL_FLASH_ADDR2PAGE((uint32_t)pFlashAddr);
@@ -204,58 +168,41 @@ static void updateRecordInNVM(uint32_t* pDest, uint32_t* pSrc, uint32_t* pFlashA
     am_hal_interrupt_master_set(ui32Critical);
 }
 
-int32_t AppDbUpdateNVM(appDbHdl_t hdl)
+int32_t AppStorePairingInfoInNVM(appDbHdl_t hdl)
 {
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-    uint32_t* pNvmRec =  (uint32_t *)pRecListNvmPointer;
-    uint32_t * pRamBufRec = (uint32_t *)ui8DbRamBuffer;
-#else
     appDbRec_t* pNvmRec =  pRecListNvmPointer;
     appDbRec_t* pRamBufRec = (appDbRec_t*)ui8DbRamBuffer;
-#endif
 
     int i;
 
 
     for(i=0;i<APP_DB_NUM_RECS;i++)
     {
-        void *pPeerAddr = ((appDbRec_t* )pNvmRec)->peerAddr;
-        if ( (*(uint32_t*)pPeerAddr != 0xFFFFFFFF)  &&
-             (*(uint32_t*)pPeerAddr != 0x00000000) )
+        void *pPeerAddr = pNvmRec->peerAddr;
+        if ( *(uint32_t*)pPeerAddr != 0xFFFFFFFF )
         {
-            if(BdaCmp(((appDbRec_t*)hdl)->peerAddr, ((appDbRec_t* )pNvmRec)->peerAddr))
+            if(BdaCmp(((appDbRec_t*)hdl)->peerAddr, pNvmRec->peerAddr))
             {
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-                updateRecordInNVM((uint32_t*)&pRamBufRec[i*NVM_REC_BYTE_LEN], (uint32_t*)((appDbRec_t*)hdl)->peerAddr, (uint32_t*)pRecListNvmPointer);
-#else
                 updateRecordInNVM((uint32_t*)&pRamBufRec[i], (uint32_t*)((appDbRec_t*)hdl)->peerAddr, (uint32_t*)pRecListNvmPointer);
-#endif
                 return true;
             }
 
             //skip
-#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
-            pNvmRec += NVM_REC_WORD_LEN;
-#else
             pNvmRec++;
-#endif
         }
         else
         {
-            uint32_t ui32Critical = am_hal_interrupt_master_disable();
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
             am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY,
                                       (uint32_t *)((appDbRec_t*)hdl)->peerAddr,
                                       (uint32_t *)pNvmRec,
-                                      ui16DbRamBufferSize/4);
+                                      (sizeof(appDbRec_t)%4?((sizeof(appDbRec_t)/4) + 1):(sizeof(appDbRec_t)/4)));
 #else
             am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY,
                                       (uint32_t *)((appDbRec_t*)hdl)->peerAddr,
                                       (uint32_t *)pNvmRec,
                                       (sizeof(appDbRec_t)%4?((sizeof(appDbRec_t)/4) + 1):(sizeof(appDbRec_t)/4)));
 #endif
-            am_hal_interrupt_master_set(ui32Critical);
-
             return true;
         }
     }
@@ -268,7 +215,7 @@ int32_t AppDbUpdateNVM(appDbHdl_t hdl)
     am_hal_mram_main_program(AM_HAL_MRAM_PROGRAM_KEY,
                               (uint32_t *)((appDbRec_t*)hdl)->peerAddr,
                               (uint32_t *)pRecListNvmPointer,
-                               ui16DbRamBufferSize/4);
+                              (sizeof(appDbRec_t)%4?((sizeof(appDbRec_t)/4) + 1):(sizeof(appDbRec_t)/4)));
 #else
     uint32_t ui32CurrentPage =  AM_HAL_FLASH_ADDR2PAGE((uint32_t)pRecListNvmPointer);
     uint32_t ui32CurrentBlock = AM_HAL_FLASH_ADDR2INST((uint32_t)pRecListNvmPointer);
@@ -431,7 +378,7 @@ void AppDbValidateRecord(appDbHdl_t hdl, uint8_t keyMask)
   ((appDbRec_t *) hdl)->keyValidMask = keyMask;
 
 #ifdef AM_BLE_USE_NVM
-  AppDbUpdateNVM(hdl);
+  AppStorePairingInfoInNVM(hdl);
 #endif
 }
 
@@ -699,10 +646,6 @@ void AppDbSetPeerDbHash(appDbHdl_t hdl, uint8_t *pDbHash)
   WSF_ASSERT(pDbHash != NULL);
 
   memcpy(((appDbRec_t *) hdl)->dbHash, pDbHash, ATT_DATABASE_HASH_LEN);
-
-#ifdef AM_BLE_USE_NVM
-  AppDbUpdateNVM(hdl);
-#endif
 }
 
 /*************************************************************************************************/
@@ -732,10 +675,6 @@ bool_t AppDbIsCacheCheckedByHash(appDbHdl_t hdl)
 void AppDbSetCacheByHash(appDbHdl_t hdl, bool_t cacheByHash)
 {
   ((appDbRec_t *) hdl)->cacheByHash = cacheByHash;
-
-#ifdef AM_BLE_USE_NVM
-  AppDbUpdateNVM(hdl);
-#endif
 }
 
 /*************************************************************************************************/
@@ -774,7 +713,7 @@ void AppDbSetCccTblValue(appDbHdl_t hdl, uint16_t idx, uint16_t value)
 
   if(AppCheckBonded(connId))
   {
-    AppDbUpdateNVM(hdl);
+    AppStorePairingInfoInNVM(hdl);
   }
 #endif
 }
@@ -813,7 +752,6 @@ void AppDbSetCsfRecord(appDbHdl_t hdl, uint8_t changeAwareState, uint8_t *pCsf)
   {
     ((appDbRec_t *) hdl)->changeAwareState = changeAwareState;
     memcpy(&((appDbRec_t *) hdl)->csf, pCsf, ATT_CSF_LEN);
-
   }
 }
 
@@ -828,7 +766,7 @@ void AppDbSetCsfRecord(appDbHdl_t hdl, uint8_t changeAwareState, uint8_t *pCsf)
  *  \return None.
  */
 /*************************************************************************************************/
-void AppDbSetClientChangeAwareState(appDbHdl_t hdl, uint8_t state)
+void AppDbSetClientsChangeAwareState(appDbHdl_t hdl, uint8_t state)
 {
   if (hdl == APP_DB_HDL_NONE)
   {
@@ -932,10 +870,6 @@ uint16_t *AppDbGetHdlList(appDbHdl_t hdl)
 void AppDbSetHdlList(appDbHdl_t hdl, uint16_t *pHdlList)
 {
   memcpy(((appDbRec_t *) hdl)->hdlList, pHdlList, sizeof(((appDbRec_t *) hdl)->hdlList));
-
-#ifdef AM_BLE_USE_NVM
-  AppDbUpdateNVM(hdl);
-#endif
 }
 
 /*************************************************************************************************/
@@ -1007,10 +941,6 @@ bool_t AppDbGetPeerAddrRes(appDbHdl_t hdl)
 void AppDbSetPeerAddrRes(appDbHdl_t hdl, uint8_t addrRes)
 {
   ((appDbRec_t *)hdl)->peerAddrRes = addrRes;
-
-#ifdef AM_BLE_USE_NVM
-  AppDbUpdateNVM(hdl);
-#endif
 }
 
 /*************************************************************************************************/
@@ -1098,8 +1028,4 @@ bool_t AppDbGetPeerRpao(appDbHdl_t hdl)
 void AppDbSetPeerRpao(appDbHdl_t hdl, bool_t peerRpao)
 {
   ((appDbRec_t *)hdl)->peerRpao = peerRpao;
-
-#ifdef AM_BLE_USE_NVM
-  AppDbUpdateNVM(hdl);
-#endif
 }

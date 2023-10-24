@@ -5,7 +5,7 @@
  *  \brief  Fitness sample application for the following profiles:
  *            Heart Rate profile
  *
- *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
  *
@@ -48,12 +48,6 @@
 #include "hrps/hrps_api.h"
 #include "rscp/rscp_api.h"
 #include "fit_api.h"
-#include "atts_main.h"
-
-#ifdef AM_BLE_EATT
-#include "att_eatt.h"
-#include "eatt_api.h"
-#endif
 
 /**************************************************************************************************
   Macros
@@ -155,22 +149,6 @@ static const smpCfg_t fitSmpCfg =
   64000,                                  /*! Time msec before attemptExp decreases */
   2                                       /*! Repeated attempts multiplier exponent */
 };
-
-#ifdef AM_BLE_EATT
-/* priority required for each channel */
-uint8_t eatt_pri[] = {0x1, 0x1};
-/* EATT Configuration structure */
-static const eattCfg_t fiteattCfg =
-{
-  247,                              /* MTU */
-  247,                              /* MPS */
-  TRUE,                             /* Open EATT channels automatically on connect */
-  FALSE,                            /* Authorization required */
-  DM_SEC_LEVEL_NONE,                /* Security level required */
-  2,                                /* Number of enhanced l2cap channels per connection */
-  eatt_pri                          /* Channel priority table */
-};
-#endif
 
 /**************************************************************************************************
   Advertising Data
@@ -462,8 +440,6 @@ static void fitSetup(fitMsg_t *pMsg)
 
   /* start advertising; automatically set connectable/discoverable mode and bondable mode */
   AppAdvStart(APP_MODE_AUTO_INIT);
-
-  AppSetBondable(TRUE);
 }
 
 /*************************************************************************************************/
@@ -583,24 +559,6 @@ static void fitBtnCback(uint8_t btn)
   }
 }
 
-//*****************************************************************************
-//
-// Save the handler ID of the HciDrvHandler so we can send it events through
-// the WSF task system.
-//
-// Note: These two lines need to be added to the exactle initialization
-// function at the beginning of all Cordio applications:
-//
-//     handlerId = WsfOsSetNextHandler(HciDrvHandler);
-//     HciDrvHandler(handlerId);
-//
-//*****************************************************************************
-wsfHandlerId_t g_CustHandleID = 0xFF;
-void CustHandlerInit(wsfHandlerId_t handlerId)
-{
-    g_CustHandleID = handlerId;
-}
-
 /*************************************************************************************************/
 /*!
  *  \brief  Process messages from the event handler.
@@ -642,28 +600,10 @@ static void fitProcMsg(fitMsg_t *pMsg)
       break;
 
     case DM_RESET_CMPL_IND:
-#ifdef AM_BLE_USE_NVM
-        AppLoadResList();
-#endif
-      // set database hash calculating status to true until a new hash is generated after reset
-      attsCsfSetHashUpdateStatus(TRUE);
-
-      // Generate ECC key if configured support secure connection,
-      // else will calcualte ATT database hash
-      if( fitSecCfg.auth & DM_AUTH_SC_FLAG )
-      {
-          DmSecGenerateEccKeyReq();
-      }
-      else
-      {
-          AttsCalculateDbHash();
-      }
-
-      uiEvent = APP_UI_RESET_CMPL;
-      break;
-
-    case ATTS_DB_HASH_CALC_CMPL_IND:
+      AttsCalculateDbHash();
+      DmSecGenerateEccKeyReq();
       fitSetup(pMsg);
+      uiEvent = APP_UI_RESET_CMPL;
       break;
 
     case DM_ADV_SET_START_IND:
@@ -676,10 +616,6 @@ static void fitProcMsg(fitMsg_t *pMsg)
 
      case DM_ADV_START_IND:
       uiEvent = APP_UI_ADV_START;
-      if(g_CustHandleID != 0xFF)
-      {
-        WsfSetEvent(g_CustHandleID, CUST_BLE_ADV_START_EVENT);
-      }
       break;
 
     case DM_ADV_STOP_IND:
@@ -691,20 +627,11 @@ static void fitProcMsg(fitMsg_t *pMsg)
       BasProcMsg(&pMsg->hdr);
       // AppSlaveSecurityReq(1);
       uiEvent = APP_UI_CONN_OPEN;
-      if(g_CustHandleID != 0xFF)
-      {
-        WsfSetEvent(g_CustHandleID, CUST_BLE_CONN_OPEN_EVENT);
-      }
       break;
 
     case DM_CONN_CLOSE_IND:
-      {
-        hciDisconnectCmplEvt_t *evt = (hciDisconnectCmplEvt_t*) pMsg;
-        fitClose(pMsg);
-        uiEvent = APP_UI_CONN_CLOSE;
-        APP_TRACE_INFO1(">>> Connection closed reason 0x%x <<<",
-                evt->reason);
-      }
+      fitClose(pMsg);
+      uiEvent = APP_UI_CONN_CLOSE;
       break;
 
     case DM_PHY_UPDATE_IND:
@@ -723,11 +650,6 @@ static void fitProcMsg(fitMsg_t *pMsg)
 
     case DM_SEC_ENCRYPT_IND:
       uiEvent = APP_UI_SEC_ENCRYPT;
-      if(AttsCccEnabled((dmConnId_t) pMsg->dm.hdr.param, FIT_HRS_HRM_CCC_IDX))
-      {
-        APP_TRACE_INFO0("encrypted, ccc enabled\r\n");
-        HrpsMeasStart((dmConnId_t) pMsg->dm.hdr.param, FIT_HR_TIMER_IND, FIT_HRS_HRM_CCC_IDX);
-      }
       break;
 
     case DM_SEC_ENCRYPT_FAIL_IND:
@@ -739,12 +661,8 @@ static void fitProcMsg(fitMsg_t *pMsg)
       break;
 
     case DM_SEC_ECC_KEY_IND:
+
       DmSecSetEccKey(&pMsg->dm.eccMsg.data.key);
-      // Only calculate database hash if the calculating status is in progress
-      if( attsCsfGetHashUpdateStatus() )
-      {
-        AttsCalculateDbHash();
-      }
       break;
 
     case DM_SEC_COMPARE_IND:
@@ -829,9 +747,6 @@ void FitHandlerInit(wsfHandlerId_t handlerId)
 
   /* Set stack configuration pointers */
   pSmpCfg = (smpCfg_t *) &fitSmpCfg;
-#ifdef AM_BLE_EATT
-  pEattCfg = (eattCfg_t *) &fiteattCfg;
-#endif
 
   /* initialize heart rate profile sensor */
   HrpsInit(handlerId, (hrpsCfg_t *) &fitHrpsCfg);
@@ -887,11 +802,6 @@ void FitHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
 /*************************************************************************************************/
 void FitStart(void)
 {
-  /* EATT initialization */
-#ifdef AM_BLE_EATT
-  EattInit(EATT_ROLE_INITIATOR | EATT_ROLE_ACCEPTOR);
-#endif
-
   /* Register for stack callbacks */
   DmRegister(fitDmCback);
   DmConnRegister(DM_CLIENT_ID_APP, fitDmCback);

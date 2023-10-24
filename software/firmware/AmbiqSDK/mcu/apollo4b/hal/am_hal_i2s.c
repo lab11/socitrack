@@ -2,7 +2,7 @@
 //
 //! @file am_hal_i2s.c
 //!
-//! @brief HAL implementation for the Inter-IC Sound module.
+//! @brief HAL implementation for the I2S module.
 //!
 //! @addtogroup i2s4_4b I2S - Inter-IC Sound
 //! @ingroup apollo4b_hal
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -116,7 +116,7 @@ typedef struct
 }am_hal_i2s_state_t;
 
 //
-//! Available frame size.
+// Available frame size.
 //
 static const uint32_t ui32I2sWordLength[AM_HAL_I2S_FRAME_WDLEN_MAX] =
 {
@@ -130,7 +130,7 @@ static const uint32_t ui32I2sWordLength[AM_HAL_I2S_FRAME_WDLEN_MAX] =
 
 //*****************************************************************************
 //
-// Globals
+//! Globals
 //
 //*****************************************************************************
 am_hal_i2s_state_t          g_I2Shandles[AM_REG_I2S_NUM_MODULES];
@@ -1119,13 +1119,11 @@ am_hal_i2s_dma_transfer_complete(void *pHandle)
 {
     am_hal_i2s_state_t *pState = (am_hal_i2s_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
-
     //
     // Once completed, software must first write the DMACFG register to 0,
     // prior to making any update
     //
     I2Sn(ui32Module)->DMACFG = 0x0;
-
     //
     // Clear dma status.
     //
@@ -1145,7 +1143,6 @@ am_hal_i2s_tx_fifo_empty(void *pHandle)
 {
     am_hal_i2s_state_t *pState = (am_hal_i2s_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
-
     //
     // AM_HAL_I2S_INT_TXDMACPL is always triggered before the completion of FIFO TX,
     // So check the FIFOCNT to guarantee all datas transfered completely before next DMA transaction.
@@ -1170,12 +1167,10 @@ am_hal_i2s_dma_error(void *pHandle, am_hal_i2s_xfer_dir_e xfer)
 {
     am_hal_i2s_state_t *pState = (am_hal_i2s_state_t *) pHandle;
     uint32_t ui32Module = pState->ui32Module;
-
     //
     // If an error condition did occur during a DMA operation, the DMA must first be disabled
     //
     I2Sn(ui32Module)->DMACFG = 0x0;
-
     //
     // DMA status bits cleared.
     //

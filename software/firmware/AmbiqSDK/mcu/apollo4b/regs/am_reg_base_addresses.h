@@ -8,7 +8,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_BASE_ADDRESSES_H
@@ -125,16 +125,6 @@
 #define DSP1IRAM_BASEADDR                       (0x101D0000UL)
 #define DSP1IRAM_MAX_SIZE                       (0x8000UL)
 #define EXRAM_MAX_SIZE                          (0x78000UL)
-#define EXTRAM_MAX_SIZE                         (EXRAM_MAX_SIZE)
-
-//
-// RAM sizes.
-// NONTCM_MAX_SIZE is the total of contiguous RAM after TCM (mix of SSRAM and Extended)
-// SSRAM_MAX_SIZE  is the total of Shared System RAM, but is not necessarily contiguous.
-// RAM_TOTAL_SIZE  is the grand total of all contiguous RAM.
-//
-#define NONTCM_MAX_SIZE                         (EXTRAM_MAX_SIZE + SSRAM_MAX_SIZE)
-#define RAM_TOTAL_SIZE                          (TCM_MAX_SIZE + NONTCM_MAX_SIZE)
 
 // ****************************************************************************
 // MRAM Address Space

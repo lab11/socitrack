@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -55,7 +55,7 @@
 //  Local defines.
 //*****************************************************************************
 //
-//! Maximum iterations for hardware CRC to finish
+// Maximum iterations for hardware CRC to finish
 //
 #define MAX_CRC_WAIT        100000
 
@@ -70,7 +70,13 @@
 
 //*****************************************************************************
 //
-//  Get Device Security Info
+//! @brief  Get Device Security Info
+//!
+//! @param  pSecInfo -  Pointer to structure for returned security info
+//!
+//! This will retrieve the security information for the device
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_security_get_info(am_hal_security_info_t *pSecInfo)
@@ -116,7 +122,13 @@ uint32_t am_hal_security_get_info(am_hal_security_info_t *pSecInfo)
 
 //*****************************************************************************
 //
-//  Get Device Security SOCID
+//! @brief  Get Device Security SOCID
+//!
+//! @param  pSocId -  Pointer to structure for returned SOCID info
+//!
+//! This will retrieve the SOCID information for the device
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_security_get_socid(am_hal_security_socid_t *pSocId)
@@ -126,7 +138,14 @@ uint32_t am_hal_security_get_socid(am_hal_security_socid_t *pSocId)
 
 //*****************************************************************************
 //
-//  Set the key for specified lock
+//! @brief  Set the key for specified lock
+//!
+//! @param  lockType - The lock type to be operated upon
+//! @param  pKey -  Pointer to 128b key value
+//!
+//! This will program the lock registers for the specified lock and key
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_security_set_key(am_hal_security_locktype_t lockType, am_hal_security_128bkey_t *pKey)
@@ -159,7 +178,15 @@ uint32_t am_hal_security_set_key(am_hal_security_locktype_t lockType, am_hal_sec
 
 //*****************************************************************************
 //
-// Get the current status of the specified lock
+//! @brief  Get the current status of the specified lock
+//!
+//! @param lockType - The lock type to be operated upon
+//! @param pbUnlockStatus -  Pointer to return variable with lock status
+//!
+//! This will get the lock status for specified lock - true implies unlocked
+//! Note that except for customer lock, other locks are self-locking on status read
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t am_hal_security_get_lock_status(am_hal_security_locktype_t lockType, bool *pbUnlockStatus)
@@ -191,7 +218,17 @@ uint32_t am_hal_security_get_lock_status(am_hal_security_locktype_t lockType, bo
 
 //*****************************************************************************
 //
-//  Compute CRC32 for a specified payload
+//! @brief  Compute CRC32 for a specified payload
+//!
+//! @param  ui32StartAddr - The start address of the payload.
+//! @param  ui32SizeBytes - The length of payload in bytes.
+//! @param  pui32Crc      - Pointer to variable to return the computed CRC.
+//!
+//! This function uses the hardware engine to compute CRC32 on an arbitrary data
+//! payload.  The payload can reside in any contiguous memory including external
+//! memory.
+//!
+//! @return Returns AM_HAL_STATUS_SUCCESS on success
 //
 //*****************************************************************************
 uint32_t

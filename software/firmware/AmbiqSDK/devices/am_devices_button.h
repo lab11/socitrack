@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_DEVICES_BUTTON_H
@@ -96,7 +96,7 @@ typedef struct
 {
     am_devices_button_t sDevButton ;
     //
-    //! pointer to pin config for button
+    // pointer to pin config for button
     //
     am_hal_gpio_pincfg_t *tPinCfg ;
 }
@@ -167,7 +167,7 @@ extern void am_devices_button_array_init(am_devices_button_t *psButtons,
 //! @brief Configures the pin for a button with pincfg param
 //! and reads and debounces the pin, then disables the button
 //!
-//! @param psButton is an array of button structures.
+//! @param psButtons is an array of button structures.
 //! @param am_hal_pingcfg is the pinConfig parameter
 //!
 //! This function configures the GPIO for a buttons.
@@ -181,9 +181,9 @@ extern void am_devices_button_tick_pin_cfg(am_devices_button_t *psButton,
 //! @brief Configures the pin for a button with a default pincfg
 //! then reads and debounces the pin, then disables the button
 //!
-//! @note this is the legacy call
+//! this is the legacy call
 //!
-//! @param psButton is an array of button structures.
+//! @param psButtons is an array of button structures.
 //!
 //! This function configures the GPIO for a buttons.
 //
@@ -195,7 +195,7 @@ extern void am_devices_button_tick(am_devices_button_t *psButton);
 //! @brief Configures the necessary pins for an array of buttons.
 //! then this will read, debounce, and disable the button pins
 //!
-//! @note this is the legacy call that uses a default pincfg
+//! this is the legacy call that uses a default pincfg
 //!
 //! @param psButtons is an array of button structures.
 //! @param ui32NumButtons is the total number of buttons in the array.

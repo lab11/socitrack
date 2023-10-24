@@ -8,7 +8,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -70,67 +70,9 @@
 
 //*****************************************************************************
 //
-//*****************************************************************************
-//
-// Enable the heartbeat command
-//
-// Setting this to 1 will cause the MCU to send occasional HCI packets to the
-// BLE core if there hasn't been any activity for a while. This can help catch
-// communication issues that might otherwise go unnoticed.
-//
-//*****************************************************************************
-#define ENABLE_BLE_HEARTBEAT            1
-
 // Configurable error-detection thresholds.
 //
 //*****************************************************************************
-
-
-//*****************************************************************************
-//
-// Heartbeat implementation functions.
-//
-//*****************************************************************************
-#if ENABLE_BLE_HEARTBEAT
-#define HEARTBEAT_TIMEOUT_MS            (10000)   //milli-seconds
-#define BLE_HEARTBEAT_EVENT             (0x12)
-
-#define BLE_HEARTBEAT_START()                                                 \
-    do { WsfTimerStartMs(&g_HeartBeatTimer, HEARTBEAT_TIMEOUT_MS); } while (0)
-
-#define BLE_HEARTBEAT_STOP()                                                  \
-    do { WsfTimerStop(&g_HeartBeatTimer); } while (0)
-
-#define BLE_HEARTBEAT_RESTART()                                               \
-    do                                                                        \
-    {                                                                         \
-            WsfTimerStop(&g_HeartBeatTimer);                                  \
-            WsfTimerStartMs(&g_HeartBeatTimer, HEARTBEAT_TIMEOUT_MS);         \
-    } while (0)
-
-wsfTimer_t g_HeartBeatTimer;
-#else
-
-#define BLE_HEARTBEAT_START()
-#define BLE_HEARTBEAT_STOP()
-#define BLE_HEARTBEAT_RESTART()
-
-#endif
-
-#if DISABLE_WAKEUP_NOP_EVENT
-#define WAKEUP_TIMEOUT_MS            (100)   //milli-seconds
-
-#define BLE_WAKEUP_TIMER_START()                                                 \
-    do { WsfTimerStartMs(&g_WakeUpTimer, WAKEUP_TIMEOUT_MS); } while (0)
-
-#define BLE_WAKEUP_TIMER_STOP()                                                  \
-    do { WsfTimerStop(&g_WakeUpTimer); } while (0)
-
-wsfTimer_t g_WakeUpTimer;
-#else
-#define BLE_WAKEUP_TIMER_START()
-#define BLE_WAKEUP_TIMER_STOP()
-#endif
 
 uint32_t DMATCBBuffer[AM_DEVICES_COOPER_MAX_TX_PACKET / 4];
 
@@ -167,14 +109,6 @@ uint32_t g_consumed_bytes = 0;
 //
 //*****************************************************************************
 #define BLE_TRANSFER_NEEDED_EVENT                   0x01
-
-#if ENABLE_BLE_HEARTBEAT
-#define BLE_HEARTBEAT_EVENT                         (0x12)
-#endif
-
-#if DISABLE_WAKEUP_NOP_EVENT
-#define BLE_WAKEUP_EVENT                            (0x13)
-#endif
 
 
 //*****************************************************************************
@@ -288,14 +222,14 @@ static void HciDrvIntService(void *pArg)
 
 static void ClkReqIntService(void *pArg)
 {
-    if (am_devices_cooper_clkreq_read(g_IomDevHdl))
+    if(am_devices_cooper_clkreq_read(g_IomDevHdl))
     {
         // Power up the 32MHz Crystal
-        am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, (void *)&g_amHalMcuctrlArgBLEDefault);
+        am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_KICK_START, 0);
     }
     else
     {
-        am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE,(void *) &g_amHalMcuctrlArgBLEDefault);
+        am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE, 0);
     }
     am_hal_gpio_intdir_toggle(AM_DEVICES_COOPER_CLKREQ_PIN);
 }
@@ -366,8 +300,6 @@ HciDrvRadioBoot(bool bColdBoot)
 void
 HciDrvRadioShutdown(void)
 {
-    BLE_HEARTBEAT_STOP();
-
     uint32_t IntNum = AM_DEVICES_COOPER_IRQ_PIN;
     am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0,
                                   AM_HAL_GPIO_INT_CTRL_INDV_DISABLE,
@@ -404,17 +336,10 @@ hciDrvWrite(uint8_t type, uint16_t len, uint8_t *pData)
 
     if (ui32ErrorStatus == AM_DEVICES_COOPER_STATUS_SUCCESS)
     {
-        //
-        // Restart the heartbeat timer.
-        //
-        BLE_HEARTBEAT_RESTART();
         return len;
     }
     else if (ui32ErrorStatus == AM_DEVICES_COOPER_STATUS_CONTROLLER_NOT_READY)
     {
-        // Cooper is not ready for current writing request,
-        // HOST will start the timmer to check if there is any pending HCI data.
-        BLE_WAKEUP_TIMER_START();
         return 0;
     }
     else if (ui32ErrorStatus == AM_DEVICES_COOPER_STATUS_TIMEOUT)
@@ -448,17 +373,6 @@ void
 HciDrvHandlerInit(wsfHandlerId_t handlerId)
 {
     g_HciDrvHandleID = handlerId;
-
-#if ENABLE_BLE_HEARTBEAT
-    g_HeartBeatTimer.handlerId = handlerId;
-    g_HeartBeatTimer.msg.event = BLE_HEARTBEAT_EVENT;
-#endif
-
-#if DISABLE_WAKEUP_NOP_EVENT
-    g_WakeUpTimer.handlerId = handlerId;
-    g_WakeUpTimer.msg.event = BLE_WAKEUP_EVENT;
-#endif
-
 }
 
 
@@ -475,44 +389,6 @@ HciDrvHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
 {
     uint32_t ui32ErrorStatus = 0;
 
-#if ENABLE_BLE_HEARTBEAT
-    //
-    // If this handler was called in response to a heartbeat event, then it's
-    // time to run a benign HCI command. Normally, the BLE controller should
-    // handle this command without issue. If it doesn't acknowledge the
-    // command, we will eventually get an HCI command timeout error, which will
-    // alert us to the fact that the BLE core has become unresponsive in
-    // general.
-    //
-    if (pMsg != NULL)
-    {
-        if (pMsg->event == BLE_HEARTBEAT_EVENT)
-        {
-            HciReadLocalVerInfoCmd();
-            BLE_HEARTBEAT_START();
-
-            return;
-        }
-    }
-#endif
-
-#if DISABLE_WAKEUP_NOP_EVENT
-    //
-    // If this handler was called in response to a wakeup event, then it
-    // means the last HCI packet wakeup interrupt signal is not coming up
-    // within 100ms, will trigger checking pending HCI command/ACL data.
-    //
-    if (pMsg != NULL)
-    {
-        if (pMsg->event == BLE_WAKEUP_EVENT)
-        {
-            BLE_WAKEUP_TIMER_STOP();
-
-            WsfSetEvent(g_HciDrvHandleID, BLE_TRANSFER_NEEDED_EVENT);
-        }
-    }
-#endif
-
     //
     //need to check the each bit of event mask
     //
@@ -522,7 +398,6 @@ HciDrvHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
 
         if ( pBle->bWakingUp )
         {
-            BLE_WAKEUP_TIMER_STOP();
             pBle->bWakingUp = false;
             /* Send any pending HCI command */
             hciCmdSend(NULL);
@@ -566,7 +441,6 @@ HciDrvHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
             // Reset
             g_ui32NumBytes = 0;
             ui32ErrorStatus = am_devices_cooper_blocking_read(g_IomDevHdl, g_pui32ReadBuffer, &g_ui32NumBytes);
-            BLE_HEARTBEAT_RESTART();
 
             if (g_ui32NumBytes > AM_DEVICES_COOPER_MAX_RX_PACKET)
             {
@@ -675,25 +549,26 @@ bool HciVscSetRfPowerLevelEx(txPowerLevel_t txPowerlevel)
  *  \brief  read memory variable
  *
  *  \param  start_addr   Start address to read
- *  \param  access_type  Access type
+ *  \param  size         Access size
  *  \param  length       Length to read
  *
  *  \return true when success, otherwise false
  */
 /*************************************************************************************************/
-bool HciVscReadMem(uint32_t start_addr, eMemAccess_type access_type, uint8_t length)
+bool HciVscReadMem(uint32_t start_addr, eMemAccess_type size,uint8_t length)
 {
+    hciRdMemCmd_t rdMemCmd =
+    {
+        .start_addr = start_addr,
+        .type = size,
+        .length = length,
+    };
+
     if((length > MAX_MEM_ACCESS_SIZE)
-        || ((access_type != RD_8_Bit) && (access_type != RD_16_Bit) && (access_type != RD_32_Bit)))
+        || ((size!=RD_8_Bit)&&(size!=RD_16_Bit)&&(size!=RD_32_Bit)))
     {
         return false;
     }
-
-    hciRdMemCmd_t rdMemCmd = {0};
-    uint8_t *p = (uint8_t *)&rdMemCmd;
-    UINT32_TO_BSTREAM(p, start_addr);
-    UINT8_TO_BSTREAM(p, access_type);
-    UINT8_TO_BSTREAM(p, length);
 
     HciVendorSpecificCmd(HCI_VSC_RD_MEM_CMD_OPCODE, HCI_VSC_RD_MEM_CMD_LENGTH, (uint8_t *)&rdMemCmd);
 
@@ -705,27 +580,28 @@ bool HciVscReadMem(uint32_t start_addr, eMemAccess_type access_type, uint8_t len
  *  \brief  write memory variable
  *
  *  \param  start_addr   Start address to write
- *  \param  access_type  Access type
+ *  \param  size         Access size
  *  \param  length       Length to write
  *  \param  data         Data to write
  *
  *  \return true when success, otherwise false
  */
 /*************************************************************************************************/
-bool HciVscWriteMem(uint32_t start_addr, eMemAccess_type access_type, uint8_t length, uint8_t *data)
+bool HciVscWriteMem(uint32_t start_addr, eMemAccess_type size,uint8_t length, uint8_t *data)
 {
+    hciWrMemCmd_t wrMemCmd =
+    {
+        .start_addr = start_addr,
+        .type = size,
+        .length = length
+    };
+
     if((length > MAX_MEM_ACCESS_SIZE)
-        || ((access_type != RD_8_Bit) && (access_type != RD_16_Bit) && (access_type != RD_32_Bit)))
+        || ((size!=RD_8_Bit)&&(size!=RD_16_Bit)&&(size!=RD_32_Bit)))
     {
         return false;
     }
 
-    hciWrMemCmd_t wrMemCmd = {0};
-    uint8_t *p = (uint8_t *)&wrMemCmd;
-    UINT32_TO_BSTREAM(p, start_addr);
-    UINT8_TO_BSTREAM(p, access_type);
-    UINT8_TO_BSTREAM(p, length);
-    
     memset(wrMemCmd.data, 0x0, MAX_MEM_ACCESS_SIZE);
     memcpy(wrMemCmd.data, data, length);
 
@@ -754,20 +630,21 @@ void HciVscGetFlashId(void)
 /*!
  *  \brief  Erase specifide flash space
  *
- *  \param  flash_type  Flash type
- *  \param  offset      Start offset address
- *  \param  length      Length to erase
+ *  \param  type     Flash type
+ *  \param  offset   Start offset address
+ *  \param  size     Size to erase
  *
  *  \return None
  */
 /*************************************************************************************************/
-void HciVscEraseFlash(uint8_t flash_type, uint32_t offset, uint32_t length)
+void HciVscEraseFlash(uint8_t type, uint32_t offset,uint32_t size)
 {
-    hciErFlashCmd_t erFlashCmd = {0};
-    uint8_t *p = (uint8_t *)&erFlashCmd;
-    UINT8_TO_BSTREAM(p, flash_type);
-    UINT32_TO_BSTREAM(p, offset);
-    UINT32_TO_BSTREAM(p, length);
+    hciErFlashCmd_t erFlashCmd =
+    {
+        .flashtype = type,
+        .startoffset = offset,
+        .size = size
+    };
 
     HciVendorSpecificCmd(HCI_VSC_ER_FLASH_CMD_OPCODE, HCI_VSC_ER_FLASH_CMD_LENGTH, (uint8_t *)&erFlashCmd);
 }
@@ -777,26 +654,27 @@ void HciVscEraseFlash(uint8_t flash_type, uint32_t offset, uint32_t length)
 /*!
  *  \brief  write flash
  *
- *  \param  flash_type  Flash type
- *  \param  offset      Start offset address
- *  \param  length      Length to write
- *  \param  data        Data to write
+ *  \param  type     Flash type
+ *  \param  offset   Start offset address
+ *  \param  length   Length to write
+ *  \param  data     Data to write
  *
  *  \return true when success, otherwise false
  */
 /*************************************************************************************************/
-bool HciVscWriteFlash(uint8_t flash_type, uint32_t offset, uint8_t length, uint8_t *data)
+bool HciVscWriteFlash(uint8_t type, uint32_t offset,uint32_t length, uint8_t *data)
 {
+    hciWrFlashCmd_t wrFlashCmd =
+    {
+        .flashtype = type,
+        .length = length,
+        .startoffset = offset
+    };
+
     if(data == NULL)
     {
         return false;
     }
-
-    hciWrFlashCmd_t wrFlashCmd = {0};
-    uint8_t *p = (uint8_t *)&wrFlashCmd;
-    UINT8_TO_BSTREAM(p, flash_type);
-    UINT32_TO_BSTREAM(p, offset);
-    UINT8_TO_BSTREAM(p, length);
 
     memset(wrFlashCmd.data, 0x0, MAX_FLASH_ACCESS_SIZE);
     memcpy(wrFlashCmd.data, data, length);
@@ -812,20 +690,21 @@ bool HciVscWriteFlash(uint8_t flash_type, uint32_t offset, uint8_t length, uint8
 /*!
  *  \brief  Read flash
  *
- *  \param  flash_type   Flash type
- *  \param  offset       Start offset address
- *  \param  length       Length to read
+ *  \param  type     Flash type
+ *  \param  offset   Start offset address
+ *  \param  size     Size to read
  *
  *  \return true when success, otherwise false
  */
 /*************************************************************************************************/
-bool HciVscReadFlash(uint8_t flash_type, uint32_t offset, uint8_t length)
+bool HciVscReadFlash(uint8_t type, uint32_t offset,uint32_t size)
 {
-    hciRdFlashCmd_t rdFlashCmd = {0};
-    uint8_t *p = (uint8_t *)&rdFlashCmd;
-    UINT8_TO_BSTREAM(p, flash_type);
-    UINT32_TO_BSTREAM(p, offset);
-    UINT8_TO_BSTREAM(p, length);
+    hciRdFlashCmd_t rdFlashCmd =
+    {
+        .flashtype = type,
+        .startoffset = offset,
+        .size = size
+    };
 
     HciVendorSpecificCmd(HCI_VSC_RD_FLASH_CMD_OPCODE, HCI_VSC_RD_FLASH_CMD_LENGTH, (uint8_t *)&rdFlashCmd);
 
@@ -938,18 +817,6 @@ void HciVscSetTraceBitMap(ble_trace_cfg bit_map)
 
 /*************************************************************************************************/
 /*!
- *  \brief  Configure the specified event mask
- *  \param evt_mask, the event mask to configure, see #enum eCfgEvtMsk_type
- */
-/*************************************************************************************************/
-void HciVscConfigEvtMask(uint32_t evt_mask)
-{
-    HciVendorSpecificCmd(HCI_VSC_CFG_EVT_MASK_CMD_OPCODE, HCI_VSC_CFG_EVT_MASK_CMD_LENGTH, (uint8_t *)&evt_mask);
-}
-
-
-/*************************************************************************************************/
-/*!
  *  \fn     HciVscSetCustom_BDAddr
  *
  *  \brief  This procedure is to set customer-provided Bluetooth address if needed.
@@ -1002,23 +869,5 @@ void HciVscUpdateLinklayerFeature(void)
     ll_local_feats[3] = (uint8_t)(LL_FEATURES_BYTE3>>24);
 
     HciVendorSpecificCmd(HCI_VSC_UPDATE_LL_FEATURE_CFG_CMD_OPCODE, LE_FEATS_LEN, ll_local_feats);
-}
-
-/*************************************************************************************************/
-/*!
- *  \brief  Get RSSI in DTM mode. The command complete event of this command inlcudes one byte BLE
- *          standard error status and one byte signed RSSI value. When the status is 0x0 (success),
- *          the following RSSI value is valid. Before using this command to read the RSSI in DTM mode,
- *          the application needs to send HCI receiver start command to put the controller to RX mode.
- *          Only controller firmware v1.21.1.0 and higher version supports this feature.
- *
- *  \param  NULL
- *
- *  \return None
- */
-/*************************************************************************************************/
-void HciVscGetDtmRssi(void)
-{
-    HciVendorSpecificCmd(HCI_VSC_GET_DTM_RSSI_CMD_OPCODE, HCI_VSC_GET_DTM_RSSI_CMD_LENGTH, NULL);
 }
 

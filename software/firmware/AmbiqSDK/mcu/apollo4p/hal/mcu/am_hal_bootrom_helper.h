@@ -4,7 +4,7 @@
 //!
 //! @brief BootROM Helper Function Table
 //!
-//! @addtogroup bootrom4_4p Bootrom Functionality
+//! @addtogroup bootrom4 Bootrom Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_BOOTROM_HELPER_H
@@ -69,19 +69,19 @@ extern "C"
 typedef struct am_hal_bootrom_helper_struct
 {
     //
-    //! Basics functions required by most toolchains.
+    // Basics functions required by most toolchains.
     //
     int  (*nv_mass_erase)(uint32_t, uint32_t);
     int  (*nv_page_erase)(uint32_t, uint32_t, uint32_t);
     int  (*nv_program_main)(uint32_t, uint32_t *, uint32_t *, uint32_t);
 
     //
-    //! Infospace programming function.
+    // Infospace programming function.
     //
     int  (*nv_program_info_area)(uint32_t, uint32_t *, uint32_t, uint32_t);
 
     //
-    //! Helpful utilities.
+    // Helpful utilities.
     //
     int  (*nv_program_main2)(uint32_t, uint32_t, uint32_t, uint32_t, uint32_t);
 
@@ -89,17 +89,17 @@ typedef struct am_hal_bootrom_helper_struct
     void (*bootrom_util_write_word)( uint32_t *, uint32_t);
 
     //
-    //! Infospace erase functions.
+    // Infospace erase functions.
     //
     int  (*nv_info_erase)( uint32_t);
 
     //
-    //! Non-Volatile Recovery function.
+    // Non-Volatile Recovery function.
     //
     int  (*nv_recovery)( uint32_t value);
 
     //
-    //! Cycle accurate delay function.
+    // Cycle accurate delay function.
     //
     void (*bootrom_delay_cycles)(uint32_t ui32Cycles);
 

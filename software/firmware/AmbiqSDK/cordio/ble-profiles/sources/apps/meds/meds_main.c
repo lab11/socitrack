@@ -7,16 +7,16 @@
  *            Weight Scale profile sensor
  *            Health Thermometer profile sensor
  *
- *  Copyright (c) 2012-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2012-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -32,7 +32,6 @@
 #include "wsf_trace.h"
 #include "hci_api.h"
 #include "dm_api.h"
-#include "smp_api.h"
 #include "att_api.h"
 #include "app_api.h"
 #include "app_db.h"
@@ -101,25 +100,11 @@ static const appSlaveCfg_t medsSlaveCfg =
 /*! configurable parameters for security */
 static const appSecCfg_t medsSecCfg =
 {
-  DM_AUTH_BOND_FLAG | DM_AUTH_MITM_FLAG,  /*! Authentication and bonding flags */
+  DM_AUTH_BOND_FLAG,                      /*! Authentication and bonding flags */
   0,                                      /*! Initiator key distribution flags */
   DM_KEY_DIST_LTK,                        /*! Responder key distribution flags */
   FALSE,                                  /*! TRUE if Out-of-band pairing data is present */
   TRUE                                    /*! TRUE to initiate security upon connection */
-};
-
-/*! SMP security parameter configuration */
-const smpCfg_t medsSmpCfg =
-{
-  500,                                    /* 'Repeated attempts' timeout in msec */
-  SMP_IO_DISP_YES_NO,                     /* I/O Capability */
-  7,                                      /* Minimum encryption key length */
-  16,                                     /* Maximum encryption key length */
-  1,                                      /* Attempts to trigger 'repeated attempts' timeout */
-  0,                                      /* Device authentication requirements */
-  64000,                                  /* Maximum repeated attempts timeout in msec */
-  64000,                                  /* Time msec before attemptExp decreases */
-  2                                       /* Repeated attempts multiplier exponent */
 };
 
 /*! configurable parameters for connection parameter update */
@@ -417,9 +402,6 @@ void MedsHandlerInit(wsfHandlerId_t handlerId)
   pAppAdvCfg = (appAdvCfg_t *) &medsAdvCfg;
   pAppSecCfg = (appSecCfg_t *) &medsSecCfg;
   pAppUpdateCfg = (appUpdateCfg_t *) &medsUpdateCfg;
-
-  /* Set stack configuration pointers */
-  pSmpCfg = (smpCfg_t *) &medsSmpCfg;
 
   /* Initialize application framework */
   AppSlaveInit();

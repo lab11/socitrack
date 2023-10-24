@@ -4,7 +4,7 @@
 //!
 //! @brief BootROM Helper Function Table
 //!
-//! @addtogroup mram4_4p MRAM Functionality
+//! @addtogroup mram4 MRAM Functionality
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -52,9 +52,8 @@
 #include <stdbool.h>
 #include "am_mcu_apollo.h"
 #include "am_hal_bootrom_helper.h"
-
-
-#define HLPRFNC_MAXSRC_ADDR     0x101D7FFC // Maximum src size for Apollo4 Plus
+//#include "regs/am_mcu_apollo4b_info0.h"
+//#include "regs/am_mcu_apollo4b_info1.h"
 
 //#define INFO_ACCESS_WA
 
@@ -66,7 +65,31 @@
 
 //*****************************************************************************
 //
-// This programs up to N words of the Main MRAM
+//! @brief This programs up to N words of the Main MRAM
+//!
+//! @param ui32ProgramKey - The programming key, AM_HAL_MRAM_PROGRAM_KEY.
+//! @param pui32Src - Pointer to word aligned array of data to program into
+//! the MRAM.
+//! @param pui32Dst - Pointer to the words (4 byte) aligned MRAM location where
+//! programming of the MRAM is to begin.
+//! @param ui32NumWords - The number of words to be programmed.
+//!
+//! This function will program multiple words (4 byte) tuples in main MRAM.
+//!
+//! @note This function is provided only for convenience. It is most efficient
+//! to operate on MRAM in be 4 words (16 byte) aligned multiples. Doing word
+//! access will be very inefficient and should be avoided.
+//!
+//! @return 0 for success, non-zero for failure.
+//!     Failing return code indicates:
+//!    -1   invalid alignment for pui32Dst or ui32NumWords not 16 bye multiple
+//!     1   ui32ProgramKey is invalid.
+//!     2   pui32Dst is invalid.
+//!     3   Flash addressing range would be exceeded.  That is, (pui32Dst +
+//!         (ui32NumWords * 4)) is greater than the last valid address.
+//!     4   pui32Src is invalid.
+//!     5   pui32Src is invalid.
+//!     6   Flash controller hardware timeout.
 //
 //*****************************************************************************
 int
@@ -76,22 +99,6 @@ am_hal_mram_main_words_program(uint32_t ui32ProgramKey, uint32_t *pui32Src,
     //
     // Use the new helper function to efficiently program the data in MRAM.
     //
-
-#ifndef AM_HAL_DISABLE_API_VALIDATION
-    //
-    // Check the Source to ensure proper location.
-    //
-    if ( ((uint32_t)pui32Src & 0xFF000000) == SRAM_BASEADDR )
-    {
-        //
-        // Check that the source buffer is within bounds (see errata ERR122)
-        //
-        if ( ((uint32_t)pui32Src + (ui32NumWords * 4)) > HLPRFNC_MAXSRC_ADDR )
-        {
-            return AM_HAL_STATUS_OUT_OF_RANGE;
-        }
-    }
-#endif // AM_HAL_DISABLE_API_VALIDATION
 
     if ( (uint32_t)pui32Dst <= AM_HAL_MRAM_LARGEST_VALID_ADDR )
     {
@@ -111,7 +118,31 @@ am_hal_mram_main_words_program(uint32_t ui32ProgramKey, uint32_t *pui32Src,
 
 //*****************************************************************************
 //
-// This programs up to N words of the Main MRAM
+//! @brief This programs up to N words of the Main MRAM
+//!
+//! @param ui32ProgramKey - The programming key, AM_HAL_MRAM_PROGRAM_KEY.
+//! @param pui32Src - Pointer to word aligned array of data to program into
+//! the MRAM.
+//! @param pui32Dst - Pointer to the 4 words (16 byte) aligned MRAM location where
+//! programming of the MRAM is to begin.
+//! @param ui32NumWords - The number of words to be programmed. This MUST be
+//! a multiple of 4 (16 byte multiple)
+//!
+//! This function will program multiple 4 words (16 byte) tuples in main MRAM.
+//!
+//! @note THIS FUNCTION ONLY OPERATES ON 16 BYTE BLOCKS OF MAIN MRAM. The pDst
+//! MUST be 4 words (16 byte) aligned, and ui32NumWords MUST be multiple of 4.
+//!
+//! @return 0 for success, non-zero for failure.
+//!     Failing return code indicates:
+//!    -1   invalid alignment for pui32Dst or ui32NumWords not 16 byte multiple
+//!     1   ui32ProgramKey is invalid.
+//!     2   pui32Dst is invalid.
+//!     3   Flash addressing range would be exceeded.  That is, (pui32Dst +
+//!         (ui32NumWords * 4)) is greater than the last valid address.
+//!     4   pui32Src is invalid.
+//!     5   pui32Src is invalid.
+//!     6   Flash controller hardware timeout.
 //
 //*****************************************************************************
 int
@@ -132,7 +163,29 @@ am_hal_mram_main_program(uint32_t ui32ProgramKey, uint32_t *pui32Src,
 
 //*****************************************************************************
 //
-// This Fills up to N words of the Main MRAM
+//! @brief This Fills up to N words of the Main MRAM
+//!
+//! @param ui32ProgramKey - The programming key, AM_HAL_MRAM_PROGRAM_KEY.
+//! @param ui32Value - 32-bit data value to fill into the MRAM
+//! @param pui32Dst - Pointer to the 4 words (16 byte) aligned MRAM location where
+//! programming of the MRAM is to begin.
+//! @param ui32NumWords - The number of words to be programmed. This MUST be
+//! a multiple of 4 (16 byte multiple)
+//!
+//! This function will fill multiple 16 byte tuples in main MRAM with specified pattern.
+//!
+//! @note THIS FUNCTION ONLY OPERATES ON 16 BYTE BLOCKS OF MAIN MRAM. The pDst
+//! MUST be 4 words (16 byte) aligned, and ui32NumWords MUST be multiple of 4.
+//!
+//! @return 0 for success, non-zero for failure.
+//!    -1   invalid alignment for pui32Dst or ui32NumWords not 16 byte multiple
+//!     1   ui32InfoKey is invalid.
+//!     2   ui32Offset is invalid.
+//!     3   addressing range would be exceeded.  That is, (ui32Offset +
+//!         (ui32NumWords * 4)) is greater than the last valid address.
+//!     4   pui32Src is invalid.
+//!     5   pui32Src is invalid.
+//!     6   Flash controller hardware timeout.
 //
 //*****************************************************************************
 int
@@ -169,7 +222,25 @@ am_hal_mram_main_fill(uint32_t ui32ProgramKey, uint32_t ui32Value,
 
 //*****************************************************************************
 //
-// This programs up to N words of the Main array on one MRAM.
+//! @brief This programs up to N words of the Main array on one MRAM.
+//!
+//! @param ui32InfoKey - The programming key, AM_HAL_MRAM_INFO_KEY.
+//! @param pui32Src - Pointer to word aligned array of data to program into
+//! INFO0
+//! @param ui32Offset - Pointer to the word aligned INFO0 offset where
+//! programming of the INFO0 is to begin.
+//! @param ui32NumWords - The number of words to be programmed.
+//!
+//! This function will program multiple words in INFO0
+//!
+//! @return 0 for success, non-zero for failure.
+//!     1   ui32InfoKey is invalid.
+//!     2   ui32Offset is invalid.
+//!     3   addressing range would be exceeded.  That is, (ui32Offset +
+//!         (ui32NumWords * 4)) is greater than the last valid address.
+//!     4   pui32Src is invalid.
+//!     5   pui32Src is invalid.
+//!     6   Flash controller hardware timeout.
 //
 //*****************************************************************************
 int
@@ -177,22 +248,6 @@ am_hal_mram_info_program(uint32_t ui32InfoKey, uint32_t *pui32Src,
                          uint32_t ui32Offset, uint32_t ui32NumWords)
 {
     int retval;
-
-#ifndef AM_HAL_DISABLE_API_VALIDATION
-    //
-    // Check the Source to ensure proper location.
-    //
-    if ( ((uint32_t)pui32Src & 0xFF000000) == SRAM_BASEADDR )
-    {
-        //
-        // Check that the source buffer is within bounds (see errata ERR122)
-        //
-        if ( ((uint32_t)pui32Src + (ui32NumWords * 4)) > HLPRFNC_MAXSRC_ADDR )
-        {
-            return AM_HAL_STATUS_OUT_OF_RANGE;
-        }
-    }
-#endif // AM_HAL_DISABLE_API_VALIDATION
 
     MRAM_OVERRIDE();
 
@@ -239,7 +294,21 @@ am_hal_mram_recovery(uint32_t ui32BrickKey)
 
 //*****************************************************************************
 //
-// Read INFO data.
+//! @brief Read INFO data.
+//!
+//! This function implements a workaround required for Apollo4 B0 parts in
+//! order to accurately read INFO space.
+//!
+//! @param ui32InfoSpace - 0 = Read INFO0.
+//!                        1 = Only valid to read the customer visible area
+//!                            of INFO1. If INFO1, the ui32WordOffset argument
+//!                            must be 0x480 or greater (byte offset 0x1200).
+//! @param ui32WordOffset - Desired word offset into INFO space.
+//! @param ui32NumWords  - The number of words to be retrieved.
+//! @param pui32Dst      - Pointer to the location where the INFO data
+//!                        is to be copied to.
+//!
+//! @return 0 for success, non-zero for failure.                                                6
 //
 //*****************************************************************************
 int
@@ -305,11 +374,15 @@ am_hal_mram_info_read(uint32_t ui32InfoSpace,
 
 //*****************************************************************************
 //
-// Initialize MRAM for DeepSleep.
+//! @brief Initialize MRAM for DeepSleep.
+//!
+//! This function implements a workaround required for Apollo4 B0 parts in
+//! order to fix the MRAM DeepSleep config params.
+//!
+//! @return 0 for success, non-zero for failure.                                                6
 //
 //*****************************************************************************
-int
-am_hal_mram_ds_init(void)
+int am_hal_mram_ds_init(void)
 {
     MRAM_RECOVER();
     return 0;

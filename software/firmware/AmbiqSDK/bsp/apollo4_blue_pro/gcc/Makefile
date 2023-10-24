@@ -2,7 +2,7 @@
 #
 # Makefile - Rules for building the libraries, examples and docs.
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2022, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 #
 #******************************************************************************
 TARGET := libam_bsp
@@ -86,25 +86,21 @@ all clean:
 	$(RM) -rf bin
 else
 
-DEFINES = -DAM_PART_APOLLO4P
-DEFINES+= -DNEMA_PLATFORM=apollo4p_nemagfx
-DEFINES+= -DAM_PACKAGE_BGA
+DEFINES = -DAM_PACKAGE_BGA
+DEFINES+= -DDISP_CFG
+DEFINES+= -DDBI_WIDTH=AM_HAL_DSI_DBI_WIDTH_8
+DEFINES+= -DAM_PART_APOLLO4P
+DEFINES+= -DB_USE_DPHYPLL=true
+DEFINES+= -DDSI_FREQ=AM_HAL_DSI_FREQ_TRIM_X12
+DEFINES+= -DDISP_TYPE=RM67162_DSI
+DEFINES+= -DNUM_LANES=1
 DEFINES+= -Dgcc
 
-INCLUDES = -I../../../../CMSIS/ARM/Include
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/NemaDC
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/NemaGFX
-INCLUDES+= -I../../../../mcu/apollo4p/hal
-INCLUDES+= -I../../../../third_party/ThinkSi/config/apollo4p_nemagfx
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/NemaDC
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/common/mem
-INCLUDES+= -I../../../../CMSIS/AmbiqMicro/Include
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/common
-INCLUDES+= -I../../../../mcu/apollo4p/hal/mcu
-INCLUDES+= -I../../../../utils
+INCLUDES = -I../../../../mcu/apollo4p
 INCLUDES+= -I../../../../devices
-INCLUDES+= -I../../../../mcu/apollo4p
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/NemaGFX
+INCLUDES+= -I../../../../utils
+INCLUDES+= -I../../../../CMSIS/AmbiqMicro/Include
+INCLUDES+= -I../../../../CMSIS/ARM/Include
 
 VPATH = ..
 

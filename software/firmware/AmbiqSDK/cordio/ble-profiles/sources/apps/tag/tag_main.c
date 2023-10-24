@@ -7,16 +7,16 @@
  *            Find Me profile target
  *            Find Me profile locator
  *
- *  Copyright (c) 2011-2019 Arm Ltd. All Rights Reserved.
+ *  Copyright (c) 2011-2019 Arm Ltd.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,7 +46,7 @@
 #include "gatt/gatt_api.h"
 #include "gap/gap_api.h"
 #include "fmpl/fmpl_api.h"
-#include "atts_main.h"
+
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -78,7 +78,6 @@ static struct
   bdAddr_t          peerAddr;                     /* Peer address */
   uint8_t           addrType;                     /* Peer address type */
   appDbHdl_t        dbHdl;                        /* Peer device database record handle */
-  appDbHdl_t        resListRestoreHdl;            /*! Resolving List last restored handle */
 } tagCb;
 
 /**************************************************************************************************
@@ -153,7 +152,6 @@ static uint8_t localIrk[] =
   0x95, 0xC8, 0xEE, 0x6F, 0xC5, 0x0D, 0xEF, 0x93, 0x35, 0x4E, 0x7C, 0x57, 0x08, 0xE2, 0xA3, 0x85
 };
 
-
 /**************************************************************************************************
   Advertising Data
 **************************************************************************************************/
@@ -167,12 +165,7 @@ static const uint8_t tagAdvDataDisc[] =
   DM_FLAG_LE_LIMITED_DISC |               /*! flags */
   DM_FLAG_LE_BREDR_NOT_SUP,
 
-  /*! manufacturer specific data */
-  3,                                      /*! length */
-  DM_ADV_TYPE_MANUFACTURER,               /*! AD type */
-  UINT16_TO_BYTES(HCI_ID_PACKETCRAFT),    /*! company ID */
-
-                                          /*! tx power */
+  /*! tx power */
   2,                                      /*! length */
   DM_ADV_TYPE_TX_POWER,                   /*! AD type */
   0,                                      /*! tx power */
@@ -327,13 +320,7 @@ static void tagDmCback(dmEvt_t *pDmEvt)
 
   if (pDmEvt->hdr.event == DM_SEC_ECC_KEY_IND)
   {
-      DmSecSetEccKey(&pDmEvt->eccMsg.data.key);
-
-      // Only calculate database hash if the calculating status is in progress
-      if( attsCsfGetHashUpdateStatus() )
-      {
-        AttsCalculateDbHash();
-      }
+    DmSecSetEccKey(&pDmEvt->eccMsg.data.key);
   }
   else
   {
@@ -509,17 +496,17 @@ static void tagSecPairCmpl(dmEvt_t *pMsg)
 /*!
  *  \brief  Handle add device to resolving list indication.
  *
- *  \param  dbHdl   Device DB record handle.
+ *  \param  pMsg    Pointer to DM callback event message.
  *
  *  \return None.
  */
 /*************************************************************************************************/
-static void tagPrivAddDevToResListInd(appDbHdl_t dbHdl)
+static void tagPrivAddDevToResListInd(dmEvt_t *pMsg)
 {
   dmSecKey_t *pPeerKey;
 
   /* if peer IRK present */
-  if ((pPeerKey = tagGetPeerKey(dbHdl)) != NULL)
+  if ((pPeerKey = tagGetPeerKey(AppDbGetHdl((dmConnId_t) pMsg->hdr.param))) != NULL)
   {
     /* set advertising peer address */
     AppSetAdvPeerAddr(pPeerKey->irk.addrType, pPeerKey->irk.bdAddr);
@@ -913,27 +900,13 @@ static void tagProcMsg(dmEvt_t *pMsg)
 
     case ATT_MTU_UPDATE_IND:
       APP_TRACE_INFO1("Negotiated MTU %d", ((attEvt_t *)pMsg)->mtu);
-      break;
+      break;  
 
     case DM_RESET_CMPL_IND:
-      // set database hash calculating status to true until a new hash is generated after reset
-      attsCsfSetHashUpdateStatus(TRUE);
-
-      // Generate ECC key if configured support secure connection,
-      // else will calcualte ATT database hash
-      if( tagSecCfg.auth & DM_AUTH_SC_FLAG )
-      {
-          DmSecGenerateEccKeyReq();
-      }
-      else
-      {
-          AttsCalculateDbHash();
-      }
-      uiEvent = APP_UI_RESET_CMPL;
-      break;
-
-    case ATTS_DB_HASH_CALC_CMPL_IND:
+      AttsCalculateDbHash();
+      DmSecGenerateEccKeyReq();
       tagSetup(pMsg);
+      uiEvent = APP_UI_RESET_CMPL;
       break;
 
     case DM_ADV_START_IND:
@@ -982,24 +955,7 @@ static void tagProcMsg(dmEvt_t *pMsg)
       break;
 
     case DM_PRIV_ADD_DEV_TO_RES_LIST_IND:
-      if (tagCb.resListRestoreHdl == APP_DB_HDL_NONE)
-      {
-        tagPrivAddDevToResListInd(AppDbGetHdl((dmConnId_t) pMsg->hdr.param));
-      }
-      else
-      {
-        /* Set the advertising peer address. */
-        tagPrivAddDevToResListInd(tagCb.resListRestoreHdl);
-
-        /* Retore next device to resolving list in Controller. */
-        tagCb.resListRestoreHdl = AppAddNextDevToResList(tagCb.resListRestoreHdl);
-
-        if (tagCb.resListRestoreHdl == APP_DB_HDL_NONE)
-        {
-          /* No additional device to restore. Setup application. */
-          tagSetup(pMsg);
-        }
-      }
+      tagPrivAddDevToResListInd(pMsg);
       break;
 
     case DM_PRIV_REM_DEV_FROM_RES_LIST_IND:
@@ -1029,9 +985,9 @@ static void tagProcMsg(dmEvt_t *pMsg)
     case DM_VENDOR_SPEC_CMD_CMPL_IND:
       {
         #if defined(AM_PART_APOLLO) || defined(AM_PART_APOLLO2)
-
+       
           uint8_t *param_ptr = &pMsg->vendorSpecCmdCmpl.param[0];
-
+        
           switch (pMsg->vendorSpecCmdCmpl.opcode)
           {
             case 0xFC20: //read at address
@@ -1040,8 +996,8 @@ static void tagProcMsg(dmEvt_t *pMsg)
 
               BSTREAM_TO_UINT32(read_value, param_ptr);
 
-              APP_TRACE_INFO3("VSC 0x%0x complete status %x param %x",
-                pMsg->vendorSpecCmdCmpl.opcode,
+              APP_TRACE_INFO3("VSC 0x%0x complete status %x param %x", 
+                pMsg->vendorSpecCmdCmpl.opcode, 
                 pMsg->hdr.status,
                 read_value);
             }
@@ -1053,11 +1009,11 @@ static void tagProcMsg(dmEvt_t *pMsg)
                     pMsg->hdr.status);
             break;
           }
-
+          
         #endif
       }
       break;
-
+	  
     default:
       break;
   }

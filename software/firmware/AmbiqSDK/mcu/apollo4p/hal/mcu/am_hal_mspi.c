@@ -2,9 +2,9 @@
 //
 //! @file am_hal_mspi.c
 //!
-//! @brief Functions for interfacing with the Multi-bit SPI.
+//! @brief Functions for interfacing with the MSPI.
 //!
-//! @addtogroup mspi4_4p MSPI - Multi-bit SPI
+//! @addtogroup mspi4 MSPI - Multi-bit SPI
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -72,9 +72,7 @@
 #define AM_HAL_MSPI_SC_PAUSE_BLOCK      AM_HAL_MSPI_SC_PAUSE(AM_HAL_MSPI_PAUSE_FLAG_BLOCK)
 #define AM_HAL_MSPI_SC_UNPAUSE_BLOCK    AM_HAL_MSPI_SC_UNPAUSE(AM_HAL_MSPI_PAUSE_FLAG_BLOCK)
 
-//
-//! Max time to wait when attempting to pause the command queue
-//
+// Max time to wait when attempting to pause the command queue
 #define AM_HAL_MSPI_MAX_PAUSE_DELAY     (100*1000) // 100ms
 
 //
@@ -1036,30 +1034,6 @@ mspi_device_configure(am_hal_mspi_state_t *pMSPIState)
         MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_CTRL1_PIOMIXED_NORMAL;
         MSPIn(ui32Module)->PADOUTEN = MSPI0_PADOUTEN_OUTEN_OCTAL;
         break;
-      case AM_HAL_MSPI_FLASH_OCTAL_CE0_1_1_8:
-        MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_SERIAL0;
-        MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
-        MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_DEV0XIP_XIPMIXED0_D8;
-        MSPIn(ui32Module)->PADOUTEN = MSPI0_PADOUTEN_OUTEN_OCTAL;
-        break;
-      case AM_HAL_MSPI_FLASH_OCTAL_CE1_1_1_8:
-        MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_SERIAL1;
-        MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
-        MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_DEV0XIP_XIPMIXED0_D8;
-        MSPIn(ui32Module)->PADOUTEN = MSPI0_PADOUTEN_OUTEN_OCTAL;
-        break;
-      case AM_HAL_MSPI_FLASH_OCTAL_CE0_1_8_8:
-        MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_SERIAL0;
-        MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
-        MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_DEV0XIP_XIPMIXED0_AD8;
-        MSPIn(ui32Module)->PADOUTEN = MSPI0_PADOUTEN_OUTEN_OCTAL;
-        break;
-      case AM_HAL_MSPI_FLASH_OCTAL_CE1_1_8_8:
-        MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_SERIAL1;
-        MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
-        MSPIn(ui32Module)->DEV0XIP_b.XIPMIXED0    = MSPI0_DEV0XIP_XIPMIXED0_AD8;
-        MSPIn(ui32Module)->PADOUTEN = MSPI0_PADOUTEN_OUTEN_OCTAL;
-        break;
       case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE0:
         MSPIn(ui32Module)->DEV0CFG_b.DEVCFG0      = MSPI0_DEV0CFG_DEVCFG0_OCTAL0;
         MSPIn(ui32Module)->DEV0CFG_b.SEPIO0       = 0;
@@ -1207,14 +1181,6 @@ mspi_piomixed_configure(am_hal_mspi_state_t *pMSPIState)
       case AM_HAL_MSPI_FLASH_SERIAL_CE0_3WIRE:
       case AM_HAL_MSPI_FLASH_SERIAL_CE1_3WIRE:
         MSPIn(ui32Module)->CTRL1_b.PIOMIXED    = MSPI0_CTRL1_PIOMIXED_NORMAL;
-        break;
-      case AM_HAL_MSPI_FLASH_OCTAL_CE0_1_1_8:
-      case AM_HAL_MSPI_FLASH_OCTAL_CE1_1_1_8:
-        MSPIn(ui32Module)->CTRL1_b.PIOMIXED    = MSPI0_CTRL1_PIOMIXED_D8;
-        break;
-      case AM_HAL_MSPI_FLASH_OCTAL_CE0_1_8_8:
-      case AM_HAL_MSPI_FLASH_OCTAL_CE1_1_8_8:
-        MSPIn(ui32Module)->CTRL1_b.PIOMIXED    = MSPI0_CTRL1_PIOMIXED_AD8;
         break;
       default:
         break;

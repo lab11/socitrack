@@ -4,7 +4,7 @@
 //!
 //! @brief Hardware abstraction for the Display Serial Interface
 //!
-//! @addtogroup dsi_4p DSI - Display Serial Interface
+//! @addtogroup dsi DSI - Display Serial Interface
 //! @ingroup apollo4p_hal
 //! @{
 //
@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2022, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_3_0-0ca7d78a2b of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -188,6 +188,7 @@ typedef enum
 //!
 //! The BSP shall provide callback functions to control DSI external VDD18 power
 //! rail.
+//!
 //
 //*****************************************************************************
 typedef void (*am_hal_dsi_external_vdd18_callback)(bool bEnable);
@@ -303,14 +304,6 @@ extern uint32_t am_hal_dsi_napping(void);
 //
 //*****************************************************************************
 extern uint32_t am_hal_dsi_wakeup(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim);
-
-//*****************************************************************************
-//
-// DSI set return packet size (bytes)
-//
-//*****************************************************************************
-extern uint32_t
-am_hal_dsi_set_return_size(uint8_t ui8DataLen, bool bHS);
 
 #ifdef __cplusplus
 }
