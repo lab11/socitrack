@@ -635,7 +635,7 @@ static void appSlaveResolvedAddrInd(dmEvt_t *pMsg, appConnCb_t *pCb)
 static void appSlaveRemoteConnParamReq(dmEvt_t *pMsg, appConnCb_t *pCb)
 {
   /* if configured to accept the remote connection parameter request */
-  if (pAppSlaveReqActCfg->remConnParamReqAct == APP_ACT_ACCEPT)
+  //if (pAppSlaveReqActCfg->remConnParamReqAct == APP_ACT_ACCEPT)
   {
     hciConnSpec_t connSpec;
 
@@ -649,11 +649,11 @@ static void appSlaveRemoteConnParamReq(dmEvt_t *pMsg, appConnCb_t *pCb)
     DmRemoteConnParamReqReply(pCb->connId, &connSpec);
   }
   /* if configured to reject the remote connection parameter request */
-  else if (pAppSlaveReqActCfg->remConnParamReqAct == APP_ACT_REJECT)
-  {
+  //else if (pAppSlaveReqActCfg->remConnParamReqAct == APP_ACT_REJECT)
+  //{
     /* reject the remote device's request to change connection parameters */
-    DmRemoteConnParamReqNegReply(pCb->connId, HCI_ERR_UNSUP_FEAT);
-  }
+  //  DmRemoteConnParamReqNegReply(pCb->connId, HCI_ERR_UNSUP_FEAT);
+  //}
   /* else - app will handle the remote connection parameter request */
 }
 
