@@ -61,7 +61,11 @@ void run_tasks(void)
          if (timestamp < scheduled_experiment.experiment_start_time)
             wake_on_timestamp = scheduled_experiment.experiment_start_time;
       }
+      buzzer_indicate_unplugged();
    }
+   else
+      buzzer_indicate_plugged_in();
+   am_hal_delay_us(1000000);
 
    // Enter power-down mode upon low voltage or unscheduled timestamp
    system_enable_interrupts(false);
