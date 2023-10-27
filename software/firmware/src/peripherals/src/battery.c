@@ -168,6 +168,7 @@ void battery_monitor_init(void)
 void battery_monitor_deinit(void)
 {
    // Deinitialize the ADC module
+   am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true);
    am_hal_adc_deinitialize(adc_handle);
 
    // Disable all battery-based interrupts
