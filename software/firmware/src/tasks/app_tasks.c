@@ -16,6 +16,7 @@
 
 static TaskHandle_t app_task_handle, ble_task_handle, ranging_task_handle;
 static TaskHandle_t storage_task_handle, time_aligned_task_handle;
+static experiment_details_t scheduled_experiment;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -41,11 +42,16 @@ void run_tasks(void)
    ranging_radio_sleep(true);
 
    // Determine whether there is an active experiment taking place
-   uint32_t timestamp = rtc_get_timestamp();
-   experiment_details_t scheduled_experiment;
    storage_retrieve_experiment_details(&scheduled_experiment);
-   bool active_experiment = rtc_is_valid() && scheduled_experiment.num_devices &&
-         (timestamp >= scheduled_experiment.experiment_start_time) && (timestamp < scheduled_experiment.experiment_end_time);
+   uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
+   bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices;
+   bool active_experiment = valid_experiment &&
+         (timestamp >= scheduled_experiment.experiment_start_time) && (timestamp < scheduled_experiment.experiment_end_time) &&
+         (!scheduled_experiment.use_daily_times ||
+            ((scheduled_experiment.daily_start_time < scheduled_experiment.daily_end_time) &&
+               (time_of_day >= scheduled_experiment.daily_start_time) && (time_of_day < scheduled_experiment.daily_end_time)) ||
+            ((scheduled_experiment.daily_start_time > scheduled_experiment.daily_end_time) &&
+               ((time_of_day >= scheduled_experiment.daily_start_time) || (time_of_day < scheduled_experiment.daily_end_time))));
    storage_disable(!active_experiment);
 
    // Determine whether to power off for some time based on the device state
@@ -58,8 +64,13 @@ void run_tasks(void)
       else if (!active_experiment)
       {
          power_off = true;
-         if (timestamp < scheduled_experiment.experiment_start_time)
-            wake_on_timestamp = scheduled_experiment.experiment_start_time;
+         if (valid_experiment)
+         {
+            if (timestamp < scheduled_experiment.experiment_start_time)
+               wake_on_timestamp = scheduled_experiment.experiment_start_time;
+            else if (scheduled_experiment.use_daily_times && (timestamp < scheduled_experiment.experiment_end_time))
+               wake_on_timestamp = timestamp + scheduled_experiment.daily_start_time + ((time_of_day < scheduled_experiment.daily_start_time) ? 0 : 86400) - time_of_day;
+         }
       }
       buzzer_indicate_unplugged();
    }
@@ -81,7 +92,7 @@ void run_tasks(void)
    configASSERT1(xTaskCreate(StorageTask, "StorageTask", 512, allow_ranging ? uid : NULL, 4, &storage_task_handle));
    configASSERT1(xTaskCreate(BLETask, "BLETask", 512, NULL, 3, &ble_task_handle));
    configASSERT1(xTaskCreate(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", 512, uid, 2, &app_task_handle));
-   configASSERT1(xTaskCreate(TimeAlignedTask, "TimeAlignedTask", 128, NULL, 1, &time_aligned_task_handle));
+   configASSERT1(xTaskCreate(TimeAlignedTask, "TimeAlignedTask", 128, allow_ranging ? &scheduled_experiment : NULL, 1, &time_aligned_task_handle));
 
    // Start the task scheduler
    vTaskStartScheduler();
