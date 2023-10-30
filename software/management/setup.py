@@ -25,6 +25,6 @@ setuptools.setup(
    ],
    python_requires='>=3.8',
    entry_points={
-      'console_scripts': ['tottag = dashboard.tottag:main'],
+      'console_scripts': ['tottag = tottag.tottag:main'],
    }
 )

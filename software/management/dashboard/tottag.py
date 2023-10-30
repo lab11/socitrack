@@ -74,43 +74,46 @@ def validate_time(new_val):
           (len(new_val) == 4 and new_val[-1].isnumeric() and (new_val[-2] != ':' or int(new_val[-1]) <= 5)) or \
           (len(new_val) == 5 and new_val[-1].isnumeric() and new_val[-3] == ':')
 
-def pack_datetime(time_zone, date_string, time_string):
-   if date_string:
+def pack_datetime(time_zone, date_string, time_string, daily):
+   if not daily:
       utc_datetime = pytz.timezone(time_zone).localize(datetime.datetime.strptime(date_string + ' ' + time_string, '%m/%d/%Y %H:%M')).astimezone(pytz.utc)
       timestamp = int(utc_datetime.timestamp())
    else:
-      timestamp = int((datetime.datetime.strptime(time_string, '%H:%M') - datetime.datetime.strptime('00:00', '%H:%M')).total_seconds())
+      offset = datetime.datetime.strptime(date_string, '%m/%d/%Y').astimezone(pytz.timezone(time_zone)).utcoffset().total_seconds()
+      timestamp = int((datetime.datetime.strptime(time_string, '%H:%M') - datetime.datetime.strptime('00:00', '%H:%M')).total_seconds() - offset)
    return timestamp
 
-def unpack_datetime(time_zone, include_date_string, timestamp):
+def unpack_datetime(time_zone, start_timestamp, timestamp):
    date_string = None
-   if include_date_string:
+   if start_timestamp is None:
       local_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(timestamp)).astimezone(pytz.timezone(time_zone))
       date_string = local_datetime.strftime('%m/%d/%Y')
       time_string = local_datetime.strftime('%H:%M')
       seconds_string = local_datetime.strftime('%S')
    else:
-      hours = int(timestamp/3600)
-      time_string = '%02d:%02d'%(hours, int((timestamp - (hours*3600)) / 60))
+      offset = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp)).astimezone(pytz.timezone(time_zone)).utcoffset().total_seconds()
+      hours = int((timestamp + offset) / 3600)
+      time_string = '%02d:%02d'%(hours, int((timestamp + offset - (hours*3600)) / 60))
       seconds_string = '%02d'%(timestamp % 60)
    return date_string, time_string, seconds_string
 
 def pack_experiment_details(data):
-   experiment_struct = struct.pack('<BIIIIB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES),
-                           MAINTENANCE_NEW_EXPERIMENT, data['start_time'], data['end_time'], data['daily_start_time'],
-                           data['daily_end_time'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'])
+   experiment_struct = struct.pack('<BIIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES),
+                           MAINTENANCE_NEW_EXPERIMENT, data['start_time'], data['end_time'], data['daily_start_time'], data['daily_end_time'],
+                           data['use_daily_times'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'])
    return experiment_struct
 
 def unpack_experiment_details(data):
-   experiment_struct = struct.unpack('<IIIIB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES), data)
+   experiment_struct = struct.unpack('<IIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES), data)
    return {
       'start_time': experiment_struct[0],
       'end_time': experiment_struct[1],
       'daily_start_time': experiment_struct[2],
       'daily_end_time': experiment_struct[3],
-      'num_devices': experiment_struct[4],
-      'uids': [list(experiment_struct[5+i:5+i+6]) for i in range(0, MAX_NUM_DEVICES*6, 6)],
-      'labels': experiment_struct[(5+6*MAX_NUM_DEVICES):],
+      'use_daily_times': experiment_struct[4],
+      'num_devices': experiment_struct[5],
+      'uids': [list(experiment_struct[6+i:6+i+6]) for i in range(0, MAX_NUM_DEVICES*6, 6)],
+      'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):],
    }
 
 def process_tottag_data(from_uid, storage_directory, details, data):
@@ -287,8 +290,9 @@ class TotTagBLE(threading.Thread):
             async with BleakClient(self.discovered_devices[device_id]) as client:
                await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
                await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
-         except Exception:
+         except Exception as e:
             self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
+            print('Scheduling error:', e)
             success = False
       self.result_queue.put_nowait(('SCHEDULED', success))
       self.command_queue.task_done()
@@ -343,7 +347,7 @@ class TotTagGUI(tk.Frame):
       super().__init__(None)
       self.master.title('TotTag Dashboard')
       try: self.master.iconbitmap('dashboard/tottag_dashboard.ico')
-      except Exception: self.master.iconbitmap('tottag_dashboard.ico')
+      except Exception: self.master.iconbitmap(os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.ico')
       self.master.protocol('WM_DELETE_WINDOW', self._exit)
       self.master.geometry("900x700+" + str((self.winfo_screenwidth()-900)//2) + "+" + str((self.winfo_screenheight()-700)//2))
       self.pack(fill=tk.BOTH, expand=True)
@@ -539,10 +543,11 @@ class TotTagGUI(tk.Frame):
                   chosen_labels.append(labels[i])
          if not errors:
             details = {
-               'start_time': pack_datetime(self.tottag_timezone.get(), self.start_date.get(), self.start_time.get()),
-               'end_time': pack_datetime(self.tottag_timezone.get(), self.end_date.get(), self.end_time.get()),
-               'daily_start_time': pack_datetime(self.tottag_timezone.get(), None, self.daily_start_time.get()) if self.use_daily_times.get() else 0,
-               'daily_end_time': pack_datetime(self.tottag_timezone.get(), None, self.daily_end_time.get()) if self.use_daily_times.get() else 0,
+               'start_time': pack_datetime(self.tottag_timezone.get(), self.start_date.get(), self.start_time.get(), False),
+               'end_time': pack_datetime(self.tottag_timezone.get(), self.end_date.get(), self.end_time.get(), False),
+               'daily_start_time': pack_datetime(self.tottag_timezone.get(), self.start_date.get(), self.daily_start_time.get(), True) if self.use_daily_times.get() else 0,
+               'daily_end_time': pack_datetime(self.tottag_timezone.get(), self.start_date.get(), self.daily_end_time.get(), True) if self.use_daily_times.get() else 0,
+               'use_daily_times': 1 if self.use_daily_times.get() else 0,
                'num_devices': len(self.tottag_rows),
                'uids': uids,
                'labels': labels,
@@ -559,14 +564,14 @@ class TotTagGUI(tk.Frame):
    def _show_experiment(self, data):
       self._clear_canvas()
       uids, labels = [], []
-      start_date_deployment, start_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), True, data['start_time'])
-      end_date_deployment, end_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), True, data['end_time'])
-      start_date_local, start_time_local, _ = unpack_datetime(tzlocal.get_localzone_name(), True, data['start_time'])
-      end_date_local, end_time_local, _ = unpack_datetime(tzlocal.get_localzone_name(), True, data['end_time'])
-      start_date_utc, start_time_utc, _ = unpack_datetime('UTC', True, data['start_time'])
-      end_date_utc, end_time_utc, _ = unpack_datetime('UTC', True, data['end_time'])
-      daily_start_time = unpack_datetime(None, False, data['daily_start_time'])[1] if data['daily_start_time'] > 0 else None
-      daily_end_time = unpack_datetime(None, False, data['daily_end_time'])[1] if data['daily_end_time'] > 0 else None
+      start_date_deployment, start_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), None, data['start_time'])
+      end_date_deployment, end_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), None, data['end_time'])
+      start_date_local, start_time_local, _ = unpack_datetime(tzlocal.get_localzone_name(), None, data['start_time'])
+      end_date_local, end_time_local, _ = unpack_datetime(tzlocal.get_localzone_name(), None, data['end_time'])
+      start_date_utc, start_time_utc, _ = unpack_datetime('UTC', None, data['start_time'])
+      end_date_utc, end_time_utc, _ = unpack_datetime('UTC', None, data['end_time'])
+      daily_start_time = unpack_datetime(self.tottag_timezone.get(), data['start_time'], data['daily_start_time'])[1] if data['use_daily_times'] > 0 else None
+      daily_end_time = unpack_datetime(self.tottag_timezone.get(), data['start_time'], data['daily_end_time'])[1] if data['use_daily_times'] > 0 else None
       for i in range(data['num_devices']):
          uids.append('%02X:%02X:%02X:%02X:%02X:%02X'%tuple(data['uids'][i][::-1]))
          labels.append(data['labels'][i].decode().rstrip('\x00'))
@@ -579,8 +584,8 @@ class TotTagGUI(tk.Frame):
       ttk.Label(area, text=" ", font=('Helvetica', '6')).grid(column=0, row=2)
       ttk.Label(area, text="Select Deployment Timezone:").grid(column=0, row=3, columnspan=2, sticky=tk.E)
       def change_deployment_timezone(self, _event, start_time, end_time):
-         start_date_deployment, start_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), True, start_time)
-         end_date_deployment, end_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), True, end_time)
+         start_date_deployment, start_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), None, start_time)
+         end_date_deployment, end_time_deployment, _ = unpack_datetime(self.tottag_timezone.get(), None, end_time)
          self.start_datetime_deployment.set(start_date_deployment + ' ' + start_time_deployment)
          self.end_datetime_deployment.set(end_date_deployment + ' ' + end_time_deployment)
       tz_selection = ttk.Combobox(area, textvariable=self.tottag_timezone, values=pytz.all_timezones, state=['readonly'])
@@ -607,7 +612,7 @@ class TotTagGUI(tk.Frame):
       tk.Label(area, textvariable=self.start_datetime_deployment).grid(column=0, row=12, columnspan=2, sticky=tk.W)
       tk.Label(area, text="             ").grid(column=2, row=12)
       tk.Label(area, textvariable=self.end_datetime_deployment).grid(column=3, row=12, columnspan=2, sticky=tk.W)
-      if daily_start_time and daily_end_time:
+      if daily_start_time is not None and daily_end_time is not None:
          ttk.Label(area, text=" ", font=('Helvetica', '4')).grid(column=0, row=13)
          tk.Label(area, text="Daily Start Time").grid(column=0, row=14, columnspan=2, sticky=tk.W)
          tk.Label(area, text="             ").grid(column=2, row=14)
@@ -701,17 +706,17 @@ class TotTagGUI(tk.Frame):
             self._clear_canvas_with_prompt()
          elif key == 'DISCONNECTED':
             self._clear_canvas()
-            self.device_list.clear()
             self.scan_button['state'] = ['enabled']
             self.tottag_selector['values'] = self.device_list
             self.connect_button['command'] = self._connect
-            self.connect_button['state'] = ['disabled']
+            self.connect_button['state'] = ['enabled']
             self.connect_button['text'] = 'Connect'
-            self.tottag_selection.set('Press "Scan for TotTags" to begin...')
+            self.schedule_button['state'] = ['enabled']
+            self.tottag_selection.set(self.device_list[0])
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
                   item.configure(state=['disabled'])
-            tk.Label(self.canvas, text="Scan for TotTag devices to continue...").pack(fill=tk.BOTH, expand=True)
+            tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
          elif key == 'RETRIEVING':
             self._clear_canvas()
             if data:
@@ -720,8 +725,8 @@ class TotTagGUI(tk.Frame):
                tk.Label(self.canvas, text="Operation complete!").pack(fill=tk.BOTH, expand=True)
          elif key == 'TIMESTAMP':
             self._clear_canvas()
-            date_string_utc, time_string_utc, _ = unpack_datetime('UTC', True, data)
-            date_string_local, time_string_local, seconds = unpack_datetime(tzlocal.get_localzone_name(), True, data)
+            date_string_utc, time_string_utc, _ = unpack_datetime('UTC', None, data)
+            date_string_local, time_string_local, seconds = unpack_datetime(tzlocal.get_localzone_name(), None, data)
             tk.Label(self.canvas, text="Current Device Timestamp (UTC): {} {}:{}\nCurrent Device Timestamp (Local): {} {}:{}".format(date_string_utc, time_string_utc, seconds, date_string_local, time_string_local, seconds)).pack(fill=tk.BOTH, expand=True)
          elif key == 'VOLTAGE':
             self._clear_canvas()
@@ -734,7 +739,7 @@ class TotTagGUI(tk.Frame):
             self.failed_devices.append(data)
          elif key == 'SCHEDULED':
             self._clear_canvas()
-            if len(self.failed_devices) > 0:
+            if data and not self.failed_devices:
                text = "Pilot Deployment was successfully scheduled!"
             else:
                text = "Pilot Deployment was NOT successfully scheduled!\n\nCould not communicate with:\n"
