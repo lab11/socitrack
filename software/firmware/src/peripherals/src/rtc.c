@@ -127,6 +127,12 @@ uint32_t rtc_get_timestamp(void)
    return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) ? to_unix_timestamp(&rtc_time) : 0;
 }
 
+uint32_t rtc_get_time_of_day(void)
+{
+   static am_hal_rtc_time_t rtc_time;
+   return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) ? ((3600 * rtc_time.ui32Hour) + (60 * rtc_time.ui32Minute) + rtc_time.ui32Second) : 0;
+}
+
 bool rtc_is_valid(void)
 {
    static am_hal_rtc_time_t rtc_time;
