@@ -131,8 +131,8 @@ void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 void ranging_radio_init(uint8_t *uid)
 {
    // Initialize static variables
-   tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFDFDFDFD, 0x0 };
-   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
+   tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFFFFFFFF, 0x0 };  // Recommended: 0xFDFDFDFD
+   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };  // Recommended: 0xFEFEFEFE
    spi_functions = (struct dwt_spi_s){ .readfromspi = readfromspi, .writetospi = writetospi,
       .writetospiwithcrc = NULL, .setslowrate = ranging_radio_spi_slow, .setfastrate = ranging_radio_spi_fast };
    driver_interface = (struct dwt_probe_s){ .dw = NULL, .spi = (void*)&spi_functions, .wakeup_device_with_io = NULL };
@@ -301,8 +301,8 @@ void ranging_radio_reset(void)
    configASSERT0(dwt_initialise(DWT_DW_IDLE));
 
    // Set up the DW3000 interrupts and overall configuration
-   dw_config = (dwt_config_t){ .chan = 9, .txPreambLength = DW_PREAMBLE_LENGTH, .rxPAC = DW_PAC_SIZE,
-      .txCode = 9, .rxCode = 9, .sfdType = DWT_SFD_IEEE_4Z, .dataRate = DW_DATA_RATE, .phrMode = DWT_PHRMODE_STD,
+   dw_config = (dwt_config_t){ .chan = 5, .txPreambLength = DW_PREAMBLE_LENGTH, .rxPAC = DW_PAC_SIZE,
+      .txCode = 9, .rxCode = 9, .sfdType = DW_SFD_TYPE, .dataRate = DW_DATA_RATE, .phrMode = DWT_PHRMODE_STD,
       .phrRate = DWT_PHRRATE_DTA, .sfdTO = DW_SFD_TO, .stsMode = DWT_STS_MODE_OFF, .stsLength = DWT_STS_LEN_32,
       .pdoaMode = DWT_PDOA_M0 };
    configASSERT0(dwt_configure(&dw_config));
@@ -312,9 +312,9 @@ void ranging_radio_reset(void)
          DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK  |
          DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
    dwt_writesysstatuslo(DWT_INT_RCINIT_BIT_MASK | DWT_INT_SPIRDY_BIT_MASK);
-   dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch9);
+   dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch5);
    dwt_configciadiag(DW_CIA_DIAG_LOG_ALL);
-   dwt_configmrxlut(9);
+   dwt_configmrxlut(5);
 
    // Set this node's PAN ID and EUI
    dwt_setpanid(MODULE_PANID);

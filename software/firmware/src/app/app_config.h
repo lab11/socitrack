@@ -48,10 +48,11 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 
 // DW3000 Ranging Radio Configuration ----------------------------------------------------------------------------------
 
-#define DW_PREAMBLE_LENGTH                          DWT_PLEN_128
-#define DW_PAC_SIZE                                 DWT_PAC8
+#define DW_PREAMBLE_LENGTH                          DWT_PLEN_256
+#define DW_PAC_SIZE                                 DWT_PAC16
 #define DW_DATA_RATE                                DWT_BR_6M8
-#define DW_SFD_TO                                   (128 + 1 + 8 - 8)   // (Preamble length + 1 + SFD length - PAC size)
+#define DW_SFD_TYPE                                 DWT_SFD_DW_16
+#define DW_SFD_TO                                   (256 + 1 + 16 - 16)   // (Preamble length + 1 + SFD length - PAC size)
 
 
 // Bluetooth LE Configuration ------------------------------------------------------------------------------------------
@@ -93,9 +94,9 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 
 // Ranging Protocol Configuration --------------------------------------------------------------------------------------
 
-#define RADIO_XMIT_CHANNEL                          9
+#define RADIO_XMIT_CHANNEL                          5
 #define NUM_ANTENNAS                                3
-#define RADIO_TX_PLUS_RX_DELAY                      32756           // TODO: FIGURE OUT THIS CORRECT VALUE
+#define RADIO_TX_PLUS_RX_DELAY                      32770
 #define MIN_VALID_RANGE_MM                          (-1000)
 #define MAX_VALID_RANGE_MM                          (32*1000)
 

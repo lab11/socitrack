@@ -66,7 +66,7 @@ void delayed_write_test(void)
    // Select the appropriate antenna and channel
    ranging_radio_disable();
    ranging_radio_choose_antenna(0);
-   ranging_radio_choose_channel(9);
+   ranging_radio_choose_channel(5);
 
    // Transmit the packet 2ms in the future
    dwt_writetxfctrl(packet_size, 0, 0);
@@ -82,7 +82,7 @@ void read_test(void)
 {
    // Enable packet reception
    ranging_radio_choose_antenna(0);
-   ranging_radio_choose_channel(9);
+   ranging_radio_choose_channel(5);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
 
    // Sleep for 60 seconds
