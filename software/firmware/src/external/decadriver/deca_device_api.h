@@ -24,6 +24,42 @@ extern "C"
 #define DWT_NUM_DW_DEV (1)
 #endif
 
+#define DW3000_SPI_FAC      (0<<6 | 1<<0)
+#define DW3000_SPI_FARW     (0<<6 | 0<<0)
+#define DW3000_SPI_EAMRW    (1<<6)
+#define SPICRC_CFG_ID                        0x18
+
+#define CHAN_CTRL_TX_PCODE_BIT_MASK          0xf8U
+#define CHAN_CTRL_RX_PCODE_BIT_MASK          0x1f00U
+#define CHAN_CTRL_SFD_TYPE_BIT_MASK          0x6U
+#define CHAN_CTRL_TX_PCODE_BIT_OFFSET        (3U)
+#define CHAN_CTRL_RX_PCODE_BIT_OFFSET        (8U)
+#define CHAN_CTRL_SFD_TYPE_BIT_OFFSET        (1U)
+#define CHAN_CTRL_ID                         0x10014
+#define CHAN_CTRL_RF_CHAN_BIT_MASK           0x1U
+
+#define TX_CTRL_HI_ID                        0x7001c
+#define RX_CTRL_HI_ID                        0x70010
+
+#define PLL_CFG_ID                           0x90000
+#define RF_PLL_CFG_CH5          0x1F3C
+#define RF_PLL_CFG_CH9          0x0F3C
+#define RF_PLL_CFG_LD           0x81
+
+#define RF_TXCTRL_CH5           0x1C071134UL    /* */
+#define RF_TXCTRL_CH9           0x1C010034UL    /* */
+
+#define RF_RXCTRL_CH9           0x08B5A833UL    /* */
+
+#define LDO_RLOAD_ID                         0x70050
+#define LDO_RLOAD_VAL_B1        0x14
+#define TX_CTRL_LO_ID                        0x70018
+#define RF_TXCTRL_LO_B2         0x0E
+#define PLL_CAL_ID                           0x90008
+
+#define SYS_STATUS_ID                        0x44
+#define SYS_STATUS_CP_LOCK_BIT_MASK          0x00000002U
+
 #define DWT_BIT_MASK(bit_num) (((uint32_t)1) << (bit_num))
 #define FCS_LEN               (2)
 
