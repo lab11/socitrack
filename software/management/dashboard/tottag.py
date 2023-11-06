@@ -157,7 +157,8 @@ class TotTagBLE(threading.Thread):
                           'FIND_TOTTAG': self.find_my_tottag,
                           'TIMESTAMP': self.retrieve_timestamp,
                           'VOLTAGE': self.retrieve_voltage,
-                          'NEW_EXPERIMENT': self.create_new_experiment,
+                          'NEW_EXPERIMENT_FULL': self.create_new_experiment,
+                          'NEW_EXPERIMENT_SINGLE': self.update_new_experiment,
                           'GET_EXPERIMENT': self.retrieve_experiment,
                           'DELETE_EXPERIMENT': self.delete_experiment,
                           'DOWNLOAD': self.download_logs,
@@ -294,6 +295,21 @@ class TotTagBLE(threading.Thread):
             self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
             print('Scheduling error:', e)
             success = False
+      self.result_queue.put_nowait(('SCHEDULED', success))
+      self.command_queue.task_done()
+
+   async def update_new_experiment(self):
+      success = True
+      self.result_queue.put_nowait(('SCHEDULING', True))
+      details = await self.command_queue.get()
+      packed_details = pack_experiment_details(details)
+      try:
+         await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+      except Exception as e:
+         self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
+         print('Scheduling error:', e)
+         success = False
       self.result_queue.put_nowait(('SCHEDULED', success))
       self.command_queue.task_done()
 
@@ -506,7 +522,7 @@ class TotTagGUI(tk.Frame):
             row = tk.Frame(prompt_area)
             tottag_label = tk.StringVar(row)
             row.grid(row=17+len(self.tottag_rows), column=0, columnspan=5, sticky=tk.W+tk.E)
-            tottag_selector = ttk.Combobox(row, width=18, values=self.device_list, state=['readonly'])
+            tottag_selector = ttk.Combobox(row, width=18, values=self.device_list, state=['readonly' if self.connect_button['text'] != 'Disconnect' else ''])
             tottag_selector.pack(side=tk.LEFT, expand=False)
             tottag_selector.set(self.device_list[0])
             ttk.Label(row, text="  using label  ").pack(side=tk.LEFT, expand=False)
@@ -553,7 +569,7 @@ class TotTagGUI(tk.Frame):
                'labels': labels,
                'devices': devices
             }
-            ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT')
+            ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT_FULL' if self.connect_button['text'] != 'Disconnect' else 'NEW_EXPERIMENT_SINGLE')
             ble_issue_command(self.event_loop, self.ble_command_queue, details)
       ttk.Button(prompt_area, text="Add", command=partial(add_tottag, self)).grid(column=4, row=15, sticky=tk.E)
       ttk.Label(prompt_area, text=" ", font=('Helvetica', '4')).grid(column=0, row=99)
@@ -688,11 +704,9 @@ class TotTagGUI(tk.Frame):
             self._clear_canvas()
             if data:
                self.scan_button['state'] = ['disabled']
-               self.schedule_button['state'] = ['disabled']
                tk.Label(self.canvas, text="Connecting to TotTag with ID "+self.tottag_selection.get()).pack(fill=tk.BOTH, expand=True)
             else:
                self.scan_button['state'] = ['enabled']
-               self.schedule_button['state'] = ['enabled']
                tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
          elif key == 'CONNECTED':
             self.tottag_selection.set('Connected to ' + data)
@@ -702,7 +716,6 @@ class TotTagGUI(tk.Frame):
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
                   item.configure(state=['enabled'])
-            self.schedule_button['state'] = ['disabled']
             self._clear_canvas_with_prompt()
          elif key == 'DISCONNECTED':
             self._clear_canvas()
@@ -711,11 +724,11 @@ class TotTagGUI(tk.Frame):
             self.connect_button['command'] = self._connect
             self.connect_button['state'] = ['enabled']
             self.connect_button['text'] = 'Connect'
-            self.schedule_button['state'] = ['enabled']
             self.tottag_selection.set(self.device_list[0])
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
                   item.configure(state=['disabled'])
+            self.schedule_button['state'] = ['enabled']
             tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
          elif key == 'RETRIEVING':
             self._clear_canvas()
