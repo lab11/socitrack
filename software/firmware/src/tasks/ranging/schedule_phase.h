@@ -11,7 +11,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
-   uint8_t message_type;
+   uint8_t sequence_number;
    uint32_t epoch_time_unix;
    uint8_t num_devices;
    uint8_t schedule[MAX_NUM_RANGING_DEVICES];

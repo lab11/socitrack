@@ -48,11 +48,13 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 
 // DW3000 Ranging Radio Configuration ----------------------------------------------------------------------------------
 
-#define DW_PREAMBLE_LENGTH                          DWT_PLEN_256
-#define DW_PAC_SIZE                                 DWT_PAC16
+#define DW_PREAMBLE_LENGTH                          DWT_PLEN_128
+#define DW_PAC_SIZE                                 DWT_PAC8
 #define DW_DATA_RATE                                DWT_BR_6M8
 #define DW_SFD_TYPE                                 DWT_SFD_DW_16
-#define DW_SFD_TO                                   (256 + 1 + 16 - 16)   // (Preamble length + 1 + SFD length - PAC size)
+#define DW_SFD_TO                                   (128 + 1 + 16 - 8)   // (Preamble length + 1 + SFD length - PAC size)
+#define DW_PREAMBLE_TIMEOUT                         (128 / 8)   // (Preamble length / PAC size)
+#define DW_PREAMBLE_LENGTH_US                       ((1 + 128 + 16) * 64 / 62.89133858)   // (1 + Preamble length + SFD length) * 64 / 62.89133858
 
 
 // Bluetooth LE Configuration ------------------------------------------------------------------------------------------
@@ -95,32 +97,32 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 // Ranging Protocol Configuration --------------------------------------------------------------------------------------
 
 #define RADIO_XMIT_CHANNEL                          5
-#define NUM_ANTENNAS                                3
-#define RADIO_TX_PLUS_RX_DELAY                      32770
+#define NUM_XMIT_ANTENNAS                           2
+#define NUM_RCV_ANTENNAS                            2
+#define TX_ANTENNA_DELAY                            16385
+#define RX_ANTENNA_DELAY                            16385
 #define MIN_VALID_RANGE_MM                          (-1000)
 #define MAX_VALID_RANGE_MM                          (32*1000)
 
 #define SCHEDULING_INTERVAL_US                      1000000
 #define RADIO_WAKEUP_SAFETY_DELAY_US                5000
-#define RECEIVE_EARLY_START_US                      100
+#define RECEIVE_EARLY_START_US                      ((uint32_t)DW_PREAMBLE_LENGTH_US)
 
 #define DEVICE_TIMEOUT_SECONDS                      60
 #define NETWORK_SEARCH_TIME_SECONDS                 3
 #define MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE        3
 
-#define SCHEDULE_XMIT_ANTENNA                       0
 #define SCHEDULE_NUM_TOTAL_BROADCASTS               5
 #define SCHEDULE_NUM_MASTER_BROADCASTS              2
 #define SCHEDULE_RESEND_INTERVAL_US                 1000
 #define SCHEDULE_BROADCAST_PERIOD_US                (SCHEDULE_NUM_TOTAL_BROADCASTS * SCHEDULE_RESEND_INTERVAL_US)
 
-#define RANGING_NUM_SEQUENCES                       NUM_ANTENNAS
-#define RANGING_BROADCAST_INTERVAL_US               1000
-#define RANGING_TIMEOUT_US                          (100 + RECEIVE_EARLY_START_US)
-#define RANGING_NUM_PACKETS_PER_ITERATION           ((3 * NUM_ANTENNAS) + NUM_ANTENNAS)
-#define RANGING_ITERATION_INTERVAL_US               (RANGING_BROADCAST_INTERVAL_US * RANGING_NUM_PACKETS_PER_ITERATION)
+#define RANGING_BROADCAST_INTERVAL_US               600
+#define RANGING_TIMEOUT_US                          ((uint32_t)DW_PREAMBLE_LENGTH_US + 56)
+#define RANGING_NUM_SEQUENCES_PER_RANGE             (NUM_XMIT_ANTENNAS * NUM_RCV_ANTENNAS)
+#define RANGING_NUM_PACKETS_PER_RANGE               (4 * RANGING_NUM_SEQUENCES_PER_RANGE)
+#define RANGING_US_PER_RANGE                        (RANGING_BROADCAST_INTERVAL_US * RANGING_NUM_PACKETS_PER_RANGE)
 
-#define RANGE_STATUS_XMIT_ANTENNA                   0
 #define RANGE_STATUS_NUM_TOTAL_BROADCASTS           4
 #define RANGE_STATUS_RESEND_INTERVAL_US             1000
 #define RANGE_STATUS_BROADCAST_PERIOD_US            (RANGE_STATUS_NUM_TOTAL_BROADCASTS * RANGE_STATUS_RESEND_INTERVAL_US)

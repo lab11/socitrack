@@ -13,11 +13,10 @@
 #define SPEED_OF_LIGHT                                      299711693.79        // In air @ 22C, 101.325kPa, 50% RH
 #define MODULE_PANID                                        0x6611
 
-#define APP_US_TO_DEVICETIMEU64(_microsecu)                 ((uint64_t)(((_microsecu) / DWT_TIME_UNITS) / 1000000.0))
-#define APP_DEVICETIMEU64_TO_US(_dw_units)                  ((uint32_t)(((_dw_units) * DWT_TIME_UNITS) * 1000000.0))
-#define DW_DELAY_FROM_US(_us)                               ((uint32_t)(APP_US_TO_DEVICETIMEU64((_us)) >> 8))
-#define US_DELAY_FROM_DW(_dwt)                              (APP_DEVICETIMEU64_TO_US(((uint64_t)(_dwt)) << 8))
-#define DW_TIMEOUT_FROM_US(_us)                             ((uint32_t)((_us) / (512.0 / 499.2)))
+#define US_TO_DWT(_microsec)                                ((uint64_t)((_microsec) * 499.2 * 128.0))
+#define DWT_TO_US(_dw_units)                                ((uint64_t)((_dw_units) / (499.2 * 128.0)))
+#define DW_DELAY_FROM_US(_us)                               ((uint32_t)(US_TO_DWT((_us)) >> 8))
+#define DW_TIMEOUT_FROM_US(_us)                             ((uint32_t)((_us) * 499.2 / 512.0))
 
 
 // Data structures for 802.15.4 packets --------------------------------------------------------------------------------
@@ -25,7 +24,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    uint8_t frameCtrl[2];
-   uint8_t seqNum;
+   uint8_t msgType;
    uint8_t panID[2];
    uint8_t destAddr[2];
    uint8_t sourceAddr[2];
@@ -52,7 +51,6 @@ bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
 uint64_t ranging_radio_readtxtimestamp(void);
 float ranging_radio_received_signal_level(void);
-uint64_t ranging_radio_compute_correction_for_signal_level(float signal_level_dbm);
 int ranging_radio_time_to_millimeters(double dwtime);
 
 #endif  // #ifndef __RANGING_HEADER_H__

@@ -37,7 +37,7 @@ static void ranging_radio_isr(void *args)
 static void ranging_radio_spi_slow(void)
 {
    const am_hal_iom_config_t spi_slow_config = {
-      .eInterfaceMode = AM_HAL_IOM_SPI_MODE, .ui32ClockFreq = AM_HAL_IOM_6MHZ, .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
+      .eInterfaceMode = AM_HAL_IOM_SPI_MODE, .ui32ClockFreq = 6000000, .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
       .pNBTxnBuf = NULL, .ui32NBTxnBufLength = 0 };
    am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false);
    am_hal_iom_configure(spi_handle, &spi_slow_config);
@@ -47,7 +47,7 @@ static void ranging_radio_spi_slow(void)
 static void ranging_radio_spi_fast(void)
 {
    const am_hal_iom_config_t spi_fast_config = {
-      .eInterfaceMode = AM_HAL_IOM_SPI_MODE, .ui32ClockFreq = AM_HAL_IOM_24MHZ, .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
+      .eInterfaceMode = AM_HAL_IOM_SPI_MODE, .ui32ClockFreq = 36000000, .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
       .pNBTxnBuf = NULL, .ui32NBTxnBufLength = 0 };
    am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false);
    am_hal_iom_configure(spi_handle, &spi_fast_config);
@@ -132,7 +132,7 @@ void ranging_radio_init(uint8_t *uid)
 {
    // Initialize static variables
    tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFFFFFFFF, 0x0 };  // Recommended: 0xFDFDFDFD
-   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };  // Recommended: 0xFEFEFEFE
+   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFFFFFFFF, 0x0 };  // Recommended: 0xFEFEFEFE
    spi_functions = (struct dwt_spi_s){ .readfromspi = readfromspi, .writetospi = writetospi,
       .writetospiwithcrc = NULL, .setslowrate = ranging_radio_spi_slow, .setfastrate = ranging_radio_spi_fast };
    driver_interface = (struct dwt_probe_s){ .dw = NULL, .spi = (void*)&spi_functions, .wakeup_device_with_io = NULL };
@@ -322,6 +322,7 @@ void ranging_radio_reset(void)
 
    // Disable double-buffer mode, receive timeouts, and auto-ack mode
    dwt_setdblrxbuffmode(DBL_BUF_STATE_DIS, DBL_BUF_MODE_MAN);
+   dwt_setpreambledetecttimeout(0);
    dwt_enableautoack(0, 0);
    dwt_setrxtimeout(0);
 
@@ -329,8 +330,8 @@ void ranging_radio_reset(void)
    dwt_configureframefilter(DWT_FF_ENABLE_802_15_4, DWT_FF_DATA_EN);
 
    // Clear the internal TX/RX antenna delays
-   dwt_settxantennadelay(0);
-   dwt_setrxantennadelay(0);
+   dwt_settxantennadelay(TX_ANTENNA_DELAY);
+   dwt_setrxantennadelay(RX_ANTENNA_DELAY);
 }
 
 void ranging_radio_register_callbacks(dwt_cb_t tx_done, dwt_cb_t rx_done, dwt_cb_t rx_timeout, dwt_cb_t rx_err)
@@ -459,69 +460,7 @@ float ranging_radio_received_signal_level(void)
    return (10.0f * log10f((F1*F1 + F2*F2 + F3*F3) / (N*N))) + (6.0f * D) - A;
 }
 
-uint64_t ranging_radio_compute_correction_for_signal_level(float signal_level_dbm)
-{
-   const uint32_t signal_level_inverted = (uint32_t)(-signal_level_dbm);
-   switch (signal_level_inverted)
-   {
-      case 61:
-      case 62:
-         return (uint64_t)(-0.110f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 63:
-      case 64:
-         return (uint64_t)(-0.105f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 65:
-      case 66:
-         return (uint64_t)(-0.100f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 67:
-      case 68:
-         return (uint64_t)(-0.093f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 69:
-      case 70:
-         return (uint64_t)(-0.082f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 71:
-      case 72:
-         return (uint64_t)(-0.069f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 73:
-      case 74:
-         return (uint64_t)(-0.051f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 75:
-      case 76:
-         return (uint64_t)(-0.027f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 77:
-      case 78:
-         return 0;
-      case 79:
-      case 80:
-         return (uint64_t)(0.021f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 81:
-      case 82:
-         return (uint64_t)(0.035f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 83:
-      case 84:
-         return (uint64_t)(0.042f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 85:
-      case 86:
-         return (uint64_t)(0.049f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 87:
-      case 88:
-         return (uint64_t)(0.062f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 89:
-      case 90:
-         return (uint64_t)(0.071f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 91:
-      case 92:
-         return (uint64_t)(0.076f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      case 93:
-      case 94:
-         return (uint64_t)(0.081f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-      default:
-         return (signal_level_inverted < 61) ? (uint64_t)(-0.11f / (SPEED_OF_LIGHT * DWT_TIME_UNITS)) :
-                                               (uint64_t)(0.081f / (SPEED_OF_LIGHT * DWT_TIME_UNITS));
-   }
-}
-
 int ranging_radio_time_to_millimeters(double dwtime)
 {
-   return (int)((dwtime - RADIO_TX_PLUS_RX_DELAY) * SPEED_OF_LIGHT * DWT_TIME_UNITS * 1000.0);
+   return (int)(dwtime * SPEED_OF_LIGHT * DWT_TIME_UNITS * 1000.0);
 }

@@ -17,7 +17,7 @@ static scheduler_phase_t ranging_phase;
 static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
-static uint8_t read_buffer[768], device_eui, schedule_reception_timeout;
+static uint8_t read_buffer[128], device_eui, schedule_reception_timeout;
 static uint8_t empty_round_timeout, eui[EUI_LEN];
 static volatile bool is_running, is_starting;
 
@@ -54,7 +54,7 @@ static void handle_range_computation_phase(bool is_master)
    ranging_radio_sleep(true);
    if (!is_master)
    {
-      const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - (ranging_phase_get_time_slices() * RANGING_ITERATION_INTERVAL_US) - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
+      const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
       wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
       am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
       am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
@@ -67,9 +67,8 @@ static void handle_range_computation_phase(bool is_master)
       bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
       storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
-#else
-      print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #endif
+      print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
    }
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 }
@@ -98,22 +97,17 @@ static void tx_callback(const dwt_cb_data_t *txData)
 {
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+   ranging_phase = schedule_phase_tx_complete();
    xTaskNotifyFromISR(notification_handle, RANGING_TX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 static void rx_callback(const dwt_cb_data_t *rxData)
 {
-   // Read packet data and ensure that no errors were encountered
-   if (rxData->datalength > sizeof(read_buffer))
-   {
-      read_buffer[sizeof(ieee154_header_t)] = UNKNOWN_PACKET;
-      print("ERROR: Received packet which exceeds maximal length (received %u bytes)!\n", rxData->datalength);
-   }
-
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
+   ranging_phase = schedule_phase_rx_complete((schedule_packet_t*)read_buffer);
    xTaskNotifyFromISR(notification_handle, RANGING_RX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -122,6 +116,7 @@ static void rx_timeout_callback(const dwt_cb_data_t *rxData)
 {
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+   ranging_phase = schedule_phase_rx_error();
    xTaskNotifyFromISR(notification_handle, RANGING_RX_TIMEOUT, eSetBits, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -204,12 +199,6 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
                vTaskDelay(1);
             ranging_phase = schedule_phase_begin() ? SCHEDULE_PHASE : RANGING_ERROR;
          }
-         if ((pending_actions & RANGING_TX_COMPLETE) != 0)
-            ranging_phase = schedule_phase_tx_complete();
-         if ((pending_actions & RANGING_RX_COMPLETE) != 0)
-            ranging_phase = schedule_phase_rx_complete((schedule_packet_t*)read_buffer);
-         if ((pending_actions & RANGING_RX_TIMEOUT) != 0)
-            ranging_phase = schedule_phase_rx_error();
 
          // Carry out logic based on the current reported phase of the ranging protocol
          switch (ranging_phase)

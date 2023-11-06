@@ -10,89 +10,231 @@
 
 static scheduler_phase_t current_phase;
 static ranging_packet_t ranging_packet;
-static uint8_t responder_slot_index, scheduled_slot, total_num_slots, antenna_index;
-static int32_t responder_slots[MAX_NUM_RANGING_DEVICES], current_slot;
-static int32_t initiator_slot_first, initiator_slot_last;
-static uint32_t num_sub_slots, last_rx_delay_time_us;
-static bool last_rx_relative_to_transmit;
+static uint8_t initiator_index, responder_index, my_index;
+static uint8_t initiator_antenna, responder_antenna, schedule_length;
+static uint32_t next_action_timestamp, ranging_phase_duration;
+static uint64_t reference_time;
 
 
-// Public functions ----------------------------------------------------------------------------------------------------
+// Private Helper Functions --------------------------------------------------------------------------------------------
+
+static inline scheduler_phase_t start_tx(const char *error_message)
+{
+   dwt_setdelayedtrxtime((uint32_t)((US_TO_DWT(next_action_timestamp) - TX_ANTENNA_DELAY) >> 8) & 0xFFFFFFFE);
+   if ((dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ieee154_header_t) - sizeof(ieee154_footer_t), &ranging_packet.sequence_number, offsetof(ranging_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
+   {
+      print(error_message);
+      return RANGING_ERROR;
+   }
+   return RANGING_PHASE;
+}
+
+static inline scheduler_phase_t start_rx(const char *error_message)
+{
+   dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp - RECEIVE_EARLY_START_US));
+   if (dwt_rxenable(DWT_START_RX_DLY_REF) != DWT_SUCCESS)
+   {
+      print(error_message);
+      return RANGING_ERROR;
+   }
+   return RANGING_PHASE;
+}
+
+static scheduler_phase_t initiator_handle_tx(void)
+{
+   // Listen for an incoming RESPONSE or SUMMARY packet
+   next_action_timestamp += RANGING_BROADCAST_INTERVAL_US;
+   return start_rx("ERROR: Unable to start listening for RANGING packets after INITIATOR TX\n");
+}
+
+static scheduler_phase_t initiator_handle_rx(ranging_packet_t *packet)
+{
+   // Verify the received packet sequence number
+   next_action_timestamp += RANGING_BROADCAST_INTERVAL_US;
+   ranging_packet.sequence_number = packet->sequence_number + 1;
+   if ((packet->sequence_number & 0x03) == 1)
+   {
+      // Update the packet round-trip times and transit the FINAL packet
+      add_ranging_times_poll_tx(packet->header.sourceAddr[0], packet->sequence_number >> 2, ranging_packet.tx_time);
+      add_ranging_times_poll_rx(packet->header.sourceAddr[0], packet->sequence_number >> 2, packet->rx_time);
+      add_ranging_times_response_tx(packet->header.sourceAddr[0], packet->sequence_number >> 2, packet->tx_time);
+      ranging_packet.rx_time = (uint32_t)ranging_radio_readrxtimestamp();
+      ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+      add_ranging_times_response_rx(packet->header.sourceAddr[0], packet->sequence_number >> 2, ranging_packet.rx_time);
+      add_ranging_times_final_tx(packet->header.sourceAddr[0], packet->sequence_number >> 2, ranging_packet.tx_time);
+      return start_tx("ERROR: Failed to transmit RANGING FINAL packet\n");
+   }
+   else if ((packet->sequence_number & 0x03) == 3)
+   {
+      // Update the packet round-trip times and the antenna settings
+      add_ranging_times_final_rx(packet->header.sourceAddr[0], packet->sequence_number >> 2, packet->rx_time);
+      responder_antenna = (responder_antenna + 1) % NUM_RCV_ANTENNAS;
+      if (responder_antenna == 0)
+      {
+         initiator_antenna = (initiator_antenna + 1) % NUM_XMIT_ANTENNAS;
+         ranging_radio_choose_antenna(initiator_antenna);
+         if (initiator_antenna == 0)
+         {
+            ranging_packet.sequence_number = 0;
+            responder_index = (responder_index + 1) % schedule_length;
+            if (responder_index == 0)
+            {
+               // Move to the Range Status Phase of the ranging protocol
+               current_phase = RANGE_STATUS_PHASE;
+               uint32_t remaining = schedule_length - my_index - 1;
+               next_action_timestamp += ((remaining * (remaining - 1) / 2) * RANGING_US_PER_RANGE);
+               return status_phase_begin(my_index, schedule_length, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+            }
+         }
+      }
+
+      // Transmit the next POLL packet
+      ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+      return start_tx("ERROR: Failed to transmit RANGING POLL packet\n");
+   }
+   print("ERROR: Received an unexpected RANGING sequence number for initiator...possible network collision\n");
+   return MESSAGE_COLLISION;
+}
+
+static scheduler_phase_t responder_handle_tx(void)
+{
+   // Verify the received packet sequence number
+   next_action_timestamp += RANGING_BROADCAST_INTERVAL_US;
+   if ((ranging_packet.sequence_number & 0x03) == 3)
+   {
+      // Update the initiator and responder antenna settings
+      responder_antenna = (responder_antenna + 1) % NUM_RCV_ANTENNAS;
+      ranging_radio_choose_antenna(responder_antenna);
+      if (responder_antenna == 0)
+      {
+         initiator_antenna = (initiator_antenna + 1) % NUM_XMIT_ANTENNAS;
+         if (initiator_antenna == 0)
+         {
+            // Update the initiator and responder active indices
+            responder_index = (responder_index + 1) % schedule_length;
+            if (responder_index == 0)
+            {
+               initiator_index += 1;
+               if (initiator_index == (schedule_length - 1))
+               {
+                  // Move to the Range Status Phase of the ranging protocol
+                  current_phase = RANGE_STATUS_PHASE;
+                  return status_phase_begin(my_index, schedule_length, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+               }
+               else
+               {
+                  next_action_timestamp += (uint32_t)(my_index - initiator_index - 1) * RANGING_US_PER_RANGE;
+                  responder_index = my_index;
+               }
+            }
+            else
+            {
+               // Determine if we are the next initiator
+               if (my_index == ++initiator_index)
+               {
+                  // Transmit the next POLL packet at the correct time
+                  ranging_packet.sequence_number = 0;
+                  next_action_timestamp += (schedule_length - responder_index) * RANGING_US_PER_RANGE;
+                  ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+                  responder_index = my_index + 1;
+                  return start_tx("ERROR: Failed to transmit next RANGING POLL packet\n");
+               }
+               else
+               {
+                  next_action_timestamp += (uint32_t)(schedule_length - responder_index) * RANGING_US_PER_RANGE;
+                  responder_index = my_index;
+               }
+            }
+         }
+      }
+   }
+
+   // Enter RX mode at the appropriate time
+   return start_rx("ERROR: Unable to start listening for RANGING packets after RESPONDER TX\n");
+}
+
+static scheduler_phase_t responder_handle_rx(ranging_packet_t *packet)
+{
+   // Update the ranging packet contents for the upcoming transmission
+   next_action_timestamp += RANGING_BROADCAST_INTERVAL_US;
+   ranging_packet.sequence_number = packet->sequence_number + 1;
+   ranging_packet.rx_time = (uint32_t)ranging_radio_readrxtimestamp();
+   ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+
+   // Update the packet round-trip times
+   if ((packet->sequence_number & 0x03) == 0)
+   {
+      add_ranging_times_poll_tx(packet->header.sourceAddr[0], packet->sequence_number >> 2, packet->tx_time);
+      add_ranging_times_poll_rx(packet->header.sourceAddr[0], packet->sequence_number >> 2, ranging_packet.rx_time);
+      add_ranging_times_response_tx(packet->header.sourceAddr[0], packet->sequence_number >> 2, ranging_packet.tx_time);
+      return start_tx("ERROR: Failed to transmit next RANGING RESPONSE packet\n");
+   }
+   else if ((packet->sequence_number & 0x03) == 2)
+   {
+      add_ranging_times_response_rx(packet->header.sourceAddr[0], packet->sequence_number >> 2, packet->rx_time);
+      add_ranging_times_final_tx(packet->header.sourceAddr[0], packet->sequence_number >> 2, packet->tx_time);
+      add_ranging_times_final_rx(packet->header.sourceAddr[0], packet->sequence_number >> 2, ranging_packet.rx_time);
+      return start_tx("ERROR: Failed to transmit next RANGING SUMMARY packet\n");
+   }
+   print("ERROR: Received an unexpected RANGING sequence number for responder...possible network collision\n");
+   return MESSAGE_COLLISION;
+}
+
+
+// Public Functions ----------------------------------------------------------------------------------------------------
 
 void ranging_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Ranging Phase parameters
-   ranging_packet = (ranging_packet_t){ .header = { .frameCtrl = { 0x41, 0x98 }, .seqNum = 0,
+   ranging_packet = (ranging_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = RANGING_PACKET,
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .message_type = RANGING_PACKET, .poll_time = 0, .resp_time = 0, .final_time = 0, .footer = { { 0 } } };
+      .sequence_number = 0, .tx_time = 0, .rx_time = 0, .footer = { { 0 } } };
    memcpy(ranging_packet.header.sourceAddr, uid, sizeof(ranging_packet.header.sourceAddr));
-   scheduled_slot = 0xFF;
 }
 
-scheduler_phase_t ranging_phase_begin(uint8_t ranging_slot, uint8_t num_slots, uint32_t start_delay_us, bool start_relative_to_transmit)
+scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t start_delay_dwt)
 {
    // Ensure there are at least two devices to begin ranging
    reset_computation_phase();
-   if (num_slots < 2)
+   if (schedule_size < 2)
       return RANGE_COMPUTATION_PHASE;
 
    // Reset the necessary Ranging Phase parameters
    current_phase = RANGING_PHASE;
-   responder_slot_index = antenna_index = 0;
-   num_sub_slots = (uint32_t)num_slots * (num_slots - 1) / 2;
-   scheduled_slot = ranging_slot;
-   total_num_slots = num_slots;
+   my_index = scheduled_slot;
+   schedule_length = schedule_size;
+   initiator_antenna = responder_antenna = 0;
+   next_action_timestamp = RECEIVE_EARLY_START_US;
+   dwt_writetxfctrl(sizeof(ranging_packet_t), 0, 1);
+   dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&ranging_packet, 0);
+   initiator_index = 0;
+   responder_index = 1;
 
-   // Compute the initiator time slots for the device
-   if ((ranging_slot + 1) < num_slots)
-   {
-      initiator_slot_first = 0;
-      for (uint8_t i = 1; i <= ranging_slot; ++i)
-         initiator_slot_first += (num_slots - i);
-      initiator_slot_last = initiator_slot_first + (num_slots - ranging_slot - 2);
-   }
-   else
-      initiator_slot_first = initiator_slot_last = -1;
-
-   // Compute the responder time slots for the device
-   responder_slots[0] = (int32_t)ranging_slot - 1;
-   for (uint8_t i = 1; i < ranging_slot; ++i)
-      responder_slots[i] = responder_slots[i-1] + (num_slots - i - 1);
-   for (uint8_t i = ranging_slot; i < MAX_NUM_RANGING_DEVICES; ++i)
-      responder_slots[i] = -1;
+   // Initialize the Ranging Phase start time for calculating timing offsets
+   reference_time = ((uint64_t)start_delay_dwt) << 8;
+   ranging_phase_duration = ((uint32_t)schedule_size * (schedule_size - 1) / 2) * RANGING_US_PER_RANGE;
+   dwt_setreferencetrxtime(start_delay_dwt);
 
    // Set up the correct initial antenna and RX timeout duration
    ranging_radio_choose_antenna(0);
+   dwt_setpreambledetecttimeout(DW_PREAMBLE_TIMEOUT);
    dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RANGING_TIMEOUT_US));
 
    // Begin transmission or reception depending on the scheduled time slot
-   if (ranging_slot == 0)
+   if (my_index == 0)
    {
-      current_slot = 0;
-      ranging_packet.header.seqNum = 0;
-      dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-      dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(start_delay_us));
-      if (dwt_starttx(start_relative_to_transmit ? DWT_START_TX_DLY_TS : DWT_START_TX_DLY_RS) != DWT_SUCCESS)
-      {
-         print("ERROR: Failed to transmit RANGING REQUEST packet\n");
-         return RANGING_ERROR;
-      }
+      ranging_packet.sequence_number = 0;
+      ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+      return start_tx("ERROR: Failed to transmit initial RANGING POLL packet\n");
    }
    else
    {
-      ranging_packet.header.seqNum = 11;
-      current_slot = (uint8_t)responder_slots[0];
-      last_rx_relative_to_transmit = start_relative_to_transmit;
-      last_rx_delay_time_us = start_delay_us + ((uint32_t)(responder_slots[0]) * RANGING_ITERATION_INTERVAL_US) - RECEIVE_EARLY_START_US;
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us));
-      if (!ranging_radio_rxenable(start_relative_to_transmit ? DWT_START_RX_DLY_TS : DWT_START_RX_DLY_RS))
-      {
-         print("ERROR: Unable to start listening for RANGING REQUEST packets\n");
-         return RANGING_ERROR;
-      }
+      responder_index = my_index;
+      ranging_packet.sequence_number = 0x03;
+      next_action_timestamp += (uint32_t)(my_index - 1) * RANGING_US_PER_RANGE;
+      return start_rx("ERROR: Unable to start listening for RANGING POLL packets\n");
    }
-   return RANGING_PHASE;
+   return RANGING_ERROR;
 }
 
 scheduler_phase_t ranging_phase_tx_complete(void)
@@ -100,63 +242,7 @@ scheduler_phase_t ranging_phase_tx_complete(void)
    // Forward this request to the next phase if not currently in the Ranging Phase
    if (current_phase != RANGING_PHASE)
       return status_phase_tx_complete();
-
-   // Switch to the next antenna when appropriate
-   if ((ranging_packet.header.seqNum == 3) || (ranging_packet.header.seqNum == 7))
-      ranging_radio_choose_antenna(++antenna_index);
-
-   // Handle the ranging phase based on the sequence number of the packet that was just transmitted
-   if (ranging_packet.header.seqNum == 11)
-   {
-      // Finished current ranging iteration...continue to next time slot
-      antenna_index = 0;
-      ++responder_slot_index;
-      ranging_radio_choose_antenna(0);
-      if ((++current_slot <= initiator_slot_first) && (initiator_slot_first < responder_slots[responder_slot_index]))
-      {
-         ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(RANGING_BROADCAST_INTERVAL_US + ((initiator_slot_first - current_slot) * RANGING_ITERATION_INTERVAL_US)));
-         current_slot = initiator_slot_first;
-         if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
-         {
-            print("ERROR: Failed to transmit initial RANGING REQUEST packet\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-      else if (current_slot <= responder_slots[responder_slot_index])
-      {
-         last_rx_relative_to_transmit = true;
-         last_rx_delay_time_us = RANGING_BROADCAST_INTERVAL_US + ((uint32_t)(responder_slots[responder_slot_index] - current_slot) * RANGING_ITERATION_INTERVAL_US) - RECEIVE_EARLY_START_US;
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us));
-         current_slot = (uint8_t)responder_slots[responder_slot_index];
-         if (!ranging_radio_rxenable(DWT_START_RX_DLY_TS))
-         {
-            print("ERROR: Unable to start listening for incoming RANGING REQUEST packets\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-   }
-   else
-   {
-      // Finished transmitting non-terminal packet...start listening for incoming responses
-      last_rx_relative_to_transmit = true;
-      last_rx_delay_time_us = RANGING_BROADCAST_INTERVAL_US - RECEIVE_EARLY_START_US;
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us));
-      if (!ranging_radio_rxenable(DWT_START_RX_DLY_TS))
-      {
-         print("ERROR: Unable to start listening for next RANGING REQUEST packets\n");
-         return RANGING_ERROR;
-      }
-      return RANGING_PHASE;
-   }
-
-   // Move to the Status Phase of the ranging protocol
-   current_phase = RANGE_STATUS_PHASE;
-   return status_phase_begin(scheduled_slot, total_num_slots, RANGING_BROADCAST_INTERVAL_US + ((num_sub_slots - current_slot) * RANGING_ITERATION_INTERVAL_US), true);
+   return (initiator_index == my_index) ? initiator_handle_tx() : responder_handle_tx();
 }
 
 scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
@@ -164,87 +250,12 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    // Forward this request to the next phase if not currently in the Ranging Phase
    if (current_phase != RANGING_PHASE)
       return status_phase_rx_complete((status_success_packet_t*)packet);
-   else if (packet->message_type != RANGING_PACKET)
+   else if (packet->header.msgType != RANGING_PACKET)
    {
       print("ERROR: Received an unexpected message type during RANGING phase...possible network collision\n");
       return MESSAGE_COLLISION;
    }
-
-   // Switch to the next antenna when appropriate
-   if ((packet->header.seqNum == 3) || (packet->header.seqNum == 7))
-      ranging_radio_choose_antenna(++antenna_index);
-
-   // Compute the roundtrip transmission time when appropriate
-   if ((packet->header.seqNum == 0) || (packet->header.seqNum == 4) || (packet->header.seqNum == 8))
-   {
-      uint32_t rx_timestamp = (uint32_t)ranging_radio_readrxtimestamp();
-      ranging_packet.poll_time = rx_timestamp;
-      add_roundtrip0_times(packet->header.sourceAddr[0], packet->header.seqNum / 4, rx_timestamp);
-   }
-   else if ((packet->header.seqNum == 1) || (packet->header.seqNum == 5) || (packet->header.seqNum == 9))
-   {
-      uint64_t rx_timestamp = ranging_radio_readrxtimestamp();
-      ranging_packet.poll_time = (uint32_t)ranging_radio_readtxtimestamp();
-      ranging_packet.resp_time = (uint32_t)rx_timestamp;
-      ranging_packet.final_time = (uint32_t)(rx_timestamp + APP_US_TO_DEVICETIMEU64(RANGING_BROADCAST_INTERVAL_US)) & 0xFFFFFE00UL;
-      add_roundtrip0_times(packet->header.sourceAddr[0], (packet->header.seqNum - 1) / 4, packet->poll_time);
-      add_roundtrip1_times(packet->header.sourceAddr[0], (packet->header.seqNum - 1) / 4, ranging_packet.poll_time, ranging_packet.resp_time, ranging_packet.final_time);
-   }
-   else if ((packet->header.seqNum == 2) || (packet->header.seqNum == 6) || (packet->header.seqNum == 10))
-   {
-      ranging_packet.resp_time = (uint32_t)ranging_radio_readtxtimestamp();
-      ranging_packet.final_time = (uint32_t)ranging_radio_readrxtimestamp();
-      add_roundtrip1_times(packet->header.sourceAddr[0], (packet->header.seqNum - 2) / 4, packet->poll_time, packet->resp_time, packet->final_time);
-      add_roundtrip2_times(packet->header.sourceAddr[0], (packet->header.seqNum - 2) / 4, ranging_packet.resp_time, ranging_packet.final_time);
-   }
-   else if ((packet->header.seqNum == 3) || (packet->header.seqNum == 7) || (packet->header.seqNum == 11))
-      add_roundtrip2_times(packet->header.sourceAddr[0], (packet->header.seqNum - 3) / 4, packet->resp_time, packet->final_time);
-
-   // Handle the ranging phase based on the sequence number of the packet that was just received
-   if (packet->header.seqNum == 11)
-   {
-      // Finished current ranging iteration...continue to next time slot
-      ranging_radio_choose_antenna(0);
-      antenna_index = ranging_packet.header.seqNum = 0;
-      if (++current_slot <= initiator_slot_last)
-      {
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(RANGING_BROADCAST_INTERVAL_US));
-         if (dwt_starttx(DWT_START_TX_DLY_RS) != DWT_SUCCESS)
-         {
-            print("ERROR: Failed to transmit next RANGING REQUEST packet\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-   }
-   else
-   {
-      // Received non-terminal packet...send response
-      ranging_packet.header.seqNum = packet->header.seqNum + 1;
-      if ((packet->header.seqNum == 3) || (packet->header.seqNum == 7))
-      {
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-      }
-      else
-      {
-         dwt_writetxfctrl(sizeof(ranging_packet_t), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t), (uint8_t*)&ranging_packet, 0);
-      }
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(RANGING_BROADCAST_INTERVAL_US));
-      if (dwt_starttx(DWT_START_TX_DLY_RS) != DWT_SUCCESS)
-      {
-         print("ERROR: Failed to transmit RANGING RESPONSE packet with sequence number %u\n", (uint32_t)ranging_packet.header.seqNum);
-         return RANGING_ERROR;
-      }
-      return RANGING_PHASE;
-   }
-
-   // Move to the Status Phase of the ranging protocol
-   current_phase = RANGE_STATUS_PHASE;
-   return status_phase_begin(scheduled_slot, total_num_slots, RANGING_BROADCAST_INTERVAL_US + ((num_sub_slots - current_slot) * RANGING_ITERATION_INTERVAL_US), false);
+   return (initiator_index == my_index) ? initiator_handle_rx(packet) : responder_handle_rx(packet);
 }
 
 scheduler_phase_t ranging_phase_rx_error(void)
@@ -254,140 +265,97 @@ scheduler_phase_t ranging_phase_rx_error(void)
       return status_phase_rx_error();
 
    // Handle RX errors differently depending on which sequence number experienced the problem
-   if ((ranging_packet.header.seqNum == 8) || (ranging_packet.header.seqNum == 10))
+   if (((ranging_packet.sequence_number & 0x03) == 0) || ((ranging_packet.sequence_number & 0x03) == 2))
    {
-      // We are the initiator and did not receive a response on the final antenna...move to next time slot
-      antenna_index = 0;
-      ranging_radio_choose_antenna(0);
-      uint32_t delay_time_us = (uint32_t)(12 - ranging_packet.header.seqNum) * RANGING_BROADCAST_INTERVAL_US;
-      if (++current_slot <= initiator_slot_last)
-      {
-         ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(delay_time_us));
-         if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
-         {
-            print("ERROR: Failed to transmit RANGING REQUEST packet after error\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-      else
-      {
-         // Move to the Range Status Phase of the ranging protocol
-         current_phase = RANGE_STATUS_PHASE;
-         return status_phase_begin(scheduled_slot, total_num_slots, delay_time_us + ((num_sub_slots - current_slot) * RANGING_ITERATION_INTERVAL_US), true);
-      }
-   }
-   else if ((ranging_packet.header.seqNum == 0) || (ranging_packet.header.seqNum == 2) || (ranging_packet.header.seqNum == 4) || (ranging_packet.header.seqNum == 6))
-   {
-      // We are the initiator and did not receive a response on the non-final antenna, skip to the next antenna
-      ranging_radio_choose_antenna(++antenna_index);
-      uint8_t next_sequence_num = 4 * ((4 + ranging_packet.header.seqNum) / 4);
-      uint32_t delay_time_us = (uint32_t)(next_sequence_num - ranging_packet.header.seqNum) * RANGING_BROADCAST_INTERVAL_US;
-      ranging_packet.header.seqNum = next_sequence_num;
-      dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-      dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(delay_time_us));
-      if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
-      {
-         print("ERROR: Failed to transmit next RANGING REQUEST packet after error\n");
-         return RANGING_ERROR;
-      }
-      return RANGING_PHASE;
-   }
-   else if ((ranging_packet.header.seqNum == 7) || (ranging_packet.header.seqNum == 9))
-   {
-      // We are the responder and did not receive a response on the final antenna...move to next time slot
-      antenna_index = 0;
-      ++responder_slot_index;
-      ranging_radio_choose_antenna(0);
-      uint32_t delay_time_us = (uint32_t)(12 - ranging_packet.header.seqNum) * RANGING_BROADCAST_INTERVAL_US;
-      if ((++current_slot <= initiator_slot_first) && (initiator_slot_first < responder_slots[responder_slot_index]))
-      {
-         ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(delay_time_us + ((initiator_slot_first - current_slot) * RANGING_ITERATION_INTERVAL_US)));
-         current_slot = initiator_slot_first;
-         if (dwt_starttx(DWT_START_TX_DLY_TS) != DWT_SUCCESS)
-         {
-            print("ERROR: Failed to transmit initial RANGING REQUEST packet after error\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-      else if (current_slot <= responder_slots[responder_slot_index])
-      {
-         last_rx_delay_time_us = delay_time_us + ((uint32_t)(responder_slots[responder_slot_index] - current_slot) * RANGING_ITERATION_INTERVAL_US) - RECEIVE_EARLY_START_US;
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us));
-         current_slot = (uint8_t)responder_slots[responder_slot_index];
-         if (!ranging_radio_rxenable(DWT_START_RX_DLY_TS))
-         {
-            print("ERROR: Unable to start listening for incoming RANGING REQUEST packets after error\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-      else
-         last_rx_delay_time_us += delay_time_us;
-   }
-   else if ((antenna_index + 1) == NUM_ANTENNAS)
-   {
-      // We are the responder and did not receive any responses...move to next time slot
-      antenna_index = 0;
-      ++responder_slot_index;
-      ranging_radio_choose_antenna(0);
-      last_rx_delay_time_us += (4 * RANGING_BROADCAST_INTERVAL_US);
-      if ((++current_slot <= initiator_slot_first) && (initiator_slot_first < responder_slots[responder_slot_index]))
-      {
-         ranging_packet.header.seqNum = 0;
-         dwt_writetxfctrl(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), 0, 1);
-         dwt_writetxdata(sizeof(ranging_packet_t) - (3 * sizeof(ranging_packet.poll_time)), (uint8_t*)&ranging_packet, 0);
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us + RECEIVE_EARLY_START_US + ((initiator_slot_first - current_slot) * RANGING_ITERATION_INTERVAL_US)));
-         current_slot = initiator_slot_first;
-         if (dwt_starttx(last_rx_relative_to_transmit ? DWT_START_TX_DLY_TS : DWT_START_TX_DLY_RS) != DWT_SUCCESS)
-         {
-            print("ERROR: Failed to transmit RANGING REQUEST packet after error\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-      else if (current_slot <= responder_slots[responder_slot_index])
-      {
-         last_rx_delay_time_us += (uint32_t)(responder_slots[responder_slot_index] - current_slot) * RANGING_ITERATION_INTERVAL_US;
-         dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us));
-         current_slot = (uint8_t)responder_slots[responder_slot_index];
-         if (!ranging_radio_rxenable(last_rx_relative_to_transmit ? DWT_START_RX_DLY_TS : DWT_START_RX_DLY_RS))
-         {
-            print("ERROR: Unable to start listening for new RANGING REQUEST packets after error\n");
-            return RANGING_ERROR;
-         }
-         return RANGING_PHASE;
-      }
-   }
-   else
-   {
-      // We are the responder and did not receive a response on the non-final antenna, skip to the next antenna
-      ranging_radio_choose_antenna(++antenna_index);
-      last_rx_delay_time_us += (((ranging_packet.header.seqNum == 11) || (ranging_packet.header.seqNum == 3)) ? 4 : 2) * RANGING_BROADCAST_INTERVAL_US;
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(last_rx_delay_time_us));
-      ranging_packet.header.seqNum = 11;
-      if (!ranging_radio_rxenable(last_rx_relative_to_transmit ? DWT_START_RX_DLY_TS : DWT_START_RX_DLY_RS))
-      {
-         print("ERROR: Failed to start listening for next RANGING packet after error\n");
-         return RANGING_ERROR;
-      }
-      return RANGING_PHASE;
-   }
+      // We are the initiator and didn't receive a response
+      uint32_t skip_packets = 3 - (ranging_packet.sequence_number & 0x03);
+      next_action_timestamp += (skip_packets * RANGING_BROADCAST_INTERVAL_US);
+      ranging_packet.sequence_number += skip_packets + 1;
 
-   // Move to the Range Status Phase of the ranging protocol
-   current_phase = RANGE_STATUS_PHASE;
-   return status_phase_begin(scheduled_slot, total_num_slots, last_rx_delay_time_us + RECEIVE_EARLY_START_US + ((num_sub_slots - current_slot) * RANGING_ITERATION_INTERVAL_US), last_rx_relative_to_transmit);
+      // Update the antenna settings
+      responder_antenna = (responder_antenna + 1) % NUM_RCV_ANTENNAS;
+      if (responder_antenna == 0)
+      {
+         initiator_antenna = (initiator_antenna + 1) % NUM_XMIT_ANTENNAS;
+         ranging_radio_choose_antenna(initiator_antenna);
+         if (initiator_antenna == 0)
+         {
+            responder_index = (responder_index + 1) % schedule_length;
+            if (responder_index == 0)
+            {
+               // Move to the Range Status Phase of the ranging protocol
+               current_phase = RANGE_STATUS_PHASE;
+               uint32_t remaining = schedule_length - my_index - 1;
+               next_action_timestamp += ((remaining * (remaining - 1) / 2) * RANGING_US_PER_RANGE);
+               return status_phase_begin(my_index, schedule_length, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+            }
+         }
+      }
+
+      // Transmit the next POLL packet
+      ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+      return start_tx("ERROR: Failed to transmit RANGING POLL packet after INITIATOR RX error\n");
+   }
+   else if (((ranging_packet.sequence_number & 0x03) == 1) || ((ranging_packet.sequence_number & 0x03) == 3))
+   {
+      // We are the responder and didn't receive a response
+      uint32_t skip_packets = 1 + (ranging_packet.sequence_number & 0x03);
+      next_action_timestamp += (skip_packets * RANGING_BROADCAST_INTERVAL_US);
+      ranging_packet.sequence_number += skip_packets;
+
+      // Update the initiator and responder antenna settings
+      responder_antenna = (responder_antenna + 1) % NUM_RCV_ANTENNAS;
+      ranging_radio_choose_antenna(responder_antenna);
+      if (responder_antenna == 0)
+      {
+         initiator_antenna = (initiator_antenna + 1) % NUM_XMIT_ANTENNAS;
+         if (initiator_antenna == 0)
+         {
+            // Update the initiator and responder active indices
+            responder_index = (responder_index + 1) % schedule_length;
+            if (responder_index == 0)
+            {
+               initiator_index += 1;
+               if (initiator_index == (schedule_length - 1))
+               {
+                  // Move to the Range Status Phase of the ranging protocol
+                  current_phase = RANGE_STATUS_PHASE;
+                  return status_phase_begin(my_index, schedule_length, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+               }
+               else
+               {
+                  next_action_timestamp += (uint32_t)(my_index - initiator_index - 1) * RANGING_US_PER_RANGE;
+                  responder_index = my_index;
+               }
+            }
+            else
+            {
+               // Determine if we are the next initiator
+               if (my_index == ++initiator_index)
+               {
+                  // Transmit the next POLL packet at the correct time
+                  ranging_packet.sequence_number = 0;
+                  next_action_timestamp += ((schedule_length - responder_index) * RANGING_US_PER_RANGE);
+                  responder_index = my_index + 1;
+                  ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
+                  return start_tx("ERROR: Failed to transmit next RANGING POLL packet after an RX error\n");
+               }
+               else
+               {
+                  next_action_timestamp += (uint32_t)(schedule_length - responder_index) * RANGING_US_PER_RANGE;
+                  responder_index = my_index;
+               }
+            }
+         }
+      }
+
+      // Attempt to receive the next ranging packet
+      return start_rx("ERROR: Unable to start listening for RANGING packets after RESPONDER RX error\n");
+   }
+   return RANGING_ERROR;
 }
 
-uint32_t ranging_phase_get_time_slices(void)
+uint32_t ranging_phase_get_duration(void)
 {
-   return num_sub_slots;
+   return ranging_phase_duration;
 }
