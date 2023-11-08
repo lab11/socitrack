@@ -20,11 +20,11 @@ typedef enum {
 typedef enum
 {
    SCHEDULE_PHASE,
+   SUBSCRIPTION_PHASE,
    RANGING_PHASE,
    RANGE_STATUS_PHASE,
    RANGE_COMPUTATION_PHASE,
    UNSCHEDULED_TIME_PHASE,
-   UPDATING_SCHEDULE_PHASE,
    RANGING_ERROR,
    MESSAGE_COLLISION
 } scheduler_phase_t;
@@ -32,18 +32,17 @@ typedef enum
 typedef enum
 {
    RANGING_PACKET = 0x80,
-   SCHEDULE_PACKET = 0x83,
-   STATUS_SUCCESS_PACKET = 0x85,
-   UNKNOWN_PACKET = 0x86
+   SCHEDULE_PACKET = 0x81,
+   STATUS_SUCCESS_PACKET = 0x82,
+   SUBSCRIPTION_PACKET = 0x83,
+   UNKNOWN_PACKET = 0x84
 } packet_t;
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
 
 void scheduler_init(uint8_t *uid);
-void scheduler_prepare(void);
 void scheduler_run(schedule_role_t role, uint32_t timestamp);
-void scheduler_add_device(uint8_t eui);
 void scheduler_stop(void);
 void scheduler_rtc_isr(void);
 

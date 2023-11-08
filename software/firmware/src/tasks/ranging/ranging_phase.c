@@ -196,7 +196,8 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
 {
    // Ensure there are at least two devices to begin ranging
    reset_computation_phase();
-   if (schedule_size < 2)
+   ranging_phase_duration = ((uint32_t)schedule_size * (schedule_size - 1) / 2) * RANGING_US_PER_RANGE;
+   if ((schedule_size < 2) || (scheduled_slot == UNSCHEDULED_SLOT))
       return RANGE_COMPUTATION_PHASE;
 
    // Reset the necessary Ranging Phase parameters
@@ -212,7 +213,6 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
 
    // Initialize the Ranging Phase start time for calculating timing offsets
    reference_time = ((uint64_t)start_delay_dwt) << 8;
-   ranging_phase_duration = ((uint32_t)schedule_size * (schedule_size - 1) / 2) * RANGING_US_PER_RANGE;
    dwt_setreferencetrxtime(start_delay_dwt);
 
    // Set up the correct initial antenna and RX timeout duration

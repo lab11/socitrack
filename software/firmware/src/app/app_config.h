@@ -103,6 +103,7 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 #define RX_ANTENNA_DELAY                            16385
 #define MIN_VALID_RANGE_MM                          (-1000)
 #define MAX_VALID_RANGE_MM                          (32*1000)
+#define UNSCHEDULED_SLOT                            0xFF
 
 #define SCHEDULING_INTERVAL_US                      1000000
 #define RADIO_WAKEUP_SAFETY_DELAY_US                5000
@@ -127,5 +128,8 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 #define RANGE_STATUS_RESEND_INTERVAL_US             1000
 #define RANGE_STATUS_BROADCAST_PERIOD_US            (RANGE_STATUS_NUM_TOTAL_BROADCASTS * RANGE_STATUS_RESEND_INTERVAL_US)
 #define RANGE_STATUS_TIMEOUT_US                     (RANGE_STATUS_BROADCAST_PERIOD_US - 900 + RECEIVE_EARLY_START_US)
+
+#define SUBSCRIPTION_BROADCAST_PERIOD_US            2000
+#define SUBSCRIPTION_TIMEOUT_US                     1400
 
 #endif  // #ifndef __APP_CONFIG_HEADER_H__

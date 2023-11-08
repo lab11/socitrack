@@ -17,7 +17,6 @@ void ranging_begin(schedule_role_t role)
 {
    // Notify the ranging task to start with the indicated role
    is_ranging = true;
-   scheduler_prepare();
    xTaskNotify(ranging_task_handle, role, eSetValueWithOverwrite);
 }
 
@@ -32,12 +31,6 @@ bool ranging_active(void)
 {
    // Return whether actively ranging
    return is_ranging;
-}
-
-void ranging_schedule_device(const uint8_t *device_id)
-{
-   // Instruct ranging scheduler to add device
-   scheduler_add_device(device_id[0]);
 }
 
 void RangingTask(void *uid)

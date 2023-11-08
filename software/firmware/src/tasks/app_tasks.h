@@ -15,7 +15,6 @@ typedef enum {
    APP_NOTIFY_NETWORK_LOST = 0b00000010,
    APP_NOTIFY_NETWORK_FOUND = 0b00000100,
    APP_NOTIFY_BATTERY_EVENT = 0b00100000,
-   APP_NOTIFY_SCHEDULE_DEVICE = 0b01000000,
    APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED = 0b10000000
 } app_notification_t;
 
@@ -32,14 +31,12 @@ typedef struct __attribute__ ((__packed__))
 
 // Application Task Public Functions
 void app_notify(app_notification_t notification, bool from_isr);
-void app_schedule_device(const uint8_t *uid);
 void app_activate_find_my_tottag(uint32_t seconds_to_activate);
 
 // Ranging Task Public Functions
 void ranging_begin(schedule_role_t role);
 void ranging_end(void);
 bool ranging_active(void);
-void ranging_schedule_device(const uint8_t *device_id);
 
 // Storage Task Public Functions
 void storage_flush_and_shutdown(void);

@@ -1,8 +1,8 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "logging.h"
-#include "ranging_phase.h"
 #include "schedule_phase.h"
+#include "subscription_phase.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@ scheduler_phase_t schedule_phase_tx_complete(void)
 {
    // Forward this request to the next phase if not currently in the Schedule Phase
    if (current_phase != SCHEDULE_PHASE)
-      return ranging_phase_tx_complete();
+      return subscription_phase_tx_complete();
 
    // Retransmit the schedule up to the specified number of times
    next_action_timestamp += SCHEDULE_RESEND_INTERVAL_US;
@@ -112,27 +112,17 @@ scheduler_phase_t schedule_phase_tx_complete(void)
       return SCHEDULE_PHASE;
    }
 
-   // Move to the Ranging Phase of the ranging protocol
-   current_phase = RANGING_PHASE;
+   // Move to the Subscription Phase of the ranging protocol
+   current_phase = SUBSCRIPTION_PHASE;
    next_action_timestamp += ((uint32_t)(SCHEDULE_NUM_TOTAL_BROADCASTS - schedule_packet.sequence_number)) * SCHEDULE_RESEND_INTERVAL_US;
-   return ranging_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+   return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
 }
 
 scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
 {
    // Forward this request to the next phase if not currently in the Schedule Phase
    if (current_phase != SCHEDULE_PHASE)
-   {
-      // Determine if a colliding network is present
-      bool device_found = false;
-      for (uint8_t i = 0; i < schedule_packet.num_devices; ++i)
-         if (schedule_packet.schedule[i] == schedule->header.sourceAddr[0])
-         {
-            device_found = true;
-            break;
-         }
-      return device_found ? ranging_phase_rx_complete((ranging_packet_t*)schedule) : MESSAGE_COLLISION;
-   }
+      return subscription_phase_rx_complete((subscription_packet_t*)schedule);
    else if (schedule->header.msgType != SCHEDULE_PACKET)
    {
       // Immediately restart listening for schedule packets
@@ -152,7 +142,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    }
 
    // Unpack the received schedule
-   scheduled_slot = 0;
+   scheduled_slot = UNSCHEDULED_SLOT;
    schedule_packet.epoch_time_unix = schedule->epoch_time_unix;
    schedule_packet.num_devices = schedule->num_devices;
    for (uint8_t i = 0; i < schedule->num_devices; ++i)
@@ -164,17 +154,13 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    for (uint8_t i = schedule->num_devices; i < MAX_NUM_RANGING_DEVICES; ++i)
       schedule_packet.schedule[i] = 0;
 
-   // Ensure that the schedule included a slot for this device
-   if (!scheduled_slot)
-      return RANGING_ERROR;
-
    // Set up the reference timestamp for scheduling future messages
    reference_time = (ranging_radio_readrxtimestamp() - US_TO_DWT((uint32_t)schedule->sequence_number * SCHEDULE_RESEND_INTERVAL_US)) & 0xFFFFFFFE00UL;
    dwt_setreferencetrxtime((uint32_t)(reference_time >> 8));
 
    // Retransmit the schedule at the specified time slot
    schedule_packet.sequence_number = scheduled_slot + SCHEDULE_NUM_MASTER_BROADCASTS - 1;
-   if ((schedule->sequence_number < schedule_packet.sequence_number) && (schedule_packet.sequence_number < SCHEDULE_NUM_TOTAL_BROADCASTS))
+   if ((scheduled_slot != UNSCHEDULED_SLOT) && (schedule->sequence_number < schedule_packet.sequence_number) && (schedule_packet.sequence_number < SCHEDULE_NUM_TOTAL_BROADCASTS))
    {
       const uint16_t packet_size = sizeof(schedule_packet_t) - MAX_NUM_RANGING_DEVICES + schedule_packet.num_devices;
       next_action_timestamp += (uint32_t)(schedule_packet.sequence_number - schedule->sequence_number) * SCHEDULE_RESEND_INTERVAL_US;
@@ -188,17 +174,17 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
       return SCHEDULE_PHASE;
    }
 
-   // Move to the Ranging Phase of the ranging protocol
-   current_phase = RANGING_PHASE;
+   // Move to the Subscription Phase of the ranging protocol
+   current_phase = SUBSCRIPTION_PHASE;
    next_action_timestamp += ((uint32_t)(SCHEDULE_NUM_TOTAL_BROADCASTS - schedule->sequence_number)) * SCHEDULE_RESEND_INTERVAL_US;
-   return ranging_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+   return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
 }
 
 scheduler_phase_t schedule_phase_rx_error(void)
 {
    // Forward this request to the next phase if not currently in the Schedule Phase
    if (current_phase != SCHEDULE_PHASE)
-      return ranging_phase_rx_error();
+      return subscription_phase_rx_error();
    return RANGING_ERROR;
 }
 

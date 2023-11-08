@@ -8,6 +8,7 @@
 #include "schedule_phase.h"
 #include "scheduler.h"
 #include "status_phase.h"
+#include "subscription_phase.h"
 #include "system.h"
 
 
@@ -19,7 +20,7 @@ static am_hal_timer_config_t wakeup_timer_config;
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint8_t read_buffer[128], device_eui, schedule_reception_timeout;
 static uint8_t empty_round_timeout, eui[EUI_LEN];
-static volatile bool is_running, is_starting;
+static volatile bool is_running;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -54,7 +55,7 @@ static void handle_range_computation_phase(bool is_master)
    ranging_radio_sleep(true);
    if (!is_master)
    {
-      const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
+      const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
       wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
       am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
       am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
@@ -135,12 +136,7 @@ void scheduler_init(uint8_t *uid)
       // Set the DW3000 callback configuration
       ranging_radio_register_callbacks(tx_callback, rx_callback, rx_timeout_callback, rx_timeout_callback);
    }
-   is_running = is_starting = false;
-}
-
-void scheduler_prepare(void)
-{
-   is_starting = true;
+   is_running = false;
 }
 
 void scheduler_run(schedule_role_t role, uint32_t timestamp)
@@ -155,14 +151,14 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
    schedule_reception_timeout = empty_round_timeout = 0;
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 
-   // Initialize the Schedule, Ranging, and Status phases
+   // Initialize the Schedule, Ranging, Status, and Subscription phases
    schedule_phase_initialize(eui, role == ROLE_MASTER, timestamp - 1);
    ranging_phase_initialize(eui);
    status_phase_initialize(eui);
+   subscription_phase_initialize(eui);
 
    // Initialize the scheduler or wakeup timers based on the device role
    is_running = true;
-   is_starting = false;
    if (role == ROLE_MASTER)
    {
       // Initialize the scheduler timer
@@ -195,8 +191,6 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
          {
             // Wake up the radio and wait until all schedule updating tasks have completed
             ranging_radio_wakeup();
-            while (ranging_phase == UPDATING_SCHEDULE_PHASE)
-               vTaskDelay(1);
             ranging_phase = schedule_phase_begin() ? SCHEDULE_PHASE : RANGING_ERROR;
          }
 
@@ -252,25 +246,6 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
 
    // Put the DW3000 radio into deep sleep mode
    ranging_radio_sleep(true);
-}
-
-void scheduler_add_device(uint8_t eui)
-{
-   // Only schedule a device if currently running or about to start
-   if (!is_running)
-   {
-      if (!is_starting)
-         return;
-      while (!is_running)
-         vTaskDelay(1);
-   }
-
-   // Ensure that schedule changes only occur while not actively ranging
-   while (ranging_phase != UNSCHEDULED_TIME_PHASE)
-      vTaskDelay(pdMS_TO_TICKS(2));
-   ranging_phase = UPDATING_SCHEDULE_PHASE;
-   schedule_phase_add_device(eui);
-   ranging_phase = UNSCHEDULED_TIME_PHASE;
 }
 
 void scheduler_stop(void)
