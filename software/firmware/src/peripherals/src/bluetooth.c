@@ -1,9 +1,8 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "bluetooth.h"
-#include "app_api.h"
+#include "app_main.h"
 #include "device_info_service.h"
-#include "dm_api.h"
 #include "gatt_api.h"
 #include "gap_gatt_service.h"
 #include "hci_drv_apollo.h"
@@ -13,19 +12,17 @@
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
-#include "scheduling_functionality.h"
-#include "scheduling_service.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static volatile uint16_t connection_mtu;
-static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, quick_scanning;
+static volatile bool is_scanning, is_advertising, is_connected, ranges_requested;
 static volatile bool data_requested, expected_scanning, expected_advertising, is_initialized;
 static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
 static uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN];
-static uint8_t current_ranging_role[3], device_id[EUI_LEN], requesting_id[EUI_LEN];
+static uint8_t current_ranging_role[3], device_id[EUI_LEN];
 static ble_discovery_callback_t discovery_callback;
 
 
@@ -114,20 +111,8 @@ void appUiBtnPoll(void) {}
 
 static void deviceManagerCallback(dmEvt_t *pDmEvt)
 {
-   // Give the BLE protocol stack a first chance to handle the event
-   dmConnId_t conn_id = (dmConnId_t)pDmEvt->hdr.param;
-   if ((conn_id == DM_CONN_ID_NONE) || (DmConnRole(conn_id) == DM_ROLE_MASTER))
-   {
-      AppMasterProcDmMsg(pDmEvt);
-      AppMasterSecProcDmMsg(pDmEvt);
-   }
-   if ((conn_id == DM_CONN_ID_NONE) || (DmConnRole(conn_id) == DM_ROLE_SLAVE))
-   {
-      AppSlaveProcDmMsg(pDmEvt);
-      AppSlaveSecProcDmMsg(pDmEvt);
-   }
-
    // Handle the Device Manager message based on its type
+   AppSlaveProcDmMsg(pDmEvt);
    switch (pDmEvt->hdr.event)
    {
       case DM_RESET_CMPL_IND:
@@ -149,12 +134,10 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          is_connected = true;
          connection_mtu = AttGetMtu(pDmEvt->hdr.param);
          AttsCccInitTable(pDmEvt->hdr.param, NULL);
-         if (DmConnRole(conn_id) == DM_ROLE_MASTER)
-            AttcWriteReq(conn_id, REQUEST_HANDLE, sizeof(requesting_id), requesting_id);
          break;
       case DM_CONN_CLOSE_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_CLOSE_IND\n");
-         is_connected = ranges_requested = data_requested = quick_scanning = false;
+         is_connected = ranges_requested = data_requested = false;
          AttsCccClearTable(pDmEvt->hdr.param);
          break;
       case DM_ADV_START_IND:
@@ -169,11 +152,11 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          break;
       case DM_SCAN_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_START_IND\n");
-         is_scanning = !quick_scanning;
+         is_scanning = (pDmEvt->hdr.status == HCI_SUCCESS);
          break;
       case DM_SCAN_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
-         is_scanning = quick_scanning = false;
+         is_scanning = false;
          if (expected_scanning)
             bluetooth_start_scanning();
          break;
@@ -195,6 +178,11 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_PHY_UPDATE_IND:
          print("TotTag BLE: deviceManagerCallback: Negotiated PHY: RX = %d, TX = %d\n", pDmEvt->phyUpdate.rxPhy, pDmEvt->phyUpdate.txPhy);
          break;
+      case DM_HW_ERROR_IND:
+         print("TotTag BLE: deviceManagerCallback: Received DM_HW_ERROR_IND...Rebooting BLE\n");
+         HciDrvRadioBoot(false);
+         DmDevReset();
+         break;
       default:
          print("TotTag BLE: deviceManagerCallback: Received Event ID %d\n", pDmEvt->hdr.event);
          break;
@@ -209,11 +197,6 @@ static void attProtocolCallback(attEvt_t *pEvt)
       case ATT_MTU_UPDATE_IND:
          print("TotTag BLE: attProtocolCallback: Negotiated MTU = %u\n", (uint32_t)pEvt->mtu);
          connection_mtu = pEvt->mtu;
-         break;
-      case ATTC_WRITE_RSP:
-         print("TotTag BLE: attProtocolCallback: Data Write Completed = %u\n", (uint32_t)pEvt->hdr.status);
-         if (pEvt->handle == REQUEST_HANDLE)
-            AppConnClose((dmConnId_t)pEvt->hdr.param);
          break;
       case ATTS_HANDLE_VALUE_CNF:
          print("TotTag BLE: attProtocolCallback: Data Notify Completed = %u\n", (uint32_t)pEvt->hdr.status);
@@ -245,7 +228,7 @@ void bluetooth_init(uint8_t* uid)
    const uint8_t ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
    memcpy(current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
-   is_scanning = is_advertising = is_connected = ranges_requested = quick_scanning = false;
+   is_scanning = is_advertising = is_connected = ranges_requested = false;
    memcpy(device_id, uid, EUI_LEN);
    discovery_callback = NULL;
 
@@ -282,10 +265,10 @@ void bluetooth_deinit(void)
 void bluetooth_start(void)
 {
    // Register all BLE protocol stack callback functions
-   AppMasterInit();
    AppSlaveInit();
    DmRegister(deviceManagerCallback);
    DmConnRegister(DM_CLIENT_ID_APP, deviceManagerCallback);
+   DmSetDefaultPhy(HCI_ALL_PHY_ALL_PREFERENCES, HCI_PHY_LE_2M_BIT, HCI_PHY_LE_2M_BIT);
    AttRegister(attProtocolCallback);
    AttsCccRegister(TOTTAG_NUM_CCC_CHARACTERISTICS, (attsCccSet_t*)characteristicSet, cccCallback);
 
@@ -297,8 +280,6 @@ void bluetooth_start(void)
    liveStatsAddGroup();
    deviceMaintenanceRegisterCallbacks(handleDeviceMaintenanceRead, handleDeviceMaintenanceWrite);
    deviceMaintenanceAddGroup();
-   schedulingRegisterCallbacks(handleSchedulingRead, handleSchedulingWrite);
-   schedulingAddGroup();
 
    // Set the GATT Service Changed CCCD index
    GattSetSvcChangedIdx(TOTTAG_GATT_SERVICE_CHANGED_CCC_IDX);
@@ -330,16 +311,6 @@ void bluetooth_set_current_ranging_role(uint8_t ranging_role)
    current_ranging_role[2] = ranging_role;
    AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
    AppAdvStop();
-}
-
-void bluetooth_join_ranging_network(const uint8_t *ble_address, const uint8_t *requesting_address)
-{
-   // Attempt to connect to the peer device
-   quick_scanning = true;
-   memcpy(requesting_id, requesting_address ? requesting_address : device_id, EUI_LEN);
-   AppConnOpen(DM_ADDR_PUBLIC, (uint8_t*)ble_address, APP_DB_HDL_NONE);
-   while (quick_scanning)
-      vTaskDelay(1);
 }
 
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length)
@@ -379,7 +350,10 @@ void bluetooth_start_scanning(void)
    // Attempt to start scanning
    expected_scanning = true;
    if (is_initialized)
-      AppScanStart(ble_master_cfg.discMode, ble_master_cfg.scanType, ble_master_cfg.scanDuration);
+   {
+      DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
+      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
+   }
 }
 
 void bluetooth_stop_scanning(void)
@@ -387,26 +361,14 @@ void bluetooth_stop_scanning(void)
    // Attempt to stop scanning
    expected_scanning = false;
    if (is_initialized)
-      AppScanStop();
+      DmScanStop();
 }
 
 void bluetooth_reset_scanning(void)
 {
    // Attempt to stop scanning without changing the scanning expectation
    if (is_initialized)
-      AppScanStop();
-}
-
-void bluetooth_single_scan(uint16_t milliseconds)
-{
-   // Initiate a one-time scan if not already scanning
-   if (!expected_scanning)
-   {
-      quick_scanning = true;
-      AppScanStart(ble_master_cfg.discMode, ble_master_cfg.scanType, milliseconds);
-      while (quick_scanning)
-         vTaskDelay(1);
-   }
+      DmScanStop();
 }
 
 bool bluetooth_is_scanning(void)
@@ -433,6 +395,6 @@ void bluetooth_add_device_to_whitelist(uint8_t* uid)
 {
    // Add the specified device to the whitelist
    DmDevWhiteListAdd(DM_ADDR_PUBLIC, uid);
-   DmDevSetFilterPolicy(DM_FILT_POLICY_MODE_ADV, HCI_ADV_FILT_CONN);
+   //DmDevSetFilterPolicy(DM_FILT_POLICY_MODE_ADV, HCI_ADV_FILT_CONN);
    DmDevSetFilterPolicy(DM_FILT_POLICY_MODE_SCAN, HCI_FILT_WHITE_LIST);
 }

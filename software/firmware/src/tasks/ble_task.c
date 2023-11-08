@@ -41,25 +41,21 @@ static void ble_stack_init(void)
 
    // Set up callback functions for the various layers of the BLE stack
    HciHandlerInit(WsfOsSetNextHandler(HciHandler));
-   wsfHandlerId_t handlerId = WsfOsSetNextHandler(DmHandler);
    DmDevVsInit(0);
    DmAdvInit();
    DmScanInit();
    DmPhyInit();
    DmConnInit();
-   DmConnMasterInit();
    DmConnSlaveInit();
-   DmHandlerInit(handlerId);
+   DmHandlerInit(WsfOsSetNextHandler(DmHandler));
    L2cSlaveHandlerInit(WsfOsSetNextHandler(L2cSlaveHandler));
-   L2cInit();
    L2cSlaveInit();
-   L2cMasterInit();
+   L2cInit();
 
    AttHandlerInit(WsfOsSetNextHandler(AttHandler));
    AttsInit();
    AttsIndInit();
-   AttcInit();
-   HciSetMaxRxAclLen(251);
+   HciSetMaxRxAclLen(BLE_DESIRED_MTU + 4);
 
    AppHandlerInit(WsfOsSetNextHandler(AppHandler));
    HciDrvHandlerInit(WsfOsSetNextHandler(HciDrvHandler));

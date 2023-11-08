@@ -14,7 +14,7 @@
 #define MODULE_PANID                                        0x6611
 
 #define US_TO_DWT(_microsec)                                ((uint64_t)((_microsec) * 499.2 * 128.0))
-#define DWT_TO_US(_dw_units)                                ((uint64_t)((_dw_units) / (499.2 * 128.0)))
+#define DWT_TO_US(_dw_units)                                ((uint32_t)((_dw_units) / (499.2 * 128.0)))
 #define DW_DELAY_FROM_US(_us)                               ((uint32_t)(US_TO_DWT((_us)) >> 8))
 #define DW_TIMEOUT_FROM_US(_us)                             ((uint32_t)((_us) * 499.2 / 512.0))
 

@@ -529,19 +529,6 @@ void storage_store_experiment_details(const experiment_details_t *details)
    }
 }
 
-void storage_retrieve_experiment_details(experiment_details_t *details)
-{
-   // Retrieve experiment details
-   if (!in_maintenance_mode)
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
-   if (read_page(transfer_buffer, starting_page))
-      memcpy(details, transfer_buffer + 4, sizeof(*details));
-   else
-      memset(details, 0, sizeof(*details));
-   if (!in_maintenance_mode)
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
-}
-
 void storage_store(const void *data, uint32_t data_length)
 {
    // Add new data to in-memory cache if not disabled
@@ -573,6 +560,19 @@ void storage_flush(bool write_partial_pages)
 }
 
 #ifndef _TEST_BLUETOOTH
+
+void storage_retrieve_experiment_details(experiment_details_t *details)
+{
+   // Retrieve experiment details
+   if (!in_maintenance_mode)
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+   if (read_page(transfer_buffer, starting_page))
+      memcpy(details, transfer_buffer + 4, sizeof(*details));
+   else
+      memset(details, 0, sizeof(*details));
+   if (!in_maintenance_mode)
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+}
 
 void storage_begin_reading(void)
 {
