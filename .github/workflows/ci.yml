@@ -11,5 +11,5 @@ jobs:
       - uses: carlosperate/arm-none-eabi-gcc-action@v1
         with:
           release: '11.3.Rel1'
-      - name: compile-revI
-        run: pushd software/firmware && make clean && make -j all BOARD_REV=I
+      - name: compile-revM
+        run: pushd software/firmware && make clean && make -j all BOARD_REV=M
