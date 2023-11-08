@@ -66,8 +66,8 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length)
       experiment_details_t details;
       transmit_index = buffer_index = 0;
       storage_retrieve_experiment_details(&details);
-      total_data_length = storage_retrieve_data_length();
       buffer_length = (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer);
+      total_data_length = buffer_length ? storage_retrieve_data_length() : 0;
       AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length), (uint8_t*)&total_data_length);
       AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(details), (uint8_t*)&details);
    }

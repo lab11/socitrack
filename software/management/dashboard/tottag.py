@@ -12,6 +12,7 @@ import os, pickle, pytz
 import tkinter as tk
 import tkcalendar
 import threading
+import contextlib
 import asyncio
 
 
@@ -183,10 +184,9 @@ class TotTagBLE(threading.Thread):
       command = 'START'
       while command != 'QUIT':
          command = await self.command_queue.get()
+         await self.download_logs_done()
          if self.subscribed_to_notifications:
             await self.unsubscribe_from_ranges()
-         if self.downloading_log_file:
-            await self.download_logs_done()
          if command in self.operations:
             await self.operations[command]()
          else:
@@ -206,6 +206,8 @@ class TotTagBLE(threading.Thread):
          self.data_details = None
          self.data_length = struct.unpack('<I', data[0:4])[0]
          self.data = bytearray(self.data_length)
+         if self.data_length == 0:
+            self.data_length = 1
          self.result_queue.put_nowait(('LOGDATA', self.data_length))
       elif self.data_details is None:
          self.data_details = unpack_experiment_details(data)
@@ -219,7 +221,12 @@ class TotTagBLE(threading.Thread):
    async def scan_for_tottags(self):
       self.result_queue.put_nowait(('SCANNING', True))
       self.discovered_devices.clear()
-      for device_address, device_info in (await BleakScanner.discover(5.0, return_adv=True)).items():
+      stop_event = asyncio.Event()
+      scanner = BleakScanner(cb={ 'use_bdaddr': True })
+      await scanner.start()
+      await asyncio.sleep(5)
+      await scanner.stop()
+      for device_address, device_info in scanner.discovered_devices_and_advertisement_data.items():
          if device_info[1].local_name == 'TotTag':
             self.discovered_devices[device_address] = device_info[0]
             self.result_queue.put_nowait(('DEVICE', device_address))
@@ -343,14 +350,15 @@ class TotTagBLE(threading.Thread):
       self.command_queue.task_done()
 
    async def download_logs_done(self):
-      self.downloading_log_file = False
-      try:
-         self.result_queue.put_nowait(('DOWNLOADED', True))
-         await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
-         if self.data_index == self.data_length:
-            process_tottag_data(int(self.connected_device.address.split[':'][-1]), self.storage_directory, self.data_details, self.data)
-      except Exception:
-         self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
+      if self.downloading_log_file:
+         try:
+            self.downloading_log_file = False
+            self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
+            await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
+            if self.data_index == self.data_length:
+               process_tottag_data(int(self.connected_device.address.split[':'][-1]), self.storage_directory, self.data_details, self.data)
+         except Exception:
+            self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
 
 
 # GUI DESIGN ----------------------------------------------------------------------------------------------------------
@@ -684,6 +692,7 @@ class TotTagGUI(tk.Frame):
             if data:
                self.device_list.clear()
                self.scan_button['state'] = ['disabled']
+               self.connect_button['state'] = ['disabled']
                self.schedule_button['state'] = ['disabled']
                self.tottag_selection.set('Scanning for TotTags...')
                tk.Label(self.canvas, text="Scanning for TotTag devices. Please wait...").pack(fill=tk.BOTH, expand=True)
@@ -770,7 +779,11 @@ class TotTagGUI(tk.Frame):
             self._log_data_received(data)
          elif key == 'DOWNLOADED':
             self._clear_canvas()
-            tk.Label(self.canvas, text="Download complete! Your files were saved to:\n\n"+self.save_directory.get()).pack(fill=tk.BOTH, expand=True)
+            if data:
+               text = "Download complete! Your files were saved to:\n\n"+self.save_directory.get()
+            else:
+               text = "No data downloaded!\n\nPlease ensure that your TotTag is charging and in maintenance mode."
+            tk.Label(self.canvas, text=text).pack(fill=tk.BOTH, expand=True)
          else:
             print('Unrecognized BLE Data:', key, '=', data)
       if self.ble_comms.is_alive():
