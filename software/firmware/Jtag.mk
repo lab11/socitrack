@@ -36,16 +36,15 @@ endif
 .PHONY: UID flash
 UID: $(CONFIG)
 	printf "r\n" > $(CONFIG)/flash.jlink
+ifdef ID
 	printf "w4 $(ID_FLASH_LOCATION), 0x$(ID_SECON) 0x$(ID_FIRST)\n" >> $(CONFIG)/flash.jlink
 	printf "exit\n" >> $(CONFIG)/flash.jlink
 	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
+endif
 
 # Code Flash Rule
 flash: all
 	printf "r\n" > $(CONFIG)/flash.jlink
-ifdef ID
-	printf "w4 $(ID_FLASH_LOCATION), 0x$(ID_SECON) 0x$(ID_FIRST)\n" >> $(CONFIG)/flash.jlink
-endif
 	printf "loadfile $(CONFIG)/$(TARGET).bin $(FLASH_START)\nr\ng\nexit\n" >> $(CONFIG)/flash.jlink
 	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
 
