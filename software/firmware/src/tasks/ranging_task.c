@@ -20,13 +20,6 @@ void ranging_begin(schedule_role_t role)
    xTaskNotify(ranging_task_handle, role, eSetValueWithOverwrite);
 }
 
-void ranging_end(void)
-{
-   // Force ranging task to end
-   if (is_ranging)
-      scheduler_stop();
-}
-
 bool ranging_active(void)
 {
    // Return whether actively ranging

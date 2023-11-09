@@ -66,7 +66,7 @@ static const attsCccSet_t characteristicSet[TOTTAG_NUM_CCC_CHARACTERISTICS] =
 {
    { GATT_SERVICE_CHANGED_CCC_HANDLE,  ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE },
    { RANGES_CCC_HANDLE,                  ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
-   { MAINTENANCE_RESULT_CCC_HANDLE,      ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE }
+   { MAINTENANCE_RESULT_CCC_HANDLE,    ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE }
 };
 
 
@@ -216,7 +216,7 @@ static void cccCallback(attsCccEvt_t *pEvt)
    if (pEvt->idx == TOTTAG_RANGING_CCC_IDX)
       ranges_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
    else if (pEvt->idx == TOTTAG_MAINTENANCE_RESULT_CCC_IDX)
-      data_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
+      data_requested = (pEvt->value == ATT_CLIENT_CFG_INDICATE);
 }
 
 

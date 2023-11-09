@@ -35,7 +35,6 @@ void app_activate_find_my_tottag(uint32_t seconds_to_activate);
 
 // Ranging Task Public Functions
 void ranging_begin(schedule_role_t role);
-void ranging_end(void);
 bool ranging_active(void);
 
 // Storage Task Public Functions

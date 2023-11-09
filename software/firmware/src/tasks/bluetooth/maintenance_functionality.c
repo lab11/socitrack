@@ -68,14 +68,15 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length)
       storage_retrieve_experiment_details(&details);
       buffer_length = (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer);
       total_data_length = buffer_length ? storage_retrieve_data_length() : 0;
-      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length), (uint8_t*)&total_data_length);
-      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(details), (uint8_t*)&details);
+      memcpy(transmit_buffer, &total_data_length, sizeof(total_data_length));
+      memcpy(transmit_buffer + sizeof(total_data_length), &details, sizeof(details));
+      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length) + sizeof(details), transmit_buffer);
    }
    else if (transmit_index < total_data_length)
    {
       // Transmit the next chunk of data
       const uint16_t transmit_length = MIN(max_length, buffer_length - buffer_index);
-      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
+      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
       transmit_index += transmit_length;
       buffer_index += transmit_length;
 
@@ -93,7 +94,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length)
       // Transit a completion packet
       storage_end_reading();
       uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
-      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
+      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
       ++transmit_index;
    }
 }

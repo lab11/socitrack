@@ -203,14 +203,12 @@ class TotTagBLE(threading.Thread):
    def data_callback(self, _sender_uuid, data):
       if self.data_length == 0:
          self.data_index = 0
-         self.data_details = None
          self.data_length = struct.unpack('<I', data[0:4])[0]
          self.data = bytearray(self.data_length)
          if self.data_length == 0:
             self.data_length = 1
+         self.data_details = unpack_experiment_details(data[4:])
          self.result_queue.put_nowait(('LOGDATA', self.data_length))
-      elif self.data_details is None:
-         self.data_details = unpack_experiment_details(data)
       elif len(data) == 1 and data[0] == MAINTENANCE_DOWNLOAD_COMPLETE:
          self.command_queue.put_nowait('DOWNLOAD_DONE')
       else:
