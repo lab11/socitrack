@@ -602,6 +602,11 @@ void storage_exit_maintenance_mode(void)
 
 uint32_t storage_retrieve_data_length(void)
 {
+   // Ensure that we are in reading mode
+   if (!is_reading)
+      return 0;
+
+   // Read and return the number of bytes available to read
    uint32_t data_length = (BBM_LUT_BASE_ADDRESS - starting_page - 1) * MEMORY_NUM_DATA_BYTES_PER_PAGE;
    if (starting_page < current_page)
       data_length = ((current_page - starting_page - 1) * MEMORY_NUM_DATA_BYTES_PER_PAGE) + cache_index;

@@ -36,7 +36,7 @@
 #define COMPRESSED_RANGE_DATUM_LENGTH               (1 + sizeof(int16_t))       // EUI + Range
 #define MAX_COMPRESSED_RANGE_DATA_LENGTH            (1 + (COMPRESSED_RANGE_DATUM_LENGTH * MAX_NUM_RANGING_DEVICES))
 
-#define STORAGE_QUEUE_MAX_NUM_ITEMS                 16
+#define STORAGE_QUEUE_MAX_NUM_ITEMS                 24
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 

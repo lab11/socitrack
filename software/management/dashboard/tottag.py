@@ -12,7 +12,6 @@ import os, pickle, pytz
 import tkinter as tk
 import tkcalendar
 import threading
-import contextlib
 import asyncio
 
 
@@ -124,10 +123,12 @@ def process_tottag_data(from_uid, storage_directory, details, data):
       uid_to_labels[int(details['uids'][i][0])] = label if label else details['uids'][i][0]
    i = 0
    log_data = defaultdict(dict)
+   with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
+      file.write(data)
    while i < len(data):
-      timestamp = struct.unpack('<I', data[i+1:i+5])
+      timestamp = struct.unpack('<I', data[i+1:i+5])[0]
       if data[i] == STORAGE_TYPE_VOLTAGE:
-         log_data[timestamp]['v'] = struct.unpack('<I', data[i+5:i+9])
+         log_data[timestamp]['v'] = struct.unpack('<I', data[i+5:i+9])[0]
          i += 9
       elif data[i] == STORAGE_TYPE_CHARGING_EVENT:
          log_data[timestamp]['c'] = BATTERY_CODES[data[i+5]]
@@ -138,11 +139,11 @@ def process_tottag_data(from_uid, storage_directory, details, data):
       elif data[i] == STORAGE_TYPE_RANGES:
          log_data[timestamp]['r'] = {}
          for j in range(data[i+5]):
-            log_data[timestamp]['r'][uid_to_labels[data[i+6+(j*3)]]] = struct.unpack('<h', data[i+7+(j*3):i+9+(j*3)])
+            log_data[timestamp]['r'][uid_to_labels[data[i+6+(j*3)]]] = struct.unpack('<h', data[i+7+(j*3):i+9+(j*3)])[0]
          i += 6 + data[i+5]*3
    log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
-      pickle.dump(dict(log_data), file, protocol=pickle.HIGHEST_PROTOCOL)
+      pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # BLUETOOTH LE COMMUNICATIONS -----------------------------------------------------------------------------------------
@@ -219,7 +220,6 @@ class TotTagBLE(threading.Thread):
    async def scan_for_tottags(self):
       self.result_queue.put_nowait(('SCANNING', True))
       self.discovered_devices.clear()
-      stop_event = asyncio.Event()
       scanner = BleakScanner(cb={ 'use_bdaddr': True })
       await scanner.start()
       await asyncio.sleep(5)
@@ -354,7 +354,7 @@ class TotTagBLE(threading.Thread):
             self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
             await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
             if self.data_index == self.data_length:
-               process_tottag_data(int(self.connected_device.address.split[':'][-1]), self.storage_directory, self.data_details, self.data)
+               process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data)
          except Exception:
             self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
 

@@ -60,6 +60,7 @@ static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t
 {
    const uint8_t storage_type = STORAGE_TYPE_RANGES;
    storage_store(&storage_type, sizeof(storage_type));
+   storage_store(&timestamp, sizeof(timestamp));
    storage_store(range_data, range_data_len);
    storage_flush(false);
 }
