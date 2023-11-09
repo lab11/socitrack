@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_tasks.h"
+#include "bluetooth.h"
 #include "rtc.h"
 #include "scheduler.h"
 
@@ -39,7 +40,11 @@ void RangingTask(void *uid)
    {
       // Sleep until time to start ranging with the indicated role
       if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && uid)
+      {
+         bluetooth_set_current_ranging_role(desired_role_bits);
          scheduler_run((schedule_role_t)desired_role_bits, rtc_get_timestamp());
+         bluetooth_set_current_ranging_role(ROLE_IDLE);
+      }
 
       // Notify the application that network connectivity has been lost
       is_ranging = false;

@@ -48,27 +48,34 @@ static void handle_notification(app_notification_t notification)
       verify_app_configuration();
    if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
    {
-      // Search for the non-sleeping device with the highest ID that is higher than our own
-      int32_t best_device_idx = -1;
-      uint8_t highest_device_id = device_uid_short;
-      for (uint8_t i = 0; i < num_discovered_devices; ++i)
-         if ((discovered_devices[i][EUI_LEN] != ROLE_ASLEEP) && (discovered_devices[i][0] > highest_device_id))
-         {
-            best_device_idx = i;
-            highest_device_id = discovered_devices[i][0];
-         }
+      // Determine if an actively ranging device was located
+      bool ranging_device_located = false, idle_device_located = false;
+      for (uint8_t i = 0; !ranging_device_located && (i < num_discovered_devices); ++i)
+         if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) || (discovered_devices[i][EUI_LEN] == ROLE_PARTICIPANT))
+            ranging_device_located = true;
+         else if (discovered_devices[i][EUI_LEN] == ROLE_IDLE)
+            idle_device_located = true;
 
-      // If a potential master candidate device was found, attempt to connect to it
-      if (best_device_idx >= 0)
-      {
-         // Set our role as a ranging participant and start the ranging process
+      // Start the ranging task based on the state of the detected devices
+      if (ranging_device_located)
          ranging_begin(ROLE_PARTICIPANT);
-         //bluetooth_set_current_ranging_role(ROLE_PARTICIPANT);
-      }
-      else
+      else if (idle_device_located)
       {
-         ranging_begin(ROLE_MASTER);
-         //bluetooth_set_current_ranging_role(ROLE_MASTER);
+         // Search for the non-sleeping device with the highest ID that is higher than our own
+         int32_t best_device_idx = -1;
+         uint8_t highest_device_id = device_uid_short;
+         for (uint8_t i = 0; i < num_discovered_devices; ++i)
+            if ((discovered_devices[i][EUI_LEN] != ROLE_ASLEEP) && (discovered_devices[i][0] > highest_device_id))
+            {
+               best_device_idx = i;
+               highest_device_id = discovered_devices[i][0];
+            }
+
+         // If a potential master candidate device was found, attempt to connect to it
+         if (best_device_idx >= 0)
+            ranging_begin(ROLE_PARTICIPANT);
+         else
+            ranging_begin(ROLE_MASTER);
       }
 
       // Reset the devices-found flag and verify the app configuration
@@ -194,7 +201,7 @@ void AppTaskRanging(void *uid)
    devices_found = false;
    while (!bluetooth_is_initialized())
       vTaskDelay(1);
-   bluetooth_set_current_ranging_role(ROLE_UNKNOWN);
+   bluetooth_set_current_ranging_role(ROLE_IDLE);
 
    // Update the BLE address whitelist
    bluetooth_clear_whitelist();
