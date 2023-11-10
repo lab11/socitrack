@@ -33,6 +33,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    schedule_length = schedule_size;
    reference_time = ((uint64_t)start_delay_dwt) << 8;
    dwt_setreferencetrxtime(start_delay_dwt);
+   ranging_radio_choose_antenna(0);
 
    // Reset the necessary Subscription Phase parameters
    if (schedule_index == UNSCHEDULED_SLOT)
@@ -49,7 +50,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
       dwt_setdelayedtrxtime(0);
       dwt_setpreambledetecttimeout(0);
       dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US));
-      if (dwt_rxenable(DWT_START_RX_DLY_REF) != DWT_SUCCESS)
+      if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
          print("ERROR: Unable to start listening for SUBSCRIPTION packets\n");
       else
          return SUBSCRIPTION_PHASE;
@@ -65,6 +66,7 @@ scheduler_phase_t subscription_phase_tx_complete(void)
    // Forward this request to the next phase if not currently in the Subscription Phase
    if (current_phase != SUBSCRIPTION_PHASE)
       return ranging_phase_tx_complete();
+   current_phase = RANGING_PHASE;
    return ranging_phase_begin(schedule_index, schedule_length, (uint32_t)((reference_time + US_TO_DWT(SUBSCRIPTION_BROADCAST_PERIOD_US)) >> 8) & 0xFFFFFFFE);
 }
 
@@ -84,6 +86,10 @@ scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet)
 
 scheduler_phase_t subscription_phase_rx_error(void)
 {
+   // Forward this request to the next phase if not currently in the Subscription Phase
+   if (current_phase != SUBSCRIPTION_PHASE)
+      return ranging_phase_rx_error();
+
    // Attempt to re-enable listening for additional Subscription packets
    uint32_t time_elapsed_us = DWT_TO_US((uint64_t)(dwt_readsystimestamphi32() - (uint32_t)(reference_time >> 8)) << 8);
    if ((time_elapsed_us + 600) <= (RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US))

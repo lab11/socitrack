@@ -32,7 +32,7 @@ static inline scheduler_phase_t start_tx(const char *error_message)
 static inline scheduler_phase_t start_rx(const char *error_message)
 {
    dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp - RECEIVE_EARLY_START_US));
-   if (dwt_rxenable(DWT_START_RX_DLY_REF) != DWT_SUCCESS)
+   if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
    {
       print(error_message);
       return RADIO_ERROR;

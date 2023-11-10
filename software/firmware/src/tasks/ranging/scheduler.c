@@ -120,11 +120,16 @@ void scheduler_rtc_isr(void)
 
 static void tx_callback(const dwt_cb_data_t *txData)
 {
-   // Notify the main task to handle the interrupt
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+   // Allow the scheduling protocol to handle the interrupt
    ranging_phase = schedule_phase_tx_complete();
-   xTaskNotifyFromISR(notification_handle, RANGING_TX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+   // Determine if the main task needs to be woken up to handle the current ranging phase
+   if ((ranging_phase == RADIO_ERROR) || (ranging_phase == RANGE_COMPUTATION_PHASE))
+   {
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      xTaskNotifyFromISR(notification_handle, RANGING_TX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+   }
 }
 
 static void rx_callback(const dwt_cb_data_t *rxData)
@@ -134,7 +139,7 @@ static void rx_callback(const dwt_cb_data_t *rxData)
    ranging_phase = schedule_phase_rx_complete((schedule_packet_t*)read_buffer);
 
    // Determine if the main task needs to be woken up to handle the current ranging phase
-   if ((ranging_phase == RANGE_COMPUTATION_PHASE) || (ranging_phase == MESSAGE_COLLISION))
+   if ((ranging_phase == RANGE_COMPUTATION_PHASE) || (ranging_phase == MESSAGE_COLLISION) || (ranging_phase == RADIO_ERROR))
    {
       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       xTaskNotifyFromISR(notification_handle, RANGING_RX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
