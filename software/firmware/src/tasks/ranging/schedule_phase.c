@@ -98,6 +98,7 @@ scheduler_phase_t schedule_phase_tx_complete(void)
    next_action_timestamp += SCHEDULE_RESEND_INTERVAL_US;
    while ((++schedule_packet.sequence_number < SCHEDULE_NUM_MASTER_BROADCASTS) && is_master_scheduler)
    {
+      ranging_radio_choose_antenna(schedule_packet.sequence_number % NUM_XMIT_ANTENNAS);
       if (schedule_packet.sequence_number == 1)
       {
          reference_time = ranging_radio_readtxtimestamp() & 0xFFFFFFFE00UL;
