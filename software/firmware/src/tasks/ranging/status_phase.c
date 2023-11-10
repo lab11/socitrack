@@ -67,7 +67,7 @@ scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uin
 
    // Set up the correct initial start time, antenna, and RX timeout duration
    ranging_radio_choose_antenna(0);
-   dwt_setreferencetrxtime(start_delay_dwt + DW_DELAY_FROM_US(400));
+   dwt_setreferencetrxtime(start_delay_dwt + DW_DELAY_FROM_US(1000 - RANGING_BROADCAST_INTERVAL_US));
    dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RANGE_STATUS_TIMEOUT_US));
 
    // Begin transmission or reception depending on the scheduled time slot
@@ -103,7 +103,7 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
    const uint32_t seqNum = packet->sequence_number;
    if (scheduled_slot && (scheduled_slot <= RANGE_STATUS_NUM_TOTAL_BROADCASTS) && (packet->sequence_number < scheduled_slot))
    {
-      packet->sequence_number = scheduled_slot - 1;
+      packet->sequence_number = (scheduled_slot < current_slot) ? scheduled_slot : (scheduled_slot - 1);
       next_action_timestamp += (packet->sequence_number - seqNum) * RANGE_STATUS_RESEND_INTERVAL_US;
       return start_tx("ERROR: Failed to retransmit received STATUS packet\n", packet);
    }

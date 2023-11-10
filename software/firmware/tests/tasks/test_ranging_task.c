@@ -60,9 +60,6 @@ void TestTask(void *uid)
                   scheduler_stop();
                while (is_ranging);
                xTaskNotify(ranging_task_handle, ROLE_MASTER, eSetValueWithOverwrite);
-               for (uint8_t i = 3; i < 8; ++i)
-                  scheduler_add_device(i);
-               scheduler_add_device(0x02);
                break;
             }
             default:
@@ -72,13 +69,7 @@ void TestTask(void *uid)
    }
 #else
    if (desired_role == ROLE_MASTER)
-   {
-      scheduler_prepare();
       xTaskNotify(ranging_task_handle, ROLE_MASTER, eSetValueWithOverwrite);
-      for (uint8_t i = 3; i < 8; ++i)
-         scheduler_add_device(i);
-      scheduler_add_device(0x52);
-   }
    else
       xTaskNotify(ranging_task_handle, ROLE_PARTICIPANT, eSetValueWithOverwrite);
    vTaskSuspend(test_task_handle);

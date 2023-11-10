@@ -14,18 +14,19 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+static schedule_role_t current_role;
 static scheduler_phase_t ranging_phase;
 static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
-static uint8_t read_buffer[128], device_eui, schedule_reception_timeout;
+static uint8_t read_buffer[128], device_eui, reception_timeout;
 static uint8_t empty_round_timeout, eui[EUI_LEN];
 static volatile bool is_running;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-static bool fix_network_errors(uint8_t num_ranging_results)
+static void fix_network_errors(uint8_t num_ranging_results)
 {
    // Have the Scheduler Phase handle any new device timeouts
    uint8_t num_devices = 0;
@@ -44,32 +45,55 @@ static bool fix_network_errors(uint8_t num_ranging_results)
 #else
       empty_round_timeout = 0;
 #endif
-      return false;
    }
-   return true;
 }
 
-static void handle_range_computation_phase(bool is_master)
+static void handle_range_computation_phase(void)
 {
-   // Put the radio into deep-sleep mode and set a timer to wake it before the next round
+   // Put the radio into deep-sleep mode and handle role-specific tasks
    ranging_radio_sleep(true);
-   if (!is_master)
+   switch (current_role)
    {
-      const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
-      wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
-      am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
-      am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
-   }
-
-   // Carry out the ranging algorithm and fix any detected network errors
-   compute_ranges(ranging_results);
-   if (!is_master || fix_network_errors(ranging_results[0]))
-   {
-      bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+      case ROLE_MASTER:
+      {
+         // Carry out the ranging algorithm and fix any detected network errors
+         compute_ranges(ranging_results);
+         fix_network_errors(ranging_results[0]);
+         bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
-      storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         if (ranging_results[0])
+            storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #endif
-      print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         break;
+      }
+      case ROLE_PARTICIPANT:
+      {
+         // Set a timer to wake the radio before the next round
+         const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
+         wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
+         am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
+         am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
+
+         // Carry out the ranging algorithm and fix any detected network errors
+         compute_ranges(ranging_results);
+         bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+#ifndef _TEST_RANGING_TASK
+         if (ranging_results[0])
+            storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+#endif
+         print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         break;
+      }
+      default:
+      {
+         // Set a timer to wake the radio before the next round
+         const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US;
+         wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
+         am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
+         am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
+         break;
+      }
    }
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 }
@@ -105,21 +129,31 @@ static void tx_callback(const dwt_cb_data_t *txData)
 
 static void rx_callback(const dwt_cb_data_t *rxData)
 {
-   // Notify the main task to handle the interrupt
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+   // Read the received data packet and allow the scheduling protocol to handle it
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
    ranging_phase = schedule_phase_rx_complete((schedule_packet_t*)read_buffer);
-   xTaskNotifyFromISR(notification_handle, RANGING_RX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+   // Determine if the main task needs to be woken up to handle the current ranging phase
+   if ((ranging_phase == RANGE_COMPUTATION_PHASE) || (ranging_phase == MESSAGE_COLLISION))
+   {
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      xTaskNotifyFromISR(notification_handle, RANGING_RX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+   }
 }
 
 static void rx_timeout_callback(const dwt_cb_data_t *rxData)
 {
-   // Notify the main task to handle the interrupt
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+   // Allow the scheduling protocol to handle the interrupt
    ranging_phase = schedule_phase_rx_error();
-   xTaskNotifyFromISR(notification_handle, RANGING_RX_TIMEOUT, eSetBits, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+   // Determine if the main task needs to be woken up to handle the current ranging phase
+   if ((ranging_phase == RANGING_ERROR) || (ranging_phase == RADIO_ERROR) || (ranging_phase == RANGE_COMPUTATION_PHASE))
+   {
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      xTaskNotifyFromISR(notification_handle, RANGING_RX_TIMEOUT, eSetBits, &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+   }
 }
 
 
@@ -148,7 +182,7 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
    // Initialize all static ranging variables
    notification_handle = xTaskGetCurrentTaskHandle();
    memset(ranging_results, 0, sizeof(ranging_results));
-   schedule_reception_timeout = empty_round_timeout = 0;
+   reception_timeout = empty_round_timeout = 0;
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 
    // Initialize the Schedule, Ranging, Status, and Subscription phases
@@ -162,6 +196,7 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
    if (role == ROLE_MASTER)
    {
       // Initialize the scheduler timer
+      current_role = ROLE_MASTER;
       am_hal_rtc_time_t scheduler_interval = {
          .ui32ReadError = 0, .ui32CenturyEnable = 0, .ui32Weekday = 0, .ui32Century = 0, .ui32Year = 0,
          .ui32Month = 0, .ui32DayOfMonth = 0, .ui32Hour = 0, .ui32Minute = 0, .ui32Second = 1, .ui32Hundredths = 0 };
@@ -173,12 +208,13 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
    else
    {
       // Initialize the radio wakeup timer
+      current_role = ROLE_IDLE;
       am_hal_timer_default_config_set(&wakeup_timer_config);
       am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
       NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
       NVIC_EnableIRQ(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER);
       print("INFO: Searching for an existing network\n");
-      schedule_phase_begin();
+      ranging_phase = schedule_phase_begin();
    }
 
    // Loop forever waiting for actions to wake us up
@@ -191,48 +227,61 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
          {
             // Wake up the radio and wait until all schedule updating tasks have completed
             ranging_radio_wakeup();
-            ranging_phase = schedule_phase_begin() ? SCHEDULE_PHASE : RANGING_ERROR;
+            ranging_phase = schedule_phase_begin();
          }
 
          // Carry out logic based on the current reported phase of the ranging protocol
          switch (ranging_phase)
          {
-            case RANGING_PHASE:
-               schedule_reception_timeout = 0;
-               break;
             case RANGE_COMPUTATION_PHASE:
-               handle_range_computation_phase(role == ROLE_MASTER);
+               reception_timeout = 0;
+               if (ranging_phase_was_scheduled() && (current_role == ROLE_IDLE))
+               {
+                  current_role = ROLE_PARTICIPANT;
+                  bluetooth_set_current_ranging_role(ROLE_PARTICIPANT);
+               }
+               handle_range_computation_phase();
+               break;
+            case RADIO_ERROR:
+               if (current_role == ROLE_MASTER)
+                  ranging_phase = UNSCHEDULED_TIME_PHASE;
+               else
+                  ranging_phase = schedule_phase_begin();
                break;
             case RANGING_ERROR:
-               if (role == ROLE_MASTER)
+               if (current_role == ROLE_MASTER)
                   ranging_phase = UNSCHEDULED_TIME_PHASE;
-               else if (++schedule_reception_timeout >= NETWORK_SEARCH_TIME_SECONDS)
+               else if (++reception_timeout >= NETWORK_SEARCH_TIME_SECONDS)
                {
                      // Stop the ranging task if no network was detected after a period of time
                      print("WARNING: Timed out searching for an existing network\n");
 #ifndef _TEST_RANGING_TASK
                      is_running = false;
 #else
-                     schedule_phase_begin();
-                     schedule_reception_timeout = 0;
+                     ranging_phase = schedule_phase_begin();
+                     reception_timeout = 0;
 #endif
                }
                else
-                  schedule_phase_begin();
+                  ranging_phase = schedule_phase_begin();
                break;
             case MESSAGE_COLLISION:
                print("WARNING: Stopping ranging due to possible network collision\n");
 #ifndef _TEST_RANGING_TASK
                is_running = false;
 #else
-               schedule_phase_begin();
-               schedule_reception_timeout = 0;
+               ranging_phase = schedule_phase_begin();
+               reception_timeout = 0;
 #endif
                break;
             default:
                break;
          }
       }
+
+   // Update our BLE-advertised role to IDLE
+   current_role = ROLE_IDLE;
+   bluetooth_set_current_ranging_role(ROLE_IDLE);
 
    // Disable all ranging timers and interrupts
    const am_hal_rtc_time_t scheduler_interval = {

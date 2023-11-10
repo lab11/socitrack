@@ -24,7 +24,7 @@ static inline scheduler_phase_t start_tx(const char *error_message)
    if ((dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ieee154_header_t) - sizeof(ieee154_footer_t), &ranging_packet.sequence_number, offsetof(ranging_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
    {
       print(error_message);
-      return RANGING_ERROR;
+      return RADIO_ERROR;
    }
    return RANGING_PHASE;
 }
@@ -35,7 +35,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
    if (dwt_rxenable(DWT_START_RX_DLY_REF) != DWT_SUCCESS)
    {
       print(error_message);
-      return RANGING_ERROR;
+      return RADIO_ERROR;
    }
    return RANGING_PHASE;
 }
@@ -196,13 +196,13 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
 {
    // Ensure there are at least two devices to begin ranging
    reset_computation_phase();
+   my_index = scheduled_slot;
    ranging_phase_duration = ((uint32_t)schedule_size * (schedule_size - 1) / 2) * RANGING_US_PER_RANGE;
-   if ((schedule_size < 2) || (scheduled_slot == UNSCHEDULED_SLOT))
+   if ((schedule_size < 2) || (my_index == UNSCHEDULED_SLOT))
       return RANGE_COMPUTATION_PHASE;
 
    // Reset the necessary Ranging Phase parameters
    current_phase = RANGING_PHASE;
-   my_index = scheduled_slot;
    schedule_length = schedule_size;
    initiator_antenna = responder_antenna = 0;
    next_action_timestamp = RECEIVE_EARLY_START_US;
@@ -234,7 +234,6 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
       next_action_timestamp += (uint32_t)(my_index - 1) * RANGING_US_PER_RANGE;
       return start_rx("ERROR: Unable to start listening for RANGING POLL packets\n");
    }
-   return RANGING_ERROR;
 }
 
 scheduler_phase_t ranging_phase_tx_complete(void)
@@ -296,7 +295,7 @@ scheduler_phase_t ranging_phase_rx_error(void)
       ranging_packet.tx_time = (uint32_t)(reference_time + US_TO_DWT(next_action_timestamp)) & 0xFFFFFE00;
       return start_tx("ERROR: Failed to transmit RANGING POLL packet after INITIATOR RX error\n");
    }
-   else if (((ranging_packet.sequence_number & 0x03) == 1) || ((ranging_packet.sequence_number & 0x03) == 3))
+   else  // if (((ranging_packet.sequence_number & 0x03) == 1) || ((ranging_packet.sequence_number & 0x03) == 3))
    {
       // We are the responder and didn't receive a response
       uint32_t skip_packets = 1 + (ranging_packet.sequence_number & 0x03);
@@ -352,10 +351,14 @@ scheduler_phase_t ranging_phase_rx_error(void)
       // Attempt to receive the next ranging packet
       return start_rx("ERROR: Unable to start listening for RANGING packets after RESPONDER RX error\n");
    }
-   return RANGING_ERROR;
 }
 
 uint32_t ranging_phase_get_duration(void)
 {
    return ranging_phase_duration;
+}
+
+bool ranging_phase_was_scheduled(void)
+{
+   return (my_index != UNSCHEDULED_SLOT);
 }

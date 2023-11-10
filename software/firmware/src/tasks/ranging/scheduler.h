@@ -26,6 +26,7 @@ typedef enum
    RANGE_COMPUTATION_PHASE,
    UNSCHEDULED_TIME_PHASE,
    RANGING_ERROR,
+   RADIO_ERROR,
    MESSAGE_COLLISION
 } scheduler_phase_t;
 

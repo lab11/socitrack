@@ -25,5 +25,6 @@ scheduler_phase_t ranging_phase_tx_complete(void);
 scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet);
 scheduler_phase_t ranging_phase_rx_error(void);
 uint32_t ranging_phase_get_duration(void);
+bool ranging_phase_was_scheduled(void);
 
 #endif  // #ifndef __RANGING_PHASE_HEADER_H__

@@ -10,14 +10,14 @@ static uint8_t eui[EUI_LEN], read_buffer[1024];
 static void tx_callback(const dwt_cb_data_t *txData)
 {
    volatile uint64_t tx_timestamp = ranging_radio_readtxtimestamp();
-   print("Callback 'tx_callback' fired at %lu us\n", APP_DEVICETIMEU64_TO_US(tx_timestamp));
+   print("Callback 'tx_callback' fired at %lu us\n", DWT_TO_US(tx_timestamp));
 }
 
 static void rx_done_callback(const dwt_cb_data_t *rxData)
 {
    // Check the reception timestamp and re-enable packet reception
    volatile uint64_t rx_timestamp = ranging_radio_readrxtimestamp();
-   print("Callback 'rx_callback' fired at %lu us\n", APP_DEVICETIMEU64_TO_US(rx_timestamp));
+   print("Callback 'rx_callback' fired at %lu us\n", DWT_TO_US(rx_timestamp));
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
    print("Message Length: %u, Type: %u, Seq: %u\n", (uint32_t)rxData->datalength, (uint32_t)read_buffer[sizeof(ieee154_header_t)], (uint32_t)read_buffer[2]);
@@ -27,7 +27,7 @@ static void rx_error_callback(const dwt_cb_data_t *rxData)
 {
    // Re-enable packet reception upon error
    volatile uint64_t rx_timestamp = ranging_radio_readrxtimestamp();
-   print("Callback 'rx_error_callback' fired at %lu us\n", APP_DEVICETIMEU64_TO_US(rx_timestamp));
+   print("Callback 'rx_error_callback' fired at %lu us\n", DWT_TO_US(rx_timestamp));
    print("Status Flags: %u, RX Flags: %u\n", rxData->status, (uint32_t)rxData->rx_flags);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
 }
@@ -57,9 +57,9 @@ void deep_sleep_test(void)
 void delayed_write_test(void)
 {
    // Create a test packet for sending
-   schedule_packet_t packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0xC8 }, .seqNum = 0,
+   schedule_packet_t packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = SCHEDULE_PACKET,
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .message_type = SCHEDULE_PACKET, .epoch_time_unix = 12345678, .num_devices = 0,
+      .sequence_number = 0, .epoch_time_unix = 12345678, .num_devices = 0,
       .schedule = { 0 }, .footer = { { 0 } } };
    uint16_t packet_size = sizeof(packet);
 
