@@ -110,8 +110,8 @@ int main(void)
    ranging_radio_sleep(true);
 
    // Create the ranging tasks and start the task scheduler
-   configASSERT1(xTaskCreate(RangeTask, "RangeTask", 2048, uid, 5, &ranging_task_handle));
-   configASSERT1(xTaskCreate(TestTask, "TestTask", 1024, NULL, 4, &test_task_handle));
+   configASSERT1(xTaskCreate(RangeTask, "RangeTask", 512, uid, 5, &ranging_task_handle));
+   configASSERT1(xTaskCreate(TestTask, "TestTask", 512, NULL, 4, &test_task_handle));
    vTaskStartScheduler();
    return 0;
 }
