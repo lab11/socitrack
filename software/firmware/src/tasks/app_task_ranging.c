@@ -192,6 +192,8 @@ void AppTaskRanging(void *uid)
    battery_register_event_callback(battery_event_handler);
    imu_register_motion_change_callback(motion_change_handler);
    bluetooth_register_discovery_callback(ble_discovery_handler);
+   if (battery_monitor_is_plugged_in())
+      storage_flush_and_shutdown();
 
    // Retrieve current experiment details from non-volatile storage
    experiment_details_t current_experiment;
@@ -201,12 +203,12 @@ void AppTaskRanging(void *uid)
    devices_found = false;
    while (!bluetooth_is_initialized())
       vTaskDelay(1);
-   bluetooth_set_current_ranging_role(ROLE_IDLE);
 
    // Update the BLE address whitelist
    bluetooth_clear_whitelist();
    for (uint8_t i = 0; i < current_experiment.num_devices; ++i)
       bluetooth_add_device_to_whitelist(current_experiment.uids[i]);
+   bluetooth_set_current_ranging_role(ROLE_IDLE);
 
    // Loop forever, sleeping until an application notification is received
    while (true)

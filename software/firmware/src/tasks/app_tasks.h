@@ -8,7 +8,7 @@
 
 // Task Type Definitions -----------------------------------------------------------------------------------------------
 
-typedef enum { ROLE_IDLE = 0, ROLE_MASTER, ROLE_PARTICIPANT, ROLE_ASLEEP } schedule_role_t;
+typedef enum { ROLE_IDLE = 10, ROLE_MASTER, ROLE_PARTICIPANT, ROLE_ASLEEP } schedule_role_t;
 
 typedef enum {
    APP_NOTIFY_VERIFY_CONFIGURATION = 0b00000001,

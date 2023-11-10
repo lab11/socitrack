@@ -309,8 +309,10 @@ void bluetooth_set_current_ranging_role(uint8_t ranging_role)
 {
    // Update the current device ranging role in the BLE advertisements
    current_ranging_role[2] = ranging_role;
+#ifndef _TEST_RANGING_TASK
    AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
    AppAdvStop();
+#endif
 }
 
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length)
