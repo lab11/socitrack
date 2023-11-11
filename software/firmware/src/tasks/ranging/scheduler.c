@@ -61,8 +61,10 @@ static void handle_range_computation_phase(void)
          fix_network_errors(ranging_results[0]);
          bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
+#ifndef _TEST_BLE_RANGING_TASK
          if (ranging_results[0])
             storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+#endif
 #endif
          print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
@@ -79,8 +81,10 @@ static void handle_range_computation_phase(void)
          compute_ranges(ranging_results);
          bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
+#ifndef _TEST_BLE_RANGING_TASK
          if (ranging_results[0])
             storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+#endif
 #endif
          print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;

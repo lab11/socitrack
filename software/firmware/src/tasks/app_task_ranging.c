@@ -189,11 +189,13 @@ void AppTaskRanging(void *uid)
    NVIC_EnableIRQ(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER);
 
    // Register handlers for motion detection, battery status changes, and BLE events
+   bluetooth_register_discovery_callback(ble_discovery_handler);
+#ifndef _TEST_BLE_RANGING_TASK
    battery_register_event_callback(battery_event_handler);
    imu_register_motion_change_callback(motion_change_handler);
-   bluetooth_register_discovery_callback(ble_discovery_handler);
    if (battery_monitor_is_plugged_in())
       storage_flush_and_shutdown();
+#endif
 
    // Retrieve current experiment details from non-volatile storage
    experiment_details_t current_experiment;

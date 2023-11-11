@@ -560,6 +560,7 @@ void storage_flush(bool write_partial_pages)
 }
 
 #ifndef _TEST_BLUETOOTH
+#ifndef _TEST_BLE_RANGING_TASK
 
 void storage_retrieve_experiment_details(experiment_details_t *details)
 {
@@ -644,4 +645,5 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    return num_bytes_retrieved;
 }
 
+#endif  // #ifndef _TEST_BLE_RANGING_TASK
 #endif  // #ifndef _TEST_BLUETOOTH
