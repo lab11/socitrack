@@ -287,35 +287,39 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve current battery level from TotTag')))
 
    async def create_new_experiment(self):
-      success = True
       self.result_queue.put_nowait(('SCHEDULING', True))
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
       for device_id in details['devices']:
-         try:
-            async with BleakClient(self.discovered_devices[device_id]) as client:
-               await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
-               await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
-         except Exception as e:
-            self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
-            print('Scheduling error:', e)
-            success = False
-      self.result_queue.put_nowait(('SCHEDULED', success))
+         retry_count = 0
+         while retry_count < 3:
+            try:
+               async with BleakClient(self.discovered_devices[device_id]) as client:
+                  await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+                  await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+                  retry_count = 3
+            except Exception:
+               retry_count += 1
+               if retry_count == 3:
+                  self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
+      self.result_queue.put_nowait(('SCHEDULED', details))
       self.command_queue.task_done()
 
    async def update_new_experiment(self):
-      success = True
       self.result_queue.put_nowait(('SCHEDULING', True))
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
-      try:
-         await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
-         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
-      except Exception as e:
-         self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
-         print('Scheduling error:', e)
-         success = False
-      self.result_queue.put_nowait(('SCHEDULED', success))
+      retry_count = 0
+      while retry_count < 3:
+         try:
+            await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+            retry_count = 3
+         except Exception:
+            retry_count += 1
+            if retry_count == 3:
+               self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device.address))
+      self.result_queue.put_nowait(('SCHEDULED', details))
       self.command_queue.task_done()
 
    async def retrieve_experiment(self):
@@ -368,8 +372,10 @@ class TotTagGUI(tk.Frame):
       # Set up the root application window
       super().__init__(None)
       self.master.title('TotTag Dashboard')
-      try: self.master.iconbitmap('dashboard/tottag_dashboard.ico')
-      except Exception: self.master.iconbitmap(os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.ico')
+      try:
+         self.master.iconbitmap('dashboard/tottag_dashboard.ico')
+      except Exception:
+         self.master.iconbitmap(os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.ico')
       self.master.protocol('WM_DELETE_WINDOW', self._exit)
       self.master.geometry("900x700+" + str((self.winfo_screenwidth()-900)//2) + "+" + str((self.winfo_screenheight()-700)//2))
       self.pack(fill=tk.BOTH, expand=True)
@@ -760,12 +766,18 @@ class TotTagGUI(tk.Frame):
          elif key == 'SCHEDULED':
             self._clear_canvas()
             if data and not self.failed_devices:
-               text = "Pilot Deployment was successfully scheduled!"
+               tk.Label(self.canvas, text="Pilot Deployment was successfully scheduled!").pack(fill=tk.BOTH, expand=True)
             else:
                text = "Pilot Deployment was NOT successfully scheduled!\n\nCould not communicate with:\n"
                for device_id in self.failed_devices:
                   text += device_id + "\n"
-            tk.Label(self.canvas, text=text).pack(fill=tk.BOTH, expand=True)
+               def retry_scheduling(self, details):
+                  ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT_FULL' if self.connect_button['text'] != 'Disconnect' else 'NEW_EXPERIMENT_SINGLE')
+                  ble_issue_command(self.event_loop, self.ble_command_queue, details)
+               prompt_area = tk.Frame(self.canvas)
+               prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+               tk.Label(prompt_area, text=text).pack(fill=tk.NONE, expand=False)
+               ttk.Button(prompt_area, text="Retry", command=partial(retry_scheduling, self, data)).pack(fill=tk.NONE, expand=False)
          elif key == 'EXPERIMENT':
             self._show_experiment(data)
          elif key == 'DELETED':
