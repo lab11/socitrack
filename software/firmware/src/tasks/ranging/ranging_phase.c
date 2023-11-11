@@ -279,6 +279,7 @@ scheduler_phase_t ranging_phase_rx_error(void)
          ranging_radio_choose_antenna(initiator_antenna);
          if (initiator_antenna == 0)
          {
+            ranging_packet.sequence_number = 0;
             responder_index = (responder_index + 1) % schedule_length;
             if (responder_index == 0)
             {
