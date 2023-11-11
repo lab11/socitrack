@@ -177,7 +177,7 @@ void AppTaskRanging(void *uid)
    // Store the UID and application task handle
    device_uid_short = ((uint8_t*)uid)[0];
    app_task_handle = xTaskGetCurrentTaskHandle();
-   uint32_t notification_bits = APP_NOTIFY_NETWORK_LOST;
+   uint32_t notification_bits = 0;
 
    // Initialize the BLE scanning window timer
    am_hal_timer_config_t scanning_timer_config;
@@ -211,6 +211,7 @@ void AppTaskRanging(void *uid)
    for (uint8_t i = 0; i < current_experiment.num_devices; ++i)
       bluetooth_add_device_to_whitelist(current_experiment.uids[i]);
    bluetooth_set_current_ranging_role(ROLE_IDLE);
+   verify_app_configuration();
 
    // Loop forever, sleeping until an application notification is received
    while (true)
