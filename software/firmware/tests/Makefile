@@ -155,16 +155,10 @@ SRC += am_util_stdio.c
 SRC += am_util_string.c
 SRC += app_db.c
 SRC += app_main.c
-SRC += app_master.c
-SRC += app_master_leg.c
 SRC += app_slave.c
 SRC += app_slave_leg.c
 SRC += att_main.c
 SRC += att_uuid.c
-SRC += attc_main.c
-SRC += attc_proc.c
-SRC += attc_read.c
-SRC += attc_write.c
 SRC += atts_ccc.c
 SRC += atts_csf.c
 SRC += atts_ind.c
@@ -178,8 +172,6 @@ SRC += cfg_stack.c
 SRC += dm_adv.c
 SRC += dm_adv_leg.c
 SRC += dm_conn.c
-SRC += dm_conn_master.c
-SRC += dm_conn_master_leg.c
 SRC += dm_conn_slave.c
 SRC += dm_conn_slave_leg.c
 SRC += dm_conn_sm.c
@@ -190,11 +182,11 @@ SRC += dm_priv.c
 SRC += dm_scan.c
 SRC += dm_scan_leg.c
 SRC += dm_sec.c
-SRC += dm_sec_master.c
 SRC += dm_sec_slave.c
 SRC += event_groups.c
 SRC += gatt_main.c
 SRC += hci_cmd.c
+SRC += hci_cmd_phy.c
 SRC += hci_core.c
 SRC += hci_core_ps.c
 SRC += hci_dbg_trc.c
@@ -205,7 +197,6 @@ SRC += hci_tr.c
 SRC += hci_vs_cooper.c
 SRC += heap_4.c
 SRC += l2c_main.c
-SRC += l2c_master.c
 SRC += l2c_slave.c
 SRC += list.c
 SRC += port.c
@@ -254,18 +245,17 @@ SRC += ranging_phase.c
 SRC += ranging_task.c
 SRC += schedule_phase.c
 SRC += scheduler.c
-SRC += scheduling_functionality.c
-SRC += scheduling_service.c
 SRC += status_phase.c
 SRC += storage_task.c
+SRC += subscription_phase.c
 SRC += time_aligned_task.c
 
-.PHONY: all program clean battery bluetooth bluetooth_task button buzzer imu led logging ranging ranging_radio rtc_set rtc storage system
+.PHONY: all program clean battery ble_and_range bluetooth bluetooth_task button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery bluetooth bluetooth_task button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system)
+	$(error Make targets include: battery ble_and_range bluetooth bluetooth_task button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -278,6 +268,11 @@ endif
 battery: TARGET = TestBattery
 battery: SRC += test_battery.c
 battery: $(CONFIG) $(CONFIG)/test_battery.o $(CONFIG)/$$(TARGET).bin program
+
+ble_and_range: TARGET = TestBleAndRanging
+ble_and_range: SRC += test_ble_and_ranging.c
+ble_and_range: CFLAGS += -D_TEST_BLE_RANGING_TASK
+ble_and_range: $(CONFIG) $(CONFIG)/test_ble_and_ranging.o $(CONFIG)/$$(TARGET).bin program
 
 bluetooth: TARGET = TestBluetooth
 bluetooth: SRC += test_bluetooth.c

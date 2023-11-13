@@ -21,6 +21,7 @@ static void read_page(uint8_t *buffer)
    for (uint16_t i = 0; i < MEMORY_PAGE_SIZE_BYTES; ++i)
       buffer[i] = (uint8_t)((((uint32_t)reading_page * MEMORY_PAGE_SIZE_BYTES) + i) & 0xFF);
 }
+void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
 void storage_begin_reading(void)
 {
    reading_page = 0;
@@ -68,6 +69,7 @@ int main(void)
    static uint8_t uid[EUI_LEN];
    system_read_UID(uid, sizeof(uid));
    bluetooth_init(uid);
+   print("Initialized BLE with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]);
 
    // Create the BLE task and start the task scheduler
    static TaskHandle_t ble_task_handle;

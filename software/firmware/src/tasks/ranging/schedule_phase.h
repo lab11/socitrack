@@ -11,7 +11,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
-   uint8_t message_type;
+   uint8_t sequence_number;
    uint32_t epoch_time_unix;
    uint8_t num_devices;
    uint8_t schedule[MAX_NUM_RANGING_DEVICES];
@@ -22,7 +22,7 @@ typedef struct __attribute__ ((__packed__))
 // Public API ----------------------------------------------------------------------------------------------------------
 
 void schedule_phase_initialize(const uint8_t *uid, bool is_master, uint32_t epoch_timestamp);
-bool schedule_phase_begin(void);
+scheduler_phase_t schedule_phase_begin(void);
 scheduler_phase_t schedule_phase_tx_complete(void);
 scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule);
 scheduler_phase_t schedule_phase_rx_error(void);

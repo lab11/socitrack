@@ -123,10 +123,12 @@ def process_tottag_data(from_uid, storage_directory, details, data):
       uid_to_labels[int(details['uids'][i][0])] = label if label else details['uids'][i][0]
    i = 0
    log_data = defaultdict(dict)
+   with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
+      file.write(data)
    while i < len(data):
-      timestamp = struct.unpack('<I', data[i+1:i+5])
+      timestamp = struct.unpack('<I', data[i+1:i+5])[0]
       if data[i] == STORAGE_TYPE_VOLTAGE:
-         log_data[timestamp]['v'] = struct.unpack('<I', data[i+5:i+9])
+         log_data[timestamp]['v'] = struct.unpack('<I', data[i+5:i+9])[0]
          i += 9
       elif data[i] == STORAGE_TYPE_CHARGING_EVENT:
          log_data[timestamp]['c'] = BATTERY_CODES[data[i+5]]
@@ -137,11 +139,11 @@ def process_tottag_data(from_uid, storage_directory, details, data):
       elif data[i] == STORAGE_TYPE_RANGES:
          log_data[timestamp]['r'] = {}
          for j in range(data[i+5]):
-            log_data[timestamp]['r'][uid_to_labels[data[i+6+(j*3)]]] = struct.unpack('<h', data[i+7+(j*3):i+9+(j*3)])
+            log_data[timestamp]['r'][uid_to_labels[data[i+6+(j*3)]]] = struct.unpack('<h', data[i+7+(j*3):i+9+(j*3)])[0]
          i += 6 + data[i+5]*3
    log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
-      pickle.dump(dict(log_data), file, protocol=pickle.HIGHEST_PROTOCOL)
+      pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 # BLUETOOTH LE COMMUNICATIONS -----------------------------------------------------------------------------------------
@@ -157,7 +159,8 @@ class TotTagBLE(threading.Thread):
                           'FIND_TOTTAG': self.find_my_tottag,
                           'TIMESTAMP': self.retrieve_timestamp,
                           'VOLTAGE': self.retrieve_voltage,
-                          'NEW_EXPERIMENT': self.create_new_experiment,
+                          'NEW_EXPERIMENT_FULL': self.create_new_experiment,
+                          'NEW_EXPERIMENT_SINGLE': self.update_new_experiment,
                           'GET_EXPERIMENT': self.retrieve_experiment,
                           'DELETE_EXPERIMENT': self.delete_experiment,
                           'DOWNLOAD': self.download_logs,
@@ -182,10 +185,9 @@ class TotTagBLE(threading.Thread):
       command = 'START'
       while command != 'QUIT':
          command = await self.command_queue.get()
+         await self.download_logs_done()
          if self.subscribed_to_notifications:
             await self.unsubscribe_from_ranges()
-         if self.downloading_log_file:
-            await self.download_logs_done()
          if command in self.operations:
             await self.operations[command]()
          else:
@@ -202,12 +204,12 @@ class TotTagBLE(threading.Thread):
    def data_callback(self, _sender_uuid, data):
       if self.data_length == 0:
          self.data_index = 0
-         self.data_details = None
          self.data_length = struct.unpack('<I', data[0:4])[0]
          self.data = bytearray(self.data_length)
+         if self.data_length == 0:
+            self.data_length = 1
+         self.data_details = unpack_experiment_details(data[4:])
          self.result_queue.put_nowait(('LOGDATA', self.data_length))
-      elif self.data_details is None:
-         self.data_details = unpack_experiment_details(data)
       elif len(data) == 1 and data[0] == MAINTENANCE_DOWNLOAD_COMPLETE:
          self.command_queue.put_nowait('DOWNLOAD_DONE')
       else:
@@ -218,7 +220,11 @@ class TotTagBLE(threading.Thread):
    async def scan_for_tottags(self):
       self.result_queue.put_nowait(('SCANNING', True))
       self.discovered_devices.clear()
-      for device_address, device_info in (await BleakScanner.discover(5.0, return_adv=True)).items():
+      scanner = BleakScanner(cb={ 'use_bdaddr': True })
+      await scanner.start()
+      await asyncio.sleep(5)
+      await scanner.stop()
+      for device_address, device_info in scanner.discovered_devices_and_advertisement_data.items():
          if device_info[1].local_name == 'TotTag':
             self.discovered_devices[device_address] = device_info[0]
             self.result_queue.put_nowait(('DEVICE', device_address))
@@ -281,20 +287,39 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve current battery level from TotTag')))
 
    async def create_new_experiment(self):
-      success = True
       self.result_queue.put_nowait(('SCHEDULING', True))
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
       for device_id in details['devices']:
+         retry_count = 0
+         while retry_count < 3:
+            try:
+               async with BleakClient(self.discovered_devices[device_id]) as client:
+                  await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+                  await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+                  retry_count = 3
+            except Exception:
+               retry_count += 1
+               if retry_count == 3:
+                  self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
+      self.result_queue.put_nowait(('SCHEDULED', details))
+      self.command_queue.task_done()
+
+   async def update_new_experiment(self):
+      self.result_queue.put_nowait(('SCHEDULING', True))
+      details = await self.command_queue.get()
+      packed_details = pack_experiment_details(details)
+      retry_count = 0
+      while retry_count < 3:
          try:
-            async with BleakClient(self.discovered_devices[device_id]) as client:
-               await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
-               await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
-         except Exception as e:
-            self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
-            print('Scheduling error:', e)
-            success = False
-      self.result_queue.put_nowait(('SCHEDULED', success))
+            await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+            retry_count = 3
+         except Exception:
+            retry_count += 1
+            if retry_count == 3:
+               self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device.address))
+      self.result_queue.put_nowait(('SCHEDULED', details))
       self.command_queue.task_done()
 
    async def retrieve_experiment(self):
@@ -327,14 +352,15 @@ class TotTagBLE(threading.Thread):
       self.command_queue.task_done()
 
    async def download_logs_done(self):
-      self.downloading_log_file = False
-      try:
-         self.result_queue.put_nowait(('DOWNLOADED', True))
-         await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
-         if self.data_index == self.data_length:
-            process_tottag_data(int(self.connected_device.address.split[':'][-1]), self.storage_directory, self.data_details, self.data)
-      except Exception:
-         self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
+      if self.downloading_log_file:
+         try:
+            self.downloading_log_file = False
+            self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
+            await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
+            if self.data_index == self.data_length:
+               process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data)
+         except Exception:
+            self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
 
 
 # GUI DESIGN ----------------------------------------------------------------------------------------------------------
@@ -346,8 +372,10 @@ class TotTagGUI(tk.Frame):
       # Set up the root application window
       super().__init__(None)
       self.master.title('TotTag Dashboard')
-      try: self.master.iconbitmap('dashboard/tottag_dashboard.ico')
-      except Exception: self.master.iconbitmap(os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.ico')
+      try:
+         self.master.iconbitmap('dashboard/tottag_dashboard.ico')
+      except Exception:
+         self.master.iconbitmap(os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.ico')
       self.master.protocol('WM_DELETE_WINDOW', self._exit)
       self.master.geometry("900x700+" + str((self.winfo_screenwidth()-900)//2) + "+" + str((self.winfo_screenheight()-700)//2))
       self.pack(fill=tk.BOTH, expand=True)
@@ -506,7 +534,7 @@ class TotTagGUI(tk.Frame):
             row = tk.Frame(prompt_area)
             tottag_label = tk.StringVar(row)
             row.grid(row=17+len(self.tottag_rows), column=0, columnspan=5, sticky=tk.W+tk.E)
-            tottag_selector = ttk.Combobox(row, width=18, values=self.device_list, state=['readonly'])
+            tottag_selector = ttk.Combobox(row, width=18, values=self.device_list, state=['readonly' if self.connect_button['text'] != 'Disconnect' else ''])
             tottag_selector.pack(side=tk.LEFT, expand=False)
             tottag_selector.set(self.device_list[0])
             ttk.Label(row, text="  using label  ").pack(side=tk.LEFT, expand=False)
@@ -553,7 +581,7 @@ class TotTagGUI(tk.Frame):
                'labels': labels,
                'devices': devices
             }
-            ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT')
+            ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT_FULL' if self.connect_button['text'] != 'Disconnect' else 'NEW_EXPERIMENT_SINGLE')
             ble_issue_command(self.event_loop, self.ble_command_queue, details)
       ttk.Button(prompt_area, text="Add", command=partial(add_tottag, self)).grid(column=4, row=15, sticky=tk.E)
       ttk.Label(prompt_area, text=" ", font=('Helvetica', '4')).grid(column=0, row=99)
@@ -668,6 +696,7 @@ class TotTagGUI(tk.Frame):
             if data:
                self.device_list.clear()
                self.scan_button['state'] = ['disabled']
+               self.connect_button['state'] = ['disabled']
                self.schedule_button['state'] = ['disabled']
                self.tottag_selection.set('Scanning for TotTags...')
                tk.Label(self.canvas, text="Scanning for TotTag devices. Please wait...").pack(fill=tk.BOTH, expand=True)
@@ -688,11 +717,9 @@ class TotTagGUI(tk.Frame):
             self._clear_canvas()
             if data:
                self.scan_button['state'] = ['disabled']
-               self.schedule_button['state'] = ['disabled']
                tk.Label(self.canvas, text="Connecting to TotTag with ID "+self.tottag_selection.get()).pack(fill=tk.BOTH, expand=True)
             else:
                self.scan_button['state'] = ['enabled']
-               self.schedule_button['state'] = ['enabled']
                tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
          elif key == 'CONNECTED':
             self.tottag_selection.set('Connected to ' + data)
@@ -702,7 +729,6 @@ class TotTagGUI(tk.Frame):
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
                   item.configure(state=['enabled'])
-            self.schedule_button['state'] = ['disabled']
             self._clear_canvas_with_prompt()
          elif key == 'DISCONNECTED':
             self._clear_canvas()
@@ -711,11 +737,11 @@ class TotTagGUI(tk.Frame):
             self.connect_button['command'] = self._connect
             self.connect_button['state'] = ['enabled']
             self.connect_button['text'] = 'Connect'
-            self.schedule_button['state'] = ['enabled']
             self.tottag_selection.set(self.device_list[0])
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
                   item.configure(state=['disabled'])
+            self.schedule_button['state'] = ['enabled']
             tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
          elif key == 'RETRIEVING':
             self._clear_canvas()
@@ -740,12 +766,18 @@ class TotTagGUI(tk.Frame):
          elif key == 'SCHEDULED':
             self._clear_canvas()
             if data and not self.failed_devices:
-               text = "Pilot Deployment was successfully scheduled!"
+               tk.Label(self.canvas, text="Pilot Deployment was successfully scheduled!").pack(fill=tk.BOTH, expand=True)
             else:
                text = "Pilot Deployment was NOT successfully scheduled!\n\nCould not communicate with:\n"
                for device_id in self.failed_devices:
                   text += device_id + "\n"
-            tk.Label(self.canvas, text=text).pack(fill=tk.BOTH, expand=True)
+               def retry_scheduling(self, details):
+                  ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT_FULL' if self.connect_button['text'] != 'Disconnect' else 'NEW_EXPERIMENT_SINGLE')
+                  ble_issue_command(self.event_loop, self.ble_command_queue, details)
+               prompt_area = tk.Frame(self.canvas)
+               prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+               tk.Label(prompt_area, text=text).pack(fill=tk.NONE, expand=False)
+               ttk.Button(prompt_area, text="Retry", command=partial(retry_scheduling, self, data)).pack(fill=tk.NONE, expand=False)
          elif key == 'EXPERIMENT':
             self._show_experiment(data)
          elif key == 'DELETED':
@@ -757,7 +789,11 @@ class TotTagGUI(tk.Frame):
             self._log_data_received(data)
          elif key == 'DOWNLOADED':
             self._clear_canvas()
-            tk.Label(self.canvas, text="Download complete! Your files were saved to:\n\n"+self.save_directory.get()).pack(fill=tk.BOTH, expand=True)
+            if data:
+               text = "Download complete! Your files were saved to:\n\n"+self.save_directory.get()
+            else:
+               text = "No data downloaded!\n\nPlease ensure that your TotTag is charging and in maintenance mode."
+            tk.Label(self.canvas, text=text).pack(fill=tk.BOTH, expand=True)
          else:
             print('Unrecognized BLE Data:', key, '=', data)
       if self.ble_comms.is_alive():

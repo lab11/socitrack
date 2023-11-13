@@ -63,8 +63,10 @@ void AppTaskMaintenance(void *uid)
    app_task_handle = xTaskGetCurrentTaskHandle();
    uint32_t notification_bits = 0;
 
-   // Register handler for battery status changes
+   // Register handler for battery status changes and verify correct mode of operation
    battery_register_event_callback(battery_event_handler);
+   if (!battery_monitor_is_plugged_in())
+      storage_flush_and_shutdown();
 
    // Wait until the BLE stack has been fully initialized
    while (!bluetooth_is_initialized())

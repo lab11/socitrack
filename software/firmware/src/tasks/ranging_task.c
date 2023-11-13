@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_tasks.h"
+#include "logging.h"
 #include "rtc.h"
 #include "scheduler.h"
 
@@ -17,27 +18,13 @@ void ranging_begin(schedule_role_t role)
 {
    // Notify the ranging task to start with the indicated role
    is_ranging = true;
-   scheduler_prepare();
    xTaskNotify(ranging_task_handle, role, eSetValueWithOverwrite);
-}
-
-void ranging_end(void)
-{
-   // Force ranging task to end
-   if (is_ranging)
-      scheduler_stop();
 }
 
 bool ranging_active(void)
 {
    // Return whether actively ranging
    return is_ranging;
-}
-
-void ranging_schedule_device(const uint8_t *device_id)
-{
-   // Instruct ranging scheduler to add device
-   scheduler_add_device(device_id[0]);
 }
 
 void RangingTask(void *uid)
@@ -53,7 +40,11 @@ void RangingTask(void *uid)
    {
       // Sleep until time to start ranging with the indicated role
       if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && uid)
+      {
+         print("TotTag Ranging: Starting ranging task as %s\n", (desired_role_bits == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");
          scheduler_run((schedule_role_t)desired_role_bits, rtc_get_timestamp());
+         print("TotTag Ranging: Ranging task has stopped!\n");
+      }
 
       // Notify the application that network connectivity has been lost
       is_ranging = false;

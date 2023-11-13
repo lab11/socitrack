@@ -17,11 +17,10 @@
 
 static uint8_t device_uid_short;
 static TaskHandle_t app_task_handle = 0;
-static uint8_t device_id_to_schedule[EUI_LEN];
 static uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
-static volatile bool devices_found, forwarding_request;
 static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
+static volatile bool devices_found;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -29,11 +28,8 @@ static volatile uint8_t num_discovered_devices;
 static void verify_app_configuration(void)
 {
    // Retrieve the current state of the application
+   print("INFO: Verifying TotTag application configuration\n");
    const bool is_scanning = bluetooth_is_scanning(), is_ranging = ranging_active();
-
-   // Advertised role should be UNKNOWN if not ranging
-   if (!is_ranging && (bluetooth_get_current_ranging_role() != ROLE_UNKNOWN))
-      bluetooth_set_current_ranging_role(ROLE_UNKNOWN);
 
    // Advertising should always be enabled
    if (!bluetooth_is_advertising())
@@ -53,41 +49,18 @@ static void handle_notification(app_notification_t notification)
       verify_app_configuration();
    if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
    {
-      // Determine if a master or participant device was located
-      bool master_device_located = false, participant_device_located = false;
-      for (uint8_t i = 0; !master_device_located && (i < num_discovered_devices); ++i)
-         switch (discovered_devices[i][EUI_LEN])
-         {
-            case ROLE_MASTER:
-               master_device_located = true;
-               bluetooth_join_ranging_network(discovered_devices[i], NULL);
-               break;
-            case ROLE_PARTICIPANT:
-               participant_device_located = true;
-               break;
-            default:
-               break;
-         }
+      // Determine if an actively ranging device was located
+      bool ranging_device_located = false, idle_device_located = false;
+      for (uint8_t i = 0; !ranging_device_located && (i < num_discovered_devices); ++i)
+         if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) || (discovered_devices[i][EUI_LEN] == ROLE_PARTICIPANT))
+            ranging_device_located = true;
+         else if (discovered_devices[i][EUI_LEN] == ROLE_IDLE)
+            idle_device_located = true;
 
-      // Join the ranging network based on the state of the detected devices
-      if (master_device_located)
-      {
-         // Set our role as a ranging participant and start the ranging process
-         bluetooth_set_current_ranging_role(ROLE_PARTICIPANT);
+      // Start the ranging task based on the state of the detected devices
+      if (ranging_device_located)
          ranging_begin(ROLE_PARTICIPANT);
-      }
-      else if (participant_device_located)
-      {
-         // Set our role as a ranging participant and start the ranging process
-         bluetooth_set_current_ranging_role(ROLE_PARTICIPANT);
-         ranging_begin(ROLE_PARTICIPANT);
-
-         // Send a request to join the network to all participant devices
-         for (uint8_t i = 0; i < num_discovered_devices; ++i)
-            if (discovered_devices[i][EUI_LEN] == ROLE_PARTICIPANT)
-               bluetooth_join_ranging_network(discovered_devices[i], NULL);
-      }
-      else
+      else if (idle_device_located)
       {
          // Search for the non-sleeping device with the highest ID that is higher than our own
          int32_t best_device_idx = -1;
@@ -101,18 +74,9 @@ static void handle_notification(app_notification_t notification)
 
          // If a potential master candidate device was found, attempt to connect to it
          if (best_device_idx >= 0)
-         {
-            // Set our role as a ranging participant and start the ranging process
             ranging_begin(ROLE_PARTICIPANT);
-            bluetooth_set_current_ranging_role(ROLE_PARTICIPANT);
-            bluetooth_join_ranging_network(discovered_devices[best_device_idx], NULL);
-         }
          else
-         {
-            // Reset the scanning interface so that lower ID devices quickly get discovered again
-            // in case one of them became the master
-            bluetooth_reset_scanning();
-         }
+            ranging_begin(ROLE_MASTER);
       }
 
       // Reset the devices-found flag and verify the app configuration
@@ -127,41 +91,6 @@ static void handle_notification(app_notification_t notification)
          buzzer_indicate_location();
          vTaskDelay(pdMS_TO_TICKS(1000));
       }
-   if ((notification & APP_NOTIFY_SCHEDULE_DEVICE) != 0)
-   {
-      // Ignore this if we are supposed to be asleep
-      schedule_role_t role = (schedule_role_t)bluetooth_get_current_ranging_role();
-      if (role != ROLE_ASLEEP)
-      {
-         // Start the ranging protocol as master if not already ranging
-         if (!ranging_active())
-         {
-            role = ROLE_MASTER;
-            ranging_begin(ROLE_MASTER);
-            bluetooth_set_current_ranging_role(ROLE_MASTER);
-            verify_app_configuration();
-         }
-
-         // Schedule the device if we are the master, otherwise forward the request if it has not already been forwarded
-         if (role == ROLE_MASTER)
-            ranging_schedule_device(device_id_to_schedule);
-         else if (!forwarding_request)
-         {
-            // Quickly scan for all TotTags in the vicinity
-            forwarding_request = true;
-            bluetooth_single_scan(250);
-
-            // Try to forward directly to the master device
-            for (uint8_t i = 0; i < num_discovered_devices; ++i)
-               if (discovered_devices[i][EUI_LEN] == ROLE_MASTER)
-               {
-                  bluetooth_join_ranging_network(discovered_devices[i], device_id_to_schedule);
-                  break;
-               }
-            forwarding_request = devices_found = false;
-         }
-      }
-   }
 }
 
 static void battery_event_handler(battery_event_t battery_event)
@@ -187,11 +116,13 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
       num_discovered_devices = 1;
       memcpy(discovered_devices[0], ble_address, EUI_LEN);
       discovered_devices[0][EUI_LEN] = ranging_role;
-      if (!forwarding_request)
-         am_hal_timer_clear(BLE_SCANNING_TIMER_NUMBER);
+      am_hal_timer_clear(BLE_SCANNING_TIMER_NUMBER);
    }
    else if (num_discovered_devices < MAX_NUM_RANGING_DEVICES)
    {
+      for (uint8_t i = 0; i < num_discovered_devices; ++i)
+         if (memcmp(discovered_devices[i], ble_address, EUI_LEN) == 0)
+            return;
       memcpy(discovered_devices[num_discovered_devices], ble_address, EUI_LEN);
       discovered_devices[num_discovered_devices++][EUI_LEN] = ranging_role;
    }
@@ -199,6 +130,9 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
 
 void am_timer04_isr(void)
 {
+   // Immediately stop scanning for additional devices
+   bluetooth_stop_scanning();
+
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
@@ -227,13 +161,6 @@ void app_notify(app_notification_t notification, bool from_isr)
    }
 }
 
-void app_schedule_device(const uint8_t *uid)
-{
-   // Notify application of the device scheduling request
-   memcpy(device_id_to_schedule, uid, EUI_LEN);
-   app_notify(APP_NOTIFY_SCHEDULE_DEVICE, false);
-}
-
 void app_activate_find_my_tottag(uint32_t seconds_to_activate)
 {
    // Notify application of the request to active FindMyTottag
@@ -251,7 +178,7 @@ void AppTaskRanging(void *uid)
    // Store the UID and application task handle
    device_uid_short = ((uint8_t*)uid)[0];
    app_task_handle = xTaskGetCurrentTaskHandle();
-   uint32_t notification_bits = APP_NOTIFY_NETWORK_LOST;
+   uint32_t notification_bits = 0;
 
    // Initialize the BLE scanning window timer
    am_hal_timer_config_t scanning_timer_config;
@@ -263,16 +190,20 @@ void AppTaskRanging(void *uid)
    NVIC_EnableIRQ(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER);
 
    // Register handlers for motion detection, battery status changes, and BLE events
+   bluetooth_register_discovery_callback(ble_discovery_handler);
+#ifndef _TEST_BLE_RANGING_TASK
    battery_register_event_callback(battery_event_handler);
    imu_register_motion_change_callback(motion_change_handler);
-   bluetooth_register_discovery_callback(ble_discovery_handler);
+   if (battery_monitor_is_plugged_in())
+      storage_flush_and_shutdown();
+#endif
 
    // Retrieve current experiment details from non-volatile storage
    experiment_details_t current_experiment;
    storage_retrieve_experiment_details(&current_experiment);
 
    // Wait until the BLE stack has been fully initialized
-   devices_found = forwarding_request = false;
+   devices_found = false;
    while (!bluetooth_is_initialized())
       vTaskDelay(1);
 
@@ -280,6 +211,8 @@ void AppTaskRanging(void *uid)
    bluetooth_clear_whitelist();
    for (uint8_t i = 0; i < current_experiment.num_devices; ++i)
       bluetooth_add_device_to_whitelist(current_experiment.uids[i]);
+   bluetooth_set_current_ranging_role(ROLE_IDLE);
+   verify_app_configuration();
 
    // Loop forever, sleeping until an application notification is received
    while (true)

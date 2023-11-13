@@ -6,8 +6,9 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static ranging_state_t state;
-static int distances_millimeters[RANGING_NUM_SEQUENCES];
+static ranging_device_state_t state[MAX_NUM_RANGING_DEVICES];
+static int distances_millimeters[RANGING_NUM_RANGE_ATTEMPTS];
+static uint8_t num_scheduled_devices;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -32,69 +33,45 @@ void insert_sorted(int arr[], int new, unsigned end)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void reset_computation_phase(void)
+void reset_computation_phase(uint8_t schedule_length)
 {
+   num_scheduled_devices = schedule_length;
    memset(&state, 0, sizeof(state));
 }
 
-void add_roundtrip0_times(uint8_t eui, uint8_t sequence_number, uint32_t poll_rx_time)
+void associate_eui_with_index(uint32_t index, uint8_t eui)
 {
-   bool response_found = false;
-   for (uint8_t i = 0; i < state.num_responses; ++i)
-      if (state.responses[i].device_eui == eui)
-      {
-         state.responses[i].poll_rx_times[sequence_number] = poll_rx_time;
-         response_found = true;
-         break;
-      }
-   if (!response_found)
-   {
-      state.responses[state.num_responses].device_eui = eui;
-      state.responses[state.num_responses].poll_rx_times[sequence_number] = poll_rx_time;
-      ++state.num_responses;
-   }
+   state[index].device_eui = eui;
 }
 
-void add_roundtrip1_times(uint8_t eui, uint8_t sequence_number, uint32_t poll_tx_time, uint32_t resp_rx_time, uint32_t final_tx_time)
+void add_ranging_times_poll_tx(uint32_t index, uint8_t sequence_number, uint32_t tx_time)
 {
-   bool response_found = false;
-   for (uint8_t i = 0; i < state.num_responses; ++i)
-      if (state.responses[i].device_eui == eui)
-      {
-         state.responses[i].poll_tx_times[sequence_number] = poll_tx_time;
-         state.responses[i].resp_rx_times[sequence_number] = resp_rx_time;
-         state.responses[i].final_tx_times[sequence_number] = final_tx_time;
-         response_found = true;
-         break;
-      }
-   if (!response_found)
-   {
-      state.responses[state.num_responses].device_eui = eui;
-      state.responses[state.num_responses].poll_tx_times[sequence_number] = poll_tx_time;
-      state.responses[state.num_responses].resp_rx_times[sequence_number] = resp_rx_time;
-      state.responses[state.num_responses].final_tx_times[sequence_number] = final_tx_time;
-      ++state.num_responses;
-   }
+   state[index].poll_tx_times[sequence_number] = tx_time;
 }
 
-void add_roundtrip2_times(uint8_t eui, uint8_t sequence_number, uint32_t resp_tx_time, uint32_t final_rx_time)
+void add_ranging_times_poll_rx(uint32_t index, uint8_t sequence_number, uint32_t rx_time)
 {
-   bool response_found = false;
-   for (uint8_t i = 0; i < state.num_responses; ++i)
-      if (state.responses[i].device_eui == eui)
-      {
-         state.responses[i].resp_tx_times[sequence_number] = resp_tx_time;
-         state.responses[i].final_rx_times[sequence_number] = final_rx_time;
-         response_found = true;
-         break;
-      }
-   if (!response_found)
-   {
-      state.responses[state.num_responses].device_eui = eui;
-      state.responses[state.num_responses].resp_tx_times[sequence_number] = resp_tx_time;
-      state.responses[state.num_responses].final_rx_times[sequence_number] = final_rx_time;
-      ++state.num_responses;
-   }
+   state[index].poll_rx_times[sequence_number] = rx_time;
+}
+
+void add_ranging_times_response_tx(uint32_t index, uint8_t sequence_number, uint32_t tx_time)
+{
+   state[index].resp_tx_times[sequence_number] = tx_time;
+}
+
+void add_ranging_times_response_rx(uint32_t index, uint8_t sequence_number, uint32_t rx_time)
+{
+   state[index].resp_rx_times[sequence_number] = rx_time;
+}
+
+void add_ranging_times_final_tx(uint32_t index, uint8_t sequence_number, uint32_t tx_time)
+{
+   state[index].final_tx_times[sequence_number] = tx_time;
+}
+
+void add_ranging_times_final_rx(uint32_t index, uint8_t sequence_number, uint32_t rx_time)
+{
+   state[index].final_rx_times[sequence_number] = rx_time;
 }
 
 void compute_ranges(uint8_t *ranging_results)
@@ -102,19 +79,19 @@ void compute_ranges(uint8_t *ranging_results)
    // Iterate through all responses to calculate the range from this to that device
    ranging_results[0] = 0;
    uint8_t output_buffer_index = 1;
-   for (uint8_t dev_index = 0; dev_index < state.num_responses; ++dev_index)
+   for (uint8_t dev_index = 0; dev_index < num_scheduled_devices; ++dev_index)
    {
       // Calculate the device distances using symmetric two-way TOFs
       uint8_t num_valid_distances = 0;
       memset(distances_millimeters, 0, sizeof(distances_millimeters));
-      for (uint8_t i = 0; i < RANGING_NUM_SEQUENCES; ++i)
-         if (state.responses[dev_index].resp_rx_times[i] && state.responses[dev_index].final_rx_times[i])
+      for (uint8_t i = 0; i < RANGING_NUM_RANGE_ATTEMPTS; ++i)
+         if (state[dev_index].device_eui && state[dev_index].poll_rx_times[i] && state[dev_index].resp_rx_times[i] && state[dev_index].final_rx_times[i])
          {
             // Compute the device range from the two-way round-trip times
-            const double Ra = state.responses[dev_index].resp_rx_times[i] - state.responses[dev_index].poll_tx_times[i];
-            const double Rb = state.responses[dev_index].final_rx_times[i] - state.responses[dev_index].resp_tx_times[i];
-            const double Da = state.responses[dev_index].final_tx_times[i] - state.responses[dev_index].resp_rx_times[i];
-            const double Db = state.responses[dev_index].resp_tx_times[i] - state.responses[dev_index].poll_rx_times[i];
+            const double Ra = state[dev_index].resp_rx_times[i] - state[dev_index].poll_tx_times[i];
+            const double Rb = state[dev_index].final_rx_times[i] - state[dev_index].resp_tx_times[i];
+            const double Da = state[dev_index].final_tx_times[i] - state[dev_index].resp_rx_times[i];
+            const double Db = state[dev_index].resp_tx_times[i] - state[dev_index].poll_rx_times[i];
             const double TOF = ((Ra * Rb) - (Da * Db)) / (Ra + Rb + Da + Db);
             const int distance_millimeters = ranging_radio_time_to_millimeters(TOF);
 
@@ -122,7 +99,7 @@ void compute_ranges(uint8_t *ranging_results)
             if ((distance_millimeters >= MIN_VALID_RANGE_MM) && (distance_millimeters <= MAX_VALID_RANGE_MM))
                insert_sorted(distances_millimeters, distance_millimeters, num_valid_distances++);
             else
-               print("WARNING: Disregarding range to EUI %u for subsequence #%u: %d\n", (uint32_t)state.responses[dev_index].device_eui, i, distance_millimeters);
+               print("WARNING: Disregarding range to EUI 0x%02X for subsequence #%u: %d\n", (uint32_t)state[dev_index].device_eui, i, distance_millimeters);
          }
 
       // Skip this device if too few ranging packets were received
@@ -137,7 +114,7 @@ void compute_ranges(uint8_t *ranging_results)
          if (range_millimeters < MAX_VALID_RANGE_MM)
          {
             // Copy valid ranges into the ID/range output buffer
-            ranging_results[output_buffer_index++] = state.responses[dev_index].device_eui;
+            ranging_results[output_buffer_index++] = state[dev_index].device_eui;
             *((int16_t*)&ranging_results[output_buffer_index]) = range_millimeters;
             output_buffer_index += sizeof(range_millimeters);
             ++ranging_results[0];
@@ -148,5 +125,8 @@ void compute_ranges(uint8_t *ranging_results)
 
 bool responses_received(void)
 {
-   return state.num_responses;
+   for (uint8_t dev_index = 0; dev_index < num_scheduled_devices; ++dev_index)
+      if (state[dev_index].device_eui)
+         return true;
+   return false;
 }

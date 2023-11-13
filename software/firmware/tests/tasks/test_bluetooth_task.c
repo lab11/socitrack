@@ -1,7 +1,9 @@
 #include "app_tasks.h"
+#include "battery.h"
 #include "bluetooth.h"
 #include "button.h"
 #include "logging.h"
+#include "rtc.h"
 #include "system.h"
 
 
@@ -20,6 +22,7 @@ static void read_page(uint8_t *buffer)
    for (uint16_t i = 0; i < MEMORY_PAGE_SIZE_BYTES; ++i)
       buffer[i] = (uint8_t)((((uint32_t)reading_page * MEMORY_PAGE_SIZE_BYTES) + i) & 0xFF);
 }
+void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
 void storage_begin_reading(void)
 {
    reading_page = 0;
@@ -118,7 +121,9 @@ int main(void)
 {
    // Set up system hardware
    setup_hardware();
+   battery_monitor_init();
    buttons_init();
+   rtc_init();
 
    // Fetch the device UID and initialize the Bluetooth hardware
    system_read_UID(device_uid, sizeof(device_uid));

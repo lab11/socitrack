@@ -529,19 +529,6 @@ void storage_store_experiment_details(const experiment_details_t *details)
    }
 }
 
-void storage_retrieve_experiment_details(experiment_details_t *details)
-{
-   // Retrieve experiment details
-   if (!in_maintenance_mode)
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
-   if (read_page(transfer_buffer, starting_page))
-      memcpy(details, transfer_buffer + 4, sizeof(*details));
-   else
-      memset(details, 0, sizeof(*details));
-   if (!in_maintenance_mode)
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
-}
-
 void storage_store(const void *data, uint32_t data_length)
 {
    // Add new data to in-memory cache if not disabled
@@ -573,6 +560,20 @@ void storage_flush(bool write_partial_pages)
 }
 
 #ifndef _TEST_BLUETOOTH
+#ifndef _TEST_BLE_RANGING_TASK
+
+void storage_retrieve_experiment_details(experiment_details_t *details)
+{
+   // Retrieve experiment details
+   if (!in_maintenance_mode)
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+   if (read_page(transfer_buffer, starting_page))
+      memcpy(details, transfer_buffer + 4, sizeof(*details));
+   else
+      memset(details, 0, sizeof(*details));
+   if (!in_maintenance_mode)
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+}
 
 void storage_begin_reading(void)
 {
@@ -602,6 +603,11 @@ void storage_exit_maintenance_mode(void)
 
 uint32_t storage_retrieve_data_length(void)
 {
+   // Ensure that we are in reading mode
+   if (!is_reading)
+      return 0;
+
+   // Read and return the number of bytes available to read
    uint32_t data_length = (BBM_LUT_BASE_ADDRESS - starting_page - 1) * MEMORY_NUM_DATA_BYTES_PER_PAGE;
    if (starting_page < current_page)
       data_length = ((current_page - starting_page - 1) * MEMORY_NUM_DATA_BYTES_PER_PAGE) + cache_index;
@@ -639,4 +645,5 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    return num_bytes_retrieved;
 }
 
+#endif  // #ifndef _TEST_BLE_RANGING_TASK
 #endif  // #ifndef _TEST_BLUETOOTH
