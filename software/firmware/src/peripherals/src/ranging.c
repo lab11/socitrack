@@ -114,6 +114,70 @@ static void wakeup_device_with_io(void)
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
 }
 
+static void dwt_xfer3000(const uint32_t regFileID, const uint16_t indx, const uint16_t length, uint8_t *buffer, const spi_modes_e mode)
+{
+   // Set up local variables
+   uint8_t header[2];            // Buffer to compose header in
+   uint16_t cnt = 1;             // Counter for length of a header
+   uint16_t reg_file = 0x1F & ((regFileID + indx) >> 16), reg_offset = 0x7F & (regFileID + indx);
+
+   // Write message header selecting WRITE operation and addresses as appropriate
+   uint16_t addr = (reg_file << 9) | (reg_offset << 2);
+   header[0] = (uint8_t)((mode | addr) >> 8);    // bit7 + addr[4:0] + sub_addr[6:6]
+   header[1] = (uint8_t)(addr | (mode & 0x03));  // EAM: subaddr[5:0] + R/W/AND_OR
+
+   // Set up the header structure
+   if (!length)  // FAC: bit_7=one is W operation, bit_6=zero: FastAccess command, bit_[5..1] addr, bits_0=one: MODE of FastAccess
+      header[0] = (uint8_t)((DW3000_SPI_WR_BIT >> 8) | (regFileID << 1) | DW3000_SPI_FAC);
+   else if ((reg_offset == 0) && ((mode == DW3000_SPI_WR_BIT) || (mode == DW3000_SPI_RD_BIT)))  // FACRW: bit_7 is R/W operation, bit_6=zero: FastAccess command, bit_[5..1] addr, bits_0=zero: MODE of FastAccess
+      header[0] |= DW3000_SPI_FARW;
+   else  // EAMRW: b[0] = bit_7 is R/W operation, bit_6 one = ExtendedAddressMode, b[1] = addr<<2 | (mode&0x3)
+   {
+      header[0] |= DW3000_SPI_EAMRW;
+      cnt = 2;
+   }
+
+   // Perform the actual SPI read/write command
+   if (mode == DW3000_SPI_WR_BIT)
+      writetospi(cnt, header, length, buffer);
+   else
+      readfromspi(cnt, header, length, buffer);
+}
+
+static uint32_t dwt_read32bitoffsetreg(int regFileID, int regOffset)
+{
+   uint8_t buffer[4];
+   uint32_t regval = 0;
+   dwt_xfer3000(regFileID ,regOffset ,4, buffer, DW3000_SPI_RD_BIT);
+   for (int j = 3; j >= 0; --j)
+      regval = (regval << 8) + buffer[j];
+   return (regval);
+}
+
+static void dwt_write32bitoffsetreg(int regFileID, int regOffset, uint32_t regval)
+{
+   uint8_t buffer[4] = { (uint8_t)regval, (uint8_t)(regval >> 8), (uint8_t)(regval >> 16), (uint8_t)(regval >> 24) };
+   dwt_xfer3000(regFileID, regOffset, 4, buffer, DW3000_SPI_WR_BIT);
+}
+
+static void dwt_write16bitoffsetreg(int regFileID, int regOffset, uint16_t regval)
+{
+   uint8_t buffer[2] = { (uint8_t)regval, regval >> 8 };
+   dwt_xfer3000(regFileID, regOffset, 2, buffer, DW3000_SPI_WR_BIT);
+}
+
+static uint8_t dwt_read8bitoffsetreg(int regFileID, int regOffset)
+{
+   uint8_t regval;
+   dwt_xfer3000(regFileID, regOffset, 1, &regval, DW3000_SPI_RD_BIT);
+   return regval;
+}
+
+static void dwt_write8bitoffsetreg(int regFileID, int regOffset, uint8_t regval)
+{
+   dwt_xfer3000(regFileID, regOffset, 1, &regval, DW3000_SPI_WR_BIT);
+}
+
 
 // DW3000 Required Driver Function Implementations ---------------------------------------------------------------------
 
@@ -347,11 +411,45 @@ void ranging_radio_choose_channel(uint8_t channel)
    {
       // Update the channel number and corresponding power configuration
       dw_config.chan = channel;
-      dwt_configure(&dw_config);
-      if (channel == 5)
-         dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch5);
+      uint32_t temp = dwt_read32bitoffsetreg(CHAN_CTRL_ID, 0);
+      temp &= (~(CHAN_CTRL_RX_PCODE_BIT_MASK | CHAN_CTRL_TX_PCODE_BIT_MASK | CHAN_CTRL_SFD_TYPE_BIT_MASK | CHAN_CTRL_RF_CHAN_BIT_MASK));
+      if (channel == 9)
+         temp |= CHAN_CTRL_RF_CHAN_BIT_MASK;
+      temp |= (CHAN_CTRL_RX_PCODE_BIT_MASK & ((uint32_t)dw_config.rxCode << CHAN_CTRL_RX_PCODE_BIT_OFFSET));
+      temp |= (CHAN_CTRL_TX_PCODE_BIT_MASK & ((uint32_t)dw_config.txCode << CHAN_CTRL_TX_PCODE_BIT_OFFSET));
+      temp |= (CHAN_CTRL_SFD_TYPE_BIT_MASK & ((uint32_t)dw_config.sfdType << CHAN_CTRL_SFD_TYPE_BIT_OFFSET));
+      dwt_write32bitoffsetreg(CHAN_CTRL_ID, 0, temp);
+
+      // Setup radio analog configurations
+      if (channel == 9)
+      {
+         dwt_write32bitoffsetreg(TX_CTRL_HI_ID, 0, RF_TXCTRL_CH9);
+         dwt_write16bitoffsetreg(PLL_CFG_ID, 0, RF_PLL_CFG_CH9);
+         dwt_write32bitoffsetreg(RX_CTRL_HI_ID, 0, RF_RXCTRL_CH9);
+      }
       else
-         dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch9);
+      {
+         dwt_write32bitoffsetreg(TX_CTRL_HI_ID, 0, RF_TXCTRL_CH5);
+         dwt_write16bitoffsetreg(PLL_CFG_ID, 0, RF_PLL_CFG_CH5);
+      }
+      dwt_write8bitoffsetreg(LDO_RLOAD_ID, 1, LDO_RLOAD_VAL_B1);
+      dwt_write8bitoffsetreg(TX_CTRL_LO_ID, 2, RF_TXCTRL_LO_B2);
+      dwt_write8bitoffsetreg(PLL_CAL_ID, 0, RF_PLL_CFG_LD);
+
+      // Verify that the PLL lock bit is cleared
+      dwt_write8bitoffsetreg(SYS_STATUS_ID, 0, SYS_STATUS_CP_LOCK_BIT_MASK);
+
+      // Change to the IDLE_PLL state and auto-calibrate the PLL
+      dwt_setdwstate(DWT_DW_IDLE);
+      for (uint8_t cnt = 0; cnt < MAX_RETRIES_FOR_PLL; ++cnt)
+      {
+         deca_usleep(DELAY_20uUSec);
+         if ((dwt_read8bitoffsetreg(SYS_STATUS_ID, 0) & SYS_STATUS_CP_LOCK_BIT_MASK))
+            break;
+      }
+
+      // Update the RF TX spectrum configuration for the given channel
+      dwt_configuretxrf((channel == 5) ? &tx_config_ch5 : &tx_config_ch9);
       dwt_configmrxlut(channel);
    }
 }
