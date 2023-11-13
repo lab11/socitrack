@@ -28,6 +28,7 @@ static volatile bool devices_found;
 static void verify_app_configuration(void)
 {
    // Retrieve the current state of the application
+   print("INFO: Verifying TotTag application configuration\n");
    const bool is_scanning = bluetooth_is_scanning(), is_ranging = ranging_active();
 
    // Advertising should always be enabled

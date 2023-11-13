@@ -97,8 +97,7 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 // Ranging Protocol Configuration --------------------------------------------------------------------------------------
 
 #define RADIO_XMIT_CHANNEL                          5
-#define NUM_XMIT_ANTENNAS                           2
-#define NUM_RCV_ANTENNAS                            2
+#define NUM_XMIT_ANTENNAS                           3
 #define TX_ANTENNA_DELAY                            16385
 #define RX_ANTENNA_DELAY                            16385
 #define MIN_VALID_RANGE_MM                          (-1000)
@@ -118,11 +117,10 @@ typedef enum { BATTERY_EMPTY = 3200, BATTERY_CRITICAL = 3500, BATTERY_NOMINAL = 
 #define SCHEDULE_RESEND_INTERVAL_US                 1000
 #define SCHEDULE_BROADCAST_PERIOD_US                (SCHEDULE_NUM_TOTAL_BROADCASTS * SCHEDULE_RESEND_INTERVAL_US)
 
+#define RANGING_NUM_PACKETS_PER_DEVICE              3
 #define RANGING_BROADCAST_INTERVAL_US               600
-#define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 56)
-#define RANGING_NUM_SEQUENCES_PER_RANGE             (NUM_XMIT_ANTENNAS * NUM_RCV_ANTENNAS)
-#define RANGING_NUM_PACKETS_PER_RANGE               (4 * RANGING_NUM_SEQUENCES_PER_RANGE)
-#define RANGING_US_PER_RANGE                        (RANGING_BROADCAST_INTERVAL_US * RANGING_NUM_PACKETS_PER_RANGE)
+#define RANGING_NUM_RANGE_ATTEMPTS                  NUM_XMIT_ANTENNAS
+#define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 130)
 
 #define RANGE_STATUS_NUM_TOTAL_BROADCASTS           4
 #define RANGE_STATUS_RESEND_INTERVAL_US             1000
