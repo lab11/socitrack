@@ -2,7 +2,7 @@
 #define FREERTOS_CONFIG_H
 
 #define configUSE_PREEMPTION                    1
-#define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
 
 #define configCPU_CLOCK_HZ                      AM_HAL_CLKGEN_FREQ_MAX_HZ
 #define configTICK_RATE_HZ                      1000
@@ -79,7 +79,6 @@ extern void vAssertCalled(const char * const pcFileName, unsigned long ulLine);
 #define configOVERRIDE_DEFAULT_TICK_CONFIGURATION 1 // Enable non-SysTick based Tick
 #define configUSE_TICKLESS_IDLE                   2 // Ambiq specific implementation for Tickless
 
-#if !(defined(__ASSEMBLY__) || defined(__IAR_SYSTEMS_ASM__))
 extern uint32_t am_freertos_sleep(uint32_t);
 extern void am_freertos_wakeup(uint32_t);
 
@@ -89,8 +88,7 @@ extern void am_freertos_wakeup(uint32_t);
     } while (0);
 
 #define configPOST_SLEEP_PROCESSING(time)    am_freertos_wakeup(time)
-#endif
-/*-----------------------------------------------------------*/
+
 #define AM_FREERTOS_USE_STIMER_FOR_TICK
 #define configSTIMER_CLOCK_HZ                     32768
 #define configSTIMER_CLOCK                        AM_HAL_STIMER_XTAL_32KHZ

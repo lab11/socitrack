@@ -74,7 +74,7 @@ int main(void)
    // Create the BLE task and start the task scheduler
    static TaskHandle_t ble_task_handle;
    configASSERT1(xTaskCreate(BLETask, "BLETask", 512, NULL, 3, &ble_task_handle));
-   bluetooth_start_advertising();
+   bluetooth_start_advertising(false);
    vTaskStartScheduler();
 
    // Should never reach this point

@@ -77,7 +77,7 @@ void AppTaskMaintenance(void *uid)
 
    // Update the BLE role to ASLEEP and start advertising
    bluetooth_set_current_ranging_role(ROLE_ASLEEP);
-   bluetooth_start_advertising();
+   bluetooth_start_advertising(false);
 
    // Loop forever, sleeping until an application notification is received
    while (true)

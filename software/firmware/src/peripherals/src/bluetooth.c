@@ -19,10 +19,9 @@
 static volatile uint16_t connection_mtu;
 static volatile bool is_scanning, is_advertising, is_connected, ranges_requested;
 static volatile bool data_requested, expected_scanning, expected_advertising, is_initialized;
+static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
 static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
-static uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN];
-static uint8_t current_ranging_role[3], device_id[EUI_LEN];
 static ble_discovery_callback_t discovery_callback;
 
 
@@ -82,14 +81,14 @@ static void advertising_setup(dmEvt_t *pMsg)
    AttsSetAttr(DEVICE_INFO_SYSID_HANDLE, sizeof(sys_id), sys_id);
 
    // Set the advertising data
-   memset(adv_data_conn, 0, sizeof(adv_data_conn));
+   memset((uint8_t*)adv_data_conn, 0, sizeof(adv_data_conn));
    AppAdvSetData(APP_ADV_DATA_CONNECTABLE, 0, (uint8_t*)adv_data_conn);
    AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_FLAGS, sizeof(adv_data_flags), (uint8_t*)adv_data_flags);
    AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_LOCAL_NAME, sizeof(adv_local_name), (uint8_t*)adv_local_name);
    AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
 
    // Set the scan response data
-   memset(scan_data_conn, 0, sizeof(scan_data_conn));
+   memset((uint8_t*)scan_data_conn, 0, sizeof(scan_data_conn));
    AppAdvSetData(APP_SCAN_DATA_CONNECTABLE, 0, (uint8_t*)scan_data_conn);
 
    // Setup the advertising mode
@@ -121,13 +120,13 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          advertising_setup(pDmEvt);
          is_initialized = true;
          if (expected_advertising)
-            bluetooth_start_advertising();
+            bluetooth_start_advertising(false);
          else
-            bluetooth_stop_advertising();
+            bluetooth_stop_advertising(false);
          if (expected_scanning)
-            bluetooth_start_scanning();
+            bluetooth_start_scanning(false);
          else
-            bluetooth_stop_scanning();
+            bluetooth_stop_scanning(false);
          break;
       case DM_CONN_OPEN_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_OPEN_IND\n");
@@ -148,7 +147,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_STOP_IND\n");
          is_advertising = false;
          if (expected_advertising)
-            bluetooth_start_advertising();
+            bluetooth_start_advertising(false);
          break;
       case DM_SCAN_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_START_IND\n");
@@ -158,7 +157,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
          is_scanning = false;
          if (expected_scanning)
-            bluetooth_start_scanning();
+            bluetooth_start_scanning(false);
          break;
       case DM_SCAN_REPORT_IND:
       {
@@ -226,10 +225,9 @@ void bluetooth_init(uint8_t* uid)
 {
    // Initialize static variables
    const uint8_t ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
-   memcpy(current_ranging_role, ranging_role, sizeof(ranging_role));
+   memcpy((uint8_t*)current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
    is_scanning = is_advertising = is_connected = ranges_requested = false;
-   memcpy(device_id, uid, EUI_LEN);
    discovery_callback = NULL;
 
    // Store all BLE configuration pointers
@@ -239,10 +237,6 @@ void bluetooth_init(uint8_t* uid)
    pAppSecCfg = (appSecCfg_t*)&ble_sec_cfg;
    pAppUpdateCfg = (appUpdateCfg_t*)&ble_update_cfg;
    pAttCfg = (attCfg_t*)&ble_att_cfg;
-
-   // Setup BLE interrupt priorities
-   NVIC_SetPriority(COOPER_IOM_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
-   NVIC_SetPriority(AM_COOPER_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
 
    // Set the Bluetooth address and boot the BLE radio
    HciVscSetCustom_BDAddr(uid);
@@ -322,23 +316,29 @@ void bluetooth_write_range_results(const uint8_t *results, uint16_t results_leng
       updateRangeResults(AppConnIsOpen(), results, results_length);
 }
 
-void bluetooth_start_advertising(void)
+void bluetooth_start_advertising(bool wait_for_success)
 {
    // Attempt to begin advertising
    expected_advertising = true;
-   if (is_initialized)
+   if (is_initialized && (!wait_for_success || !is_advertising))
    {
       HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
       AppAdvStart(APP_MODE_CONNECTABLE);
+      while (wait_for_success && !is_advertising)
+         am_hal_delay_us(1);
    }
 }
 
-void bluetooth_stop_advertising(void)
+void bluetooth_stop_advertising(bool wait_for_success)
 {
    // Attempt to stop advertising
    expected_advertising = false;
-   if (is_initialized)
+   if (is_initialized && (!wait_for_success || is_advertising))
+   {
       AppAdvStop();
+      while (wait_for_success && is_advertising)
+         am_hal_delay_us(1);
+   }
 }
 
 bool bluetooth_is_advertising(void)
@@ -347,23 +347,29 @@ bool bluetooth_is_advertising(void)
    return is_advertising;
 }
 
-void bluetooth_start_scanning(void)
+void bluetooth_start_scanning(bool wait_for_success)
 {
    // Attempt to start scanning
    expected_scanning = true;
-   if (is_initialized)
+   if (is_initialized && (!wait_for_success || !is_scanning))
    {
       DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
       DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
+      while (wait_for_success && !is_scanning)
+         am_hal_delay_us(1);
    }
 }
 
-void bluetooth_stop_scanning(void)
+void bluetooth_stop_scanning(bool wait_for_success)
 {
    // Attempt to stop scanning
    expected_scanning = false;
-   if (is_initialized)
+   if (is_initialized && (!wait_for_success || is_scanning))
+   {
       DmScanStop();
+      while (wait_for_success && is_scanning)
+         am_hal_delay_us(1);
+   }
 }
 
 void bluetooth_reset_scanning(void)
