@@ -39,7 +39,7 @@ int main(void)
    // Create tasks with the following priority order:
    //    IdleTask < AppTask < BLETask < RangingTask
    configASSERT1(xTaskCreate(RangingTask, "RangingTask", 512, uid, 5, &ranging_task_handle));
-   configASSERT1(xTaskCreate(BLETask, "BLETask", 512, NULL, 3, &ble_task_handle));
+   configASSERT1(xTaskCreate(BLETask, "BLETask", 1024, NULL, 3, &ble_task_handle));
    configASSERT1(xTaskCreate(AppTaskRanging, "AppTask", 512, uid, 2, &app_task_handle));
 
    // Start the task scheduler

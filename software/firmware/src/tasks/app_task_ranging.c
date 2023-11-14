@@ -81,7 +81,7 @@ static void handle_notification(app_notification_t notification)
 
       // Reset the devices-found flag and verify the app configuration
       while (bluetooth_is_scanning())
-         am_hal_delay_us(1);
+         vTaskDelay(pdMS_TO_TICKS(1));
       devices_found = false;
       verify_app_configuration();
    }
@@ -208,8 +208,10 @@ void AppTaskRanging(void *uid)
 
    // Wait until the BLE stack has been fully initialized
    devices_found = false;
-   while (!bluetooth_is_initialized())
-      vTaskDelay(1);
+   for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+      vTaskDelay(pdMS_TO_TICKS(100));
+   if (!bluetooth_is_initialized())
+      system_reset();
 
    // Update the BLE address whitelist
    bluetooth_clear_whitelist();

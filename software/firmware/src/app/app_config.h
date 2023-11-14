@@ -40,6 +40,8 @@
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 
+#define BLE_INIT_TIMEOUT_MS                         1000
+
 
 // Battery Configuration -----------------------------------------------------------------------------------------------
 
