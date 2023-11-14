@@ -90,6 +90,13 @@ static void imu_isr(void *args)
    previously_in_motion = in_motion;
 }
 
+static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
+	static uint8_t byte_array[22];
+    i2c_read(reg_number, byte_array, byte_count);
+    for (uint32_t i = 0; i < byte_count/2; i++){
+        read_buffer[i] = ((int16_t)byte_array[i*2]) | (((int16_t)byte_array[i*2+1]) << 8);
+    }
+}
 
 // IMU Chip-Specific API Functions -------------------------------------------------------------------------------------
 
@@ -98,6 +105,11 @@ static void set_mode(bno055_opmode_t mode)
    // Set the indicated mode and delay to allow it to take effect
    i2c_write8(BNO055_OPR_MODE_ADDR, mode);
    am_util_delay_ms(30);
+}
+
+static bno055_opmode_t get_mode(void)
+{
+   return (bno055_opmode_t)i2c_read8(BNO055_OPR_MODE_ADDR);
 }
 
 static void set_use_external_crystal(void)
@@ -282,4 +294,30 @@ void imu_read_calibration_status(bno55_calib_status_t *status) {
     status->accel = (reg_value >> 2) & 0x03;
     status->gyro = (reg_value >> 4) & 0x03;
     status->sys = (reg_value >> 6) & 0x03;
+}
+
+void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets){
+    static int16_t calib_data[11];
+    bno055_opmode_t saved_mode = get_mode();
+    //calibration values are only availble in config mode
+    set_mode(OPERATION_MODE_CONFIG);
+    //read the 11 offset values
+    read_int16_vector(ACCEL_OFFSET_X_LSB_ADDR, calib_data, sizeof(calib_data));
+    //revert to the previous mode
+    set_mode(saved_mode);
+
+    offsets->accel_offset_x = calib_data[0];
+    offsets->accel_offset_y = calib_data[1];
+    offsets->accel_offset_z = calib_data[2];
+
+    offsets->mag_offset_x = calib_data[3];
+    offsets->mag_offset_y = calib_data[4];
+    offsets->mag_offset_z = calib_data[5];
+
+    offsets->gyro_offset_x = calib_data[6];
+    offsets->gyro_offset_y = calib_data[7];
+    offsets->gyro_offset_z = calib_data[8];
+
+    offsets->accel_radius = calib_data[9];
+    offsets->mag_radius = calib_data[10];
 }

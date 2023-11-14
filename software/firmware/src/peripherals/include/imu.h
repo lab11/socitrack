@@ -191,12 +191,29 @@ typedef enum {
 
 typedef struct
 {
-    int sys;
-    int gyro;
-    int accel;
-    int mag;
+    uint8_t sys;
+    uint8_t gyro;
+    uint8_t accel;
+    uint8_t mag;
 } bno55_calib_status_t;
 
+typedef struct {
+  int16_t accel_offset_x;
+  int16_t accel_offset_y;
+  int16_t accel_offset_z;
+
+  int16_t mag_offset_x;
+  int16_t mag_offset_y;
+  int16_t mag_offset_z;
+
+  int16_t gyro_offset_x;
+  int16_t gyro_offset_y;
+  int16_t gyro_offset_z;
+
+  int16_t accel_radius;
+
+  int16_t mag_radius;
+} bno055_calib_offsets_t;
 // Peripheral Type Definitions -----------------------------------------------------------------------------------------
 
 typedef void (*motion_change_callback_t)(bool in_motion);
@@ -215,4 +232,5 @@ void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z);
 void imu_read_temp(int8_t *temp);
 void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
 void imu_read_calibration_status(bno55_calib_status_t *status);
+void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets);
 #endif  // #ifndef __IMU_HEADER_H__

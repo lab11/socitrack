@@ -19,21 +19,24 @@ int main(void)
    int8_t temp;
    uint8_t rev_msb, rev_lsb;
    bno55_calib_status_t status;
+   bno055_calib_offsets_t offsets;
+
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
 
    imu_read_fw_version(&rev_msb, &rev_lsb);
    print("BNO055 firmware version:%u.%u\n",rev_msb, rev_lsb);
+
    while (true)
    {
       am_hal_delay_us(1000000);
       imu_read_accel_data(&x, &y, &z);
-      print("X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_linear_accel_data(&x, &y, &z);
-      print("X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      print("Linear Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_gravity_accel_data(&x, &y, &z);
-      print("X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_quaternion_data(&w, &x, &y, &z);
-      print("W = %d, X = %d, Y = %d, Z = %d\n", (int32_t)w, (int32_t)x, (int32_t)y, (int32_t)z);
+      print("Quaternion W = %d, X = %d, Y = %d, Z = %d\n", (int32_t)w, (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_gyro_data(&x, &y, &z);
       print("gyro 1 = %d, gyro 2 = %d, gyro 3 = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_temp(&temp);
@@ -42,6 +45,8 @@ int main(void)
       //0: not calibrated; 3: fully calibrated
       imu_read_calibration_status(&status);
       print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
+      imu_read_calibration_offsets(&offsets);
+	  print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
    }
 
    // Should never reach this point
