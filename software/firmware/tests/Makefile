@@ -250,12 +250,12 @@ SRC += storage_task.c
 SRC += subscription_phase.c
 SRC += time_aligned_task.c
 
-.PHONY: all program clean battery ble_and_range bluetooth bluetooth_task button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system
+.PHONY: all program clean battery ble_and_range bluetooth button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range bluetooth bluetooth_task button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system)
+	$(error Make targets include: battery ble_and_range bluetooth button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -278,11 +278,6 @@ bluetooth: TARGET = TestBluetooth
 bluetooth: SRC += test_bluetooth.c
 bluetooth: CFLAGS += -D_TEST_BLUETOOTH
 bluetooth: $(CONFIG) $(CONFIG)/test_bluetooth.o $(CONFIG)/$$(TARGET).bin program
-
-bluetooth_task: TARGET = TestBluetoothTask
-bluetooth_task: SRC += test_bluetooth_task.c
-bluetooth_task: CFLAGS += -D_TEST_BLUETOOTH
-bluetooth_task: $(CONFIG) $(CONFIG)/test_bluetooth_task.o $(CONFIG)/$$(TARGET).bin program
 
 button: TARGET = TestButton
 button: SRC += test_button.c
