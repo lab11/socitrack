@@ -91,11 +91,11 @@ static void imu_isr(void *args)
 }
 
 static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
-	static uint8_t byte_array[22];
-    i2c_read(reg_number, byte_array, byte_count);
-    for (uint32_t i = 0; i < byte_count/2; i++){
-        read_buffer[i] = ((int16_t)byte_array[i*2]) | (((int16_t)byte_array[i*2+1]) << 8);
-    }
+   static uint8_t byte_array[22];
+   i2c_read(reg_number, byte_array, byte_count);
+   for (uint32_t i = 0; i < byte_count/2; i++){
+      read_buffer[i] = ((int16_t)byte_array[i*2]) | (((int16_t)byte_array[i*2+1]) << 8);
+   }
 }
 
 // IMU Chip-Specific API Functions -------------------------------------------------------------------------------------
@@ -244,80 +244,92 @@ void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z)
 }
 
 void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z){
-    static int16_t accel_data[3];
-    i2c_read(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
-    *x = (int16_t)(accel_data[0] << 2) / 4;
-    *y = (int16_t)(accel_data[1] << 2) / 4;
-    *z = (int16_t)(accel_data[2] << 2) / 4;
+   static int16_t accel_data[3];
+   i2c_read(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
+   *x = (int16_t)(accel_data[0] << 2) / 4;
+   *y = (int16_t)(accel_data[1] << 2) / 4;
+   *z = (int16_t)(accel_data[2] << 2) / 4;
 }
 
 void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z){
-    static int16_t accel_data[3];
-    i2c_read(BNO055_GRAVITY_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
-    *x = (int16_t)(accel_data[0] << 2) / 4;
-    *y = (int16_t)(accel_data[1] << 2) / 4;
-    *z = (int16_t)(accel_data[2] << 2) / 4;
+   static int16_t accel_data[3];
+   i2c_read(BNO055_GRAVITY_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
+   *x = (int16_t)(accel_data[0] << 2) / 4;
+   *y = (int16_t)(accel_data[1] << 2) / 4;
+   *z = (int16_t)(accel_data[2] << 2) / 4;
 }
 
 void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z){
-    static int16_t quaternion_data[4];
-    i2c_read(BNO055_QUATERNION_DATA_W_LSB_ADDR, (uint8_t*)quaternion_data, sizeof(quaternion_data));
-    *w = (int16_t)(quaternion_data[0] << 2) / 4;
-    *x = (int16_t)(quaternion_data[1] << 2) / 4;
-    *y = (int16_t)(quaternion_data[2] << 2) / 4;
-    *z = (int16_t)(quaternion_data[3] << 2) / 4;
+   static int16_t quaternion_data[4];
+   i2c_read(BNO055_QUATERNION_DATA_W_LSB_ADDR, (uint8_t*)quaternion_data, sizeof(quaternion_data));
+   *w = (int16_t)(quaternion_data[0] << 2) / 4;
+   *x = (int16_t)(quaternion_data[1] << 2) / 4;
+   *y = (int16_t)(quaternion_data[2] << 2) / 4;
+   *z = (int16_t)(quaternion_data[3] << 2) / 4;
 }
 
 void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z){
-    static int16_t gyro_data[3];
-    i2c_read(BNO055_GYRO_DATA_X_LSB_ADDR, (uint8_t*)gyro_data, sizeof(gyro_data));
-    *x = (int16_t)(gyro_data[0] << 2) / 4;
-    *y = (int16_t)(gyro_data[1] << 2) / 4;
-    *z = (int16_t)(gyro_data[2] << 2) / 4;
+   static int16_t gyro_data[3];
+   i2c_read(BNO055_GYRO_DATA_X_LSB_ADDR, (uint8_t*)gyro_data, sizeof(gyro_data));
+   *x = (int16_t)(gyro_data[0] << 2) / 4;
+   *y = (int16_t)(gyro_data[1] << 2) / 4;
+   *z = (int16_t)(gyro_data[2] << 2) / 4;
 }
 
 void imu_read_temp(int8_t *temp){
-    static int8_t temp_data;
-    i2c_read(BNO055_TEMP_ADDR, (uint8_t*)&temp_data, 1);
-    *temp = (int8_t)temp_data;
+   static int8_t temp_data;
+   i2c_read(BNO055_TEMP_ADDR, (uint8_t*)&temp_data, 1);
+   *temp = (int8_t)temp_data;
 }
 
 void imu_read_fw_version(uint8_t *msb, uint8_t *lsb){
-    *msb = i2c_read8(BNO055_SW_REV_ID_MSB_ADDR);
-    *lsb = i2c_read8(BNO055_SW_REV_ID_LSB_ADDR);
+   *msb = i2c_read8(BNO055_SW_REV_ID_MSB_ADDR);
+   *lsb = i2c_read8(BNO055_SW_REV_ID_LSB_ADDR);
 }
 
 void imu_read_calibration_status(bno55_calib_status_t *status) {
-    uint8_t reg_value = i2c_read8(BNO055_CALIB_STAT_ADDR);
+   uint8_t reg_value = i2c_read8(BNO055_CALIB_STAT_ADDR);
 
-    status->mag = reg_value & 0x03;
-    status->accel = (reg_value >> 2) & 0x03;
-    status->gyro = (reg_value >> 4) & 0x03;
-    status->sys = (reg_value >> 6) & 0x03;
+   status->mag = reg_value & 0x03;
+   status->accel = (reg_value >> 2) & 0x03;
+   status->gyro = (reg_value >> 4) & 0x03;
+   status->sys = (reg_value >> 6) & 0x03;
 }
 
 void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets){
-    static int16_t calib_data[11];
-    bno055_opmode_t saved_mode = get_mode();
-    //calibration values are only availble in config mode
-    set_mode(OPERATION_MODE_CONFIG);
-    //read the 11 offset values
-    read_int16_vector(ACCEL_OFFSET_X_LSB_ADDR, calib_data, sizeof(calib_data));
-    //revert to the previous mode
-    set_mode(saved_mode);
+   static int16_t calib_data[11];
+   bno055_opmode_t saved_mode = get_mode();
+   //calibration values are only availble in config mode
+   set_mode(OPERATION_MODE_CONFIG);
+   //read the 11 offset values
+   read_int16_vector(ACCEL_OFFSET_X_LSB_ADDR, calib_data, sizeof(calib_data));
+   //revert to the previous mode
+   set_mode(saved_mode);
 
-    offsets->accel_offset_x = calib_data[0];
-    offsets->accel_offset_y = calib_data[1];
-    offsets->accel_offset_z = calib_data[2];
+   offsets->accel_offset_x = calib_data[0];
+   offsets->accel_offset_y = calib_data[1];
+   offsets->accel_offset_z = calib_data[2];
 
-    offsets->mag_offset_x = calib_data[3];
-    offsets->mag_offset_y = calib_data[4];
-    offsets->mag_offset_z = calib_data[5];
+   offsets->mag_offset_x = calib_data[3];
+   offsets->mag_offset_y = calib_data[4];
+   offsets->mag_offset_z = calib_data[5];
 
-    offsets->gyro_offset_x = calib_data[6];
-    offsets->gyro_offset_y = calib_data[7];
-    offsets->gyro_offset_z = calib_data[8];
+   offsets->gyro_offset_x = calib_data[6];
+   offsets->gyro_offset_y = calib_data[7];
+   offsets->gyro_offset_z = calib_data[8];
 
-    offsets->accel_radius = calib_data[9];
-    offsets->mag_radius = calib_data[10];
+   offsets->accel_radius = calib_data[9];
+   offsets->mag_radius = calib_data[10];
+}
+
+void imu_read_axis_remap(bno055_axis_remap_t *remap){
+   uint8_t reg_axis_map_config = i2c_read8(BNO055_AXIS_MAP_CONFIG_ADDR);
+   remap->x_remap_val = reg_axis_map_config & 0x03;
+   remap->y_remap_val = (reg_axis_map_config >> 2) & 0x03;
+   remap->z_remap_val = (reg_axis_map_config >> 4) & 0x03;
+
+   uint8_t reg_axis_map_sign = i2c_read8(BNO055_AXIS_MAP_SIGN_ADDR);
+   remap->x_remap_sign = reg_axis_map_sign & 0x03;
+   remap->y_remap_sign = (reg_axis_map_sign >> 2) & 0x03;
+   remap->z_remap_sign = (reg_axis_map_sign >> 4) & 0x03;
 }

@@ -20,11 +20,15 @@ int main(void)
    uint8_t rev_msb, rev_lsb;
    bno55_calib_status_t status;
    bno055_calib_offsets_t offsets;
+   bno055_axis_remap_t remap;
 
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
 
    imu_read_fw_version(&rev_msb, &rev_lsb);
    print("BNO055 firmware version:%u.%u\n",rev_msb, rev_lsb);
+
+   imu_read_axis_remap(&remap);
+   print("BNO055 X mapping:%u, Y mapping:%u, Z mapping:%u, X sign:%u, Y sign:%u, Z sign:%u\n", remap.x_remap_val, remap.y_remap_val, remap.z_remap_val, remap.x_remap_sign, remap.y_remap_sign, remap.z_remap_sign);
 
    while (true)
    {
@@ -33,20 +37,21 @@ int main(void)
       print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_linear_accel_data(&x, &y, &z);
       print("Linear Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
-      imu_read_gravity_accel_data(&x, &y, &z);
-      print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
-      imu_read_quaternion_data(&w, &x, &y, &z);
-      print("Quaternion W = %d, X = %d, Y = %d, Z = %d\n", (int32_t)w, (int32_t)x, (int32_t)y, (int32_t)z);
-      imu_read_gyro_data(&x, &y, &z);
-      print("gyro 1 = %d, gyro 2 = %d, gyro 3 = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
-      imu_read_temp(&temp);
-      print("temp:%d\n", (int32_t)temp);
+      //imu_read_gravity_accel_data(&x, &y, &z);
+      //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      //imu_read_quaternion_data(&w, &x, &y, &z);
+      //print("Quaternion W = %d, X = %d, Y = %d, Z = %d\n", (int32_t)w, (int32_t)x, (int32_t)y, (int32_t)z);
+      //imu_read_gyro_data(&x, &y, &z);
+      //print("gyro 1 = %d, gyro 2 = %d, gyro 3 = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      //imu_read_temp(&temp);
+      //print("temp:%d\n", (int32_t)temp);
 
       //0: not calibrated; 3: fully calibrated
       imu_read_calibration_status(&status);
       print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
-      imu_read_calibration_offsets(&offsets);
-	  print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
+      //imu_read_calibration_offsets(&offsets);
+      //print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
+
    }
 
    // Should never reach this point
