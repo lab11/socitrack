@@ -259,13 +259,13 @@ void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z){
    *z = (int16_t)(accel_data[2] << 2) / 4;
 }
 
-void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z){
+void imu_read_quaternion_data(bno055_quaternion_t *quaternion){
    static int16_t quaternion_data[4];
-   i2c_read(BNO055_QUATERNION_DATA_W_LSB_ADDR, (uint8_t*)quaternion_data, sizeof(quaternion_data));
-   *w = (int16_t)(quaternion_data[0] << 2) / 4;
-   *x = (int16_t)(quaternion_data[1] << 2) / 4;
-   *y = (int16_t)(quaternion_data[2] << 2) / 4;
-   *z = (int16_t)(quaternion_data[3] << 2) / 4;
+   read_int16_vector(BNO055_QUATERNION_DATA_W_LSB_ADDR, quaternion_data, sizeof(quaternion_data));
+   quaternion->w = quaternion_data[0];
+   quaternion->x = quaternion_data[1];
+   quaternion->y = quaternion_data[2];
+   quaternion->z = quaternion_data[3];
 }
 
 void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z){
