@@ -87,12 +87,12 @@ void run_tasks(void)
    }
 
    // Create tasks with the following priority order:
-   //    IdleTask < TimeAlignedTask < AppTask < BLETask < StorageTask < RangingTask
-   configASSERT1(xTaskCreate(RangingTask, "RangingTask", 512, allow_ranging ? uid : NULL, 5, &ranging_task_handle));
-   configASSERT1(xTaskCreate(StorageTask, "StorageTask", 512, allow_ranging ? uid : NULL, 4, &storage_task_handle));
+   //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask
+   configASSERT1(xTaskCreate(StorageTask, "StorageTask", 512, allow_ranging ? uid : NULL, 5, &storage_task_handle));
+   configASSERT1(xTaskCreate(RangingTask, "RangingTask", 512, allow_ranging ? uid : NULL, 4, &ranging_task_handle));
    configASSERT1(xTaskCreate(BLETask, "BLETask", 1024, NULL, 3, &ble_task_handle));
    configASSERT1(xTaskCreate(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", 512, uid, 2, &app_task_handle));
-   configASSERT1(xTaskCreate(TimeAlignedTask, "TimeAlignedTask", 512, allow_ranging ? &scheduled_experiment : NULL, 1, &time_aligned_task_handle));
+   configASSERT1(xTaskCreate(TimeAlignedTask, "TimeAlignedTask", 512, allow_ranging ? &allow_ranging : NULL, 1, &time_aligned_task_handle));
 
    // Start the task scheduler
    vTaskStartScheduler();
