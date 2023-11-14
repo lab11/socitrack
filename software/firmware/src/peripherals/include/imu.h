@@ -205,5 +205,6 @@ void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z);
 void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z);
 void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z);
 void imu_read_temp(int8_t *temp);
+void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
 
 #endif  // #ifndef __IMU_HEADER_H__

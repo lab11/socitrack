@@ -269,3 +269,8 @@ void imu_read_temp(int8_t *temp){
     i2c_read(BNO055_TEMP_ADDR, (uint8_t*)&temp_data, 1);
     *temp = (int8_t)temp_data;
 }
+
+void imu_read_fw_version(uint8_t *msb, uint8_t *lsb){
+    *msb = i2c_read8(BNO055_SW_REV_ID_MSB_ADDR);
+    *lsb = i2c_read8(BNO055_SW_REV_ID_LSB_ADDR);
+}

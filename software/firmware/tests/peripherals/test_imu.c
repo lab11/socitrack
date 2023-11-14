@@ -17,7 +17,11 @@ int main(void)
    // Loop forever, waiting for IMU interrupts
    int16_t w, x, y, z;
    int8_t temp;
+   uint8_t rev_msb, rev_lsb;
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
+
+   imu_read_fw_version(&rev_msb, &rev_lsb);
+   print("BNO055 firmware version:%u.%u\n",rev_msb, rev_lsb);
    while (true)
    {
       am_hal_delay_us(1000000);
