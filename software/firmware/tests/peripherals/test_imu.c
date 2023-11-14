@@ -15,13 +15,24 @@ int main(void)
    system_enable_interrupts(true);
 
    // Loop forever, waiting for IMU interrupts
-   int16_t x, y, z;
+   int16_t w, x, y, z;
+   int16_t temp;
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
    while (true)
    {
-      am_hal_delay_us(5000000);
+      am_hal_delay_us(1000000);
       imu_read_accel_data(&x, &y, &z);
       print("X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      imu_read_linear_accel_data(&x, &y, &z);
+      print("X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      imu_read_gravity_accel_data(&x, &y, &z);
+      print("X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
+      imu_read_quaternion_data(&w, &x, &y, &z);
+      print("W = %d, X = %d, Y = %d, Z = %d\n", (int32_t)w, (int32_t)x, (int32_t)y, (int32_t)z);
+	  imu_read_gyro_data(&x, &y, &z);
+	  print("")?????
+      imu_read_temp(&temp);
+      print("temp:%d\n", (int32_t)temp);
    }
 
    // Should never reach this point

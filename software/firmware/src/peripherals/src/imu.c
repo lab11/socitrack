@@ -138,7 +138,6 @@ static void enable_motion_interrupts(void)
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
-
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 void imu_init(void)
@@ -230,4 +229,43 @@ void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z)
    *x = (int16_t)(accel_data[0] << 2) / 4;
    *y = (int16_t)(accel_data[1] << 2) / 4;
    *z = (int16_t)(accel_data[2] << 2) / 4;
+}
+
+void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z){
+    static int16_t accel_data[3];
+    i2c_read(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
+    *x = (int16_t)(accel_data[0] << 2) / 4;
+    *y = (int16_t)(accel_data[1] << 2) / 4;
+    *z = (int16_t)(accel_data[2] << 2) / 4;
+}
+
+void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z){
+    static int16_t accel_data[3];
+    i2c_read(BNO055_GRAVITY_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
+    *x = (int16_t)(accel_data[0] << 2) / 4;
+    *y = (int16_t)(accel_data[1] << 2) / 4;
+    *z = (int16_t)(accel_data[2] << 2) / 4;
+}
+
+void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z){
+    static int16_t quaternion_data[4];
+    i2c_read(BNO055_QUATERNION_DATA_W_LSB_ADDR, (uint8_t*)quaternion_data, sizeof(quaternion_data));
+    *w = (int16_t)(quaternion_data[0] << 2) / 4;
+    *x = (int16_t)(quaternion_data[1] << 2) / 4;
+    *y = (int16_t)(quaternion_data[2] << 2) / 4;
+    *z = (int16_t)(quaternion_data[3] << 2) / 4;
+}
+
+void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z){
+    static int16_t gyro_data[3];
+    i2c_read(BNO055_GYRO_DATA_X_LSB_ADDR, (uint8_t*)gyro_data, sizeof(gyro_data));
+    *x = (int16_t)(gyro_data[0] << 2) / 4;
+    *y = (int16_t)(gyro_data[1] << 2) / 4;
+    *z = (int16_t)(gyro_data[2] << 2) / 4;
+}
+
+void imu_read_temp(int8_t *temp){
+    static int8_t temp_data;
+    i2c_read(BNO055_TEMP_ADDR, (uint8_t*)&temp_data, 1);
+    *temp = (int8_t)temp_data;
 }
