@@ -247,7 +247,7 @@ void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timesta
       am_hal_gpio_interrupt_irq_clear(GPIO0_001F_IRQn, interrupt_status);
       AM_CRITICAL_END
       am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &wakeup_pin);
-      NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(wakeup_pin), AM_IRQ_PRIORITY_DEFAULT);
+      NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(wakeup_pin), NVIC_configKERNEL_INTERRUPT_PRIORITY);
       NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(wakeup_pin));
    }
 

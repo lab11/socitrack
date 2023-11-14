@@ -117,7 +117,7 @@ void rtc_set_wakeup_timestamp(uint32_t timestamp)
    am_hal_rtc_alarm_set(&wakeup_time, AM_HAL_RTC_ALM_RPT_YR);
    am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
    am_hal_rtc_interrupt_enable(AM_HAL_RTC_INT_ALM);
-   NVIC_SetPriority(RTC_IRQn, AM_IRQ_PRIORITY_DEFAULT);
+   NVIC_SetPriority(RTC_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(RTC_IRQn);
 }
 

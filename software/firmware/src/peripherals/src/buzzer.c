@@ -116,7 +116,7 @@ void buzzer_init(void)
 
    // Enable interrupts upon PWM timer completion
    am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BUZZER_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
-   NVIC_SetPriority(TIMER0_IRQn + BUZZER_TIMER_NUMBER, AM_IRQ_PRIORITY_DEFAULT);
+   NVIC_SetPriority(TIMER0_IRQn + BUZZER_TIMER_NUMBER, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 2);
    NVIC_EnableIRQ(TIMER0_IRQn + BUZZER_TIMER_NUMBER);
 }
 

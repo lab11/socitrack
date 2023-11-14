@@ -24,7 +24,7 @@ void buttons_init(void)
    for (uint32_t i = 0; i < num_buttons; ++i)
    {
       configASSERT0(am_hal_gpio_pinconfig(buttons[i].ui32GPIONumber, button_config));
-      NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(buttons[i].ui32GPIONumber), AM_IRQ_PRIORITY_DEFAULT);
+      NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(buttons[i].ui32GPIONumber), NVIC_configKERNEL_INTERRUPT_PRIORITY);
       NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(buttons[i].ui32GPIONumber));
    }
 }

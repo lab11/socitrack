@@ -144,8 +144,8 @@ void battery_monitor_init(void)
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_BATTERY_INPUT_POWER_GOOD, plugged_in_status_changed, NULL));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &charging_status_pin));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &input_power_good_pin));
-   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_BATTERY_INPUT_POWER_GOOD), AM_IRQ_PRIORITY_DEFAULT);
-   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_BATTERY_CHARGING_STATUS), AM_IRQ_PRIORITY_DEFAULT);
+   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_BATTERY_INPUT_POWER_GOOD), NVIC_configKERNEL_INTERRUPT_PRIORITY);
+   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_BATTERY_CHARGING_STATUS), NVIC_configKERNEL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_BATTERY_INPUT_POWER_GOOD));
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_BATTERY_CHARGING_STATUS));
 
@@ -195,7 +195,7 @@ uint32_t battery_monitor_get_level_mV(void)
 
    // Enable interrupts upon completion of an ADC conversion
    am_hal_adc_interrupt_enable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
-   NVIC_SetPriority(ADC_IRQn, AM_IRQ_PRIORITY_DEFAULT);
+   NVIC_SetPriority(ADC_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 2);
    NVIC_EnableIRQ(ADC_IRQn);
 
    // Enable the ADC

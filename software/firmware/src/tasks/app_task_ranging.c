@@ -17,7 +17,7 @@
 
 static uint8_t device_uid_short;
 static TaskHandle_t app_task_handle = 0;
-static uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
+static volatile uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
 static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
 static volatile bool devices_found;
@@ -33,13 +33,13 @@ static void verify_app_configuration(void)
 
    // Advertising should always be enabled
    if (!bluetooth_is_advertising())
-      bluetooth_start_advertising();
+      bluetooth_start_advertising(true);
 
    // Scanning should only be enabled if we are not already ranging with a network
    if (!is_ranging && !is_scanning)
-      bluetooth_start_scanning();
+      bluetooth_start_scanning(true);
    else if (is_ranging && is_scanning)
-      bluetooth_stop_scanning();
+      bluetooth_stop_scanning(true);
 }
 
 static void handle_notification(app_notification_t notification)
@@ -80,6 +80,8 @@ static void handle_notification(app_notification_t notification)
       }
 
       // Reset the devices-found flag and verify the app configuration
+      while (bluetooth_is_scanning())
+         am_hal_delay_us(1);
       devices_found = false;
       verify_app_configuration();
    }
@@ -114,16 +116,18 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
    {
       devices_found = true;
       num_discovered_devices = 1;
-      memcpy(discovered_devices[0], ble_address, EUI_LEN);
+      for (uint8_t i = 0; i < EUI_LEN; ++i)
+         discovered_devices[0][i] = ble_address[i];
       discovered_devices[0][EUI_LEN] = ranging_role;
       am_hal_timer_clear(BLE_SCANNING_TIMER_NUMBER);
    }
    else if (num_discovered_devices < MAX_NUM_RANGING_DEVICES)
    {
       for (uint8_t i = 0; i < num_discovered_devices; ++i)
-         if (memcmp(discovered_devices[i], ble_address, EUI_LEN) == 0)
+         if (memcmp((uint8_t*)discovered_devices[i], ble_address, EUI_LEN) == 0)
             return;
-      memcpy(discovered_devices[num_discovered_devices], ble_address, EUI_LEN);
+      for (uint8_t i = 0; i < EUI_LEN; ++i)
+         discovered_devices[num_discovered_devices][i] = ble_address[i];
       discovered_devices[num_discovered_devices++][EUI_LEN] = ranging_role;
    }
 }
@@ -131,7 +135,7 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
 void am_timer04_isr(void)
 {
    // Immediately stop scanning for additional devices
-   bluetooth_stop_scanning();
+   bluetooth_stop_scanning(false);
 
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -186,7 +190,7 @@ void AppTaskRanging(void *uid)
    scanning_timer_config.ui32Compare0 = (uint32_t)(BLE_SCANNING_TIMER_TICK_RATE_HZ / 4);
    am_hal_timer_config(BLE_SCANNING_TIMER_NUMBER, &scanning_timer_config);
    am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
-   NVIC_SetPriority(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+   NVIC_SetPriority(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER);
 
    // Register handlers for motion detection, battery status changes, and BLE events

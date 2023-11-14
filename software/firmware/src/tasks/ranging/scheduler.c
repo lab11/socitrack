@@ -15,12 +15,12 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static schedule_role_t current_role;
-static scheduler_phase_t ranging_phase;
 static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint8_t read_buffer[128], device_eui, reception_timeout;
 static uint8_t empty_round_timeout, eui[EUI_LEN];
+static volatile scheduler_phase_t ranging_phase;
 static volatile bool is_running;
 
 
@@ -211,7 +211,7 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
          .ui32Month = 0, .ui32DayOfMonth = 0, .ui32Hour = 0, .ui32Minute = 0, .ui32Second = 1, .ui32Hundredths = 0 };
       am_hal_rtc_alarm_set(&scheduler_interval, AM_HAL_RTC_ALM_RPT_SEC);
       am_hal_rtc_interrupt_enable(AM_HAL_RTC_INT_ALM);
-      NVIC_SetPriority(RTC_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+      NVIC_SetPriority(RTC_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
       NVIC_EnableIRQ(RTC_IRQn);
    }
    else
@@ -220,7 +220,7 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
       current_role = ROLE_IDLE;
       am_hal_timer_default_config_set(&wakeup_timer_config);
       am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
-      NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 1);
+      NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
       NVIC_EnableIRQ(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER);
       print("INFO: Searching for an existing network\n");
       ranging_phase = schedule_phase_begin();
