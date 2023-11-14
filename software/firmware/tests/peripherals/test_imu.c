@@ -22,6 +22,7 @@ int main(void)
    bno055_calib_offsets_t offsets;
    bno055_axis_remap_t remap;
    bno055_quaternion_t quaternion;
+   bno055_acc_t acc;
 
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
 
@@ -34,14 +35,13 @@ int main(void)
    while (true)
    {
       am_hal_delay_us(20000);
-      //imu_read_accel_data(&x, &y, &z);
-      //print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
-      imu_read_linear_accel_data(&x, &y, &z);
-	  imu_read_quaternion_data(&quaternion);
-      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d\n", (int32_t)x, (int32_t)y, (int32_t)z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z);
-      //imu_read_gravity_accel_data(&x, &y, &z);
-      //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
-      //print("Quaternion W = %d, X = %d, Y = %d, Z = %d\n", (int32_t)w, (int32_t)x, (int32_t)y, (int32_t)z);
+      //imu_read_accel_data(&acc);
+      //print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
+      imu_read_linear_accel_data(&acc);
+      imu_read_quaternion_data(&quaternion);
+      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z);
+      //imu_read_gravity_accel_data(&acc);
+      //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       //imu_read_gyro_data(&x, &y, &z);
       //print("gyro 1 = %d, gyro 2 = %d, gyro 3 = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       //imu_read_temp(&temp);

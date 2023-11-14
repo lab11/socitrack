@@ -234,29 +234,29 @@ void imu_register_motion_change_callback(motion_change_callback_t callback, bno0
    set_mode(mode);
 }
 
-void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z)
+void imu_read_accel_data(bno055_acc_t *acc)
 {
    static int16_t accel_data[3];
-   i2c_read(BNO055_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
-   *x = (int16_t)(accel_data[0] << 2) / 4;
-   *y = (int16_t)(accel_data[1] << 2) / 4;
-   *z = (int16_t)(accel_data[2] << 2) / 4;
+   read_int16_vector(BNO055_ACCEL_DATA_X_LSB_ADDR, accel_data, sizeof(accel_data));
+   acc->x = accel_data[0];
+   acc->y = accel_data[1];
+   acc->z = accel_data[2];
 }
 
-void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z){
+void imu_read_linear_accel_data(bno055_acc_t *acc){
    static int16_t accel_data[3];
-   i2c_read(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
-   *x = (int16_t)(accel_data[0] << 2) / 4;
-   *y = (int16_t)(accel_data[1] << 2) / 4;
-   *z = (int16_t)(accel_data[2] << 2) / 4;
+   read_int16_vector(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, accel_data, sizeof(accel_data));
+   acc->x = accel_data[0];
+   acc->y = accel_data[1];
+   acc->z = accel_data[2];
 }
 
-void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z){
+void imu_read_gravity_accel_data(bno055_acc_t *acc){
    static int16_t accel_data[3];
-   i2c_read(BNO055_GRAVITY_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data));
-   *x = (int16_t)(accel_data[0] << 2) / 4;
-   *y = (int16_t)(accel_data[1] << 2) / 4;
-   *z = (int16_t)(accel_data[2] << 2) / 4;
+   read_int16_vector(BNO055_GRAVITY_DATA_X_LSB_ADDR, accel_data, sizeof(accel_data));
+   acc->x = accel_data[0];
+   acc->y = accel_data[1];
+   acc->z = accel_data[2];
 }
 
 void imu_read_quaternion_data(bno055_quaternion_t *quaternion){
