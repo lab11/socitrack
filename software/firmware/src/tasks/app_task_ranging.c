@@ -197,7 +197,7 @@ void AppTaskRanging(void *uid)
    bluetooth_register_discovery_callback(ble_discovery_handler);
 #ifndef _TEST_BLE_RANGING_TASK
    battery_register_event_callback(battery_event_handler);
-   imu_register_motion_change_callback(motion_change_handler, OPERATION_MODE_NDOF);
+   imu_register_motion_change_callback(motion_change_handler, OPERATION_MODE_ACCONLY);
    if (battery_monitor_is_plugged_in())
       storage_flush_and_shutdown();
 #endif
