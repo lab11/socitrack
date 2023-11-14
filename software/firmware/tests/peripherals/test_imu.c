@@ -16,7 +16,7 @@ int main(void)
 
    // Loop forever, waiting for IMU interrupts
    int16_t x, y, z;
-   imu_register_motion_change_callback(motion_interrupt);
+   imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
    while (true)
    {
       am_hal_delay_us(5000000);
