@@ -189,6 +189,14 @@ typedef enum {
    POWER_MODE_SUSPEND = 0X02
 } bno055_powermode_t;
 
+typedef struct
+{
+    int sys;
+    int gyro;
+    int accel;
+    int mag;
+} bno55_calib_status_t;
+
 // Peripheral Type Definitions -----------------------------------------------------------------------------------------
 
 typedef void (*motion_change_callback_t)(bool in_motion);
@@ -206,5 +214,5 @@ void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z);
 void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z);
 void imu_read_temp(int8_t *temp);
 void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
-
+void imu_read_calibration_status(bno55_calib_status_t *status);
 #endif  // #ifndef __IMU_HEADER_H__

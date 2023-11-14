@@ -274,3 +274,12 @@ void imu_read_fw_version(uint8_t *msb, uint8_t *lsb){
     *msb = i2c_read8(BNO055_SW_REV_ID_MSB_ADDR);
     *lsb = i2c_read8(BNO055_SW_REV_ID_LSB_ADDR);
 }
+
+void imu_read_calibration_status(bno55_calib_status_t *status) {
+    uint8_t reg_value = i2c_read8(BNO055_CALIB_STAT_ADDR);
+
+    status->mag = reg_value & 0x03;
+    status->accel = (reg_value >> 2) & 0x03;
+    status->gyro = (reg_value >> 4) & 0x03;
+    status->sys = (reg_value >> 6) & 0x03;
+}

@@ -18,6 +18,7 @@ int main(void)
    int16_t w, x, y, z;
    int8_t temp;
    uint8_t rev_msb, rev_lsb;
+   bno55_calib_status_t status;
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
 
    imu_read_fw_version(&rev_msb, &rev_lsb);
@@ -37,6 +38,10 @@ int main(void)
       print("gyro 1 = %d, gyro 2 = %d, gyro 3 = %d\n", (int32_t)x, (int32_t)y, (int32_t)z);
       imu_read_temp(&temp);
       print("temp:%d\n", (int32_t)temp);
+
+      //0: not calibrated; 3: fully calibrated
+      imu_read_calibration_status(&status);
+      print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
    }
 
    // Should never reach this point
