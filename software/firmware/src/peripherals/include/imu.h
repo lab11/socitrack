@@ -158,7 +158,13 @@ typedef enum {
    ACC_AM_THRE = 0x11,
    ACC_INT_SET = 0x12,
    ACC_NM_THRE = 0x15,
-   ACC_NM_SET = 0x16
+   ACC_NM_SET = 0x16,
+
+   //configs
+   BNO055_MAG_CONFIG_ADDR = 0X09,
+   BNO055_GYRO_CONFIG_ADDR =0X0A,
+   BNO055_GYRO_MODE_CONFIG_ADDR = 0X0B,
+
 } bno055_reg_t;
 
 typedef enum {
@@ -194,5 +200,10 @@ void imu_init(void);
 void imu_deinit(void);
 void imu_register_motion_change_callback(motion_change_callback_t callback, bno055_opmode_t mode);
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z);
+void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z);
+void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z);
+void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z);
+void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z);
+void imu_read_temp(int8_t *temp);
 
 #endif  // #ifndef __IMU_HEADER_H__
