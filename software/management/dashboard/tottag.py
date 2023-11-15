@@ -116,15 +116,16 @@ def unpack_experiment_details(data):
       'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):],
    }
 
-def process_tottag_data(from_uid, storage_directory, details, data):
+def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file=False):
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
       label = details['labels'][i].decode().rstrip('\x00')
       uid_to_labels[int(details['uids'][i][0])] = label if label else details['uids'][i][0]
    i = 0
    log_data = defaultdict(dict)
-   with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
-      file.write(data)
+   if save_raw_file:
+      with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
+         file.write(data)
    while i < len(data):
       timestamp = struct.unpack('<I', data[i+1:i+5])[0]
       if data[i] == STORAGE_TYPE_VOLTAGE:

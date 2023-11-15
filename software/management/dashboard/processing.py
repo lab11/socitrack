@@ -22,6 +22,7 @@ def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
     axis.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
     axis.xaxis.set_label_text(x_axis_label)
     axis.yaxis.set_label_text(y_axis_label)
+    axis.figure.autofmt_xdate(rotation=45, bottom=0.3)
     plt.plot(x_axis_data, y_axis_data)
     plt.show()
 
@@ -34,7 +35,7 @@ def get_voltage_time_series(data, tottag_label):
     plot_data('Battery Voltage for {}'.format(tottag_label), 'Date and Time', 'Voltage (mV)', timestamps, voltages)
 
 def get_motion_time_series(data, tottag_label):
-    motions = data.loc['m'].fillna(method='pad')
+    motions = data.loc['m'].ffill()
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in motions.keys()])
     plot_data('Motion Status for {}'.format(tottag_label), 'Date and Time', 'Motion Status', timestamps, motions)
 
