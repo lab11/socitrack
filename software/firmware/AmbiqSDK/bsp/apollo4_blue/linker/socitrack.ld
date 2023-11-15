@@ -25,7 +25,7 @@ SECTIONS
         KEEP(*(.isr_vector))
         KEEP(*(.patch))
         . = ALIGN(4);
-	}
+	} > MCU_MRAM
 
     .text :
     {
@@ -39,7 +39,6 @@ SECTIONS
         *(.rodata)
         *(.rodata*)
         . = ALIGN(4);
-        _etext = .;
     } > MCU_MRAM
     
     .ARM.exidx :
@@ -49,24 +48,8 @@ SECTIONS
         __exidx_end = .;
     } > MCU_MRAM
 
-    /* User stack section initialized by startup code. */
-    .stack (NOLOAD):
-    {
-        . = ALIGN(8);
-        *(.stack)
-        *(.stack*)
-        . = ALIGN(8);
-    } > MCU_TCM
-
-    .heap : {
-        __heap_start__ = .;
-        end = __heap_start__;
-        _end = end;
-        __end = end;
-        KEEP(*(.heap))
-        __heap_end__ = .;
-        __HeapLimit = __heap_end__;
-    } > MCU_TCM
+    . = ALIGN(8);
+    _etext = .;
 
     .data :
     {
@@ -81,7 +64,7 @@ SECTIONS
     /* used by startup to initialize data */
     _init_data = LOADADDR(.data);
 
-    .bss :
+    .bss (NOLOAD):
     {
         . = ALIGN(4);
         _sbss = .;
@@ -92,13 +75,26 @@ SECTIONS
         _ebss = .;
     } > MCU_TCM
 
-    .shared :
+    .heap (NOLOAD):
     {
-        . = ALIGN(4);
-        KEEP(*(.resource_table))
-        KEEP(*(.shared))
-        . = ALIGN(4);
-    } > SHARED_SRAM AT>MCU_MRAM
+        __heap_start__ = .;
+        end = __heap_start__;
+        _end = end;
+        __end = end;
+        KEEP(*(.heap))
+        __heap_end__ = .;
+        __HeapLimit = __heap_end__;
+    } > MCU_TCM
+
+    /* User stack section initialized by startup code. */
+    .stack (NOLOAD):
+    {
+        . = ALIGN(8);
+        *(.stack)
+        *(.stack*)
+        . = ALIGN(8);
+    } > MCU_TCM
+
     .ARM.attributes 0 : { *(.ARM.attributes) }
 }
 
