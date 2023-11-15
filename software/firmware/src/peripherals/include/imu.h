@@ -5,7 +5,15 @@
 
 #include "app_config.h"
 
-typedef enum {
+
+// Peripheral Type Definitions -----------------------------------------------------------------------------------------
+
+#define BNO055_ID 0xA0
+
+typedef void (*motion_change_callback_t)(bool in_motion);
+
+typedef enum
+{
    // Page ID register definition
    BNO055_PAGE_ID_ADDR = 0X07,
 
@@ -167,7 +175,8 @@ typedef enum {
 
 } bno055_reg_t;
 
-typedef enum {
+typedef enum
+{
    OPERATION_MODE_CONFIG = 0X00,
    OPERATION_MODE_ACCONLY = 0X01,
    OPERATION_MODE_MAGONLY = 0X02,
@@ -183,7 +192,8 @@ typedef enum {
    OPERATION_MODE_NDOF = 0X0C
 } bno055_opmode_t;
 
-typedef enum {
+typedef enum
+{
    POWER_MODE_NORMAL = 0X00,
    POWER_MODE_LOWPOWER = 0X01,
    POWER_MODE_SUSPEND = 0X02
@@ -197,7 +207,8 @@ typedef struct
    uint8_t mag;
 } bno55_calib_status_t;
 
-typedef struct {
+typedef struct
+{
    int16_t accel_offset_x;
    int16_t accel_offset_y;
    int16_t accel_offset_z;
@@ -215,7 +226,8 @@ typedef struct {
    int16_t mag_radius;
 } bno055_calib_offsets_t;
 
-typedef struct {
+typedef struct
+{
    uint8_t x_remap_val;
    uint8_t y_remap_val;
    uint8_t z_remap_val;
@@ -224,21 +236,20 @@ typedef struct {
    uint8_t z_remap_sign;
 }bno055_axis_remap_t;
 
-typedef struct {
+typedef struct
+{
    int16_t w;
    int16_t x;
    int16_t y;
    int16_t z;
 } bno055_quaternion_t;
 
-typedef struct {
+typedef struct
+{
    int16_t x;
    int16_t y;
    int16_t z;
 } bno055_acc_t;
-// Peripheral Type Definitions -----------------------------------------------------------------------------------------
-
-typedef void (*motion_change_callback_t)(bool in_motion);
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -256,4 +267,6 @@ void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
 void imu_read_calibration_status(bno55_calib_status_t *status);
 void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets);
 void imu_read_axis_remap(bno055_axis_remap_t *remap);
+bool imu_read_in_motion(void);
+
 #endif  // #ifndef __IMU_HEADER_H__
