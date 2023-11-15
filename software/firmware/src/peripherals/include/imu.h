@@ -223,6 +223,19 @@ typedef struct {
    uint8_t y_remap_sign;
    uint8_t z_remap_sign;
 }bno055_axis_remap_t;
+
+typedef struct {
+   int16_t w;
+   int16_t x;
+   int16_t y;
+   int16_t z;
+} bno055_quaternion_t;
+
+typedef struct {
+   int16_t x;
+   int16_t y;
+   int16_t z;
+} bno055_acc_t;
 // Peripheral Type Definitions -----------------------------------------------------------------------------------------
 
 typedef void (*motion_change_callback_t)(bool in_motion);
@@ -233,10 +246,10 @@ typedef void (*motion_change_callback_t)(bool in_motion);
 void imu_init(void);
 void imu_deinit(void);
 void imu_register_motion_change_callback(motion_change_callback_t callback, bno055_opmode_t mode);
-void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z);
-void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z);
-void imu_read_gravity_accel_data(int16_t *x, int16_t *y, int16_t *z);
-void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z);
+void imu_read_accel_data(bno055_acc_t *acc);
+void imu_read_linear_accel_data(bno055_acc_t *acc);
+void imu_read_gravity_accel_data(bno055_acc_t *acc);
+void imu_read_quaternion_data(bno055_quaternion_t *quaternion);
 void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z);
 void imu_read_temp(int8_t *temp);
 void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
