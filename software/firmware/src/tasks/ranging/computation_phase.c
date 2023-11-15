@@ -2,11 +2,11 @@
 
 #include "logging.h"
 #include "computation_phase.h"
+#include "ranging_phase.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static ranging_device_state_t state[MAX_NUM_RANGING_DEVICES];
 static int distances_millimeters[RANGING_NUM_RANGE_ATTEMPTS];
 static uint8_t num_scheduled_devices;
 
@@ -36,42 +36,6 @@ void insert_sorted(int arr[], int new, unsigned end)
 void reset_computation_phase(uint8_t schedule_length)
 {
    num_scheduled_devices = schedule_length;
-   memset(&state, 0, sizeof(state));
-}
-
-void associate_eui_with_index(uint32_t index, uint8_t eui)
-{
-   state[index].device_eui = eui;
-}
-
-void add_ranging_times_poll_tx(uint32_t index, uint8_t sequence_number, uint32_t tx_time)
-{
-   state[index].poll_tx_times[sequence_number] = tx_time;
-}
-
-void add_ranging_times_poll_rx(uint32_t index, uint8_t sequence_number, uint32_t rx_time)
-{
-   state[index].poll_rx_times[sequence_number] = rx_time;
-}
-
-void add_ranging_times_response_tx(uint32_t index, uint8_t sequence_number, uint32_t tx_time)
-{
-   state[index].resp_tx_times[sequence_number] = tx_time;
-}
-
-void add_ranging_times_response_rx(uint32_t index, uint8_t sequence_number, uint32_t rx_time)
-{
-   state[index].resp_rx_times[sequence_number] = rx_time;
-}
-
-void add_ranging_times_final_tx(uint32_t index, uint8_t sequence_number, uint32_t tx_time)
-{
-   state[index].final_tx_times[sequence_number] = tx_time;
-}
-
-void add_ranging_times_final_rx(uint32_t index, uint8_t sequence_number, uint32_t rx_time)
-{
-   state[index].final_rx_times[sequence_number] = rx_time;
 }
 
 void compute_ranges(uint8_t *ranging_results)
@@ -79,6 +43,7 @@ void compute_ranges(uint8_t *ranging_results)
    // Iterate through all responses to calculate the range from this to that device
    ranging_results[0] = 0;
    uint8_t output_buffer_index = 1;
+   const ranging_device_state_t *state = ranging_phase_get_measurements();
    for (uint8_t dev_index = 0; dev_index < num_scheduled_devices; ++dev_index)
    {
       // Calculate the device distances using symmetric two-way TOFs
@@ -121,12 +86,4 @@ void compute_ranges(uint8_t *ranging_results)
          }
       }
    }
-}
-
-bool responses_received(void)
-{
-   for (uint8_t dev_index = 0; dev_index < num_scheduled_devices; ++dev_index)
-      if (state[dev_index].device_eui)
-         return true;
-   return false;
 }

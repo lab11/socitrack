@@ -10,6 +10,7 @@
 
 static scheduler_phase_t current_phase;
 static ranging_packet_t ranging_packet;
+static ranging_device_state_t measurements[MAX_NUM_RANGING_DEVICES];
 static uint32_t time_slot, my_slot, extended_slot, num_slots, slots_per_range;
 static uint32_t schedule_length, next_action_timestamp, ranging_phase_duration, temp_resp_rx;
 static uint16_t extended_packet_length;
@@ -90,6 +91,7 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
    // Ensure there are at least two devices to begin ranging
    my_slot = scheduled_slot;
    reset_computation_phase(schedule_size);
+   memset(&measurements, 0, sizeof(measurements));
    slots_per_range = (uint32_t)schedule_size * RANGING_NUM_PACKETS_PER_DEVICE;
    extended_slot = (uint32_t)schedule_size * (RANGING_NUM_PACKETS_PER_DEVICE - 1);
    num_slots = slots_per_range * RANGING_NUM_RANGE_ATTEMPTS;
@@ -133,13 +135,13 @@ scheduler_phase_t ranging_phase_tx_complete(void)
    if (slot < schedule_length)
    {
       for (uint32_t i = 0; i < my_slot; ++i)
-         add_ranging_times_response_tx(i, (uint8_t)sequence_number, ranging_packet.tx_rx_times[0]);
+         measurements[i].resp_tx_times[sequence_number] = ranging_packet.tx_rx_times[0];
       for (uint32_t i = my_slot + 1; i < schedule_length; ++i)
-         add_ranging_times_poll_tx(i, (uint8_t)sequence_number, ranging_packet.tx_rx_times[0]);
+         measurements[i].poll_tx_times[sequence_number] = ranging_packet.tx_rx_times[0];
    }
    else if (slot < extended_slot)
       for (uint32_t i = my_slot + 1; i < schedule_length; ++i)
-         add_ranging_times_final_tx(i, (uint8_t)sequence_number, ranging_packet.tx_rx_times[0]);
+         measurements[i].final_tx_times[sequence_number] = ranging_packet.tx_rx_times[0];
 
    // Move to the next time slot operation
    ++time_slot;
@@ -170,8 +172,8 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    {
       register const uint32_t storage_index = schedule_length - my_slot - 1 + slot + slot;
       ranging_packet.tx_rx_times[storage_index] = (uint32_t)ranging_radio_readrxtimestamp();
-      add_ranging_times_poll_tx(slot, (uint8_t)sequence_number, packet->tx_rx_times[0]);
-      add_ranging_times_poll_rx(slot, (uint8_t)sequence_number, ranging_packet.tx_rx_times[storage_index]);
+      measurements[slot].poll_tx_times[sequence_number] = packet->tx_rx_times[0];
+      measurements[slot].poll_rx_times[sequence_number] = ranging_packet.tx_rx_times[storage_index];
       if (!storage_index)
          temp_resp_rx = ranging_packet.tx_rx_times[storage_index];
    }
@@ -179,30 +181,30 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    {
       register const uint32_t storage_index = slot - my_slot - 1;
       ranging_packet.tx_rx_times[storage_index] = (uint32_t)ranging_radio_readrxtimestamp();
-      add_ranging_times_response_tx(slot, (uint8_t)sequence_number, packet->tx_rx_times[0]);
-      add_ranging_times_response_rx(slot, (uint8_t)sequence_number, ranging_packet.tx_rx_times[storage_index]);
+      measurements[slot].resp_tx_times[sequence_number] = packet->tx_rx_times[0];
+      measurements[slot].resp_rx_times[sequence_number] = ranging_packet.tx_rx_times[storage_index];
       if (!storage_index)
          temp_resp_rx = ranging_packet.tx_rx_times[storage_index];
    }
    else if (slot >= extended_slot)
    {
       register const uint32_t tx_device_slot = slot - extended_slot;
-      associate_eui_with_index(tx_device_slot, packet->header.sourceAddr[0]);
+      measurements[tx_device_slot].device_eui = packet->header.sourceAddr[0];
       if (my_slot > tx_device_slot)
-         add_ranging_times_response_rx(tx_device_slot, (uint8_t)sequence_number, packet->tx_rx_times[my_slot - tx_device_slot - 1]);
+         measurements[tx_device_slot].resp_rx_times[sequence_number] = packet->tx_rx_times[my_slot - tx_device_slot - 1];
       else
       {
          register const uint32_t poll_times_offset = schedule_length - tx_device_slot - 1;
-         add_ranging_times_poll_rx(tx_device_slot, (uint8_t)sequence_number, packet->tx_rx_times[poll_times_offset + my_slot + my_slot]);
-         add_ranging_times_final_rx(tx_device_slot, (uint8_t)sequence_number, packet->tx_rx_times[poll_times_offset + my_slot + my_slot + 1]);
+         measurements[tx_device_slot].poll_rx_times[sequence_number] = packet->tx_rx_times[poll_times_offset + my_slot + my_slot];
+         measurements[tx_device_slot].final_rx_times[sequence_number] = packet->tx_rx_times[poll_times_offset + my_slot + my_slot + 1];
       }
    }
    else if ((slot - schedule_length) < my_slot)
    {
       register const uint32_t storage_index = slot + slot - schedule_length - my_slot;
       ranging_packet.tx_rx_times[storage_index] = (uint32_t)ranging_radio_readrxtimestamp();
-      add_ranging_times_final_tx(slot - schedule_length, (uint8_t)sequence_number, packet->tx_rx_times[0]);
-      add_ranging_times_final_rx(slot - schedule_length, (uint8_t)sequence_number, ranging_packet.tx_rx_times[storage_index]);
+      measurements[slot - schedule_length].final_tx_times[sequence_number] = packet->tx_rx_times[0];
+      measurements[slot - schedule_length].final_rx_times[sequence_number] = ranging_packet.tx_rx_times[storage_index];
    }
 
    // Move to the next time slot operation
@@ -241,6 +243,11 @@ scheduler_phase_t ranging_phase_rx_error(void)
           start_rx("ERROR: Unable to start listening for RANGING packets after error\n");
 }
 
+ranging_device_state_t* ranging_phase_get_measurements(void)
+{
+   return measurements;
+}
+
 uint32_t ranging_phase_get_duration(void)
 {
    return ranging_phase_duration;
@@ -249,4 +256,12 @@ uint32_t ranging_phase_get_duration(void)
 bool ranging_phase_was_scheduled(void)
 {
    return (my_slot != UNSCHEDULED_SLOT);
+}
+
+bool responses_received(void)
+{
+   for (uint32_t i = 0; i < schedule_length; ++i)
+      if (measurements[i].device_eui)
+         return true;
+   return false;
 }
