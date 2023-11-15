@@ -100,7 +100,7 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
       present_devices[num_present_devices++] = packet->header.sourceAddr[0];
 
    // Retransmit the status packet upon reception
-   const uint32_t seqNum = packet->sequence_number;
+   register const uint32_t seqNum = packet->sequence_number;
    if (scheduled_slot && (scheduled_slot <= RANGE_STATUS_NUM_TOTAL_BROADCASTS) && (packet->sequence_number < scheduled_slot))
    {
       packet->sequence_number = (scheduled_slot < current_slot) ? scheduled_slot : (scheduled_slot - 1);

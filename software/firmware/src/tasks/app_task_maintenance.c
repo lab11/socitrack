@@ -60,8 +60,8 @@ void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate)
 void AppTaskMaintenance(void *uid)
 {
    // Store the application task handle
+   static uint32_t notification_bits = 0;
    app_task_handle = xTaskGetCurrentTaskHandle();
-   uint32_t notification_bits = 0;
 
    // Register handler for battery status changes and verify correct mode of operation
    battery_register_event_callback(battery_event_handler);

@@ -91,7 +91,7 @@ scheduler_phase_t subscription_phase_rx_error(void)
       return ranging_phase_rx_error();
 
    // Attempt to re-enable listening for additional Subscription packets
-   uint32_t time_elapsed_us = DWT_TO_US((uint64_t)(dwt_readsystimestamphi32() - (uint32_t)(reference_time >> 8)) << 8);
+   register const uint32_t time_elapsed_us = DWT_TO_US((uint64_t)(dwt_readsystimestamphi32() - (uint32_t)(reference_time >> 8)) << 8);
    if ((time_elapsed_us + 600) <= (RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US))
    {
       print("INFO: More time left in the Subscription phase...listening again\n");

@@ -72,19 +72,19 @@ static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t
 
 void storage_flush_and_shutdown(void)
 {
-   storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
+   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
    xQueueSendToBack(storage_queue, &storage_item, portMAX_DELAY);
 }
 
 void storage_write_battery_level(uint32_t battery_voltage_mV)
 {
-   storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
+   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
    xQueueSendToBack(storage_queue, &storage_item, portMAX_DELAY);
 }
 
 void storage_write_charging_event(battery_event_t battery_event)
 {
-   storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = battery_event, .type = STORAGE_TYPE_CHARGING_EVENT };
+   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = battery_event, .type = STORAGE_TYPE_CHARGING_EVENT };
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    xQueueSendToBackFromISR(storage_queue, &storage_item, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -92,7 +92,7 @@ void storage_write_charging_event(battery_event_t battery_event)
 
 void storage_write_motion_status(bool in_motion)
 {
-   storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = in_motion, .type = STORAGE_TYPE_MOTION };
+   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = in_motion, .type = STORAGE_TYPE_MOTION };
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    xQueueSendToBackFromISR(storage_queue, &storage_item, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -100,7 +100,7 @@ void storage_write_motion_status(bool in_motion)
 
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len)
 {
-   storage_item_t storage_item = { .timestamp = timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
+   const storage_item_t storage_item = { .timestamp = timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
    memcpy(range_data[range_data_index].data, ranging_data, ranging_data_len);
    range_data[range_data_index].length = ranging_data_len;
    range_data_index = (range_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
@@ -110,8 +110,8 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void StorageTask(void *params)
 {
    // Create a queue to hold pending storage items
-   storage_item_t item;
    range_data_index = 0;
+   static storage_item_t item;
    storage_queue = xQueueCreateStatic(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t), ucQueueStorage, &xQueueBuffer);
 
    // Set whether the storage peripheral should be in maintenance mode

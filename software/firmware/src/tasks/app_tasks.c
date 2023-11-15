@@ -19,7 +19,6 @@ static StaticTask_t storage_task_tcb, time_aligned_task_tcb;
 static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
 static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], storage_task_stack[configMINIMAL_STACK_SIZE];
 static StackType_t time_aligned_task_stack[configMINIMAL_STACK_SIZE];
-static experiment_details_t scheduled_experiment;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -45,6 +44,7 @@ void run_tasks(void)
    ranging_radio_sleep(true);
 
    // Determine whether there is an active experiment taking place
+   static experiment_details_t scheduled_experiment;
    storage_retrieve_experiment_details(&scheduled_experiment);
    uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
    bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices;
@@ -93,7 +93,7 @@ void run_tasks(void)
    //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask
    xTaskCreateStatic(StorageTask, "StorageTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 5, storage_task_stack, &storage_task_tcb);
    xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);
-   xTaskCreateStatic(BLETask, "BLETask", 2*configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
+   xTaskCreateStatic(BLETask, "BLETask", 2 * configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
    xTaskCreateStatic(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);
    xTaskCreateStatic(TimeAlignedTask, "TimeAlignedTask", configMINIMAL_STACK_SIZE, allow_ranging ? &scheduled_experiment : NULL, 1, time_aligned_task_stack, &time_aligned_task_tcb);
 

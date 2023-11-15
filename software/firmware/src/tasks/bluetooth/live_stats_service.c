@@ -158,7 +158,7 @@ static const attsAttr_t liveStatsList[] =
    }
 };
 
-static attsGroup_t liveStatsGroup;
+static attsGroup_t liveStatsGroup = { 0, (attsAttr_t*)liveStatsList, NULL, NULL, LIVE_STATS_SERVICE_HANDLE, LIVE_STATS_MAX_HANDLE-1 };
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
@@ -170,7 +170,6 @@ void liveStatsAddGroup(void)
 
 void liveStatsRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t writeCallback)
 {
-   timestamp = findMyTottagDuration = batteryLevel = 0;
-   memset(ranges, 0, sizeof(ranges));
-   liveStatsGroup = (attsGroup_t){ 0, (attsAttr_t*)liveStatsList, readCallback, writeCallback, LIVE_STATS_SERVICE_HANDLE, LIVE_STATS_MAX_HANDLE-1 };
+   liveStatsGroup.readCback = readCallback;
+   liveStatsGroup.writeCback = writeCallback;
 }

@@ -124,14 +124,12 @@ static const attsAttr_t deviceInfoList[] =
    }
 };
 
-static attsGroup_t deviceInfoGroup;
+static attsGroup_t deviceInfoGroup = { 0, (attsAttr_t*)deviceInfoList, 0, 0, DEVICE_INFO_SERVICE_HANDLE, DEVICE_INFO_MAX_HANDLE-1 };
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
 
 void deviceInfoAddGroup(void)
 {
-   memset(deviceInfoSysId, 0, sizeof(deviceInfoSysId));
-   deviceInfoGroup = (attsGroup_t){ 0, (attsAttr_t*)deviceInfoList, 0, 0, DEVICE_INFO_SERVICE_HANDLE, DEVICE_INFO_MAX_HANDLE-1 };
    AttsAddGroup(&deviceInfoGroup);
 }

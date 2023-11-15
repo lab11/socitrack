@@ -129,7 +129,7 @@ scheduler_phase_t ranging_phase_tx_complete(void)
 
    // Record the packet transmit time in all relevant storage structures
    const div_t slot_results = div(time_slot, slots_per_range);
-   const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
+   register const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
    if (slot < schedule_length)
    {
       for (uint32_t i = 0; i < my_slot; ++i)
@@ -165,10 +165,10 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
 
    // Record the packet reception time in all relevant storage structures
    const div_t slot_results = div(time_slot, slots_per_range);
-   const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
+   register const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
    if (slot < my_slot)
    {
-      const uint32_t storage_index = schedule_length - my_slot - 1 + slot + slot;
+      register const uint32_t storage_index = schedule_length - my_slot - 1 + slot + slot;
       ranging_packet.tx_rx_times[storage_index] = (uint32_t)ranging_radio_readrxtimestamp();
       add_ranging_times_poll_tx(slot, (uint8_t)sequence_number, packet->tx_rx_times[0]);
       add_ranging_times_poll_rx(slot, (uint8_t)sequence_number, ranging_packet.tx_rx_times[storage_index]);
@@ -177,7 +177,7 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    }
    else if (slot < schedule_length)
    {
-      const uint32_t storage_index = slot - my_slot - 1;
+      register const uint32_t storage_index = slot - my_slot - 1;
       ranging_packet.tx_rx_times[storage_index] = (uint32_t)ranging_radio_readrxtimestamp();
       add_ranging_times_response_tx(slot, (uint8_t)sequence_number, packet->tx_rx_times[0]);
       add_ranging_times_response_rx(slot, (uint8_t)sequence_number, ranging_packet.tx_rx_times[storage_index]);
@@ -186,20 +186,20 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    }
    else if (slot >= extended_slot)
    {
-      const uint32_t tx_device_slot = slot - extended_slot;
+      register const uint32_t tx_device_slot = slot - extended_slot;
       associate_eui_with_index(tx_device_slot, packet->header.sourceAddr[0]);
       if (my_slot > tx_device_slot)
          add_ranging_times_response_rx(tx_device_slot, (uint8_t)sequence_number, packet->tx_rx_times[my_slot - tx_device_slot - 1]);
       else
       {
-         const uint32_t poll_times_offset = schedule_length - tx_device_slot - 1;
+         register const uint32_t poll_times_offset = schedule_length - tx_device_slot - 1;
          add_ranging_times_poll_rx(tx_device_slot, (uint8_t)sequence_number, packet->tx_rx_times[poll_times_offset + my_slot + my_slot]);
          add_ranging_times_final_rx(tx_device_slot, (uint8_t)sequence_number, packet->tx_rx_times[poll_times_offset + my_slot + my_slot + 1]);
       }
    }
    else if ((slot - schedule_length) < my_slot)
    {
-      const uint32_t storage_index = slot + slot - schedule_length - my_slot;
+      register const uint32_t storage_index = slot + slot - schedule_length - my_slot;
       ranging_packet.tx_rx_times[storage_index] = (uint32_t)ranging_radio_readrxtimestamp();
       add_ranging_times_final_tx(slot - schedule_length, (uint8_t)sequence_number, packet->tx_rx_times[0]);
       add_ranging_times_final_rx(slot - schedule_length, (uint8_t)sequence_number, ranging_packet.tx_rx_times[storage_index]);

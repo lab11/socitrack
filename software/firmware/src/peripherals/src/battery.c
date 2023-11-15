@@ -27,7 +27,7 @@ static void signal_charge_complete(bool charge_complete)
 static void plugged_in_status_changed(void *args)
 {
    // Retrieve the current plugged-in status of the charger
-   bool is_plugged_in = battery_monitor_is_plugged_in();
+   const bool is_plugged_in = battery_monitor_is_plugged_in();
 
    // Toggle the interrupt direction (dual-edge interrupts not available due to errata)
    am_hal_gpio_pincfg_t pin_config = AM_HAL_GPIO_PINCFG_INPUT;
@@ -46,7 +46,7 @@ static void plugged_in_status_changed(void *args)
 static void charging_status_changed(void *args)
 {
    // Retrieve the current charging statuses of the charger
-   bool is_charging = battery_monitor_is_charging();
+   const bool is_charging = battery_monitor_is_charging();
 
    // Toggle the interrupt direction (dual-edge interrupts not available due to errata)
    am_hal_gpio_pincfg_t pin_config = AM_HAL_GPIO_PINCFG_INPUT;
@@ -224,18 +224,12 @@ bool battery_monitor_is_plugged_in(void)
 {
    // Return the current plugged-in status of the battery
    static uint32_t status;
-   if (am_hal_gpio_state_read(PIN_BATTERY_INPUT_POWER_GOOD, AM_HAL_GPIO_INPUT_READ, &status) == AM_HAL_STATUS_SUCCESS)
-      return (status == 0);
-   else
-      return false;
+   return (am_hal_gpio_state_read(PIN_BATTERY_INPUT_POWER_GOOD, AM_HAL_GPIO_INPUT_READ, &status) == AM_HAL_STATUS_SUCCESS) && !status;
 }
 
 bool battery_monitor_is_charging(void)
 {
    // Return the current charging status of the battery
    static uint32_t status;
-   if (am_hal_gpio_state_read(PIN_BATTERY_CHARGING_STATUS, AM_HAL_GPIO_INPUT_READ, &status) == AM_HAL_STATUS_SUCCESS)
-      return (status == 0);
-   else
-      return false;
+   return (am_hal_gpio_state_read(PIN_BATTERY_CHARGING_STATUS, AM_HAL_GPIO_INPUT_READ, &status) == AM_HAL_STATUS_SUCCESS) && !status;
 }

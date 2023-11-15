@@ -117,12 +117,12 @@ static void wakeup_device_with_io(void)
 static void dwt_xfer3000(const uint32_t regFileID, const uint16_t indx, const uint16_t length, uint8_t *buffer, const spi_modes_e mode)
 {
    // Set up local variables
-   uint8_t header[2];            // Buffer to compose header in
-   uint16_t cnt = 1;             // Counter for length of a header
-   uint16_t reg_file = 0x1F & ((regFileID + indx) >> 16), reg_offset = 0x7F & (regFileID + indx);
+   uint8_t header[2];
+   uint16_t cnt = 1;
+   const uint16_t reg_file = 0x1F & ((regFileID + indx) >> 16), reg_offset = 0x7F & (regFileID + indx);
 
    // Write message header selecting WRITE operation and addresses as appropriate
-   uint16_t addr = (reg_file << 9) | (reg_offset << 2);
+   const uint16_t addr = (reg_file << 9) | (reg_offset << 2);
    header[0] = (uint8_t)((mode | addr) >> 8);    // bit7 + addr[4:0] + sub_addr[6:6]
    header[1] = (uint8_t)(addr | (mode & 0x03));  // EAM: subaddr[5:0] + R/W/AND_OR
 
@@ -146,12 +146,12 @@ static void dwt_xfer3000(const uint32_t regFileID, const uint16_t indx, const ui
 
 static uint32_t dwt_read32bitoffsetreg(int regFileID, int regOffset)
 {
-   uint8_t buffer[4];
    uint32_t regval = 0;
-   dwt_xfer3000(regFileID ,regOffset ,4, buffer, DW3000_SPI_RD_BIT);
+   static uint8_t buffer[4];
+   dwt_xfer3000(regFileID, regOffset, 4, buffer, DW3000_SPI_RD_BIT);
    for (int j = 3; j >= 0; --j)
       regval = (regval << 8) + buffer[j];
-   return (regval);
+   return regval;
 }
 
 static void dwt_write32bitoffsetreg(int regFileID, int regOffset, uint32_t regval)
@@ -168,7 +168,7 @@ static void dwt_write16bitoffsetreg(int regFileID, int regOffset, uint16_t regva
 
 static uint8_t dwt_read8bitoffsetreg(int regFileID, int regOffset)
 {
-   uint8_t regval;
+   static uint8_t regval;
    dwt_xfer3000(regFileID, regOffset, 1, &regval, DW3000_SPI_RD_BIT);
    return regval;
 }

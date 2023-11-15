@@ -5,22 +5,10 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static const uint16_t unplugged_frequencies[] = { 1760,   1, 1320,   1, 1110,   1, 880, 0 };
-static const uint16_t unplugged_durations[] =   {  100,  10,  100,  10,  100,  10, 100 };
-static const uint16_t plugged_frequencies[] = { 880,   1, 1110,   1, 1320,   1, 1760, 0 };
-static const uint16_t plugged_durations[] =   { 100,  10,  100,  10,  100,  10,  100 };
-static const uint16_t invalid_rtc_frequencies[] = { 760,   1, 760, 0 };
-static const uint16_t invalid_rtc_durations[] =   {  100, 100,  400 };
-static const uint16_t error_frequencies[] = { 880,   1, 587, 0 };
-static const uint16_t error_durations[] =   { 300, 100, 500 };
-static const uint16_t locator_frequencies[] = { 1047,   1, 1047, 830,   1, 880, 698, 0 };
-static const uint16_t locator_durations[] =   {  100, 100,  100, 100, 100, 100, 200 };
-
 static am_hal_timer_config_t timer_config;
+static const uint32_t buzzer_clock_hz = AM_HAL_CLKGEN_FREQ_MAX_HZ / 256;
 static volatile const uint16_t *current_frequency, *current_duration;
 static volatile uint32_t interrupt_counter_index, interrupt_counter_max;
-static uint32_t buzzer_clock_hz;
-
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
@@ -97,7 +85,6 @@ void am_timer00_isr(void)
 void buzzer_init(void)
 {
    // Initialize static variables
-   buzzer_clock_hz = AM_HAL_CLKGEN_FREQ_MAX_HZ / 256;
    current_frequency = NULL;
    current_duration = NULL;
 
@@ -135,6 +122,8 @@ void buzzer_deinit(void)
 
 void buzzer_indicate_plugged_in(void)
 {
+   static const uint16_t plugged_frequencies[] = { 880,   1, 1110,   1, 1320,   1, 1760, 0 };
+   static const uint16_t plugged_durations[] =   { 100,  10,  100,  10,  100,  10,  100 };
    if (!current_frequency)
    {
       current_frequency = plugged_frequencies;
@@ -145,6 +134,8 @@ void buzzer_indicate_plugged_in(void)
 
 void buzzer_indicate_unplugged(void)
 {
+   static const uint16_t unplugged_frequencies[] = { 1760,   1, 1320,   1, 1110,   1, 880, 0 };
+   static const uint16_t unplugged_durations[] =   {  100,  10,  100,  10,  100,  10, 100 };
    if (!current_frequency)
    {
       current_frequency = unplugged_frequencies;
@@ -155,6 +146,8 @@ void buzzer_indicate_unplugged(void)
 
 void buzzer_indicate_invalid_rtc_time(void)
 {
+   static const uint16_t invalid_rtc_frequencies[] = { 760,   1, 760, 0 };
+   static const uint16_t invalid_rtc_durations[] =   {  100, 100,  400 };
    if (!current_frequency)
    {
       current_frequency = invalid_rtc_frequencies;
@@ -165,6 +158,8 @@ void buzzer_indicate_invalid_rtc_time(void)
 
 void buzzer_indicate_error(void)
 {
+   static const uint16_t error_frequencies[] = { 880,   1, 587, 0 };
+   static const uint16_t error_durations[] =   { 300, 100, 500 };
    if (!current_frequency)
    {
       current_frequency = error_frequencies;
@@ -175,6 +170,8 @@ void buzzer_indicate_error(void)
 
 void buzzer_indicate_location(void)
 {
+   static const uint16_t locator_frequencies[] = { 1047,   1, 1047, 830,   1, 880, 698, 0 };
+   static const uint16_t locator_durations[] =   {  100, 100,  100, 100, 100, 100, 200 };
    if (!current_frequency)
    {
       current_frequency = locator_frequencies;

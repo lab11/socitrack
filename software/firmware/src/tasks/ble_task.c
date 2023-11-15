@@ -29,7 +29,7 @@ static void ble_stack_init(void)
    WsfTimerInit();
 
    // Initialize a buffer pool for WSF dynamic memory needs
-   uint16_t wsfBufMemLen = WsfBufInit(sizeof(g_pui32BufMem), (uint8_t*)g_pui32BufMem, WSF_BUF_POOLS, g_psPoolDescriptors);
+   const uint16_t wsfBufMemLen = WsfBufInit(sizeof(g_pui32BufMem), (uint8_t*)g_pui32BufMem, WSF_BUF_POOLS, g_psPoolDescriptors);
    if (wsfBufMemLen > sizeof(g_pui32BufMem))
       print("ERROR: Memory pool is too small by %d\n", wsfBufMemLen - sizeof(g_pui32BufMem));
 

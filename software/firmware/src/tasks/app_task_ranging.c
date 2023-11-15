@@ -16,7 +16,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint8_t device_uid_short;
-static TaskHandle_t app_task_handle = 0;
+static TaskHandle_t app_task_handle;
 static volatile uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
 static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
@@ -49,6 +49,9 @@ static void handle_notification(app_notification_t notification)
       verify_app_configuration();
    if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
    {
+      // Stop scanning for additional devices
+      bluetooth_stop_scanning(true);
+
       // Determine if an actively ranging device was located
       bool ranging_device_located = false, idle_device_located = false;
       for (uint8_t i = 0; !ranging_device_located && (i < num_discovered_devices); ++i)
@@ -80,8 +83,6 @@ static void handle_notification(app_notification_t notification)
       }
 
       // Reset the devices-found flag and verify the app configuration
-      while (bluetooth_is_scanning())
-         vTaskDelay(pdMS_TO_TICKS(1));
       devices_found = false;
       verify_app_configuration();
    }
@@ -134,9 +135,6 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
 
 void am_timer04_isr(void)
 {
-   // Immediately stop scanning for additional devices
-   bluetooth_stop_scanning(false);
-
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
@@ -180,9 +178,9 @@ void app_activate_find_my_tottag(uint32_t seconds_to_activate)
 void AppTaskRanging(void *uid)
 {
    // Store the UID and application task handle
+   static uint32_t notification_bits = 0;
    device_uid_short = ((uint8_t*)uid)[0];
    app_task_handle = xTaskGetCurrentTaskHandle();
-   uint32_t notification_bits = 0;
 
    // Initialize the BLE scanning window timer
    am_hal_timer_config_t scanning_timer_config;
@@ -203,7 +201,7 @@ void AppTaskRanging(void *uid)
 #endif
 
    // Retrieve current experiment details from non-volatile storage
-   experiment_details_t current_experiment;
+   static experiment_details_t current_experiment;
    storage_retrieve_experiment_details(&current_experiment);
 
    // Wait until the BLE stack has been fully initialized

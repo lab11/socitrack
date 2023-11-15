@@ -53,8 +53,8 @@ typedef struct __attribute__ ((__packed__)) { uint16_t lba, pba; } bbm_lut_t;
 static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table_internal[BBM_INTERNAL_LUT_NUM_ENTRIES];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES];
-static uint32_t starting_page, current_page, reading_page, cache_index;
-static bool is_reading, in_maintenance_mode, disabled;
+static volatile uint32_t starting_page, current_page, reading_page, cache_index;
+static volatile bool is_reading, in_maintenance_mode, disabled;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------

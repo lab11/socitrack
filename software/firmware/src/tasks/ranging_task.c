@@ -31,7 +31,7 @@ void RangingTask(void *uid)
 {
    // Store the ranging task handle and initialize the ranging scheduler
    ranging_task_handle = xTaskGetCurrentTaskHandle();
-   uint32_t desired_role_bits = 0;
+   static uint32_t desired_role_bits = 0;
    scheduler_init(uid);
    is_ranging = false;
 
