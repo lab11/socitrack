@@ -4,7 +4,6 @@
 #include "battery.h"
 #include "logging.h"
 #include "rtc.h"
-#include "storage.h"
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -12,11 +11,9 @@
 void TimeAlignedTask(void *scheduled_experiment)
 {
    // Set up local variables
-   experiment_details_t experiment_details;
+   experiment_details_t *experiment_details = scheduled_experiment ? (experiment_details_t*)scheduled_experiment : NULL;
    const TickType_t ticks_between_iterations = pdMS_TO_TICKS(BATTERY_CHECK_INTERVAL_S * 1000);
    TickType_t last_wake_time = xTaskGetTickCount();
-   if (scheduled_experiment)
-      storage_retrieve_experiment_details(&experiment_details);
 
    // Loop forever
    while (true)
@@ -31,17 +28,17 @@ void TimeAlignedTask(void *scheduled_experiment)
 
       // Determine if an active experiment has ended
       bool experiment_ended = false;
-      if (scheduled_experiment)
+      if (experiment_details)
       {
-         if (rtc_get_timestamp() > experiment_details.experiment_end_time)
+         if (rtc_get_timestamp() > experiment_details->experiment_end_time)
             experiment_ended = true;
-         else if (experiment_details.use_daily_times)
+         else if (experiment_details->use_daily_times)
          {
             uint32_t time_of_day = rtc_get_time_of_day();
-            if (((experiment_details.daily_start_time < experiment_details.daily_end_time) &&
-                  ((time_of_day < experiment_details.daily_start_time) || (time_of_day > experiment_details.daily_end_time))) ||
-               ((experiment_details.daily_start_time > experiment_details.daily_end_time) &&
-                  ((time_of_day < experiment_details.daily_start_time) && (time_of_day > experiment_details.daily_end_time))))
+            if (((experiment_details->daily_start_time < experiment_details->daily_end_time) &&
+                  ((time_of_day < experiment_details->daily_start_time) || (time_of_day > experiment_details->daily_end_time))) ||
+               ((experiment_details->daily_start_time > experiment_details->daily_end_time) &&
+                  ((time_of_day < experiment_details->daily_start_time) && (time_of_day > experiment_details->daily_end_time))))
                experiment_ended = true;
          }
       }

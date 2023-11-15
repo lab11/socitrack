@@ -22,6 +22,8 @@ typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
+static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
 static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
 static uint32_t range_data_index;
@@ -110,7 +112,7 @@ void StorageTask(void *params)
    // Create a queue to hold pending storage items
    storage_item_t item;
    range_data_index = 0;
-   storage_queue = xQueueCreate(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t));
+   storage_queue = xQueueCreateStatic(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t), ucQueueStorage, &xQueueBuffer);
 
    // Set whether the storage peripheral should be in maintenance mode
    if (params)

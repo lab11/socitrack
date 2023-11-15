@@ -7,7 +7,9 @@
 #include "rtc.h"
 #include "system.h"
 
-static TaskHandle_t app_task_handle, ble_task_handle, ranging_task_handle;
+static StaticTask_t app_task_tcb, ble_task_tcb, ranging_task_tcb;
+static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
+static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE];
 
 void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
 void storage_begin_reading(void) {}
@@ -38,9 +40,9 @@ int main(void)
 
    // Create tasks with the following priority order:
    //    IdleTask < AppTask < BLETask < RangingTask
-   configASSERT1(xTaskCreate(RangingTask, "RangingTask", 512, uid, 5, &ranging_task_handle));
-   configASSERT1(xTaskCreate(BLETask, "BLETask", 1024, NULL, 3, &ble_task_handle));
-   configASSERT1(xTaskCreate(AppTaskRanging, "AppTask", 512, uid, 2, &app_task_handle));
+   xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, uid, 4, ranging_task_stack, &ranging_task_tcb);
+   xTaskCreateStatic(BLETask, "BLETask", 2*configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
+   xTaskCreateStatic(AppTaskRanging, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);
 
    // Start the task scheduler
    vTaskStartScheduler();

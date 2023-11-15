@@ -82,6 +82,7 @@ wsfOs_t wsfOs;
 #include "FreeRTOS.h"
 #include "event_groups.h"
 EventGroupHandle_t xRadioTaskEventObject = NULL;
+StaticEventGroup_t xEventGroupBuffer;
 
 /*************************************************************************************************/
 /*!
@@ -341,7 +342,7 @@ void WsfOsInit(void)
 
   if( xRadioTaskEventObject == NULL)
   {
-    xRadioTaskEventObject = xEventGroupCreate();
+    xRadioTaskEventObject = xEventGroupCreateStatic(&xEventGroupBuffer);
 
     WSF_ASSERT(xRadioTaskEventObject != NULL);
   }

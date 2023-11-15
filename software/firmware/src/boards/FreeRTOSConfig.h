@@ -4,11 +4,13 @@
 #define configUSE_PREEMPTION                    1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
 
+#define configSUPPORT_STATIC_ALLOCATION         1
+#define configSUPPORT_DYNAMIC_ALLOCATION        0
+
 #define configCPU_CLOCK_HZ                      AM_HAL_CLKGEN_FREQ_MAX_HZ
 #define configTICK_RATE_HZ                      1000
 #define configMAX_PRIORITIES                    6
-#define configMINIMAL_STACK_SIZE                (256)
-#define configTOTAL_HEAP_SIZE                   (16 * 1024)
+#define configMINIMAL_STACK_SIZE                512
 #define configMAX_TASK_NAME_LEN                 16
 #define configUSE_16_BIT_TICKS                  0
 #define configIDLE_SHOULD_YIELD                 1
@@ -38,7 +40,7 @@
 #define configUSE_TIMERS                        1
 #define configTIMER_TASK_PRIORITY               3
 #define configTIMER_QUEUE_LENGTH                5
-#define configTIMER_TASK_STACK_DEPTH            configMINIMAL_STACK_SIZE
+#define configTIMER_TASK_STACK_DEPTH            256
 
 /* Interrupt nesting behaviour configuration. */
 #define NVIC_configKERNEL_INTERRUPT_PRIORITY        (0x7)

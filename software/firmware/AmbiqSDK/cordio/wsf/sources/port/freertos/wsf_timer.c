@@ -46,6 +46,7 @@
 
 wsfQueue_t  wsfTimerTimerQueue;     /*!< Timer queue */
 TimerHandle_t xWsfTimer;
+StaticTimer_t xTimerBuffer;
 static uint32_t g_ui32LastTime = 0;
 
 /*************************************************************************************************/
@@ -156,8 +157,8 @@ void WsfTimerInit(void)
 
   if(xWsfTimer == NULL)
   {
-    xWsfTimer = xTimerCreate("WSF Timer", pdMS_TO_TICKS(WSF_MS_PER_TICK),
-          pdFALSE, NULL, WsfTimer_handler);
+    xWsfTimer = xTimerCreateStatic("WSF Timer", pdMS_TO_TICKS(WSF_MS_PER_TICK),
+          pdFALSE, NULL, WsfTimer_handler, &xTimerBuffer);
     configASSERT(xWsfTimer);
     g_ui32LastTime = xTaskGetTickCount();
   }

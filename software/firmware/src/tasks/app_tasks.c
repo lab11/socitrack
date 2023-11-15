@@ -14,8 +14,11 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static TaskHandle_t app_task_handle, ble_task_handle, ranging_task_handle;
-static TaskHandle_t storage_task_handle, time_aligned_task_handle;
+static StaticTask_t app_task_tcb, ble_task_tcb, ranging_task_tcb;
+static StaticTask_t storage_task_tcb, time_aligned_task_tcb;
+static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
+static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], storage_task_stack[configMINIMAL_STACK_SIZE];
+static StackType_t time_aligned_task_stack[configMINIMAL_STACK_SIZE];
 static experiment_details_t scheduled_experiment;
 
 
@@ -88,11 +91,11 @@ void run_tasks(void)
 
    // Create tasks with the following priority order:
    //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask
-   configASSERT1(xTaskCreate(StorageTask, "StorageTask", 512, allow_ranging ? uid : NULL, 5, &storage_task_handle));
-   configASSERT1(xTaskCreate(RangingTask, "RangingTask", 512, allow_ranging ? uid : NULL, 4, &ranging_task_handle));
-   configASSERT1(xTaskCreate(BLETask, "BLETask", 1024, NULL, 3, &ble_task_handle));
-   configASSERT1(xTaskCreate(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", 512, uid, 2, &app_task_handle));
-   configASSERT1(xTaskCreate(TimeAlignedTask, "TimeAlignedTask", 512, allow_ranging ? &allow_ranging : NULL, 1, &time_aligned_task_handle));
+   xTaskCreateStatic(StorageTask, "StorageTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 5, storage_task_stack, &storage_task_tcb);
+   xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);
+   xTaskCreateStatic(BLETask, "BLETask", 2*configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
+   xTaskCreateStatic(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);
+   xTaskCreateStatic(TimeAlignedTask, "TimeAlignedTask", configMINIMAL_STACK_SIZE, allow_ranging ? &scheduled_experiment : NULL, 1, time_aligned_task_stack, &time_aligned_task_tcb);
 
    // Start the task scheduler
    vTaskStartScheduler();

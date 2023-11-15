@@ -8,7 +8,9 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+static StaticTask_t ranging_task_tcb, test_task_tcb;
 static TaskHandle_t ranging_task_handle, test_task_handle;
+static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], test_task_stack[configMINIMAL_STACK_SIZE];
 static uint8_t uid[EUI_LEN], test_state;
 static volatile bool is_ranging;
 
@@ -110,8 +112,8 @@ int main(void)
    ranging_radio_sleep(true);
 
    // Create the ranging tasks and start the task scheduler
-   configASSERT1(xTaskCreate(RangeTask, "RangeTask", 512, uid, 5, &ranging_task_handle));
-   configASSERT1(xTaskCreate(TestTask, "TestTask", 512, NULL, 4, &test_task_handle));
+   ranging_task_handle = xTaskCreateStatic(RangeTask, "RangeTask", configMINIMAL_STACK_SIZE, uid, 5, ranging_task_stack, &ranging_task_tcb);
+   test_task_handle = xTaskCreateStatic(TestTask, "TestTask", configMINIMAL_STACK_SIZE, NULL, 4, test_task_stack, &test_task_tcb);
    vTaskStartScheduler();
    return 0;
 }
