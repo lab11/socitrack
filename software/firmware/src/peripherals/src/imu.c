@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "imu.h"
+#include "math.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -87,6 +88,7 @@ static void imu_isr(void *args)
 
 static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
    static uint8_t byte_array[22];
+   memset(byte_array, 0, 22);
    i2c_read(reg_number, byte_array, byte_count);
    for (uint32_t i = 0; i < byte_count/2; i++){
       read_buffer[i] = ((int16_t)byte_array[i*2]) | (((int16_t)byte_array[i*2+1]) << 8);
@@ -143,6 +145,19 @@ static void enable_motion_interrupts(void)
    i2c_write8(INT_MSK, 0xC0);
    i2c_write8(INT_EN, 0xC0);
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
+}
+
+// Math helper functions -----------------------------------------------------------------------------------------------
+void quaternion_to_euler(const bno055_quaternion_t quaternion, bno055_euler_t *euler)
+{
+   int32_t sqw = quaternion.w * quaternion.w;
+   int32_t sqx = quaternion.x * quaternion.x;
+   int32_t sqy = quaternion.y * quaternion.y;
+   int32_t sqz = quaternion.z * quaternion.z;
+
+   euler->yaw = atan2(2.0*(quaternion.x*quaternion.y + quaternion.z*quaternion.w),(sqx - sqy - sqz + sqw));
+   euler->pitch = asin((double)(-2*(quaternion.x*quaternion.z - quaternion.y*quaternion.w))/(double)(sqx + sqy + sqz + sqw));
+   euler->roll = atan2(2.0*(quaternion.y*quaternion.z + quaternion.x*quaternion.w),(-sqx - sqy + sqz + sqw));
 }
 
 // Public API Functions ------------------------------------------------------------------------------------------------

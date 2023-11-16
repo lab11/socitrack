@@ -246,6 +246,13 @@ typedef struct
 
 typedef struct
 {
+   double yaw;
+   double pitch;
+   double roll;
+}bno055_euler_t;
+
+typedef struct
+{
    int16_t x;
    int16_t y;
    int16_t z;
@@ -268,5 +275,8 @@ void imu_read_calibration_status(bno55_calib_status_t *status);
 void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets);
 void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_read_in_motion(void);
+
+// Math utilities
+void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler);
 
 #endif  // #ifndef __IMU_HEADER_H__

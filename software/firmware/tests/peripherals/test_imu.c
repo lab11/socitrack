@@ -2,6 +2,7 @@
 #include "logging.h"
 #include "system.h"
 
+#define RAD_TO_DEG(radian) (radian * 180.0 / 3.14159265358979f)
 static void motion_interrupt(bool in_motion)
 {
    print("Device is %s\n", in_motion ? "IN MOTION" : "STATIONARY");
@@ -18,11 +19,12 @@ int main(void)
    int16_t x, y, z;
    int8_t temp;
    uint8_t rev_msb, rev_lsb;
-   bno55_calib_status_t status;
-   bno055_calib_offsets_t offsets;
-   bno055_axis_remap_t remap;
-   bno055_quaternion_t quaternion;
-   bno055_acc_t acc;
+   bno55_calib_status_t status = {0};
+   bno055_calib_offsets_t offsets = {0};
+   bno055_axis_remap_t remap = {0};
+   bno055_quaternion_t quaternion = {0};
+   bno055_euler_t euler = {0};
+   bno055_acc_t acc = {0};
 
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
 
@@ -34,12 +36,18 @@ int main(void)
 
    while (true)
    {
-      am_hal_delay_us(20000);
+      //0: not calibrated; 3: fully calibrated 
+      imu_read_calibration_status(&status);
+      print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
+      //imu_read_calibration_offsets(&offsets);
+      //print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
+      am_hal_delay_us(40000);
       //imu_read_accel_data(&acc);
       //print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       imu_read_linear_accel_data(&acc);
       imu_read_quaternion_data(&quaternion);
-      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z);
+      quaternion_to_euler(quaternion, &euler);
+      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d, yaw = %lf, pitch = %lf, roll = %lf\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z, RAD_TO_DEG(euler.yaw), RAD_TO_DEG(euler.pitch), RAD_TO_DEG(euler.roll));
       //imu_read_gravity_accel_data(&acc);
       //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       //imu_read_gyro_data(&x, &y, &z);
@@ -47,11 +55,7 @@ int main(void)
       //imu_read_temp(&temp);
       //print("temp:%d\n", (int32_t)temp);
 
-      //0: not calibrated; 3: fully calibrated
-      //imu_read_calibration_status(&status);
-      //print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
-      //imu_read_calibration_offsets(&offsets);
-      //print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
+
 
    }
 
