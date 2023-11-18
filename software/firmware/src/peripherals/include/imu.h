@@ -274,6 +274,7 @@ void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
 void imu_read_calibration_status(bno55_calib_status_t *status);
 void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets);
 void imu_read_axis_remap(bno055_axis_remap_t *remap);
+bool imu_set_axis_remap(bno055_axis_remap_t remap);
 bool imu_read_in_motion(void);
 
 // Math utilities

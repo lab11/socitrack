@@ -348,9 +348,31 @@ void imu_read_axis_remap(bno055_axis_remap_t *remap)
    remap->z_remap_val = (reg_axis_map_config >> 4) & 0x03;
 
    uint8_t reg_axis_map_sign = i2c_read8(BNO055_AXIS_MAP_SIGN_ADDR);
-   remap->x_remap_sign = reg_axis_map_sign & 0x03;
-   remap->y_remap_sign = (reg_axis_map_sign >> 2) & 0x03;
-   remap->z_remap_sign = (reg_axis_map_sign >> 4) & 0x03;
+   remap->x_remap_sign = reg_axis_map_sign & 0x04;
+   remap->y_remap_sign = reg_axis_map_sign & 0x02;
+   remap->z_remap_sign = reg_axis_map_sign & 0x01;
+}
+
+bool imu_set_axis_remap(bno055_axis_remap_t remap)
+{
+   uint8_t reg_axis_map_config = remap.x_remap_val | (remap.y_remap_val << 2) | (remap.z_remap_val << 4);
+   uint8_t reg_axis_map_sign = (remap.x_remap_sign << 2) | (remap.y_remap_sign << 1) | (remap.z_remap_sign);
+
+   bno055_opmode_t saved_mode = get_mode();
+   set_mode(OPERATION_MODE_CONFIG);
+   i2c_write8(BNO055_AXIS_MAP_CONFIG_ADDR, reg_axis_map_config);
+   i2c_write8(BNO055_AXIS_MAP_SIGN_ADDR, reg_axis_map_sign);
+   set_mode(saved_mode);
+
+   //test whether the set is successful
+   bno055_axis_remap_t remap_verification = {0};
+   imu_read_axis_remap(&remap_verification);
+   if ((remap_verification.x_remap_val == remap.x_remap_val) && (remap_verification.y_remap_val == remap.y_remap_val) && (remap_verification.z_remap_val == remap.z_remap_val) &&
+      (remap_verification.x_remap_sign == remap.x_remap_sign) && (remap_verification.y_remap_sign == remap.y_remap_sign) && (remap_verification.z_remap_sign == remap.z_remap_sign))
+   {
+      return 1;
+   }
+   return 0;
 }
 
 bool imu_read_in_motion(void)

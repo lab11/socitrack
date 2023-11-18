@@ -21,7 +21,7 @@ int main(void)
    uint8_t rev_msb, rev_lsb;
    bno55_calib_status_t status = {0};
    bno055_calib_offsets_t offsets = {0};
-   bno055_axis_remap_t remap = {0};
+   bno055_axis_remap_t remap = {.x_remap_val = 1, .y_remap_val = 0, .z_remap_val = 2};
    bno055_quaternion_t quaternion = {0};
    bno055_euler_t euler = {0};
    bno055_acc_t acc = {0};
@@ -31,8 +31,9 @@ int main(void)
    imu_read_fw_version(&rev_msb, &rev_lsb);
    print("BNO055 firmware version:%u.%u\n",rev_msb, rev_lsb);
 
-   imu_read_axis_remap(&remap);
-   print("BNO055 X mapping:%u, Y mapping:%u, Z mapping:%u, X sign:%u, Y sign:%u, Z sign:%u\n", remap.x_remap_val, remap.y_remap_val, remap.z_remap_val, remap.x_remap_sign, remap.y_remap_sign, remap.z_remap_sign);
+   //imu_read_axis_remap(&remap);
+   if (imu_set_axis_remap(remap)){print("remap success!\n");}
+   //print("BNO055 X mapping:%u, Y mapping:%u, Z mapping:%u, X sign:%u, Y sign:%u, Z sign:%u\n", remap.x_remap_val, remap.y_remap_val, remap.z_remap_val, remap.x_remap_sign, remap.y_remap_sign, remap.z_remap_sign);
 
    while (true)
    {
@@ -41,9 +42,13 @@ int main(void)
       print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
       //imu_read_calibration_offsets(&offsets);
       //print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
-      am_hal_delay_us(40000);
+      am_hal_delay_us(100000);
       //imu_read_accel_data(&acc);
       //print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
+      memset(&acc, 0, sizeof(acc));
+      memset(&quaternion, 0, sizeof(quaternion));
+      memset(&euler, 0, sizeof(euler));
+
       imu_read_linear_accel_data(&acc);
       imu_read_quaternion_data(&quaternion);
       quaternion_to_euler(quaternion, &euler);
