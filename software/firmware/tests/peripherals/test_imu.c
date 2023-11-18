@@ -27,6 +27,7 @@ int main(void)
    bno055_acc_t acc = {0};
 
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
+   imu_set_power_mode(POWER_MODE_NORMAL);
 
    imu_read_fw_version(&rev_msb, &rev_lsb);
    print("BNO055 firmware version:%u.%u\n",rev_msb, rev_lsb);

@@ -244,6 +244,14 @@ void imu_register_motion_change_callback(motion_change_callback_t callback, bno0
    set_mode(mode);
 }
 
+void imu_set_power_mode(bno055_powermode_t power_mode)
+{
+   bno055_opmode_t saved_mode = get_mode();
+   set_mode(OPERATION_MODE_CONFIG);
+   i2c_write8(BNO055_PWR_MODE_ADDR, power_mode);
+   set_mode(saved_mode);
+}
+
 void imu_read_accel_data(bno055_acc_t *acc)
 {
    static int16_t accel_data[3];
