@@ -279,6 +279,15 @@ void imu_read_gravity_accel_data(bno055_acc_t *acc)
    acc->z = accel_data[2];
 }
 
+void imu_read_euler_data(bno055_euler_t *euler)
+{
+   static int16_t euler_data[3];
+   read_int16_vector(BNO055_EULER_H_LSB_ADDR, euler_data, sizeof(euler_data));
+   euler->yaw = (euler_data[0]/16.0);
+   euler->roll = (euler_data[1]/16.0);
+   euler->pitch = (euler_data[2]/16.0);
+}
+
 void imu_read_quaternion_data(bno055_quaternion_t *quaternion)
 {
    static int16_t quaternion_data[4];

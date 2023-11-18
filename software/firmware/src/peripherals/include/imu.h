@@ -1,6 +1,7 @@
 #ifndef __IMU_HEADER_H__
 #define __IMU_HEADER_H__
 
+#define RAD_TO_DEG(radian) (radian * 180.0 / 3.14159265358979f)
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_config.h"
@@ -276,6 +277,7 @@ void imu_read_calibration_status(bno55_calib_status_t *status);
 void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets);
 void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_set_axis_remap(bno055_axis_remap_t remap);
+void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
 
 // Math utilities

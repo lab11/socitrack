@@ -2,7 +2,6 @@
 #include "logging.h"
 #include "system.h"
 
-#define RAD_TO_DEG(radian) (radian * 180.0 / 3.14159265358979f)
 static void motion_interrupt(bool in_motion)
 {
    print("Device is %s\n", in_motion ? "IN MOTION" : "STATIONARY");
@@ -21,9 +20,11 @@ int main(void)
    uint8_t rev_msb, rev_lsb;
    bno55_calib_status_t status = {0};
    bno055_calib_offsets_t offsets = {0};
-   bno055_axis_remap_t remap = {.x_remap_val = 1, .y_remap_val = 0, .z_remap_val = 2};
+   //bno055_axis_remap_t remap = {.x_remap_val = 1, .y_remap_val = 0, .z_remap_val = 2};
+   bno055_axis_remap_t remap = {0};
    bno055_quaternion_t quaternion = {0};
    bno055_euler_t euler = {0};
+   bno055_euler_t device_calculated_euler = {0};
    bno055_acc_t acc = {0};
 
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
@@ -49,11 +50,13 @@ int main(void)
       memset(&acc, 0, sizeof(acc));
       memset(&quaternion, 0, sizeof(quaternion));
       memset(&euler, 0, sizeof(euler));
+	  memset(&device_calculated_euler, 0 , sizeof(device_calculated_euler));
 
       imu_read_linear_accel_data(&acc);
       imu_read_quaternion_data(&quaternion);
       quaternion_to_euler(quaternion, &euler);
-      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d, yaw = %lf, pitch = %lf, roll = %lf\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z, RAD_TO_DEG(euler.yaw), RAD_TO_DEG(euler.pitch), RAD_TO_DEG(euler.roll));
+	  imu_read_euler_data(&device_calculated_euler);
+      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d, yaw = %lf, pitch = %lf, roll = %lf, d_yaw = %lf, d_pitch = %lf, d_roll = %lf\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z, RAD_TO_DEG(euler.yaw), RAD_TO_DEG(euler.pitch), RAD_TO_DEG(euler.roll), device_calculated_euler.yaw, device_calculated_euler.pitch, device_calculated_euler.roll);
       //imu_read_gravity_accel_data(&acc);
       //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       //imu_read_gyro_data(&x, &y, &z);
