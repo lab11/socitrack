@@ -89,6 +89,7 @@ static void imu_isr(void *args)
 static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
    static uint8_t byte_array[22];
    memset(byte_array, 0, 22);
+   memset(read_buffer, 0, byte_count);
    i2c_read(reg_number, byte_array, byte_count);
    for (uint32_t i = 0; i < byte_count/2; i++){
       read_buffer[i] = ((int16_t)byte_array[i*2]) | (((int16_t)byte_array[i*2+1]) << 8);
@@ -148,7 +149,7 @@ static void enable_motion_interrupts(void)
 }
 
 // Math helper functions -----------------------------------------------------------------------------------------------
-void quaternion_to_euler(const bno055_quaternion_t quaternion, bno055_euler_t *euler)
+void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler)
 {
    int32_t sqw = quaternion.w * quaternion.w;
    int32_t sqx = quaternion.x * quaternion.x;
@@ -292,6 +293,16 @@ void imu_read_quaternion_data(bno055_quaternion_t *quaternion)
 {
    static int16_t quaternion_data[4];
    read_int16_vector(BNO055_QUATERNION_DATA_W_LSB_ADDR, quaternion_data, sizeof(quaternion_data));
+   //temporary fix of MSB sign bit flipping problem
+   for (uint8_t i = 0; i < 4; i++)
+   {
+       if (quaternion_data[i]>16384){
+          quaternion_data[i] = quaternion_data[i] - 32768;
+       }
+       else if (quaternion_data[i]<-16384){
+           quaternion_data[i] = quaternion_data[i] + 32768;
+       }
+   }
    quaternion->w = quaternion_data[0];
    quaternion->x = quaternion_data[1];
    quaternion->y = quaternion_data[2];

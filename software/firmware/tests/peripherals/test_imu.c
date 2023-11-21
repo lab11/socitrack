@@ -44,7 +44,7 @@ int main(void)
       print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
       //imu_read_calibration_offsets(&offsets);
       //print("Calibration offsets: %d, %d, %d \n", offsets.gyro_offset_x, offsets.gyro_offset_y, offsets.gyro_offset_z);
-      am_hal_delay_us(100000);
+      am_hal_delay_us(40000);
       //imu_read_accel_data(&acc);
       //print("Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       memset(&acc, 0, sizeof(acc));
@@ -56,7 +56,7 @@ int main(void)
       imu_read_quaternion_data(&quaternion);
       quaternion_to_euler(quaternion, &euler);
 	  imu_read_euler_data(&device_calculated_euler);
-      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d, yaw = %lf, pitch = %lf, roll = %lf, d_yaw = %lf, d_pitch = %lf, d_roll = %lf\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z, (int32_t)quaternion.w, (int32_t)quaternion.x, (int32_t)quaternion.y, (int32_t)quaternion.z, RAD_TO_DEG(euler.yaw), RAD_TO_DEG(euler.pitch), RAD_TO_DEG(euler.roll), device_calculated_euler.yaw, device_calculated_euler.pitch, device_calculated_euler.roll);
+      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d, yaw = %lf, pitch = %lf, roll = %lf, d_yaw = %lf, d_pitch = %lf, d_roll = %lf\n", (int16_t)acc.x, (int16_t)acc.y, (int16_t)acc.z, (int16_t)quaternion.w, (int16_t)quaternion.x, (int16_t)quaternion.y, (int16_t)quaternion.z, RAD_TO_DEG(euler.yaw), RAD_TO_DEG(euler.pitch), RAD_TO_DEG(euler.roll), device_calculated_euler.yaw, device_calculated_euler.pitch, device_calculated_euler.roll);
       //imu_read_gravity_accel_data(&acc);
       //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       //imu_read_gyro_data(&x, &y, &z);
