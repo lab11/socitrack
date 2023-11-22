@@ -173,7 +173,7 @@ void imu_init(void)
    const am_hal_iom_config_t i2c_config =
    {
       .eInterfaceMode = AM_HAL_IOM_I2C_MODE,
-      .ui32ClockFreq = AM_HAL_IOM_400KHZ,
+      .ui32ClockFreq = AM_HAL_IOM_100KHZ,
       .eSpiMode = 0,
       .pNBTxnBuf = NULL,
       .ui32NBTxnBufLength = 0
@@ -188,6 +188,7 @@ void imu_init(void)
    am_hal_gpio_pincfg_t sda_config = g_AM_BSP_GPIO_IOM0_SDA;
    scl_config.GP.cfg_b.uFuncSel = PIN_IMU_I2C_SCL_FUNCTION;
    sda_config.GP.cfg_b.uFuncSel = PIN_IMU_I2C_SDA_FUNCTION;
+   scl_config.GP.cfg_b.ePullup =  AM_HAL_GPIO_PIN_PULLUP_6K;
    configASSERT0(am_hal_iom_initialize(IMU_I2C_NUMBER, &i2c_handle));
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_I2C_SCL, scl_config));
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_I2C_SDA, sda_config));
