@@ -26,6 +26,7 @@ int main(void)
    bno055_euler_t euler = {0};
    bno055_euler_t device_calculated_euler = {0};
    bno055_acc_t acc = {0};
+   bno055_gyro_t gyro = {0};
 
    imu_register_motion_change_callback(motion_interrupt, OPERATION_MODE_NDOF);
    imu_set_power_mode(POWER_MODE_NORMAL);
@@ -39,7 +40,7 @@ int main(void)
 
    while (true)
    {
-      am_hal_delay_us(40000);
+      am_hal_delay_us(20000);
       //0: not calibrated; 3: fully calibrated 
       imu_read_calibration_status(&status);
       print("Calibration status: sys %u, gyro %u, accel %u, mag %u\n",status.sys, status.gyro, status.accel, status.mag);
@@ -55,8 +56,9 @@ int main(void)
       imu_read_linear_accel_data(&acc);
       imu_read_quaternion_data(&quaternion);
       quaternion_to_euler(quaternion, &euler);
+	  imu_read_gyro_data(&gyro);
       //imu_read_euler_data(&device_calculated_euler);
-      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d\n", (int16_t)acc.x, (int16_t)acc.y, (int16_t)acc.z, (int16_t)quaternion.w, (int16_t)quaternion.x, (int16_t)quaternion.y, (int16_t)quaternion.z);
+      print("Linear Accel X = %d, Y = %d, Z = %d, qw = %d, qx = %d, qy = %d, qz = %d, gx = %d, gy = %d, gz = %d\n", acc.x, acc.y, acc.z, quaternion.w, quaternion.x, quaternion.y, quaternion.z, gyro.x, gyro.y,gyro.z);
       //imu_read_gravity_accel_data(&acc);
       //print("Gravity Accel X = %d, Y = %d, Z = %d\n", (int32_t)acc.x, (int32_t)acc.y, (int32_t)acc.z);
       //imu_read_gyro_data(&x, &y, &z);

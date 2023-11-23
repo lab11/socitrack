@@ -310,13 +310,13 @@ void imu_read_quaternion_data(bno055_quaternion_t *quaternion)
    quaternion->z = quaternion_data[3];
 }
 
-void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z)
+void imu_read_gyro_data(bno055_gyro_t *gyro)
 {
    static int16_t gyro_data[3];
-   i2c_read(BNO055_GYRO_DATA_X_LSB_ADDR, (uint8_t*)gyro_data, sizeof(gyro_data));
-   *x = (int16_t)(gyro_data[0] << 2) / 4;
-   *y = (int16_t)(gyro_data[1] << 2) / 4;
-   *z = (int16_t)(gyro_data[2] << 2) / 4;
+   read_int16_vector(BNO055_GYRO_DATA_X_LSB_ADDR, gyro_data, sizeof(gyro_data));
+   gyro->x = gyro_data[0];
+   gyro->y = gyro_data[1];
+   gyro->z = gyro_data[2];
 }
 
 void imu_read_temp(int8_t *temp)

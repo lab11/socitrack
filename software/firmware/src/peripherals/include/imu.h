@@ -259,6 +259,13 @@ typedef struct
    int16_t z;
 } bno055_acc_t;
 
+typedef struct
+{
+   int16_t x;
+   int16_t y;
+   int16_t z;
+}bno055_gyro_t;
+
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
@@ -270,7 +277,7 @@ void imu_read_accel_data(bno055_acc_t *acc);
 void imu_read_linear_accel_data(bno055_acc_t *acc);
 void imu_read_gravity_accel_data(bno055_acc_t *acc);
 void imu_read_quaternion_data(bno055_quaternion_t *quaternion);
-void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z);
+void imu_read_gyro_data(bno055_gyro_t *gyro);
 void imu_read_temp(int8_t *temp);
 void imu_read_fw_version(uint8_t *msb, uint8_t *lsb);
 void imu_read_calibration_status(bno55_calib_status_t *status);
