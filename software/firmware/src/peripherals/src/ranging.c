@@ -4,6 +4,7 @@
 #include "deca_interface.h"
 #include "logging.h"
 #include "ranging.h"
+#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -11,7 +12,7 @@
 static void *spi_handle;
 static dwt_config_t dw_config;
 static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
-static volatile bool spi_ready;
+static volatile bool spi_ready, initialized;
 static uint8_t eui64_array[8];
 
 
@@ -75,8 +76,12 @@ static int readfromspi(uint16_t headerLength, uint8_t *headerBuffer, uint16_t re
       .ui32StatusSetClr             = 0
    };
 
-   // Repeat the transfer until it succeeds
-   while (am_hal_iom_blocking_transfer(spi_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS);
+   // Repeat the transfer until it succeeds or requires a device reset
+   uint32_t retries_remaining = 3;
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(false);
    return 0;
 }
 
@@ -101,8 +106,12 @@ static int writetospi(uint16_t headerLength, const uint8_t *headerBuffer, uint16
       .ui32StatusSetClr             = 0
    };
 
-   // Repeat the transfer until it succeeds
-   while (am_hal_iom_blocking_transfer(spi_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS);
+   // Repeat the transfer until it succeeds or requires a device reset
+   uint32_t retries_remaining = 3;
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(false);
    return 0;
 }
 
@@ -110,7 +119,7 @@ static void wakeup_device_with_io(void)
 {
    // Assert the WAKEUP pin for >=500us
    am_hal_gpio_output_set(PIN_RADIO_WAKEUP);
-   am_hal_delay_us(500);
+   deca_usleep(500);
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
 }
 
@@ -186,7 +195,7 @@ static struct dwt_probe_s driver_interface;
 
 decaIrqStatus_t decamutexon(void) { return (decaIrqStatus_t)am_hal_interrupt_master_disable(); }
 void decamutexoff(decaIrqStatus_t status) { am_hal_interrupt_master_set((uint32_t)status); }
-void deca_sleep(unsigned int time_ms) { am_hal_delay_us(time_ms * 1000); }
+void deca_sleep(unsigned int time_ms) { system_delay(time_ms); }
 void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 
 
@@ -202,7 +211,7 @@ void ranging_radio_init(uint8_t *uid)
    driver_interface = (struct dwt_probe_s){ .dw = NULL, .spi = (void*)&spi_functions, .wakeup_device_with_io = NULL };
 
    // Convert the device UID into the necessary 64-bit EUI format
-   spi_ready = false;
+   spi_ready = initialized = false;
    eui64_array[0] = uid[0]; eui64_array[1] = uid[1]; eui64_array[2] = uid[2];
    eui64_array[3] = 0xFE; eui64_array[4] = 0xFF;
    eui64_array[5] = uid[3]; eui64_array[6] = uid[4]; eui64_array[7] = uid[5];
@@ -283,18 +292,18 @@ void ranging_radio_init(uint8_t *uid)
 
    // Put all DWMs into reset mode
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
-   am_hal_delay_us(1);
+   deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
-   am_hal_delay_us(2000);
+   deca_usleep(2000);
 #if REVISION_ID >= REVISION_M
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET2);
-   am_hal_delay_us(1);
+   deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
-   am_hal_delay_us(2000);
+   deca_usleep(2000);
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET3);
-   am_hal_delay_us(1);
+   deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
-   am_hal_delay_us(2000);
+   deca_usleep(2000);
 #endif
 
    // Reset the extra DWMs and put them into deep-sleep mode
@@ -324,6 +333,7 @@ void ranging_radio_init(uint8_t *uid)
    ranging_radio_reset();
    dwt_setcallbacks(NULL, NULL, NULL, NULL, NULL, ranging_radio_spi_ready, NULL);
    ranging_radio_spi_fast();
+   initialized = true;
 }
 
 void ranging_radio_deinit(void)
@@ -348,20 +358,26 @@ void ranging_radio_deinit(void)
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT3, NULL, NULL);
    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &radio_interrupt_pin);
 #endif
+   initialized = false;
 }
 
 void ranging_radio_reset(void)
 {
    // Assert the DW3000 reset pin for 1us to manually reset the device
-   // TODO: SOMEHOW CLEAN ALL THIS UP ONCE THE HW STOPS CHANGING
-   //am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
-   //am_hal_delay_us(1);
-   //am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
-   //am_hal_delay_us(2000);
+   if (initialized)
+   {
+      am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
+      deca_usleep(1);
+      am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
+      deca_sleep(10);
+   }
 
    // Initialize the DW3000 driver and transceiver
-   while (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
-      am_hal_delay_us(2000);
+   if (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
+   {
+      print("ERROR: Could not successfully reset DW3000 peripheral...resetting entire device\n");
+      system_reset(false);
+   }
    configASSERT0(dwt_initialise(DWT_DW_IDLE));
 
    // Set up the DW3000 interrupts and overall configuration
@@ -509,11 +525,13 @@ void ranging_radio_wakeup(void)
    // Assert the WAKEUP pin for >=500us and wait for it to become accessible
    wakeup_device_with_io();
    for (int i = 0; !spi_ready && (i < 100); ++i)
-      am_hal_delay_us(20);
+      deca_usleep(20);
    if (!spi_ready)
    {
       print("WARNING: DW3000 radio could not be woken up...resetting peripheral\n");
+      ranging_radio_spi_slow();
       ranging_radio_reset();
+      ranging_radio_spi_fast();
    }
    else
    {

@@ -2,6 +2,7 @@
 
 #include "imu.h"
 #include "math.h"
+#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -15,8 +16,8 @@ static motion_change_callback_t motion_change_callback;
 
 static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
 {
-   // Repeat the transfer until it succeeds
-   uint32_t bodyBuffer = reg_value;
+   // Repeat the transfer until it succeeds or requires a device reset
+   uint32_t bodyBuffer = reg_value, retries_remaining = 3;
    am_hal_iom_transfer_t write_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
       .ui32InstrLen                 = 1,
@@ -31,13 +32,17 @@ static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-   while (am_hal_iom_blocking_transfer(i2c_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS);
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(false);
 }
 
 static uint8_t i2c_read8(uint8_t reg_number)
 {
-   // Repeat the transfer until it succeeds
+   // Repeat the transfer until it succeeds or requires a device reset
    static uint32_t readBuffer;
+   uint32_t retries_remaining = 3;
    am_hal_iom_transfer_t read_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
       .ui32InstrLen                 = 1,
@@ -52,13 +57,17 @@ static uint8_t i2c_read8(uint8_t reg_number)
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-   while (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS);
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(false);
    return ((uint8_t*)&readBuffer)[0];
 }
 
 static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_length)
 {
-   // Repeat the transfer until it succeeds
+   // Repeat the transfer until it succeeds or requires a device reset
+   uint32_t retries_remaining = 3;
    am_hal_iom_transfer_t read_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
       .ui32InstrLen                 = 1,
@@ -73,7 +82,10 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-   while (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS);
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(false);
 }
 
 static void imu_isr(void *args)
