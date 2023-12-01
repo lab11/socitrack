@@ -3,7 +3,6 @@
 
 static volatile int i;
 static uint8_t uid[EUI_LEN];
-static TaskHandle_t rtos_task_handle;
 
 void RtosIdleTask(void *param)
 {
@@ -30,14 +29,18 @@ void idle_cpu_power_test(void)
 void idle_cpu_with_rtos_power_test(void)
 {
    // Test power consumption with FreeRTOS when permanently in tickless idle mode
-   configASSERT1(xTaskCreate(RtosIdleTask, "RtosIdleTask", 512, NULL, 3, &rtos_task_handle));
+   static StaticTask_t rtos_task_tcb;
+   static StackType_t rtos_task_stack[configMINIMAL_STACK_SIZE];
+   xTaskCreateStatic(RtosIdleTask, "RtosIdleTask", configMINIMAL_STACK_SIZE, NULL, 3, rtos_task_stack, &rtos_task_tcb);
    vTaskStartScheduler();
 }
 
 void active_cpu_with_rtos_power_test(void)
 {
    // Test power consumption with FreeRTOS when in an active CPU loop
-   configASSERT1(xTaskCreate(RtosActiveTask, "RtosActiveTask", 512, NULL, 3, &rtos_task_handle));
+   static StaticTask_t rtos_task_tcb;
+   static StackType_t rtos_task_stack[configMINIMAL_STACK_SIZE];
+   xTaskCreateStatic(RtosActiveTask, "RtosActiveTask", configMINIMAL_STACK_SIZE, NULL, 3, rtos_task_stack, &rtos_task_tcb);
    vTaskStartScheduler();
 }
 

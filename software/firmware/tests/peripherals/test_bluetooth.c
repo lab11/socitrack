@@ -72,8 +72,9 @@ int main(void)
    print("Initialized BLE with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]);
 
    // Create the BLE task and start the task scheduler
-   static TaskHandle_t ble_task_handle;
-   configASSERT1(xTaskCreate(BLETask, "BLETask", 512, NULL, 3, &ble_task_handle));
+   static StaticTask_t ble_task_tcb;
+   static StackType_t ble_task_stack[2*configMINIMAL_STACK_SIZE];
+   xTaskCreateStatic(BLETask, "BLETask", 2 * configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
    bluetooth_start_advertising(false);
    vTaskStartScheduler();
 

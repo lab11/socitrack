@@ -46,7 +46,7 @@ int main(void)
    // Enter power-down mode until awoken 5 seconds in the future (or by a change in charging status)
    system_enable_interrupts(false);
    system_enter_power_off_mode(wakeup_pin, (wake_criteria == WAKE_WITH_RTC) ? rtc_get_timestamp() + 5 : 0);
-   system_reset();
+   system_reset(true);
 
    // Should never reach this point
    return 0;

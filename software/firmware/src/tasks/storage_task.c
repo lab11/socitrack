@@ -127,7 +127,7 @@ void StorageTask(void *params)
          {
             case STORAGE_TYPE_SHUTDOWN:
                storage_flush(true);
-               system_reset();
+               system_reset(true);
                break;
             case STORAGE_TYPE_VOLTAGE:
                store_battery_voltage(item.timestamp, item.value);

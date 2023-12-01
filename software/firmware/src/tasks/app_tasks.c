@@ -86,7 +86,7 @@ void run_tasks(void)
    if (power_off)
    {
       system_enter_power_off_mode(PIN_BATTERY_INPUT_POWER_GOOD, wake_on_timestamp);
-      system_reset();
+      system_reset(true);
    }
 
    // Create tasks with the following priority order:

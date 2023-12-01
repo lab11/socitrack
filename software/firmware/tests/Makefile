@@ -269,12 +269,12 @@ battery: $(CONFIG) $(CONFIG)/test_battery.o $(CONFIG)/$$(TARGET).bin program
 
 ble_and_range: TARGET = TestBleAndRanging
 ble_and_range: SRC += test_ble_and_ranging.c
-ble_and_range: CFLAGS += -D_TEST_BLE_RANGING_TASK
+ble_and_range: CFLAGS += -D_TEST_BLE_RANGING_TASK -D__USE_FREERTOS__
 ble_and_range: $(CONFIG) $(CONFIG)/test_ble_and_ranging.o $(CONFIG)/$$(TARGET).bin program
 
 bluetooth: TARGET = TestBluetooth
 bluetooth: SRC += test_bluetooth.c
-bluetooth: CFLAGS += -D_TEST_BLUETOOTH
+bluetooth: CFLAGS += -D_TEST_BLUETOOTH -D__USE_FREERTOS__
 bluetooth: $(CONFIG) $(CONFIG)/test_bluetooth.o $(CONFIG)/$$(TARGET).bin program
 
 button: TARGET = TestButton
@@ -307,7 +307,7 @@ power_off: $(CONFIG) $(CONFIG)/test_power_off.o $(CONFIG)/$$(TARGET).bin program
 
 ranging: TARGET = TestRanging
 ranging: SRC += test_ranging_task.c
-ranging: CFLAGS += -D_TEST_RANGING_TASK
+ranging: CFLAGS += -D_TEST_RANGING_TASK -D__USE_FREERTOS__
 ranging: $(CONFIG) $(CONFIG)/test_ranging_task.o $(CONFIG)/$$(TARGET).bin program
 
 ranging_radio: TARGET = TestRangingRadio
