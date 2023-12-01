@@ -8,7 +8,7 @@
 #define configSUPPORT_DYNAMIC_ALLOCATION        0
 
 #define configCPU_CLOCK_HZ                      AM_HAL_CLKGEN_FREQ_MAX_HZ
-#define configTICK_RATE_HZ                      1000
+#define configTICK_RATE_HZ                      100
 #define configMAX_PRIORITIES                    6
 #define configMINIMAL_STACK_SIZE                512
 #define configMAX_TASK_NAME_LEN                 16
