@@ -12,6 +12,7 @@
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
+#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -320,12 +321,15 @@ void bluetooth_start_advertising(bool wait_for_success)
 {
    // Attempt to begin advertising
    expected_advertising = true;
-   if (is_initialized && (!wait_for_success || !is_advertising))
+   if (is_initialized && !is_advertising)
    {
+      uint32_t retries_remaining = 50;
       HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
       AppAdvStart(APP_MODE_CONNECTABLE);
-      while (wait_for_success && !is_advertising)
-         am_hal_delay_us(1);
+      while (wait_for_success && !is_advertising && retries_remaining--)
+         system_delay(10);
+      if (!retries_remaining)
+         system_reset(false);
    }
 }
 
@@ -333,11 +337,14 @@ void bluetooth_stop_advertising(bool wait_for_success)
 {
    // Attempt to stop advertising
    expected_advertising = false;
-   if (is_initialized && (!wait_for_success || is_advertising))
+   if (is_initialized && is_advertising)
    {
       AppAdvStop();
-      while (wait_for_success && is_advertising)
-         am_hal_delay_us(1);
+      uint32_t retries_remaining = 50;
+      while (wait_for_success && is_advertising && retries_remaining--)
+         system_delay(10);
+      if (!retries_remaining)
+         system_reset(false);
    }
 }
 
@@ -351,12 +358,15 @@ void bluetooth_start_scanning(bool wait_for_success)
 {
    // Attempt to start scanning
    expected_scanning = true;
-   if (is_initialized && (!wait_for_success || !is_scanning))
+   if (is_initialized && !is_scanning)
    {
+      uint32_t retries_remaining = 50;
       DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
       DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
-      while (wait_for_success && !is_scanning)
-         am_hal_delay_us(1);
+      while (wait_for_success && !is_scanning && retries_remaining--)
+         system_delay(10);
+      if (!retries_remaining)
+         system_reset(false);
    }
 }
 
@@ -364,18 +374,21 @@ void bluetooth_stop_scanning(bool wait_for_success)
 {
    // Attempt to stop scanning
    expected_scanning = false;
-   if (is_initialized && (!wait_for_success || is_scanning))
+   if (is_initialized && is_scanning)
    {
       DmScanStop();
-      while (wait_for_success && is_scanning)
-         am_hal_delay_us(1);
+      uint32_t retries_remaining = 50;
+      while (wait_for_success && is_scanning && retries_remaining--)
+         system_delay(10);
+      if (!retries_remaining)
+         system_reset(false);
    }
 }
 
 void bluetooth_reset_scanning(void)
 {
    // Attempt to stop scanning without changing the scanning expectation
-   if (is_initialized)
+   if (is_initialized && is_scanning)
       DmScanStop();
 }
 
