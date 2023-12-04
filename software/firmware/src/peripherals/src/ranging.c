@@ -77,11 +77,8 @@ static int readfromspi(uint16_t headerLength, uint8_t *headerBuffer, uint16_t re
    };
 
    // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t retries_remaining = 3;
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(false);
+   uint32_t retries_remaining = 5;
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
    return 0;
 }
 
@@ -107,11 +104,8 @@ static int writetospi(uint16_t headerLength, const uint8_t *headerBuffer, uint16
    };
 
    // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t retries_remaining = 3;
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(false);
+   uint32_t retries_remaining = 5;
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS));
    return 0;
 }
 
