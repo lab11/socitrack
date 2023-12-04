@@ -27,19 +27,47 @@ static volatile bool devices_found;
 
 static void verify_app_configuration(void)
 {
-   // Retrieve the current state of the application
+   // Verify the current state of the application
+   uint32_t retries_remaining = 4;
    print("INFO: Verifying TotTag application configuration\n");
-   const bool is_scanning = bluetooth_is_scanning(), is_ranging = ranging_active();
 
    // Advertising should always be enabled
-   if (!bluetooth_is_advertising())
-      bluetooth_start_advertising(true);
+   while (!bluetooth_is_advertising() && retries_remaining--)
+   {
+      bluetooth_start_advertising();
+      uint32_t waits_remaining = 50;
+      while (!bluetooth_is_advertising() && waits_remaining--)
+         vTaskDelay(pdMS_TO_TICKS(10));
+   }
+   if (!retries_remaining)
+      system_reset(false);
 
    // Scanning should only be enabled if we are not already ranging with a network
-   if (!is_ranging && !is_scanning)
-      bluetooth_start_scanning(true);
-   else if (is_ranging && is_scanning)
-      bluetooth_stop_scanning(true);
+   retries_remaining = 4;
+   if (!ranging_active())
+   {
+      while (!bluetooth_is_scanning() && retries_remaining--)
+      {
+         bluetooth_start_scanning();
+         uint32_t waits_remaining = 50;
+         while (!bluetooth_is_scanning() && waits_remaining--)
+            vTaskDelay(pdMS_TO_TICKS(10));
+      }
+   }
+   else
+   {
+      while (bluetooth_is_scanning() && retries_remaining--)
+      {
+         bluetooth_stop_scanning();
+         uint32_t waits_remaining = 50;
+         while (bluetooth_is_scanning() && waits_remaining--)
+            vTaskDelay(pdMS_TO_TICKS(10));
+      }
+   }
+
+   // If switching scanning mode failed, reset the entire device
+   if (!retries_remaining)
+      system_reset(false);
 }
 
 static void handle_notification(app_notification_t notification)
@@ -50,7 +78,16 @@ static void handle_notification(app_notification_t notification)
    if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
    {
       // Stop scanning for additional devices
-      bluetooth_stop_scanning(true);
+      uint32_t retries_remaining = 4;
+      while (bluetooth_is_scanning() && retries_remaining--)
+      {
+         bluetooth_stop_scanning();
+         uint32_t waits_remaining = 50;
+         while (bluetooth_is_scanning() && waits_remaining--)
+            vTaskDelay(pdMS_TO_TICKS(10));
+      }
+      if (!retries_remaining)
+         system_reset(false);
 
       // Determine if an actively ranging device was located
       bool ranging_device_located = false, idle_device_located = false;

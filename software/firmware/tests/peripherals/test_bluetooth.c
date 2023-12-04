@@ -75,7 +75,7 @@ int main(void)
    static StaticTask_t ble_task_tcb;
    static StackType_t ble_task_stack[2*configMINIMAL_STACK_SIZE];
    xTaskCreateStatic(BLETask, "BLETask", 2 * configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
-   bluetooth_start_advertising(false);
+   bluetooth_start_advertising();
    vTaskStartScheduler();
 
    // Should never reach this point

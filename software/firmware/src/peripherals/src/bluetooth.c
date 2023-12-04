@@ -12,7 +12,6 @@
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
-#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -121,13 +120,13 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          advertising_setup(pDmEvt);
          is_initialized = true;
          if (expected_advertising)
-            bluetooth_start_advertising(false);
+            bluetooth_start_advertising();
          else
-            bluetooth_stop_advertising(false);
+            bluetooth_stop_advertising();
          if (expected_scanning)
-            bluetooth_start_scanning(false);
+            bluetooth_start_scanning();
          else
-            bluetooth_stop_scanning(false);
+            bluetooth_stop_scanning();
          break;
       case DM_CONN_OPEN_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_OPEN_IND\n");
@@ -148,7 +147,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_STOP_IND\n");
          is_advertising = false;
          if (expected_advertising)
-            bluetooth_start_advertising(false);
+            bluetooth_start_advertising();
          break;
       case DM_SCAN_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_START_IND\n");
@@ -158,7 +157,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
          is_scanning = false;
          if (expected_scanning)
-            bluetooth_start_scanning(false);
+            bluetooth_start_scanning();
          break;
       case DM_SCAN_REPORT_IND:
       {
@@ -317,34 +316,26 @@ void bluetooth_write_range_results(const uint8_t *results, uint16_t results_leng
       updateRangeResults(AppConnIsOpen(), results, results_length);
 }
 
-void bluetooth_start_advertising(bool wait_for_success)
+void bluetooth_start_advertising(void)
 {
    // Attempt to begin advertising
    expected_advertising = true;
    if (is_initialized && !is_advertising)
    {
-      uint32_t retries_remaining = 50;
+      print("TotTag BLE: Starting advertising...\n");
       HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
       AppAdvStart(APP_MODE_CONNECTABLE);
-      while (wait_for_success && !is_advertising && retries_remaining--)
-         system_delay(10);
-      if (!retries_remaining)
-         system_reset(false);
    }
 }
 
-void bluetooth_stop_advertising(bool wait_for_success)
+void bluetooth_stop_advertising(void)
 {
    // Attempt to stop advertising
    expected_advertising = false;
    if (is_initialized && is_advertising)
    {
+      print("TotTag BLE: Stopping advertising...\n");
       AppAdvStop();
-      uint32_t retries_remaining = 50;
-      while (wait_for_success && is_advertising && retries_remaining--)
-         system_delay(10);
-      if (!retries_remaining)
-         system_reset(false);
    }
 }
 
@@ -354,34 +345,26 @@ bool bluetooth_is_advertising(void)
    return is_advertising;
 }
 
-void bluetooth_start_scanning(bool wait_for_success)
+void bluetooth_start_scanning(void)
 {
    // Attempt to start scanning
    expected_scanning = true;
    if (is_initialized && !is_scanning)
    {
-      uint32_t retries_remaining = 50;
+      print("TotTag BLE: Starting scanning...\n");
       DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
       DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
-      while (wait_for_success && !is_scanning && retries_remaining--)
-         system_delay(10);
-      if (!retries_remaining)
-         system_reset(false);
    }
 }
 
-void bluetooth_stop_scanning(bool wait_for_success)
+void bluetooth_stop_scanning(void)
 {
    // Attempt to stop scanning
    expected_scanning = false;
    if (is_initialized && is_scanning)
    {
+      print("TotTag BLE: Stopping scanning...\n");
       DmScanStop();
-      uint32_t retries_remaining = 50;
-      while (wait_for_success && is_scanning && retries_remaining--)
-         system_delay(10);
-      if (!retries_remaining)
-         system_reset(false);
    }
 }
 
