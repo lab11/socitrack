@@ -287,6 +287,7 @@ buzzer: $(CONFIG) $(CONFIG)/test_buzzer.o $(CONFIG)/$$(TARGET).bin program
 
 full: TARGET = TestFull
 full: SRC += main.c
+full: CFLAGS += -D__USE_FREERTOS__
 full: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/$$(TARGET).bin program
 
 imu: TARGET = TestIMU
