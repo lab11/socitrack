@@ -116,7 +116,7 @@ def unpack_experiment_details(data):
       'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):],
    }
 
-def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file=False):
+def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file):
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
       label = details['labels'][i].decode().rstrip('\x00')
@@ -169,6 +169,7 @@ class TotTagBLE(threading.Thread):
       self.storage_directory = get_download_directory()
       self.subscribed_to_notifications = False
       self.downloading_log_file = False
+      self.download_raw_logs = False
       self.command_queue = command_queue
       self.result_queue = result_queue
       self.discovered_devices = {}
@@ -341,7 +342,9 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to delete scheduled deployment from TotTag')))
 
    async def download_logs(self):
-      self.storage_directory = await self.command_queue.get()
+      params = await self.command_queue.get()
+      self.storage_directory = params['dir']
+      self.download_raw_logs = params['raw']
       try:
          self.data_length = 0
          await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
@@ -359,7 +362,7 @@ class TotTagBLE(threading.Thread):
             self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
             await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
             if self.data_index == self.data_length:
-               process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data)
+               process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data, self.download_raw_logs)
          except Exception:
             self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
 
@@ -389,6 +392,7 @@ class TotTagGUI(tk.Frame):
       self.device_list = []
       self.failed_devices = []
       self.use_daily_times = tk.IntVar()
+      self.download_raw_data = tk.IntVar()
       self.ble_command_queue = asyncio.Queue()
       self.ble_result_queue = queue.Queue()
       self.tottag_selection = tk.StringVar(self.master, 'Press "Scan for TotTags" to begin...')
@@ -462,6 +466,7 @@ class TotTagGUI(tk.Frame):
 
    def _download_logs(self):
       self._clear_canvas()
+      self.download_raw_data.set(0)
       prompt_area = tk.Frame(self.canvas)
       prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
       tk.Label(prompt_area, text="Download Deployment Log Files").grid(column=0, row=0, columnspan=4, sticky=tk.W+tk.E+tk.N+tk.S)
@@ -477,12 +482,13 @@ class TotTagGUI(tk.Frame):
       ttk.Button(save_controls, text="Change", command=self._change_save_directory).pack(side=tk.RIGHT)
       ttk.Entry(save_controls, textvariable=self.save_directory).pack(fill=tk.X)
       ttk.Label(prompt_area, text=" ", font=('Helvetica', '4')).grid(column=0, row=6)
+      ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=7, pady=5, sticky=tk.W+tk.N)
       def begin_download(self):
          self.data_length = 0
          ble_issue_command(self.event_loop, self.ble_command_queue, 'DOWNLOAD')
-         ble_issue_command(self.event_loop, self.ble_command_queue, self.save_directory.get())
-      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=7)
-      ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=7)
+         ble_issue_command(self.event_loop, self.ble_command_queue, { 'dir': self.save_directory.get(), 'raw': self.download_raw_data.get() })
+      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=8)
+      ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=8)
 
    def _create_new_experiment(self):
       self._clear_canvas()
