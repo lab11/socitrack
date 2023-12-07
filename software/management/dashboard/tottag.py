@@ -8,7 +8,7 @@ from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog
 from collections import defaultdict
 import struct, queue, datetime, tzlocal
-import os, pickle, pytz
+import os, pickle, pytz, time
 import tkinter as tk
 import tkcalendar
 import threading
@@ -128,7 +128,9 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          file.write(data)
    while i < len(data):
       timestamp = struct.unpack('<I', data[i+1:i+5])[0]
-      if data[i] == STORAGE_TYPE_VOLTAGE:
+      if timestamp < 1696721375 or timestamp > int(time.time()) or data[i] < 1 or data[i] > 4:
+         i += 1
+      elif data[i] == STORAGE_TYPE_VOLTAGE:
          log_data[timestamp]['v'] = struct.unpack('<I', data[i+5:i+9])[0]
          i += 9
       elif data[i] == STORAGE_TYPE_CHARGING_EVENT:
