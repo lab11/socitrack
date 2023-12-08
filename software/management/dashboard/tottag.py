@@ -32,6 +32,7 @@ MAINTENANCE_DOWNLOAD_LOG = 0x03
 MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
+MAX_RANGING_DISTANCE_MM = 16000
 MAX_LABEL_LENGTH = 16
 MAX_NUM_DEVICES = 10
 
@@ -131,19 +132,35 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
       if timestamp < 1696721375 or timestamp > int(time.time()) or data[i] < 1 or data[i] > 4:
          i += 1
       elif data[i] == STORAGE_TYPE_VOLTAGE:
-         log_data[timestamp]['v'] = struct.unpack('<I', data[i+5:i+9])[0]
-         i += 9
+         datum = struct.unpack('<I', data[i+5:i+9])[0]
+         if datum > 0 and datum < 4500:
+            log_data[timestamp]['v'] = datum
+            i += 9
+         else:
+            i += 1
       elif data[i] == STORAGE_TYPE_CHARGING_EVENT:
-         log_data[timestamp]['c'] = BATTERY_CODES[data[i+5]]
-         i += 6
+         if data[i+5] > 0 and data[i+5] < 5:
+            log_data[timestamp]['c'] = BATTERY_CODES[data[i+5]]
+            i += 6
+         else:
+            i += 1
       elif data[i] == STORAGE_TYPE_MOTION:
-         log_data[timestamp]['m'] = data[i+5] > 0
-         i += 6
+         if data[i+5] == 0 or data[i+5] == 1:
+            log_data[timestamp]['m'] = data[i+5] > 0
+            i += 6
+         else:
+            i += 1
       elif data[i] == STORAGE_TYPE_RANGES:
          log_data[timestamp]['r'] = {}
-         for j in range(data[i+5]):
-            log_data[timestamp]['r'][uid_to_labels[data[i+6+(j*3)]]] = struct.unpack('<h', data[i+7+(j*3):i+9+(j*3)])[0]
-         i += 6 + data[i+5]*3
+         if data[i+5] < MAX_NUM_DEVICES:
+            for j in range(data[i+5]):
+               uid = data[i+6+(j*3)]
+               datum = struct.unpack('<H', data[i+7+(j*3):i+9+(j*3)])[0]
+               if uid in uid_to_labels and datum < MAX_RANGING_DISTANCE_MM:
+                  log_data[timestamp]['r'][uid_to_labels[uid]] = datum
+            i += 6 + data[i+5]*3
+         else:
+            i += 1
    log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
