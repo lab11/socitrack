@@ -33,7 +33,7 @@ void run_tasks(void)
    battery_monitor_init();
    bluetooth_init(uid);
    buzzer_init();
-   imu_init();
+   //TODO:UNCOMMENT/FIX:imu_init();
    leds_init();
    rtc_init();
    storage_init();
