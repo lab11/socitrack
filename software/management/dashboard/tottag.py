@@ -382,7 +382,8 @@ class TotTagBLE(threading.Thread):
             await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
             if self.data_index == self.data_length:
                process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data, self.download_raw_logs)
-         except Exception:
+         except Exception as e:
+            print('Log file processing error:', e);
             self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
 
 
