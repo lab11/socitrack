@@ -17,7 +17,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static volatile uint16_t connection_mtu;
-static volatile bool is_scanning, is_advertising, is_connected, ranges_requested;
+static volatile bool is_scanning, is_advertising, is_changing_roles, is_connected, ranges_requested;
 static volatile bool data_requested, expected_scanning, expected_advertising, is_initialized;
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
 static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
@@ -71,7 +71,7 @@ static const attsCccSet_t characteristicSet[TOTTAG_NUM_CCC_CHARACTERISTICS] =
 
 // Bluetooth LE Advertising Setup Functions ----------------------------------------------------------------------------
 
-static void advertising_setup(dmEvt_t *pMsg)
+static void advertising_setup(void)
 {
    // Set the BLE address as the System ID, formatted for GATT 0x2A23
    uint8_t *bdaddr = HciGetBdAddr(), sys_id[8];
@@ -91,9 +91,10 @@ static void advertising_setup(dmEvt_t *pMsg)
    memset((uint8_t*)scan_data_conn, 0, sizeof(scan_data_conn));
    AppAdvSetData(APP_SCAN_DATA_CONNECTABLE, 0, (uint8_t*)scan_data_conn);
 
-   // Setup the advertising mode
+   // Setup the advertising mode and power level
    AppSetBondable(FALSE);
    AppSetAdvType(DM_ADV_CONN_UNDIRECT);
+   HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
 }
 
 
@@ -117,7 +118,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_RESET_CMPL_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_RESET_CMPL_IND\n");
          AttsCalculateDbHash();
-         advertising_setup(pDmEvt);
+         advertising_setup();
          is_initialized = true;
          if (expected_advertising)
             bluetooth_start_advertising();
@@ -141,7 +142,11 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          break;
       case DM_ADV_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_START_IND\n");
-         is_advertising = true;
+         is_advertising = (pDmEvt->hdr.status == HCI_SUCCESS);
+         if (!is_advertising)
+            bluetooth_start_advertising();
+         else
+            is_changing_roles = false;
          break;
       case DM_ADV_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_STOP_IND\n");
@@ -152,6 +157,8 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_SCAN_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_START_IND\n");
          is_scanning = (pDmEvt->hdr.status == HCI_SUCCESS);
+         if (!is_scanning)
+            bluetooth_start_scanning();
          break;
       case DM_SCAN_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
@@ -227,7 +234,7 @@ void bluetooth_init(uint8_t* uid)
    const uint8_t ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
    memcpy((uint8_t*)current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
-   is_scanning = is_advertising = is_connected = ranges_requested = false;
+   is_scanning = is_advertising = is_changing_roles = is_connected = ranges_requested = false;
    discovery_callback = NULL;
 
    // Store all BLE configuration pointers
@@ -302,11 +309,18 @@ uint8_t bluetooth_get_current_ranging_role(void)
 void bluetooth_set_current_ranging_role(uint8_t ranging_role)
 {
    // Update the current device ranging role in the BLE advertisements
+   is_changing_roles = is_advertising;
    current_ranging_role[2] = ranging_role;
 #ifndef _TEST_RANGING_TASK
    AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
    AppAdvStop();
 #endif
+}
+
+bool bluetooth_is_changing_roles(void)
+{
+   // Return whether the advertised role is being updated
+   return is_changing_roles;
 }
 
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length)
@@ -323,7 +337,6 @@ void bluetooth_start_advertising(void)
    if (is_initialized && !is_advertising)
    {
       print("TotTag BLE: Starting advertising...\n");
-      HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
       AppAdvStart(APP_MODE_CONNECTABLE);
    }
 }
@@ -331,7 +344,7 @@ void bluetooth_start_advertising(void)
 void bluetooth_stop_advertising(void)
 {
    // Attempt to stop advertising
-   expected_advertising = false;
+   expected_advertising = is_changing_roles = false;
    if (is_initialized && is_advertising)
    {
       print("TotTag BLE: Stopping advertising...\n");

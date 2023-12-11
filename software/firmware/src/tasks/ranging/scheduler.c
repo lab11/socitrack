@@ -14,12 +14,12 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static schedule_role_t current_role;
 static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
+static uint8_t empty_round_timeout, eui[EUI_LEN];
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint8_t read_buffer[128], device_eui, reception_timeout;
-static uint8_t empty_round_timeout, eui[EUI_LEN];
+static volatile schedule_role_t current_role = ROLE_IDLE;
 static volatile scheduler_phase_t ranging_phase;
 static volatile bool is_running;
 
@@ -182,6 +182,11 @@ void scheduler_init(uint8_t *uid)
    is_running = false;
 }
 
+schedule_role_t scheduler_get_current_role(void)
+{
+   return current_role;
+}
+
 void scheduler_run(schedule_role_t role, uint32_t timestamp)
 {
    // Wake up the DW3000 ranging radio and set it to the correct channel
@@ -226,6 +231,9 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
       ranging_phase = schedule_phase_begin();
    }
 
+   // Notify the application that network connectivity has been established
+   app_notify(APP_NOTIFY_NETWORK_CONNECTED, false);
+
    // Loop forever waiting for actions to wake us up
    uint32_t pending_actions = 0;
    while (is_running)
@@ -246,8 +254,9 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
                reception_timeout = 0;
                if (ranging_phase_was_scheduled() && (current_role == ROLE_IDLE))
                {
+                  // Notify the application that our network role has changed
                   current_role = ROLE_PARTICIPANT;
-                  bluetooth_set_current_ranging_role(ROLE_PARTICIPANT);
+                  app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
                }
                handle_range_computation_phase();
                break;
@@ -288,10 +297,6 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
          }
       }
 
-   // Update our BLE-advertised role to IDLE
-   current_role = ROLE_IDLE;
-   bluetooth_set_current_ranging_role(ROLE_IDLE);
-
    // Disable all ranging timers and interrupts
    const am_hal_rtc_time_t scheduler_interval = {
       .ui32ReadError = 0, .ui32CenturyEnable = 0, .ui32Weekday = 0, .ui32Century = 0, .ui32Year = 0,
@@ -304,6 +309,10 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
 
    // Put the DW3000 radio into deep sleep mode
    ranging_radio_sleep(true);
+
+   // Notify the application that network connectivity has been lost
+   current_role = ROLE_IDLE;
+   app_notify(APP_NOTIFY_NETWORK_LOST, false);
 }
 
 void scheduler_stop(void)

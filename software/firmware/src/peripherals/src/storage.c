@@ -63,7 +63,7 @@ static volatile bool is_reading, in_maintenance_mode, disabled;
 static void spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
 {
    // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 3;
+   uint32_t instruction = command, retries_remaining = 4;
    memcpy(((uint8_t*)&instruction) + 1, address, address_length);
    am_hal_iom_transfer_t spi_transaction = {
       .uPeerInfo.ui32SpiChipSelect  = 0,
@@ -81,13 +81,13 @@ static void spi_read(uint8_t command, const void *address, uint32_t address_leng
    };
 
    // Repeat the transfer until it succeeds or requires a device reset
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
       am_hal_delay_us(10);
    if (!retries_remaining)
       system_reset(true);
 
    // Update the SPI transaction structure
-   retries_remaining = 3;
+   retries_remaining = 4;
    spi_transaction.eDirection = AM_HAL_IOM_RX;
    spi_transaction.ui32NumBytes = read_length;
    spi_transaction.pui32TxBuffer = NULL,
@@ -95,7 +95,7 @@ static void spi_read(uint8_t command, const void *address, uint32_t address_leng
    spi_transaction.bContinue = false;
 
    // Repeat the transfer until it succeeds or requires a device reset
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
       am_hal_delay_us(10);
    if (!retries_remaining)
       system_reset(true);
@@ -104,7 +104,7 @@ static void spi_read(uint8_t command, const void *address, uint32_t address_leng
 static void spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
 {
    // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 3;
+   uint32_t instruction = command, retries_remaining = 4;
    memcpy(((uint8_t*)&instruction) + 1, address, address_length);
    am_hal_iom_transfer_t spi_transaction = {
       .uPeerInfo.ui32SpiChipSelect  = 0,
@@ -122,19 +122,19 @@ static void spi_write(uint8_t command, const void *address, uint32_t address_len
    };
 
    // Repeat the transfer until it succeeds or requires a device reset
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
       am_hal_delay_us(10);
    if (!retries_remaining)
       system_reset(true);
 
    // Update the SPI transaction structure
-   retries_remaining = 3;
+   retries_remaining = 4;
    spi_transaction.ui32NumBytes = write_length;
    spi_transaction.pui32TxBuffer = (uint32_t*)write_buffer,
    spi_transaction.bContinue = false;
 
    // Repeat the transfer until it succeeds or requires a device reset
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
       am_hal_delay_us(10);
    if (!retries_remaining)
       system_reset(true);
@@ -161,8 +161,8 @@ static bool verify_device_id(void)
 
 static void wait_until_not_busy(void)
 {
-   uint32_t retries_remaining = 500;
-   while (retries_remaining-- && ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) == STATUS_BUSY))
+   uint32_t retries_remaining = 501;
+   while (--retries_remaining && ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) == STATUS_BUSY))
       am_hal_delay_us(10);
    if (!retries_remaining)
       system_reset(true);

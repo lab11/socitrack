@@ -9,6 +9,7 @@
 #include "logging.h"
 #include "ranging.h"
 #include "rtc.h"
+#include "scheduler.h"
 #include "storage.h"
 #include "system.h"
 
@@ -28,11 +29,11 @@ static volatile bool devices_found;
 static void verify_app_configuration(void)
 {
    // Verify the current state of the application
-   uint32_t retries_remaining = 4;
    print("INFO: Verifying TotTag application configuration\n");
 
    // Advertising should always be enabled
-   while (!bluetooth_is_advertising() && retries_remaining--)
+   uint32_t retries_remaining = 5;
+   while (!bluetooth_is_advertising() && --retries_remaining)
    {
       bluetooth_start_advertising();
       uint32_t waits_remaining = 50;
@@ -42,11 +43,27 @@ static void verify_app_configuration(void)
    if (!retries_remaining)
       system_reset(false);
 
+   // Verify the current BLE-advertised role
+   uint8_t current_role = scheduler_get_current_role();
+   if (current_role != bluetooth_get_current_ranging_role())
+   {
+      retries_remaining = 5;
+      do
+      {
+         bluetooth_set_current_ranging_role(current_role);
+         uint32_t waits_remaining = 50;
+         while (bluetooth_is_changing_roles() && waits_remaining--)
+            vTaskDelay(pdMS_TO_TICKS(10));
+      } while (bluetooth_is_changing_roles() && --retries_remaining);
+      if (!retries_remaining)
+         system_reset(false);
+   }
+
    // Scanning should only be enabled if we are not already ranging with a network
-   retries_remaining = 4;
+   retries_remaining = 5;
    if (!ranging_active())
    {
-      while (!bluetooth_is_scanning() && retries_remaining--)
+      while (!bluetooth_is_scanning() && --retries_remaining)
       {
          bluetooth_start_scanning();
          uint32_t waits_remaining = 50;
@@ -56,7 +73,7 @@ static void verify_app_configuration(void)
    }
    else
    {
-      while (bluetooth_is_scanning() && retries_remaining--)
+      while (bluetooth_is_scanning() && --retries_remaining)
       {
          bluetooth_stop_scanning();
          uint32_t waits_remaining = 50;
@@ -73,13 +90,14 @@ static void verify_app_configuration(void)
 static void handle_notification(app_notification_t notification)
 {
    // Handle the notification based on which bits are set
-   if (((notification & APP_NOTIFY_NETWORK_LOST) != 0) || ((notification & APP_NOTIFY_VERIFY_CONFIGURATION) != 0))
+   if (((notification & APP_NOTIFY_NETWORK_LOST) != 0) || ((notification & APP_NOTIFY_NETWORK_CONNECTED) != 0) ||
+       ((notification & APP_NOTIFY_VERIFY_CONFIGURATION) != 0))
       verify_app_configuration();
    if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
    {
       // Stop scanning for additional devices
-      uint32_t retries_remaining = 4;
-      while (bluetooth_is_scanning() && retries_remaining--)
+      uint32_t retries_remaining = 5;
+      while (bluetooth_is_scanning() && --retries_remaining)
       {
          bluetooth_stop_scanning();
          uint32_t waits_remaining = 50;
@@ -257,7 +275,6 @@ void AppTaskRanging(void *uid)
    for (uint8_t i = 0; i < current_experiment.num_devices; ++i)
       bluetooth_add_device_to_whitelist(current_experiment.uids[i]);
    bluetooth_set_current_ranging_role(ROLE_IDLE);
-   verify_app_configuration();
 
    // Loop forever, sleeping until an application notification is received
    while (true)

@@ -44,10 +44,7 @@ void RangingTask(void *uid)
          print("TotTag Ranging: Starting ranging task as %s\n", (desired_role_bits == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");
          scheduler_run((schedule_role_t)desired_role_bits, rtc_get_timestamp());
          print("TotTag Ranging: Ranging task has stopped!\n");
+         is_ranging = false;
       }
-
-      // Notify the application that network connectivity has been lost
-      is_ranging = false;
-      app_notify(APP_NOTIFY_NETWORK_LOST, false);
    }
 }
