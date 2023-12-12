@@ -124,7 +124,7 @@ static void handle_notification(app_notification_t notification)
          int32_t best_device_idx = -1;
          uint8_t highest_device_id = device_uid_short;
          for (uint8_t i = 0; i < num_discovered_devices; ++i)
-            if ((discovered_devices[i][EUI_LEN] != ROLE_ASLEEP) && (discovered_devices[i][0] > highest_device_id))
+            if (discovered_devices[i][0] > highest_device_id)
             {
                best_device_idx = i;
                highest_device_id = discovered_devices[i][0];
@@ -167,24 +167,27 @@ static void motion_change_handler(bool in_motion)
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
 {
-   // Keep track of all newly discovered devices
-   if (!devices_found)
+   // Keep track of all newly discovered non-sleeping devices
+   if (ranging_role != ROLE_ASLEEP)
    {
-      devices_found = true;
-      num_discovered_devices = 1;
-      for (uint8_t i = 0; i < EUI_LEN; ++i)
-         discovered_devices[0][i] = ble_address[i];
-      discovered_devices[0][EUI_LEN] = ranging_role;
-      am_hal_timer_clear(BLE_SCANNING_TIMER_NUMBER);
-   }
-   else if (num_discovered_devices < MAX_NUM_RANGING_DEVICES)
-   {
-      for (uint8_t i = 0; i < num_discovered_devices; ++i)
-         if (memcmp((uint8_t*)discovered_devices[i], ble_address, EUI_LEN) == 0)
-            return;
-      for (uint8_t i = 0; i < EUI_LEN; ++i)
-         discovered_devices[num_discovered_devices][i] = ble_address[i];
-      discovered_devices[num_discovered_devices++][EUI_LEN] = ranging_role;
+      if (!devices_found)
+      {
+         devices_found = true;
+         num_discovered_devices = 1;
+         for (uint8_t i = 0; i < EUI_LEN; ++i)
+            discovered_devices[0][i] = ble_address[i];
+         discovered_devices[0][EUI_LEN] = ranging_role;
+         am_hal_timer_clear(BLE_SCANNING_TIMER_NUMBER);
+      }
+      else if (num_discovered_devices < MAX_NUM_RANGING_DEVICES)
+      {
+         for (uint8_t i = 0; i < num_discovered_devices; ++i)
+            if (memcmp((uint8_t*)discovered_devices[i], ble_address, EUI_LEN) == 0)
+               return;
+         for (uint8_t i = 0; i < EUI_LEN; ++i)
+            discovered_devices[num_discovered_devices][i] = ble_address[i];
+         discovered_devices[num_discovered_devices++][EUI_LEN] = ranging_role;
+      }
    }
 }
 
