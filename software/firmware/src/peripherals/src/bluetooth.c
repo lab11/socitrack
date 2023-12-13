@@ -95,6 +95,7 @@ static void advertising_setup(void)
    AppSetBondable(FALSE);
    AppSetAdvType(DM_ADV_CONN_UNDIRECT);
    HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
+   DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
 }
 
 
@@ -103,8 +104,6 @@ static void advertising_setup(void)
 #ifndef AM_DEBUG_PRINTF
 void hci_process_trace_data(uint8_t *dbg_data, uint32_t len) {}
 #endif
-void AppExtScanStop(void) {}
-dmConnId_t AppExtConnOpen(uint8_t initPhys, uint8_t addrType, uint8_t *pAddr, appDbHdl_t dbHdl) { return DM_CONN_ID_NONE; }
 void AppUiBtnPressed(void) {}
 void appUiTimerExpired(wsfMsgHdr_t *pMsg) {}
 void appUiBtnPoll(void) {}
@@ -119,15 +118,12 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_RESET_CMPL_IND\n");
          AttsCalculateDbHash();
          advertising_setup();
+         is_advertising = is_scanning = is_changing_roles = false;
          is_initialized = true;
          if (expected_advertising)
             bluetooth_start_advertising();
-         else
-            bluetooth_stop_advertising();
          if (expected_scanning)
             bluetooth_start_scanning();
-         else
-            bluetooth_stop_scanning();
          break;
       case DM_CONN_OPEN_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_OPEN_IND\n");
@@ -151,7 +147,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_ADV_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_STOP_IND\n");
          is_advertising = false;
-         if (expected_advertising)
+         if (is_initialized && expected_advertising)
             bluetooth_start_advertising();
          break;
       case DM_SCAN_START_IND:
@@ -163,7 +159,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_SCAN_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
          is_scanning = false;
-         if (expected_scanning)
+         if (is_initialized && expected_scanning)
             bluetooth_start_scanning();
          break;
       case DM_SCAN_REPORT_IND:
@@ -261,6 +257,15 @@ void bluetooth_deinit(void)
    am_hal_gpio_pinconfig(AM_DEVICES_BLECTRLR_RESET_PIN, am_hal_gpio_pincfg_output);
    am_hal_gpio_state_write(AM_DEVICES_BLECTRLR_RESET_PIN, AM_HAL_GPIO_OUTPUT_SET);
    am_hal_gpio_state_write(AM_DEVICES_BLECTRLR_RESET_PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
+}
+
+void bluetooth_reset(void)
+{
+   // Shutdown and reboot the BLE controller
+   is_initialized = is_advertising = is_scanning = false;
+   HciDrvRadioShutdown();
+   HciDrvRadioBoot(false);
+   DmDevReset();
 }
 
 void bluetooth_start(void)
@@ -365,7 +370,6 @@ void bluetooth_start_scanning(void)
    if (is_initialized && !is_scanning)
    {
       print("TotTag BLE: Starting scanning...\n");
-      DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
       DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, FALSE, ble_master_cfg.scanDuration, 0);
    }
 }

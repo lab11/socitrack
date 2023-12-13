@@ -15,6 +15,7 @@ typedef void (*ble_discovery_callback_t)(const uint8_t ble_address[6], uint8_t r
 
 void bluetooth_init(uint8_t* uid);
 void bluetooth_deinit(void);
+void bluetooth_reset(void);
 void bluetooth_start(void);
 bool bluetooth_is_initialized(void);
 void bluetooth_register_discovery_callback(ble_discovery_callback_t callback);
