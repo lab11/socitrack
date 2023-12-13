@@ -32,59 +32,67 @@ static void verify_app_configuration(void)
    print("INFO: Verifying TotTag application configuration\n");
 
    // Advertising should always be enabled
-   uint32_t retries_remaining = 5;
-   while (!bluetooth_is_advertising() && --retries_remaining)
+   if (!bluetooth_is_advertising())
    {
       bluetooth_start_advertising();
-      uint32_t waits_remaining = 50;
-      while (!bluetooth_is_advertising() && waits_remaining--)
+      for (uint32_t i = 0; !bluetooth_is_advertising() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
          vTaskDelay(pdMS_TO_TICKS(10));
+      if (!bluetooth_is_advertising())
+      {
+         bluetooth_reset();
+         for (int i = 0; !bluetooth_is_advertising() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+            vTaskDelay(pdMS_TO_TICKS(100));
+         if (!bluetooth_is_advertising())
+            system_reset(false);
+      }
    }
-   if (!retries_remaining)
-      system_reset(false);
 
    // Verify the current BLE-advertised role
    uint8_t current_role = scheduler_get_current_role();
    if (current_role != bluetooth_get_current_ranging_role())
    {
-      retries_remaining = 5;
-      do
+      bluetooth_set_current_ranging_role(current_role);
+      for (uint32_t i = 0; bluetooth_is_changing_roles() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
+         vTaskDelay(pdMS_TO_TICKS(10));
+      if (bluetooth_is_changing_roles())
       {
-         bluetooth_set_current_ranging_role(current_role);
-         uint32_t waits_remaining = 50;
-         while (bluetooth_is_changing_roles() && waits_remaining--)
-            vTaskDelay(pdMS_TO_TICKS(10));
-      } while (bluetooth_is_changing_roles() && --retries_remaining);
-      if (!retries_remaining)
-         system_reset(false);
+         bluetooth_reset();
+         for (int i = 0; !bluetooth_is_advertising() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+            vTaskDelay(pdMS_TO_TICKS(100));
+         if (!bluetooth_is_advertising())
+            system_reset(false);
+      }
    }
 
    // Scanning should only be enabled if we are not already ranging with a network
-   retries_remaining = 5;
-   if (!ranging_active())
+   if (!ranging_active() && !bluetooth_is_scanning())
    {
-      while (!bluetooth_is_scanning() && --retries_remaining)
+      bluetooth_start_scanning();
+      for (uint32_t i = 0; !bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
+         vTaskDelay(pdMS_TO_TICKS(10));
+      if (!bluetooth_is_scanning())
       {
-         bluetooth_start_scanning();
-         uint32_t waits_remaining = 50;
-         while (!bluetooth_is_scanning() && waits_remaining--)
-            vTaskDelay(pdMS_TO_TICKS(10));
+         bluetooth_reset();
+         for (int i = 0; !bluetooth_is_scanning() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+            vTaskDelay(pdMS_TO_TICKS(100));
+         if (!bluetooth_is_scanning())
+            system_reset(false);
       }
    }
-   else
+   else if (ranging_active() && bluetooth_is_scanning())
    {
-      while (bluetooth_is_scanning() && --retries_remaining)
+      bluetooth_stop_scanning();
+      for (uint32_t i = 0; bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
+         vTaskDelay(pdMS_TO_TICKS(10));
+      if (bluetooth_is_scanning())
       {
-         bluetooth_stop_scanning();
-         uint32_t waits_remaining = 50;
-         while (bluetooth_is_scanning() && waits_remaining--)
-            vTaskDelay(pdMS_TO_TICKS(10));
+         bluetooth_reset();
+         for (int i = 0; bluetooth_is_scanning() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+            vTaskDelay(pdMS_TO_TICKS(100));
+         if (bluetooth_is_scanning())
+            system_reset(false);
       }
    }
-
-   // If switching scanning mode failed, reset the entire device
-   if (!retries_remaining)
-      system_reset(false);
 }
 
 static void handle_notification(app_notification_t notification)
@@ -96,16 +104,17 @@ static void handle_notification(app_notification_t notification)
    if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
    {
       // Stop scanning for additional devices
-      uint32_t retries_remaining = 5;
-      while (bluetooth_is_scanning() && --retries_remaining)
+      bluetooth_stop_scanning();
+      for (uint32_t i = 0; bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
+         vTaskDelay(pdMS_TO_TICKS(10));
+      if (bluetooth_is_scanning())
       {
-         bluetooth_stop_scanning();
-         uint32_t waits_remaining = 50;
-         while (bluetooth_is_scanning() && waits_remaining--)
-            vTaskDelay(pdMS_TO_TICKS(10));
+         bluetooth_reset();
+         for (int i = 0; bluetooth_is_scanning() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+            vTaskDelay(pdMS_TO_TICKS(100));
+         if (bluetooth_is_scanning())
+            system_reset(false);
       }
-      if (!retries_remaining)
-         system_reset(false);
 
       // Determine if an actively ranging device was located
       bool ranging_device_located = false, idle_device_located = false;
@@ -271,7 +280,13 @@ void AppTaskRanging(void *uid)
    for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
       vTaskDelay(pdMS_TO_TICKS(100));
    if (!bluetooth_is_initialized())
-      system_reset(true);
+   {
+      bluetooth_reset();
+      for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+         vTaskDelay(pdMS_TO_TICKS(100));
+      if (!bluetooth_is_initialized())
+         system_reset(true);
+   }
 
    // Update the BLE address whitelist
    bluetooth_clear_whitelist();

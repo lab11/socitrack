@@ -72,7 +72,13 @@ void AppTaskMaintenance(void *uid)
    for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
       vTaskDelay(pdMS_TO_TICKS(100));
    if (!bluetooth_is_initialized())
-      system_reset(true);
+   {
+      bluetooth_reset();
+      for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+         vTaskDelay(pdMS_TO_TICKS(100));
+      if (!bluetooth_is_initialized())
+         system_reset(true);
+   }
 
    // Clear the BLE address whitelist
    bluetooth_clear_whitelist();
