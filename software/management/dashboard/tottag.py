@@ -121,7 +121,7 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
       label = details['labels'][i].decode().rstrip('\x00')
-      uid_to_labels[int(details['uids'][i][0])] = label if label else details['uids'][i][0]
+      uid_to_labels[int(details['uids'][i][0])] = label if label else str(details['uids'][i][0])
    i = 0
    log_data = defaultdict(dict)
    if save_raw_file:
