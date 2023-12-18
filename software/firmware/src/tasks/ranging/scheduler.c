@@ -189,6 +189,10 @@ schedule_role_t scheduler_get_current_role(void)
 
 void scheduler_run(schedule_role_t role, uint32_t timestamp)
 {
+   // Ensure that the role is a valid ranging role
+   if ((role != ROLE_MASTER) && (role != ROLE_PARTICIPANT))
+      return;
+
    // Wake up the DW3000 ranging radio and set it to the correct channel
    ranging_radio_wakeup();
    ranging_radio_choose_channel(RADIO_XMIT_CHANNEL);
