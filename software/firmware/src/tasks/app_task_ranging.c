@@ -265,9 +265,9 @@ void AppTaskRanging(void *uid)
       storage_flush_and_shutdown();
    else
    {
-      storage_write_motion_status(imu_read_in_motion());
+      // TODO: UNCOMMENT: storage_write_motion_status(imu_read_in_motion());
       battery_register_event_callback(battery_event_handler);
-      imu_register_motion_change_callback(motion_change_handler, OPERATION_MODE_ACCONLY);
+      // TODO: UNCOMMENT: imu_register_motion_change_callback(motion_change_handler, OPERATION_MODE_ACCONLY);
    }
 #endif
 
