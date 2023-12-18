@@ -11,6 +11,11 @@ If you would be interested in incorporating the SociTrack system or TotTag
 devices into your future research, please fill out this
 [Interest Form](https://forms.gle/SqWca9DrKpcx9rBL6)
 
+**Note: This system is currently under heavy development. At the moment, it is
+provided as-is with no mechanism for external support, technical or otherwise.
+In the future, once the project has reached a steady state and staffing has
+ramped up, we may begin providing limited support. We will post any updates
+on that front here. Thank you for your understanding!**
 
 Hardware
 --------
