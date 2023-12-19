@@ -462,7 +462,7 @@ void storage_init(void)
                   uint16_t len = *(uint16_t*)(transfer_buffer+2);
                   if (len < MEMORY_NUM_DATA_BYTES_PER_PAGE)
                   {
-                     current_page = (current_page - MEMORY_PAGES_PER_BLOCK) + i;
+                     current_page += i;
                      cache_index = len;
                      memcpy(cache, transfer_buffer + 4, len);
                      break;
@@ -470,7 +470,7 @@ void storage_init(void)
                }
                else
                {
-                  current_page = (current_page - MEMORY_PAGES_PER_BLOCK) + i;
+                  current_page += i;
                   break;
                }
          }
@@ -657,8 +657,6 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
       else
          memset(buffer, 0xFF, MEMORY_NUM_DATA_BYTES_PER_PAGE);
       reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
-      if ((starting_page == current_page) && (reading_page == current_page))
-         is_reading = false;
    }
    return num_bytes_retrieved;
 }
