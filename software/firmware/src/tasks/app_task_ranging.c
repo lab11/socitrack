@@ -164,6 +164,7 @@ static void battery_event_handler(battery_event_t battery_event)
 {
    // Store the battery event to non-volatile memory and notify the app
    storage_write_charging_event(battery_event);
+   print("INFO: Battery event occurred: %d\n", (uint32_t)battery_event);
    if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED))
       app_notify(APP_NOTIFY_BATTERY_EVENT, true);
 }
