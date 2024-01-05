@@ -8,7 +8,7 @@ matplotlib==3.3.4
 mccabe==0.6.1
 numpy==1.22.0
 Pillow==10.0.1
-pycryptodomex==3.9.9
+pycryptodomex==3.19.1
 pylint==2.6.0
 pyparsing==2.4.7
 python-dateutil==2.8.1
