@@ -85,6 +85,8 @@
 #define BUZZER_TIMER_NUMBER                         0
 #define RADIO_WAKEUP_TIMER_NUMBER                   2
 #define RADIO_WAKEUP_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
+#define BLE_SCAN_PROBLEM_TIMER_NUMBER               3
+#define BLE_SCAN_PROBLEM_TIMER_TICK_RATE_HZ         (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
 #define BLE_SCANNING_TIMER_NUMBER                   4
 #define BLE_SCANNING_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
 
