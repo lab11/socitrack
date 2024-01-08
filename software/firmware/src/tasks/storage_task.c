@@ -8,8 +8,6 @@
 
 // Storage Task and Notification Types ---------------------------------------------------------------------------------
 
-#if REVISION_ID != REVISION_APOLLO4_EVB
-
 typedef enum {
    STORAGE_TYPE_SHUTDOWN = 0,
    STORAGE_TYPE_VOLTAGE,
@@ -32,6 +30,8 @@ static uint32_t range_data_index;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+#if REVISION_ID != REVISION_APOLLO4_EVB
 
 static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_mV)
 {
@@ -109,6 +109,16 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
    xQueueSendToBack(storage_queue, &storage_item, portMAX_DELAY);
 }
 
+#else
+
+void storage_flush_and_shutdown(void) {}
+void storage_write_battery_level(uint32_t battery_voltage_mV) {}
+void storage_write_charging_event(battery_event_t battery_event) {}
+void storage_write_motion_status(bool in_motion) {}
+void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len) {}
+
+#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB
+
 void StorageTask(void *params)
 {
    // Create a queue to hold pending storage items
@@ -125,6 +135,10 @@ void StorageTask(void *params)
    // Loop forever, waiting until storage events are received
    while (true)
       if (xQueueReceive(storage_queue, &item, portMAX_DELAY) == pdPASS)
+#if REVISION_ID == REVISION_APOLLO4_EVB
+         if (item.type == STORAGE_TYPE_SHUTDOWN)
+            system_reset(true);
+#else
          switch (item.type)
          {
             case STORAGE_TYPE_SHUTDOWN:
@@ -146,14 +160,5 @@ void StorageTask(void *params)
             default:
                break;
          }
+#endif
 }
-
-#else
-
-void storage_flush_and_shutdown(void) {}
-void storage_write_battery_level(uint32_t battery_voltage_mV) {}
-void storage_write_charging_event(battery_event_t battery_event) {}
-void storage_write_motion_status(bool in_motion) {}
-void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len) {}
-
-#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB
