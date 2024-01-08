@@ -18,7 +18,7 @@
 
 static volatile uint16_t connection_mtu;
 static volatile bool is_scanning, is_advertising, is_changing_roles, is_connected, ranges_requested;
-static volatile bool data_requested, expected_scanning, expected_advertising, is_initialized;
+static volatile bool data_requested, expected_scanning, expected_advertising, is_initialized, first_initialization;
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
 static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
@@ -116,9 +116,10 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
    {
       case DM_RESET_CMPL_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_RESET_CMPL_IND\n");
-         AttsCalculateDbHash();
+         if (first_initialization)
+            AttsCalculateDbHash();
          advertising_setup();
-         is_advertising = is_scanning = is_changing_roles = false;
+         is_advertising = is_scanning = is_changing_roles = first_initialization = false;
          is_initialized = true;
          if (expected_advertising)
             bluetooth_start_advertising();
@@ -231,6 +232,7 @@ void bluetooth_init(uint8_t* uid)
    memcpy((uint8_t*)current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
    is_scanning = is_advertising = is_changing_roles = is_connected = ranges_requested = false;
+   first_initialization = true;
    discovery_callback = NULL;
 
    // Store all BLE configuration pointers
@@ -251,6 +253,7 @@ void bluetooth_deinit(void)
    // Shut down the BLE controller
    HciDrvRadioShutdown();
    NVIC_DisableIRQ(AM_COOPER_IRQn);
+   is_initialized = is_advertising = is_scanning = false;
 
    // Put the BLE controller into reset
    am_hal_gpio_state_write(AM_DEVICES_BLECTRLR_RESET_PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
