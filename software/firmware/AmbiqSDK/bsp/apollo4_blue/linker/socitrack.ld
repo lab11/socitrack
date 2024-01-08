@@ -40,7 +40,7 @@ SECTIONS
         *(.rodata*)
         . = ALIGN(4);
     } > MCU_MRAM
-    
+
     .ARM.exidx :
     {
         __exidx_start = .;
@@ -77,22 +77,27 @@ SECTIONS
 
     .heap (NOLOAD):
     {
-        __heap_start__ = .;
-        end = __heap_start__;
-        _end = end;
-        __end = end;
+        . = ALIGN(8);
+        _sheap = .;
+        __heap_start__ = _sheap;
+        end = _sheap;
+        _end = _sheap;
+        __end = _sheap;
         KEEP(*(.heap))
-        __heap_end__ = .;
-        __HeapLimit = __heap_end__;
+        . = ALIGN(8);
+        _eheap = .;
+        __heap_end__ = _eheap;
+        __HeapLimit = _eheap;
     } > MCU_TCM
 
-    /* User stack section initialized by startup code. */
     .stack (NOLOAD):
     {
         . = ALIGN(8);
-        *(.stack)
-        *(.stack*)
+        _sstack = .;
+        _stack_size = ORIGIN(MCU_TCM) + LENGTH(MCU_TCM) - _sstack;
+        . = . + _stack_size;
         . = ALIGN(8);
+        _estack = .;
     } > MCU_TCM
 
     .ARM.attributes 0 : { *(.ARM.attributes) }

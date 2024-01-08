@@ -147,11 +147,16 @@ extern int main(void);
 
 //*****************************************************************************
 //
-// Reserve space for the system stack.
+// The following are constructs created by the linker, indicating where the
+// the "data" and "bss" segments reside in memory.  The initializers for the
+// "data" segment resides immediately following the "text" segment.
 //
 //*****************************************************************************
-__attribute__ ((section(".stack")))
-static uint32_t g_pui32Stack[0xac0];
+extern uint32_t _sdata;
+extern uint32_t _edata;
+extern uint32_t _sbss;
+extern uint32_t _ebss;
+extern uint32_t _estack;
 
 //*****************************************************************************
 //
@@ -175,8 +180,7 @@ static uint32_t g_pui32Stack[0xac0];
 __attribute__ ((section(".isr_vector")))
 void (* const g_am_pfnVectors[])(void) =
 {
-    (void (*)(void))((uint32_t)g_pui32Stack + sizeof(g_pui32Stack)),
-                                            // The initial stack pointer
+    (void (*)(void))&_estack,               // Top of the stack
     Reset_Handler,                          // The reset handler
     NMI_Handler,                            // The NMI handler
     HardFault_Handler,                      // The hard fault handler
@@ -304,19 +308,6 @@ uint32_t const __Patchable[] =
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0,           // 100-109
     0, 0                                    // 110-111
 };
-
-//*****************************************************************************
-//
-// The following are constructs created by the linker, indicating where the
-// the "data" and "bss" segments reside in memory.  The initializers for the
-// "data" segment resides immediately following the "text" segment.
-//
-//*****************************************************************************
-extern uint32_t _etext;
-extern uint32_t _sdata;
-extern uint32_t _edata;
-extern uint32_t _sbss;
-extern uint32_t _ebss;
 
 //*****************************************************************************
 //

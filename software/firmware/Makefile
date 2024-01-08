@@ -264,6 +264,7 @@ LFLAGS+= -nostartfiles -static
 LFLAGS+= -Wl,--gc-sections,--entry,Reset_Handler,-Map,$(CONFIG)/$(TARGET).map
 LFLAGS+= -Wl,--start-group -lm -lc -lgcc -lnosys $(LIBS) -Wl,--end-group
 LFLAGS+= -Wl,--whole-archive $(DW_LIBRARY) -Wl,--no-whole-archive
+LFLAGS+= -Wl,--print-memory-usage
 
 CPFLAGS = -Obinary
 ODFLAGS = -S
