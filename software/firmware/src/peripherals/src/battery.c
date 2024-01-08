@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "battery.h"
+#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -189,6 +190,7 @@ void battery_register_event_callback(battery_event_callback_t callback)
 uint32_t battery_monitor_get_level_mV(void)
 {
    // Wake up the ADC
+   battery_voltage_code = 0;
    conversion_complete = false;
    if (am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true) != AM_HAL_STATUS_SUCCESS)
       return 0;
@@ -208,8 +210,9 @@ uint32_t battery_monitor_get_level_mV(void)
    }
 
    // Wait until the conversion has completed
-   while (!conversion_complete)
-      am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_NORMAL);
+   uint32_t retries_remaining = 25;
+   while (!conversion_complete && retries_remaining--)
+      system_delay(10);
 
    // Disable the ADC
    am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
