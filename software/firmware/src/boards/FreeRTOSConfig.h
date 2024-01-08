@@ -39,7 +39,7 @@
 /* Software timer related definitions. */
 #define configUSE_TIMERS                        1
 #define configTIMER_TASK_PRIORITY               3
-#define configTIMER_QUEUE_LENGTH                5
+#define configTIMER_QUEUE_LENGTH                10
 #define configTIMER_TASK_STACK_DEPTH            256
 
 /* Interrupt nesting behaviour configuration. */
@@ -62,7 +62,7 @@ extern void vAssertCalled(const char * const pcFileName, unsigned long ulLine);
 #define INCLUDE_vTaskDelete                     0
 #define INCLUDE_vTaskSuspend                    1
 #define INCLUDE_xResumeFromISR                  0
-#define INCLUDE_vTaskDelayUntil                 1
+#define INCLUDE_vTaskDelayUntil                 0
 #define INCLUDE_vTaskDelay                      1
 #define INCLUDE_xTaskGetSchedulerState          0
 #define INCLUDE_xTaskGetCurrentTaskHandle       1
@@ -71,7 +71,7 @@ extern void vAssertCalled(const char * const pcFileName, unsigned long ulLine);
 #define INCLUDE_xTimerGetTimerDaemonTaskHandle  0
 #define INCLUDE_pcTaskGetTaskName               0
 #define INCLUDE_eTaskGetState                   0
-#define INCLUDE_xEventGroupSetBitFromISR        1
+#define INCLUDE_xEventGroupSetBitFromISR        0
 #define INCLUDE_xTimerPendFunctionCall          1
 
 #define vPortSVCHandler                         SVC_Handler

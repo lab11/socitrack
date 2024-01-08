@@ -12,12 +12,10 @@ void TimeAlignedTask(void *scheduled_experiment)
 {
    // Set up local variables
    experiment_details_t *experiment_details = scheduled_experiment ? (experiment_details_t*)scheduled_experiment : NULL;
-   const TickType_t ticks_between_iterations = pdMS_TO_TICKS(BATTERY_CHECK_INTERVAL_S * 1000);
    static uint32_t battery_voltage, time_of_day;
    static bool experiment_ended;
 
    // Loop forever
-   TickType_t last_wake_time = xTaskGetTickCount();
    while (true)
    {
       // Send a configuration verification notification to the Application Task
@@ -50,6 +48,6 @@ void TimeAlignedTask(void *scheduled_experiment)
          storage_flush_and_shutdown();
 
       // Sleep until the next time-aligned task iteration
-      vTaskDelayUntil(&last_wake_time, ticks_between_iterations);
+      vTaskDelay(pdMS_TO_TICKS(BATTERY_CHECK_INTERVAL_S * 1000));
    }
 }

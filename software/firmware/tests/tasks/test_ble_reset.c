@@ -8,12 +8,10 @@
 static void AppTestTask(void *uid)
 {
    // Initiate a BLE reset every 10 seconds
-   const TickType_t ticks_between_resets = pdMS_TO_TICKS(10000);
-   TickType_t last_wake_time = xTaskGetTickCount();
    while (true)
    {
       // Sleep until time for the next BLE reset
-      vTaskDelayUntil(&last_wake_time, ticks_between_resets);
+      vTaskDelay(pdMS_TO_TICKS(10000));
       print("INFO: Resetting BLE...\n");
 
       // Reset the BLE module
