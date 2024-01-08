@@ -2721,7 +2721,7 @@ void hciEvtProcessMsg(uint8_t *pEvt)
     case HCI_LE_META_EVT:
       BSTREAM_TO_UINT8(subEvt, pEvt);
       hciEvtStats.numLeMetaEvt++;
-      APP_TRACE_INFO1("LE meta sub event = 0x%x", subEvt);
+      //APP_TRACE_INFO1("LE meta sub event = 0x%x", subEvt);
       switch (subEvt)
       {
         case HCI_LE_CONN_CMPL_EVT:
