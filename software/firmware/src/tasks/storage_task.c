@@ -8,6 +8,8 @@
 
 // Storage Task and Notification Types ---------------------------------------------------------------------------------
 
+#if REVISION_ID != REVISION_APOLLO4_EVB
+
 typedef enum {
    STORAGE_TYPE_SHUTDOWN = 0,
    STORAGE_TYPE_VOLTAGE,
@@ -145,3 +147,13 @@ void StorageTask(void *params)
                break;
          }
 }
+
+#else
+
+void storage_flush_and_shutdown(void) {}
+void storage_write_battery_level(uint32_t battery_voltage_mV) {}
+void storage_write_charging_event(battery_event_t battery_event) {}
+void storage_write_motion_status(bool in_motion) {}
+void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len) {}
+
+#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB

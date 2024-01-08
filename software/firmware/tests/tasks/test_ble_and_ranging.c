@@ -7,15 +7,9 @@
 #include "rtc.h"
 #include "system.h"
 
-static StaticTask_t app_task_tcb, ble_task_tcb, ranging_task_tcb;
+static StaticTask_t app_task_tcb, ble_task_tcb, ranging_task_tcb, time_aligned_task_tcb;
 static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
-static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE];
-
-void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
-void storage_begin_reading(void) {}
-void storage_end_reading(void) {}
-uint32_t storage_retrieve_data_length(void) { return 0; }
-uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
+static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], time_aligned_task_stack[configMINIMAL_STACK_SIZE];
 
 int main(void)
 {
@@ -30,7 +24,7 @@ int main(void)
    leds_init();
    rtc_init();
    system_enable_interrupts(true);
-   print("Initialized BLE with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]);
+   print("Initialized BLE with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[5], uid[4], uid[3], uid[2], uid[1], uid[0]);
 
    // Initialize the ranging radio and put it into deep sleep
    ranging_radio_init(uid);
@@ -43,6 +37,7 @@ int main(void)
    xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, uid, 4, ranging_task_stack, &ranging_task_tcb);
    xTaskCreateStatic(BLETask, "BLETask", 2*configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
    xTaskCreateStatic(AppTaskRanging, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);
+   xTaskCreateStatic(TimeAlignedTask, "TimeAlignedTask", configMINIMAL_STACK_SIZE, NULL, 1, time_aligned_task_stack, &time_aligned_task_tcb);
 
    // Start the task scheduler
    vTaskStartScheduler();

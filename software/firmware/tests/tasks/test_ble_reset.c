@@ -5,12 +5,6 @@
 #include "rtc.h"
 #include "system.h"
 
-void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
-void storage_begin_reading(void) {}
-void storage_end_reading(void) {}
-uint32_t storage_retrieve_data_length(void) { return 0; }
-uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
-
 static void AppTestTask(void *uid)
 {
    // Initiate a BLE reset every 10 seconds

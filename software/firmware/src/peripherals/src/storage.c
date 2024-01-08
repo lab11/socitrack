@@ -7,6 +7,8 @@
 
 // Chip-Specific Definitions -------------------------------------------------------------------------------------------
 
+#if REVISION_ID != REVISION_APOLLO4_EVB
+
 #define STORAGE_DEVICE_ID                           { 0xEF, 0xBA, 0x21 }
 
 #define COMMAND_READ_DEVICE_ID                      0x9F
@@ -577,9 +579,6 @@ void storage_flush(bool write_partial_pages)
       write_page((uint16_t)cache_index);
 }
 
-#ifndef _TEST_BLUETOOTH
-#ifndef _TEST_BLE_RANGING_TASK
-
 void storage_retrieve_experiment_details(experiment_details_t *details)
 {
    // Retrieve experiment details
@@ -661,5 +660,20 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    return num_bytes_retrieved;
 }
 
-#endif  // #ifndef _TEST_BLE_RANGING_TASK
-#endif  // #ifndef _TEST_BLUETOOTH
+#else
+
+void storage_init(void) {}
+void storage_deinit(void) {}
+void storage_disable(bool disable) {}
+void storage_store_experiment_details(const experiment_details_t *details) {}
+void storage_store(const void *data, uint32_t data_length) {}
+void storage_flush(bool write_partial_pages) {}
+void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
+void storage_begin_reading(void) {}
+void storage_end_reading(void) {}
+void storage_enter_maintenance_mode(void){}
+void storage_exit_maintenance_mode(void) {}
+uint32_t storage_retrieve_data_length(void) { return 0; }
+uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
+
+#endif  // #if REVISION_ID != REVISION_APOLLO4_EVB
