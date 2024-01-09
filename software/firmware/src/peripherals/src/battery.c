@@ -1,7 +1,6 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "battery.h"
-#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -212,7 +211,7 @@ uint32_t battery_monitor_get_level_mV(void)
    // Wait until the conversion has completed
    uint32_t retries_remaining = 25;
    while (!conversion_complete && retries_remaining--)
-      system_delay(10);
+      am_hal_delay_us(10000);
 
    // Disable the ADC
    am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
