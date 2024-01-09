@@ -24,7 +24,6 @@ int main(void)
    leds_init();
    rtc_init();
    system_enable_interrupts(true);
-   print("Initialized BLE with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[5], uid[4], uid[3], uid[2], uid[1], uid[0]);
 
    // Initialize the ranging radio and put it into deep sleep
    ranging_radio_init(uid);
