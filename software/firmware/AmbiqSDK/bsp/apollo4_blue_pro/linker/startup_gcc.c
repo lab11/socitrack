@@ -158,6 +158,9 @@ extern uint32_t _sbss;
 extern uint32_t _ebss;
 extern uint32_t _estack;
 
+__attribute__ ((section(".heap"))) __attribute__ ((__used__))
+static uint32_t pHeap[1024];
+
 //*****************************************************************************
 //
 // The vector table.
