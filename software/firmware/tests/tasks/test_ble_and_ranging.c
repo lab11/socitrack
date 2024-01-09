@@ -33,7 +33,7 @@ int main(void)
    system_enable_interrupts(false);
 
    // Create tasks with the following priority order:
-   //    IdleTask < AppTask < BLETask < RangingTask
+   //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask
    xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, uid, 4, ranging_task_stack, &ranging_task_tcb);
    xTaskCreateStatic(BLETask, "BLETask", 2*configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
    xTaskCreateStatic(AppTaskRanging, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);
