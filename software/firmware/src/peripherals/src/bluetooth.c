@@ -122,7 +122,7 @@ void am_timer03_isr(void)
       DmScanStop();
       am_hal_timer_clear(BLE_SCAN_PROBLEM_TIMER_NUMBER);
       print("TotTag BLE: Scanning cycle did not complete as expected...re-enabling scanning\n");
-      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
+      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, FALSE, ble_master_cfg.scanDuration, 0);
    }
 }
 
@@ -272,6 +272,7 @@ void bluetooth_init(uint8_t* uid)
    // Set the Bluetooth address and boot the BLE radio
    HciVscSetCustom_BDAddr(uid);
    configASSERT0(HciDrvRadioBoot(false));
+   print("TotTag BLE: Initialized with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[5], uid[4], uid[3], uid[2], uid[1], uid[0]);
 }
 
 void bluetooth_deinit(void)
@@ -403,7 +404,7 @@ void bluetooth_start_scanning(void)
    {
       print("TotTag BLE: Starting scanning...\n");
       am_hal_timer_clear(BLE_SCAN_PROBLEM_TIMER_NUMBER);
-      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
+      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, FALSE, ble_master_cfg.scanDuration, 0);
    }
 }
 
