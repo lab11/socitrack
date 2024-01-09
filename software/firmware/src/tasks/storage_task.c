@@ -135,7 +135,7 @@ void StorageTask(void *params)
    // Loop forever, waiting until storage events are received
    while (true)
       if (xQueueReceive(storage_queue, &item, portMAX_DELAY) == pdPASS)
-#if REVISION_ID == REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
+#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_BLE_RANGING_TASK)
          if (item.type == STORAGE_TYPE_SHUTDOWN)
             system_reset(true);
 #else
