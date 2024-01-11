@@ -21,6 +21,7 @@
 /*************************************************************************************************/
 
 #include <string.h>
+#include "bluetooth.h"
 #include "wsf_types.h"
 #include "wsf_queue.h"
 #include "wsf_timer.h"
@@ -187,6 +188,7 @@ void hciCmdTimeout(wsfMsgHdr_t *pMsg)
   // reset/reboot controller and initialize HCI
   // layer and SPI transport layer again.
 
+  bluetooth_set_uninitialized();
   HciDrvRadioShutdown();
   HciDrvRadioBoot(0);
   DmDevReset();

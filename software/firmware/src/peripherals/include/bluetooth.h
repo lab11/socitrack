@@ -18,6 +18,7 @@ void bluetooth_deinit(void);
 void bluetooth_reset(void);
 void bluetooth_start(void);
 bool bluetooth_is_initialized(void);
+void bluetooth_set_uninitialized(void);
 void bluetooth_register_discovery_callback(ble_discovery_callback_t callback);
 uint8_t bluetooth_get_current_ranging_role(void);
 void bluetooth_set_current_ranging_role(uint8_t ranging_role);
