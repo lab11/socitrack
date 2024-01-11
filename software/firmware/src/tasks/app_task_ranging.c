@@ -52,9 +52,9 @@ static void verify_app_configuration(void)
    if (current_role != bluetooth_get_current_ranging_role())
    {
       bluetooth_set_current_ranging_role(current_role);
-      for (uint32_t i = 0; bluetooth_is_changing_roles() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
+      for (uint32_t i = 0; !bluetooth_is_advertising() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
          vTaskDelay(pdMS_TO_TICKS(10));
-      if (bluetooth_is_changing_roles())
+      if (!bluetooth_is_advertising())
       {
          bluetooth_reset();
          for (int i = 0; !bluetooth_is_advertising() && (i < BLE_INIT_TIMEOUT_MS); i += 100)

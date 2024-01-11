@@ -22,7 +22,6 @@ void bluetooth_set_uninitialized(void);
 void bluetooth_register_discovery_callback(ble_discovery_callback_t callback);
 uint8_t bluetooth_get_current_ranging_role(void);
 void bluetooth_set_current_ranging_role(uint8_t ranging_role);
-bool bluetooth_is_changing_roles(void);
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length);
 void bluetooth_start_advertising(void);
 void bluetooth_stop_advertising(void);
