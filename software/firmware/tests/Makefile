@@ -155,7 +155,6 @@ SRC += am_util_string.c
 SRC += app_db.c
 SRC += app_main.c
 SRC += app_slave.c
-SRC += app_slave_leg.c
 SRC += att_main.c
 SRC += att_uuid.c
 SRC += atts_ccc.c

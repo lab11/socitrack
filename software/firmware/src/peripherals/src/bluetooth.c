@@ -23,6 +23,7 @@ static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_
 static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
 static ble_discovery_callback_t discovery_callback;
+static uint8_t ble_sys_id[8];
 
 
 // Bluetooth LE Advertising and Connection Parameters ------------------------------------------------------------------
@@ -73,28 +74,21 @@ static const attsCccSet_t characteristicSet[TOTTAG_NUM_CCC_CHARACTERISTICS] =
 
 static void advertising_setup(void)
 {
-   // Set the BLE address as the System ID, formatted for GATT 0x2A23
-   uint8_t *bdaddr = HciGetBdAddr(), sys_id[8];
-   sys_id[0] = bdaddr[0]; sys_id[1] = bdaddr[1]; sys_id[2] = bdaddr[2];
-   sys_id[3] = 0xFE; sys_id[4] = 0xFF;
-   sys_id[5] = bdaddr[3]; sys_id[6] = bdaddr[4]; sys_id[7] = bdaddr[5];
-   AttsSetAttr(DEVICE_INFO_SYSID_HANDLE, sizeof(sys_id), sys_id);
-
    // Set the advertising data
    memset((uint8_t*)adv_data_conn, 0, sizeof(adv_data_conn));
-   AppAdvSetData(APP_ADV_DATA_CONNECTABLE, 0, (uint8_t*)adv_data_conn);
-   AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_FLAGS, sizeof(adv_data_flags), (uint8_t*)adv_data_flags);
-   AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_LOCAL_NAME, sizeof(adv_local_name), (uint8_t*)adv_local_name);
-   AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
+   appAdvSetData(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, 0,(uint8_t*)adv_data_conn, HCI_ADV_DATA_LEN, HCI_ADV_DATA_LEN);
+   appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_FLAGS, sizeof(adv_data_flags), (uint8_t*)adv_data_flags);
+   appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_LOCAL_NAME, sizeof(adv_local_name), (uint8_t*)adv_local_name);
+   appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
 
    // Set the scan response data
    memset((uint8_t*)scan_data_conn, 0, sizeof(scan_data_conn));
-   AppAdvSetData(APP_SCAN_DATA_CONNECTABLE, 0, (uint8_t*)scan_data_conn);
+   appAdvSetData(DM_ADV_HANDLE_DEFAULT, APP_SCAN_DATA_CONNECTABLE, 0, (uint8_t*)scan_data_conn, HCI_ADV_DATA_LEN, HCI_ADV_DATA_LEN);
 
    // Setup the advertising mode and power level
-   AppSetBondable(FALSE);
-   AppSetAdvType(DM_ADV_CONN_UNDIRECT);
+   appSetAdvType(DM_ADV_HANDLE_DEFAULT, DM_ADV_CONN_UNDIRECT, BLE_ADVERTISING_INTERVAL_0_625_MS, BLE_ADVERTISING_DURATION_MS, 0, TRUE);
    HciVscSetRfPowerLevelEx(TX_POWER_LEVEL_0P0_dBm);
+   DmSetDefaultPhy(HCI_ALL_PHY_ALL_PREFERENCES, HCI_PHY_LE_2M_BIT, HCI_PHY_LE_2M_BIT);
    DmScanSetInterval(HCI_SCAN_PHY_LE_1M_BIT, (uint16_t*)&ble_master_cfg.scanInterval, (uint16_t*)&ble_master_cfg.scanWindow);
 }
 
@@ -121,7 +115,7 @@ void am_timer05_isr(void)
    // Force stop the BLE scanning cycle
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(BLE_ADV_PROBLEM_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
    am_hal_timer_clear(BLE_ADV_PROBLEM_TIMER_NUMBER);
-   AppAdvStop();
+   appAdvStop(0, NULL);
 }
 
 static void deviceManagerCallback(dmEvt_t *pDmEvt)
@@ -145,6 +139,8 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_CONN_OPEN_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_OPEN_IND\n");
          is_connected = true;
+         is_advertising = false;
+         bluetooth_start_advertising();
          connection_mtu = AttGetMtu(pDmEvt->hdr.param);
          AttsCccInitTable(pDmEvt->hdr.param, NULL);
          break;
@@ -152,6 +148,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_CLOSE_IND\n");
          is_connected = ranges_requested = data_requested = false;
          AttsCccClearTable(pDmEvt->hdr.param);
+         bluetooth_start_advertising();
          break;
       case DM_ADV_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_START_IND\n");
@@ -251,6 +248,11 @@ void bluetooth_init(uint8_t* uid)
    first_initialization = true;
    discovery_callback = NULL;
 
+   // Initialize the BLE address as the System ID, formatted for GATT 0x2A23
+   ble_sys_id[0] = uid[0]; ble_sys_id[1] = uid[1]; ble_sys_id[2] = uid[2];
+   ble_sys_id[3] = 0xFE; ble_sys_id[4] = 0xFF;
+   ble_sys_id[5] = uid[3]; ble_sys_id[6] = uid[4]; ble_sys_id[7] = uid[5];
+
    // Store all BLE configuration pointers
    pAppAdvCfg = (appAdvCfg_t*)&ble_adv_cfg;
    pAppMasterCfg = (appMasterCfg_t*)&ble_master_cfg;
@@ -318,7 +320,6 @@ void bluetooth_start(void)
    AppSlaveInit();
    DmRegister(deviceManagerCallback);
    DmConnRegister(DM_CLIENT_ID_APP, deviceManagerCallback);
-   DmSetDefaultPhy(HCI_ALL_PHY_ALL_PREFERENCES, HCI_PHY_LE_2M_BIT, HCI_PHY_LE_2M_BIT);
    AttRegister(attProtocolCallback);
    AttsCccRegister(TOTTAG_NUM_CCC_CHARACTERISTICS, (attsCccSet_t*)characteristicSet, cccCallback);
 
@@ -333,6 +334,9 @@ void bluetooth_start(void)
 
    // Set the GATT Service Changed CCCD index
    GattSetSvcChangedIdx(TOTTAG_GATT_SERVICE_CHANGED_CCC_IDX);
+
+   // Set the BLE address as the System ID
+   AttsSetAttr(DEVICE_INFO_SYSID_HANDLE, sizeof(ble_sys_id), ble_sys_id);
 
    // Reset the BLE device
    DmDevReset();
@@ -369,8 +373,8 @@ void bluetooth_set_current_ranging_role(uint8_t ranging_role)
    is_advertising = false;
    current_ranging_role[2] = ranging_role;
 #ifndef _TEST_RANGING_TASK
-   AppAdvSetAdValue(APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
-   AppAdvStop();
+   appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
+   appAdvStop(0, NULL);
 #endif
 }
 
@@ -388,8 +392,10 @@ void bluetooth_start_advertising(void)
    if (is_initialized && !is_advertising)
    {
       print("TotTag BLE: Starting advertising...\n");
+      uint8_t advHandle = DM_ADV_HANDLE_DEFAULT, maxEaEvents = 0;
+      appSlaveCb.advState[DM_ADV_HANDLE_DEFAULT] = APP_ADV_STATE1;
+      appSlaveAdvStart(1, &advHandle, &(pAppAdvCfg->advInterval[APP_ADV_STATE1]), &(pAppAdvCfg->advDuration[APP_ADV_STATE1]), &maxEaEvents, TRUE, APP_MODE_CONNECTABLE);
       am_hal_timer_clear(BLE_ADV_PROBLEM_TIMER_NUMBER);
-      AppAdvStart(APP_MODE_CONNECTABLE);
    }
 }
 
@@ -397,11 +403,11 @@ void bluetooth_stop_advertising(void)
 {
    // Attempt to stop advertising
    expected_advertising = false;
+   am_hal_timer_disable(BLE_ADV_PROBLEM_TIMER_NUMBER);
    if (is_initialized && is_advertising)
    {
       print("TotTag BLE: Stopping advertising...\n");
-      am_hal_timer_disable(BLE_ADV_PROBLEM_TIMER_NUMBER);
-      AppAdvStop();
+      appAdvStop(0, NULL);
    }
 }
 
@@ -427,10 +433,10 @@ void bluetooth_stop_scanning(void)
 {
    // Attempt to stop scanning
    expected_scanning = false;
+   am_hal_timer_disable(BLE_SCAN_PROBLEM_TIMER_NUMBER);
    if (is_initialized && is_scanning)
    {
       print("TotTag BLE: Stopping scanning...\n");
-      am_hal_timer_disable(BLE_SCAN_PROBLEM_TIMER_NUMBER);
       DmScanStop();
    }
 }
