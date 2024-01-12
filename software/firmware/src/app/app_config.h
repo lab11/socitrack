@@ -68,7 +68,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define MAX_NUM_CONNECTIONS                         1
 
-#define BLE_ADVERTISING_DURATION_MS                 0
+#define BLE_ADVERTISING_DURATION_MS                 10000
 #define BLE_ADVERTISING_INTERVAL_0_625_MS           120         // 75 ms
 #define BLE_SCANNING_WINDOW_0_625_MS                160         // 100 ms
 #define BLE_SCANNING_INTERVAL_0_625_MS              1600        // 1000 ms
