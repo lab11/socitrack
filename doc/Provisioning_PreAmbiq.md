@@ -20,6 +20,19 @@ calibration, and carry out device debugging:
 - [Calibration](#calibration)
 - [Debugging](#debugging)
 
+## Checkout the firmware before revision H
+This guide is for TotTag hardware up to revision H. You need to checkout the older firmware as the latest firmware is no longer designed for STM32 + nRF TotTag.
+
+```bash
+git checkout 67cdde4991d016ee61d7ed7892941ad19e543c95
+```
+
+To ensure that the submodules are downloaded, you might need to run
+
+```bash
+git submodule update --init --recursive
+```
+
 ## Programming the nRF Microcontroller
 
 This guide covers the step-by-step requirements necessary to program the nRF
