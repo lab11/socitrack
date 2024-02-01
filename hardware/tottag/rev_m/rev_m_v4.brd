@@ -269,8 +269,8 @@
 <vertex x="24.2316" y="14.1986"/>
 <vertex x="19.7104" y="14.1986"/>
 </polygon>
-<text x="-33.528" y="20.828" size="0.8128" layer="22" font="vector" ratio="12" rot="MR270" align="center-left">ON</text>
-<text x="-33.528" y="24.6888" size="0.8128" layer="22" font="vector" ratio="12" rot="MR90" align="center-left">OFF</text>
+<text x="-33.528" y="20.828" size="0.8128" layer="22" font="vector" ratio="12" rot="MR270" align="center-left">OFF</text>
+<text x="-33.528" y="24.6888" size="0.8128" layer="22" font="vector" ratio="12" rot="MR90" align="center-left">ON</text>
 <rectangle x1="-0.5" y1="32.5" x2="0.5" y2="35" layer="49"/>
 <rectangle x1="-0.5" y1="-8" x2="0.5" y2="-5.5" locked="yes" layer="49"/>
 <text x="-11.8872" y="-3.556" size="0.508" layer="25" font="vector" ratio="18" rot="R30" align="center">VBAT</text>
