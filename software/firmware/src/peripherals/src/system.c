@@ -250,7 +250,7 @@ void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timesta
    bluetooth_deinit();
    buttons_deinit();
    buzzer_deinit();
-   // TODO: UNCOMMENT: imu_deinit();
+   imu_deinit();
    leds_deinit();
    ranging_radio_deinit();
    storage_deinit();

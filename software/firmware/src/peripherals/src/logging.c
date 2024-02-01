@@ -10,17 +10,15 @@ void logging_init(void)
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
 
    // Enable SWO
+   if ((PWRCTRL->DEVPWRSTATUS_b.PWRSTCRYPTO == 1) && (CRYPTO->HOSTCCISIDLE_b.HOSTCCISIDLE == 1))
    {
-      if ((PWRCTRL->DEVPWRSTATUS_b.PWRSTCRYPTO == 1) && (CRYPTO->HOSTCCISIDLE_b.HOSTCCISIDLE == 1))
-      {
-         uint32_t ui32dcuVal;
-         am_hal_dcu_get(&ui32dcuVal);
-         if (!(ui32dcuVal & AM_HAL_DCU_CPUTRC_TPIU_SWO) && (am_hal_dcu_update(true, AM_HAL_DCU_CPUTRC_TPIU_SWO) != AM_HAL_STATUS_SUCCESS))
-            configASSERT0(1);
-      }
-      else
+      uint32_t ui32dcuVal;
+      am_hal_dcu_get(&ui32dcuVal);
+      if (!(ui32dcuVal & AM_HAL_DCU_CPUTRC_TPIU_SWO) && (am_hal_dcu_update(true, AM_HAL_DCU_CPUTRC_TPIU_SWO) != AM_HAL_STATUS_SUCCESS))
          configASSERT0(1);
    }
+   else
+      configASSERT0(1);
 
    // Enable the ITM interface and the SWO pin
    am_hal_itm_enable();
