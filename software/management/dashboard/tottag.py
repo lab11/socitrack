@@ -229,9 +229,9 @@ class TotTagBLE(threading.Thread):
       if self.data_length == 0:
          self.data_index = 0
          self.data_length = struct.unpack('<I', data[0:4])[0]
-         self.data = bytearray(self.data_length)
          if self.data_length == 0:
             self.data_length = 1
+         self.data = bytearray(self.data_length)
          self.data_details = unpack_experiment_details(data[4:])
          self.result_queue.put_nowait(('LOGDATA', self.data_length))
       elif len(data) == 1 and data[0] == MAINTENANCE_DOWNLOAD_COMPLETE:
@@ -383,8 +383,7 @@ class TotTagBLE(threading.Thread):
             self.downloading_log_file = False
             self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
             await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
-            if self.data_index == self.data_length:
-               process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data, self.download_raw_logs)
+            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data[:self.data_index], self.download_raw_logs)
          except Exception as e:
             print('Log file processing error:', e);
             self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
