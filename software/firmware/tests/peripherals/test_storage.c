@@ -27,8 +27,6 @@ int main(void)
    uint8_t read_data[MEMORY_PAGE_SIZE_BYTES*2];
    storage_enter_maintenance_mode();
    storage_begin_reading();
-   uint32_t stored_length = storage_retrieve_data_length();
-   print("Stored length: %u\n", stored_length);
    uint32_t bytes_read = storage_retrieve_next_data_chunk(read_data);
    while (bytes_read)
    {

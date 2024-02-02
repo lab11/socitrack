@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "buzzer.h"
+#include "rtc.h"
 #include "storage.h"
 #include "system.h"
 
@@ -263,6 +264,7 @@ static void write_page(uint16_t data_length)
    while (!success)
    {
       // Fill up transfer buffer with current page data
+      memset(transfer_buffer, 0xFF, MEMORY_PAGE_SIZE_BYTES);
       transfer_buffer[0] = 'D';
       transfer_buffer[1] = 'A';
       *(uint16_t*)(transfer_buffer+2) = data_length;
@@ -330,7 +332,7 @@ static void ensure_empty_memory(void)
       if (!read_page(transfer_buffer, block * MEMORY_PAGES_PER_BLOCK) || (transfer_buffer[0] != 0xFF) || (transfer_buffer[1] != 0xFF))
       {
          erase_block(block * MEMORY_PAGES_PER_BLOCK, block * MEMORY_PAGES_PER_BLOCK);
-         if (block == current_block)
+         if ((block * MEMORY_PAGES_PER_BLOCK) == current_block)
             current_block_erased = true;
       }
    if (!current_block_erased)
@@ -455,19 +457,8 @@ void storage_init(void)
             curr_page_found = true;
             current_page = (current_page ? current_page : BBM_LUT_BASE_ADDRESS) - MEMORY_PAGES_PER_BLOCK;
             for (uint32_t i = 0; i < MEMORY_PAGES_PER_BLOCK; ++i)
-               if (read_page(transfer_buffer, current_page + i) && (memcmp(transfer_buffer, "META", 4) == 0))
+               if (read_page(transfer_buffer, current_page + i) && ((memcmp(transfer_buffer, "META", 4) == 0) || (memcmp(transfer_buffer, "DA", 2) == 0)))
                   continue;
-               else if (memcmp(transfer_buffer, "DA", 2) == 0)
-               {
-                  uint16_t len = *(uint16_t*)(transfer_buffer+2);
-                  if (len < MEMORY_NUM_DATA_BYTES_PER_PAGE)
-                  {
-                     current_page = (current_page - MEMORY_PAGES_PER_BLOCK) + i;
-                     cache_index = len;
-                     memcpy(cache, transfer_buffer + 4, len);
-                     break;
-                  }
-               }
                else
                {
                   current_page = (current_page - MEMORY_PAGES_PER_BLOCK) + i;
@@ -513,8 +504,8 @@ void storage_store_experiment_details(const experiment_details_t *details)
    {
       // Erase all existing used pages and update storage metadata
       ensure_empty_memory();
-      starting_page = (current_page + MEMORY_PAGES_PER_BLOCK) & 0x0000FFC0;
-      current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
+      starting_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0x0000FFC0;
+      current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
       cache_index = 0;
 
       // Write experiment details to storage
@@ -544,6 +535,18 @@ void storage_store_experiment_details(const experiment_details_t *details)
             current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
          }
       }
+
+      // Determine whether there is an active experiment taking place
+      uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
+      bool valid_experiment = rtc_is_valid() && details->num_devices;
+      bool active_experiment = valid_experiment &&
+            (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
+            (!details->use_daily_times ||
+               ((details->daily_start_time < details->daily_end_time) &&
+                  (time_of_day >= details->daily_start_time) && (time_of_day < details->daily_end_time)) ||
+               ((details->daily_start_time > details->daily_end_time) &&
+                  ((time_of_day >= details->daily_start_time) || (time_of_day < details->daily_end_time))));
+      storage_disable(!active_experiment);
    }
 }
 
@@ -616,19 +619,12 @@ void storage_exit_maintenance_mode(void)
    in_maintenance_mode = false;
 }
 
-uint32_t storage_retrieve_data_length(void)
+uint32_t storage_retrieve_num_data_chunks(void)
 {
    // Ensure that we are in reading mode
    if (!is_reading)
       return 0;
-
-   // Read and return the number of bytes available to read
-   uint32_t data_length = (BBM_LUT_BASE_ADDRESS - starting_page - 1) * MEMORY_NUM_DATA_BYTES_PER_PAGE;
-   if (starting_page < current_page)
-      data_length = ((current_page - starting_page - 1) * MEMORY_NUM_DATA_BYTES_PER_PAGE) + cache_index;
-   else
-      data_length += (current_page * MEMORY_NUM_DATA_BYTES_PER_PAGE) + ((starting_page == current_page) ? 0 : cache_index);
-   return data_length;
+   return (starting_page < current_page) ? (current_page - starting_page) : (BBM_LUT_BASE_ADDRESS - starting_page + current_page);
 }
 
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
@@ -638,7 +634,7 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
       return 0;
 
    // Determine if a full page of memory is available to read
-   uint32_t num_bytes_retrieved = MEMORY_NUM_DATA_BYTES_PER_PAGE;
+   uint32_t num_bytes_retrieved = 0;
    if (reading_page == current_page)
    {
       // Return the valid available bytes
@@ -650,9 +646,10 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    {
       // Read the next page of memory and update the reading metadata
       if (read_page(buffer, reading_page))
-         memmove(buffer, buffer + 4, MEMORY_NUM_DATA_BYTES_PER_PAGE);
-      else
-         memset(buffer, 0xFF, MEMORY_NUM_DATA_BYTES_PER_PAGE);
+      {
+         num_bytes_retrieved = *(uint16_t*)(buffer+2);
+         memmove(buffer, buffer + 4, num_bytes_retrieved);
+      }
       reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
    }
    return num_bytes_retrieved;

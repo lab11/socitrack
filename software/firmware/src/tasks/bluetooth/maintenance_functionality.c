@@ -55,46 +55,55 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length)
 {
    // Define static transmission variables
    static uint8_t transmit_buffer[2 * MEMORY_PAGE_SIZE_BYTES];
-   static uint32_t transmit_index, total_data_length;
+   static uint32_t data_chunk_index, total_data_chunks;
    static uint16_t buffer_index, buffer_length;
+   static bool is_reading = false;
 
    // Determine whether this is a new transmission or a continuation
    if (max_length == 0)
    {
-      // Reset all transmission variables and send total data length
+      // Reset all transmission variables and send estimated total data length
+      buffer_index = 0;
+      is_reading = true;
       storage_begin_reading();
       experiment_details_t details;
-      transmit_index = buffer_index = 0;
       storage_retrieve_experiment_details(&details);
-      total_data_length = storage_retrieve_data_length();
+      total_data_chunks = storage_retrieve_num_data_chunks();
+      uint32_t total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
       memcpy(transmit_buffer, &total_data_length, sizeof(total_data_length));
       memcpy(transmit_buffer + sizeof(total_data_length), &details, sizeof(details));
       AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length) + sizeof(details), transmit_buffer);
       buffer_length = (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer);
+      data_chunk_index = 1;
    }
-   else if (transmit_index < total_data_length)
+   else if (is_reading)
    {
-      // Transmit the next chunk of data
+      // Determine if there is more data to be transmitted
       const uint16_t transmit_length = MIN(max_length, buffer_length - buffer_index);
-      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
-      transmit_index += transmit_length;
-      buffer_index += transmit_length;
-
-      // Ensure that there is enough buffered data to transmit again in the future without reading
-      if ((buffer_length - buffer_index) < max_length)
+      print("T_LENGTH: %u\n", (uint32_t)transmit_length);
+      if (transmit_length)
       {
-         memmove(transmit_buffer, transmit_buffer + buffer_index, buffer_length - buffer_index);
-         buffer_length -= buffer_index;
-         buffer_length += (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer + buffer_length);
-         buffer_index = 0;
+         // Transmit the next chunk of data
+         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
+         buffer_index += transmit_length;
+
+         // Ensure that there is enough buffered data to transmit again in the future without reading
+         if (((buffer_length - buffer_index) < max_length) && (data_chunk_index < total_data_chunks))
+         {
+            memmove(transmit_buffer, transmit_buffer + buffer_index, buffer_length - buffer_index);
+            buffer_length -= buffer_index;
+            buffer_length += (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer + buffer_length);
+            ++data_chunk_index;
+            buffer_index = 0;
+         }
       }
-   }
-   else if (transmit_index == total_data_length)
-   {
-      // Transit a completion packet
-      storage_end_reading();
-      uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
-      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
-      ++transmit_index;
+      else
+      {
+         // Transit a completion packet
+         is_reading = false;
+         storage_end_reading();
+         uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
+         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
+      }
    }
 }
