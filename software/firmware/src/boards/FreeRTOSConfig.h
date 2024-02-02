@@ -60,7 +60,7 @@ extern void vAssertCalled(const char * const pcFileName, unsigned long ulLine);
 #define INCLUDE_vTaskPrioritySet                0
 #define INCLUDE_uxTaskPriorityGet               0
 #define INCLUDE_vTaskDelete                     0
-#define INCLUDE_vTaskSuspend                    1
+#define INCLUDE_vTaskSuspend                    0
 #define INCLUDE_xResumeFromISR                  0
 #define INCLUDE_vTaskDelayUntil                 0
 #define INCLUDE_vTaskDelay                      1

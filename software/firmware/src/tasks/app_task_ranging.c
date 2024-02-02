@@ -98,6 +98,8 @@ static void verify_app_configuration(void)
 static void handle_notification(app_notification_t notification)
 {
    // Handle the notification based on which bits are set
+   if ((notification & APP_NOTIFY_MOTION_EVENT) != 0)
+      storage_write_motion_status(imu_read_in_motion());
    if (((notification & APP_NOTIFY_NETWORK_LOST) != 0) || ((notification & APP_NOTIFY_NETWORK_CONNECTED) != 0) ||
        ((notification & APP_NOTIFY_VERIFY_CONFIGURATION) != 0))
       verify_app_configuration();
@@ -162,17 +164,15 @@ static void handle_notification(app_notification_t notification)
 
 static void battery_event_handler(battery_event_t battery_event)
 {
-   // Store the battery event to non-volatile memory and notify the app
-   storage_write_charging_event(battery_event);
-   print("INFO: Battery event occurred: %d\n", (uint32_t)battery_event);
+   // Notify the app of a change in the plugged-in status of the device
    if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED))
       app_notify(APP_NOTIFY_BATTERY_EVENT, true);
 }
 
-static void motion_change_handler(bool in_motion)
+static void motion_change_handler(bool)
 {
-   // Store the motion change to non-volatile memory
-   storage_write_motion_status(in_motion);
+   // Notify the app about a change in motion
+   app_notify(APP_NOTIFY_MOTION_EVENT, true);
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)

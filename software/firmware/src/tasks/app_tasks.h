@@ -15,6 +15,7 @@ typedef enum {
    APP_NOTIFY_NETWORK_LOST = 0b00000010,
    APP_NOTIFY_NETWORK_FOUND = 0b00000100,
    APP_NOTIFY_NETWORK_CONNECTED = 0b00001000,
+   APP_NOTIFY_MOTION_EVENT = 0b00010000,
    APP_NOTIFY_BATTERY_EVENT = 0b00100000,
    APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED = 0b10000000
 } app_notification_t;
@@ -41,7 +42,6 @@ bool ranging_active(void);
 // Storage Task Public Functions
 void storage_flush_and_shutdown(void);
 void storage_write_battery_level(uint32_t battery_voltage_mV);
-void storage_write_charging_event(battery_event_t battery_event);
 void storage_write_motion_status(bool in_motion);
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len);
 

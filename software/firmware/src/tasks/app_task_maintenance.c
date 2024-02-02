@@ -37,7 +37,6 @@ static void handle_notification(app_notification_t notification)
 static void battery_event_handler(battery_event_t battery_event)
 {
    // Notify the app of a change in the plugged-in status of the device
-   print("INFO: Battery event occurred: %d\n", (uint32_t)battery_event);
    if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED))
    {
       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
