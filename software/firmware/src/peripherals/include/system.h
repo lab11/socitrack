@@ -13,6 +13,5 @@ void system_reset(bool immediate);
 void system_enable_interrupts(bool enabled);
 void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timestamp);
 void system_read_UID(uint8_t *uid, uint32_t uid_length);
-void system_delay(uint32_t delay_ms);
 
 #endif  // #ifndef __SYSTEM_HEADER_H__

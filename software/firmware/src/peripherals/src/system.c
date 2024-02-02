@@ -226,7 +226,7 @@ void system_reset(bool immediate)
    if (!immediate)
    {
       storage_flush_and_shutdown();
-      vTaskDelay(pdMS_TO_TICKS(10000));
+      vTaskDelay(portMAX_DELAY);
    }
    else
 #endif
@@ -292,13 +292,4 @@ void system_read_UID(uint8_t *uid, uint32_t uid_length)
    uint8_t *_uid = &_uid_base_address;
    for (uint32_t i = 0; i < uid_length; ++i)
       uid[i] = _uid[i];
-}
-
-void system_delay(uint32_t delay_ms)
-{
-#ifdef __USE_FREERTOS__
-   vTaskDelay(pdMS_TO_TICKS(delay_ms));
-#else
-   am_hal_delay_us(1000 * delay_ms);
-#endif
 }

@@ -169,7 +169,7 @@ static void battery_event_handler(battery_event_t battery_event)
       app_notify(APP_NOTIFY_BATTERY_EVENT, true);
 }
 
-static void motion_change_handler(bool)
+static void motion_change_handler(bool in_motion)
 {
    // Notify the app about a change in motion
    app_notify(APP_NOTIFY_MOTION_EVENT, true);

@@ -189,7 +189,7 @@ static struct dwt_probe_s driver_interface;
 
 decaIrqStatus_t decamutexon(void) { return (decaIrqStatus_t)am_hal_interrupt_master_disable(); }
 void decamutexoff(decaIrqStatus_t status) { am_hal_interrupt_master_set((uint32_t)status); }
-void deca_sleep(unsigned int time_ms) { system_delay(time_ms); }
+void deca_sleep(unsigned int time_ms) { am_hal_delay_us(1000 * time_ms); }
 void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 
 
