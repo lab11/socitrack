@@ -80,7 +80,6 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length)
    {
       // Determine if there is more data to be transmitted
       const uint16_t transmit_length = MIN(max_length, buffer_length - buffer_index);
-      print("T_LENGTH: %u\n", (uint32_t)transmit_length);
       if (transmit_length)
       {
          // Transmit the next chunk of data
