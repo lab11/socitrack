@@ -163,11 +163,8 @@ static bool verify_device_id(void)
 
 static void wait_until_not_busy(void)
 {
-   uint32_t retries_remaining = 501;
-   while (--retries_remaining && ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) == STATUS_BUSY))
+   while ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) == STATUS_BUSY)
       am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
 }
 
 static bool write_page_raw(const uint8_t *data, uint32_t page_number)
@@ -403,6 +400,7 @@ void storage_init(void)
    while (!verify_device_id())
       am_util_delay_ms(1);
    am_util_delay_ms(3);
+   wait_until_not_busy();
 
    // Configure the memory chip
    const uint8_t status_register_1_bits = 0b01111110;
