@@ -41,6 +41,7 @@ typedef struct  __attribute__ ((__packed__))
 void ranging_radio_init(uint8_t *uid);
 void ranging_radio_deinit(void);
 void ranging_radio_reset(void);
+void ranging_radio_enable_rx_diagnostics(void);
 void ranging_radio_register_callbacks(dwt_cb_t tx_done, dwt_cb_t rx_done, dwt_cb_t rx_timeout, dwt_cb_t rx_err);
 void ranging_radio_choose_channel(uint8_t channel);
 void ranging_radio_choose_antenna(uint8_t antenna_number);
@@ -50,7 +51,7 @@ void ranging_radio_wakeup(void);
 bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
 uint64_t ranging_radio_readtxtimestamp(void);
-float ranging_radio_received_signal_level(void);
+float ranging_radio_received_signal_level(bool first_signal_level);
 int ranging_radio_time_to_millimeters(double dwtime);
 
 #endif  // #ifndef __RANGING_HEADER_H__

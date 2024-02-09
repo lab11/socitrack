@@ -247,12 +247,12 @@ SRC += storage_task.c
 SRC += subscription_phase.c
 SRC += time_aligned_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full imu led logging power_off ranging ranging_radio rtc_set rtc storage system)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -318,6 +318,10 @@ ranging: $(CONFIG) $(CONFIG)/test_ranging_task.o $(CONFIG)/$$(TARGET).bin progra
 ranging_radio: TARGET = TestRangingRadio
 ranging_radio: SRC += test_ranging_radio.c
 ranging_radio: $(CONFIG) $(CONFIG)/test_ranging_radio.o $(CONFIG)/$$(TARGET).bin program
+
+ranging_power: TARGET = TestRangingPower
+ranging_power: SRC += ranging_power_test.c
+ranging_power: $(CONFIG) $(CONFIG)/ranging_power_test.o $(CONFIG)/$$(TARGET).bin program
 
 rtc_set: TARGET = TestRTCSet
 rtc_set: SRC += test_rtc.c
