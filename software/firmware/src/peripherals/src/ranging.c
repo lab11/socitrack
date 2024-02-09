@@ -214,7 +214,7 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET, am_hal_gpio_pincfg_tristate));
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
    am_hal_gpio_output_clear(PIN_RADIO_RESET);
-#if REVISION_ID >= REVISION_M
+#if REVISION_ID == REVISION_M
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_tristate));
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
    am_hal_gpio_output_clear(PIN_RADIO_RESET2);
@@ -226,7 +226,7 @@ void ranging_radio_init(uint8_t *uid)
    // Set up the DW3000 wake-up pin as an output, initially set to low
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
-#if REVISION_ID >= REVISION_L
+#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP2, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP2);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP3, am_hal_gpio_pincfg_output));
@@ -256,7 +256,7 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
-#if REVISION_ID >= REVISION_L
+#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
    radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT2, interrupt_pin_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
@@ -289,19 +289,32 @@ void ranging_radio_init(uint8_t *uid)
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
    deca_usleep(2000);
-#if REVISION_ID >= REVISION_M
+#if REVISION_ID == REVISION_M
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET2);
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_input));
+   const uint32_t radio2_present = am_hal_gpio_input_read(PIN_RADIO_RESET2);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_tristate));
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
+   am_hal_gpio_output_clear(PIN_RADIO_RESET2);
    deca_usleep(2000);
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET3);
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_input));
+   const uint32_t radio3_present = am_hal_gpio_input_read(PIN_RADIO_RESET3);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_tristate));
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
+   am_hal_gpio_output_clear(PIN_RADIO_RESET3);
    deca_usleep(2000);
 #endif
 
    // Reset the extra DWMs and put them into deep-sleep mode
-#if REVISION_ID >= REVISION_L
+#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
+#if REVISION_ID == REVISION_M
+   if (radio2_present || radio3_present) {
+#endif
    cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS2_FUNCTION;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, cs_config));
    ranging_radio_spi_slow();
@@ -319,6 +332,9 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_set(PIN_RADIO_SPI_CS3);
    cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
+#if REVISION_ID == REVISION_M
+   }
+#endif
 #endif
 
    // Reset and initialize the DW3000 radio
@@ -342,7 +358,7 @@ void ranging_radio_deinit(void)
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT, NULL, NULL);
    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &radio_interrupt_pin);
-#if REVISION_ID >= REVISION_L
+#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
    radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2));
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT2, NULL, NULL);
@@ -387,7 +403,7 @@ void ranging_radio_reset(void)
          DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
    dwt_writesysstatuslo(DWT_INT_RCINIT_BIT_MASK | DWT_INT_SPIRDY_BIT_MASK);
    dwt_configuretxrf((dwt_txconfig_t*)&tx_config_ch5);
-   dwt_configciadiag(DW_CIA_DIAG_LOG_ALL);
+   dwt_configciadiag(DW_CIA_DIAG_LOG_OFF);
    dwt_configmrxlut(5);
 
    // Set this node's PAN ID and EUI
@@ -406,6 +422,11 @@ void ranging_radio_reset(void)
    // Clear the internal TX/RX antenna delays
    dwt_settxantennadelay(TX_ANTENNA_DELAY);
    dwt_setrxantennadelay(RX_ANTENNA_DELAY);
+}
+
+void ranging_radio_enable_rx_diagnostics(void)
+{
+   dwt_configciadiag(DW_CIA_DIAG_LOG_ALL);
 }
 
 void ranging_radio_register_callbacks(dwt_cb_t tx_done, dwt_cb_t rx_done, dwt_cb_t rx_timeout, dwt_cb_t rx_err)
@@ -560,14 +581,16 @@ uint64_t ranging_radio_readtxtimestamp(void)
    return cur_dw_timestamp;
 }
 
-float ranging_radio_received_signal_level(void)
+float ranging_radio_received_signal_level(bool first_signal_level)
 {
-   // Read the current RX diagnostics and compute the signal level in dBm
+   // Read the current RX diagnostics and compute either the first signal level or the receive signal level in dBm
    static dwt_nlos_alldiag_t diagnostics;
+   diagnostics.diag_type = IPATOV;
    dwt_nlos_alldiag(&diagnostics);
    const float F1 = 0.25f * (float)diagnostics.F1, F2 = 0.25f * (float)diagnostics.F2, F3 = 0.25f * (float)diagnostics.F3;
-   const float N = (float)diagnostics.accumCount, D = (float)diagnostics.D, A = 121.7f;
-   return (10.0f * log10f((F1*F1 + F2*F2 + F3*F3) / (N*N))) + (6.0f * D) - A;
+   const float C = (float)diagnostics.cir_power, N = (float)diagnostics.accumCount, D = (float)diagnostics.D, A = 121.7f;
+   return first_signal_level ? ((10.0f * log10f((F1*F1 + F2*F2 + F3*F3) / (N*N))) + (6.0f * D) - A) :
+         ((10.0f * log10f(C * powf(2.0f, 21.0f) / (N*N))) + (6.0f * D) - A);
 }
 
 int ranging_radio_time_to_millimeters(double dwtime)
