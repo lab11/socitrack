@@ -106,7 +106,7 @@ typedef struct __attribute__((packed)) ContextStateFrame
 __attribute__((optimize("O0")))
 void system_hard_fault_handler(sContextStateFrame *frame)
 {
-#ifdef DEBUGGING
+#ifdef AM_DEBUG_PRINTF
    do {
       if (CoreDebug->DHCSR & (1 << 0))
          __asm("bkpt 1");
