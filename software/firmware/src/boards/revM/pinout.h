@@ -23,23 +23,23 @@
 #define PIN_RADIO_SPI_SCK                           31
 #define PIN_RADIO_SPI_MISO                          33
 #define PIN_RADIO_SPI_MOSI                          32
-#define PIN_RADIO_SPI_CS                            29
-#define PIN_RADIO_SPI_CS2                           24
+#define PIN_RADIO_SPI_CS                            24
+#define PIN_RADIO_SPI_CS2                           29
 #define PIN_RADIO_SPI_CS3                           25
-#define PIN_RADIO_INTERRUPT                         27
-#define PIN_RADIO_INTERRUPT2                        72
+#define PIN_RADIO_INTERRUPT                         72
+#define PIN_RADIO_INTERRUPT2                        27
 #define PIN_RADIO_INTERRUPT3                        76
-#define PIN_RADIO_RESET                             50
-#define PIN_RADIO_RESET2                            82
+#define PIN_RADIO_RESET                             82
+#define PIN_RADIO_RESET2                            50
 #define PIN_RADIO_RESET3                            83
-#define PIN_RADIO_WAKEUP                            26
-#define PIN_RADIO_WAKEUP2                           63
+#define PIN_RADIO_WAKEUP                            63
+#define PIN_RADIO_WAKEUP2                           26
 #define PIN_RADIO_WAKEUP3                           88
 #define PIN_RADIO_SPI_SCK_FUNCTION                  AM_HAL_PIN_31_M3SCK
 #define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_33_M3MISO
 #define PIN_RADIO_SPI_MOSI_FUNCTION                 AM_HAL_PIN_32_M3MOSI
-#define PIN_RADIO_SPI_CS_FUNCTION                   AM_HAL_PIN_29_NCE29
-#define PIN_RADIO_SPI_CS2_FUNCTION                  AM_HAL_PIN_24_NCE24
+#define PIN_RADIO_SPI_CS_FUNCTION                   AM_HAL_PIN_24_NCE24
+#define PIN_RADIO_SPI_CS2_FUNCTION                  AM_HAL_PIN_29_NCE29
 #define PIN_RADIO_SPI_CS3_FUNCTION                  AM_HAL_PIN_25_NCE25
 
 // IMU
