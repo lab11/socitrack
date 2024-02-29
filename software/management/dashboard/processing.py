@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas, pickle
 from matplotlib.widgets import Slider
+from matplotlib.widgets import TextBox
 import textwrap
 import re
 
@@ -43,7 +44,6 @@ def extract_simple_event_log(logpath):
         match = pattern.match(line)
         if match:
             timestamp_str, message = match.groups()
-            #timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
             timestamp = mdates.date2num(datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
             event_dict[timestamp] = message
 
@@ -99,13 +99,13 @@ def get_ranging_time_series(data, source_tottag_label, destination_tottag_label,
     plot_data(f"Ranging Data from {source_tottag_label} to {destination_tottag_label}",
               "Date and Time", f"Range ({unit})", timestamps, ranges)
 
-def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit="ft", events=None):
+def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit="ft", events=dict()):
     ylabel = f"Range ({unit})"
     #extract timestamps and ranges
     timestamps1, ranges1 = extract_ranging_time_series(data1, label2, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit)
     timestamps2, ranges2 = extract_ranging_time_series(data2, label1, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit)
 
-    #set up subplots
+    #set up subplots: left side ax1, ax2; right side ax3, ax4
     fig, axes = plt.subplots(2,2)
     ax1 = axes[0,0]
     ax2 = axes[1,0]
@@ -123,9 +123,21 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
 
     #be careful with the timezone of the log if place of collection and place of analysis are in different timezones
     #plot the indication first so it will not hide the actual plot
-    if events is not None:
-        ax1.vlines(x=list(events.keys()), ymin=ymin, ymax=ymax, colors='orange', ls='-', lw=2, label='vline_multiple - full height')
-        ax2.vlines(x=list(events.keys()), ymin=ymin, ymax=ymax, colors='orange', ls='-', lw=2, label='vline_multiple - full height')
+    def draw_indications(events, event_offset):
+        events_timestamps = list(events.keys())
+        # Convert matplotlib date to datetime object
+        timestamps = mdates.num2date(events_timestamps)
+        # Add 1 second to the timestamp
+        timestamps = [t+timedelta(seconds=float(event_offset)) for t in timestamps]
+        # Convert the updated timestamp back to the matplotlib date format
+        events_timestamps_with_offset = mdates.date2num(timestamps)
+
+        vlines1 = ax1.vlines(x=events_timestamps_with_offset, ymin=ymin, ymax=ymax, colors='orange', ls='-', lw=2, label='vline_multiple - full height')
+        vlines2 = ax2.vlines(x=events_timestamps_with_offset, ymin=ymin, ymax=ymax, colors='orange', ls='-', lw=2, label='vline_multiple - full height')
+        return vlines1, vlines2
+
+    if len(events):
+        vlines1, vlines2 = draw_indications(events, 0)
 
     ax1.plot(timestamps1, ranges1)
     ax2.plot(timestamps2, ranges2)
@@ -151,24 +163,19 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     # use rect to avoid overlapping with the slider
     plt.tight_layout(rect=[0, 0.11, 1, 1])
 
-    # this should be done after tight layout, otherwise the layout will be messed up
-    if events is not None:
-        for e in events:
-            wrapped_text = textwrap.fill(events[e], width=12)
-            ax3.annotate(wrapped_text, xy =(e, 0), xytext =(e, 1), fontsize=5, arrowprops = dict(facecolor ='green', shrink = 0.05),)
-
     # choose the slider color
     slider_color = 'White'
 
+    # set up the window size slider
     axis_size= plt.axes([0.1, 0.08, 0.65, 0.03], facecolor = slider_color)
     window_sizes = [10,15,30,60,300,600,900,1800,3600]
-    #window_size_slider = Slider(axis_size, 'WindowSize', 30, 3600, valinit=window_size*86400)
+
     init_sel = 2
     window_size_slider = Slider(axis_size, 'WindowSize', 0, 7, valinit=init_sel, valstep=1)
     window_size = window_sizes[init_sel]/86400.0
     window_size_slider.valtext.set_text(seconds_to_human_readable(window_sizes[init_sel]))
 
-    # set the window slider
+    # setup the window position slider
     axis_position = plt.axes([0.1, 0.05, 0.7, 0.03], facecolor = slider_color)
     window_position_slider = Slider(axis_position, 'WindowStart', tmin, tmax-window_size, valinit=init_pos)
 
@@ -177,6 +184,26 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     ax4.axis([init_pos, init_pos+window_size, 0, ymax])
     # set the slider text
     window_position_slider.valtext.set_text(mdates.num2date(init_pos).strftime('%y-%m-%d %H:%M:%S'))
+
+    # setup the delay input box
+    if len(events):
+        axbox = fig.add_axes([0.1, 0.11, 0.3, 0.02])
+        text_box = TextBox(axbox, "EventOffset (s)")
+        text_box.set_val(f"{0}")  # Trigger `submit` with the initial string.
+
+    def draw_annotations(events, event_offset):
+        annotations = []
+        if len(events):
+            for e in events:
+                wrapped_text = textwrap.fill(events[e], width=12)
+                e_with_offset = mdates.date2num(mdates.num2date(e)+timedelta(seconds=float(event_offset)))
+                anno = ax4.annotate(wrapped_text, xy =(e_with_offset, 0), xytext =(e_with_offset, 1), fontsize=5, arrowprops = dict(facecolor ='green', shrink = 0.05),)
+                annotations.append(anno)
+        return annotations
+
+    # draw the annotations with 0s offset
+    # this should be done after tight layout, otherwise the layout will be messed up
+    annotations = draw_annotations(events, 0)
 
     def update_shades_and_window(pos):
         if len(update_window_position.avs)>0:
@@ -204,7 +231,24 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
         pos = window_position_slider.val
         update_shades_and_window(pos)
 
-    #to store the spans for efficient redraw
+    def submit(event_offset):
+        """
+        Change the events timestamp. Positive offset: delay the events. Negative offset: advance the events.
+        When the labels lagged behind, apply negative offset; otherwise apply positive offset.
+        """
+        nonlocal vlines1, vlines2, annotations
+        # redraw the indication vlines
+        vlines1.remove()
+        vlines2.remove()
+        draw_indications(events, event_offset)
+
+        # redraw the annotations
+        for anno in annotations:
+            anno.remove()
+        annotations = draw_annotations(events, event_offset)
+        fig.canvas.draw_idle()
+
+    # to store the spans for efficient redraw
     avs1 = ax1.axvspan(tmin, tmin+window_size, color='gray', alpha=0.3)
     avs2 = ax2.axvspan(tmin, tmin+window_size, color='gray', alpha=0.3)
     update_window_position.avs = [avs1, avs2]
@@ -212,6 +256,8 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     # update function called using on_changed() function
     window_position_slider.on_changed(update_window_position)
     window_size_slider.on_changed(update_window_size)
+    if len(events):
+        text_box.on_submit(submit)
     # Display the plot
     plt.get_current_fig_manager().full_screen_toggle()
     plt.show()
