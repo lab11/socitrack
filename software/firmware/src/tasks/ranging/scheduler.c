@@ -244,12 +244,14 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
       if (xTaskNotifyWait(pdFALSE, 0xffffffff, &pending_actions, portMAX_DELAY) == pdTRUE)
       {
          // Handle any pending actions
-         if ((pending_actions & RANGING_NEW_ROUND_START) != 0)
+         if ((pending_actions & RANGING_NEW_ROUND_START))
          {
             // Wake up the radio and wait until all schedule updating tasks have completed
             ranging_radio_wakeup();
             ranging_phase = schedule_phase_begin();
          }
+         else if ((pending_actions & RANGING_STOP))
+            continue;
 
          // Carry out logic based on the current reported phase of the ranging protocol
          switch (ranging_phase)

@@ -64,8 +64,8 @@ static void verify_app_configuration(void)
       }
    }
 
-   // Scanning should only be enabled if we are not already ranging with a network
-   if (!ranging_active() && !bluetooth_is_scanning())
+   // Scanning should only be enabled if we are not already ranging with a network or if we are a Master
+   if ((!ranging_active() || (current_role == ROLE_MASTER)) && !bluetooth_is_scanning())
    {
       bluetooth_start_scanning();
       for (uint32_t i = 0; !bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
@@ -79,7 +79,7 @@ static void verify_app_configuration(void)
             system_reset(false);
       }
    }
-   else if (ranging_active() && bluetooth_is_scanning())
+   else if (ranging_active() && (current_role == ROLE_PARTICIPANT) && bluetooth_is_scanning())
    {
       bluetooth_stop_scanning();
       for (uint32_t i = 0; bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
@@ -98,12 +98,12 @@ static void verify_app_configuration(void)
 static void handle_notification(app_notification_t notification)
 {
    // Handle the notification based on which bits are set
-   if ((notification & APP_NOTIFY_MOTION_EVENT) != 0)
+   if ((notification & APP_NOTIFY_MOTION_EVENT))
       storage_write_motion_status(imu_read_in_motion());
-   if (((notification & APP_NOTIFY_NETWORK_LOST) != 0) || ((notification & APP_NOTIFY_NETWORK_CONNECTED) != 0) ||
-       ((notification & APP_NOTIFY_VERIFY_CONFIGURATION) != 0))
+   if (((notification & APP_NOTIFY_NETWORK_LOST)) || ((notification & APP_NOTIFY_NETWORK_CONNECTED)) ||
+       ((notification & APP_NOTIFY_VERIFY_CONFIGURATION)))
       verify_app_configuration();
-   if ((notification & APP_NOTIFY_NETWORK_FOUND) != 0)
+   if ((notification & APP_NOTIFY_NETWORK_FOUND))
    {
       // Stop scanning for additional devices
       bluetooth_stop_scanning();
@@ -118,43 +118,63 @@ static void handle_notification(app_notification_t notification)
             system_reset(false);
       }
 
-      // Determine if an actively ranging device was located
-      bool ranging_device_located = false, idle_device_located = false;
-      for (uint8_t i = 0; !ranging_device_located && (i < num_discovered_devices); ++i)
-         if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) || (discovered_devices[i][EUI_LEN] == ROLE_PARTICIPANT))
-            ranging_device_located = true;
-         else if (discovered_devices[i][EUI_LEN] == ROLE_IDLE)
-            idle_device_located = true;
-
-      // Start the ranging task based on the state of the detected devices
-      if (ranging_device_located)
-         ranging_begin(ROLE_PARTICIPANT);
-      else if (idle_device_located)
+      // Proceed based on whether we are currently idle or ranging as the Master
+      if (scheduler_get_current_role() == ROLE_MASTER)
       {
-         // Search for the non-sleeping device with the highest ID that is higher than our own
-         int32_t best_device_idx = -1;
-         uint8_t highest_device_id = device_uid_short;
+         // Restart as a Participant if another Master device with a higher ID was located
          for (uint8_t i = 0; i < num_discovered_devices; ++i)
-            if (discovered_devices[i][0] > highest_device_id)
+            if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) && (discovered_devices[i][0] > device_uid_short))
             {
-               best_device_idx = i;
-               highest_device_id = discovered_devices[i][0];
+               scheduler_stop();
+               while (ranging_active())
+                  vTaskDelay(pdMS_TO_TICKS(10));
+               ranging_begin(ROLE_PARTICIPANT);
+               break;
             }
 
-         // If a potential master candidate device was found, attempt to connect to it
-         if (best_device_idx >= 0)
-            ranging_begin(ROLE_PARTICIPANT);
-         else
-            ranging_begin(ROLE_MASTER);
+         // Reset the devices-found flag
+         devices_found = false;
       }
+      else
+      {
+         // Determine if an actively ranging device was located
+         bool ranging_device_located = false, idle_device_located = false;
+         for (uint8_t i = 0; !ranging_device_located && (i < num_discovered_devices); ++i)
+            if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) || (discovered_devices[i][EUI_LEN] == ROLE_PARTICIPANT))
+               ranging_device_located = true;
+            else if (discovered_devices[i][EUI_LEN] == ROLE_IDLE)
+               idle_device_located = true;
 
-      // Reset the devices-found flag and verify the app configuration
-      devices_found = false;
-      verify_app_configuration();
+         // Start the ranging task based on the state of the detected devices
+         if (ranging_device_located)
+            ranging_begin(ROLE_PARTICIPANT);
+         else if (idle_device_located)
+         {
+            // Search for the non-sleeping device with the highest ID that is higher than our own
+            int32_t best_device_idx = -1;
+            uint8_t highest_device_id = device_uid_short;
+            for (uint8_t i = 0; i < num_discovered_devices; ++i)
+               if (discovered_devices[i][0] > highest_device_id)
+               {
+                  best_device_idx = i;
+                  highest_device_id = discovered_devices[i][0];
+               }
+
+            // If a potential master candidate device was found, attempt to connect to it
+            if (best_device_idx >= 0)
+               ranging_begin(ROLE_PARTICIPANT);
+            else
+               ranging_begin(ROLE_MASTER);
+         }
+
+         // Reset the devices-found flag and verify the app configuration
+         devices_found = false;
+         verify_app_configuration();
+      }
    }
-   if ((notification & APP_NOTIFY_BATTERY_EVENT) != 0)
+   if ((notification & APP_NOTIFY_BATTERY_EVENT))
       storage_flush_and_shutdown();
-   if ((notification & APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED) != 0)
+   if ((notification & APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED))
       for (uint32_t seconds = 0; seconds < seconds_to_activate_buzzer; ++seconds)
       {
          buzzer_indicate_location();
