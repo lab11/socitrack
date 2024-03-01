@@ -72,7 +72,7 @@ static void handle_range_computation_phase(void)
       case ROLE_PARTICIPANT:
       {
          // Set a timer to wake the radio before the next round
-         const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
+         const uint32_t remaing_time_us = SCHEDULING_INTERVAL_US - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
          wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
          am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
          am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
@@ -92,7 +92,7 @@ static void handle_range_computation_phase(void)
       default:
       {
          // Set a timer to wake the radio before the next round
-         const uint32_t remaing_time_us = 1000000 - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US;
+         const uint32_t remaing_time_us = SCHEDULING_INTERVAL_US - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US;
          wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
          am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
          am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
@@ -216,9 +216,9 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
       // Initialize the scheduler timer
       current_role = ROLE_MASTER;
       am_hal_rtc_time_t scheduler_interval = {
-         .ui32ReadError = 0, .ui32CenturyEnable = 0, .ui32Weekday = 0, .ui32Century = 0, .ui32Year = 0,
-         .ui32Month = 0, .ui32DayOfMonth = 0, .ui32Hour = 0, .ui32Minute = 0, .ui32Second = 1, .ui32Hundredths = 0 };
-      am_hal_rtc_alarm_set(&scheduler_interval, AM_HAL_RTC_ALM_RPT_SEC);
+         .ui32ReadError = 0, .ui32CenturyEnable = 0, .ui32Weekday = 0, .ui32Century = 0, .ui32Year = 0, .ui32Month = 0,
+         .ui32DayOfMonth = 0, .ui32Hour = 0, .ui32Minute = 0, .ui32Second = 0, .ui32Hundredths = SCHEDULING_INTERVAL_100THS };
+      am_hal_rtc_alarm_set(&scheduler_interval, AM_HAL_RTC_ALM_RPT_100TH);
       am_hal_rtc_interrupt_enable(AM_HAL_RTC_INT_ALM);
       NVIC_SetPriority(RTC_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
       NVIC_EnableIRQ(RTC_IRQn);

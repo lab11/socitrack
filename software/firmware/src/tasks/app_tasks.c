@@ -6,6 +6,7 @@
 #include "buzzer.h"
 #include "imu.h"
 #include "led.h"
+#include "logging.h"
 #include "ranging.h"
 #include "rtc.h"
 #include "storage.h"
@@ -62,8 +63,12 @@ void run_tasks(void)
    bool power_off = false, allow_ranging = !battery_monitor_is_plugged_in();
    if (allow_ranging)
    {
-      if (battery_monitor_get_level_mV() < BATTERY_NOMINAL)
+      uint32_t battery_level = battery_monitor_get_level_mV();
+      if (battery_level < BATTERY_NOMINAL)
+      {
+         print("WARNING: Battery level (%u mV) is too low to begin ranging!\n", battery_level);
          power_off = true;
+      }
       else if (!active_experiment)
       {
          power_off = true;

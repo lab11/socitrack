@@ -20,8 +20,8 @@ static volatile uint16_t connection_mtu;
 static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, data_requested;
 static volatile bool expected_scanning, expected_advertising, is_initialized, first_initialization;
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
-static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
+static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static ble_discovery_callback_t discovery_callback;
 static uint8_t ble_sys_id[8];
 

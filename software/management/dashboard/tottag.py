@@ -129,7 +129,7 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          file.write(data)
    try:
       while i < len(data):
-         timestamp = struct.unpack('<I', data[i+1:i+5])[0]
+         timestamp = struct.unpack('<f', data[i+1:i+5])[0]
          if timestamp < 1696721375 or timestamp > int(time.time()) or data[i] < 1 or data[i] > 4:
             i += 1
          elif data[i] == STORAGE_TYPE_VOLTAGE:

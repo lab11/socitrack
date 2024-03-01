@@ -16,7 +16,7 @@ typedef enum {
    STORAGE_TYPE_RANGES
 } storage_data_type_t;
 
-typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
+typedef struct storage_item_t { float timestamp; uint32_t value; uint8_t type; } storage_item_t;
 typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
 
 
@@ -32,7 +32,7 @@ static QueueHandle_t storage_queue;
 
 #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
 
-static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_mV)
+static void store_battery_voltage(float timestamp, uint32_t battery_voltage_mV)
 {
    const uint8_t storage_type = STORAGE_TYPE_VOLTAGE;
    storage_store(&storage_type, sizeof(storage_type));
@@ -41,7 +41,7 @@ static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_m
    storage_flush(false);
 }
 
-static void store_motion_change(uint32_t timestamp, bool in_motion)
+static void store_motion_change(float timestamp, bool in_motion)
 {
    const uint8_t storage_type = STORAGE_TYPE_MOTION;
    storage_store(&storage_type, sizeof(storage_type));
@@ -50,7 +50,7 @@ static void store_motion_change(uint32_t timestamp, bool in_motion)
    storage_flush(false);
 }
 
-static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t range_data_len)
+static void store_ranges(float timestamp, const uint8_t *range_data, uint32_t range_data_len)
 {
    const uint8_t storage_type = STORAGE_TYPE_RANGES;
    storage_store(&storage_type, sizeof(storage_type));
@@ -64,23 +64,23 @@ static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t
 
 void storage_flush_and_shutdown(void)
 {
-   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
+   const storage_item_t storage_item = { .timestamp = (float)rtc_get_timestamp(), .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_battery_level(uint32_t battery_voltage_mV)
 {
-   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
+   const storage_item_t storage_item = { .timestamp = (float)rtc_get_timestamp(), .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_motion_status(bool in_motion)
 {
-   const storage_item_t storage_item = { .timestamp = rtc_get_timestamp(), .value = in_motion, .type = STORAGE_TYPE_MOTION };
+   const storage_item_t storage_item = { .timestamp = (float)rtc_get_timestamp(), .value = in_motion, .type = STORAGE_TYPE_MOTION };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
-void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len)
+void storage_write_ranging_data(float timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len)
 {
    static uint32_t range_data_index = 0;
    const storage_item_t storage_item = { .timestamp = timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
@@ -95,7 +95,7 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void storage_flush_and_shutdown(void) {}
 void storage_write_battery_level(uint32_t battery_voltage_mV) {}
 void storage_write_motion_status(bool in_motion) {}
-void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len) {}
+void storage_write_ranging_data(float timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len) {}
 
 #endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
 
