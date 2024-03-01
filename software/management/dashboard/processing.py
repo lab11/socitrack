@@ -171,7 +171,7 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     window_sizes = [10,15,30,60,300,600,900,1800,3600]
 
     init_sel = 2
-    window_size_slider = Slider(axis_size, 'WindowSize', 0, 7, valinit=init_sel, valstep=1)
+    window_size_slider = Slider(axis_size, 'WindowSize', 0, 8, valinit=init_sel, valstep=1)
     window_size = window_sizes[init_sel]/86400.0
     window_size_slider.valtext.set_text(seconds_to_human_readable(window_sizes[init_sel]))
 
@@ -220,8 +220,11 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
 
     def update_window_position(val):
         pos = window_position_slider.val
+        # limiting the movable position
+        if pos+window_size>tmax:
+            window_position_slider.set_val(tmax-window_size)
+            return
         window_position_slider.valtext.set_text(mdates.num2date(pos).strftime('%y-%m-%d %H:%M:%S'))
-
         update_shades_and_window(pos)
 
     def update_window_size(val):
@@ -229,6 +232,10 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
         window_size = window_sizes[val]/86400.0
         window_size_slider.valtext.set_text(seconds_to_human_readable(window_sizes[val]))
         pos = window_position_slider.val
+        # dial the slider back if the range is reached
+        if pos+window_size>tmax:
+            pos = tmax-window_size
+            window_position_slider.set_val(pos)
         update_shades_and_window(pos)
 
     def submit(event_offset):
