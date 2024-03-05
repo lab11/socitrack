@@ -179,6 +179,9 @@ void setup_hardware(void)
    // Configure the board to operate in low-power mode
    am_hal_pwrctrl_low_power_init();
    am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_SIMOBUCK_INIT, NULL);
+#ifndef AM_DEBUG_PRINTF
+   am_hal_pwrctrl_control(AM_HAL_PWRCTRL_CONTROL_CRYPTO_POWERDOWN, NULL);
+#endif
 
    // Configure only the necessary memory
    am_hal_pwrctrl_dsp_memory_config_t dsp_mem_config =
