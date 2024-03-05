@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas, pickle
+import numpy as np
 from matplotlib.widgets import Slider
 from matplotlib.widgets import TextBox
 import textwrap
@@ -55,7 +56,7 @@ def extract_simple_event_log(logpath):
 def load_data(filename):
     with open(filename, 'rb') as file:
         data = pandas.json_normalize(data=pickle.load(file))
-    return data.set_index('t').reindex(pandas.Series(range(data.head(1)['t'].iloc[0], 1+data.tail(1)['t'].iloc[0]))).T \
+    return data.set_index('t').reindex(pandas.Series(np.arange(data.head(1)['t'].iloc[0], 1+data.tail(1)['t'].iloc[0]))).T \
            if data is not None and len(data.index) > 0 else None
 
 def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
@@ -89,7 +90,7 @@ def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=
         conversion_factor_from_mm = 1000.0
     ranges = data.loc['r.' + destination_tottag_label] / conversion_factor_from_mm
     ranges = ranges.mask(ranges > cutoff_distance)\
-                   .reindex(pandas.Series(range(start_timestamp if start_timestamp is not None else data.T.head(1).index[0],
+                   .reindex(pandas.Series(np.arange(start_timestamp if start_timestamp is not None else data.T.head(1).index[0],
                                                 end_timestamp if end_timestamp is not None else 1+data.T.tail(1).index[0])))
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ranges.keys()])
     return timestamps, ranges
