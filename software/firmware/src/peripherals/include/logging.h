@@ -15,7 +15,7 @@ void logging_disable(void);
 
 #define print(...) am_util_stdio_printf(__VA_ARGS__)
 void print_reset_reason(const am_hal_reset_status_t* reason);
-void print_ranges(float timestamp, const uint8_t* range_data, uint32_t range_data_length);
+void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8_t* range_data, uint32_t range_data_length);
 
 #else
 

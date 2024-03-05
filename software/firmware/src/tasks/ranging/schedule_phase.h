@@ -12,7 +12,7 @@ typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
    uint8_t sequence_number;
-   float epoch_time_unix;
+   uint32_t epoch_time_unix;
    uint8_t num_devices;
    uint8_t schedule[MAX_NUM_RANGING_DEVICES];
    ieee154_footer_t footer;
@@ -27,7 +27,7 @@ scheduler_phase_t schedule_phase_tx_complete(void);
 scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule);
 scheduler_phase_t schedule_phase_rx_error(void);
 uint32_t schedule_phase_get_num_devices(void);
-float schedule_phase_get_timestamp(void);
+uint32_t schedule_phase_get_timestamp(void);
 void schedule_phase_add_device(uint8_t eui);
 void schedule_phase_update_device_presence(uint8_t eui);
 void schedule_phase_handle_device_timeouts(void);

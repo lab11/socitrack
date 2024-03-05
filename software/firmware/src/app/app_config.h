@@ -107,12 +107,12 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define MAX_VALID_RANGE_MM                          (32*1000)
 #define UNSCHEDULED_SLOT                            0xFF
 
-#define SCHEDULING_INTERVAL_US                      1000000
+#define SCHEDULING_INTERVAL_US                      500000
 #define RADIO_WAKEUP_SAFETY_DELAY_US                5000
 #define RECEIVE_EARLY_START_US                      ((uint32_t)DW_PREAMBLE_LENGTH_US)
 
 #define SCHEDULING_INTERVAL_100THS                  (SCHEDULING_INTERVAL_US * 100 / 1000000)
-#define TIMESTAMP_INCREASE_PER_RANGE                ((float)SCHEDULING_INTERVAL_US / 1000000.0f)
+#define TIMESTAMP_INCREASE_PER_RANGE                (SCHEDULING_INTERVAL_US / 1000)
 
 #define DEVICE_TIMEOUT_SECONDS                      60
 #define NETWORK_SEARCH_TIME_SECONDS                 3

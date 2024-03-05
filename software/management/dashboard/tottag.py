@@ -118,6 +118,7 @@ def unpack_experiment_details(data):
    }
 
 def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file):
+   experiment_start_time = details['start_time']
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
       label = details['labels'][i].decode().rstrip('\x00')
@@ -129,8 +130,8 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          file.write(data)
    try:
       while i < len(data):
-         timestamp = struct.unpack('<f', data[i+1:i+5])[0]
-         if timestamp < 1696721375 or timestamp > int(time.time()) or data[i] < 1 or data[i] > 4:
+         timestamp = experiment_start_time + (struct.unpack('<I', data[i+1:i+5])[0] / 1000)
+         if timestamp > int(time.time()) or data[i] < 1 or data[i] > 4:
             i += 1
          elif data[i] == STORAGE_TYPE_VOLTAGE:
             datum = struct.unpack('<I', data[i+5:i+9])[0]

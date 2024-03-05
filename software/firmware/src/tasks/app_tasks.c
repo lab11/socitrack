@@ -20,9 +20,13 @@ static StaticTask_t storage_task_tcb, time_aligned_task_tcb;
 static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
 static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], storage_task_stack[configMINIMAL_STACK_SIZE];
 static StackType_t time_aligned_task_stack[configMINIMAL_STACK_SIZE];
+static uint32_t experiment_start_time;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
+
+uint32_t app_rtc_time_to_experiment_time(uint32_t rtc_time) { return 1000 * (rtc_time - experiment_start_time); }
+uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time) { return (experiment_time / 1000) + experiment_start_time; }
 
 void run_tasks(void)
 {
@@ -56,6 +60,7 @@ void run_tasks(void)
                (time_of_day >= scheduled_experiment.daily_start_time) && (time_of_day < scheduled_experiment.daily_end_time)) ||
             ((scheduled_experiment.daily_start_time > scheduled_experiment.daily_end_time) &&
                ((time_of_day >= scheduled_experiment.daily_start_time) || (time_of_day < scheduled_experiment.daily_end_time))));
+   experiment_start_time = scheduled_experiment.experiment_start_time;
    storage_disable(!active_experiment);
 
    // Determine whether to power off for some time based on the device state

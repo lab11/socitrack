@@ -79,7 +79,7 @@ static void verify_app_configuration(void)
             system_reset(false);
       }
    }
-   else if (ranging_active() && (current_role == ROLE_PARTICIPANT) && bluetooth_is_scanning())
+   else if (ranging_active() && (current_role != ROLE_MASTER) && bluetooth_is_scanning())
    {
       bluetooth_stop_scanning();
       for (uint32_t i = 0; bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
@@ -131,9 +131,6 @@ static void handle_notification(app_notification_t notification)
                ranging_begin(ROLE_PARTICIPANT);
                break;
             }
-
-         // Reset the devices-found flag
-         devices_found = false;
       }
       else
       {
@@ -166,11 +163,11 @@ static void handle_notification(app_notification_t notification)
             else
                ranging_begin(ROLE_MASTER);
          }
-
-         // Reset the devices-found flag and verify the app configuration
-         devices_found = false;
-         verify_app_configuration();
       }
+
+      // Reset the devices-found flag and verify the app configuration
+      devices_found = false;
+      verify_app_configuration();
    }
    if ((notification & APP_NOTIFY_BATTERY_EVENT))
       storage_flush_and_shutdown();

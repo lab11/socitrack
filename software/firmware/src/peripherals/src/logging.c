@@ -80,9 +80,9 @@ void print_reset_reason(const am_hal_reset_status_t* reason)
    print("\n");
 }
 
-void print_ranges(float timestamp, const uint8_t* range_data, uint32_t range_data_length)
+void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8_t* range_data, uint32_t range_data_length)
 {
-   print("%u ranges @ Timestamp %.1f:\n", range_data[0], timestamp);
+   print("%u ranges @ Timestamp %u.%u:\n", range_data[0], timestamp, fractional_timestamp);
    for (uint8_t i = 0; i < range_data[0]; ++i)
       print("   Range to 0x%02X: %d\n", range_data[1 + (i*COMPRESSED_RANGE_DATUM_LENGTH)], (int32_t)(*((int16_t*)(range_data + 2 + (i*COMPRESSED_RANGE_DATUM_LENGTH)))));
 }

@@ -77,8 +77,6 @@ void am_rtc_isr(void)
    am_hal_rtc_alarm_get(NULL, &repeat_interval);
    am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
    AM_CRITICAL_END
-   if (repeat_interval == AM_HAL_RTC_ALM_RPT_SEC)
-      scheduler_rtc_isr();
 }
 
 uint32_t am_freertos_sleep(uint32_t idleTime)

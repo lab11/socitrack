@@ -66,7 +66,8 @@ static void handle_range_computation_phase(void)
             storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #endif
 #endif
-         print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         const uint32_t rtc_timestamp = schedule_phase_get_timestamp();
+         print_ranges(app_experiment_time_to_rtc_time(rtc_timestamp), rtc_timestamp % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
       }
       case ROLE_PARTICIPANT:
@@ -86,7 +87,8 @@ static void handle_range_computation_phase(void)
             storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #endif
 #endif
-         print_ranges(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         const uint32_t rtc_timestamp = schedule_phase_get_timestamp();
+         print_ranges(app_experiment_time_to_rtc_time(rtc_timestamp), rtc_timestamp % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
       }
       default:
@@ -110,14 +112,6 @@ void am_timer02_isr(void)
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
-   xTaskNotifyFromISR(notification_handle, RANGING_NEW_ROUND_START, eSetBits, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-
-void scheduler_rtc_isr(void)
-{
-   // Notify the main task to handle the interrupt
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    xTaskNotifyFromISR(notification_handle, RANGING_NEW_ROUND_START, eSetBits, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
@@ -209,19 +203,20 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
    status_phase_initialize(eui);
    subscription_phase_initialize(eui);
 
-   // Initialize the scheduler or wakeup timers based on the device role
+   // Initialize the wakeup timer based on the device role
    is_running = true;
    if (role == ROLE_MASTER)
    {
       // Initialize the scheduler timer
       current_role = ROLE_MASTER;
-      am_hal_rtc_time_t scheduler_interval = {
-         .ui32ReadError = 0, .ui32CenturyEnable = 0, .ui32Weekday = 0, .ui32Century = 0, .ui32Year = 0, .ui32Month = 0,
-         .ui32DayOfMonth = 0, .ui32Hour = 0, .ui32Minute = 0, .ui32Second = 0, .ui32Hundredths = SCHEDULING_INTERVAL_100THS };
-      am_hal_rtc_alarm_set(&scheduler_interval, AM_HAL_RTC_ALM_RPT_100TH);
-      am_hal_rtc_interrupt_enable(AM_HAL_RTC_INT_ALM);
-      NVIC_SetPriority(RTC_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
-      NVIC_EnableIRQ(RTC_IRQn);
+      am_hal_timer_default_config_set(&wakeup_timer_config);
+      wakeup_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
+      wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / SCHEDULING_INTERVAL_US));
+      am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
+      am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
+      NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
+      NVIC_EnableIRQ(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER);
+      am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
    }
    else
    {

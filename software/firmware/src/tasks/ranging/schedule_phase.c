@@ -38,7 +38,7 @@ void schedule_phase_initialize(const uint8_t *uid, bool is_master, uint32_t epoc
    // Initialize all Schedule Phase parameters
    schedule_packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = SCHEDULE_PACKET,
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .sequence_number = 0, .epoch_time_unix = (float)epoch_timestamp, .num_devices = 1,
+      .sequence_number = 0, .epoch_time_unix = app_rtc_time_to_experiment_time(epoch_timestamp), .num_devices = 1,
       .schedule = { 0 }, .footer = { { 0 } } };
    memset(device_timeouts, 0, sizeof(device_timeouts));
    memcpy(schedule_packet.header.sourceAddr, uid, sizeof(schedule_packet.header.sourceAddr));
@@ -191,7 +191,7 @@ uint32_t schedule_phase_get_num_devices(void)
    return schedule_packet.num_devices;
 }
 
-float schedule_phase_get_timestamp(void)
+uint32_t schedule_phase_get_timestamp(void)
 {
    // Return the current epoch timestamp from the schedule
    return schedule_packet.epoch_time_unix;

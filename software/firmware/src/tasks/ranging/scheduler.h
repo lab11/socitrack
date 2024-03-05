@@ -45,7 +45,6 @@ typedef enum
 void scheduler_init(uint8_t *uid);
 schedule_role_t scheduler_get_current_role(void);
 void scheduler_run(schedule_role_t role, uint32_t timestamp);
-void scheduler_rtc_isr(void);
 void scheduler_stop(void);
 
 
