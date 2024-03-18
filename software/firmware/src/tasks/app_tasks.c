@@ -25,7 +25,7 @@ static uint32_t experiment_start_time;
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-uint32_t app_rtc_time_to_experiment_time(uint32_t rtc_time) { return 1000 * (rtc_time - experiment_start_time); }
+uint32_t app_get_experiment_time(int32_t offset) { return (uint32_t)(rtc_get_timestamp_diff_ms(experiment_start_time) + offset); }
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time) { return (experiment_time / 1000) + experiment_start_time; }
 
 void run_tasks(void)

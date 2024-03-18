@@ -2,7 +2,6 @@
 
 #include "app_tasks.h"
 #include "logging.h"
-#include "rtc.h"
 #include "scheduler.h"
 
 
@@ -42,7 +41,7 @@ void RangingTask(void *uid)
       if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && uid)
       {
          print("TotTag Ranging: Starting ranging task as %s\n", (desired_role_bits == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");
-         scheduler_run((schedule_role_t)desired_role_bits, rtc_get_timestamp());
+         scheduler_run((schedule_role_t)desired_role_bits);
          print("TotTag Ranging: Ranging task has stopped!\n");
          is_ranging = false;
       }

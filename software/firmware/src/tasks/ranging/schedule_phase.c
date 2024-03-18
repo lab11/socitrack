@@ -33,12 +33,12 @@ static void deschedule_device(uint8_t device_index)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void schedule_phase_initialize(const uint8_t *uid, bool is_master, uint32_t epoch_timestamp)
+void schedule_phase_initialize(const uint8_t *uid, bool is_master)
 {
    // Initialize all Schedule Phase parameters
    schedule_packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = SCHEDULE_PACKET,
          .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .sequence_number = 0, .epoch_time_unix = app_rtc_time_to_experiment_time(epoch_timestamp), .num_devices = 1,
+      .sequence_number = 0, .epoch_time_unix = 0, .num_devices = 1,
       .schedule = { 0 }, .footer = { { 0 } } };
    memset(device_timeouts, 0, sizeof(device_timeouts));
    memcpy(schedule_packet.header.sourceAddr, uid, sizeof(schedule_packet.header.sourceAddr));
@@ -61,7 +61,7 @@ scheduler_phase_t schedule_phase_begin(void)
    if (is_master_scheduler)
    {
       // Increment the epoch timestamp and increment all device timeouts
-      schedule_packet.epoch_time_unix += TIMESTAMP_INCREASE_PER_RANGE;
+      schedule_packet.epoch_time_unix = app_get_experiment_time(0);
       for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
          ++device_timeouts[i];
 

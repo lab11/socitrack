@@ -1,7 +1,6 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_tasks.h"
-#include "rtc.h"
 #include "storage.h"
 #include "system.h"
 
@@ -24,6 +23,7 @@ typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; 
 
 static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
+static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
 
@@ -64,26 +64,31 @@ static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t
 
 void storage_flush_and_shutdown(void)
 {
-   const storage_item_t storage_item = { .timestamp = app_rtc_time_to_experiment_time(rtc_get_timestamp()), .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_battery_level(uint32_t battery_voltage_mV)
 {
-   const storage_item_t storage_item = { .timestamp = app_rtc_time_to_experiment_time(rtc_get_timestamp()), .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_motion_status(bool in_motion)
 {
-   const storage_item_t storage_item = { .timestamp = app_rtc_time_to_experiment_time(rtc_get_timestamp()), .value = in_motion, .type = STORAGE_TYPE_MOTION };
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = in_motion, .type = STORAGE_TYPE_MOTION };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
-void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len)
+void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset)
 {
    static uint32_t range_data_index = 0;
-   const storage_item_t storage_item = { .timestamp = timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
+   ranging_timestamp_offset = timestamp_offset;
+   const uint32_t rounded_timestamp = 500 * (timestamp / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
    memcpy(range_data[range_data_index].data, ranging_data, ranging_data_len);
    range_data[range_data_index].length = ranging_data_len;
    range_data_index = (range_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
@@ -103,6 +108,7 @@ void StorageTask(void *params)
 {
    // Create a queue to hold pending storage items
    static storage_item_t item;
+   ranging_timestamp_offset = 0;
    storage_queue = xQueueCreateStatic(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t), ucQueueStorage, &xQueueBuffer);
 
    // Set whether the storage peripheral should be in maintenance mode

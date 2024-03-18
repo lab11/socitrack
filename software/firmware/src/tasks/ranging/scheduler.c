@@ -63,7 +63,7 @@ static void handle_range_computation_phase(void)
 #ifndef _TEST_RANGING_TASK
 #ifndef _TEST_BLE_RANGING_TASK
          if (ranging_results[0])
-            storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+            storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), 0);
 #endif
 #endif
          print_ranges(app_experiment_time_to_rtc_time(schedule_phase_get_timestamp()), schedule_phase_get_timestamp() % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
@@ -79,14 +79,15 @@ static void handle_range_computation_phase(void)
 
          // Carry out the ranging algorithm and fix any detected network errors
          compute_ranges(ranging_results);
+         const uint32_t data_timestamp = schedule_phase_get_timestamp();
          bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
 #ifndef _TEST_BLE_RANGING_TASK
          if (ranging_results[0])
-            storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+            storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), (int32_t)data_timestamp - (int32_t)app_get_experiment_time(0));
 #endif
 #endif
-         print_ranges(app_experiment_time_to_rtc_time(schedule_phase_get_timestamp()), schedule_phase_get_timestamp() % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         print_ranges(app_experiment_time_to_rtc_time(500 * (data_timestamp / 500)), (500 * (data_timestamp / 500)) % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
       }
       default:
@@ -179,7 +180,7 @@ schedule_role_t scheduler_get_current_role(void)
    return current_role;
 }
 
-void scheduler_run(schedule_role_t role, uint32_t timestamp)
+void scheduler_run(schedule_role_t role)
 {
    // Ensure that the role is a valid ranging role
    if ((role != ROLE_MASTER) && (role != ROLE_PARTICIPANT))
@@ -196,7 +197,7 @@ void scheduler_run(schedule_role_t role, uint32_t timestamp)
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 
    // Initialize the Schedule, Ranging, Status, and Subscription phases
-   schedule_phase_initialize(eui, role == ROLE_MASTER, timestamp - 1);
+   schedule_phase_initialize(eui, role == ROLE_MASTER);
    ranging_phase_initialize(eui);
    status_phase_initialize(eui);
    subscription_phase_initialize(eui);
