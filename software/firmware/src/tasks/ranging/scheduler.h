@@ -42,7 +42,7 @@ typedef enum
 
 // Public API ----------------------------------------------------------------------------------------------------------
 
-void scheduler_init(uint8_t *uid);
+void scheduler_init(experiment_details_t *details);
 schedule_role_t scheduler_get_current_role(void);
 void scheduler_run(schedule_role_t role);
 void scheduler_stop(void);

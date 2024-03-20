@@ -7,7 +7,8 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static uint8_t scheduled_slot, device_timeouts[MAX_NUM_RANGING_DEVICES];
+static uint8_t device_timeouts[MAX_NUM_RANGING_DEVICES], valid_devices[MAX_NUM_RANGING_DEVICES];
+static uint8_t scheduled_slot, num_valid_devices;
 static schedule_packet_t schedule_packet;
 static scheduler_phase_t current_phase;
 static uint32_t next_action_timestamp;
@@ -16,6 +17,15 @@ static bool is_master_scheduler;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static bool is_valid_device(uint8_t device_uid)
+{
+   // Search through the list of active deployment devices for a match
+   for (int i = 0; i < num_valid_devices; ++i)
+      if (valid_devices[i] == device_uid)
+         return true;
+   return false;
+}
 
 static void deschedule_device(uint8_t device_index)
 {
@@ -45,6 +55,14 @@ void schedule_phase_initialize(const uint8_t *uid, bool is_master)
    schedule_packet.schedule[0] = uid[0];
    is_master_scheduler = is_master;
    scheduled_slot = 0;
+}
+
+void schedule_phase_store_experiment_details(experiment_details_t *details)
+{
+   // Store a list of all valid devices in the current experiment
+   num_valid_devices = details->num_devices;
+   for (uint8_t i = 0; i < details->num_devices; ++i)
+      valid_devices[i] = details->uids[i][0];
 }
 
 scheduler_phase_t schedule_phase_begin(void)
@@ -125,7 +143,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    // Forward this request to the next phase if not currently in the Schedule Phase
    if (current_phase != SCHEDULE_PHASE)
       return subscription_phase_rx_complete((subscription_packet_t*)schedule);
-   else if (schedule->header.msgType != SCHEDULE_PACKET)
+   else if ((schedule->header.msgType != SCHEDULE_PACKET) || !is_valid_device(schedule->header.sourceAddr[0]))
    {
       // Immediately restart listening for schedule packets
       if (!ranging_radio_rxenable(DWT_START_RX_IMMEDIATE))

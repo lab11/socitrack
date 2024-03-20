@@ -3,6 +3,7 @@
 #include "app_tasks.h"
 #include "logging.h"
 #include "scheduler.h"
+#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -26,19 +27,19 @@ bool ranging_active(void)
    return is_ranging;
 }
 
-void RangingTask(void *uid)
+void RangingTask(void *scheduled_experiment)
 {
    // Store the ranging task handle and initialize the ranging scheduler
-   ranging_task_handle = xTaskGetCurrentTaskHandle();
    static uint32_t desired_role_bits = 0;
-   scheduler_init(uid);
+   ranging_task_handle = xTaskGetCurrentTaskHandle();
+   scheduler_init((experiment_details_t*)scheduled_experiment);
    is_ranging = false;
 
    // Loop forever
    while (true)
    {
       // Sleep until time to start ranging with the indicated role
-      if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && uid)
+      if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && scheduled_experiment)
       {
          print("TotTag Ranging: Starting ranging task as %s\n", (desired_role_bits == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");
          scheduler_run((schedule_role_t)desired_role_bits);

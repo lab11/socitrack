@@ -59,14 +59,15 @@ static void handle_range_computation_phase(void)
          // Carry out the ranging algorithm and fix any detected network errors
          compute_ranges(ranging_results);
          fix_network_errors(ranging_results[0]);
+         const uint32_t data_timestamp = schedule_phase_get_timestamp();
          bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
 #ifndef _TEST_BLE_RANGING_TASK
          if (ranging_results[0])
-            storage_write_ranging_data(schedule_phase_get_timestamp(), ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), 0);
+            storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), 0);
 #endif
 #endif
-         print_ranges(app_experiment_time_to_rtc_time(schedule_phase_get_timestamp()), schedule_phase_get_timestamp() % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         print_ranges(app_experiment_time_to_rtc_time(500 * (data_timestamp / 500)), (500 * (data_timestamp / 500)) % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
       }
       case ROLE_PARTICIPANT:
@@ -161,12 +162,13 @@ static void rx_timeout_callback(const dwt_cb_data_t *rxData)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void scheduler_init(uint8_t *uid)
+void scheduler_init(experiment_details_t *details)
 {
-   // Store the device EUI
-   if (uid)
+   // Store the device EUI and experiment details
+   if (details)
    {
-      memcpy(eui, uid, EUI_LEN);
+      schedule_phase_store_experiment_details(details);
+      system_read_UID(eui, sizeof(eui));
       device_eui = eui[0];
 
       // Set the DW3000 callback configuration
