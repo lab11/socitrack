@@ -37,7 +37,7 @@ def seconds_to_human_readable(seconds):
 
 def extract_simple_event_log(logpath):
     #line fomat of the simple event log: 2024-02-22 07:33:11 blabla
-    with open(logpath) as f:
+    with open(logpath, errors="ignore") as f:
         event_log = f.readlines()
     event_dict = {}
 
