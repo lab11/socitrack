@@ -26,19 +26,19 @@ def seconds_to_human_readable(seconds):
     hours, minutes = divmod(minutes, 60)
 
     # Create a formatted string
-    result = ""
+    result = ''
     if hours > 0:
-        result += f"{int(hours)}h"
+        result += f'{int(hours)}h'
     if minutes > 0:
-        result += f"{int(minutes)}m"
+        result += f'{int(minutes)}m'
     if seconds > 0:
-        result += f"{int(seconds)}s"
+        result += f'{int(seconds)}s'
 
     return result
 
 def extract_simple_event_log(logpath):
     #line fomat of the simple event log: 2024-02-22 07:33:11 blabla
-    with open(logpath, errors="ignore") as f:
+    with open(logpath, errors='ignore') as f:
         event_log = f.readlines()
     event_dict = {}
 
@@ -49,12 +49,12 @@ def extract_simple_event_log(logpath):
         match = pattern.match(line)
         if match:
             timestamp_str, message = match.groups()
-            timestamp = mdates.date2num(datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S"))
+            timestamp = mdates.date2num(datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S'))
             event_dict[timestamp] = message
 
     # Display the dictionary
     #for timestamp in event_dict:
-    #    print(f"{timestamp}: {event_dict[timestamp]}")
+    #    print(f'{timestamp}: {event_dict[timestamp]}')
     return event_dict
 
 def load_data(filename):
@@ -80,17 +80,17 @@ def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
 def get_voltage_time_series(data, tottag_label):
     voltages = data.loc['v'].dropna()
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in voltages.keys()])
-    plot_data(f"Battery Voltage for {tottag_label}", "Date and Time", "Voltage (mV)", timestamps, voltages)
+    plot_data(f'Battery Voltage for {tottag_label}', 'Date and Time', 'Voltage (mV)', timestamps, voltages)
 
 def get_motion_time_series(data, tottag_label):
     motions = data.loc['m'].ffill()
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in motions.keys()])
-    plot_data(f"Motion Status for {tottag_label}", "Date and Time", "Motion Status", timestamps, motions)
+    plot_data(f'Motion Status for {tottag_label}', 'Date and Time', 'Motion Status', timestamps, motions)
 
-def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit="ft"):
-    if unit == "ft":
+def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft'):
+    if unit == 'ft':
         conversion_factor_from_mm = 304.8
-    elif unit == "m":
+    elif unit == 'm':
         conversion_factor_from_mm = 1000.0
     ranges = data.loc['r.' + destination_tottag_label] / conversion_factor_from_mm
     ranges = ranges.mask(ranges > cutoff_distance)\
@@ -100,37 +100,37 @@ def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ranges.keys()])
     return timestamps, ranges
 
-def get_ranging_time_series(data, source_tottag_label, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit="ft"):
+def get_ranging_time_series(data, source_tottag_label, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft'):
     timestamps, ranges = extract_ranging_time_series(data, destination_tottag_label, start_timestamp=start_timestamp, end_timestamp=end_timestamp, cutoff_distance=cutoff_distance, unit=unit)
-    plot_data(f"Ranging Data from {source_tottag_label} to {destination_tottag_label}",
-              "Date and Time", f"Range ({unit})", timestamps, ranges)
+    plot_data(f'Ranging Data from {source_tottag_label} to {destination_tottag_label}',
+              'Date and Time', f'Range ({unit})', timestamps, ranges)
 
-def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distance, unit="ft"):
+def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distance, unit='ft'):
     ranges = data.loc[['r.' + label for label in target_tottag_labels]] / (304.8 if unit == 'ft' else 1000.0)
     dates = [datetime.fromtimestamp(ts).day for ts in ranges.keys()]
     day_change_indices = np.where(np.roll(dates, 1) != dates)[0]
     for i in range(len(day_change_indices)):
-        print(f"\nRanging Statistics on {datetime.fromtimestamp(ranges.keys()[day_change_indices[i]]).strftime("%m/%d/%Y")}:")
+        print(f'\nRanging Statistics on {datetime.fromtimestamp(ranges.keys()[day_change_indices[i]]).strftime("%m/%d/%Y")}:')
         day_ranges = ranges.T.iloc[day_change_indices[i]:(day_change_indices[i+1] if (i + 1) < len(day_change_indices) else ranges.count().count())]
         for target in day_ranges.keys():
-            print(f"   Statistics to {target}:")
+            print(f'   Statistics to {target}:')
             in_range_data = day_ranges[target].dropna()
             touching_distance_data = day_ranges[target].mask(day_ranges[target] > max_touching_distance).dropna()
             minutes_in_range = 1 + (len(in_range_data.index) // 120)
             minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
             mean_distance_in_range = in_range_data.mean()
-            print(f"      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}")
+            print(f'      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}')
         if len(target_tottag_labels) > 1:
-            print(f"   Statistics to Either of {target_tottag_labels}:")
+            print(f'   Statistics to Either of {target_tottag_labels}:')
             in_range_data = day_ranges.dropna(how='all')
             touching_distance_data = day_ranges.mask(day_ranges > max_touching_distance).dropna(how='all')
             minutes_in_range = 1 + (len(in_range_data.index) // 120)
             minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
             mean_distance_in_range = pd.concat([in_range_data[col] for col in in_range_data.columns]).mean()
-            print(f"      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}")
+            print(f'      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}')
 
-def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit="ft", events=dict()):
-    ylabel = f"Range ({unit})"
+def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit='ft', events=dict()):
+    ylabel = f'Range ({unit})'
     #extract timestamps and ranges
     timestamps1, ranges1 = extract_ranging_time_series(data1, label2, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit)
     timestamps2, ranges2 = extract_ranging_time_series(data2, label1, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit)
@@ -171,8 +171,8 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
 
     ax1.plot(timestamps1, ranges1)
     ax2.plot(timestamps2, ranges2)
-    ax1.yaxis.set_label_text(f"{label1}-{label2} {ylabel}")
-    ax2.yaxis.set_label_text(f"{label2}-{label1} {ylabel}")
+    ax1.yaxis.set_label_text(f'{label1}-{label2} {ylabel}')
+    ax2.yaxis.set_label_text(f'{label2}-{label1} {ylabel}')
     ax1.set_ylim([0, ymax])
     ax2.set_ylim([0, ymax])
     #suppress the tick texts
@@ -218,8 +218,8 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     # setup the delay input box
     if len(events):
         axbox = fig.add_axes([0.1, 0.11, 0.3, 0.02])
-        text_box = TextBox(axbox, "EventOffset (s)")
-        text_box.set_val(f"{0}")  # Trigger `submit` with the initial string.
+        text_box = TextBox(axbox, 'EventOffset (s)')
+        text_box.set_val(f'{0}')  # Trigger `submit` with the initial string.
 
     def draw_annotations(events, event_offset):
         annotations = []
