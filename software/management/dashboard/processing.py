@@ -18,6 +18,7 @@ import re
 pd.options.display.float_format = '{:.3f}'.format
 
 # HELPER FUNCTIONS ----------------------------------------------------------------------------------------------------
+
 def seconds_to_human_readable(seconds):
     # Calculate minutes and seconds
     minutes, seconds = divmod(seconds, 60)
@@ -103,6 +104,30 @@ def get_ranging_time_series(data, source_tottag_label, destination_tottag_label,
     timestamps, ranges = extract_ranging_time_series(data, destination_tottag_label, start_timestamp=start_timestamp, end_timestamp=end_timestamp, cutoff_distance=cutoff_distance, unit=unit)
     plot_data(f"Ranging Data from {source_tottag_label} to {destination_tottag_label}",
               "Date and Time", f"Range ({unit})", timestamps, ranges)
+
+def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distance, unit="ft"):
+    ranges = data.loc[['r.' + label for label in target_tottag_labels]] / (304.8 if unit == 'ft' else 1000.0)
+    dates = [datetime.fromtimestamp(ts).day for ts in ranges.keys()]
+    day_change_indices = np.where(np.roll(dates, 1) != dates)[0]
+    for i in range(len(day_change_indices)):
+        print(f"\nRanging Statistics on {datetime.fromtimestamp(ranges.keys()[day_change_indices[i]]).strftime("%m/%d/%Y")}:")
+        day_ranges = ranges.T.iloc[day_change_indices[i]:(day_change_indices[i+1] if (i + 1) < len(day_change_indices) else ranges.count().count())]
+        for target in day_ranges.keys():
+            print(f"   Statistics to {target}:")
+            in_range_data = day_ranges[target].dropna()
+            touching_distance_data = day_ranges[target].mask(day_ranges[target] > max_touching_distance).dropna()
+            minutes_in_range = 1 + (len(in_range_data.index) // 120)
+            minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
+            mean_distance_in_range = in_range_data.mean()
+            print(f"      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}")
+        if len(target_tottag_labels) > 1:
+            print(f"   Statistics to Either of {target_tottag_labels}:")
+            in_range_data = day_ranges.dropna(how='all')
+            touching_distance_data = day_ranges.mask(day_ranges > max_touching_distance).dropna(how='all')
+            minutes_in_range = 1 + (len(in_range_data.index) // 120)
+            minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
+            mean_distance_in_range = pd.concat([in_range_data[col] for col in in_range_data.columns]).mean()
+            print(f"      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}")
 
 def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit="ft", events=dict()):
     ylabel = f"Range ({unit})"
