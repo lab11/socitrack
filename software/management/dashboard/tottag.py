@@ -30,6 +30,7 @@ MAINTENANCE_DATA_SERVICE_UUID = 'd68c3163-a23f-ee90-0c45-5231395e5d2e'
 MAINTENANCE_NEW_EXPERIMENT = 0x01
 MAINTENANCE_DELETE_EXPERIMENT = 0x02
 MAINTENANCE_DOWNLOAD_LOG = 0x03
+MAINTENANCE_SET_LOG_DOWNLOAD_DATES = 0x04
 MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
@@ -372,6 +373,7 @@ class TotTagBLE(threading.Thread):
       try:
          self.data_length = 0
          await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
+         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']))
          await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG), True)
          self.downloading_log_file = True
       except Exception:
@@ -506,13 +508,26 @@ class TotTagGUI(tk.Frame):
       ttk.Button(save_controls, text="Change", command=self._change_save_directory).pack(side=tk.RIGHT)
       ttk.Entry(save_controls, textvariable=self.save_directory).pack(fill=tk.X)
       ttk.Label(prompt_area, text=" ", font=('Helvetica', '4')).grid(column=0, row=6)
-      ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=7, pady=5, sticky=tk.W+tk.N)
+      start_time_controls = tk.Frame(prompt_area)
+      start_time_controls.grid(column=0, row=7, columnspan=2, sticky=tk.W+tk.E+tk.N+tk.S)
+      end_time_controls = tk.Frame(prompt_area)
+      end_time_controls.grid(column=2, row=7, columnspan=2, sticky=tk.W+tk.E+tk.N+tk.S)
+      ttk.Label(start_time_controls, text="Start Date: ").pack(side=tk.LEFT)
+      tkcalendar.DateEntry(start_time_controls, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy').pack(side=tk.LEFT)
+      tkcalendar.DateEntry(end_time_controls, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy').pack(side=tk.RIGHT)
+      ttk.Label(end_time_controls, text="End Date: ").pack(side=tk.RIGHT)
+      ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=8, pady=5, sticky=tk.W+tk.N)
       def begin_download(self):
          self.data_length = 0
          ble_issue_command(self.event_loop, self.ble_command_queue, 'DOWNLOAD')
-         ble_issue_command(self.event_loop, self.ble_command_queue, { 'dir': self.save_directory.get(), 'raw': self.download_raw_data.get() })
-      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=8)
-      ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=8)
+         ble_issue_command(self.event_loop, self.ble_command_queue, {
+            'dir': self.save_directory.get(),
+            'raw': self.download_raw_data.get(),
+            'start': pack_datetime(tzlocal.get_localzone(), self.start_date.get(), "00:00", False),
+            'end': pack_datetime(tzlocal.get_localzone(), self.end_date.get(), "00:00", False)
+         })
+      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=9)
+      ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=9)
 
    def _create_new_experiment(self):
       self._clear_canvas()

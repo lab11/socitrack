@@ -57,7 +57,7 @@ typedef struct __attribute__ ((__packed__)) { uint16_t lba, pba; } bbm_lut_t;
 static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table_internal[BBM_INTERNAL_LUT_NUM_ENTRIES];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES];
-static volatile uint32_t starting_page, current_page, reading_page, cache_index;
+static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index;
 static volatile bool is_reading, in_maintenance_mode, disabled;
 
 
@@ -430,8 +430,8 @@ void storage_init(void)
    }
 
    // Search for the starting page
-   cache_index = 0;
    int32_t start_page = -1;
+   cache_index = last_reading_page = 0;
    memset(cache, 0, sizeof(cache));
    for (uint32_t page = 0; page < BBM_LUT_BASE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
       if (read_page(transfer_buffer, page) && (memcmp(transfer_buffer, "META", 4) == 0))
@@ -593,14 +593,44 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
 }
 
-void storage_begin_reading(void)
+void storage_begin_reading(uint32_t starting_timestamp)
 {
+   // Update the data reading details
+   experiment_details_t details;
+   storage_retrieve_experiment_details(&details);
+   if (starting_timestamp >= details.experiment_start_time)
+      starting_timestamp = 1000 * (starting_timestamp - details.experiment_start_time);
    reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
+   last_reading_page = reading_page;
    is_reading = in_maintenance_mode;
+
+   // Search for the page that contains the starting timestamp
+   bool timestamp_found = starting_timestamp;
+   while (!timestamp_found && (reading_page != current_page))
+      if (read_page(transfer_buffer, reading_page))
+      {
+         uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
+         for (uint32_t i = 0; !timestamp_found && ((i + 5) < num_bytes_retrieved); ++i)
+            if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES))
+            {
+               if (*(uint32_t*)(transfer_buffer + 5 + i) > starting_timestamp)
+               {
+                  reading_page = last_reading_page;
+                  timestamp_found = true;
+               }
+               else
+               {
+                  last_reading_page = reading_page;
+                  reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+                  break;
+               }
+            }
+      }
 }
 
 void storage_end_reading(void)
 {
+   last_reading_page = 0;
    is_reading = false;
 }
 
@@ -619,12 +649,42 @@ void storage_exit_maintenance_mode(void)
    in_maintenance_mode = false;
 }
 
-uint32_t storage_retrieve_num_data_chunks(void)
+uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
 {
    // Ensure that we are in reading mode
    if (!is_reading)
       return 0;
-   return (starting_page < current_page) ? (current_page - starting_page) : (BBM_LUT_BASE_ADDRESS - starting_page + current_page);
+
+   if (ending_timestamp)
+   {
+      // Search for the page that contains the ending timestamp
+      bool timestamp_found = false;
+      last_reading_page = reading_page;
+      uint32_t previous_reading_page = last_reading_page;
+      while (!timestamp_found && (last_reading_page != current_page))
+         if (read_page(transfer_buffer, last_reading_page))
+         {
+            uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
+            for (uint32_t i = 0; !timestamp_found && ((i + 5) < num_bytes_retrieved); ++i)
+               if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES))
+               {
+                  if (*(uint32_t*)(transfer_buffer + 5 + i) > ending_timestamp)
+                  {
+                     last_reading_page = previous_reading_page;
+                     timestamp_found = true;
+                  }
+                  else
+                  {
+                     previous_reading_page = last_reading_page;
+                     last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+                     break;
+                  }
+               }
+         }
+   }
+   else
+      last_reading_page = current_page;
+   return (reading_page <= last_reading_page) ? (1 + last_reading_page - reading_page) : (BBM_LUT_BASE_ADDRESS - reading_page + last_reading_page + 1);
 }
 
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
@@ -635,11 +695,19 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
 
    // Determine if a full page of memory is available to read
    uint32_t num_bytes_retrieved = 0;
-   if (reading_page == current_page)
+   if (reading_page == last_reading_page)
    {
-      // Return the valid available bytes
-      memcpy(buffer, cache, cache_index);
-      num_bytes_retrieved = cache_index;
+      if (reading_page == current_page)
+      {
+         // Return the valid available bytes
+         memcpy(buffer, cache, cache_index);
+         num_bytes_retrieved = cache_index;
+      }
+      else if (read_page(buffer, reading_page))
+      {
+         num_bytes_retrieved = *(uint16_t*)(buffer+2);
+         memmove(buffer, buffer + 4, num_bytes_retrieved);
+      }
       is_reading = false;
    }
    else
@@ -664,7 +732,7 @@ void storage_store_experiment_details(const experiment_details_t *details) {}
 void storage_store(const void *data, uint32_t data_length) {}
 void storage_flush(bool write_partial_pages) {}
 void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
-void storage_begin_reading(void) {}
+void storage_begin_reading(uint32_t) {}
 void storage_end_reading(void) {}
 void storage_enter_maintenance_mode(void){}
 void storage_exit_maintenance_mode(void) {}

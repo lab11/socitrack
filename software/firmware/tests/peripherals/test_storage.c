@@ -26,7 +26,7 @@ int main(void)
    // Read the stuff back from storage
    uint8_t read_data[MEMORY_PAGE_SIZE_BYTES*2];
    storage_enter_maintenance_mode();
-   storage_begin_reading();
+   storage_begin_reading(0);
    uint32_t bytes_read = storage_retrieve_next_data_chunk(read_data);
    while (bytes_read)
    {

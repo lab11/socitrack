@@ -9,6 +9,11 @@
 #include "storage.h"
 
 
+// Static Global Variables ---------------------------------------------------------------------------------------------
+
+static uint32_t download_start_timestamp = 0, download_end_timestamp = 0;
+
+
 // Public API ----------------------------------------------------------------------------------------------------------
 
 uint8_t handleDeviceMaintenanceRead(dmConnId_t connId, uint16_t handle, uint8_t operation, uint16_t offset, attsAttr_t *pAttr)
@@ -42,6 +47,12 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             storage_store_experiment_details(&empty_details);
             break;
          }
+         case BLE_MAINTENANCE_SET_LOG_DOWNLOAD_DATES:
+         {
+            download_start_timestamp = *(uint32_t*)(pValue + 1);
+            download_end_timestamp = *(uint32_t*)(pValue + 1 + sizeof(download_start_timestamp));
+            break;
+         }
          case BLE_MAINTENANCE_DOWNLOAD_LOG:
             continueSendingLogData(connId, 0);
             break;
@@ -65,10 +76,10 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length)
       // Reset all transmission variables and send estimated total data length
       buffer_index = 0;
       is_reading = true;
-      storage_begin_reading();
       experiment_details_t details;
+      storage_begin_reading(download_start_timestamp);
       storage_retrieve_experiment_details(&details);
-      total_data_chunks = storage_retrieve_num_data_chunks();
+      total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
       uint32_t total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
       memcpy(transmit_buffer, &total_data_length, sizeof(total_data_length));
       memcpy(transmit_buffer + sizeof(total_data_length), &details, sizeof(details));

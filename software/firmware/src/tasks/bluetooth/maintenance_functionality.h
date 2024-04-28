@@ -13,6 +13,7 @@
 #define BLE_MAINTENANCE_NEW_EXPERIMENT                  0x01
 #define BLE_MAINTENANCE_DELETE_EXPERIMENT               0x02
 #define BLE_MAINTENANCE_DOWNLOAD_LOG                    0x03
+#define BLE_MAINTENANCE_SET_LOG_DOWNLOAD_DATES          0x04
 #define BLE_MAINTENANCE_PACKET_COMPLETE                 0xFF
 
 

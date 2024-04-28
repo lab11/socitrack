@@ -7,14 +7,6 @@
 
 // Storage Task and Notification Types ---------------------------------------------------------------------------------
 
-typedef enum {
-   STORAGE_TYPE_SHUTDOWN = 0,
-   STORAGE_TYPE_VOLTAGE,
-   STORAGE_TYPE_CHARGING_EVENT,
-   STORAGE_TYPE_MOTION,
-   STORAGE_TYPE_RANGES
-} storage_data_type_t;
-
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
 typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
 

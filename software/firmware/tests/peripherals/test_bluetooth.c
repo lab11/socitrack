@@ -22,7 +22,7 @@ static void read_page(uint8_t *buffer)
       buffer[i] = (uint8_t)((((uint32_t)reading_page * MEMORY_PAGE_SIZE_BYTES) + i) & 0xFF);
 }
 void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
-void storage_begin_reading(void)
+void storage_begin_reading(uint32_t)
 {
    reading_page = 0;
    is_reading = true;
@@ -32,7 +32,7 @@ void storage_begin_reading(void)
       cache[i] = (uint8_t)i;
 }
 void storage_end_reading(void) { is_reading = false; }
-uint32_t storage_retrieve_num_data_chunks(void) { return total_size / MEMORY_PAGE_SIZE_BYTES; }
+uint32_t storage_retrieve_num_data_chunks(uint32_t) { return total_size / MEMORY_PAGE_SIZE_BYTES; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
 {
    // Ensure that we are in reading mode
