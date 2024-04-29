@@ -132,8 +132,9 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          file.write(data)
    try:
       while i < len(data):
-         timestamp = experiment_start_time + (struct.unpack('<I', data[i+1:i+5])[0] / 1000)
-         if timestamp > int(time.time()) or data[i] < 1 or data[i] > 4:
+         timestamp_raw = struct.unpack('<I', data[i+1:i+5])[0]
+         timestamp = experiment_start_time + (timestamp_raw / 1000)
+         if timestamp > int(time.time()) or ((timestamp_raw % 500) != 0) or data[i] < 1 or data[i] > 4:
             i += 1
          elif data[i] == STORAGE_TYPE_VOLTAGE:
             datum = struct.unpack('<I', data[i+5:i+9])[0]
@@ -230,13 +231,14 @@ class TotTagBLE(threading.Thread):
 
    def data_callback(self, _sender_uuid, data):
       if self.data_length == 0:
-         self.data_index = 0
-         self.data_length = struct.unpack('<I', data[0:4])[0]
-         if self.data_length == 0:
-            self.data_length = 1
-         self.data = bytearray(self.data_length)
-         self.data_details = unpack_experiment_details(data[4:])
-         self.result_queue.put_nowait(('LOGDATA', self.data_length))
+         if len(data) >= 4:
+            self.data_index = 0
+            self.data_length = struct.unpack('<I', data[0:4])[0]
+            if self.data_length == 0:
+               self.data_length = 1
+            self.data = bytearray(self.data_length)
+            self.data_details = unpack_experiment_details(data[4:])
+            self.result_queue.put_nowait(('LOGDATA', self.data_length))
       elif len(data) == 1 and data[0] == MAINTENANCE_DOWNLOAD_COMPLETE:
          self.command_queue.put_nowait('DOWNLOAD_DONE')
       else:
@@ -373,7 +375,7 @@ class TotTagBLE(threading.Thread):
       try:
          self.data_length = 0
          await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
-         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']))
+         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']), True)
          await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG), True)
          self.downloading_log_file = True
       except Exception:
@@ -523,8 +525,8 @@ class TotTagGUI(tk.Frame):
          ble_issue_command(self.event_loop, self.ble_command_queue, {
             'dir': self.save_directory.get(),
             'raw': self.download_raw_data.get(),
-            'start': pack_datetime(tzlocal.get_localzone(), self.start_date.get(), "00:00", False),
-            'end': pack_datetime(tzlocal.get_localzone(), self.end_date.get(), "00:00", False)
+            'start': pack_datetime(str(tzlocal.get_localzone()), self.start_date.get(), "00:00", False),
+            'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False)
          })
       ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=9)
       ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=9)
