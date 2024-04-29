@@ -21,6 +21,6 @@
 
 uint8_t handleDeviceMaintenanceRead(dmConnId_t connId, uint16_t handle, uint8_t operation, uint16_t offset, attsAttr_t *pAttr);
 uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t operation, uint16_t offset, uint16_t len, uint8_t *pValue, attsAttr_t *pAttr);
-void continueSendingLogData(dmConnId_t connId, uint16_t max_length);
+void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat);
 
 #endif  // #ifndef __MAINTENANCE_FUNCTIONALITY_HEADER_H__

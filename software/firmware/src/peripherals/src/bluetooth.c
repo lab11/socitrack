@@ -210,8 +210,8 @@ static void attProtocolCallback(attEvt_t *pEvt)
          break;
       case ATTS_HANDLE_VALUE_CNF:
          print("TotTag BLE: attProtocolCallback: Data Notify Completed = %u\n", (uint32_t)pEvt->hdr.status);
-         if ((pEvt->hdr.status == ATT_SUCCESS) && (pEvt->handle == MAINTENANCE_RESULT_HANDLE) && data_requested)
-            continueSendingLogData((dmConnId_t)pEvt->hdr.param, connection_mtu - 3);
+         if (((pEvt->hdr.status == ATT_SUCCESS) || (pEvt->hdr.status == ATT_ERR_TIMEOUT)) && (pEvt->handle == MAINTENANCE_RESULT_HANDLE) && data_requested)
+            continueSendingLogData((dmConnId_t)pEvt->hdr.param, connection_mtu - 3, pEvt->hdr.status == ATT_ERR_TIMEOUT);
          break;
       default:
          print("TotTag BLE: attProtocolCallback: Received Event ID %d\n", pEvt->hdr.event);

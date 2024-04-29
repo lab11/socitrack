@@ -605,14 +605,16 @@ void storage_begin_reading(uint32_t starting_timestamp)
    is_reading = in_maintenance_mode;
 
    // Search for the page that contains the starting timestamp
-   bool timestamp_found = starting_timestamp;
+   bool timestamp_found = !starting_timestamp;
    while (!timestamp_found && (reading_page != current_page))
       if (read_page(transfer_buffer, reading_page))
       {
+         bool found_valid_timestamp = false;
          uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
          for (uint32_t i = 0; !timestamp_found && ((i + 5) < num_bytes_retrieved); ++i)
-            if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES))
+            if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES) && ((*(uint32_t*)(transfer_buffer + 5 + i) % 500) == 0))
             {
+               found_valid_timestamp = true;
                if (*(uint32_t*)(transfer_buffer + 5 + i) > starting_timestamp)
                {
                   reading_page = last_reading_page;
@@ -625,6 +627,8 @@ void storage_begin_reading(uint32_t starting_timestamp)
                   break;
                }
             }
+         if (!found_valid_timestamp)
+            reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
       }
 }
 
@@ -657,6 +661,12 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
 
    if (ending_timestamp)
    {
+      // Convert the ending timestamp to the appropriate format
+      experiment_details_t details;
+      storage_retrieve_experiment_details(&details);
+      if (ending_timestamp >= details.experiment_start_time)
+         ending_timestamp = 1000 * (ending_timestamp - details.experiment_start_time);
+
       // Search for the page that contains the ending timestamp
       bool timestamp_found = false;
       last_reading_page = reading_page;
@@ -664,10 +674,12 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       while (!timestamp_found && (last_reading_page != current_page))
          if (read_page(transfer_buffer, last_reading_page))
          {
+            bool found_valid_timestamp = false;
             uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
             for (uint32_t i = 0; !timestamp_found && ((i + 5) < num_bytes_retrieved); ++i)
-               if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES))
+               if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES) && ((*(uint32_t*)(transfer_buffer + 5 + i) % 500) == 0))
                {
+                  found_valid_timestamp = true;
                   if (*(uint32_t*)(transfer_buffer + 5 + i) > ending_timestamp)
                   {
                      last_reading_page = previous_reading_page;
@@ -680,6 +692,8 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
                      break;
                   }
                }
+            if (!found_valid_timestamp)
+               last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
          }
    }
    else
