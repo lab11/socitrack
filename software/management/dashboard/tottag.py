@@ -405,9 +405,9 @@ class TotTagGUI(tk.Frame):
       super().__init__(None)
       self.master.title('TotTag Dashboard')
       try:
-         self.master.iconbitmap('dashboard/tottag_dashboard.ico')
+         self.master.iconphoto(True, tk.PhotoImage(file='dashboard/tottag_dashboard.png'))
       except Exception:
-         self.master.iconbitmap(os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.ico')
+         self.master.iconphoto(True, tk.PhotoImage(file=os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.png'))
       self.master.protocol('WM_DELETE_WINDOW', self._exit)
       self.master.geometry("900x700+" + str((self.winfo_screenwidth()-900)//2) + "+" + str((self.winfo_screenheight()-700)//2))
       self.pack(fill=tk.BOTH, expand=True)
