@@ -598,8 +598,7 @@ void storage_begin_reading(uint32_t starting_timestamp)
    // Update the data reading details
    experiment_details_t details;
    storage_retrieve_experiment_details(&details);
-   if (starting_timestamp >= details.experiment_start_time)
-      starting_timestamp = 1000 * (starting_timestamp - details.experiment_start_time);
+   starting_timestamp = (starting_timestamp >= details.experiment_start_time) ? (1000 * (starting_timestamp - details.experiment_start_time)) : 0;
    reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
    last_reading_page = reading_page;
    is_reading = in_maintenance_mode;
@@ -664,8 +663,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       // Convert the ending timestamp to the appropriate format
       experiment_details_t details;
       storage_retrieve_experiment_details(&details);
-      if (ending_timestamp >= details.experiment_start_time)
-         ending_timestamp = 1000 * (ending_timestamp - details.experiment_start_time);
+      ending_timestamp = (ending_timestamp >= details.experiment_start_time) ? (1000 * (ending_timestamp - details.experiment_start_time)) : 0;
 
       // Search for the page that contains the ending timestamp
       bool timestamp_found = false;
