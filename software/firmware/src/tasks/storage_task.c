@@ -92,7 +92,7 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void storage_flush_and_shutdown(void) {}
 void storage_write_battery_level(uint32_t battery_voltage_mV) {}
 void storage_write_motion_status(bool in_motion) {}
-void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len) {}
+void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
 
 #endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
 

@@ -750,5 +750,6 @@ void storage_enter_maintenance_mode(void){}
 void storage_exit_maintenance_mode(void) {}
 uint32_t storage_retrieve_data_length(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
+uint32_t storage_retrieve_num_data_chunks(uint32_t) {return 0; }
 
 #endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
