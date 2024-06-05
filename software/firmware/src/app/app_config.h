@@ -66,7 +66,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define HW_MODEL                                    "TotTag"
 #define HW_REVISION                                 "Rev. "STRINGIZE_VAL(_HW_REVISION)
 
-#define MAX_NUM_CONNECTIONS                         1
+#define MAX_NUM_CONNECTIONS                         2
 
 #define BLE_ADVERTISING_DURATION_MS                 0
 #define BLE_ADVERTISING_INTERVAL_0_625_MS           120         // 75 ms
