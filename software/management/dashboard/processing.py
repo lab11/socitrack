@@ -145,8 +145,8 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     plt.subplots_adjust(bottom=0.25)
 
     #time is expressed in days as floats
-    tmin = min(timestamps1[0], timestamps2[0])
-    tmax = max(timestamps1[-1], timestamps2[-1])
+    tmin = max(timestamps1[0], timestamps2[0])
+    tmax = min(timestamps1[-1], timestamps2[-1])
     ymin = min(ranges1.min(), ranges2.min())
     ymax = max(ranges2.max(), ranges2.max())
     init_pos = tmin
@@ -173,6 +173,8 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     ax2.plot(timestamps2, ranges2)
     ax1.yaxis.set_label_text(f'{label1}-{label2} {ylabel}')
     ax2.yaxis.set_label_text(f'{label2}-{label1} {ylabel}')
+    ax1.set_xlim([tmin, tmax])
+    ax2.set_xlim([tmin, tmax])
     ax1.set_ylim([0, ymax])
     ax2.set_ylim([0, ymax])
     #suppress the tick texts
@@ -183,6 +185,8 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
 
     ax3.plot(timestamps1, ranges1)
     ax4.plot(timestamps2, ranges2)
+    ax3.set_xlim([tmin, tmax])
+    ax4.set_xlim([tmin, tmax])
     # suppress the tick texts
     ax3.xaxis.set_ticklabels([])
     plt.setp(ax3.get_xticklabels(), visible=False)
