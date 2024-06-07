@@ -12,6 +12,7 @@
 #define BNO055_ID 0xA0
 
 typedef void (*motion_change_callback_t)(bool in_motion);
+typedef void (*data_ready_callback_t)(uint8_t interrupt_status);
 
 typedef enum
 {
@@ -195,6 +196,18 @@ typedef enum
 
 typedef enum
 {
+   ACC_NM = 0b10000000,
+   ACC_AM = 0b01000000,
+   ACC_HIGH_G = 0b00100000,
+   GYR_DRDY = 0b00010000,
+   GYR_HIGH_RATE = 0b00001000,
+   GYRO_AM = 0b00000100,
+   MAG_DRDY = 0b00000010,
+   ACC_BSX_DRDY = 0b00000001
+}bno055_intmsk_t;
+
+typedef enum
+{
    POWER_MODE_NORMAL = 0X00,
    POWER_MODE_LOWPOWER = 0X01,
    POWER_MODE_SUSPEND = 0X02
@@ -272,6 +285,7 @@ typedef struct
 void imu_init(void);
 void imu_deinit(void);
 void imu_register_motion_change_callback(motion_change_callback_t callback, bno055_opmode_t mode);
+void imu_register_data_ready_callback(data_ready_callback_t callback);
 void imu_set_power_mode(bno055_powermode_t power_mode);
 void imu_read_accel_data(bno055_acc_t *acc);
 void imu_read_linear_accel_data(bno055_acc_t *acc);

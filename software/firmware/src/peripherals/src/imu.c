@@ -4,12 +4,12 @@
 #include "math.h"
 #include "system.h"
 
-
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static void *i2c_handle;
 static volatile bool previously_in_motion;
 static motion_change_callback_t motion_change_callback;
+static data_ready_callback_t data_ready_callback;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -82,11 +82,18 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
 static void imu_isr(void *args)
 {
    // Read the device motion status and trigger the registered callback
-   const bool in_motion = i2c_read8(BNO055_INTR_STAT_ADDR) & 0x40;
-   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
+   const uint8_t interrupt_status = i2c_read8(BNO055_INTR_STAT_ADDR);
+   const bool in_motion = interrupt_status & ACC_AM;
+
    if (in_motion != previously_in_motion)
       motion_change_callback(in_motion);
    previously_in_motion = in_motion;
+   if (interrupt_status && (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY))
+   {
+      if (data_ready_callback!=NULL)
+         data_ready_callback(interrupt_status);
+   }
+   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);//reset all interrupt status bits, and INT output
 }
 
 static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
@@ -141,14 +148,24 @@ static void enable_motion_interrupts(void)
 {
    // Set up interrupts for motion and non-motion events
    i2c_write8(BNO055_PAGE_ID_ADDR, 1);
-   i2c_write8(ACC_CONFIG, 0b00000000);
+   i2c_write8(ACC_CONFIG, 0b00000000); //operation mode/bandwidth/g range
    i2c_write8(ACC_AM_THRE, 0b00001010);
    i2c_write8(ACC_NM_THRE, 0b00001010);
    i2c_write8(ACC_NM_SET, 0b00001001);
-   i2c_write8(ACC_INT_SET, 0b00011111);
-   i2c_write8(INT_MSK, 0xC0);
-   i2c_write8(INT_EN, 0xC0);
+   i2c_write8(ACC_INT_SET, 0b00011111); //axis and duration for triggering motion interrupt
+   i2c_write8(INT_MSK, ACC_NM|ACC_AM);
+   i2c_write8(INT_EN, ACC_NM|ACC_AM);
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
+}
+
+static void enable_data_ready_interrupts(void)
+{
+  i2c_write8(BNO055_PAGE_ID_ADDR, 1);
+  uint8_t int_msk = i2c_read8(INT_MSK)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+  uint8_t int_en = i2c_read8(INT_EN)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+  i2c_write8(INT_MSK, int_msk); 
+  i2c_write8(INT_EN, int_en);
+  i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 // Math helper functions -----------------------------------------------------------------------------------------------
@@ -171,6 +188,7 @@ void imu_init(void)
    // Initialize static variables
    previously_in_motion = false;
    motion_change_callback = NULL;
+   data_ready_callback = NULL;
 
    // Create an I2C configuration structure
    const am_hal_iom_config_t i2c_config =
@@ -247,6 +265,11 @@ void imu_register_motion_change_callback(motion_change_callback_t callback, bno0
    set_mode(OPERATION_MODE_CONFIG);
    enable_motion_interrupts();
    set_mode(mode);
+}
+
+void imu_register_data_ready_callback(data_ready_callback_t callback){
+   data_ready_callback = callback;
+   enable_data_ready_interrupts();
 }
 
 void imu_set_power_mode(bno055_powermode_t power_mode)
