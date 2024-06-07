@@ -16,6 +16,7 @@ static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES];
 static const uint32_t total_size = 2097158;
 static bool is_reading;
 
+/*
 static void read_page(uint8_t *buffer)
 {
    for (uint16_t i = 0; i < MEMORY_PAGE_SIZE_BYTES; ++i)
@@ -56,7 +57,7 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    }
    return num_bytes_retrieved;
 }
-
+*/
 
 int main(void)
 {
