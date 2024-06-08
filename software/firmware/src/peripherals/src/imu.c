@@ -163,9 +163,19 @@ static void enable_data_ready_interrupts(void)
   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
   uint8_t int_msk = i2c_read8(INT_MSK)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
   uint8_t int_en = i2c_read8(INT_EN)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-  i2c_write8(INT_MSK, int_msk); 
+  i2c_write8(INT_MSK, int_msk);
   i2c_write8(INT_EN, int_en);
   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
+}
+
+static void disable_data_ready_interrupts(void)
+{
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
+   uint8_t int_msk = i2c_read8(INT_MSK) && ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   uint8_t int_en = i2c_read8(INT_EN) && ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   i2c_write8(INT_MSK, int_msk);
+   i2c_write8(INT_EN, int_en);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 // Math helper functions -----------------------------------------------------------------------------------------------
