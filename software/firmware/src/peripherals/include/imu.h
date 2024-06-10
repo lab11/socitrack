@@ -284,9 +284,10 @@ typedef struct
 
 void imu_init(void);
 void imu_deinit(void);
-void imu_register_motion_change_callback(motion_change_callback_t callback, bno055_opmode_t mode);
+void imu_register_motion_change_callback(motion_change_callback_t callback);
 void imu_register_data_ready_callback(data_ready_callback_t callback);
 void imu_set_power_mode(bno055_powermode_t power_mode);
+void imu_set_fusion_mode(bno055_opmode_t fusion_mode);
 void imu_read_accel_data(bno055_acc_t *acc);
 void imu_read_linear_accel_data(bno055_acc_t *acc);
 void imu_read_gravity_accel_data(bno055_acc_t *acc);

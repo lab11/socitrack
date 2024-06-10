@@ -85,7 +85,7 @@ static void imu_isr(void *args)
    const uint8_t interrupt_status = i2c_read8(BNO055_INTR_STAT_ADDR);
    const bool in_motion = interrupt_status & ACC_AM;
 
-   if (in_motion != previously_in_motion)
+   if ((in_motion != previously_in_motion) && motion_change_callback!=NULL)
       motion_change_callback(in_motion);
    previously_in_motion = in_motion;
    if (interrupt_status && (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY))
@@ -108,14 +108,14 @@ static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t
 
 // IMU Chip-Specific API Functions -------------------------------------------------------------------------------------
 
-static void set_mode(bno055_opmode_t mode)
+static void imu_set_op_mode(bno055_opmode_t op_mode)
 {
    // Set the indicated mode and delay to allow it to take effect
-   i2c_write8(BNO055_OPR_MODE_ADDR, mode);
+   i2c_write8(BNO055_OPR_MODE_ADDR, op_mode);
    am_util_delay_ms(30);
 }
 
-static bno055_opmode_t get_mode(void)
+static bno055_opmode_t imu_get_op_mode(void)
 {
    return (bno055_opmode_t)i2c_read8(BNO055_OPR_MODE_ADDR);
 }
@@ -130,7 +130,7 @@ static void set_use_external_crystal(void)
 static void enter_suspend_mode(void)
 {
    // Switch to configuration mode and suspend
-  set_mode(OPERATION_MODE_CONFIG);
+  imu_set_op_mode(OPERATION_MODE_CONFIG);
   i2c_write8(BNO055_PWR_MODE_ADDR, 0x02);
 }
 
@@ -231,7 +231,7 @@ void imu_init(void)
    while (i2c_read8(BNO055_CHIP_ID_ADDR) != BNO055_ID)
       am_util_delay_ms(100);
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
-   set_mode(OPERATION_MODE_CONFIG);
+   imu_set_op_mode(OPERATION_MODE_CONFIG);
 
    // Set up an external crystal and the sensor output units
    set_use_external_crystal();
@@ -268,13 +268,11 @@ void imu_deinit(void)
    am_hal_iom_uninitialize(i2c_handle);
 }
 
-void imu_register_motion_change_callback(motion_change_callback_t callback, bno055_opmode_t mode)
+void imu_register_motion_change_callback(motion_change_callback_t callback)
 {
    // Set up IMU motion-based interrupts
    motion_change_callback = callback;
-   set_mode(OPERATION_MODE_CONFIG);
    enable_motion_interrupts();
-   set_mode(mode);
 }
 
 void imu_register_data_ready_callback(data_ready_callback_t callback){
@@ -282,12 +280,18 @@ void imu_register_data_ready_callback(data_ready_callback_t callback){
    enable_data_ready_interrupts();
 }
 
+void imu_set_fusion_mode(bno055_opmode_t fusion_mode)
+{
+    imu_set_op_mode(OPERATION_MODE_CONFIG);
+    imu_set_op_mode(fusion_mode);
+}
+
 void imu_set_power_mode(bno055_powermode_t power_mode)
 {
-   bno055_opmode_t saved_mode = get_mode();
-   set_mode(OPERATION_MODE_CONFIG);
+   bno055_opmode_t saved_mode = imu_get_op_mode();
+   imu_set_op_mode(OPERATION_MODE_CONFIG);
    i2c_write8(BNO055_PWR_MODE_ADDR, power_mode);
-   set_mode(saved_mode);
+   imu_set_op_mode(saved_mode);
 }
 
 void imu_read_accel_data(bno055_acc_t *acc)
@@ -381,13 +385,13 @@ void imu_read_calibration_status(bno55_calib_status_t *status)
 void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets)
 {
    static int16_t calib_data[11];
-   bno055_opmode_t saved_mode = get_mode();
+   bno055_opmode_t saved_mode = imu_get_op_mode();
    //calibration values are only availble in config mode
-   set_mode(OPERATION_MODE_CONFIG);
+   imu_set_op_mode(OPERATION_MODE_CONFIG);
    //read the 11 offset values
    read_int16_vector(ACCEL_OFFSET_X_LSB_ADDR, calib_data, sizeof(calib_data));
    //revert to the previous mode
-   set_mode(saved_mode);
+   imu_set_op_mode(saved_mode);
 
    offsets->accel_offset_x = calib_data[0];
    offsets->accel_offset_y = calib_data[1];
@@ -423,11 +427,11 @@ bool imu_set_axis_remap(bno055_axis_remap_t remap)
    uint8_t reg_axis_map_config = remap.x_remap_val | (remap.y_remap_val << 2) | (remap.z_remap_val << 4);
    uint8_t reg_axis_map_sign = (remap.x_remap_sign << 2) | (remap.y_remap_sign << 1) | (remap.z_remap_sign);
 
-   bno055_opmode_t saved_mode = get_mode();
-   set_mode(OPERATION_MODE_CONFIG);
+   bno055_opmode_t saved_mode = imu_get_op_mode();
+   imu_set_op_mode(OPERATION_MODE_CONFIG);
    i2c_write8(BNO055_AXIS_MAP_CONFIG_ADDR, reg_axis_map_config);
    i2c_write8(BNO055_AXIS_MAP_SIGN_ADDR, reg_axis_map_sign);
-   set_mode(saved_mode);
+   imu_set_op_mode(saved_mode);
 
    //test whether the set is successful
    bno055_axis_remap_t remap_verification = {0};
