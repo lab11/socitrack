@@ -48,13 +48,13 @@ int main(void)
    //bno055_axis_remap_t remap = {.x_remap_val = 1, .y_remap_val = 0, .z_remap_val = 2};
    bno055_axis_remap_t remap = {0};
 
-   imu_set_fusion_mode(OPERATION_MODE_NDOF);
-   imu_register_motion_change_callback(motion_interrupt);
-   //imu_register_data_ready_callback(read_data);
-   imu_set_power_mode(POWER_MODE_NORMAL);
-
    imu_read_fw_version(&rev_msb, &rev_lsb);
    print("BNO055 firmware version:%x.%x\n",rev_msb, rev_lsb);
+
+   imu_set_fusion_mode(OPERATION_MODE_NDOF);
+   imu_register_motion_change_callback(motion_interrupt);
+   //imu_register_data_ready_callback(NULL);
+   imu_set_power_mode(POWER_MODE_NORMAL);
 
    //imu_read_axis_remap(&remap);
    //if (imu_set_axis_remap(remap)){print("remap success!\n");}

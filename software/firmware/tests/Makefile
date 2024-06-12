@@ -275,6 +275,11 @@ ble_reset: SRC += test_ble_reset.c
 ble_reset: CFLAGS += -D_TEST_BLE_RANGING_TASK -D__USE_FREERTOS__
 ble_reset: $(CONFIG) $(CONFIG)/test_ble_reset.o $(CONFIG)/$$(TARGET).bin program
 
+ble_range_imu: TARGET = TestBleRangingIMU
+ble_range_imu: SRC += test_ble_range_imu.c
+ble_range_imu: CFLAGS += -D_TEST_BLE_RANGING_TASK -D_TEST_IMU_DATA -D__USE_FREERTOS__
+ble_range_imu: $(CONFIG) $(CONFIG)/test_ble_range_imu.o $(CONFIG)/$$(TARGET).bin program
+
 bluetooth: TARGET = TestBluetooth
 bluetooth: SRC += test_bluetooth.c
 bluetooth: CFLAGS += -D_TEST_BLUETOOTH -D__USE_FREERTOS__

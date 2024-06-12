@@ -290,6 +290,13 @@ void AppTaskRanging(void *uid)
    }
 #endif
 
+#ifdef _TEST_IMU_DATA
+   //imu_register_motion_change_callback(motion_change_handler);
+   imu_register_data_ready_callback(NULL);//imu_data_ready_handler
+   imu_set_power_mode(POWER_MODE_NORMAL);
+   imu_set_fusion_mode(OPERATION_MODE_NDOF);
+#endif
+
    // Retrieve current experiment details from non-volatile storage
    static experiment_details_t current_experiment;
    storage_retrieve_experiment_details(&current_experiment);
