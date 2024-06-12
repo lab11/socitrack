@@ -8,6 +8,8 @@ else
 REVISION := M
 endif
 
+NONBLOCKING ?= 0
+
 ifeq ($(REVISION), I)
 BSP = apollo4_blue
 PART = apollo4b
@@ -300,6 +302,7 @@ full: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/$$(TARGET).bin program
 
 imu: TARGET = TestIMU
 imu: SRC += test_imu.c
+imu: CFLAGS += -DNONBLOCKING=$(NONBLOCKING)
 imu: $(CONFIG) $(CONFIG)/test_imu.o $(CONFIG)/$$(TARGET).bin program
 
 led: TARGET = TestLED

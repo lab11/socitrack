@@ -3,16 +3,47 @@
 #include "imu.h"
 #include "math.h"
 #include "system.h"
+#include "logging.h"
 
+uint32_t imuBuffer[2048];
 // Static Global Variables ---------------------------------------------------------------------------------------------
-
+static uint8_t gReadBuffer[26] = {0};
 static void *i2c_handle;
 static volatile bool previously_in_motion;
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
 
+#if NONBLOCKING
+#define imu_iom_isr                                                          \
+    am_iom_isr1(IMU_I2C_NUMBER)
+#define am_iom_isr1(n)                                                        \
+    am_iom_isr(n)
+#define am_iom_isr(n)                                                         \
+    am_iomaster ## n ## _isr
+#define IMU_IOM_IRQn           ((IRQn_Type)(IOMSTR0_IRQn + IMU_I2C_NUMBER))
 
+void imu_iom_isr(void)
+{
+    uint32_t ui32Status;
+
+    if (!am_hal_iom_interrupt_status_get(i2c_handle, true, &ui32Status))
+    {
+        if ( ui32Status )
+        {
+            am_hal_iom_interrupt_clear(i2c_handle, ui32Status);
+            am_hal_iom_interrupt_service(i2c_handle, ui32Status);
+        }
+    }
+}
+#endif
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static void nonblocking_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
+{
+   print("nonblocking read complete\n");
+
+}
+
 
 static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
 {
@@ -79,8 +110,36 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
    while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
 }
 
+static uint8_t i2c_nonblocking_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_length)
+{
+   am_hal_iom_transfer_t read_transaction = {
+      .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
+      .ui32InstrLen                 = 1,
+      .ui64Instr                    = reg_number,
+      .eDirection                   = AM_HAL_IOM_RX,
+      .ui32NumBytes                 = buffer_length,
+      .pui32TxBuffer                = NULL,
+      .pui32RxBuffer                = (uint32_t*)read_buffer,
+      .bContinue                    = false,
+      .ui8RepeatCount               = 0,
+      .ui8Priority                  = 1,
+      .ui32PauseCondition           = 0,
+      .ui32StatusSetClr             = 0
+   };
+   uint32_t status = am_hal_iom_nonblocking_transfer(i2c_handle, &read_transaction, nonblocking_read_complete, NULL);
+   if (status!=AM_HAL_STATUS_SUCCESS)
+   {
+       return status;
+   }
+   return AM_HAL_STATUS_SUCCESS;
+}
+
 static void imu_isr(void *args)
 {
+#if NONBLOCKING
+   //read useful data in one go
+   i2c_nonblocking_read(0X20, gReadBuffer, 26);
+#else
    // Read the device motion status and trigger the registered callback
    const uint8_t interrupt_status = i2c_read8(BNO055_INTR_STAT_ADDR);
    const bool in_motion = interrupt_status & ACC_AM;
@@ -88,12 +147,13 @@ static void imu_isr(void *args)
    if ((in_motion != previously_in_motion) && motion_change_callback!=NULL)
       motion_change_callback(in_motion);
    previously_in_motion = in_motion;
-   if (interrupt_status && (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY))
+   if (interrupt_status & (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY))
    {
       if (data_ready_callback!=NULL)
          data_ready_callback(interrupt_status);
    }
    i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);//reset all interrupt status bits, and INT output
+#endif
 }
 
 static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
@@ -171,8 +231,8 @@ static void enable_data_ready_interrupts(void)
 static void disable_data_ready_interrupts(void)
 {
    i2c_write8(BNO055_PAGE_ID_ADDR, 1);
-   uint8_t int_msk = i2c_read8(INT_MSK) && ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-   uint8_t int_en = i2c_read8(INT_EN) && ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   uint8_t int_msk = i2c_read8(INT_MSK) & ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   uint8_t int_en = i2c_read8(INT_EN) & ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
    i2c_write8(INT_MSK, int_msk);
    i2c_write8(INT_EN, int_en);
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
@@ -206,8 +266,13 @@ void imu_init(void)
       .eInterfaceMode = AM_HAL_IOM_I2C_MODE,
       .ui32ClockFreq = AM_HAL_IOM_100KHZ,
       .eSpiMode = 0,
+#if NONBLOCKING
+      .pNBTxnBuf = &imuBuffer[0],
+      .ui32NBTxnBufLength = sizeof(imuBuffer) / 4
+#else
       .pNBTxnBuf = NULL,
       .ui32NBTxnBufLength = 0
+#endif
    };
 
    // Configure and assert the RESET pin
@@ -249,6 +314,11 @@ void imu_init(void)
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_IMU_INTERRUPT, imu_isr, NULL));
    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
+
+#if NONBLOCKING
+   NVIC_SetPriority(IMU_IOM_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
+   NVIC_EnableIRQ(IMU_IOM_IRQn);
+#endif
 }
 
 void imu_deinit(void)
