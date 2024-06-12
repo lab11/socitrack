@@ -11,8 +11,16 @@
 
 #define BNO055_ID 0xA0
 
+// For burst data transfer
+#define BURST_READ_BASE_ADDR BNO055_GYRO_DATA_X_LSB_ADDR
+#define BURST_READ_LEN 38
+
 typedef void (*motion_change_callback_t)(bool in_motion);
+#if NONBLOCKING
+typedef void (*data_ready_callback_t)(uint8_t *localBuffer);
+#else
 typedef void (*data_ready_callback_t)(uint8_t interrupt_status);
+#endif
 
 typedef enum
 {

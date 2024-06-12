@@ -7,13 +7,14 @@
 
 uint32_t imuBuffer[2048];
 // Static Global Variables ---------------------------------------------------------------------------------------------
-static uint8_t gReadBuffer[26] = {0};
 static void *i2c_handle;
 static volatile bool previously_in_motion;
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
 
 #if NONBLOCKING
+static uint8_t gReadBuffer[BURST_READ_LEN] = {0};
+
 #define imu_iom_isr                                                          \
     am_iom_isr1(IMU_I2C_NUMBER)
 #define am_iom_isr1(n)                                                        \
@@ -35,14 +36,20 @@ void imu_iom_isr(void)
         }
     }
 }
-#endif
-// Private Helper Functions --------------------------------------------------------------------------------------------
 
 static void nonblocking_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
 {
-   print("nonblocking read complete\n");
+   uint8_t localBuffer[BURST_READ_LEN] = {0};
 
+   AM_CRITICAL_BEGIN
+   memcpy(localBuffer, gReadBuffer, BURST_READ_LEN);
+   memset(gReadBuffer, 0, BURST_READ_LEN);
+   AM_CRITICAL_END
+   data_ready_callback(localBuffer);
 }
+
+#endif
+// Private Helper Functions --------------------------------------------------------------------------------------------
 
 
 static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
@@ -110,6 +117,7 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
    while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
 }
 
+#if NONBLOCKING
 static uint8_t i2c_nonblocking_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_length)
 {
    am_hal_iom_transfer_t read_transaction = {
@@ -133,12 +141,13 @@ static uint8_t i2c_nonblocking_read(uint8_t reg_number, uint8_t *read_buffer, ui
    }
    return AM_HAL_STATUS_SUCCESS;
 }
+#endif
 
 static void imu_isr(void *args)
 {
 #if NONBLOCKING
    //read useful data in one go
-   i2c_nonblocking_read(0X20, gReadBuffer, 26);
+   i2c_nonblocking_read(BURST_READ_BASE_ADDR, gReadBuffer, BURST_READ_LEN);
 #else
    // Read the device motion status and trigger the registered callback
    const uint8_t interrupt_status = i2c_read8(BNO055_INTR_STAT_ADDR);
