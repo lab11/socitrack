@@ -2,6 +2,9 @@
 #include "rtc.h"
 #include "system.h"
 
+int device_start_time;
+uint32_t get_experiment_time(int32_t offset) { return (uint32_t)(rtc_get_timestamp_diff_ms(device_start_time) + offset); }
+
 int main(void)
 {
    // Set up system hardware
@@ -11,12 +14,13 @@ int main(void)
    rtc_set_time_to_compile_time();
    int i = 0;
 #endif
-
+   device_start_time = rtc_get_timestamp();
    // Output timestamp every second
    while (true)
    {
       uint32_t timestamp = rtc_get_timestamp();
-      print("Current Timestamp: %u\n", timestamp);
+	  uint32_t diff = get_experiment_time(0);
+      print("Current Timestamp: %u Time Diff in milliseconds: %u\n", timestamp, diff);
 #ifdef SET_RTC
       if (i++ == 15)
       {
