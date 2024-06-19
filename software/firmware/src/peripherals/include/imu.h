@@ -309,6 +309,7 @@ void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_set_axis_remap(bno055_axis_remap_t remap);
 void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
+void imu_read_burst_buffer(uint8_t *destBuffer);
 
 // Math utilities
 void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler);

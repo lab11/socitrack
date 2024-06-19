@@ -38,9 +38,9 @@ static void read_data(uint8_t interrupt_status)
 }
 
 static void handle_burst_data(uint8_t *localBuffer){
-    int16_t read_buffer[BURST_READ_SIZE/2] = {0};
+    int16_t read_buffer[BURST_READ_LEN/2] = {0};
 
-    for (uint32_t i = 0; i < BURST_READ_SIZE/2; i++)
+    for (uint32_t i = 0; i < BURST_READ_LEN/2; i++)
     {
        read_buffer[i] = ((int16_t)localBuffer[i*2]) | (((int16_t)localBuffer[i*2+1]) << 8);
     }

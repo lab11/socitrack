@@ -192,6 +192,11 @@ static void motion_change_handler(bool in_motion)
    app_notify(APP_NOTIFY_MOTION_EVENT, true);
 }
 
+static void imu_burst_data_handler(uint8_t *localBuffer)
+{
+   //TODO
+}
+
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
 {
    // Keep track of all newly discovered non-sleeping devices
@@ -292,7 +297,7 @@ void AppTaskRanging(void *uid)
 
 #ifdef _TEST_IMU_DATA
    //imu_register_motion_change_callback(motion_change_handler);
-   imu_register_data_ready_callback(NULL);//imu_data_ready_handler
+   imu_register_data_ready_callback(imu_burst_data_handler);
    imu_set_power_mode(POWER_MODE_NORMAL);
    imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #endif

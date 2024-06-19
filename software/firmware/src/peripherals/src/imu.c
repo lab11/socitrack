@@ -40,11 +40,7 @@ void imu_iom_isr(void)
 static void nonblocking_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
 {
    uint8_t localBuffer[BURST_READ_LEN] = {0};
-
-   AM_CRITICAL_BEGIN
-   memcpy(localBuffer, gReadBuffer, BURST_READ_LEN);
-   memset(gReadBuffer, 0, BURST_READ_LEN);
-   AM_CRITICAL_END
+   imu_read_burst_buffer(localBuffer);
    data_ready_callback(localBuffer);
 }
 
@@ -527,3 +523,13 @@ bool imu_read_in_motion(void)
 {
    return previously_in_motion;
 }
+
+#if NONBLOCKING
+void imu_read_burst_buffer(uint8_t *destBuffer)
+{
+    AM_CRITICAL_BEGIN
+    memcpy(destBuffer, gReadBuffer, BURST_READ_LEN);
+    memset(gReadBuffer, 0, BURST_READ_LEN);
+    AM_CRITICAL_END
+}
+#endif

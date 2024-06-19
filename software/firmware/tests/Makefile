@@ -279,7 +279,7 @@ ble_reset: $(CONFIG) $(CONFIG)/test_ble_reset.o $(CONFIG)/$$(TARGET).bin program
 
 ble_range_imu: TARGET = TestBleRangingIMU
 ble_range_imu: SRC += test_ble_range_imu.c
-ble_range_imu: CFLAGS += -D_TEST_BLE_RANGING_TASK -D_TEST_IMU_DATA -D__USE_FREERTOS__
+ble_range_imu: CFLAGS += -D_TEST_BLE_RANGING_TASK -D_TEST_IMU_DATA -D__USE_FREERTOS__ -DNONBLOCKING=$(NONBLOCKING)
 ble_range_imu: $(CONFIG) $(CONFIG)/test_ble_range_imu.o $(CONFIG)/$$(TARGET).bin program
 
 bluetooth: TARGET = TestBluetooth
