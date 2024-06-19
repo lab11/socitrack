@@ -32,6 +32,7 @@ static uint32_t findMyTottagDuration = 0;
 static const uint16_t findMyTottagDurationLen = sizeof(findMyTottagDuration);
 static const uint8_t findMyTottagDesc[] = "FindMyTottagRequest";
 static const uint16_t findMyTottagDescLen = sizeof(findMyTottagDesc);
+
 static const uint8_t rangingChUuid[] = { BLE_LIVE_STATS_RANGING_CHAR };
 static const uint8_t rangesChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(RANGES_HANDLE), BLE_LIVE_STATS_RANGING_CHAR };
 static const uint16_t rangesCharLen = sizeof(rangesChar);
@@ -41,6 +42,16 @@ static const uint8_t rangesDesc[] = "LiveRangingResults";
 static const uint16_t rangesDescLen = sizeof(rangesDesc);
 static uint8_t rangesCcc[] = { UINT16_TO_BYTES(0x0000) };
 static const uint16_t rangesCccLen = sizeof(rangesCcc);
+
+static const uint8_t imuDataChUuid[] = { BLE_LIVE_STATS_IMU_DATA_CHAR };
+static const uint8_t imuDataChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(IMU_DATA_HANDLE), BLE_LIVE_STATS_IMU_DATA_CHAR };
+static const uint16_t imuDataCharLen = sizeof(imuDataChar);
+static uint8_t imuData[40] = { 0 };
+static const uint16_t imuDataLen = sizeof(imuData);
+static const uint8_t imuDataDesc[] = "LiveIMUData";
+static const uint16_t imuDataDescLen = sizeof(imuDataDesc);
+static uint8_t imuDataCcc[] = { UINT16_TO_BYTES(0x0001) };
+static const uint16_t imuDataCccLen = sizeof(imuDataCcc);
 
 static const attsAttr_t liveStatsList[] =
 {
@@ -153,6 +164,38 @@ static const attsAttr_t liveStatsList[] =
       (uint8_t*)rangesCcc,
       (uint16_t*)&rangesCccLen,
       sizeof(rangesCcc),
+      ATTS_SET_CCC,
+      (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
+   },
+   {
+      attChUuid,
+      (uint8_t*)imuDataChar,
+      (uint16_t*)&imuDataCharLen,
+      sizeof(imuDataChar),
+      0,
+      ATTS_PERMIT_READ
+   },
+   {
+      imuDataChUuid,
+      (uint8_t*)imuData,
+      (uint16_t*)&imuDataLen,
+      sizeof(imuData),
+      (ATTS_SET_UUID_128 | ATTS_SET_VARIABLE_LEN),
+      0
+   },
+   {
+      attChUserDescUuid,
+      (uint8_t*)imuDataDesc,
+      (uint16_t*)&imuDataDescLen,
+      sizeof(imuDataDesc),
+      0,
+      ATTS_PERMIT_READ
+   },
+   {
+      attCliChCfgUuid,
+      (uint8_t*)imuDataCcc,
+      (uint16_t*)&imuDataCccLen,
+      sizeof(imuDataCcc),
       ATTS_SET_CCC,
       (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
    }

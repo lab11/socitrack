@@ -33,5 +33,6 @@ bool bluetooth_is_scanning(void);
 bool bluetooth_is_connected(void);
 void bluetooth_clear_whitelist(void);
 void bluetooth_add_device_to_whitelist(uint8_t* uid);
+void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length);
 
 #endif  // #ifndef __BLUETOOTH_HEADER_H__

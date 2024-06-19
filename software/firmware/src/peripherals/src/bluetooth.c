@@ -17,7 +17,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static volatile uint16_t connection_mtu;
-static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, data_requested;
+static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, data_requested, imu_data_requested;
 static volatile bool expected_scanning, expected_advertising, is_initialized, first_initialization;
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
@@ -58,6 +58,7 @@ enum
 {
    TOTTAG_GATT_SERVICE_CHANGED_CCC_IDX,
    TOTTAG_RANGING_CCC_IDX,
+   TOTTAG_IMU_DATA_CCC_IDX,
    TOTTAG_MAINTENANCE_RESULT_CCC_IDX,
    TOTTAG_NUM_CCC_CHARACTERISTICS
 };
@@ -66,6 +67,7 @@ static const attsCccSet_t characteristicSet[TOTTAG_NUM_CCC_CHARACTERISTICS] =
 {
    { GATT_SERVICE_CHANGED_CCC_HANDLE,  ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE },
    { RANGES_CCC_HANDLE,                  ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
+   { IMU_DATA_CCC_HANDLE,                ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
    { MAINTENANCE_RESULT_CCC_HANDLE,    ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE }
 };
 
@@ -140,7 +142,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          break;
       case DM_CONN_CLOSE_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_CLOSE_IND\n");
-         is_connected = ranges_requested = data_requested = false;
+         is_connected = ranges_requested = data_requested = imu_data_requested = false;
          AttsCccClearTable(pDmEvt->hdr.param);
          bluetooth_start_advertising();
          break;
@@ -225,6 +227,8 @@ static void cccCallback(attsCccEvt_t *pEvt)
    print("TotTag BLE: cccCallback: index = %d, handle = %d, value = %d\n", pEvt->idx, pEvt->handle, pEvt->value);
    if (pEvt->idx == TOTTAG_RANGING_CCC_IDX)
       ranges_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
+   else if (pEvt->idx == TOTTAG_IMU_DATA_CCC_IDX)
+      imu_data_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
    else if (pEvt->idx == TOTTAG_MAINTENANCE_RESULT_CCC_IDX)
       data_requested = (pEvt->value == ATT_CLIENT_CFG_INDICATE);
 }
@@ -238,7 +242,7 @@ void bluetooth_init(uint8_t* uid)
    const uint8_t ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
    memcpy((uint8_t*)current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
-   is_scanning = is_advertising = is_connected = ranges_requested = false;
+   is_scanning = is_advertising = is_connected = ranges_requested = imu_data_requested = false;
    first_initialization = true;
    discovery_callback = NULL;
 
@@ -369,6 +373,12 @@ void bluetooth_write_range_results(const uint8_t *results, uint16_t results_leng
    // Update the current set of ranging data
    if (ranges_requested)
       updateRangeResults(AppConnIsOpen(), results, results_length);
+}
+
+void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length){
+   //TODO
+   if (imu_data_requested)
+      updateIMUData(AppConnIsOpen(), results, results_length);
 }
 
 void bluetooth_start_advertising(void)
