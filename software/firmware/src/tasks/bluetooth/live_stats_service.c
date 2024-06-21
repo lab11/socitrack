@@ -33,6 +33,16 @@ static const uint16_t findMyTottagDurationLen = sizeof(findMyTottagDuration);
 static const uint8_t findMyTottagDesc[] = "FindMyTottagRequest";
 static const uint16_t findMyTottagDescLen = sizeof(findMyTottagDesc);
 
+#ifdef _REMOTE_MODE_SWITCH_ENABLED
+static const uint8_t modeSwitchChUuid[] = { BLE_MODE_SWITCH_CHAR };
+static const uint8_t modeSwitchChar[] = { ATT_PROP_WRITE, UINT16_TO_BYTES(APP_MODE_SWITCH_HANDLE), BLE_MODE_SWITCH_CHAR };
+static const uint16_t modeSwitchCharLen = sizeof(modeSwitchChar);
+static uint32_t operationMode = 0;
+static const uint16_t operationModeLen = sizeof(operationMode);
+static const uint8_t modeSwitchDesc[] = "AppModeSwitch";
+static const uint16_t modeSwitchDescLen = sizeof(modeSwitchDesc);
+#endif
+
 static const uint8_t rangingChUuid[] = { BLE_LIVE_STATS_RANGING_CHAR };
 static const uint8_t rangesChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(RANGES_HANDLE), BLE_LIVE_STATS_RANGING_CHAR };
 static const uint16_t rangesCharLen = sizeof(rangesChar);
@@ -137,6 +147,32 @@ static const attsAttr_t liveStatsList[] =
       0,
       ATTS_PERMIT_READ
    },
+#ifdef _REMOTE_MODE_SWITCH_ENABLED
+   {
+      attChUuid,
+      (uint8_t*)modeSwitchChar,
+      (uint16_t*)&modeSwitchCharLen,
+      sizeof(modeSwitchChar),
+      0,
+      ATTS_PERMIT_READ
+   },
+   {
+      modeSwitchChUuid,
+      (uint8_t*)&operationMode,
+      (uint16_t*)&operationModeLen,
+      sizeof(operationMode),
+      (ATTS_SET_UUID_128 | ATTS_SET_WRITE_CBACK),
+      ATTS_PERMIT_WRITE
+   },
+   {
+      attChUserDescUuid,
+      (uint8_t*)modeSwitchDesc,
+      (uint16_t*)&modeSwitchDescLen,
+      sizeof(modeSwitchDesc),
+      0,
+      ATTS_PERMIT_READ
+   },
+#endif
    {
       attChUuid,
       (uint8_t*)rangesChar,

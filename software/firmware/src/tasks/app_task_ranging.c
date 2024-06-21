@@ -268,6 +268,16 @@ void app_activate_find_my_tottag(uint32_t seconds_to_activate)
       app_maintenance_activate_find_my_tottag(seconds_to_activate);
 }
 
+void app_switch_mode(uint8_t command)
+{
+   if (command==1)
+   {  //enable data downloading from ranging mode
+      //disable storage writing
+      storage_disable(true);
+      storage_enter_maintenance_mode();
+   }
+}
+
 void AppTaskRanging(void *uid)
 {
    // Store the UID and application task handle

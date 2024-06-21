@@ -15,6 +15,11 @@ enum
    FIND_MY_TOTTAG_CHAR_HANDLE,              // FindMyTottag characteristic
    FIND_MY_TOTTAG_HANDLE,                   // FindMyTottag value
    FIND_MY_TOTTAG_DESC_HANDLE,              // FindMyTottag description
+#ifdef _REMOTE_MODE_SWITCH_ENABLED
+   APP_MODE_SWITCH_CHAR_HANDLE,             // Mode switch characteristic
+   APP_MODE_SWITCH_HANDLE,                  // Mode switch  value
+   APP_MODE_SWITCH_DESC_HANDLE,             // Mode switch  description
+#endif
    RANGES_CHAR_HANDLE,                      // Current ranges characteristic
    RANGES_HANDLE,                           // Current ranges
    RANGES_DESC_HANDLE,                      // Current ranges description
