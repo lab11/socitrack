@@ -167,6 +167,7 @@ static const attsAttr_t liveStatsList[] =
       ATTS_SET_CCC,
       (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
    },
+#ifdef _LIVE_IMU_DATA
    {
       attChUuid,
       (uint8_t*)imuDataChar,
@@ -198,7 +199,8 @@ static const attsAttr_t liveStatsList[] =
       sizeof(imuDataCcc),
       ATTS_SET_CCC,
       (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
-   }
+   },
+#endif
 };
 
 static attsGroup_t liveStatsGroup = { 0, (attsAttr_t*)liveStatsList, NULL, NULL, LIVE_STATS_SERVICE_HANDLE, LIVE_STATS_MAX_HANDLE-1 };
