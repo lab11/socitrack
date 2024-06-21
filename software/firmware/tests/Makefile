@@ -269,17 +269,17 @@ battery: $(CONFIG) $(CONFIG)/test_battery.o $(CONFIG)/$$(TARGET).bin program
 
 ble_and_range: TARGET = TestBleAndRanging
 ble_and_range: SRC += test_ble_and_ranging.c
-ble_and_range: CFLAGS += -D_TEST_BLE_RANGING_TASK -D__USE_FREERTOS__
+ble_and_range: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D__USE_FREERTOS__
 ble_and_range: $(CONFIG) $(CONFIG)/test_ble_and_ranging.o $(CONFIG)/$$(TARGET).bin program
 
 ble_reset: TARGET = TestBleReset
 ble_reset: SRC += test_ble_reset.c
-ble_reset: CFLAGS += -D_TEST_BLE_RANGING_TASK -D__USE_FREERTOS__
+ble_reset: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D__USE_FREERTOS__
 ble_reset: $(CONFIG) $(CONFIG)/test_ble_reset.o $(CONFIG)/$$(TARGET).bin program
 
 ble_range_imu: TARGET = TestBleRangingIMU
 ble_range_imu: SRC += test_ble_range_imu.c
-ble_range_imu: CFLAGS += -D_TEST_BLE_RANGING_TASK -D_TEST_IMU_DATA -D__USE_FREERTOS__ -DNONBLOCKING=$(NONBLOCKING) -D_LIVE_IMU_DATA
+ble_range_imu: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D_TEST_IMU_DATA -D__USE_FREERTOS__ -DNONBLOCKING=$(NONBLOCKING) -D_LIVE_IMU_DATA
 ble_range_imu: $(CONFIG) $(CONFIG)/test_ble_range_imu.o $(CONFIG)/$$(TARGET).bin program
 
 bluetooth: TARGET = TestBluetooth

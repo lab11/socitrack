@@ -464,7 +464,7 @@ void bluetooth_clear_whitelist(void)
 
 void bluetooth_add_device_to_whitelist(uint8_t* uid)
 {
-#ifndef _TEST_BLE_RANGING_TASK
+#ifndef _TEST_NO_EXP_DETAILS
    // Add the specified device to the whitelist
    DmDevWhiteListAdd(DM_ADDR_PUBLIC, uid);
    //DmDevSetFilterPolicy(DM_FILT_POLICY_MODE_ADV, HCI_ADV_FILT_CONN);

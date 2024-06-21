@@ -102,7 +102,7 @@ void run_tasks(void)
    // Create tasks with the following priority order:
    //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask
    xTaskCreateStatic(StorageTask, "StorageTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 5, storage_task_stack, &storage_task_tcb);
-#if !defined(_TEST_BLE_RANGING_TASK)
+#if !defined(_TEST_NO_EXP_DETAILS)
    xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? &scheduled_experiment : NULL, 4, ranging_task_stack, &ranging_task_tcb);
 #else 
    xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);

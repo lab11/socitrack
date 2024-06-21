@@ -22,7 +22,7 @@ static QueueHandle_t storage_queue;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
+#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
 static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_mV)
 {
@@ -94,7 +94,7 @@ void storage_write_battery_level(uint32_t battery_voltage_mV) {}
 void storage_write_motion_status(bool in_motion) {}
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
 
-#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
+#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
 void StorageTask(void *params)
 {
@@ -112,7 +112,7 @@ void StorageTask(void *params)
    // Loop forever, waiting until storage events are received
    while (true)
       if (xQueueReceive(storage_queue, &item, portMAX_DELAY) == pdPASS)
-#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_BLE_RANGING_TASK)
+#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_NO_STORAGE)
          if (item.type == STORAGE_TYPE_SHUTDOWN)
             system_reset(true);
 #else

@@ -196,7 +196,7 @@ static void imu_burst_data_handler(uint8_t *localBuffer)
 {
    //TODO
 #ifdef _LIVE_IMU_DATA
-   //bluetooth_write_imu_data(localBuffer, 38);
+   bluetooth_write_imu_data(localBuffer, 38);
 #endif
 }
 
@@ -286,7 +286,7 @@ void AppTaskRanging(void *uid)
 
    // Register handlers for motion detection, battery status changes, and BLE events
    bluetooth_register_discovery_callback(ble_discovery_handler);
-#ifndef _TEST_BLE_RANGING_TASK
+#if !defined(_TEST_NO_STORAGE) && !defined(_TEST_NO_EXP_DETAILS)
    if (battery_monitor_is_plugged_in())
       storage_flush_and_shutdown();
    else

@@ -20,7 +20,7 @@ static bool is_master_scheduler;
 
 static bool is_valid_device(uint8_t device_uid)
 {
-#if !defined(_TEST_BLE_RANGING_TASK)
+#if !defined(_TEST_NO_EXP_DETAILS)
    // Search through the list of active deployment devices for a match
    for (int i = 0; i < num_valid_devices; ++i)
       if (valid_devices[i] == device_uid)
