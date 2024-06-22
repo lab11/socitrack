@@ -296,16 +296,19 @@ void AppTaskRanging(void *uid)
 
    // Register handlers for motion detection, battery status changes, and BLE events
    bluetooth_register_discovery_callback(ble_discovery_handler);
-#if !defined(_TEST_NO_STORAGE) && !defined(_TEST_NO_EXP_DETAILS)
+#ifndef _TEST_NO_BATTERY_CALLBACK
    if (battery_monitor_is_plugged_in())
       storage_flush_and_shutdown();
    else
    {
-      storage_write_motion_status(imu_read_in_motion());
       battery_register_event_callback(battery_event_handler);
-      imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
-      imu_register_motion_change_callback(motion_change_handler);
    }
+#endif
+
+#if !defined(_TEST_NO_STORAGE) && !defined(_TEST_NO_EXP_DETAILS)
+   storage_write_motion_status(imu_read_in_motion());
+   imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
+   imu_register_motion_change_callback(motion_change_handler);
 #endif
 
 #ifdef _TEST_IMU_DATA
