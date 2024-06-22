@@ -14,6 +14,7 @@ import tkinter as tk
 import tkcalendar
 import threading
 import asyncio
+import argparse
 
 
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ import asyncio
 DEVICE_ID_UUID = '00002a23-0000-1000-8000-00805f9b34fb'
 LOCATION_SERVICE_UUID = 'd68c3156-a23f-ee90-0c45-5231395e5d2e'
 FIND_MY_TOTTAG_SERVICE_UUID = 'd68c3155-a23f-ee90-0c45-5231395e5d2e'
+MODE_SWITCH_UUID = 'd68c3164-a23f-ee90-0c45-5231395e5d2e'
 TIMESTAMP_SERVICE_UUID = 'd68c3154-a23f-ee90-0c45-5231395e5d2e'
 VOLTAGE_SERVICE_UUID = 'd68c3153-a23f-ee90-0c45-5231395e5d2e'
 EXPERIMENT_SERVICE_UUID = 'd68c3161-a23f-ee90-0c45-5231395e5d2e'
@@ -191,7 +193,9 @@ class TotTagBLE(threading.Thread):
                           'GET_EXPERIMENT': self.retrieve_experiment,
                           'DELETE_EXPERIMENT': self.delete_experiment,
                           'DOWNLOAD': self.download_logs,
-                          'DOWNLOAD_DONE': self.download_logs_done }
+                          'DOWNLOAD_DONE': self.download_logs_done,
+                          'ENABLE_STORAGE_MAINTENANCE': self.enable_storage_maintenance,
+                      }
       self.storage_directory = get_download_directory()
       self.subscribed_to_notifications = False
       self.downloading_log_file = False
@@ -300,6 +304,15 @@ class TotTagBLE(threading.Thread):
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to activate FindMyTotTag')))
 
+   async def enable_storage_maintenance(self):
+      self.result_queue.put_nowait(('SWITCHING', True))
+      try:
+         await self.connected_device.write_gatt_char(MODE_SWITCH_UUID, struct.pack('<I', 1), True)
+         self.result_queue.put_nowait(('SWITCHING', False))
+      except Exception:
+         traceback.print_exc()
+         self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to enable storage maintenance')))
+
    async def retrieve_timestamp(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
@@ -400,7 +413,7 @@ class TotTagBLE(threading.Thread):
 
 class TotTagGUI(tk.Frame):
 
-   def __init__(self):
+   def __init__(self, mode_switch_visibility=False):
 
       # Set up the root application window
       super().__init__(None)
@@ -460,6 +473,9 @@ class TotTagGUI(tk.Frame):
       ttk.Button(self.operations_bar, text="Get Scheduled Deployment Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'GET_EXPERIMENT'), state=['disabled']).grid(row=6, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Cancel Scheduled Pilot Deployment", command=self._delete_experiment, state=['disabled']).grid(row=7, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled']).grid(row=8, sticky=tk.W+tk.E)
+      if mode_switch_visibility:
+          self.switch_button = ttk.Button(self.operations_bar, text="Mode Switch", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'ENABLE_STORAGE_MAINTENANCE'), state=['disabled'])
+          self.switch_button.grid(row=9)
 
       # Create the workspace canvas
       self.canvas = tk.Frame(self)
@@ -798,6 +814,12 @@ class TotTagGUI(tk.Frame):
                tk.Label(self.canvas, text="Carrying out the selected operation. Please wait...").pack(fill=tk.BOTH, expand=True)
             else:
                tk.Label(self.canvas, text="Operation complete!").pack(fill=tk.BOTH, expand=True)
+         elif key == 'SWITCHING':
+             self._clear_canvas()
+             if data:
+                tk.Label(self.canvas, text="Carrying out the selected operation. Please wait...").pack(fill=tk.BOTH, expand=True)
+             else:
+                tk.Label(self.canvas, text="Operation complete!").pack(fill=tk.BOTH, expand=True)
          elif key == 'TIMESTAMP':
             self._clear_canvas()
             date_string_utc, time_string_utc, _ = unpack_datetime('UTC', None, data)
@@ -863,10 +885,12 @@ class TotTagGUI(tk.Frame):
 
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
-
-def main():
-   gui = TotTagGUI()
+def main(s):
+   gui = TotTagGUI(mode_switch_visibility=s)
    gui.mainloop()
 
 if __name__ == "__main__":
-   main()
+   parser = argparse.ArgumentParser(description="Parser for command line options")
+   parser.add_argument('-s', action='store_true', help='With the -s flag, the mode switch will be visible')
+   args = parser.parse_args()
+   main(args.s)
