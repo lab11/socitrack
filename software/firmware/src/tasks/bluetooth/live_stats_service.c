@@ -43,6 +43,7 @@ static const uint16_t rangesDescLen = sizeof(rangesDesc);
 static uint8_t rangesCcc[] = { UINT16_TO_BYTES(0x0000) };
 static const uint16_t rangesCccLen = sizeof(rangesCcc);
 
+#ifdef _LIVE_IMU_DATA
 static const uint8_t imuDataChUuid[] = { BLE_LIVE_STATS_IMU_DATA_CHAR };
 static const uint8_t imuDataChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(IMU_DATA_HANDLE), BLE_LIVE_STATS_IMU_DATA_CHAR };
 static const uint16_t imuDataCharLen = sizeof(imuDataChar);
@@ -52,6 +53,7 @@ static const uint8_t imuDataDesc[] = "LiveIMUData";
 static const uint16_t imuDataDescLen = sizeof(imuDataDesc);
 static uint8_t imuDataCcc[] = { UINT16_TO_BYTES(0x0001) };
 static const uint16_t imuDataCccLen = sizeof(imuDataCcc);
+#endif
 
 static const attsAttr_t liveStatsList[] =
 {

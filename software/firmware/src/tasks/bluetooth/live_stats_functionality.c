@@ -39,9 +39,12 @@ void updateRangeResults(dmConnId_t connId, const uint8_t *results, uint16_t resu
       AttsHandleValueNtf(connId, RANGES_HANDLE, results_length, (uint8_t*)results);
 }
 
+
 void updateIMUData(dmConnId_t connId, const uint8_t *results, uint16_t results_length)
 {
+#ifdef _LIVE_IMU_DATA
    // Update the imu data characteristic
    if (connId != DM_CONN_ID_NONE)
       AttsHandleValueNtf(connId, IMU_DATA_HANDLE, results_length, (uint8_t*)results);
+#endif
 }
