@@ -305,7 +305,7 @@ void AppTaskRanging(void *uid)
    }
 #endif
 
-#if !defined(_TEST_NO_STORAGE) && !defined(_TEST_NO_EXP_DETAILS)
+#if !defined(_TEST_NO_STORAGE) && !defined(_TEST_IMU_DATA)
    storage_write_motion_status(imu_read_in_motion());
    imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
    imu_register_motion_change_callback(motion_change_handler);
