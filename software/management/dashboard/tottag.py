@@ -471,7 +471,8 @@ class TotTagGUI(tk.Frame):
       self.schedule_button = ttk.Button(self.operations_bar, text="Schedule New Pilot Deployment", command=self._create_new_experiment, state=['disabled'])
       self.schedule_button.grid(row=5, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Get Scheduled Deployment Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'GET_EXPERIMENT'), state=['disabled']).grid(row=6, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Cancel Scheduled Pilot Deployment", command=self._delete_experiment, state=['disabled']).grid(row=7, sticky=tk.W+tk.E)
+      self.cancel_button = ttk.Button(self.operations_bar, text="Cancel Scheduled Pilot Deployment", command=self._delete_experiment, state=['disabled'])
+      self.cancel_button.grid(row=7, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled']).grid(row=8, sticky=tk.W+tk.E)
       if mode_switch_visibility:
           self.switch_button = ttk.Button(self.operations_bar, text="Mode Switch", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'ENABLE_STORAGE_MAINTENANCE'), state=['disabled'])
@@ -794,6 +795,8 @@ class TotTagGUI(tk.Frame):
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
                   item.configure(state=['enabled'])
+            self.schedule_button['text'] = 'Update Deployment On Current Device'
+            self.cancel_button['text'] = 'Cancel Deployment On Current Device'
             self._clear_canvas_with_prompt()
          elif key == 'DISCONNECTED':
             self._clear_canvas()
@@ -802,6 +805,8 @@ class TotTagGUI(tk.Frame):
             self.connect_button['command'] = self._connect
             self.connect_button['state'] = ['enabled']
             self.connect_button['text'] = 'Connect'
+            self.schedule_button['text'] = 'Schedule New Pilot Deployment'
+            self.cancel_button['text'] = 'Cancel Scheduled Pilot Deployment'
             self.tottag_selection.set(self.device_list[0])
             for item in self.operations_bar.winfo_children():
                if isinstance(item, ttk.Button):
