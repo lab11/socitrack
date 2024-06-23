@@ -595,6 +595,10 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
 
 void storage_begin_reading(uint32_t starting_timestamp)
 {
+#ifdef _DOWNLOAD_EVERYTHING
+   reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
+   is_reading = in_maintenance_mode;
+#else
    // Update the data reading details
    experiment_details_t details;
    storage_retrieve_experiment_details(&details);
@@ -629,6 +633,7 @@ void storage_begin_reading(uint32_t starting_timestamp)
          if (!found_valid_timestamp)
             reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
       }
+#endif
 }
 
 void storage_end_reading(void)
@@ -657,7 +662,9 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
    // Ensure that we are in reading mode
    if (!is_reading)
       return 0;
-
+#ifdef _DOWNLOAD_EVERYTHING
+   return (starting_page < current_page) ? (current_page - starting_page) : (BBM_LUT_BASE_ADDRESS - starting_page + current_page);
+#else
    if (ending_timestamp)
    {
       // Convert the ending timestamp to the appropriate format
@@ -697,6 +704,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
    else
       last_reading_page = current_page;
    return (reading_page <= last_reading_page) ? (1 + last_reading_page - reading_page) : (BBM_LUT_BASE_ADDRESS - reading_page + last_reading_page + 1);
+#endif
 }
 
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
@@ -707,6 +715,15 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
 
    // Determine if a full page of memory is available to read
    uint32_t num_bytes_retrieved = 0;
+#ifdef _DOWNLOAD_EVERYTHING
+   if (reading_page == current_page)
+   {
+      // Return the valid available bytes
+      memcpy(buffer, cache, cache_index);
+      num_bytes_retrieved = cache_index;
+      is_reading = false;
+   }
+#else
    if (reading_page == last_reading_page)
    {
       if (reading_page == current_page)
@@ -722,6 +739,7 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
       }
       is_reading = false;
    }
+#endif
    else
    {
       // Read the next page of memory and update the reading metadata

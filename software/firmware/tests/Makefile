@@ -302,7 +302,7 @@ full: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/$$(TARGET).bin program
 
 full_exp: TARGET = TestFullExp
 full_exp: SRC += main.c
-full_exp: CFLAGS += -D__USE_FREERTOS__ -DNONBLOCKING=1 -D_TEST_IMU_DATA -D_REMOTE_MODE_SWITCH_ENABLED
+full_exp: CFLAGS += -D__USE_FREERTOS__ -DNONBLOCKING=1 -D_TEST_IMU_DATA -D_DOWNLOAD_EVERYTHING -D_REMOTE_MODE_SWITCH_ENABLED
 full_exp: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/$$(TARGET).bin program
 
 imu: TARGET = TestIMU
