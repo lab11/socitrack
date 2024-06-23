@@ -198,6 +198,7 @@ static void imu_burst_data_handler(uint8_t *localBuffer)
 #ifdef _LIVE_IMU_DATA
    bluetooth_write_imu_data(localBuffer, 38);
 #endif
+   storage_write_imu_data(app_get_experiment_time(0), localBuffer, 38);
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
