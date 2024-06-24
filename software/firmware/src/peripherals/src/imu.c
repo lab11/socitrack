@@ -313,6 +313,7 @@ void imu_init(void)
 
    // Set up incoming interrupts from the IMU
    disable_motion_interrupts();
+   disable_data_ready_interrupts();
    uint32_t imu_interrupt_pin = PIN_IMU_INTERRUPT;
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_INTERRUPT, am_hal_gpio_pincfg_input));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
@@ -330,6 +331,7 @@ void imu_deinit(void)
 {
    // Disable interrupts and put the device into suspend mode
    disable_motion_interrupts();
+   disable_data_ready_interrupts();
    enter_suspend_mode();
 
    // Disable all IMU-based interrupts

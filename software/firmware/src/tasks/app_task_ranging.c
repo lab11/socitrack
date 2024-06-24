@@ -273,9 +273,13 @@ void app_switch_mode(uint8_t command)
 {
    if (command==1)
    {  //enable data downloading from ranging mode
+
       //disable storage writing
       storage_disable(true);
       storage_enter_maintenance_mode();
+      //stop ranging and imu
+      scheduler_stop();
+      imu_deinit();
    }
 }
 
