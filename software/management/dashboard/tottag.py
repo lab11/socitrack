@@ -890,12 +890,12 @@ class TotTagGUI(tk.Frame):
 
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
-def main(s):
-   gui = TotTagGUI(mode_switch_visibility=s)
+def main(mode_switch_visibility=False):
+   gui = TotTagGUI(mode_switch_visibility=mode_switch_visibility)
    gui.mainloop()
 
 if __name__ == "__main__":
    parser = argparse.ArgumentParser(description="Parser for command line options")
    parser.add_argument('-s', action='store_true', help='With the -s flag, the mode switch will be visible')
    args = parser.parse_args()
-   main(args.s)
+   main(mode_switch_visibility = args.s)
