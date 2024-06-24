@@ -48,6 +48,29 @@ void run_tasks(void)
    ranging_radio_init(uid);
    ranging_radio_sleep(true);
 
+#ifdef _USE_DEFAULT_EXP_DETAILS
+      //only set immediately after flashing, not on reboot
+      if (!rtc_is_valid())
+      {
+         rtc_set_time_to_compile_time();
+         //default exp details
+         uint32_t current_timestamp = rtc_get_timestamp();
+         experiment_details_t details = {
+         .experiment_start_time = current_timestamp, .experiment_end_time = current_timestamp + 604800,
+         .daily_start_time = 1, .daily_end_time = 23,
+         .num_devices = 2, .uids = {}, .uid_name_mappings = {}
+         };
+         //new exp details can only be set in maintenance mode
+         storage_enter_maintenance_mode();
+         storage_store_experiment_details(&details);
+         if (!battery_monitor_is_plugged_in())
+         {
+         storage_exit_maintenance_mode();
+         }
+      }
+#endif
+
+
    // Determine whether there is an active experiment taking place
    static experiment_details_t scheduled_experiment;
    storage_retrieve_experiment_details(&scheduled_experiment);
