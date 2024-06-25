@@ -35,6 +35,7 @@ typedef struct __attribute__ ((__packed__))
 // Application Task Public Functions
 void app_notify(app_notification_t notification, bool from_isr);
 void app_activate_find_my_tottag(uint32_t seconds_to_activate);
+void app_download_log_file(uint32_t start_time, uint32_t end_time);
 void app_switch_mode(uint8_t command);
 uint32_t app_get_experiment_time(int32_t offset);
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time);
@@ -49,9 +50,6 @@ void storage_write_battery_level(uint32_t battery_voltage_mV);
 void storage_write_motion_status(bool in_motion);
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset);
 void storage_write_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_t imu_data_len);
-
-// Maintenance Task Public Functions
-void maintenance_get_requested_log_start_end_times(uint32_t *start_time, uint32_t *end_time);
 
 // Main Task Functions
 void AppTaskRanging(void *uid);

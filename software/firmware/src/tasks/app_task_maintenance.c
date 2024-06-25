@@ -17,6 +17,7 @@
 
 static TaskHandle_t app_task_handle;
 static volatile uint32_t seconds_to_activate_buzzer;
+static uint32_t download_start_timestamp, download_end_timestamp;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -32,6 +33,35 @@ static void handle_notification(app_notification_t notification)
       }
    if ((notification & APP_NOTIFY_BATTERY_EVENT) != 0)
       storage_flush_and_shutdown();
+#ifdef __USE_SEGGER__
+   if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
+   {
+      // Define log file transmission variables
+      static uint8_t transmit_buffer[MEMORY_PAGE_SIZE_BYTES];
+      experiment_details_t details;
+
+      // Transmit estimated total data length
+      storage_begin_reading(download_start_timestamp);
+      storage_retrieve_experiment_details(&details);
+      uint32_t total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+      uint32_t total_data_length = storage_retrieve_num_data_bytes();
+      transmit_log_data(&total_data_length, sizeof(total_data_length));
+      transmit_log_data(&details, sizeof(details));
+
+      // Transmit log file data in chunks
+      for (uint32_t chunk = 0; chunk < total_data_chunks; ++chunk)
+      {
+         const uint32_t data_length = storage_retrieve_next_data_chunk(transmit_buffer);
+         if (data_length)
+            transmit_log_data(transmit_buffer, data_length);
+      }
+
+      // Transmit completion packet
+      storage_end_reading();
+      uint8_t completion_packet = 0xFF;
+      transmit_log_data(&completion_packet, sizeof(completion_packet));
+   }
+#endif  // #ifdef __USE_SEGGER__
 }
 
 static void battery_event_handler(battery_event_t battery_event)
@@ -55,6 +85,13 @@ void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate)
    seconds_to_activate_buzzer = seconds_to_activate;
    xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED, eSetBits, &xHigherPriorityTaskWoken);
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+void app_maintenance_download_log_file(uint32_t start_time, uint32_t end_time)
+{
+   download_start_timestamp = start_time;
+   download_end_timestamp = end_time;
+   xTaskNotify(app_task_handle, APP_NOTIFY_DOWNLOAD_SEGGER_LOG, eSetBits);
 }
 
 void AppTaskMaintenance(void *uid)

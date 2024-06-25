@@ -55,7 +55,7 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
          }
          case BLE_MAINTENANCE_DOWNLOAD_LOG:
 #ifdef __USE_SEGGER__
-            app_notify(APP_NOTIFY_DOWNLOAD_SEGGER_LOG, false);
+            app_download_log_file(download_start_timestamp, download_end_timestamp);
 #else
             continueSendingLogData(connId, 0, false);
 #endif
@@ -90,7 +90,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       storage_begin_reading(download_start_timestamp);
       storage_retrieve_experiment_details(&details);
       total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
-      total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+      total_data_length = storage_retrieve_num_data_bytes();
       memcpy(transmit_buffer, &total_data_length, sizeof(total_data_length));
       memcpy(transmit_buffer + sizeof(total_data_length), &details, sizeof(details));
       AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length) + sizeof(experiment_details_t), transmit_buffer);
@@ -146,10 +146,4 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          download_start_timestamp = download_end_timestamp = 0;
       }
    }
-}
-
-void maintenance_get_requested_log_start_end_times(uint32_t *start_time, uint32_t *end_time)
-{
-   *start_time = download_start_timestamp;
-   *end_time = download_end_timestamp;
 }
