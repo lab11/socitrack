@@ -62,7 +62,7 @@ static void handle_range_computation_phase(void)
          const uint32_t data_timestamp = schedule_phase_get_timestamp();
          bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
-#ifndef _TEST_BLE_RANGING_TASK
+#ifndef _TEST_NO_STORAGE
          if (ranging_results[0])
             storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), 0);
 #endif
@@ -83,7 +83,7 @@ static void handle_range_computation_phase(void)
          const uint32_t data_timestamp = schedule_phase_get_timestamp();
          bluetooth_write_range_results(ranging_results, 1 + ((uint16_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
 #ifndef _TEST_RANGING_TASK
-#ifndef _TEST_BLE_RANGING_TASK
+#ifndef _TEST_NO_STORAGE
          if (ranging_results[0])
             storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), (int32_t)data_timestamp - (int32_t)app_get_experiment_time(0));
 #endif

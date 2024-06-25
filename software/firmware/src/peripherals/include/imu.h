@@ -15,6 +15,13 @@
 #define BURST_READ_BASE_ADDR BNO055_GYRO_DATA_X_LSB_ADDR
 #define BURST_READ_LEN 38
 
+#define GYRO_DATA_LEN 6
+#define ACC_DATA_LEN 6
+#define LACC_DATA_LEN 6
+#define GACC_DATA_LEN 6
+#define QUAT_DATA_LEN 8
+#define STAT_DATA_LEN 1
+
 typedef void (*motion_change_callback_t)(bool in_motion);
 #if NONBLOCKING
 typedef void (*data_ready_callback_t)(uint8_t *localBuffer);
@@ -187,6 +194,16 @@ typedef enum
 
 typedef enum
 {
+   GYRO_DATA,
+   ACC_DATA,
+   LACC_DATA,
+   GACC_DATA,
+   QUAT_DATA,
+   STAT_DATA,
+} bno055_data_type_t;
+
+typedef enum
+{
    OPERATION_MODE_CONFIG = 0X00,
    OPERATION_MODE_ACCONLY = 0X01,
    OPERATION_MODE_MAGONLY = 0X02,
@@ -310,6 +327,7 @@ bool imu_set_axis_remap(bno055_axis_remap_t remap);
 void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
 void imu_read_burst_buffer(uint8_t *destBuffer);
+uint8_t imu_pick_data_from_burst_buffer(uint8_t *picked, uint8_t *full, bno055_data_type_t data_type);
 
 // Math utilities
 void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler);

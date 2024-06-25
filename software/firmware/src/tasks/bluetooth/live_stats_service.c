@@ -33,6 +33,16 @@ static const uint16_t findMyTottagDurationLen = sizeof(findMyTottagDuration);
 static const uint8_t findMyTottagDesc[] = "FindMyTottagRequest";
 static const uint16_t findMyTottagDescLen = sizeof(findMyTottagDesc);
 
+#ifdef _REMOTE_MODE_SWITCH_ENABLED
+static const uint8_t modeSwitchChUuid[] = { BLE_MODE_SWITCH_CHAR };
+static const uint8_t modeSwitchChar[] = { ATT_PROP_WRITE, UINT16_TO_BYTES(APP_MODE_SWITCH_HANDLE), BLE_MODE_SWITCH_CHAR };
+static const uint16_t modeSwitchCharLen = sizeof(modeSwitchChar);
+static uint32_t operationMode = 0;
+static const uint16_t operationModeLen = sizeof(operationMode);
+static const uint8_t modeSwitchDesc[] = "AppModeSwitch";
+static const uint16_t modeSwitchDescLen = sizeof(modeSwitchDesc);
+#endif
+
 static const uint8_t rangingChUuid[] = { BLE_LIVE_STATS_RANGING_CHAR };
 static const uint8_t rangesChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(RANGES_HANDLE), BLE_LIVE_STATS_RANGING_CHAR };
 static const uint16_t rangesCharLen = sizeof(rangesChar);
@@ -43,6 +53,7 @@ static const uint16_t rangesDescLen = sizeof(rangesDesc);
 static uint8_t rangesCcc[] = { UINT16_TO_BYTES(0x0000) };
 static const uint16_t rangesCccLen = sizeof(rangesCcc);
 
+#ifdef _LIVE_IMU_DATA
 static const uint8_t imuDataChUuid[] = { BLE_LIVE_STATS_IMU_DATA_CHAR };
 static const uint8_t imuDataChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(IMU_DATA_HANDLE), BLE_LIVE_STATS_IMU_DATA_CHAR };
 static const uint16_t imuDataCharLen = sizeof(imuDataChar);
@@ -52,6 +63,7 @@ static const uint8_t imuDataDesc[] = "LiveIMUData";
 static const uint16_t imuDataDescLen = sizeof(imuDataDesc);
 static uint8_t imuDataCcc[] = { UINT16_TO_BYTES(0x0001) };
 static const uint16_t imuDataCccLen = sizeof(imuDataCcc);
+#endif
 
 static const attsAttr_t liveStatsList[] =
 {
@@ -135,6 +147,32 @@ static const attsAttr_t liveStatsList[] =
       0,
       ATTS_PERMIT_READ
    },
+#ifdef _REMOTE_MODE_SWITCH_ENABLED
+   {
+      attChUuid,
+      (uint8_t*)modeSwitchChar,
+      (uint16_t*)&modeSwitchCharLen,
+      sizeof(modeSwitchChar),
+      0,
+      ATTS_PERMIT_READ
+   },
+   {
+      modeSwitchChUuid,
+      (uint8_t*)&operationMode,
+      (uint16_t*)&operationModeLen,
+      sizeof(operationMode),
+      (ATTS_SET_UUID_128 | ATTS_SET_WRITE_CBACK),
+      ATTS_PERMIT_WRITE
+   },
+   {
+      attChUserDescUuid,
+      (uint8_t*)modeSwitchDesc,
+      (uint16_t*)&modeSwitchDescLen,
+      sizeof(modeSwitchDesc),
+      0,
+      ATTS_PERMIT_READ
+   },
+#endif
    {
       attChUuid,
       (uint8_t*)rangesChar,
@@ -167,6 +205,7 @@ static const attsAttr_t liveStatsList[] =
       ATTS_SET_CCC,
       (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
    },
+#ifdef _LIVE_IMU_DATA
    {
       attChUuid,
       (uint8_t*)imuDataChar,
@@ -198,7 +237,8 @@ static const attsAttr_t liveStatsList[] =
       sizeof(imuDataCcc),
       ATTS_SET_CCC,
       (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
-   }
+   },
+#endif
 };
 
 static attsGroup_t liveStatsGroup = { 0, (attsAttr_t*)liveStatsList, NULL, NULL, LIVE_STATS_SERVICE_HANDLE, LIVE_STATS_MAX_HANDLE-1 };

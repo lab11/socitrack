@@ -13,6 +13,9 @@ from matplotlib.widgets import Slider
 from matplotlib.widgets import TextBox
 import textwrap
 import re
+from scipy.signal import find_peaks
+import pytz
+import tzlocal
 
 # suppress the pandas scientific notation
 pd.options.display.float_format = '{:.3f}'.format
@@ -104,6 +107,44 @@ def get_ranging_time_series(data, source_tottag_label, destination_tottag_label,
     timestamps, ranges = extract_ranging_time_series(data, destination_tottag_label, start_timestamp=start_timestamp, end_timestamp=end_timestamp, cutoff_distance=cutoff_distance, unit=unit)
     plot_data(f'Ranging Data from {source_tottag_label} to {destination_tottag_label}',
               'Date and Time', f'Range ({unit})', timestamps, ranges)
+
+def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, visualize=True):
+    """
+    default usage: get_off_and_on_charger_times(A,"10043_S1")
+    """
+    voltages = data.loc['v'].dropna()
+
+    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in voltages.keys()])
+    voltages = voltages.rolling(window=window_size).mean()
+
+    peak_idx, _ = find_peaks(voltages,  width=50)
+    valley_idx, _ = find_peaks(-voltages,width=50)
+
+    taken_off_times = mdates.num2date(timestamps[peak_idx])
+    put_on_times = mdates.num2date(timestamps[valley_idx])
+
+    off = {x:"TAKEN OFF CHARGER" for x in taken_off_times}
+    on = {x:"PUT ON CHARGER" for x in put_on_times}
+
+    combined = {k: off.get(k, "") + on.get(k, "") for k in sorted(set(off) | set(on))}
+
+    for key in combined:
+        local_time = pytz.utc.localize(datetime.utcfromtimestamp(key.timestamp())).astimezone(pytz.timezone(tzlocal.get_localzone_name())).strftime('%Y-%m-%d %H:%M:%S %Z')
+        print(key.strftime('%Y-%m-%d %H:%M:%S %Z'), local_time, combined[key])
+
+    if visualize:
+        plt.plot(timestamps, voltages)
+        axis = plt.gca()
+        axis.plot(timestamps[peak_idx], np.array(voltages)[peak_idx], 'r.', label="taken off from charger")
+        axis.plot(timestamps[valley_idx], np.array(voltages)[valley_idx], 'g.', label="put on the charger")
+
+        axis.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
+        axis.figure.autofmt_xdate(rotation=45, bottom=0.3)
+        plt.xlabel('Date and Time')
+        plt.ylabel('Voltage (mV)')
+        plt.title(f'Battery Voltage for {label}')
+        plt.legend()
+        plt.show()
 
 def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distance, unit='ft'):
     ranges = data.loc[['r.' + label for label in target_tottag_labels]] / (304.8 if unit == 'ft' else 1000.0)

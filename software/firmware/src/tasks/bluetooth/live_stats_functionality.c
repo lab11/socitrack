@@ -29,6 +29,10 @@ uint8_t handleLiveStatsWrite(dmConnId_t connId, uint16_t handle, uint8_t operati
       app_activate_find_my_tottag(*(uint32_t*)pValue);
    else if (handle == TIMESTAMP_HANDLE)
       rtc_set_time_from_timestamp(*(uint32_t*)pValue);
+#ifdef _REMOTE_MODE_SWITCH_ENABLED
+   else if (handle == APP_MODE_SWITCH_HANDLE)
+      app_switch_mode(*(uint8_t*)pValue);
+#endif
    return ATT_SUCCESS;
 }
 
@@ -39,9 +43,12 @@ void updateRangeResults(dmConnId_t connId, const uint8_t *results, uint16_t resu
       AttsHandleValueNtf(connId, RANGES_HANDLE, results_length, (uint8_t*)results);
 }
 
+
 void updateIMUData(dmConnId_t connId, const uint8_t *results, uint16_t results_length)
 {
+#ifdef _LIVE_IMU_DATA
    // Update the imu data characteristic
    if (connId != DM_CONN_ID_NONE)
       AttsHandleValueNtf(connId, IMU_DATA_HANDLE, results_length, (uint8_t*)results);
+#endif
 }

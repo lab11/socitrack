@@ -9,6 +9,7 @@
 
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
 typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
+typedef struct imu_data_t {uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length;} imu_data_t;
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -19,10 +20,12 @@ static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
 
+static imu_data_t imu_buffer[STORAGE_IMU_BUFFER_NUM_ITEM];
+
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
+#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
 static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_mV)
 {
@@ -48,6 +51,15 @@ static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t
    storage_store(&storage_type, sizeof(storage_type));
    storage_store(&timestamp, sizeof(timestamp));
    storage_store(range_data, range_data_len);
+   storage_flush(false);
+}
+
+static void store_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_t imu_data_len)
+{
+   const uint8_t storage_type = STORAGE_TYPE_IMU;
+   storage_store(&storage_type, sizeof(storage_type));
+   storage_store(&timestamp, sizeof(timestamp));
+   storage_store(imu_data, imu_data_len);
    storage_flush(false);
 }
 
@@ -87,6 +99,16 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
+void storage_write_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_t imu_data_len)
+{
+   static uint32_t imu_data_index = 0;
+   const storage_item_t storage_item = { .timestamp = timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU};
+   memcpy(imu_buffer[imu_data_index].data, imu_data, imu_data_len);
+   imu_buffer[imu_data_index].length = imu_data_len;
+   imu_data_index = (imu_data_index + 1) % STORAGE_IMU_BUFFER_NUM_ITEM;
+   xQueueSendToBack(storage_queue, &storage_item, 0);
+}
+
 #else
 
 void storage_flush_and_shutdown(void) {}
@@ -94,7 +116,7 @@ void storage_write_battery_level(uint32_t battery_voltage_mV) {}
 void storage_write_motion_status(bool in_motion) {}
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
 
-#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_BLE_RANGING_TASK)
+#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
 void StorageTask(void *params)
 {
@@ -112,7 +134,7 @@ void StorageTask(void *params)
    // Loop forever, waiting until storage events are received
    while (true)
       if (xQueueReceive(storage_queue, &item, portMAX_DELAY) == pdPASS)
-#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_BLE_RANGING_TASK)
+#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_NO_STORAGE)
          if (item.type == STORAGE_TYPE_SHUTDOWN)
             system_reset(true);
 #else
@@ -131,6 +153,8 @@ void StorageTask(void *params)
             case STORAGE_TYPE_RANGES:
                store_ranges(item.timestamp, range_data[item.value].data, range_data[item.value].length);
                break;
+            case STORAGE_TYPE_IMU:
+               store_imu_data(item.timestamp, imu_buffer[item.value].data, imu_buffer[item.value].length);
             default:
                break;
          }

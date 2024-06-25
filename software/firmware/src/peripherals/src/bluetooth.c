@@ -58,7 +58,9 @@ enum
 {
    TOTTAG_GATT_SERVICE_CHANGED_CCC_IDX,
    TOTTAG_RANGING_CCC_IDX,
+#ifdef _LIVE_IMU_DATA
    TOTTAG_IMU_DATA_CCC_IDX,
+#endif
    TOTTAG_MAINTENANCE_RESULT_CCC_IDX,
    TOTTAG_NUM_CCC_CHARACTERISTICS
 };
@@ -67,7 +69,9 @@ static const attsCccSet_t characteristicSet[TOTTAG_NUM_CCC_CHARACTERISTICS] =
 {
    { GATT_SERVICE_CHANGED_CCC_HANDLE,  ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE },
    { RANGES_CCC_HANDLE,                  ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
+#ifdef _LIVE_IMU_DATA
    { IMU_DATA_CCC_HANDLE,                ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
+#endif
    { MAINTENANCE_RESULT_CCC_HANDLE,    ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE }
 };
 
@@ -227,8 +231,10 @@ static void cccCallback(attsCccEvt_t *pEvt)
    print("TotTag BLE: cccCallback: index = %d, handle = %d, value = %d\n", pEvt->idx, pEvt->handle, pEvt->value);
    if (pEvt->idx == TOTTAG_RANGING_CCC_IDX)
       ranges_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
+#ifdef _LIVE_IMU_DATA
    else if (pEvt->idx == TOTTAG_IMU_DATA_CCC_IDX)
       imu_data_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
+#endif
    else if (pEvt->idx == TOTTAG_MAINTENANCE_RESULT_CCC_IDX)
       data_requested = (pEvt->value == ATT_CLIENT_CFG_INDICATE);
 }
@@ -464,7 +470,7 @@ void bluetooth_clear_whitelist(void)
 
 void bluetooth_add_device_to_whitelist(uint8_t* uid)
 {
-#ifndef _TEST_BLE_RANGING_TASK
+#ifndef _TEST_NO_EXP_DETAILS
    // Add the specified device to the whitelist
    DmDevWhiteListAdd(DM_ADDR_PUBLIC, uid);
    //DmDevSetFilterPolicy(DM_FILT_POLICY_MODE_ADV, HCI_ADV_FILT_CONN);

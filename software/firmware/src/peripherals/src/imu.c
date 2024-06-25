@@ -39,9 +39,9 @@ void imu_iom_isr(void)
 
 static void nonblocking_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
 {
-   uint8_t localBuffer[BURST_READ_LEN] = {0};
-   imu_read_burst_buffer(localBuffer);
-   data_ready_callback(localBuffer);
+   uint8_t saved_buffer[BURST_READ_LEN] = {0};
+   imu_read_burst_buffer(saved_buffer);
+   data_ready_callback(saved_buffer);
 }
 
 #endif
@@ -313,6 +313,7 @@ void imu_init(void)
 
    // Set up incoming interrupts from the IMU
    disable_motion_interrupts();
+   disable_data_ready_interrupts();
    uint32_t imu_interrupt_pin = PIN_IMU_INTERRUPT;
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_INTERRUPT, am_hal_gpio_pincfg_input));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
@@ -330,6 +331,7 @@ void imu_deinit(void)
 {
    // Disable interrupts and put the device into suspend mode
    disable_motion_interrupts();
+   disable_data_ready_interrupts();
    enter_suspend_mode();
 
    // Disable all IMU-based interrupts
@@ -524,6 +526,37 @@ bool imu_set_axis_remap(bno055_axis_remap_t remap)
 bool imu_read_in_motion(void)
 {
    return previously_in_motion;
+}
+
+uint8_t imu_pick_data_from_burst_buffer(uint8_t *picked, uint8_t *full, bno055_data_type_t data_type)
+{
+   //pick data from the continuous read data, and copy it at the start of the picked buffer
+   if (data_type == GYRO_DATA)
+   {
+      memcpy(picked, full+BNO055_GYRO_DATA_X_LSB_ADDR-BURST_READ_BASE_ADDR, GYRO_DATA_LEN);
+      return GYRO_DATA_LEN;
+   }
+   else if (data_type == LACC_DATA)
+   {
+      memcpy(picked, full+BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR-BURST_READ_BASE_ADDR, LACC_DATA_LEN);
+      return LACC_DATA_LEN;
+   }
+   else if (data_type == GACC_DATA)
+   {
+      memcpy(picked, full+BNO055_GRAVITY_DATA_X_LSB_ADDR-BURST_READ_BASE_ADDR, LACC_DATA_LEN);
+      return GACC_DATA_LEN;
+   }
+   else if (data_type == QUAT_DATA)
+   {
+      memcpy(picked, full+BNO055_QUATERNION_DATA_W_LSB_ADDR-BURST_READ_BASE_ADDR, QUAT_DATA_LEN);
+      return QUAT_DATA_LEN;
+   }
+   else if  (data_type == STAT_DATA)
+   {
+      memcpy(picked, full+BNO055_CALIB_STAT_ADDR-BURST_READ_BASE_ADDR, STAT_DATA_LEN);
+      return STAT_DATA_LEN;
+   }
+   return 0;
 }
 
 #if NONBLOCKING

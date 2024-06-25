@@ -223,10 +223,27 @@ static void motion_change_handler(bool in_motion)
    app_notify(APP_NOTIFY_MOTION_EVENT, true);
 }
 
-static void imu_burst_data_handler(uint8_t *localBuffer)
+static void imu_burst_data_handler(uint8_t *burst_data_buffer)
 {
    //TODO
-   //bluetooth_write_imu_data(localBuffer, 38);
+#ifdef _LIVE_IMU_DATA
+   bluetooth_write_imu_data(burst_data_buffer, 38);
+#endif
+
+   uint8_t useful_imu_data[38] = {0};
+
+   //types of imu data to be saved
+   const bno055_data_type_t data_types[] = {STAT_DATA,LACC_DATA,GYRO_DATA};
+   uint8_t index = 0;
+   uint8_t len = 0;
+
+   for (uint8_t i = 0; i < sizeof(data_types)/sizeof(data_types[0]); i+=1)
+   {
+      len = imu_pick_data_from_burst_buffer(useful_imu_data+index, burst_data_buffer, data_types[i]);
+      index+= len;
+   }
+   storage_write_imu_data(app_get_experiment_time(0), useful_imu_data, index);
+   //storage_write_imu_data(app_get_experiment_time(0), burst_data_buffer, 38);
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
@@ -297,6 +314,19 @@ void app_activate_find_my_tottag(uint32_t seconds_to_activate)
       app_maintenance_activate_find_my_tottag(seconds_to_activate);
 }
 
+void app_switch_mode(uint8_t command)
+{
+   if (command==1)
+   {  //enable data downloading from ranging mode
+
+      //disable storage writing
+      storage_disable(true);
+      storage_enter_maintenance_mode();
+      //stop imu
+      imu_deinit();
+   }
+}
+
 void AppTaskRanging(void *uid)
 {
    // Store the UID and application task handle
@@ -315,16 +345,19 @@ void AppTaskRanging(void *uid)
 
    // Register handlers for motion detection, battery status changes, and BLE events
    bluetooth_register_discovery_callback(ble_discovery_handler);
-#ifndef _TEST_BLE_RANGING_TASK
+#ifndef _TEST_NO_BATTERY_CALLBACK
    if (battery_monitor_is_plugged_in())
       storage_flush_and_shutdown();
    else
    {
-      storage_write_motion_status(imu_read_in_motion());
       battery_register_event_callback(battery_event_handler);
-      imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
-      imu_register_motion_change_callback(motion_change_handler);
    }
+#endif
+
+#if !defined(_TEST_NO_STORAGE) && !defined(_TEST_IMU_DATA)
+   storage_write_motion_status(imu_read_in_motion());
+   imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
+   imu_register_motion_change_callback(motion_change_handler);
 #endif
 
 #ifdef _TEST_IMU_DATA
