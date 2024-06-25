@@ -63,6 +63,15 @@ get_motion_time_series(A, "07")
 get_motion_time_series(B, "09")
 ```
 
+### Get the on and off charger time
+```python
+from processing import *
+A = load_data("12043_S1.pkl")
+get_off_and_on_charger_times(A,"10043_S1",visualize=False)
+
+# to show the marking on the voltage plot
+get_off_and_on_charger_times(A,"10043_S1",visualize=True)
+```
 
 ### Visualizing paired logs with alignment
 
