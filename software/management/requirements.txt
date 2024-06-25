@@ -1,7 +1,9 @@
 bleak
 matplotlib
+numpy
 pandas
 pytz
+scipy
 tzlocal
 tkcalendar
 tk
