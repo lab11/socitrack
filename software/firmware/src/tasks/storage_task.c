@@ -9,18 +9,17 @@
 
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
 typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
-typedef struct imu_data_t {uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length;} imu_data_t;
+typedef struct imu_data_t { uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length; } imu_data_t;
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
+static imu_data_t imu_buffer[STORAGE_IMU_BUFFER_NUM_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
 static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
-
-static imu_data_t imu_buffer[STORAGE_IMU_BUFFER_NUM_ITEM];
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -105,7 +104,7 @@ void storage_write_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_
    const storage_item_t storage_item = { .timestamp = timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU};
    memcpy(imu_buffer[imu_data_index].data, imu_data, imu_data_len);
    imu_buffer[imu_data_index].length = imu_data_len;
-   imu_data_index = (imu_data_index + 1) % STORAGE_IMU_BUFFER_NUM_ITEM;
+   imu_data_index = (imu_data_index + 1) % STORAGE_IMU_BUFFER_NUM_ITEMS;
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
@@ -155,6 +154,7 @@ void StorageTask(void *params)
                break;
             case STORAGE_TYPE_IMU:
                store_imu_data(item.timestamp, imu_buffer[item.value].data, imu_buffer[item.value].length);
+               break;
             default:
                break;
          }

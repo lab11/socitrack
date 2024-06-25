@@ -5,14 +5,16 @@
 #include "system.h"
 #include "logging.h"
 
-uint32_t imuBuffer[2048];
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
+
 static void *i2c_handle;
 static volatile bool previously_in_motion;
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
 
 #if NONBLOCKING
+static uint32_t imuBuffer[2048];
 static uint8_t gReadBuffer[BURST_READ_LEN] = {0};
 
 #define imu_iom_isr                                                          \

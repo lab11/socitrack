@@ -21,7 +21,6 @@ void ranging_begin(schedule_role_t role)
    xTaskNotify(ranging_task_handle, role, eSetValueWithOverwrite);
 }
 
-
 bool ranging_active(void)
 {
    // Return whether actively ranging
