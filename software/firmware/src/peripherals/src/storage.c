@@ -57,7 +57,7 @@ typedef struct __attribute__ ((__packed__)) { uint16_t lba, pba; } bbm_lut_t;
 static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table_internal[BBM_INTERNAL_LUT_NUM_ENTRIES];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES];
-static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index;
+static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
 static volatile bool is_reading, in_maintenance_mode, disabled;
 
 
@@ -431,7 +431,7 @@ void storage_init(void)
 
    // Search for the starting page
    int32_t start_page = -1;
-   cache_index = last_reading_page = 0;
+   cache_index = last_reading_page = log_data_size = 0;
    memset(cache, 0, sizeof(cache));
    for (uint32_t page = 0; page < BBM_LUT_BASE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
       if (read_page(transfer_buffer, page) && (memcmp(transfer_buffer, "META", 4) == 0))
@@ -606,6 +606,7 @@ void storage_begin_reading(uint32_t starting_timestamp)
    reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
    last_reading_page = reading_page;
    is_reading = in_maintenance_mode;
+   log_data_size = 0;
 
    // Search for the page that contains the starting timestamp
    bool timestamp_found = !starting_timestamp;
@@ -681,6 +682,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
          {
             bool found_valid_timestamp = false;
             uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
+            log_data_size += num_bytes_retrieved;
             for (uint32_t i = 0; !timestamp_found && ((i + 5) < num_bytes_retrieved); ++i)
                if ((transfer_buffer[4 + i] == STORAGE_TYPE_RANGES) && (transfer_buffer[9 + i] < MAX_NUM_RANGING_DEVICES) && ((*(uint32_t*)(transfer_buffer + 5 + i) % 500) == 0))
                {
@@ -688,6 +690,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
                   if (*(uint32_t*)(transfer_buffer + 5 + i) > ending_timestamp)
                   {
                      last_reading_page = previous_reading_page;
+                     log_data_size -= num_bytes_retrieved;
                      timestamp_found = true;
                   }
                   else
@@ -705,6 +708,12 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       last_reading_page = current_page;
    return (reading_page <= last_reading_page) ? (1 + last_reading_page - reading_page) : (BBM_LUT_BASE_ADDRESS - reading_page + last_reading_page + 1);
 #endif
+}
+
+uint32_t storage_retrieve_num_data_bytes(void)
+{
+   // Return the total number of log data bytes available (must be called after "storage_retrieve_num_data_chunks()")
+   return (last_reading_page == current_page) ? (log_data_size + cache_index) : log_data_size;
 }
 
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)

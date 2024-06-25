@@ -45,6 +45,7 @@ void storage_end_reading(void);
 void storage_enter_maintenance_mode(void);
 void storage_exit_maintenance_mode(void);
 uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp);
+uint32_t storage_retrieve_num_data_bytes(void);
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer);
 
 #endif  // #ifndef __STORAGE_HEADER_H__
