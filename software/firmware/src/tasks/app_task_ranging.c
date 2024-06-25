@@ -227,16 +227,17 @@ static void imu_burst_data_handler(uint8_t *burst_data_buffer)
 {
    //TODO
 #ifdef _LIVE_IMU_DATA
-   bluetooth_write_imu_data(burst_data_buffer, 38);
+   bluetooth_write_imu_data(burst_data_buffer, BURST_READ_LEN);
 #endif
 
-   uint8_t useful_imu_data[38] = {0};
+   uint8_t useful_imu_data[BURST_READ_LEN] = {0};
 
    //types of imu data to be saved
    const bno055_data_type_t data_types[] = {STAT_DATA,LACC_DATA,GYRO_DATA};
    uint8_t index = 0;
    uint8_t len = 0;
 
+#ifndef _TEST_NO_STORAGE
    for (uint8_t i = 0; i < sizeof(data_types)/sizeof(data_types[0]); i+=1)
    {
       len = imu_pick_data_from_burst_buffer(useful_imu_data+index, burst_data_buffer, data_types[i]);
@@ -244,6 +245,7 @@ static void imu_burst_data_handler(uint8_t *burst_data_buffer)
    }
    storage_write_imu_data(app_get_experiment_time(0), useful_imu_data, index);
    //storage_write_imu_data(app_get_experiment_time(0), burst_data_buffer, 38);
+#endif
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
