@@ -54,7 +54,11 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             break;
          }
          case BLE_MAINTENANCE_DOWNLOAD_LOG:
+#ifdef __USE_SEGGER__
+            app_notify(APP_NOTIFY_DOWNLOAD_SEGGER_LOG, false);
+#else
             continueSendingLogData(connId, 0, false);
+#endif
             break;
          default:
             break;
@@ -139,6 +143,13 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          storage_end_reading();
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
          AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
+         download_start_timestamp = download_end_timestamp = 0;
       }
    }
+}
+
+void maintenance_get_requested_log_start_end_times(uint32_t *start_time, uint32_t *end_time)
+{
+   *start_time = download_start_timestamp;
+   *end_time = download_end_timestamp;
 }

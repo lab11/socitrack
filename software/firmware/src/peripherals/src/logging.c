@@ -3,6 +3,17 @@
 #include "logging.h"
 
 
+// Static Global Variables ---------------------------------------------------------------------------------------------
+
+#ifdef __USE_SEGGER__
+
+#include "storage.h"
+#define RTT_BUFFER_LENGTH (2*MEMORY_PAGE_SIZE_BYTES)
+static uint8_t rttTransferBuffer[RTT_BUFFER_LENGTH];
+
+#endif
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 void logging_init(void)
@@ -33,6 +44,15 @@ void logging_init(void)
 #else
 
    logging_disable();
+
+#endif
+
+#ifdef __USE_SEGGER__
+
+   // Set up SEGGER RTT data streaming
+   SEGGER_RTT_Init();
+   SEGGER_RTT_ConfigUpBuffer(1, "DataLogger", rttTransferBuffer, RTT_BUFFER_LENGTH, SEGGER_RTT_MODE_BLOCK_IF_FIFO_FULL);
+   print("\nRTT Control Block Address:  0x%08X\n", (uint32_t)&_SEGGER_RTT);
 
 #endif
 }

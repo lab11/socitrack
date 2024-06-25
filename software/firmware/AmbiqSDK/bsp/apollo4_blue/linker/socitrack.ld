@@ -57,6 +57,7 @@ SECTIONS
         _sdata = .;
         *(.data)
         *(.data*)
+        *(.ramfunc)
         . = ALIGN(4);
         _edata = .;
     } > MCU_TCM AT>MCU_MRAM
@@ -99,6 +100,13 @@ SECTIONS
         . = ALIGN(8);
         _estack = .;
     } > MCU_TCM
+
+    .shared (NOLOAD):
+    {
+        . = ALIGN(4);
+        KEEP(*(.shared))
+        . = ALIGN(4);
+    } > MCU_TCM AT>MCU_MRAM
 
     .ARM.attributes 0 : { *(.ARM.attributes) }
 }

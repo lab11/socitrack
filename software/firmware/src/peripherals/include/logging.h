@@ -4,6 +4,9 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_config.h"
+#ifdef __USE_SEGGER__
+#include "SEGGER_RTT.h"
+#endif
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -24,5 +27,11 @@ void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8
 #define print_ranges(...)
 
 #endif  // #if defined(ENABLE_LOGGING)
+
+#ifdef __USE_SEGGER__
+#define transmit_log_data(...) SEGGER_RTT_Write(1, __VA_ARGS__)
+#else
+#define transmit_log_data(...)
+#endif  // #if defined(ENABLE_AUDIO_DL)
 
 #endif  // #ifndef __LOGGING_HEADER_H__

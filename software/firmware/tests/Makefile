@@ -36,6 +36,7 @@ DEFINES  = -D_HW_REVISION=$(REVISION)
 DEFINES += -D_DATETIME="\"$(shell date -u)\""
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
+DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
 DEFINES += -DWSF_TRACE_ENABLED
@@ -104,6 +105,7 @@ INCLUDES += -I../src/app
 INCLUDES += -I../src/boards
 INCLUDES += -I../src/boards/rev$(REVISION)
 INCLUDES += -I../src/external/decadriver
+INCLUDES += -I../src/external/segger
 INCLUDES += -I../src/peripherals/include
 INCLUDES += -I../src/tasks
 INCLUDES += -I../src/tasks/bluetooth
@@ -138,6 +140,7 @@ VPATH += ../src/app
 VPATH += ../src/boards
 VPATH += ../src/boards/rev$(REVISION)
 VPATH += ../src/external/decadriver
+VPATH += ../src/external/segger
 VPATH += ../src/peripherals/src
 VPATH += ../src/tasks
 VPATH += ../src/tasks/bluetooth
@@ -248,12 +251,12 @@ SRC += storage_task.c
 SRC += subscription_phase.c
 SRC += time_aligned_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -299,6 +302,11 @@ full: TARGET = TestFull
 full: SRC += main.c
 full: CFLAGS += -D__USE_FREERTOS__
 full: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/$$(TARGET).bin program
+
+full_segger: TARGET = TestFullSegger
+full_segger: SRC += main.c SEGGER_RTT.c
+full_segger: CFLAGS += -D__USE_FREERTOS__ -D__USE_SEGGER__
+full_segger: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/SEGGER_RTT.o $(CONFIG)/$$(TARGET).bin program
 
 imu: TARGET = TestIMU
 imu: SRC += test_imu.c

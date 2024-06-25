@@ -177,6 +177,37 @@ static void handle_notification(app_notification_t notification)
          buzzer_indicate_location();
          vTaskDelay(pdMS_TO_TICKS(1000));
       }
+#ifdef __USE_SEGGER__
+   if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
+   {
+      // Define log file transmission variables
+      static uint8_t transmit_buffer[MEMORY_PAGE_SIZE_BYTES];
+      uint32_t start_timestamp, end_timestamp;
+      experiment_details_t details;
+
+      // Transmit estimated total data length
+      maintenance_get_requested_log_start_end_times(&start_timestamp, &end_timestamp);
+      storage_begin_reading(start_timestamp);
+      storage_retrieve_experiment_details(&details);
+      uint32_t total_data_chunks = storage_retrieve_num_data_chunks(end_timestamp);
+      uint32_t total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+      transmit_log_data(&total_data_length, sizeof(total_data_length));
+      transmit_log_data(&details, sizeof(details));
+
+      // Transmit log file data in chunks
+      for (uint32_t chunk = 0; chunk < total_data_chunks; ++chunk)
+      {
+         const uint32_t data_length = storage_retrieve_next_data_chunk(transmit_buffer);
+         if (data_length)
+            transmit_log_data(transmit_buffer, data_length);
+      }
+
+      // Transmit completion packet
+      storage_end_reading();
+      uint8_t completion_packet = 0xFF;
+      transmit_log_data(&completion_packet, sizeof(completion_packet));
+   }
+#endif  // #ifdef __USE_SEGGER__
 }
 
 static void battery_event_handler(battery_event_t battery_event)

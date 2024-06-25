@@ -195,8 +195,8 @@ static void set_use_external_crystal(void)
 static void enter_suspend_mode(void)
 {
    // Switch to configuration mode and suspend
-  imu_set_op_mode(OPERATION_MODE_CONFIG);
-  i2c_write8(BNO055_PWR_MODE_ADDR, 0x02);
+   imu_set_op_mode(OPERATION_MODE_CONFIG);
+   i2c_write8(BNO055_PWR_MODE_ADDR, 0x02);
 }
 
 static void disable_motion_interrupts(void)
@@ -225,12 +225,12 @@ static void enable_motion_interrupts(void)
 
 static void enable_data_ready_interrupts(void)
 {
-  i2c_write8(BNO055_PAGE_ID_ADDR, 1);
-  uint8_t int_msk = i2c_read8(INT_MSK)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-  uint8_t int_en = i2c_read8(INT_EN)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-  i2c_write8(INT_MSK, int_msk);
-  i2c_write8(INT_EN, int_en);
-  i2c_write8(BNO055_PAGE_ID_ADDR, 0);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
+   uint8_t int_msk = i2c_read8(INT_MSK)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   uint8_t int_en = i2c_read8(INT_EN)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   i2c_write8(INT_MSK, int_msk);
+   i2c_write8(INT_EN, int_en);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 static void disable_data_ready_interrupts(void)
@@ -350,15 +350,17 @@ void imu_register_motion_change_callback(motion_change_callback_t callback)
    enable_motion_interrupts();
 }
 
-void imu_register_data_ready_callback(data_ready_callback_t callback){
+void imu_register_data_ready_callback(data_ready_callback_t callback)
+{
+   // Set up IMU data-ready interrupts
    data_ready_callback = callback;
    enable_data_ready_interrupts();
 }
 
 void imu_set_fusion_mode(bno055_opmode_t fusion_mode)
 {
-    imu_set_op_mode(OPERATION_MODE_CONFIG);
-    imu_set_op_mode(fusion_mode);
+   imu_set_op_mode(OPERATION_MODE_CONFIG);
+   imu_set_op_mode(fusion_mode);
 }
 
 void imu_set_power_mode(bno055_powermode_t power_mode)

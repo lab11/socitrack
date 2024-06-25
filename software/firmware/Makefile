@@ -35,6 +35,7 @@ DEFINES  = -D_HW_REVISION=$(REVISION)
 DEFINES += -D_DATETIME="\"$(shell date -u)\""
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
+DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
 DEFINES += -D__USE_FREERTOS__
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
@@ -102,6 +103,7 @@ INCLUDES += -Isrc/app
 INCLUDES += -Isrc/boards
 INCLUDES += -Isrc/boards/rev$(REVISION)
 INCLUDES += -Isrc/external/decadriver
+INCLUDES += -Isrc/external/segger
 INCLUDES += -Isrc/peripherals/include
 INCLUDES += -Isrc/tasks
 INCLUDES += -Isrc/tasks/bluetooth
@@ -133,6 +135,7 @@ VPATH += src/app
 VPATH += src/boards
 VPATH += src/boards/rev$(REVISION)
 VPATH += src/external/decadriver
+VPATH += src/external/segger
 VPATH += src/peripherals/src
 VPATH += src/tasks
 VPATH += src/tasks/bluetooth
