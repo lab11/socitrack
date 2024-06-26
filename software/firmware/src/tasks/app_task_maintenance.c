@@ -55,11 +55,6 @@ static void handle_notification(app_notification_t notification)
          if (data_length)
             transmit_log_data(transmit_buffer, data_length);
       }
-
-      // Transmit some garbage values to flush RTT buffer
-      memset(transmit_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
-      for (int i = 0; i < 4; ++i)
-         transmit_log_data(transmit_buffer, MEMORY_PAGE_SIZE_BYTES);
       storage_end_reading();
    }
 #endif  // #ifdef __USE_SEGGER__

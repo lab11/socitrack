@@ -4,47 +4,62 @@
 # PYTHON INCLUSIONS ---------------------------------------------------------------------------------------------------
 
 import tottag
-import os, signal, struct, sys, tempfile
+import os, signal, sys, tempfile, time
 import subprocess, multiprocessing
 
 
 # HELPER FUNCTIONS ----------------------------------------------------------------------------------------------------
 
+def monitor_incoming_data(fifo_file_name, data_activity_value, is_running):
+
+   # Loop forever listening for updated data activity messages
+   last_value = 99999999
+   while data_activity_value.value != last_value:
+      last_value = data_activity_value.value
+      time.sleep(1)
+
+   # Force the data reading thread to return from a blocking read call
+   is_running.value = False
+   with open(fifo_file_name, 'wb') as rtt_file:
+      rtt_file.write(bytes([0]*2044))
+
+
 def handle_incoming_data(fifo_file_name, storage_directory, pipe, is_running):
 
-   # Loop forever while parent process is running and log is incomplete
-   log_complete = False
-   try:
-      with open(os.path.join(storage_directory, 'data.ttg'), 'wb') as ttg_file:
-         with open(fifo_file_name, 'rb') as rtt_file:
-            (data_length, data_index) = (0, 0)
-            while is_running.value and not log_complete:
-               if data_length == 0:
-                  data = rtt_file.read(4 + 4 * 4 + 2 + 6 * tottag.MAX_NUM_DEVICES + tottag.MAX_NUM_DEVICES * tottag.MAX_LABEL_LENGTH)
-                  data_length = struct.unpack('<I', data[0:4])[0]
-                  if data_length == 0:
-                     log_complete = True
-                  details = tottag.unpack_experiment_details(data[4:])
-                  pipe.send(details)
-               else:
-                  data = rtt_file.read(min(2044, data_length - data_index))
-                  ttg_file.write(data)
-                  data_index += len(data)
-                  if data_index >= data_length:
-                     log_complete = True
-   except KeyboardInterrupt:
-      pass
-   pipe.send([0xFF])
-   pipe.close()
+   # Open the FIFO file for reading and a TTG file for writing
+   with open(os.path.join(storage_directory, 'data.ttg'), 'wb') as ttg_file:
+      with open(fifo_file_name, 'rb') as rtt_file:
+
+         # Wait until all experiment details have been received
+         data = rtt_file.read(4 + 4 * 4 + 2 + 6 * tottag.MAX_NUM_DEVICES + tottag.MAX_NUM_DEVICES * tottag.MAX_LABEL_LENGTH)
+         details = tottag.unpack_experiment_details(data[4:])
+         pipe.send(details)
+
+         # Create a thread to monitor the data reading activity
+         data_activity_value = multiprocessing.Value('i', 0)
+         monitor_process = multiprocessing.Process(target=monitor_incoming_data, args=(fifo_file_name, data_activity_value, is_running))
+         monitor_process.start()
+
+         # Loop forever while data is being received
+         while is_running.value:
+
+            data = rtt_file.read(2044)
+            data_activity_value.value += 1
+            if is_running.value:
+               ttg_file.write(data)
+
+         # Wait for the monitor thread to terminate and wake up the main thread
+         monitor_process.join()
+         pipe.send([0xFF])
 
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
 
 def main():
 
-   # Parse command-line parameters
+   # Parse the command-line parameters
    if len(sys.argv) != 3:
-      print('Usage: python3 segger_download.py <storage_directory> <device_id>')
+      print('Usage: python3 segger_download.py <storage_directory> <device_id_hex>')
       return
    storage_directory = sys.argv[1]
    device_id = sys.argv[2]
@@ -60,31 +75,29 @@ def main():
       os.rmdir(tmp_dir)
       return
 
-   # Run the RTT Logger utility until data transfer has completed or is interrupted by Ctrl+C
+   # Run the RTT Logger utility and create a data handling thread
    is_running = multiprocessing.Value('b', True)
-   parent_pipe, child_pipe = multiprocessing.Pipe()
+   read_pipe, write_pipe = multiprocessing.Pipe()
    rtt_process = subprocess.Popen([rtt_bin_name, '-Device', 'AMAP42KK-KBR', '-If', 'SWD', '-speed', '4000', '-RTTAddress', '0x1005FFA0', tmp_file_name])
-   reader_process = multiprocessing.Process(target=handle_incoming_data, args=(tmp_file_name, storage_directory, child_pipe, is_running))
+   reader_process = multiprocessing.Process(target=handle_incoming_data, args=(tmp_file_name, storage_directory, write_pipe, is_running))
    reader_process.start()
-   try:
-      details = parent_pipe.recv()
-      if isinstance(details, dict):
-         parent_pipe.recv()
-      print('\nLog file successfully downloaded. Please wait...')
-   except KeyboardInterrupt:
-      print('\nShutting down logger. Please wait...')
-      is_running.value = False
+
+   # Wait until all data has been received
+   details = read_pipe.recv()
+   read_pipe.recv()
+
+   # Terminate the RTT Logger utility and the data handling thread
+   reader_process.join()
    rtt_process.send_signal(signal.SIGINT)
    rtt_process.wait()
-   parent_pipe.close()
-   reader_process.join()
+   read_pipe.close()
+   write_pipe.close()
 
    # Convert the downloaded log data to a PKL file
-   if is_running.value:
-      print('\nDeserializing log data into a PKL file... ', end='')
-      with open(os.path.join(storage_directory, 'data.ttg'), 'rb') as ttg_file:
-         tottag.process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), False)
-      print('Done')
+   print('\nDeserializing log data into a PKL file... ', end='')
+   with open(os.path.join(storage_directory, 'data.ttg'), 'rb') as ttg_file:
+      tottag.process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), False)
+   print('Done')
 
    # Clean up all temporary files and directories
    os.remove(os.path.join(storage_directory, 'data.ttg'))
