@@ -63,7 +63,7 @@ def main():
    # Run the RTT Logger utility until data transfer has completed or is interrupted by Ctrl+C
    is_running = multiprocessing.Value('b', True)
    parent_pipe, child_pipe = multiprocessing.Pipe()
-   rtt_process = subprocess.Popen([rtt_bin_name, '-Device', 'AMAP42KK-KBR', '-If', 'SWD', '-speed', '4000', '-RTTAddress', '0x10000A58', tmp_file_name])
+   rtt_process = subprocess.Popen([rtt_bin_name, '-Device', 'AMAP42KK-KBR', '-If', 'SWD', '-speed', '4000', '-RTTAddress', '0x1005FFA0', tmp_file_name])
    reader_process = multiprocessing.Process(target=handle_incoming_data, args=(tmp_file_name, storage_directory, child_pipe, is_running))
    reader_process.start()
    try:
