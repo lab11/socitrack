@@ -544,7 +544,7 @@ class TotTagGUI(tk.Frame):
             'dir': self.save_directory.get(),
             'raw': self.download_raw_data.get(),
             'start': pack_datetime(str(tzlocal.get_localzone()), self.start_date.get(), "00:00", False),
-            'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False)
+            'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False) + 86400
          })
       ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=9)
       ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=9)
