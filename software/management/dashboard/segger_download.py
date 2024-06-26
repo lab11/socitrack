@@ -15,27 +15,23 @@ def handle_incoming_data(fifo_file_name, storage_directory, pipe, is_running):
    # Loop forever while parent process is running and log is incomplete
    log_complete = False
    try:
-      with open(fifo_file_name, 'rb') as rtt_file:
-         (data_length, data_index) = (0, 0)
-         while is_running.value and not log_complete:
-            if data_length == 0:
-               data = rtt_file.read(4 + 4 * 4 + 2 + 6 * tottag.MAX_NUM_DEVICES + tottag.MAX_NUM_DEVICES * tottag.MAX_LABEL_LENGTH)
-               data_length = struct.unpack('<I', data[0:4])[0]
+      with open(os.path.join(storage_directory, 'data.ttg'), 'wb') as ttg_file:
+         with open(fifo_file_name, 'rb') as rtt_file:
+            (data_length, data_index) = (0, 0)
+            while is_running.value and not log_complete:
                if data_length == 0:
-                  data_length = 1
-               bytes = bytearray(data_length)
-               details = tottag.unpack_experiment_details(data[4:])
-               pipe.send(details)
-            else:
-               data = rtt_file.read(min(2044, data_length - data_index))
-               bytes[data_index:data_index+len(data)] = data
-               data_index += len(data)
-               if data_index >= data_length:
-                  log_complete = True
-      with open(os.path.join(storage_directory, 'data.bin'), 'wb') as bin_file:
-         bin_file.write(bytes)
-         bin_file.flush()
-         os.fsync(bin_file.fileno())
+                  data = rtt_file.read(4 + 4 * 4 + 2 + 6 * tottag.MAX_NUM_DEVICES + tottag.MAX_NUM_DEVICES * tottag.MAX_LABEL_LENGTH)
+                  data_length = struct.unpack('<I', data[0:4])[0]
+                  if data_length == 0:
+                     log_complete = True
+                  details = tottag.unpack_experiment_details(data[4:])
+                  pipe.send(details)
+               else:
+                  data = rtt_file.read(min(2044, data_length - data_index))
+                  ttg_file.write(data)
+                  data_index += len(data)
+                  if data_index >= data_length:
+                     log_complete = True
    except KeyboardInterrupt:
       pass
    pipe.send([0xFF])
@@ -67,7 +63,7 @@ def main():
    # Run the RTT Logger utility until data transfer has completed or is interrupted by Ctrl+C
    is_running = multiprocessing.Value('b', True)
    parent_pipe, child_pipe = multiprocessing.Pipe()
-   rtt_process = subprocess.Popen([rtt_bin_name, '-Device', 'AMAP42KK-KBR', '-If', 'SWD', '-speed', '4000', tmp_file_name])
+   rtt_process = subprocess.Popen([rtt_bin_name, '-Device', 'AMAP42KK-KBR', '-If', 'SWD', '-speed', '4000', '-RTTAddress', '0x10000A58', tmp_file_name])
    reader_process = multiprocessing.Process(target=handle_incoming_data, args=(tmp_file_name, storage_directory, child_pipe, is_running))
    reader_process.start()
    try:
@@ -81,15 +77,17 @@ def main():
    rtt_process.send_signal(signal.SIGINT)
    rtt_process.wait()
    parent_pipe.close()
+   reader_process.join()
 
    # Convert the downloaded log data to a PKL file
    if is_running.value:
       print('\nDeserializing log data into a PKL file... ', end='')
-      with open(os.path.join(storage_directory, 'data.bin'), 'wb') as bin_file:
-         tottag.process_tottag_data(int(device_id, 16), storage_directory, details, bin_file.read(), True)
+      with open(os.path.join(storage_directory, 'data.ttg'), 'rb') as ttg_file:
+         tottag.process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), False)
       print('Done')
 
    # Clean up all temporary files and directories
+   os.remove(os.path.join(storage_directory, 'data.ttg'))
    os.remove(tmp_file_name)
    os.rmdir(tmp_dir)
 

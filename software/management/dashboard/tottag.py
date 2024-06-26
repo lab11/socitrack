@@ -169,7 +169,7 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
             else:
                i += 1
    except Exception:
-       traceback.print_exc()
+      pass
    log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
