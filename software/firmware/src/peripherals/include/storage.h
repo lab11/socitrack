@@ -15,6 +15,7 @@ typedef enum {
    STORAGE_TYPE_MOTION,
    STORAGE_TYPE_RANGES,
    STORAGE_TYPE_IMU,
+   STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
 
