@@ -56,10 +56,11 @@ static void handle_notification(app_notification_t notification)
             transmit_log_data(transmit_buffer, data_length);
       }
 
-      // Transmit completion packet
+      // Transmit some garbage values to flush RTT buffer
+      memset(transmit_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
+      for (int i = 0; i < 4; ++i)
+         transmit_log_data(transmit_buffer, MEMORY_PAGE_SIZE_BYTES);
       storage_end_reading();
-      uint8_t completion_packet = 0xFF;
-      transmit_log_data(&completion_packet, sizeof(completion_packet));
    }
 #endif  // #ifdef __USE_SEGGER__
 }
