@@ -325,16 +325,26 @@ void app_download_log_file(uint32_t start_time, uint32_t end_time)
    }
 }
 
-void app_switch_mode(uint8_t command)
+void app_allow_downloads(bool allow)
 {
-   if (command==1)
-   {  //enable data downloading from ranging mode
-
-      //disable storage writing
+   // Enable data downloading from ranging mode
+   if (allow)
+   {
+      // Disable writing to storage
       storage_disable(true);
       storage_enter_maintenance_mode();
-      //stop imu
+
+      // Stop IMU
       imu_deinit();
+   }
+   else
+   {
+      // Start IMU
+      imu_init();
+
+      // Enable writing to storage
+      storage_exit_maintenance_mode();
+      storage_disable(false);
    }
 }
 

@@ -36,7 +36,7 @@ typedef struct __attribute__ ((__packed__))
 void app_notify(app_notification_t notification, bool from_isr);
 void app_activate_find_my_tottag(uint32_t seconds_to_activate);
 void app_download_log_file(uint32_t start_time, uint32_t end_time);
-void app_switch_mode(uint8_t command);
+void app_allow_downloads(bool allow);
 uint32_t app_get_experiment_time(int32_t offset);
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time);
 

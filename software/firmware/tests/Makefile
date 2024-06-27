@@ -251,12 +251,12 @@ SRC += storage_task.c
 SRC += subscription_phase.c
 SRC += time_aligned_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system)
 
 # TODO: Create separate targets for non-flashing versions
 program:
