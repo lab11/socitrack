@@ -6,6 +6,7 @@
 #include "ranging.h"
 #include "rtc.h"
 #include "system.h"
+#include "imu.h"
 
 static StaticTask_t app_task_tcb, ble_task_tcb, ranging_task_tcb, time_aligned_task_tcb;
 static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
