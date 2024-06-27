@@ -96,7 +96,7 @@ def main():
    # Convert the downloaded log data to a PKL file
    print('\nDeserializing log data into a PKL file... ', end='')
    with open(os.path.join(storage_directory, 'data.ttg'), 'rb') as ttg_file:
-      tottag.process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), False)
+      tottag.process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), True)
    print('Done')
 
    # Clean up all temporary files and directories
