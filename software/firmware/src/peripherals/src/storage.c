@@ -780,16 +780,15 @@ void storage_init(void) {}
 void storage_deinit(void) {}
 void storage_disable(bool disable) {}
 void storage_store_experiment_details(const experiment_details_t *details) {}
+void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
 void storage_store(const void *data, uint32_t data_length) {}
 void storage_flush(bool write_partial_pages) {}
-void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
-void storage_begin_reading(uint32_t) {}
+void storage_begin_reading(uint32_t starting_timestamp) {}
 void storage_end_reading(void) {}
 void storage_enter_maintenance_mode(void){}
 void storage_exit_maintenance_mode(void) {}
-uint32_t storage_retrieve_data_length(void) { return 0; }
+uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp) { return 0; }
+uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
-uint32_t storage_retrieve_num_data_chunks(uint32_t) {return 0; }
-uint32_t storage_retrieve_num_data_bytes(void) {return 0;}
 
 #endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)

@@ -178,7 +178,7 @@ static void handle_notification(app_notification_t notification)
          buzzer_indicate_location();
          vTaskDelay(pdMS_TO_TICKS(1000));
       }
-   #ifdef __USE_SEGGER__
+#ifdef __USE_SEGGER__
    if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
    {
       // Define log file transmission variables
