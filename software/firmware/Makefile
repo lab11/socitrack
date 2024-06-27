@@ -257,7 +257,7 @@ LIBS += AmbiqSDK/mcu/$(PART)/hal/mcu/gcc/bin/libam_hal.a
 
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 CFLAGS+= -ffunction-sections -fdata-sections -fomit-frame-pointer
-CFLAGS+= -MMD -MP -std=c99 -Wall -O3
+CFLAGS+= -MMD -MP -std=c99 -Wall -O0
 CFLAGS+= $(DEFINES)
 CFLAGS+= $(INCLUDES)
 
