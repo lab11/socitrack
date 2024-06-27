@@ -318,9 +318,11 @@ void app_download_log_file(uint32_t start_time, uint32_t end_time)
    if (!app_task_handle)
       app_maintenance_download_log_file(start_time, end_time);
    else
+   {
       download_start_timestamp = start_time;
       download_end_timestamp = end_time;
       xTaskNotify(app_task_handle, APP_NOTIFY_DOWNLOAD_SEGGER_LOG, eSetBits);
+   }
 }
 
 void app_switch_mode(uint8_t command)
