@@ -282,7 +282,7 @@ ble_reset: $(CONFIG) $(CONFIG)/test_ble_reset.o $(CONFIG)/$$(TARGET).bin program
 
 ble_range_imu: TARGET = TestBleRangingIMU
 ble_range_imu: SRC += test_ble_range_imu.c
-ble_range_imu: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D_TEST_IMU_DATA -D__USE_FREERTOS__ -DNONBLOCKING=$(NONBLOCKING) -D_LIVE_IMU_DATA
+ble_range_imu: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -DNONBLOCKING=1 -D_TEST_IMU_DATA -D__USE_FREERTOS__ -D_LIVE_IMU_DATA
 ble_range_imu: $(CONFIG) $(CONFIG)/test_ble_range_imu.o $(CONFIG)/$$(TARGET).bin program
 
 bluetooth: TARGET = TestBluetooth
@@ -309,9 +309,9 @@ full_segger: CFLAGS += -D__USE_FREERTOS__ -D__USE_SEGGER__
 full_segger: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/SEGGER_RTT.o $(CONFIG)/$$(TARGET).bin program
 
 full_exp: TARGET = TestFullExp
-full_exp: SRC += main.c
-full_exp: CFLAGS += -D__USE_FREERTOS__ -DNONBLOCKING=1 -D_TEST_IMU_DATA -D_DOWNLOAD_EVERYTHING -D_REMOTE_MODE_SWITCH_ENABLED -D_USE_DEFAULT_EXP_DETAILS
-full_exp: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/$$(TARGET).bin program
+full_exp: SRC += main.c SEGGER_RTT.c
+full_exp: CFLAGS += -D__USE_FREERTOS__ -D__USE_SEGGER__ -DNONBLOCKING=1 -D_TEST_IMU_DATA -D_REMOTE_MODE_SWITCH_ENABLED -D_TEST_NO_EXP_DETAILS -D_USE_DEFAULT_EXP_DETAILS
+full_exp: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/SEGGER_RTT.o $(CONFIG)/$$(TARGET).bin program
 
 imu: TARGET = TestIMU
 imu: SRC += test_imu.c
