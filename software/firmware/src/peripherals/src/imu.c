@@ -149,11 +149,15 @@ static void imu_isr(void *args)
 #else
    // Read the device motion status and trigger the registered callback
    const uint8_t interrupt_status = i2c_read8(BNO055_INTR_STAT_ADDR);
-   const bool in_motion = interrupt_status & ACC_AM;
-
-   if ((in_motion != previously_in_motion) && motion_change_callback!=NULL)
-      motion_change_callback(in_motion);
-   previously_in_motion = in_motion;
+   const bool in_motion_fired = interrupt_status & ACC_AM;
+   const bool no_motion_fired = interrupt_status & ACC_NM;
+   //print("interrupt status (blocking)%u\n",interrupt_status);
+   if ((in_motion_fired && !previously_in_motion) || (no_motion_fired && previously_in_motion))
+   {
+      previously_in_motion = !previously_in_motion;
+      if (motion_change_callback!=NULL)
+         motion_change_callback(previously_in_motion);
+   }
    if (interrupt_status & (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY))
    {
       if (data_ready_callback!=NULL)
