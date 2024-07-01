@@ -91,12 +91,12 @@ def pack_datetime(time_zone, date_string, time_string, daily):
 def unpack_datetime(time_zone, start_timestamp, timestamp):
    date_string = None
    if start_timestamp is None:
-      local_datetime = pytz.utc.localize(datetime.datetime.utcfromtimestamp(timestamp)).astimezone(pytz.timezone(time_zone))
+      local_datetime = datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).astimezone(pytz.timezone(time_zone))
       date_string = local_datetime.strftime('%m/%d/%Y')
       time_string = local_datetime.strftime('%H:%M')
       seconds_string = local_datetime.strftime('%S')
    else:
-      offset = pytz.utc.localize(datetime.datetime.utcfromtimestamp(start_timestamp)).astimezone(pytz.timezone(time_zone)).utcoffset().total_seconds()
+      offset = datetime.datetime.fromtimestamp(start_timestamp, datetime.timezone.utc).astimezone(pytz.timezone(time_zone)).utcoffset().total_seconds()
       hours = int((timestamp + offset) / 3600)
       time_string = '%02d:%02d'%(hours, int((timestamp + offset - (hours*3600)) / 60))
       seconds_string = '%02d'%(timestamp % 60)

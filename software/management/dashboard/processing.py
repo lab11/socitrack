@@ -129,7 +129,7 @@ def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, vis
     combined = {k: off.get(k, "") + on.get(k, "") for k in sorted(set(off) | set(on))}
 
     for key in combined:
-        local_time = pytz.utc.localize(datetime.utcfromtimestamp(key.timestamp())).astimezone(pytz.timezone(tzlocal.get_localzone_name())).strftime('%Y-%m-%d %H:%M:%S %Z')
+        local_time = datetime.fromtimestamp(key.timestamp(), timezone.utc).astimezone(pytz.timezone(tzlocal.get_localzone_name())).strftime('%Y-%m-%d %H:%M:%S %Z')
         print(key.strftime('%Y-%m-%d %H:%M:%S %Z'), local_time, combined[key])
 
     if visualize:
