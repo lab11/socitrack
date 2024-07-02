@@ -113,15 +113,15 @@ def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, vis
     default usage: get_off_and_on_charger_times(A,"10043_S1")
     """
     voltages = data.loc['v'].dropna()
-
-    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in voltages.keys()])
+    # the timestamps are originally utc timestamp; fromtimestamp converts them to local timezone implicitly; we use explicit conversion to avoid confusion
+    timestamps = np.array([datetime.fromtimestamp(ts, timezone.utc).astimezone(pytz.timezone(tzlocal.get_localzone_name())) for ts in voltages.keys()])
     voltages = voltages.rolling(window=window_size).mean()
 
-    peak_idx, _ = find_peaks(voltages,  width=50)
-    valley_idx, _ = find_peaks(-voltages,width=50)
+    peak_idx, _ = find_peaks(voltages, width=50)
+    valley_idx, _ = find_peaks(-voltages, width=50)
 
-    taken_off_times = mdates.num2date(timestamps[peak_idx])
-    put_on_times = mdates.num2date(timestamps[valley_idx])
+    taken_off_times = timestamps[peak_idx]
+    put_on_times = timestamps[valley_idx]
 
     off = {x:"TAKEN OFF CHARGER" for x in taken_off_times}
     on = {x:"PUT ON CHARGER" for x in put_on_times}
@@ -129,8 +129,8 @@ def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, vis
     combined = {k: off.get(k, "") + on.get(k, "") for k in sorted(set(off) | set(on))}
 
     for key in combined:
-        local_time = datetime.fromtimestamp(key.timestamp(), timezone.utc).astimezone(pytz.timezone(tzlocal.get_localzone_name())).strftime('%Y-%m-%d %H:%M:%S %Z')
-        print(key.strftime('%Y-%m-%d %H:%M:%S %Z'), local_time, combined[key])
+        utc_timestamp = key.astimezone(pytz.utc)
+        print(utc_timestamp.strftime('%Y-%m-%d %H:%M:%S %Z'), key.strftime('%Y-%m-%d %H:%M:%S %Z'), combined[key])
 
     if visualize:
         plt.plot(timestamps, voltages)
