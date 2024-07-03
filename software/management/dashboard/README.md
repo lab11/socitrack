@@ -1,5 +1,10 @@
 # Dashboard & Processing
 
+## Timezone interpretation
+
+- The timestamps stored in the processed log files (the `.pkl` files) are utc timestamps.
+- The plotting functions in `processing.py` plots the time series according to the local timezone of the computer running the script. If you run the same script with the same file on computers from different timezones, the plot will look different. 
+
 ## Dashboard
 
 The TotTag dashboard is a GUI for interacting with the tags.
