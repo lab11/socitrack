@@ -13,7 +13,7 @@
 
 // For burst data transfer
 #define BURST_READ_BASE_ADDR BNO055_GYRO_DATA_X_LSB_ADDR
-#define BURST_READ_LEN 38
+#define BURST_READ_LEN 40
 
 #define GYRO_DATA_LEN 6
 #define ACC_DATA_LEN 6

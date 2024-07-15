@@ -231,6 +231,7 @@ static void imu_burst_data_handler(uint8_t *burst_data_buffer)
    const bno055_data_type_t data_types[] = {STAT_DATA,LACC_DATA,GYRO_DATA};
    uint8_t index = 0;
    uint8_t len = 0;
+   print("got imu data!\n");
 
 #ifndef _TEST_NO_STORAGE
    for (uint8_t i = 0; i < sizeof(data_types)/sizeof(data_types[0]); i+=1)
@@ -330,6 +331,7 @@ void app_allow_downloads(bool allow)
    // Enable data downloading from ranging mode
    if (allow)
    {
+      print("allowing downloads...\n");
       // Disable writing to storage
       storage_disable(true);
       storage_enter_maintenance_mode();
@@ -385,6 +387,7 @@ void AppTaskRanging(void *uid)
    //imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(imu_burst_data_handler);
    imu_set_power_mode(POWER_MODE_NORMAL);
+   //imu_set_power_mode(POWER_MODE_LOWPOWER);
    imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #endif
 

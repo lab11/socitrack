@@ -4,6 +4,7 @@
 # PYTHON INCLUSIONS ---------------------------------------------------------------------------------------------------
 
 import tottag
+from experimental_tottag import *
 import os, signal, sys, tempfile, time
 import subprocess, multiprocessing
 
@@ -31,8 +32,8 @@ def handle_incoming_data(fifo_file_name, storage_directory, pipe, is_running):
       with open(fifo_file_name, 'rb') as rtt_file:
 
          # Wait until all experiment details have been received
-         data = rtt_file.read(4 + 4 * 4 + 2 + 6 * tottag.MAX_NUM_DEVICES + tottag.MAX_NUM_DEVICES * tottag.MAX_LABEL_LENGTH)
-         details = tottag.unpack_experiment_details(data[4:])
+         data = rtt_file.read(4 + 4 * 4 + 2 + 6 * MAX_NUM_DEVICES + MAX_NUM_DEVICES * MAX_LABEL_LENGTH)
+         details = unpack_experiment_details(data[4:])
          pipe.send(details)
 
          # Create a thread to monitor the data reading activity
@@ -96,7 +97,7 @@ def main():
    # Convert the downloaded log data to a PKL file
    print('\nDeserializing log data into a PKL file... ', end='')
    with open(os.path.join(storage_directory, 'data.ttg'), 'rb') as ttg_file:
-      tottag.process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), True)
+      process_tottag_data(int(device_id, 16), storage_directory, details, ttg_file.read(), True)
    print('Done')
 
    # Clean up all temporary files and directories
