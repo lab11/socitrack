@@ -231,7 +231,6 @@ static void imu_burst_data_handler(uint8_t *burst_data_buffer)
    const bno055_data_type_t data_types[] = {STAT_DATA,LACC_DATA,GYRO_DATA};
    uint8_t index = 0;
    uint8_t len = 0;
-   print("got imu data!\n");
 
 #ifndef _TEST_NO_STORAGE
    for (uint8_t i = 0; i < sizeof(data_types)/sizeof(data_types[0]); i+=1)

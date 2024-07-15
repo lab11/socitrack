@@ -73,3 +73,7 @@ cmake-build-debug/
 # MacOS file system
 .DS_Store
 settings.json
+
+# log files
+*.pkl
+*.ttg
