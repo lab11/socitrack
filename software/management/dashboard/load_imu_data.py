@@ -1,6 +1,8 @@
 from processing import *
 from dataclasses import dataclass, asdict
 import struct
+import numpy as np
+import matplotlib.pyplot as plt
 
 GYRO_DATA,ACC_DATA,LACC_DATA,GACC_DATA,QUAT_DATA,STAT_DATA = 0,1,2,3,4,5
 
@@ -100,7 +102,7 @@ BURST_READ_BASE_ADDR = BNO055_GYRO_DATA_X_LSB_ADDR
 GACC_SCALE_FACTOR = 100.0 #m/s^2
 QUAT_SCALE_FACTOR = float((1 << 14))
 LACC_SCALE_FACTOR = 100.0 #m/s^2
-GYRO_SCALE_FACTOR = 16.0
+GYRO_SCALE_FACTOR = 16.0 #degree/s
 ACC_SCALE_FACTOR = 100.0 #m/s^2
 
 def unpack_imu_data_single_type(data_single, data_type):
@@ -141,9 +143,53 @@ def unpack_imu_data(data, data_type_seq):
         all_elements = all_elements + dataclass_to_list(unpacked)
     return all_elements
 
-#a = load_data("~/Downloads/Unknown.pkl")
-a = load_data("./Unknown.pkl")
+def generate_headers_formats(data_types):
+    headers = ["timestamp"]
+    formats = ['%.2f']
+
+    for data_type in data_types:
+        if data_type == GYRO_DATA:
+            headers = headers + ["gyro_x","gyro_y","gyro_z"]
+            formats+=["%.4f"]*3
+        if data_type == STAT_DATA:
+            headers = headers + ["calib_mag","calib_accel","calib_gyro","calib_sys"]
+            formats+=["%d"]*4
+        if data_type == LACC_DATA:
+            headers = headers + ["lacc_x","lacc_y","lacc_z"]
+            formats+=["%.4f"]*3
+        if data_type == ACC_DATA:
+            headers = headers + ["acc_x","acc_y","acc_z"]
+            formats+=["%.4f"]*3
+        if data_type == QUAT_DATA:
+            headers = headers + ["quat_w","quat_x","quat_y","quat_z"]
+            formats+=["%.14f"]*4
+    return headers,formats
+
+"""
+a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
 data_types = [STAT_DATA,LACC_DATA,GYRO_DATA]
+headers,formats = generate_headers_formats(data_types)
+
+all_data = []
 for segment in a.loc["i"]:
     for ts, data in segment:
-        print(ts, unpack_imu_data(data,data_types))
+        unpacked = unpack_imu_data(data,data_types)
+        #print(ts, unpacked)
+        all_data.append([ts]+unpacked)
+all_data = np.array(all_data)
+print(all_data)
+np.savetxt("output.csv", all_data, delimiter=',', header=','.join(headers), comments='', fmt=formats)
+
+timestamps = all_data[:, 0]
+timestamps = timestamps - timestamps[0]
+lacc_x =all_data[:, 5]
+lacc_y =all_data[:, 6]
+lacc_z =all_data[:, 7]
+gyro_x =all_data[:, 8]
+gyro_y =all_data[:, 9]
+gyro_z =all_data[:, 10]
+
+#plt.plot(timestamps, lacc_x)
+plt.plot(timestamps, gyro_x)
+plt.show()
+"""
