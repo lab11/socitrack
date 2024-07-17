@@ -6,61 +6,41 @@
 #include "logging.h"
 
 
+// IMU Definitions -----------------------------------------------------------------------------------------------------
+
+// ISR Definitions
+#define imu_iom_isr       am_iom_isr1(IMU_I2C_NUMBER)
+#define am_iom_isr1(n)    am_iom_isr(n)
+#define am_iom_isr(n)     am_iomaster ## n ## _isr
+
+// Burst data transfer definitions
+#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
+#define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
+#define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
+
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static void *i2c_handle;
 static volatile bool previously_in_motion;
+static uint32_t imu_buffer[BURST_READ_LEN];
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
 
-#if NONBLOCKING
-static uint32_t imuBuffer[2048];
-static uint8_t gReadBuffer[BURST_READ_LEN] = {0};
 
-#define imu_iom_isr                                                          \
-    am_iom_isr1(IMU_I2C_NUMBER)
-#define am_iom_isr1(n)                                                        \
-    am_iom_isr(n)
-#define am_iom_isr(n)                                                         \
-    am_iomaster ## n ## _isr
-#define IMU_IOM_IRQn           ((IRQn_Type)(IOMSTR0_IRQn + IMU_I2C_NUMBER))
-
-void imu_iom_isr(void)
-{
-    uint32_t ui32Status;
-
-    if (!am_hal_iom_interrupt_status_get(i2c_handle, true, &ui32Status))
-    {
-        if ( ui32Status )
-        {
-            am_hal_iom_interrupt_clear(i2c_handle, ui32Status);
-            am_hal_iom_interrupt_service(i2c_handle, ui32Status);
-        }
-    }
-}
-
-static void nonblocking_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
-{
-   uint8_t saved_buffer[BURST_READ_LEN] = {0};
-   imu_read_burst_buffer(saved_buffer);
-   data_ready_callback(saved_buffer);
-}
-
-#endif
 // Private Helper Functions --------------------------------------------------------------------------------------------
-
 
 static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
 {
    // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t bodyBuffer = reg_value, retries_remaining = 5;
+   uint32_t body_buffer = reg_value, retries_remaining = 5;
    am_hal_iom_transfer_t write_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
       .ui32InstrLen                 = 1,
       .ui64Instr                    = reg_number,
       .eDirection                   = AM_HAL_IOM_TX,
       .ui32NumBytes                 = 1,
-      .pui32TxBuffer                = &bodyBuffer,
+      .pui32TxBuffer                = &body_buffer,
       .pui32RxBuffer                = NULL,
       .bContinue                    = false,
       .ui8RepeatCount               = 0,
@@ -71,10 +51,46 @@ static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
    while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS));
 }
 
+static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
+{
+   // Read the device motion status and trigger the registered callback
+   uint8_t *raw_data = (uint8_t*)imu_buffer;
+   const uint8_t interrupt_status = *(raw_data + BNO055_INTR_STAT_ADDR - BURST_READ_BASE_ADDR);
+   const bool in_motion_fired = interrupt_status & ACC_AM, no_motion_fired = interrupt_status & ACC_NM;
+   if ((in_motion_fired && !previously_in_motion) || (no_motion_fired && previously_in_motion))
+   {
+      previously_in_motion = !previously_in_motion;
+      if (motion_change_callback)
+         motion_change_callback(previously_in_motion);
+   }
+
+   // Read the data-ready status and trigger the registered callback
+   if (data_ready_callback)// TODO: Only call if interrupt-bit set: && (interrupt_status & (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY)))
+   {
+      int16_t* gyro_data = (int16_t*)(raw_data + BNO055_GYRO_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+      int16_t* linear_accel_data = (int16_t*)(raw_data + BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+      int16_t* gravity_data = (int16_t*)(raw_data + BNO055_GRAVITY_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+      int16_t* quaternion_data = (int16_t*)(raw_data + BNO055_QUATERNION_DATA_W_LSB_ADDR - BURST_READ_BASE_ADDR);
+      uint8_t* calib_data = raw_data + BNO055_CALIB_STAT_ADDR - BURST_READ_BASE_ADDR;
+      // Fix quaternion bit-flipping issue
+      for (uint8_t i = 0; i < 4; ++i)
+      {
+         if (quaternion_data[i] > 16384)
+            quaternion_data[i] -= 32768;
+         else if (quaternion_data[i] < -16384)
+            quaternion_data[i] += 32768;
+      }
+      data_ready_callback(gyro_data, linear_accel_data, gravity_data, quaternion_data, calib_data, raw_data, BURST_READ_LEN);
+   }
+
+   // Reset the interrupt trigger bits
+   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
+}
+
 static uint8_t i2c_read8(uint8_t reg_number)
 {
    // Repeat the transfer until it succeeds or requires a device reset
-   static uint32_t readBuffer;
+   static uint32_t read_buffer;
    uint32_t retries_remaining = 5;
    am_hal_iom_transfer_t read_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
@@ -83,7 +99,7 @@ static uint8_t i2c_read8(uint8_t reg_number)
       .eDirection                   = AM_HAL_IOM_RX,
       .ui32NumBytes                 = 1,
       .pui32TxBuffer                = NULL,
-      .pui32RxBuffer                = &readBuffer,
+      .pui32RxBuffer                = &read_buffer,
       .bContinue                    = false,
       .ui8RepeatCount               = 0,
       .ui8Priority                  = 1,
@@ -91,13 +107,12 @@ static uint8_t i2c_read8(uint8_t reg_number)
       .ui32StatusSetClr             = 0
    };
    while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
-   return ((uint8_t*)&readBuffer)[0];
+   return ((uint8_t*)&read_buffer)[0];
 }
 
-static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_length)
+static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_length, bool non_blocking)
 {
    // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t retries_remaining = 5;
    am_hal_iom_transfer_t read_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
       .ui32InstrLen                 = 1,
@@ -112,70 +127,35 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
+   if (non_blocking)
+      am_hal_iom_nonblocking_transfer(i2c_handle, &read_transaction, i2c_read_complete, NULL);
+   else
+   {
+      uint32_t retries_remaining = 5;
+      while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
+   }
 }
 
-#if NONBLOCKING
-static uint8_t i2c_nonblocking_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_length)
-{
-   am_hal_iom_transfer_t read_transaction = {
-      .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
-      .ui32InstrLen                 = 1,
-      .ui64Instr                    = reg_number,
-      .eDirection                   = AM_HAL_IOM_RX,
-      .ui32NumBytes                 = buffer_length,
-      .pui32TxBuffer                = NULL,
-      .pui32RxBuffer                = (uint32_t*)read_buffer,
-      .bContinue                    = false,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-   uint32_t status = am_hal_iom_nonblocking_transfer(i2c_handle, &read_transaction, nonblocking_read_complete, NULL);
-   if (status!=AM_HAL_STATUS_SUCCESS)
-   {
-       return status;
-   }
-   return AM_HAL_STATUS_SUCCESS;
-}
-#endif
+
+// Interrupt Service Routines ------------------------------------------------------------------------------------------
 
 static void imu_isr(void *args)
 {
-#if NONBLOCKING
-   //read useful data in one go
-   i2c_nonblocking_read(BURST_READ_BASE_ADDR, gReadBuffer, BURST_READ_LEN);
-#else
-   // Read the device motion status and trigger the registered callback
-   const uint8_t interrupt_status = i2c_read8(BNO055_INTR_STAT_ADDR);
-   const bool in_motion_fired = interrupt_status & ACC_AM;
-   const bool no_motion_fired = interrupt_status & ACC_NM;
-   //print("interrupt status (blocking)%u\n",interrupt_status);
-   if ((in_motion_fired && !previously_in_motion) || (no_motion_fired && previously_in_motion))
-   {
-      previously_in_motion = !previously_in_motion;
-      if (motion_change_callback!=NULL)
-         motion_change_callback(previously_in_motion);
-   }
-   if (interrupt_status & (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY))
-   {
-      if (data_ready_callback!=NULL)
-         data_ready_callback(interrupt_status);
-   }
-   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);//reset all interrupt status bits, and INT output
-#endif
+   // Initiate an IMU burst read
+   i2c_read(BURST_READ_BASE_ADDR, (uint8_t*)imu_buffer, BURST_READ_LEN, true);
 }
 
-static void read_int16_vector(uint8_t reg_number, int16_t *read_buffer, uint32_t byte_count){
-   static uint8_t byte_array[22];
-   memset(byte_array, 0, 22);
-   memset(read_buffer, 0, byte_count);
-   i2c_read(reg_number, byte_array, byte_count);
-   for (uint32_t i = 0; i < byte_count/2; i++){
-      read_buffer[i] = ((int16_t)byte_array[i*2]) | (((int16_t)byte_array[i*2+1]) << 8);
-   }
+void imu_iom_isr(void)
+{
+   // Handle an IMU read interrupt
+   static uint32_t status;
+   AM_CRITICAL_BEGIN
+   am_hal_iom_interrupt_status_get(i2c_handle, false, &status);
+   am_hal_iom_interrupt_clear(i2c_handle, status);
+   AM_CRITICAL_END
+   am_hal_iom_interrupt_service(i2c_handle, status);
 }
+
 
 // IMU Chip-Specific API Functions -------------------------------------------------------------------------------------
 
@@ -205,16 +185,6 @@ static void enter_suspend_mode(void)
    i2c_write8(BNO055_PWR_MODE_ADDR, 0x02);
 }
 
-static void disable_motion_interrupts(void)
-{
-   // Disable all interrupts
-   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
-   i2c_write8(ACC_INT_SET, 0);
-   i2c_write8(INT_MSK, 0);
-   i2c_write8(INT_EN, 0);
-   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
-}
-
 static void enable_motion_interrupts(void)
 {
    // Set up interrupts for motion and non-motion events
@@ -224,16 +194,28 @@ static void enable_motion_interrupts(void)
    i2c_write8(ACC_NM_THRE, 0b00001010);
    i2c_write8(ACC_NM_SET, 0b00001001);
    i2c_write8(ACC_INT_SET, 0b00011111); //axis and duration for triggering motion interrupt
-   i2c_write8(INT_MSK, ACC_NM|ACC_AM);
-   i2c_write8(INT_EN, ACC_NM|ACC_AM);
+   i2c_write8(INT_MSK, ACC_NM | ACC_AM);
+   i2c_write8(INT_EN, ACC_NM | ACC_AM);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
+}
+
+static void disable_motion_interrupts(void)
+{
+   // Disable interrupts for motion and non-motion events
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
+   i2c_write8(ACC_INT_SET, 0);
+   uint8_t int_msk = i2c_read8(INT_MSK) & ~(ACC_NM | ACC_AM);
+   uint8_t int_en = i2c_read8(INT_EN) & ~(ACC_NM | ACC_AM);
+   i2c_write8(INT_MSK, int_msk);
+   i2c_write8(INT_EN, int_en);
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 static void enable_data_ready_interrupts(void)
 {
    i2c_write8(BNO055_PAGE_ID_ADDR, 1);
-   uint8_t int_msk = i2c_read8(INT_MSK)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-   uint8_t int_en = i2c_read8(INT_EN)|(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   uint8_t int_msk = i2c_read8(INT_MSK) | (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
+   uint8_t int_en = i2c_read8(INT_EN) | (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
    i2c_write8(INT_MSK, int_msk);
    i2c_write8(INT_EN, int_en);
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
@@ -249,7 +231,9 @@ static void disable_data_ready_interrupts(void)
    i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
-// Math helper functions -----------------------------------------------------------------------------------------------
+
+// Math Helper Functions -----------------------------------------------------------------------------------------------
+
 void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler)
 {
    int32_t sqw = quaternion.w * quaternion.w;
@@ -262,6 +246,7 @@ void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler)
    euler->roll = atan2(2.0*(quaternion.y*quaternion.z + quaternion.x*quaternion.w),(-sqx - sqy + sqz + sqw));
 }
 
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 void imu_init(void)
@@ -272,18 +257,14 @@ void imu_init(void)
    data_ready_callback = NULL;
 
    // Create an I2C configuration structure
+   static uint32_t command_queue_buffer[128];
    const am_hal_iom_config_t i2c_config =
    {
       .eInterfaceMode = AM_HAL_IOM_I2C_MODE,
       .ui32ClockFreq = AM_HAL_IOM_100KHZ,
       .eSpiMode = 0,
-#if NONBLOCKING
-      .pNBTxnBuf = &imuBuffer[0],
-      .ui32NBTxnBufLength = sizeof(imuBuffer) / 4
-#else
-      .pNBTxnBuf = NULL,
-      .ui32NBTxnBufLength = 0
-#endif
+      .pNBTxnBuf = command_queue_buffer,
+      .ui32NBTxnBufLength = sizeof(command_queue_buffer) / sizeof(uint32_t)
    };
 
    // Configure and assert the RESET pin
@@ -325,12 +306,9 @@ void imu_init(void)
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_IMU_INTERRUPT, imu_isr, NULL));
    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
+   NVIC_SetPriority(IOMSTR0_IRQn + IMU_I2C_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
-
-#if NONBLOCKING
-   NVIC_SetPriority(IMU_IOM_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
-   NVIC_EnableIRQ(IMU_IOM_IRQn);
-#endif
+   NVIC_EnableIRQ(IOMSTR0_IRQn + IMU_I2C_NUMBER);
 }
 
 void imu_deinit(void)
@@ -382,7 +360,7 @@ void imu_set_power_mode(bno055_powermode_t power_mode)
 void imu_read_accel_data(bno055_acc_t *acc)
 {
    static int16_t accel_data[3];
-   read_int16_vector(BNO055_ACCEL_DATA_X_LSB_ADDR, accel_data, sizeof(accel_data));
+   i2c_read(BNO055_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data), false);
    acc->x = accel_data[0];
    acc->y = accel_data[1];
    acc->z = accel_data[2];
@@ -391,7 +369,7 @@ void imu_read_accel_data(bno055_acc_t *acc)
 void imu_read_linear_accel_data(bno055_acc_t *acc)
 {
    static int16_t accel_data[3];
-   read_int16_vector(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, accel_data, sizeof(accel_data));
+   i2c_read(BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data), false);
    acc->x = accel_data[0];
    acc->y = accel_data[1];
    acc->z = accel_data[2];
@@ -400,7 +378,7 @@ void imu_read_linear_accel_data(bno055_acc_t *acc)
 void imu_read_gravity_accel_data(bno055_acc_t *acc)
 {
    static int16_t accel_data[3];
-   read_int16_vector(BNO055_GRAVITY_DATA_X_LSB_ADDR, accel_data, sizeof(accel_data));
+   i2c_read(BNO055_GRAVITY_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data), false);
    acc->x = accel_data[0];
    acc->y = accel_data[1];
    acc->z = accel_data[2];
@@ -409,7 +387,7 @@ void imu_read_gravity_accel_data(bno055_acc_t *acc)
 void imu_read_euler_data(bno055_euler_t *euler)
 {
    static int16_t euler_data[3];
-   read_int16_vector(BNO055_EULER_H_LSB_ADDR, euler_data, sizeof(euler_data));
+   i2c_read(BNO055_EULER_H_LSB_ADDR, (uint8_t*)euler_data, sizeof(euler_data), false);
    euler->yaw = (euler_data[0]/16.0);
    euler->roll = (euler_data[1]/16.0);
    euler->pitch = (euler_data[2]/16.0);
@@ -418,16 +396,14 @@ void imu_read_euler_data(bno055_euler_t *euler)
 void imu_read_quaternion_data(bno055_quaternion_t *quaternion)
 {
    static int16_t quaternion_data[4];
-   read_int16_vector(BNO055_QUATERNION_DATA_W_LSB_ADDR, quaternion_data, sizeof(quaternion_data));
+   i2c_read(BNO055_QUATERNION_DATA_W_LSB_ADDR, (uint8_t*)quaternion_data, sizeof(quaternion_data), false);
    //temporary fix of MSB sign bit flipping problem
    for (uint8_t i = 0; i < 4; i++)
    {
-       if (quaternion_data[i]>16384){
-          quaternion_data[i] = quaternion_data[i] - 32768;
-       }
-       else if (quaternion_data[i]<-16384){
-           quaternion_data[i] = quaternion_data[i] + 32768;
-       }
+      if (quaternion_data[i] > 16384)
+         quaternion_data[i] -= 32768;
+      else if (quaternion_data[i] < -16384)
+         quaternion_data[i] += 32768;
    }
    quaternion->w = quaternion_data[0];
    quaternion->x = quaternion_data[1];
@@ -438,7 +414,7 @@ void imu_read_quaternion_data(bno055_quaternion_t *quaternion)
 void imu_read_gyro_data(bno055_gyro_t *gyro)
 {
    static int16_t gyro_data[3];
-   read_int16_vector(BNO055_GYRO_DATA_X_LSB_ADDR, gyro_data, sizeof(gyro_data));
+   i2c_read(BNO055_GYRO_DATA_X_LSB_ADDR, (uint8_t*)gyro_data, sizeof(gyro_data), false);
    gyro->x = gyro_data[0];
    gyro->y = gyro_data[1];
    gyro->z = gyro_data[2];
@@ -447,7 +423,7 @@ void imu_read_gyro_data(bno055_gyro_t *gyro)
 void imu_read_temp(int8_t *temp)
 {
    static int8_t temp_data;
-   i2c_read(BNO055_TEMP_ADDR, (uint8_t*)&temp_data, 1);
+   i2c_read(BNO055_TEMP_ADDR, (uint8_t*)&temp_data, 1, false);
    *temp = (int8_t)temp_data;
 }
 
@@ -474,7 +450,7 @@ void imu_read_calibration_offsets(bno055_calib_offsets_t *offsets)
    //calibration values are only availble in config mode
    imu_set_op_mode(OPERATION_MODE_CONFIG);
    //read the 11 offset values
-   read_int16_vector(ACCEL_OFFSET_X_LSB_ADDR, calib_data, sizeof(calib_data));
+   i2c_read(ACCEL_OFFSET_X_LSB_ADDR, (uint8_t*)calib_data, sizeof(calib_data), false);
    //revert to the previous mode
    imu_set_op_mode(saved_mode);
 
@@ -521,56 +497,11 @@ bool imu_set_axis_remap(bno055_axis_remap_t remap)
    //test whether the set is successful
    bno055_axis_remap_t remap_verification = {0};
    imu_read_axis_remap(&remap_verification);
-   if ((remap_verification.x_remap_val == remap.x_remap_val) && (remap_verification.y_remap_val == remap.y_remap_val) && (remap_verification.z_remap_val == remap.z_remap_val) &&
-      (remap_verification.x_remap_sign == remap.x_remap_sign) && (remap_verification.y_remap_sign == remap.y_remap_sign) && (remap_verification.z_remap_sign == remap.z_remap_sign))
-   {
-      return 1;
-   }
-   return 0;
+   return ((remap_verification.x_remap_val == remap.x_remap_val) && (remap_verification.y_remap_val == remap.y_remap_val) && (remap_verification.z_remap_val == remap.z_remap_val) &&
+           (remap_verification.x_remap_sign == remap.x_remap_sign) && (remap_verification.y_remap_sign == remap.y_remap_sign) && (remap_verification.z_remap_sign == remap.z_remap_sign));
 }
 
 bool imu_read_in_motion(void)
 {
    return previously_in_motion;
 }
-
-uint8_t imu_pick_data_from_burst_buffer(uint8_t *picked, uint8_t *full, bno055_data_type_t data_type)
-{
-   //pick data from the continuous read data, and copy it at the start of the picked buffer
-   if (data_type == GYRO_DATA)
-   {
-      memcpy(picked, full+BNO055_GYRO_DATA_X_LSB_ADDR-BURST_READ_BASE_ADDR, GYRO_DATA_LEN);
-      return GYRO_DATA_LEN;
-   }
-   else if (data_type == LACC_DATA)
-   {
-      memcpy(picked, full+BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR-BURST_READ_BASE_ADDR, LACC_DATA_LEN);
-      return LACC_DATA_LEN;
-   }
-   else if (data_type == GACC_DATA)
-   {
-      memcpy(picked, full+BNO055_GRAVITY_DATA_X_LSB_ADDR-BURST_READ_BASE_ADDR, LACC_DATA_LEN);
-      return GACC_DATA_LEN;
-   }
-   else if (data_type == QUAT_DATA)
-   {
-      memcpy(picked, full+BNO055_QUATERNION_DATA_W_LSB_ADDR-BURST_READ_BASE_ADDR, QUAT_DATA_LEN);
-      return QUAT_DATA_LEN;
-   }
-   else if  (data_type == STAT_DATA)
-   {
-      memcpy(picked, full+BNO055_CALIB_STAT_ADDR-BURST_READ_BASE_ADDR, STAT_DATA_LEN);
-      return STAT_DATA_LEN;
-   }
-   return 0;
-}
-
-#if NONBLOCKING
-void imu_read_burst_buffer(uint8_t *destBuffer)
-{
-    AM_CRITICAL_BEGIN
-    memcpy(destBuffer, gReadBuffer, BURST_READ_LEN);
-    memset(gReadBuffer, 0, BURST_READ_LEN);
-    AM_CRITICAL_END
-}
-#endif

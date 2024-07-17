@@ -218,30 +218,20 @@ static void motion_change_handler(bool in_motion)
    app_notify(APP_NOTIFY_MOTION_EVENT, true);
 }
 
-static void imu_burst_data_handler(uint8_t *burst_data_buffer)
+#ifdef _TEST_IMU_DATA
+static void data_ready_handler(int16_t *gyro_data, int16_t *linear_accel_data, int16_t *gravity_data, int16_t *quaternion_data, uint8_t *calib_data, uint8_t *raw_data, uint32_t raw_data_length)
 {
    //TODO
 #ifdef _LIVE_IMU_DATA
-   bluetooth_write_imu_data(burst_data_buffer, BURST_READ_LEN);
+   bluetooth_write_imu_data(raw_data, raw_data_length);
 #endif
 
-   uint8_t useful_imu_data[BURST_READ_LEN] = {0};
-
-   //types of imu data to be saved
-   const bno055_data_type_t data_types[] = {STAT_DATA,LACC_DATA,GYRO_DATA};
-   uint8_t index = 0;
-   uint8_t len = 0;
-
+   // Store relevant IMU data
 #ifndef _TEST_NO_STORAGE
-   for (uint8_t i = 0; i < sizeof(data_types)/sizeof(data_types[0]); i+=1)
-   {
-      len = imu_pick_data_from_burst_buffer(useful_imu_data+index, burst_data_buffer, data_types[i]);
-      index+= len;
-   }
-   storage_write_imu_data(app_get_experiment_time(0), useful_imu_data, index);
-   //storage_write_imu_data(app_get_experiment_time(0), burst_data_buffer, 38);
+   storage_write_imu_data(linear_accel_data);
 #endif
 }
+#endif
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
 {
@@ -383,8 +373,8 @@ void AppTaskRanging(void *uid)
 #endif
 
 #ifdef _TEST_IMU_DATA
-   //imu_register_motion_change_callback(motion_change_handler);
-   imu_register_data_ready_callback(imu_burst_data_handler);
+   imu_register_motion_change_callback(motion_change_handler);
+   imu_register_data_ready_callback(data_ready_handler);
    imu_set_power_mode(POWER_MODE_NORMAL);
    //imu_set_power_mode(POWER_MODE_LOWPOWER);
    imu_set_fusion_mode(OPERATION_MODE_NDOF);

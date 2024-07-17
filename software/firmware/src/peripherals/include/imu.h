@@ -1,7 +1,6 @@
 #ifndef __IMU_HEADER_H__
 #define __IMU_HEADER_H__
 
-#define RAD_TO_DEG(radian) (radian * 180.0 / 3.14159265358979f)
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_config.h"
@@ -9,11 +8,9 @@
 
 // Peripheral Type Definitions -----------------------------------------------------------------------------------------
 
-#define BNO055_ID 0xA0
+#define RAD_TO_DEG(radian) (radian * 180.0 / 3.14159265358979f)
 
-// For burst data transfer
-#define BURST_READ_BASE_ADDR BNO055_GYRO_DATA_X_LSB_ADDR
-#define BURST_READ_LEN 40
+#define BNO055_ID 0xA0
 
 #define GYRO_DATA_LEN 6
 #define ACC_DATA_LEN 6
@@ -23,11 +20,8 @@
 #define STAT_DATA_LEN 1
 
 typedef void (*motion_change_callback_t)(bool in_motion);
-#if NONBLOCKING
-typedef void (*data_ready_callback_t)(uint8_t *localBuffer);
-#else
-typedef void (*data_ready_callback_t)(uint8_t interrupt_status);
-#endif
+typedef void (*data_ready_callback_t)(int16_t *gyro_data, int16_t *linear_accel_data, int16_t *gravity_data, int16_t *quaternion_data, uint8_t *calib_data, uint8_t *raw_data, uint32_t raw_data_length);
+// TODO: Get rid of raw_data stuff after Wenshan updates BLE Live IMU functions to directly accept relevant data items
 
 typedef enum
 {
@@ -194,16 +188,6 @@ typedef enum
 
 typedef enum
 {
-   GYRO_DATA,
-   ACC_DATA,
-   LACC_DATA,
-   GACC_DATA,
-   QUAT_DATA,
-   STAT_DATA,
-} bno055_data_type_t;
-
-typedef enum
-{
    OPERATION_MODE_CONFIG = 0X00,
    OPERATION_MODE_ACCONLY = 0X01,
    OPERATION_MODE_MAGONLY = 0X02,
@@ -229,7 +213,7 @@ typedef enum
    GYRO_AM = 0b00000100,
    MAG_DRDY = 0b00000010,
    ACC_BSX_DRDY = 0b00000001
-}bno055_intmsk_t;
+} bno055_intmsk_t;
 
 typedef enum
 {
@@ -273,7 +257,7 @@ typedef struct
    uint8_t x_remap_sign;
    uint8_t y_remap_sign;
    uint8_t z_remap_sign;
-}bno055_axis_remap_t;
+} bno055_axis_remap_t;
 
 typedef struct
 {
@@ -288,7 +272,7 @@ typedef struct
    double yaw;
    double pitch;
    double roll;
-}bno055_euler_t;
+} bno055_euler_t;
 
 typedef struct
 {
@@ -302,7 +286,7 @@ typedef struct
    int16_t x;
    int16_t y;
    int16_t z;
-}bno055_gyro_t;
+} bno055_gyro_t;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -326,8 +310,6 @@ void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_set_axis_remap(bno055_axis_remap_t remap);
 void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
-void imu_read_burst_buffer(uint8_t *destBuffer);
-uint8_t imu_pick_data_from_burst_buffer(uint8_t *picked, uint8_t *full, bno055_data_type_t data_type);
 
 // Math utilities
 void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler);

@@ -8,14 +8,14 @@
 // Storage Task and Notification Types ---------------------------------------------------------------------------------
 
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
-typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
 typedef struct imu_data_t { uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length; } imu_data_t;
+typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+static imu_data_t imu_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
 static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
-static imu_data_t imu_buffer[STORAGE_IMU_BUFFER_NUM_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
 static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
@@ -98,13 +98,14 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
-void storage_write_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_t imu_data_len)
+void storage_write_imu_data(const int16_t *accel_data)
 {
    static uint32_t imu_data_index = 0;
-   const storage_item_t storage_item = { .timestamp = timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU};
-   memcpy(imu_buffer[imu_data_index].data, imu_data, imu_data_len);
-   imu_buffer[imu_data_index].length = imu_data_len;
-   imu_data_index = (imu_data_index + 1) % STORAGE_IMU_BUFFER_NUM_ITEMS;
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
+   memcpy(imu_data[imu_data_index].data, accel_data, 3 * sizeof(int16_t));
+   imu_data[imu_data_index].length = 3 * sizeof(int16_t);
+   imu_data_index = (imu_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
@@ -153,7 +154,7 @@ void StorageTask(void *params)
                store_ranges(item.timestamp, range_data[item.value].data, range_data[item.value].length);
                break;
             case STORAGE_TYPE_IMU:
-               store_imu_data(item.timestamp, imu_buffer[item.value].data, imu_buffer[item.value].length);
+               store_imu_data(item.timestamp, imu_data[item.value].data, imu_data[item.value].length);
                break;
             default:
                break;
