@@ -134,6 +134,7 @@ static void handle_notification(app_notification_t notification)
    #endif
 #endif
       }
+      imu_clear_interrupts();
    }
    if (((notification & APP_NOTIFY_NETWORK_LOST)) || ((notification & APP_NOTIFY_NETWORK_CONNECTED)) ||
        ((notification & APP_NOTIFY_VERIFY_CONFIGURATION)))

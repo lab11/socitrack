@@ -48,7 +48,13 @@ int main(void)
    //if (imu_set_axis_remap(remap)){print("remap success!\n");}
    //print("BNO055 X mapping:%u, Y mapping:%u, Z mapping:%u, X sign:%u, Y sign:%u, Z sign:%u\n", remap.x_remap_val, remap.y_remap_val, remap.z_remap_val, remap.x_remap_sign, remap.y_remap_sign, remap.z_remap_sign);
 
-   while (true);
+   while (true)
+   {
+      // Sleep until awoken by an interrupt
+      am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
+      print("Interrupt received\n");
+      imu_clear_interrupts();
+   }
 
    // Should never reach this point
    return 0;

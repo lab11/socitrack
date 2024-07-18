@@ -329,6 +329,7 @@ void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_set_axis_remap(bno055_axis_remap_t remap);
 void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
+void imu_clear_interrupts(void);
 uint8_t imu_pick_data_from_raw(const uint8_t **const picked, const uint8_t *raw_data, bno055_data_type_t data_type);
 uint8_t imu_copy_data_from_raw(uint8_t *picked, const uint8_t *raw_data, bno055_data_type_t data_type);
 

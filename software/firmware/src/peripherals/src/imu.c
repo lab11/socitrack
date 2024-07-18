@@ -70,9 +70,6 @@ static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
       data_ready_callback(calib_data, linear_accel_data);
 #endif
    }
-
-   // Reset the interrupt trigger bits
-   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
 }
 
 static uint8_t i2c_read8(uint8_t reg_number)
@@ -321,6 +318,7 @@ void imu_register_motion_change_callback(motion_change_callback_t callback)
 {
    // Set up IMU motion-based interrupts
    motion_change_callback = callback;
+   imu_clear_interrupts();
    enable_motion_interrupts();
 }
 
@@ -328,6 +326,7 @@ void imu_register_data_ready_callback(data_ready_callback_t callback)
 {
    // Set up IMU data-ready interrupts
    data_ready_callback = callback;
+   imu_clear_interrupts();
    enable_data_ready_interrupts();
 }
 
@@ -492,6 +491,12 @@ bool imu_set_axis_remap(bno055_axis_remap_t remap)
 bool imu_read_in_motion(void)
 {
    return previously_in_motion;
+}
+
+void imu_clear_interrupts(void)
+{
+   // Reset the interrupt trigger bits
+   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
 }
 
 uint8_t imu_pick_data_from_raw(const uint8_t **const picked, const uint8_t *raw_data, bno055_data_type_t data_type)
