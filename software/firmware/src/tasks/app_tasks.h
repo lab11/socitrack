@@ -50,7 +50,7 @@ void storage_write_battery_level(uint32_t battery_voltage_mV);
 void storage_write_motion_status(bool in_motion);
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset);
 #ifdef _TEST_IMU_DATA
-void storage_write_imu_data(const uint8_t *data, uint32_t data_len);
+void storage_write_imu_data(const uint8_t *raw_data, uint32_t raw_data_len);
 #else
 void storage_write_imu_data(const uint8_t *calib_data, const int16_t *accel_data);
 #endif
