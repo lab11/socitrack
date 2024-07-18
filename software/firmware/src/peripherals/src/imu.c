@@ -178,7 +178,7 @@ static void enable_motion_interrupts(void)
    // Set up interrupts for motion and non-motion events
    i2c_write8(BNO055_PAGE_ID_ADDR, 1);
    i2c_write8(ACC_CONFIG, 0b00000000); //operation mode/bandwidth/g range
-   i2c_write8(ACC_AM_THRE, 0b00001010);
+   i2c_write8(ACC_AM_THRE, 0b00000010);
    i2c_write8(ACC_NM_THRE, 0b00001010);
    i2c_write8(ACC_NM_SET, 0b00001001);
    i2c_write8(ACC_INT_SET, 0b00011111); //axis and duration for triggering motion interrupt
