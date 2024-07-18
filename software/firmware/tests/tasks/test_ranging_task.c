@@ -93,7 +93,7 @@ void RangeTask(void *uid)
       if (xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE)
       {
          is_ranging = true;
-         scheduler_run((schedule_role_t)desired_role_bits, 0);
+         scheduler_run((schedule_role_t)desired_role_bits);
       }
       is_ranging = false;
    }

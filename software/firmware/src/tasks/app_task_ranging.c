@@ -350,7 +350,7 @@ void app_allow_downloads(bool allow)
    // Enable data downloading from ranging mode
    if (allow)
    {
-      print("allowing downloads...\n");
+      print("INFO: Allowing downloads...\n");
       // Disable writing to storage
       storage_disable(true);
       storage_enter_maintenance_mode();
@@ -392,9 +392,7 @@ void AppTaskRanging(void *uid)
    if (battery_monitor_is_plugged_in())
       storage_flush_and_shutdown();
    else
-   {
       battery_register_event_callback(battery_event_handler);
-   }
 #endif
    imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(data_ready_handler);

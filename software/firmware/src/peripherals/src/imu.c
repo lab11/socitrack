@@ -30,10 +30,10 @@ static data_ready_callback_t data_ready_callback;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-static void i2c_write8(uint8_t reg_number, uint8_t reg_value, bool non_blocking)
+static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
 {
    // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t body_buffer = reg_value;
+   uint32_t body_buffer = reg_value, retries_remaining = 5;
    am_hal_iom_transfer_t write_transaction = {
       .uPeerInfo.ui32I2CDevAddr     = IMU_I2C_ADDRESS,
       .ui32InstrLen                 = 1,
@@ -48,13 +48,7 @@ static void i2c_write8(uint8_t reg_number, uint8_t reg_value, bool non_blocking)
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-   if (non_blocking)
-      am_hal_iom_nonblocking_transfer(i2c_handle, &write_transaction, NULL, NULL);
-   else
-   {
-      uint32_t retries_remaining = 5;
-      while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS));
-   }
+   while (retries_remaining-- && (am_hal_iom_blocking_transfer(i2c_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS));
 }
 
 static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
@@ -79,7 +73,7 @@ static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
    }
 
    // Reset the interrupt trigger bits
-   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0, true);
+   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
 }
 
 static uint8_t i2c_read8(uint8_t reg_number)
@@ -157,7 +151,7 @@ void imu_iom_isr(void)
 static void imu_set_op_mode(bno055_opmode_t op_mode)
 {
    // Set the indicated mode and delay to allow it to take effect
-   i2c_write8(BNO055_OPR_MODE_ADDR, op_mode, false);
+   i2c_write8(BNO055_OPR_MODE_ADDR, op_mode);
    am_util_delay_ms(30);
 }
 
@@ -169,7 +163,7 @@ static bno055_opmode_t imu_get_op_mode(void)
 static void set_use_external_crystal(void)
 {
    // Set the IMU to use an external crystal clock source
-   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0, false);
+   i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
    am_util_delay_ms(1000);
 }
 
@@ -177,53 +171,53 @@ static void enter_suspend_mode(void)
 {
    // Switch to configuration mode and suspend
    imu_set_op_mode(OPERATION_MODE_CONFIG);
-   i2c_write8(BNO055_PWR_MODE_ADDR, 0x02, false);
+   i2c_write8(BNO055_PWR_MODE_ADDR, 0x02);
 }
 
 static void enable_motion_interrupts(void)
 {
    // Set up interrupts for motion and non-motion events
-   i2c_write8(BNO055_PAGE_ID_ADDR, 1, false);
-   i2c_write8(ACC_CONFIG, 0b00000000, false); //operation mode/bandwidth/g range
-   i2c_write8(ACC_AM_THRE, 0b00001010, false);
-   i2c_write8(ACC_NM_THRE, 0b00001010, false);
-   i2c_write8(ACC_NM_SET, 0b00001001, false);
-   i2c_write8(ACC_INT_SET, 0b00011111, false); //axis and duration for triggering motion interrupt
-   i2c_write8(INT_MSK, ACC_NM | ACC_AM, false);
-   i2c_write8(INT_EN, ACC_NM | ACC_AM, false);
-   i2c_write8(BNO055_PAGE_ID_ADDR, 0, false);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
+   i2c_write8(ACC_CONFIG, 0b00000000); //operation mode/bandwidth/g range
+   i2c_write8(ACC_AM_THRE, 0b00001010);
+   i2c_write8(ACC_NM_THRE, 0b00001010);
+   i2c_write8(ACC_NM_SET, 0b00001001);
+   i2c_write8(ACC_INT_SET, 0b00011111); //axis and duration for triggering motion interrupt
+   i2c_write8(INT_MSK, ACC_NM | ACC_AM);
+   i2c_write8(INT_EN, ACC_NM | ACC_AM);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 static void disable_motion_interrupts(void)
 {
    // Disable interrupts for motion and non-motion events
-   i2c_write8(BNO055_PAGE_ID_ADDR, 1, false);
-   i2c_write8(ACC_INT_SET, 0, false);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
+   i2c_write8(ACC_INT_SET, 0);
    uint8_t int_msk = i2c_read8(INT_MSK) & ~(ACC_NM | ACC_AM);
    uint8_t int_en = i2c_read8(INT_EN) & ~(ACC_NM | ACC_AM);
-   i2c_write8(INT_MSK, int_msk, false);
-   i2c_write8(INT_EN, int_en, false);
-   i2c_write8(BNO055_PAGE_ID_ADDR, 0, false);
+   i2c_write8(INT_MSK, int_msk);
+   i2c_write8(INT_EN, int_en);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 static void enable_data_ready_interrupts(void)
 {
-   i2c_write8(BNO055_PAGE_ID_ADDR, 1, false);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
    uint8_t int_msk = i2c_read8(INT_MSK) | (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
    uint8_t int_en = i2c_read8(INT_EN) | (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-   i2c_write8(INT_MSK, int_msk, false);
-   i2c_write8(INT_EN, int_en, false);
-   i2c_write8(BNO055_PAGE_ID_ADDR, 0, false);
+   i2c_write8(INT_MSK, int_msk);
+   i2c_write8(INT_EN, int_en);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 static void disable_data_ready_interrupts(void)
 {
-   i2c_write8(BNO055_PAGE_ID_ADDR, 1, false);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 1);
    uint8_t int_msk = i2c_read8(INT_MSK) & ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
    uint8_t int_en = i2c_read8(INT_EN) & ~(ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY);
-   i2c_write8(INT_MSK, int_msk, false);
-   i2c_write8(INT_EN, int_en, false);
-   i2c_write8(BNO055_PAGE_ID_ADDR, 0, false);
+   i2c_write8(INT_MSK, int_msk);
+   i2c_write8(INT_EN, int_en);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
 }
 
 
@@ -282,15 +276,15 @@ void imu_init(void)
    // Ensure that the device is accessible and enter configuration mode
    while (i2c_read8(BNO055_CHIP_ID_ADDR) != BNO055_ID)
       am_util_delay_ms(100);
-   i2c_write8(BNO055_PAGE_ID_ADDR, 0, false);
+   i2c_write8(BNO055_PAGE_ID_ADDR, 0);
    imu_set_op_mode(OPERATION_MODE_CONFIG);
 
    // Set up an external crystal and the sensor output units
    set_use_external_crystal();
-   i2c_write8(BNO055_UNIT_SEL_ADDR, 0, false);
+   i2c_write8(BNO055_UNIT_SEL_ADDR, 0);
 
    // Set device to use the low-power mode
-   i2c_write8(BNO055_PWR_MODE_ADDR, POWER_MODE_LOWPOWER, false);
+   i2c_write8(BNO055_PWR_MODE_ADDR, POWER_MODE_LOWPOWER);
    am_util_delay_ms(30);
 
    // Set up incoming interrupts from the IMU
@@ -348,7 +342,7 @@ void imu_set_power_mode(bno055_powermode_t power_mode)
 {
    bno055_opmode_t saved_mode = imu_get_op_mode();
    imu_set_op_mode(OPERATION_MODE_CONFIG);
-   i2c_write8(BNO055_PWR_MODE_ADDR, power_mode, false);
+   i2c_write8(BNO055_PWR_MODE_ADDR, power_mode);
    imu_set_op_mode(saved_mode);
 }
 
@@ -485,8 +479,8 @@ bool imu_set_axis_remap(bno055_axis_remap_t remap)
 
    bno055_opmode_t saved_mode = imu_get_op_mode();
    imu_set_op_mode(OPERATION_MODE_CONFIG);
-   i2c_write8(BNO055_AXIS_MAP_CONFIG_ADDR, reg_axis_map_config, false);
-   i2c_write8(BNO055_AXIS_MAP_SIGN_ADDR, reg_axis_map_sign, false);
+   i2c_write8(BNO055_AXIS_MAP_CONFIG_ADDR, reg_axis_map_config);
+   i2c_write8(BNO055_AXIS_MAP_SIGN_ADDR, reg_axis_map_sign);
    imu_set_op_mode(saved_mode);
 
    //test whether the set is successful
