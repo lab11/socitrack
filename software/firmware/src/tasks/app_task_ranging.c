@@ -112,12 +112,15 @@ static void handle_notification(app_notification_t notification)
       if (motion_changed)
       {
          motion_changed = false;
-         storage_write_motion_status(imu_read_in_motion());
+         const bool in_motion = imu_read_in_motion();
+         storage_write_motion_status(in_motion);
+         print("INFO: Motion change detected: %s\n", in_motion ? "MOVING" : "STATIONARY");
       }
       if (imu_data_ready)
       {
          // Write IMU data over the BLE characteristic
          imu_data_ready = false;
+         print("INFO: IMU data received\n");
 #ifdef _TEST_IMU_DATA
          bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
 #endif
@@ -407,6 +410,9 @@ void AppTaskRanging(void *uid)
    imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #else
    imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
+#endif
+#ifndef _TEST_NO_STORAGE
+   storage_write_motion_status(imu_read_in_motion());
 #endif
 
    // Retrieve current experiment details from non-volatile storage
