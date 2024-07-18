@@ -44,7 +44,7 @@ void TimeAlignedTask(void *scheduled_experiment)
       }
 
       // Ask the storage task to shutdown if the battery is critically low or an experiment has ended
-      if ((battery_voltage <= BATTERY_CRITICAL) || experiment_ended)
+      if ((!battery_monitor_is_plugged_in() && (battery_voltage <= BATTERY_CRITICAL)) || experiment_ended)
          storage_flush_and_shutdown();
 
       // Sleep until the next time-aligned task iteration
