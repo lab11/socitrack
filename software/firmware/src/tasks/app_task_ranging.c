@@ -219,7 +219,7 @@ static void motion_change_handler(bool in_motion)
 }
 
 #ifdef _TEST_IMU_DATA
-static void data_ready_handler(int16_t *gyro_data, int16_t *linear_accel_data, int16_t *gravity_data, int16_t *quaternion_data, uint8_t *calib_data, uint8_t *raw_data, uint32_t raw_data_length)
+static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length)
 {
    //TODO
 #ifdef _LIVE_IMU_DATA
@@ -228,7 +228,11 @@ static void data_ready_handler(int16_t *gyro_data, int16_t *linear_accel_data, i
 
    // Store relevant IMU data
 #ifndef _TEST_NO_STORAGE
-   storage_write_imu_data(linear_accel_data);
+#ifdef _TEST_IMU_DATA
+   storage_write_imu_data(raw_data, raw_data_length);
+#else
+   storage_write_imu_data(calib_data, linear_accel_data);
+#endif
 #endif
 }
 #endif

@@ -7,14 +7,21 @@ static void motion_changed(bool in_motion)
    print("Device is %s\n", in_motion ? "IN MOTION" : "STATIONARY");
 }
 
-static void data_ready(int16_t *gyro_data, int16_t *linear_accel_data, int16_t *gravity_data, int16_t *quaternion_data, uint8_t *calib_data, uint8_t *raw_data, uint32_t raw_data_length)
+static void data_ready(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length)
 {
-   // Print out calibration status
+   // Pick the relevant data types from the raw data buffer
+   uint8_t *calib, *lacc, *quat, *gyro;
+   imu_pick_data_from_raw(&calib, raw_data, STAT_DATA);
+   imu_pick_data_from_raw(&lacc, raw_data, LACC_DATA);
+   imu_pick_data_from_raw(&quat, raw_data, QUAT_DATA);
+   imu_pick_data_from_raw(&gyro, raw_data, GYRO_DATA);
+
+   // Print a summary of the IMU data
    print("IMU Data:\n");
-   print("  Calibration status: sys %u, gyro %u, accel %u, mag %u\n", calib_data[0] >> 6, (calib_data[0] >> 4) & 0x03, (calib_data[0] >> 2) & 0x03, calib_data[0] & 0x03);
-   print("  Linear Accel: X = %d, Y = %d, Z = %d\n", linear_accel_data[0], linear_accel_data[1], linear_accel_data[2]);
-   print("  Quaternion: qw = %d, qx = %d, qy = %d, qz = %d\n", quaternion_data[0], quaternion_data[1], quaternion_data[2], quaternion_data[3]);
-   print("  Gyroscope: gx = %d, gy = %d, gz = %d\n", gyro_data[0], gyro_data[1], gyro_data[2]);
+   print("  Calibration status: sys %u, gyro %u, accel %u, mag %u\n", calib[0] >> 6, (calib[0] >> 4) & 0x03, (calib[0] >> 2) & 0x03, calib[0] & 0x03);
+   print("  Linear Accel: X = %d, Y = %d, Z = %d\n", lacc[0], lacc[1], lacc[2]);
+   print("  Quaternion: qw = %d, qx = %d, qy = %d, qz = %d\n", quat[0], quat[1], quat[2], quat[3]);
+   print("  Gyroscope: gx = %d, gy = %d, gz = %d\n", gyro[0], gyro[1], gyro[2]);
 }
 
 int main(void)

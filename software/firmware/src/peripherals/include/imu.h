@@ -12,15 +12,15 @@
 
 #define BNO055_ID 0xA0
 
+#define ACC_DATA_LEN  6
 #define GYRO_DATA_LEN 6
-#define ACC_DATA_LEN 6
 #define LACC_DATA_LEN 6
 #define GACC_DATA_LEN 6
 #define QUAT_DATA_LEN 8
 #define STAT_DATA_LEN 1
 
 typedef void (*motion_change_callback_t)(bool in_motion);
-typedef void (*data_ready_callback_t)(int16_t *gyro_data, int16_t *linear_accel_data, int16_t *gravity_data, int16_t *quaternion_data, uint8_t *calib_data, uint8_t *raw_data, uint32_t raw_data_length);
+typedef void (*data_ready_callback_t)(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length);
 // TODO: Get rid of raw_data stuff after Wenshan updates BLE Live IMU functions to directly accept relevant data items
 
 typedef enum
@@ -188,6 +188,16 @@ typedef enum
 
 typedef enum
 {
+   GYRO_DATA,
+   ACC_DATA,
+   LACC_DATA,
+   GACC_DATA,
+   QUAT_DATA,
+   STAT_DATA,
+} bno055_data_type_t;
+
+typedef enum
+{
    OPERATION_MODE_CONFIG = 0X00,
    OPERATION_MODE_ACCONLY = 0X01,
    OPERATION_MODE_MAGONLY = 0X02,
@@ -310,6 +320,8 @@ void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_set_axis_remap(bno055_axis_remap_t remap);
 void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
+uint8_t imu_pick_data_from_raw(uint8_t **const picked, uint8_t *raw_data, bno055_data_type_t data_type);
+uint8_t imu_copy_data_from_raw(uint8_t *picked, uint8_t *raw_data, bno055_data_type_t data_type);
 
 // Math utilities
 void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler);
