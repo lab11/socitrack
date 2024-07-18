@@ -406,11 +406,10 @@ void AppTaskRanging(void *uid)
    imu_register_data_ready_callback(data_ready_handler);
 #ifdef _TEST_IMU_DATA
    imu_set_power_mode(POWER_MODE_NORMAL);
-   //imu_set_power_mode(POWER_MODE_LOWPOWER);
-   imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #else
-   imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
+   imu_set_power_mode(POWER_MODE_LOWPOWER);
 #endif
+   imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #ifndef _TEST_NO_STORAGE
    storage_write_motion_status(imu_read_in_motion());
 #endif
