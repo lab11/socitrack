@@ -19,12 +19,18 @@
 #define QUAT_DATA_LEN 8
 #define STAT_DATA_LEN 1
 
+// IMU data callback type definitions
 typedef void (*motion_change_callback_t)(bool in_motion);
 #ifdef _TEST_IMU_DATA
 typedef void (*data_ready_callback_t)(uint8_t *raw_data, uint32_t raw_data_length);
 #else
 typedef void (*data_ready_callback_t)(uint8_t *calib_data, int16_t *linear_accel_data);
 #endif
+
+// Burst data transfer definitions
+#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
+#define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
+#define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
 
 typedef enum
 {
@@ -323,8 +329,8 @@ void imu_read_axis_remap(bno055_axis_remap_t *remap);
 bool imu_set_axis_remap(bno055_axis_remap_t remap);
 void imu_read_euler_data(bno055_euler_t *euler);
 bool imu_read_in_motion(void);
-uint8_t imu_pick_data_from_raw(uint8_t **const picked, uint8_t *raw_data, bno055_data_type_t data_type);
-uint8_t imu_copy_data_from_raw(uint8_t *picked, uint8_t *raw_data, bno055_data_type_t data_type);
+uint8_t imu_pick_data_from_raw(const uint8_t **const picked, const uint8_t *raw_data, bno055_data_type_t data_type);
+uint8_t imu_copy_data_from_raw(uint8_t *picked, const uint8_t *raw_data, bno055_data_type_t data_type);
 
 // Math utilities
 void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler);

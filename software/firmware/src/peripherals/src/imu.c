@@ -13,11 +13,6 @@
 #define am_iom_isr1(n)    am_iom_isr(n)
 #define am_iom_isr(n)     am_iomaster ## n ## _isr
 
-// Burst data transfer definitions
-#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
-#define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
-#define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
-
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
@@ -499,7 +494,7 @@ bool imu_read_in_motion(void)
    return previously_in_motion;
 }
 
-uint8_t imu_pick_data_from_raw(uint8_t **const picked, uint8_t *raw_data, bno055_data_type_t data_type)
+uint8_t imu_pick_data_from_raw(const uint8_t **const picked, const uint8_t *raw_data, bno055_data_type_t data_type)
 {
    switch (data_type) {
       case GYRO_DATA:
@@ -523,10 +518,10 @@ uint8_t imu_pick_data_from_raw(uint8_t **const picked, uint8_t *raw_data, bno055
    return 0;
 }
 
-uint8_t imu_copy_data_from_raw(uint8_t *picked, uint8_t *raw_data, bno055_data_type_t data_type)
+uint8_t imu_copy_data_from_raw(uint8_t *picked, const uint8_t *raw_data, bno055_data_type_t data_type)
 {
-   uint8_t *data_ptr;
+   const uint8_t *data_ptr;
    uint8_t data_len = imu_pick_data_from_raw(&data_ptr, raw_data, data_type);
-   memcpy(picked, data_ptr, data_type);
+   memcpy(picked, data_ptr, data_len);
    return data_len;
 }

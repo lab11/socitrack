@@ -10,7 +10,7 @@ static void motion_changed(bool in_motion)
 static void data_ready(uint8_t *raw_data, uint32_t raw_data_length)
 {
    // Pick the relevant data types from the raw data buffer
-   uint8_t *calib, *lacc, *quat, *gyro;
+   const uint8_t *calib, *lacc, *quat, *gyro;
    imu_pick_data_from_raw(&calib, raw_data, STAT_DATA);
    imu_pick_data_from_raw(&lacc, raw_data, LACC_DATA);
    imu_pick_data_from_raw(&quat, raw_data, QUAT_DATA);
