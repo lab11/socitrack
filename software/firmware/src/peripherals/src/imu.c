@@ -13,12 +13,6 @@
 #define am_iom_isr1(n)    am_iom_isr(n)
 #define am_iom_isr(n)     am_iomaster ## n ## _isr
 
-// Burst data transfer definitions
-#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
-#define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
-#define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
-
-
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static void *i2c_handle;
@@ -529,6 +523,6 @@ uint8_t imu_copy_data_from_raw(uint8_t *picked, uint8_t *raw_data, bno055_data_t
 {
    uint8_t *data_ptr;
    uint8_t data_len = imu_pick_data_from_raw(&data_ptr, raw_data, data_type);
-   memcpy(picked, data_ptr, data_type);
+   memcpy(picked, data_ptr, data_len);
    return data_len;
 }

@@ -125,7 +125,15 @@ static void handle_notification(app_notification_t notification)
          // Store relevant IMU data
 #ifndef _TEST_NO_STORAGE
 #ifdef _TEST_IMU_DATA
-         storage_write_imu_data(imu_raw_data, imu_raw_data_length);
+         uint8_t useful_imu_data[BURST_READ_LEN] = {0};
+         uint8_t index = 0, len = 0;
+         const bno055_data_type_t data_types[] = {STAT_DATA,LACC_DATA,GYRO_DATA};
+         for (uint8_t i = 0; i < sizeof(data_types) / sizeof(data_types[0]); i += 1)
+         {
+            len = imu_copy_data_from_raw(useful_imu_data + index, imu_raw_data, data_types[i]);
+            index += len;
+         }
+         storage_write_imu_data(useful_imu_data, index);
 #else
          storage_write_imu_data(&imu_calibration_data, imu_accel_data);
 #endif

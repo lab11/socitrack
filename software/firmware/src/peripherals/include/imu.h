@@ -23,6 +23,11 @@ typedef void (*motion_change_callback_t)(bool in_motion);
 typedef void (*data_ready_callback_t)(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length);
 // TODO: Get rid of raw_data stuff after Wenshan updates BLE Live IMU functions to directly accept relevant data items
 
+// Burst data transfer definitions
+#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
+#define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
+#define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
+
 typedef enum
 {
    // Page ID register definition

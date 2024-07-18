@@ -33,72 +33,6 @@ class stat:
     gyro: int  
     sys: int
 
-# Accel data registers
-BNO055_ACCEL_DATA_X_LSB_ADDR = 0X08
-BNO055_ACCEL_DATA_X_MSB_ADDR = 0X09
-BNO055_ACCEL_DATA_Y_LSB_ADDR = 0X0A
-BNO055_ACCEL_DATA_Y_MSB_ADDR = 0X0B
-BNO055_ACCEL_DATA_Z_LSB_ADDR = 0X0C
-BNO055_ACCEL_DATA_Z_MSB_ADDR = 0X0D
-
-# Mag data registers
-BNO055_MAG_DATA_X_LSB_ADDR = 0X0E
-BNO055_MAG_DATA_X_MSB_ADDR = 0X0F
-BNO055_MAG_DATA_Y_LSB_ADDR = 0X10
-BNO055_MAG_DATA_Y_MSB_ADDR = 0X11
-BNO055_MAG_DATA_Z_LSB_ADDR = 0X12
-BNO055_MAG_DATA_Z_MSB_ADDR = 0X13
-
-# Gyro data registers
-BNO055_GYRO_DATA_X_LSB_ADDR = 0X14
-BNO055_GYRO_DATA_X_MSB_ADDR = 0X15
-BNO055_GYRO_DATA_Y_LSB_ADDR = 0X16
-BNO055_GYRO_DATA_Y_MSB_ADDR = 0X17
-BNO055_GYRO_DATA_Z_LSB_ADDR = 0X18
-BNO055_GYRO_DATA_Z_MSB_ADDR = 0X19
-
-#E uler data registers
-BNO055_EULER_H_LSB_ADDR = 0X1A
-BNO055_EULER_H_MSB_ADDR = 0X1B
-BNO055_EULER_R_LSB_ADDR = 0X1C
-BNO055_EULER_R_MSB_ADDR = 0X1D
-BNO055_EULER_P_LSB_ADDR = 0X1E
-BNO055_EULER_P_MSB_ADDR = 0X1F
-
-# Quaternion data registers
-BNO055_QUATERNION_DATA_W_LSB_ADDR = 0X20
-BNO055_QUATERNION_DATA_W_MSB_ADDR = 0X21
-BNO055_QUATERNION_DATA_X_LSB_ADDR = 0X22
-BNO055_QUATERNION_DATA_X_MSB_ADDR = 0X23
-BNO055_QUATERNION_DATA_Y_LSB_ADDR = 0X24
-BNO055_QUATERNION_DATA_Y_MSB_ADDR = 0X25
-BNO055_QUATERNION_DATA_Z_LSB_ADDR = 0X26
-BNO055_QUATERNION_DATA_Z_MSB_ADDR = 0X27
-
-#/ Linear acceleration data registers
-BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR = 0X28
-BNO055_LINEAR_ACCEL_DATA_X_MSB_ADDR = 0X29
-BNO055_LINEAR_ACCEL_DATA_Y_LSB_ADDR = 0X2A
-BNO055_LINEAR_ACCEL_DATA_Y_MSB_ADDR = 0X2B
-BNO055_LINEAR_ACCEL_DATA_Z_LSB_ADDR = 0X2C
-BNO055_LINEAR_ACCEL_DATA_Z_MSB_ADDR = 0X2D
-
-# Gravity data registers
-BNO055_GRAVITY_DATA_X_LSB_ADDR = 0X2E
-BNO055_GRAVITY_DATA_X_MSB_ADDR = 0X2F
-BNO055_GRAVITY_DATA_Y_LSB_ADDR = 0X30
-BNO055_GRAVITY_DATA_Y_MSB_ADDR = 0X31
-BNO055_GRAVITY_DATA_Z_LSB_ADDR = 0X32
-BNO055_GRAVITY_DATA_Z_MSB_ADDR = 0X33
-
-# Temperature data register
-BNO055_TEMP_ADDR = 0X34
-
-# Status registers
-BNO055_CALIB_STAT_ADDR = 0X35
-
-BURST_READ_BASE_ADDR = BNO055_GYRO_DATA_X_LSB_ADDR
-
 GACC_SCALE_FACTOR = 100.0 #m/s^2
 QUAT_SCALE_FACTOR = float((1 << 14))
 LACC_SCALE_FACTOR = 100.0 #m/s^2
@@ -165,16 +99,20 @@ def generate_headers_formats(data_types):
             formats+=["%.14f"]*4
     return headers,formats
 
-"""
-a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
+
+#a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
+a = load_data("./Unknown.pkl")
 data_types = [STAT_DATA,LACC_DATA,GYRO_DATA]
 headers,formats = generate_headers_formats(data_types)
 
 all_data = []
 for segment in a.loc["i"]:
+    if not isinstance(segment, list):
+        print("NAN") # TODO: investigate why NAN shows up? it never happens in the past
+        continue
     for ts, data in segment:
         unpacked = unpack_imu_data(data,data_types)
-        #print(ts, unpacked)
+        print(ts, unpacked)
         all_data.append([ts]+unpacked)
 all_data = np.array(all_data)
 print(all_data)
@@ -192,4 +130,3 @@ gyro_z =all_data[:, 10]
 #plt.plot(timestamps, lacc_x)
 plt.plot(timestamps, gyro_x)
 plt.show()
-"""
