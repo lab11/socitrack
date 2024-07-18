@@ -20,8 +20,11 @@
 #define STAT_DATA_LEN 1
 
 typedef void (*motion_change_callback_t)(bool in_motion);
-typedef void (*data_ready_callback_t)(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length);
-// TODO: Get rid of raw_data stuff after Wenshan updates BLE Live IMU functions to directly accept relevant data items
+#ifdef _TEST_IMU_DATA
+typedef void (*data_ready_callback_t)(uint8_t *raw_data, uint32_t raw_data_length);
+#else
+typedef void (*data_ready_callback_t)(uint8_t *calib_data, int16_t *linear_accel_data);
+#endif
 
 typedef enum
 {

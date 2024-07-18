@@ -381,10 +381,13 @@ void bluetooth_write_range_results(const uint8_t *results, uint16_t results_leng
       updateRangeResults(AppConnIsOpen(), results, results_length);
 }
 
-void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length){
-   //TODO
+void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length)
+{
+#ifdef _LIVE_IMU_DATA
+   // Update the current raw IMU data
    if (imu_data_requested)
       updateIMUData(AppConnIsOpen(), results, results_length);
+#endif
 }
 
 void bluetooth_start_advertising(void)

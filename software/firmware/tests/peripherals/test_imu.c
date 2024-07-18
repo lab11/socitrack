@@ -7,7 +7,7 @@ static void motion_changed(bool in_motion)
    print("Device is %s\n", in_motion ? "IN MOTION" : "STATIONARY");
 }
 
-static void data_ready(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length)
+static void data_ready(uint8_t *raw_data, uint32_t raw_data_length)
 {
    // Pick the relevant data types from the raw data buffer
    uint8_t *calib, *lacc, *quat, *gyro;

@@ -67,9 +67,13 @@ static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
    // Read the data-ready status and trigger the registered callback
    if (data_ready_callback)// TODO: Only call if interrupt-bit set: && (interrupt_status & (ACC_BSX_DRDY | MAG_DRDY | GYR_DRDY)))
    {
+#ifdef _TEST_IMU_DATA
+      data_ready_callback(raw_data, BURST_READ_LEN);
+#else
       uint8_t* calib_data = raw_data + BNO055_CALIB_STAT_ADDR - BURST_READ_BASE_ADDR;
       int16_t* linear_accel_data = (int16_t*)(raw_data + BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
-      data_ready_callback(calib_data, linear_accel_data, raw_data, BURST_READ_LEN);
+      data_ready_callback(calib_data, linear_accel_data);
+#endif
    }
 
    // Reset the interrupt trigger bits

@@ -23,12 +23,13 @@ static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
 static volatile bool devices_found, motion_changed, imu_data_ready;
 static uint32_t download_start_timestamp, download_end_timestamp;
-static uint8_t imu_calibration_data;
-static int16_t imu_accel_data[3];
 
 #ifdef _TEST_IMU_DATA
-static volatile uint32_t imu_raw_data_length;
+static uint32_t imu_raw_data_length;
 static uint8_t imu_raw_data[MAX_IMU_DATA_LENGTH];
+#else
+static uint8_t imu_calibration_data;
+static int16_t imu_accel_data[3];
 #endif
 
 
@@ -115,20 +116,19 @@ static void handle_notification(app_notification_t notification)
       }
       if (imu_data_ready)
       {
+         // Write IMU data over the BLE characteristic
          imu_data_ready = false;
-
-         // Write IMU data over BLE characteristic
-#ifdef _LIVE_IMU_DATA
+#ifdef _TEST_IMU_DATA
          bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
 #endif
 
          // Store relevant IMU data
 #ifndef _TEST_NO_STORAGE
-#ifdef _TEST_IMU_DATA
+   #ifdef _TEST_IMU_DATA
          storage_write_imu_data(imu_raw_data, imu_raw_data_length);
-#else
+   #else
          storage_write_imu_data(&imu_calibration_data, imu_accel_data);
-#endif
+   #endif
 #endif
       }
    }
@@ -250,15 +250,20 @@ static void motion_change_handler(bool in_motion)
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
 
-static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data, uint8_t *raw_data, uint32_t raw_data_length)
+#ifdef _TEST_IMU_DATA
+static void data_ready_handler(uint8_t *raw_data, uint32_t raw_data_length)
+#else
+static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data)
+#endif
 {
    // Notify the app about a change in IMU data
    imu_data_ready = true;
-   imu_calibration_data = *calib_data;
-   memcpy(imu_accel_data, linear_accel_data, 3 * sizeof(int16_t));
 #ifdef _TEST_IMU_DATA
    memcpy(imu_raw_data, raw_data, raw_data_length);
    imu_raw_data_length = raw_data_length;
+#else
+   imu_calibration_data = *calib_data;
+   memcpy(imu_accel_data, linear_accel_data, 3 * sizeof(int16_t));
 #endif
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
@@ -401,9 +406,6 @@ void AppTaskRanging(void *uid)
    //imu_set_power_mode(POWER_MODE_LOWPOWER);
    imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #else
-#ifndef _TEST_NO_STORAGE
-   storage_write_motion_status(imu_read_in_motion());
-#endif
    imu_set_fusion_mode(OPERATION_MODE_ACCONLY);
 #endif
 

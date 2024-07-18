@@ -112,7 +112,8 @@ void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
 void storage_write_imu_data(const uint8_t *calib_data, const int16_t *accel_data)
 {
    static uint32_t imu_data_index = 0;
-   const storage_item_t storage_item = { .timestamp = app_get_experiment_time(ranging_timestamp_offset), .value = imu_data_index, .type = STORAGE_TYPE_IMU };
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
    imu_data[imu_data_index].length = 0;
    memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, calib_data, sizeof(uint8_t));
    imu_data[imu_data_index].length += sizeof(uint8_t);

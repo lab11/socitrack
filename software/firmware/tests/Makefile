@@ -312,6 +312,7 @@ full_exp: CFLAGS += -D__USE_FREERTOS__ -D__USE_SEGGER__ -D_TEST_IMU_DATA -D_REMO
 full_exp: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/SEGGER_RTT.o $(CONFIG)/$$(TARGET).bin program
 
 imu: TARGET = TestIMU
+imu: CFLAGS += -D_TEST_IMU_DATA
 imu: SRC += test_imu.c
 imu: $(CONFIG) $(CONFIG)/test_imu.o $(CONFIG)/$$(TARGET).bin program
 
