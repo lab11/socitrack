@@ -15,6 +15,7 @@ typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+static uint32_t previous_imu_timestamp;
 static imu_data_t imu_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
 static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
@@ -119,16 +120,21 @@ void storage_write_imu_data(const uint8_t *raw_data, uint32_t raw_data_len)
 #else
 void storage_write_imu_data(const uint8_t *calib_data, const int16_t *accel_data)
 {
+   // Ensure that IMU data is not stored more frequently than 2Hz
    static uint32_t imu_data_index = 0;
    const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
-   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
-   imu_data[imu_data_index].length = 0;
-   memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, calib_data, sizeof(uint8_t));
-   imu_data[imu_data_index].length += sizeof(uint8_t);
-   memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, accel_data, 3 * sizeof(int16_t));
-   imu_data[imu_data_index].length += 3 * sizeof(int16_t);
-   imu_data_index = (imu_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
-   xQueueSendToBack(storage_queue, &storage_item, 0);
+   if (rounded_timestamp >= (previous_imu_timestamp + 500))
+   {
+      previous_imu_timestamp = rounded_timestamp;
+      const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
+      imu_data[imu_data_index].length = 0;
+      memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, calib_data, sizeof(uint8_t));
+      imu_data[imu_data_index].length += sizeof(uint8_t);
+      memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, accel_data, 3 * sizeof(int16_t));
+      imu_data[imu_data_index].length += 3 * sizeof(int16_t);
+      imu_data_index = (imu_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
+      xQueueSendToBack(storage_queue, &storage_item, 0);
+   }
 }
 #endif  // #ifdef _TEST_IMU_DATA
 
@@ -145,6 +151,7 @@ void StorageTask(void *params)
 {
    // Create a queue to hold pending storage items
    static storage_item_t item;
+   previous_imu_timestamp = 0;
    ranging_timestamp_offset = 0;
    storage_queue = xQueueCreateStatic(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t), ucQueueStorage, &xQueueBuffer);
 
