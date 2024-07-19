@@ -2,13 +2,9 @@
 
 ```bash
 #start JLink 
-JLinkExe
+JLinkExe -Device ATSAMD20J18A -if SWD -speed 4000 -AutoConnect 1
 
 #inside JLink program
-connect
-ATSAMD20J18A
-SWD
-4000
 loadbin mybno.bin 0x4000
 ```
 
