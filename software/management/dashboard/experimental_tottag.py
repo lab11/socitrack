@@ -46,7 +46,7 @@ STORAGE_TYPE_MOTION = 3
 STORAGE_TYPE_RANGES = 4
 STORAGE_TYPE_IMU = 5
 
-IMU_DATA_LEN = 13
+IMU_DATA_LEN = 21
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'

@@ -104,7 +104,7 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void storage_write_imu_data(const uint8_t *raw_data, uint32_t raw_data_len)
 {
    static uint32_t imu_data_index = 0;
-   const bno055_data_type_t data_types[] = { STAT_DATA, LACC_DATA, GYRO_DATA };
+   const bno055_data_type_t data_types[] = { STAT_DATA, LACC_DATA, GYRO_DATA, QUAT_DATA};
    const storage_item_t storage_item = { .timestamp = app_get_experiment_time(ranging_timestamp_offset), .value = imu_data_index, .type = STORAGE_TYPE_IMU };
    imu_data[imu_data_index].length = 0;
    for (uint8_t i = 0; i < sizeof(data_types) / sizeof(data_types[0]); ++i)

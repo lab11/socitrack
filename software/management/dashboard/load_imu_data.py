@@ -14,6 +14,7 @@ class gyro:
     y: float
     z: float
 
+@dataclass
 class quat:
     w: float
     x: float
@@ -102,7 +103,7 @@ def generate_headers_formats(data_types):
 
 #a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
 a = load_data("./Unknown.pkl")
-data_types = [STAT_DATA,LACC_DATA,GYRO_DATA]
+data_types = [STAT_DATA,LACC_DATA,GYRO_DATA,QUAT_DATA]
 headers,formats = generate_headers_formats(data_types)
 
 all_data = []
@@ -111,9 +112,13 @@ for segment in a.loc["i"]:
         print("NAN") # TODO: investigate why NAN shows up? it never happens in the past
         continue
     for ts, data in segment:
-        unpacked = unpack_imu_data(data,data_types)
-        print(ts, unpacked)
-        all_data.append([ts]+unpacked)
+        try:
+            unpacked = unpack_imu_data(data,data_types)
+            #print(ts, unpacked)
+            all_data.append([ts]+unpacked)
+        except:
+            print(ts)
+
 all_data = np.array(all_data)
 print(all_data)
 np.savetxt("output.csv", all_data, delimiter=',', header=','.join(headers), comments='', fmt=formats)
@@ -128,5 +133,5 @@ gyro_y =all_data[:, 9]
 gyro_z =all_data[:, 10]
 
 #plt.plot(timestamps, lacc_x)
-plt.plot(timestamps, gyro_x)
+plt.plot(timestamps, lacc_y)
 plt.show()
