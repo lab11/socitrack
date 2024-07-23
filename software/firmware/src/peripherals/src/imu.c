@@ -21,7 +21,7 @@ static volatile bool previously_in_motion;
 static uint32_t imu_buffer[BURST_READ_LEN];
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
-
+static bool imu_is_initialized;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
@@ -236,6 +236,8 @@ void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler)
 
 void imu_init(void)
 {
+   if (imu_is_initialized)
+      return;
    // Initialize static variables
    previously_in_motion = false;
    motion_change_callback = NULL;
@@ -294,10 +296,16 @@ void imu_init(void)
    NVIC_SetPriority(IOMSTR0_IRQn + IMU_I2C_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
    NVIC_EnableIRQ(IOMSTR0_IRQn + IMU_I2C_NUMBER);
+
+   print("INFO: IMU Initialized\n");
+   imu_is_initialized = true;
 }
 
 void imu_deinit(void)
 {
+   // The app will crash if you try to deinit an already deinited IMU
+   if (!imu_is_initialized)
+      return;
    // Disable interrupts and put the device into suspend mode
    disable_motion_interrupts();
    disable_data_ready_interrupts();
@@ -312,6 +320,8 @@ void imu_deinit(void)
    // Disable all I2C communications
    while (am_hal_iom_disable(i2c_handle) != AM_HAL_STATUS_SUCCESS);
    am_hal_iom_uninitialize(i2c_handle);
+   print("INFO: IMU Deinited\n");
+   imu_is_initialized = false;
 }
 
 void imu_register_motion_change_callback(motion_change_callback_t callback)

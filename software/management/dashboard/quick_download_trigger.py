@@ -64,7 +64,9 @@ async def quick_download_trigger(tag_hex_address=None, command=1):
                 except Exception as e:
                     print("ERROR: Unable to connect to TotTag {}".format(device_address))
                     traceback.print_exc()
+                finally:
                     await client.disconnect()
+                    print(f"Disconnected from {device_address}")
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
 if __name__ == "__main__":
