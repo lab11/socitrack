@@ -31,7 +31,7 @@ MAINTENANCE_SET_LOG_DOWNLOAD_DATES = 0x04
 MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
 
-async def quick_download_trigger(tag_hex_address=None):
+async def quick_download_trigger(tag_hex_address=None, command=1):
     """
     Connect to the device and trigger segger offloading
     """
@@ -43,7 +43,7 @@ async def quick_download_trigger(tag_hex_address=None):
 
     for device_address, device_info in scanner.discovered_devices_and_advertisement_data.items():
         #device_info[0]:BLEDevice   device_infi[1]:AdvertisementData       
-        if (device_address == tag_hex_address) or ((tag_hex_address is None) and device_info[1].local_name == 'TotTag'):
+        if (device_address == tag_hex_address) or ((tag_hex_address is not None) and (device_address[-2:] == tag_hex_address[-2:]) and (device_info[1].local_name == 'TotTag')) or ((tag_hex_address is None) and device_info[1].local_name == 'TotTag'):
             print(f"Device {device_address} is found!")
             discovered_devices[device_address] = device_info[0]
             async with BleakClient(device_info[0], use_cached=False) as client:
@@ -58,7 +58,7 @@ async def quick_download_trigger(tag_hex_address=None):
                                 midnight_utc_datetime = midnight_local_datetime.astimezone(timezone.utc)
                                 start = int(midnight_utc_datetime.timestamp())
                                 end = start + 86400
-                                await client.write_gatt_char(MODE_SWITCH_UUID, struct.pack("<I", 1), True)
+                                await client.write_gatt_char(MODE_SWITCH_UUID, struct.pack("<I", command), True)
                                 await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack("<BII", MAINTENANCE_SET_LOG_DOWNLOAD_DATES, start, end), True)
                                 await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack("B", MAINTENANCE_DOWNLOAD_LOG), True)
                 except Exception as e:
@@ -69,17 +69,19 @@ async def quick_download_trigger(tag_hex_address=None):
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
 if __name__ == "__main__":
     """
-    usage: python3 quick_download_trigger.py last_two_char_of_tottag_hex_address
+    usage: python3 quick_download_trigger.py last_two_char_of_tottag_hex_address command
     """
     signal.signal(signal.SIGINT, handle_interrupt)
     imu_data_received_callback_count = 0
     print("\nSearching for TotTags...\n")
     loop = asyncio.get_event_loop()
     try:
-        if len(sys.argv) == 2:
+        if len(sys.argv) == 3:
             device_id = sys.argv[1]
-            loop.run_until_complete(quick_download_trigger(tag_hex_address=f"C0:98:E5:42:01:{device_id}"))
+            command = sys.argv[2]
+            loop.run_until_complete(quick_download_trigger(tag_hex_address=f"C0:98:E5:42:01:{device_id}", command=int(command)))
         else:
-            loop.run_until_complete(quick_download_trigger())
+            command = sys.argv[1]
+            loop.run_until_complete(quick_download_trigger(command=int(command)))
     finally:
         loop.close()
