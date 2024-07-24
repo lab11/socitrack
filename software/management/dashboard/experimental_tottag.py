@@ -15,6 +15,7 @@ import tkcalendar
 import threading
 import asyncio
 import argparse
+from load_imu_data import IMU_DATA_LEN
 
 
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
@@ -45,8 +46,6 @@ STORAGE_TYPE_CHARGING_EVENT = 2
 STORAGE_TYPE_MOTION = 3
 STORAGE_TYPE_RANGES = 4
 STORAGE_TYPE_IMU = 5
-
-IMU_DATA_LEN = 21
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'

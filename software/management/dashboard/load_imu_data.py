@@ -100,38 +100,39 @@ def generate_headers_formats(data_types):
             formats+=["%.14f"]*4
     return headers,formats
 
-
-#a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
-a = load_data("./Unknown.pkl")
 data_types = [STAT_DATA,LACC_DATA,GYRO_DATA,QUAT_DATA]
 headers,formats = generate_headers_formats(data_types)
+IMU_DATA_LEN = sum([data_type_len[x] for x in data_types])
 
-all_data = []
-for segment in a.loc["i"]:
-    if not isinstance(segment, list):
-        print("NAN") # TODO: investigate why NAN shows up? it never happens in the past
-        continue
-    for ts, data in segment:
-        try:
-            unpacked = unpack_imu_data(data,data_types)
-            #print(ts, unpacked)
-            all_data.append([ts]+unpacked)
-        except:
-            print(ts)
+if __name__ == "__main__":
+    #a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
+    a = load_data("./Unknown.pkl")
+    all_data = []
+    for segment in a.loc["i"]:
+        if not isinstance(segment, list):
+            print("NAN") # TODO: investigate why NAN shows up? it never happens in the past
+            continue
+        for ts, data in segment:
+            try:
+                unpacked = unpack_imu_data(data,data_types)
+                #print(ts, unpacked)
+                all_data.append([ts]+unpacked)
+            except:
+                print(ts)
 
-all_data = np.array(all_data)
-print(all_data)
-np.savetxt("output.csv", all_data, delimiter=',', header=','.join(headers), comments='', fmt=formats)
+    all_data = np.array(all_data)
+    print(all_data)
+    np.savetxt("output.csv", all_data, delimiter=',', header=','.join(headers), comments='', fmt=formats)
 
-timestamps = all_data[:, 0]
-timestamps = timestamps - timestamps[0]
-lacc_x =all_data[:, 5]
-lacc_y =all_data[:, 6]
-lacc_z =all_data[:, 7]
-gyro_x =all_data[:, 8]
-gyro_y =all_data[:, 9]
-gyro_z =all_data[:, 10]
+    timestamps = all_data[:, 0]
+    timestamps = timestamps - timestamps[0]
+    lacc_x =all_data[:, 5]
+    lacc_y =all_data[:, 6]
+    lacc_z =all_data[:, 7]
+    gyro_x =all_data[:, 8]
+    gyro_y =all_data[:, 9]
+    gyro_z =all_data[:, 10]
 
-#plt.plot(timestamps, lacc_x)
-plt.plot(timestamps, lacc_y)
-plt.show()
+    #plt.plot(timestamps, lacc_x)
+    plt.plot(timestamps, lacc_y)
+    plt.show()
