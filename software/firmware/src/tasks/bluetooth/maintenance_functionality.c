@@ -90,7 +90,11 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       storage_begin_reading(download_start_timestamp);
       storage_retrieve_experiment_details(&details);
       total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+#ifdef _TEST_IMU_DATA
+      total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+#else
       total_data_length = storage_retrieve_num_data_bytes();
+#endif
       memcpy(transmit_buffer, &total_data_length, sizeof(total_data_length));
       memcpy(transmit_buffer + sizeof(total_data_length), &details, sizeof(details));
       AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length) + sizeof(experiment_details_t), transmit_buffer);

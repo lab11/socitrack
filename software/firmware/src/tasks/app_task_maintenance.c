@@ -44,7 +44,11 @@ static void handle_notification(app_notification_t notification)
       storage_begin_reading(download_start_timestamp);
       storage_retrieve_experiment_details(&details);
       uint32_t total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+   #ifdef _TEST_IMU_DATA
+      uint32_t total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+   #else
       uint32_t total_data_length = storage_retrieve_num_data_bytes();
+   #endif
       transmit_log_data(&total_data_length, sizeof(total_data_length));
       transmit_log_data(&details, sizeof(details));
 
