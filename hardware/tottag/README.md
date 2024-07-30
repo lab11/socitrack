@@ -1,26 +1,60 @@
-Hardware Revision History
-=========================
+TotTag Revision History
+=======================
 
 The original localization platform was developed by the Lab11 research group,
 primarily by @bpkempke, @bradjc, and @ppannuto.
 
-The TotTag hardware was developed @abiri during his Master's Thesis work when
-he was a visiting scholar with the Lab11 research group.
+The original TotTag hardware (rev_c, rev_d) was developed @abiri during his
+Master's Thesis work when he was a visiting scholar with the Lab11 research
+group.
+
+Current TotTag hardware is maintained by @ppannuto and @corruptbear.
+
+## Rev M + AP4BP Rev-B
+[Rev L Issues / Rev M updates](https://github.com/lab11/socitrack/issues/49)
+ - Fix silkscreen error on switch label
+
+## Rev L + AP4BP Rev-B
+[Prior rev's issues / updates](https://github.com/lab11/socitrack/issues/46)
+ - Fixes first-rev issues from the AP4BP module.
+ - Rips out our UWB in favor of DWM3000 pre-fab modules for Qorvo as a hedge
+   to facilitate more certain-to-work UWB in the short term (but sacrificing
+   diversity and robustness [and adding cost]).
+
+## Rev K + AP4BP Rev-A
+[Rev I Issues / Rev K Updates](https://github.com/lab11/socitrack/issues/44)
+ - (n.b., there is no Rev J to avoid I/J confusion)
+ - Move to Apollo4 Blue Plus (Blue has too many silicon bugs)
+    - Split this to a castellated module for separation of hw design concerns
+ - Move to TCXO for DW3000 (bad idea; will be removed next rev)
+
+## Rev I -- **Major Revision**
+ - Refresh part selection to replace 2015 parts with improved modern versions
+ - Major change: Apollo4 Blue as sole MCU
+ - Major change: DW3000 replaces DW1000 as UWB transceiver
+ - Really, most stuff changed except the wireless charging
+
+## Rev H
+[Rev G Issues / Rev H Updates](https://github.com/lab11/socitrack/issues/9)
+ - Isolates high-bandwidth accelerometer to dedicated SPI bus
+ - Revises wireless charging design for robustness
+ - Resolve RTC design issues
+ - DFM cleanups
 
 ## Rev G
-[Rev G Issue.](https://github.com/lab11/totternary/issues/7)
+[Rev F Issues / Rev G Updates](https://github.com/lab11/totternary/issues/7)
  - Add detachable battery connector
  - Add power switch
  - Adapt PCB shape for mass-production case
 
 ## Rev F
 
-[Rev F Issue.](https://github.com/lab11/totternary/issues/4)
+[Rev E Issues / Rev F Updates.](https://github.com/lab11/totternary/issues/4)
  - Add RTC
 
 ## Rev E
 
-[Rev E Issue.](https://github.com/lab11/totternary/issues/3)
+[Rev D Issues / Rev E Updates.](https://github.com/lab11/totternary/issues/3)
 
 Rev E updates:
  - Major performance improvements
