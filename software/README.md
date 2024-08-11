@@ -1,18 +1,15 @@
 SquarePoint Software
 ====================
 
-Stable
+Current
 ------
 
-- [squarepoint](squarepoint/) - SquarePoint ranging firmware for the STM32F microcontroller
-- [tottag](tottag/firmware/) - TotTag firmware for the nRF52 BLE-enabled microcontroller
-- [calibration](tottag/calibration/) - SquarePoint calibration tools for a specific TotTag board revision
+- [firmware](firmware/) - TotTag firmware for the current generation (Ambiq Apollo) microcontroller
+- [management](management/) - Python-based GUI for management of TotTag deployments and experiments
 
 
-In Development or Unpolished
+Deprecated
 ----------------------------
 
-- [analysis](analysis/) - Scripts to perform data analysis on TotTag output
-- [modeling](modeling/) - Tools to predict system lifetime and configure protocol parameters
-- [mobile_app](tottag/mobile_app/) - Mobile app to interface with TotTag devices
-- [visualization](tottag/visualization/) - Simple demos to showcase system operation
+- [analysis](analysis/) - Scripts to perform data analysis on TotTag Generations 0 and 1 output
+- [ersp](ersp/) - Tools to predict system lifetime and configure protocol parameters
