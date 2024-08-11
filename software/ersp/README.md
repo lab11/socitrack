@@ -1,6 +1,9 @@
 User Guide
 ======================
 
+<mark style="background-color: #FFFF00">**NOTE: THE CONTENTS OF THIS DIRECTORY ARE DEPRECATED AND
+NO LONGER WORK WITH THE CURRENT TOTTAG GENERATION 2 HARDWARE**</mark>
+
 Welcome to Team Pat's Guide!
 
 ## Background Knowledge
