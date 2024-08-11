@@ -41,7 +41,7 @@ DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
 DEFINES += -Dgcc
 
-DW_LIBRARY := ./src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.7.a
+DW_LIBRARY := ./src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.14.a
 LINKER_FILE := ./AmbiqSDK/bsp/$(BSP)/linker/socitrack.ld
 STARTUP_FILE := ./AmbiqSDK/bsp/$(BSP)/linker/startup_gcc.c
 
