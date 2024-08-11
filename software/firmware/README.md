@@ -34,7 +34,7 @@ integers and all characters between 'A-F' (i.e., 2 valid IDs might be `c0:98:e5:
 9. If everything was successful, you should hear a happy sounding chime when you place the TotTag on a wireless charger.
 10. Remove all cables, close the TotTag case, and replace the screws.
 
-![TotTag J-Link Connection]()
+![TotTag J-Link Connection](../../media/jtag-tottag-connection.jpg)
 
 Updating the Firmware
 ---------------------
