@@ -41,7 +41,7 @@ DEFINES += -DWSF_TRACE_ENABLED
 DEFINES += -DAM_DEBUG_PRINTF
 DEFINES += -Dgcc
 
-DW_LIBRARY := ../src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.7.a
+DW_LIBRARY := ../src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.14.a
 LINKER_FILE := ../AmbiqSDK/bsp/$(BSP)/linker/socitrack.ld
 STARTUP_FILE := ../AmbiqSDK/bsp/$(BSP)/linker/startup_gcc.c
 
@@ -357,6 +357,14 @@ storage: $(CONFIG) $(CONFIG)/test_storage.o $(CONFIG)/$$(TARGET).bin program
 system: TARGET = TestSystem
 system: SRC += test_system.c
 system: $(CONFIG) $(CONFIG)/test_system.o $(CONFIG)/$$(TARGET).bin program
+
+uwb_cont_wave: TARGET = UwbContWave
+uwb_cont_wave: SRC += uwb_continuous_wave.c
+uwb_cont_wave: $(CONFIG) $(CONFIG)/uwb_continuous_wave.o $(CONFIG)/$$(TARGET).bin program
+
+uwb_cont_frame: TARGET = UwbContFrame
+uwb_cont_frame: SRC += uwb_continuous_frame.c
+uwb_cont_frame: $(CONFIG) $(CONFIG)/uwb_continuous_frame.o $(CONFIG)/$$(TARGET).bin program
 
 OBJS = $(SRC:%.c=$(CONFIG)/%.o)
 DEPS = $(SRC:%.c=$(CONFIG)/%.d)
