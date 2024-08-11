@@ -1,6 +1,9 @@
 TotTag Analysis Scripts
 =======================
 
+<mark style="background-color: #FFFF00">**NOTE: THE CONTENTS OF THIS DIRECTORY ARE DEPRECATED AND
+NO LONGER WORK WITH THE CURRENT TOTTAG GENERATION 2 HARDWARE**</mark>
+
 This directory contains a collection of Python scripts for use in managing and
 analyzing stored TotTag measurement data. To ensure that all scripts run
 without problem, you may pre-install all necessary packages at one time by
