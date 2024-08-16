@@ -10,6 +10,36 @@ group.
 
 Current TotTag hardware is maintained by @ppannuto and @corruptbear.
 
+
+## Rev N
+[Rev N updates](https://github.com/lab11/socitrack/issues/58)
+__Note: The main board is derived from Rev K, and integrates AP4BP Rev-B back on-board.__
+ - Re-integrate AP4BP
+    - Remove duplicate concepts (LEDs, TagConnect headers, etc)
+    - Match stackup (choose module's 0.6mm for microvias; update 50Ω for all RF)
+ - Update IMU to BNO086
+ - Update UWB components
+    - Generally update design to match new Qorvo app note APH301, bigger things...
+       - Revise layout of power rails
+       - Update via fencing spacing to lambda/20
+       - Remove soldermask from transmission lines
+    - Switch from DW3210 (QFN) to DW3110 (WLCSP aka BGA)
+       - WCSNG group reports BGA more reliable part
+       - Next-gen part QM33110W [released; no stock; pin compatible; update when able] is BGA only
+    - Revert from TCXO to XTAL (new rec'd components available)
+    - Update key passives to 0603 C0G Low-ESL variants
+    - Add Qorvo LNA
+       - This rev hedges and only adds to RF1 trace; later rev will move to RFC if fruitful
+       - This rev does not add optional band-pass filter
+       - Also adds VR3, another copy of the low-noise LDO
+  - DFM work
+    - Shrink top-metal traces on AP4 BGA perimeter to 5 mil to better match trace 75% of ball pad diameter guidance
+    - Add dedicated clean areas for mouse bite tabs
+    - Update some passives to Worthington's "ideal" smd component footprint
+    - Swap IOM's for DW and 9DOF to ease routing
+    - Remove most microvias not on BGA pads
+
+
 ## Rev M + AP4BP Rev-B
 [Rev L Issues / Rev M updates](https://github.com/lab11/socitrack/issues/49)
  - Fix silkscreen error on switch label
