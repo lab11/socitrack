@@ -8,16 +8,20 @@
 
 // Storage Task and Notification Types ---------------------------------------------------------------------------------
 
+#define MAX_NUM_DATA_ITEMS      (STORAGE_QUEUE_MAX_NUM_ITEMS / 3)
+
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
 typedef struct imu_data_t { uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length; } imu_data_t;
 typedef struct ranging_data_t { uint8_t data[MAX_COMPRESSED_RANGE_DATA_LENGTH]; uint32_t length; } ranging_data_t;
+typedef struct ble_data_t { uint8_t data[1 + MAX_NUM_RANGING_DEVICES]; uint32_t length; } ble_data_t;
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint32_t previous_imu_timestamp;
-static imu_data_t imu_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
-static ranging_data_t range_data[STORAGE_QUEUE_MAX_NUM_ITEMS];
+static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
+static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
+static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
 static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
@@ -52,6 +56,15 @@ static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t
    storage_store(&storage_type, sizeof(storage_type));
    storage_store(&timestamp, sizeof(timestamp));
    storage_store(range_data, range_data_len);
+   storage_flush(false);
+}
+
+static void store_ble_scan_data(uint32_t timestamp, const uint8_t *ble_data, uint32_t ble_data_len)
+{
+   const uint8_t storage_type = STORAGE_TYPE_BLE_SCAN;
+   storage_store(&storage_type, sizeof(storage_type));
+   storage_store(&timestamp, sizeof(timestamp));
+   storage_store(ble_data, ble_data_len);
    storage_flush(false);
 }
 
@@ -96,7 +109,19 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
    memcpy(range_data[range_data_index].data, ranging_data, ranging_data_len);
    range_data[range_data_index].length = ranging_data_len;
-   range_data_index = (range_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
+   range_data_index = (range_data_index + 1) % MAX_NUM_DATA_ITEMS;
+   xQueueSendToBack(storage_queue, &storage_item, 0);
+}
+
+void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices)
+{
+   static uint32_t ble_data_index = 0;
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = ble_data_index, .type = STORAGE_TYPE_BLE_SCAN };
+   ble_data[ble_data_index].data[0] = (uint8_t)num_devices;
+   memcpy(ble_data[ble_data_index].data + 1, found_devices, num_devices);
+   ble_data[ble_data_index].length = num_devices;
+   ble_data_index = (ble_data_index + 1) % MAX_NUM_DATA_ITEMS;
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
@@ -114,7 +139,7 @@ void storage_write_imu_data(const uint8_t *raw_data, uint32_t raw_data_len)
       memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, data, data_len);
       imu_data[imu_data_index].length += data_len;
    }
-   imu_data_index = (imu_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
+   imu_data_index = (imu_data_index + 1) % MAX_NUM_DATA_ITEMS;
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 #else
@@ -127,12 +152,13 @@ void storage_write_imu_data(const uint8_t *calib_data, const int16_t *accel_data
    {
       previous_imu_timestamp = rounded_timestamp;
       const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
-      imu_data[imu_data_index].length = 0;
+      imu_data[imu_data_index].length = 1;
       memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, calib_data, sizeof(uint8_t));
       imu_data[imu_data_index].length += sizeof(uint8_t);
       memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, accel_data, 3 * sizeof(int16_t));
       imu_data[imu_data_index].length += 3 * sizeof(int16_t);
-      imu_data_index = (imu_data_index + 1) % STORAGE_QUEUE_MAX_NUM_ITEMS;
+      imu_data[imu_data_index].data[0] = (uint8_t)imu_data[imu_data_index].length;
+      imu_data_index = (imu_data_index + 1) % MAX_NUM_DATA_ITEMS;
       xQueueSendToBack(storage_queue, &storage_item, 0);
    }
 }
@@ -185,6 +211,9 @@ void StorageTask(void *params)
                break;
             case STORAGE_TYPE_IMU:
                store_imu_data(item.timestamp, imu_data[item.value].data, imu_data[item.value].length);
+               break;
+            case STORAGE_TYPE_BLE_SCAN:
+               store_ble_scan_data(item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
                break;
             default:
                break;

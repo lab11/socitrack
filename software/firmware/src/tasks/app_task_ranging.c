@@ -18,6 +18,7 @@
 
 static uint8_t device_uid_short;
 static TaskHandle_t app_task_handle;
+static uint8_t ble_scan_results[MAX_NUM_RANGING_DEVICES];
 static volatile uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
 static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
@@ -203,8 +204,11 @@ static void handle_notification(app_notification_t notification)
          }
       }
 
-      // Reset the devices-found flag and verify the app configuration
+      // Reset the devices-found flag, store the scan results, and verify the app configuration
       devices_found = false;
+      for (uint8_t i = 0; i < num_discovered_devices; ++i)
+         ble_scan_results[i] = discovered_devices[i][0];
+      storage_write_ble_scan_results(ble_scan_results, num_discovered_devices);
       verify_app_configuration();
    }
    if ((notification & APP_NOTIFY_BATTERY_EVENT))

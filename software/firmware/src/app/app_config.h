@@ -37,7 +37,7 @@
 #define MAX_COMPRESSED_RANGE_DATA_LENGTH            (1 + (COMPRESSED_RANGE_DATUM_LENGTH * MAX_NUM_RANGING_DEVICES))
 #define MAX_IMU_DATA_LENGTH                         40
 
-#define STORAGE_QUEUE_MAX_NUM_ITEMS                 25
+#define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 
