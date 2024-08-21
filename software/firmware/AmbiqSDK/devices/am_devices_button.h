@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_DEVICES_BUTTON_H
@@ -101,7 +101,6 @@ typedef struct
     am_hal_gpio_pincfg_t *tPinCfg ;
 }
 am_devices_button_pin_cfg_t;
-
 
 //*****************************************************************************
 //
@@ -221,7 +220,6 @@ extern void am_devices_button_array_tick_pin_cfg(am_devices_button_t *psButtons,
                                                  am_hal_gpio_pincfg_t *am_hal_pingcfgs,
                                                  uint32_t ui32NumButtons) ;
 
-
 //*****************************************************************************
 //
 //! @brief Configures the necessary pins for an array of buttons.
@@ -235,7 +233,6 @@ extern void am_devices_button_array_tick_pin_cfg(am_devices_button_t *psButtons,
 //*****************************************************************************
 extern void am_devices_button_array_pin_config(am_devices_button_pin_cfg_t *psButtonInfo,
                                              uint32_t ui32NumButtons ) ;
-
 
 #ifdef __cplusplus
 }

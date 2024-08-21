@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -129,7 +129,7 @@ static uint32_t am_hal_ios_fifo_ptr_set(void *pHandle, uint32_t ui32Offset);
 // Global Variables
 //
 //*****************************************************************************
-volatile uint8_t * const am_hal_ios_pui8LRAM = (uint8_t *)REG_IOSLAVE_BASEADDR;
+volatile uint8_t * const am_hal_ios_pui8LRAM = (uint8_t *)IOSLAVE_BASE;
 
 am_hal_ios_state_t g_IOShandles[AM_REG_IOSLAVE_NUM_MODULES];
 
@@ -373,8 +373,8 @@ uint32_t am_hal_ios_configure(void *pHandle, am_hal_ios_config_t *psConfig)
     //
     // Record the FIFO parameters for later use.
     //
-    pIOSState->pui8FIFOBase = (uint8_t *)(REG_IOSLAVE_BASEADDR + psConfig->ui32FIFOBase);
-    pIOSState->pui8FIFOEnd = (uint8_t *)(REG_IOSLAVE_BASEADDR + psConfig->ui32RAMBase);
+    pIOSState->pui8FIFOBase = (uint8_t *)(IOSLAVE_BASE + psConfig->ui32FIFOBase);
+    pIOSState->pui8FIFOEnd = (uint8_t *)(IOSLAVE_BASE + psConfig->ui32RAMBase);
     pIOSState->ui32HwFifoSize = pIOSState->pui8FIFOEnd - pIOSState->pui8FIFOBase;
     pIOSState->ui32FifoBaseOffset = psConfig->ui32FIFOBase;
 
@@ -1018,7 +1018,7 @@ static uint32_t am_hal_ios_fifo_ptr_set(void *pHandle, uint32_t ui32Offset)
     //
     // Set the global FIFO-pointer tracking variable.
     //
-    ((am_hal_ios_state_t*)pHandle)->pui8FIFOPtr = (uint8_t *) (REG_IOSLAVE_BASEADDR + ui32Offset);
+    ((am_hal_ios_state_t*)pHandle)->pui8FIFOPtr = (uint8_t *) (IOSLAVE_BASE + ui32Offset);
 
     //
     // End the critical section.

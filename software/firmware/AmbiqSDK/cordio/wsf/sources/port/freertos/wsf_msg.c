@@ -28,17 +28,6 @@
 #include "wsf_trace.h"
 #include "wsf_os.h"
 
-/**************************************************************************************************
-  Data Types
-**************************************************************************************************/
-
-/* Internal message buf structure */
-typedef struct wsfMsg_tag
-{
-  struct wsfMsg_tag   *pNext;
-  wsfHandlerId_t      handlerId;
-} wsfMsg_t;
-
 /*************************************************************************************************/
 /*!
  *  \fn     WsfMsgDataAlloc

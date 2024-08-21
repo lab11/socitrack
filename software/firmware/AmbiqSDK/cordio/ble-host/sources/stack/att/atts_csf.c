@@ -134,7 +134,7 @@ uint8_t attsCsfIsClientChangeAware(dmConnId_t connId, uint16_t handle)
 /*!
  *  \brief  Update client change-aware state based on protocol event.
  *
- *  \param  connId      Connection handle.
+ *  \param  handle      Connection handle.
  *  \param  opcode      ATT PDU type.
  *  \param  pPacket     Data packet from L2CAP.
  *

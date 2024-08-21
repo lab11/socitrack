@@ -8,7 +8,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,55 +40,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_BASE_ADDRESSES_H
 #define AM_REG_BASE_ADDRESSES_H
 
 #include "stdint.h"
-
-//
-// ARM standard register space (needed for macros)
-//
-#define REG_ITM_BASEADDR                        (0x00000000UL)
-#define REG_JEDEC_BASEADDR                      (0x00000000UL)
-#define REG_NVIC_BASEADDR                       (0x00000000UL)
-#define REG_SYSCTRL_BASEADDR                    (0x00000000UL)
-#define REG_SYSTICK_BASEADDR                    (0x00000000UL)
-#define REG_TPIU_BASEADDR                       (0x00000000UL)
-
-//
-// Peripheral register space
-//
-#define REG_ADC_BASEADDR                        (0x40038000UL)
-#define REG_APBDMA_BASEADDR                     (0x51000000UL)
-#define REG_AUDADC_BASEADDR                     (0x40210000UL)
-#define REG_CLKGEN_BASEADDR                     (0x40004000UL)
-#define REG_CPU_BASEADDR                        (0x48000000UL)
-#define REG_DC_BASEADDR                         (0x400A0000UL)
-#define REG_DSI_BASEADDR                        (0x400A8000UL)
-#define REG_DSP_BASEADDR                        (0x40100000UL)
-#define REG_DSPI2S_BASEADDR                     (0x50428000UL)
-#define REG_DSPTIMER_BASEADDR                   (0x40087000UL)
-#define REG_FPIO_BASEADDR                       (0x40010800UL)
-#define REG_GPIO_BASEADDR                       (0x40010000UL)
-#define REG_GPU_BASEADDR                        (0x40090000UL)
-#define REG_IOM_BASEADDR                        (0x40005000UL)
-#define REG_IOSLAVE_BASEADDR                    (0x40034000UL)
-#define REG_MCUCTRL_BASEADDR                    (0x40020000UL)
-#define REG_MRAM_BASEADDR                       (0x40014000UL)
-#define REG_MSPI_BASEADDR                       (0x40060000UL)
-#define REG_PDM_BASEADDR                        (0x50401000UL)
-#define REG_PWRCTRL_BASEADDR                    (0x40021000UL)
-#define REG_RSTGEN_BASEADDR                     (0x40000000UL)
-#define REG_RTC_BASEADDR                        (0x40004800UL)
-#define REG_SECURITY_BASEADDR                   (0x40030000UL)
-#define REG_STIMER_BASEADDR                     (0x40008800UL)
-#define REG_TIMER_BASEADDR                      (0x40008000UL)
-#define REG_UART_BASEADDR                       (0x4001C000UL)
-#define REG_VCOMP_BASEADDR                      (0x4000C000UL)
-#define REG_WDT_BASEADDR                        (0x40024000UL)
 
 // ****************************************************************************
 // RAM Memory Map:
@@ -100,7 +58,8 @@
 // SRAM address space
 //
 #define SRAM_BASEADDR                           (0x10000000UL)
-#define TCM_MAX_SIZE                            (0x60000UL)
+#define TCM_BASEADDR                            SRAM_BASEADDR
+#define TCM_MAX_SIZE                            (384UL * 1024UL)
 
 //
 // SSRAM address space
@@ -151,8 +110,6 @@
 #define MSPI1_APERTURE_END_ADDR                 (0x1C000000UL)
 #define MSPI2_APERTURE_START_ADDR               (0x1C000000UL)
 #define MSPI2_APERTURE_END_ADDR                 (0x20000000UL)
-
-
 
 #endif // AM_REG_BASE_ADDRESSES_H
 

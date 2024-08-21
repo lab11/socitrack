@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,12 +44,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
 #ifndef AM_HAL_UART_H
 #define AM_HAL_UART_H
+
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "am_mcu_apollo.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -58,14 +63,14 @@ extern "C"
 
 //*****************************************************************************
 //
-// Global definitions
+//! Global definitions
 //
 //*****************************************************************************
 #define UARTn(n)    ((UART0_Type*)(UART0_BASE + (n * (UART1_BASE - UART0_BASE))))
 
 //*****************************************************************************
 //
-// UART error codes.
+//! UART error codes.
 //
 //*****************************************************************************
 typedef enum
@@ -79,9 +84,31 @@ typedef enum
 }
 am_hal_uart_errors_t;
 
+typedef enum
+{
+    AM_HAL_UART_STATUS2_SUCCESS   = 0,
+    AM_HAL_UART_STATUS2_RX_QUEUE_FULL = 0x0001,
+    AM_HAL_UART_STATUS2_RX_DATA_AVAIL = 0x0002,
+    AM_HAL_UART_STATUS2_TX_QUEUE_FULL = 0x0004,
+    AM_HAL_UART_STATUS2_TX_COMPLETE   = 0x0008,
+    AM_HAL_UART_STATUS2_TX_BUSY       = 0x0010,
+    AM_HAL_UART_STATUS2_FRM_ERROR     = UART0_DR_FEDATA_Msk,
+    AM_HAL_UART_STATUS2_PRTY_ERROR    = UART0_DR_PEDATA_Msk,
+    AM_HAL_UART_STATUS2_BRK_ERROR     = UART0_DR_BEDATA_Msk,
+    AM_HAL_UART_STATUS2_OVRN_ERROR    = UART0_DR_OEDATA_Msk,
+    AM_HAL_UART_STATUS2_INTRNL_MSK    = (AM_HAL_UART_STATUS2_FRM_ERROR
+        | AM_HAL_UART_STATUS2_OVRN_ERROR
+        | AM_HAL_UART_STATUS2_PRTY_ERROR
+        | AM_HAL_UART_STATUS2_BRK_ERROR),
+
+    AM_HAL_UART_STATUS2_x32           = 0x80000000,
+}
+am_hal_uart_status2_t;
+
 //*****************************************************************************
 //
-// UART interrupts.
+//! @name UART interrupts.
+//! @{
 //
 //*****************************************************************************
 #define AM_HAL_UART_INT_OVER_RUN            UART0_IER_OEIM_Msk
@@ -95,15 +122,14 @@ am_hal_uart_errors_t;
 #define AM_HAL_UART_INT_DCDM                UART0_IER_DCDMIM_Msk
 #define AM_HAL_UART_INT_CTSM                UART0_IER_CTSMIM_Msk
 #define AM_HAL_UART_INT_TXCMP               UART0_IER_TXCMPMIM_Msk
+//! @}
 
 //*****************************************************************************
 //
 //! @name UART Flag Register
 //! @{
 //! Macro definitions for UART Flag Register Bits.
-//!
 //! They may be used with the \e am_hal_uart_flags_get() function.
-//!
 //
 //*****************************************************************************
 #define AM_HAL_UART_FR_TX_EMPTY             UART0_FR_TXFE_Msk
@@ -123,7 +149,7 @@ am_hal_uart_errors_t;
 //*****************************************************************************
 
 //
-// Fifo interrupt level.
+//! Fifo interrupt level.
 //
 typedef enum
 {
@@ -136,7 +162,7 @@ typedef enum
 am_hal_uart_fifo_level_e;
 
 //
-// Number of data bits per UART frame.
+//! Number of data bits per UART frame.
 //
 typedef enum
 {
@@ -148,7 +174,7 @@ typedef enum
 am_hal_uart_data_bits_e;
 
 //
-// Parity options.
+//! Parity options.
 //
 typedef enum
 {
@@ -159,7 +185,7 @@ typedef enum
 am_hal_uart_parity_e;
 
 //
-// Stop bit options.
+//! Stop bit options.
 //
 typedef enum
 {
@@ -169,7 +195,7 @@ typedef enum
 am_hal_uart_stop_bits_e;
 
 //
-// Flow control options.
+//! Flow control options.
 //
 typedef enum
 {
@@ -180,35 +206,34 @@ typedef enum
 }
 am_hal_uart_flow_control_e;
 
+//
+//! UART Config
+//
 typedef struct
 {
-    uint32_t                   ui32BaudRate; // Baud rate
-    am_hal_uart_data_bits_e    eDataBits;    // Number of bits per frame
-    am_hal_uart_parity_e       eParity;      // UART parity
-    am_hal_uart_stop_bits_e    eStopBits;    // Number of stop bits
-    am_hal_uart_flow_control_e eFlowControl; // Flow control option
-    am_hal_uart_fifo_level_e   eTXFifoLevel; // TX fifo interrupt level
-    am_hal_uart_fifo_level_e   eRXFifoLevel; // RX fifo interrupt level
+    uint32_t                   ui32BaudRate; //!< Baud Rate
+    am_hal_uart_data_bits_e    eDataBits;    //!< Number of bits per frame
+    am_hal_uart_parity_e       eParity;      //!< UART parity
+    am_hal_uart_stop_bits_e    eStopBits;    //!< Number of stop bits
+    am_hal_uart_flow_control_e eFlowControl; //!< Flow control option
+    am_hal_uart_fifo_level_e   eTXFifoLevel; //!< TX fifo interrupt level
+    am_hal_uart_fifo_level_e   eRXFifoLevel; //!< RX fifo interrupt level
 }
 am_hal_uart_config_t;
 
 //*****************************************************************************
 //
-// UART transfer structure.
+//! @brief The type of transfer to execute.
+//!
+//! For blocking transfers, the CPU will poll until the requested number of
+//! bytes have been transferred, or the timeout interval elapses, whichever
+//! happens first.
+//!
+//! For non-blocking transfers, the CPU will read or write as many bytes as
+//! possible immediately, and then the interrupt service routine will handle the
+//! rest.
 //
 //*****************************************************************************
-
-//
-// The type of transfer to execute.
-//
-// For blocking transfers, the CPU will poll until the requested number of
-// bytes have been transferred, or the timeout interval elapses, whichever
-// happens first.
-//
-// For non-blocking transfers, the CPU will read or write as many bytes as
-// possible immediately, and then the interrupt service routine will handle the
-// rest.
-//
 typedef enum
 {
     AM_HAL_UART_BLOCKING_WRITE,
@@ -218,57 +243,62 @@ typedef enum
 }
 am_hal_uart_transfer_type_e;
 
+//*****************************************************************************
+//
+//! UART transfer structure.
+//
+//*****************************************************************************
 typedef struct
 {
     //
-    // Is this a write or a read?
+    //! Is this a write or a read?
     //
     am_hal_uart_transfer_type_e eType;
 
     //
-    // Data location to use for this transaction.
+    //! Data location to use for this transaction.
     //
     uint8_t *pui8Data;
 
     //
-    // How many bytes should we send?
+    //! How many bytes should we send?
     //
     uint32_t ui32NumBytes;
 
     //
-    // When the transaction is complete, this will be set to the number of
-    // bytes we read.
+    //! When the transaction is complete, this will be set to the number of
+    //! bytes we read.
     //
     uint32_t *pui32BytesTransferred;
 
     //
-    // For blocking transactions, this determines how long the UART HAL should
-    // wait before aborting the transaction.
+    //! For blocking transactions, this determines how long the UART HAL should
+    //! wait before aborting the transaction.
     //
     uint32_t ui32TimeoutMs;
 
     //
-    // For non-blocking transfers, the UART HAL will call this callback
-    // function as soon as the requested action is complete.
+    //! For non-blocking transfers, the UART HAL will call this callback
+    //! function as soon as the requested action is complete.
     //
     void (*pfnCallback)(uint32_t ui32ErrorStatus, void *pvContext);
 
     //
-    // This context variable will be saved and provided to the callback
-    // function when it is called.
+    //! This context variable will be saved and provided to the callback
+    //! function when it is called.
     //
     void *pvContext;
 
     //
-    // This context variable will be saved and provided to the callback
-    // function when it is called.
+    //! This context variable will be saved and provided to the callback
+    //! function when it is called.
     //
     uint32_t ui32ErrorStatus;
 }
 am_hal_uart_transfer_t;
 
 //
-// A few helpful UART transfer defaults.
+//! UART Blocking Write Defaults.
 //
 #define AM_HAL_UART_BLOCKING_WRITE_DEFAULTS                                   \
 {                                                                             \
@@ -282,6 +312,9 @@ am_hal_uart_transfer_t;
     .ui32ErrorStatus = 0,                                                     \
 };
 
+//
+//! UART Blocking Read Defaults.
+//
 #define AM_HAL_UART_BLOCKING_READ_DEFAULTS                                    \
 {                                                                             \
     .eType = AM_HAL_UART_BLOCKING_READ,                                       \
@@ -294,6 +327,9 @@ am_hal_uart_transfer_t;
     .ui32ErrorStatus = 0,                                                     \
 }
 
+//
+//! UART Non-Blocking Write Defaults.
+//
 #define AM_HAL_UART_NONBLOCKING_WRITE_DEFAULTS                                \
 {                                                                             \
     .eType = AM_HAL_UART_NONBLOCKING_WRITE,                                   \
@@ -306,6 +342,9 @@ am_hal_uart_transfer_t;
     .ui32ErrorStatus = 0,                                                     \
 }
 
+//
+//! UART Non-Blocking Read Defaults.
+//
 #define AM_HAL_UART_NONBLOCKING_READ_DEFAULTS                                 \
 {                                                                             \
     .eType = AM_HAL_UART_NONBLOCKING_READ,                                    \
@@ -319,7 +358,7 @@ am_hal_uart_transfer_t;
 }
 
 //
-// Use this value if you want to keep a UART transaction blocking forever.
+//! Use this value if you want to keep a UART transaction blocking forever.
 //
 #define AM_HAL_UART_WAIT_FOREVER            0xFFFFFFFF
 
@@ -666,10 +705,8 @@ extern uint32_t am_hal_uart_interrupt_clear(void *pHandle,
 //! @brief Read interrupt status.
 //!
 //! @param pHandle is the handle for the UART to operate on.
-//!
 //! @param pui32Status is the returned interrupt status (all bits OR'ed
 //! together)
-//!
 //! @param bEnabledOnly determines whether to read interrupts that were not
 //! enabled.
 //!
@@ -707,7 +744,6 @@ extern uint32_t am_hal_uart_interrupt_status_get(void *pHandle,
 //! @brief Check to see which interrupts are enabled.
 //!
 //! @param pHandle is the handle for the UART to operate on.
-//!
 //! @param pui32IntMask is the current set of interrupt enable bits (all bits
 //!                     OR'ed together)
 //!
@@ -742,7 +778,6 @@ extern uint32_t am_hal_uart_interrupt_enable_get(void *pHandle, uint32_t *pui32I
 //! @brief transfer data between hardware and software queue in the background.
 //!
 //! @param pHandle is the handle for the UART to operate on.
-//!
 //! @param ui32Status is the interrupt flag and can be any combination of
 //!  AM_HAL_UART_INT_RX, AM_HAL_UART_INT_RX_TMOUT, or AM_HAL_UART_INT_TX.
 //!
@@ -754,6 +789,68 @@ extern uint32_t am_hal_uart_interrupt_enable_get(void *pHandle, uint32_t *pui32I
 //*****************************************************************************
 extern uint32_t am_hal_uart_interrupt_service(void *pHandle,
                                               uint32_t ui32Status);
+
+//*****************************************************************************
+//
+//! @brief called from uart ISR
+//!
+//! @details this code process uart tx, txcomplete, and rx interrupts, it is
+//! designed to be used with uart fifos enabled and tx and rx queues enabled
+//! The application will add data to the tx queue with the am_hal_uart_append_tx
+//! call. The application will read data from the rx queue with the
+//! am_hal_uart_get_rx_data
+//!
+//! @param pHandle is the handle for the UART to operate on.
+//!
+//! This function should be called from the ISR and then recieve/transmit data
+//! from/to hardware FIFO.
+//!
+//! @return am_hal_uart_status2_t this is a bitfield
+//
+//*****************************************************************************
+extern am_hal_uart_status2_t am_hal_uart_interrupt_queue_service(void *pHandle);
+
+//*****************************************************************************
+//
+//! @brief append data to uart tx output queue
+//!
+//! @details this code is used in conjunction with am_hal_uart_interrupt_queue_service
+//! it is designed to be used with uart fifos enabled and tx and rx queues enabled
+//! It will add data to the uart tx queue and get uart tx running
+//!
+//! @note the uart fifos and tx queue must be enabled before calling this
+//!
+//! @param pHandle      - The handle for the UART to operate on.
+//! @param pui8Buff     - Pointer to data buffer
+//! @param ui32NumBytes - The Number of bytes to send
+//!
+//! @return standard hal status
+//
+//*****************************************************************************
+extern uint32_t am_hal_uart_append_tx( void *pHandle,
+                                       uint8_t *pui8Buff,
+                                       uint32_t ui32NumBytes);
+
+//*****************************************************************************
+//
+//! @brief move data from rx queue (filled via ISR) into user supplied buffer
+//!
+//! @details this code is used in conjunction with am_hal_uart_interrupt_queue_service
+//! it is designed to be used with uart fifos enabled and tx and rx queues enabled
+//! It will add data to the uart tx queue and get uart tx running
+//!
+//! @note the uart fifos and rx queue must be enabled before calling this
+//!
+//! @param pHandle              - UART handle
+//! @param pui8DestBuff         - data is moved into this buffer (user buffer)
+//! @param ui32MaxBytes         - max number of bytes that can be moved
+//!
+//! @return     - actual number of bytes loaded into user buffer
+//
+//*****************************************************************************
+extern int32_t am_hal_uart_get_rx_data( void *pHandle,
+                                        uint8_t *pui8DestBuff,
+                                        uint32_t ui32MaxBytes);
 
 #ifdef __cplusplus
 }

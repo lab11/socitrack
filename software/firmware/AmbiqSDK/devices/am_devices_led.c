@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -57,6 +57,9 @@
 #define AM_APOLLO4_API
 #endif
 
+#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+#define AM_APOLLO5_API
+#endif
 
 //
 //! @brief Define a somewhat arbitrary maximum number of LEDs.
@@ -79,7 +82,7 @@ am_devices_led_init(am_devices_led_t *psLED)
         return;
     }
 
-#if defined(AM_APOLLO4_API)
+#if defined(AM_APOLLO4_API) || defined(AM_APOLLO5_API)
     //
     // Handle Direct Drive Versus 3-State (with pull-up or no buffer).
     //
@@ -238,7 +241,7 @@ am_devices_led_array_disable(am_devices_led_t *psLEDs, uint32_t ui32NumLEDs)
             continue;
         }
 
-#if defined(AM_APOLLO4_API)
+#if defined(AM_APOLLO4_API) || defined(AM_APOLLO5_API)
         am_hal_gpio_pinconfig((psLEDs + i)->ui32GPIONumber, am_hal_gpio_pincfg_disabled);
 #else
 #if AM_APOLLO3_GPIO
@@ -290,7 +293,7 @@ am_devices_led_on(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
         return;
     }
 
-#if defined(AM_APOLLO4_API)
+#if defined(AM_APOLLO4_API) || defined(AM_APOLLO5_API)
     //
     // Handle Direct Drive Versus 3-State (with pull-up or no buffer).
     //
@@ -381,7 +384,7 @@ am_devices_led_off(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
         return;
     }
 
-#if defined(AM_APOLLO4_API)
+#if defined(AM_APOLLO4_API) || defined(AM_APOLLO5_API)
     //
     // Handle Direct Drive Versus 3-State (with pull-up or no buffer).
     //
@@ -472,7 +475,7 @@ am_devices_led_toggle(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
         return;
     }
 
-#if defined(AM_APOLLO4_API)
+#if defined(AM_APOLLO4_API) || defined(AM_APOLLO5_API)
     //
     // Handle Direct Drive Versus 3-State (with pull-up or no buffer).
     //
@@ -606,7 +609,7 @@ am_devices_led_get(am_devices_led_t *psLEDs, uint32_t ui32LEDNum)
         return false;   // No error return, so return as off
     }
 
-#if defined(AM_APOLLO4_API)
+#if defined(AM_APOLLO4_API) || defined(AM_APOLLO5_API)
     uint32_t ui32Ret, ui32Value;
     am_hal_gpio_read_type_e eReadType;
 

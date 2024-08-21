@@ -7,13 +7,13 @@
  *  Copyright (c) 2009-2019 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019-2020 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -185,7 +185,7 @@ static void attsDataCback(uint16_t handle, uint16_t len, uint8_t *pPacket)
   }
 
   /* check client's status to see if server is allowed to process this PDU. */
-  err = attsCsfActClientState(handle, opcode, pPacket);
+  err = attsCsfActClientState(pCcb->connId-1, opcode, pPacket);
   if (err)
   {
     /* check the validity of data length */
@@ -375,7 +375,7 @@ void attsClearPrepWrites(attsCcb_t *pCcb)
 {
   void *pBuf;
 
-  while ((pBuf = WsfQueueDeq(&attsCb.prepWriteQueue[pCcb->connId])) != NULL)
+  while ((pBuf = WsfQueueDeq(&attsCb.prepWriteQueue[pCcb->connId-1])) != NULL)
   {
     WsfBufFree(pBuf);
   }

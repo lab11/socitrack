@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -117,6 +117,8 @@ daxi_flush_invalidate(bool bFlush)
         // APB_SYNC
         //
         am_hal_sysctrl_sysbus_write_flush();
+
+        while ( !CPU->DAXICTRL_b.DAXIREADY );
     }
 
     //
@@ -144,11 +146,6 @@ daxi_flush_complete(void)
 {
     AM_CRITICAL_BEGIN
     daxi_flush_invalidate(true);
-
-    //
-    // flush any buffered core and peripheral writes.
-    //
-    while ( !CPU->DAXICTRL_b.DAXIREADY );
     AM_CRITICAL_END
 
 } // daxi_flush_complete()

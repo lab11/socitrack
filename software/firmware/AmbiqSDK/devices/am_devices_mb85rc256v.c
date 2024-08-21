@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -91,7 +91,7 @@ am_device_command_write(void *pHandle, uint8_t ui8DevAddr, uint32_t ui32InstrLen
     // Create the transaction.
     //
     Transaction.ui32InstrLen    = ui32InstrLen;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if (defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API))
     Transaction.ui64Instr       = ui64Instr;
 #else
     Transaction.ui32Instr       = (uint32_t)ui64Instr;
@@ -130,7 +130,7 @@ am_device_command_read(void *pHandle, uint8_t ui8DevAddr, uint32_t ui32InstrLen,
     // Create the transaction.
     //
     Transaction.ui32InstrLen    = ui32InstrLen;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if (defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API))
     Transaction.ui64Instr       = ui64Instr;
 #else
     Transaction.ui32Instr       = (uint32_t)ui64Instr;
@@ -187,12 +187,14 @@ am_devices_mb85rc256v_init(uint32_t ui32Module, am_devices_mb85rc256v_config_t *
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
+#elif AM_PART_APOLLO3_API
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
     am_hal_mcuctrl_fault_capture_enable();
+#endif
 #endif
 
     stIOMMB85RC256VSettings = g_sIomMb85rc256vCfg;
@@ -271,7 +273,6 @@ am_devices_mb85rc256v_term(void *pHandle)
     //
     return AM_DEVICES_MB85RC256V_STATUS_SUCCESS;
 }
-
 
 //*****************************************************************************
 //
@@ -354,7 +355,7 @@ am_devices_mb85rc256v_nonblocking_write(void *pHandle, uint8_t *pui8TxBuffer,
     //
     Transaction.eDirection      = AM_HAL_IOM_TX;
     Transaction.ui32InstrLen    = 2;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if (defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API))
     Transaction.ui64Instr       = ui32WriteAddress & 0x0000FFFF;
 #else
     Transaction.ui32Instr       = ui32WriteAddress & 0x0000FFFF;
@@ -422,7 +423,7 @@ am_devices_mb85rc256v_nonblocking_read(void *pHandle, uint8_t *pui8RxBuffer,
     Transaction.ui8Priority     = 1;        // High priority for now.
     Transaction.eDirection      = AM_HAL_IOM_RX;
     Transaction.ui32InstrLen    = 2;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if (defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API))
     Transaction.ui64Instr       = (ui32ReadAddress & 0x0000FFFF);
 #else
     Transaction.ui32Instr       = (ui32ReadAddress & 0x0000FFFF);

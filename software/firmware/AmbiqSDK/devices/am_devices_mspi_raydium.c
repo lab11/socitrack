@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include "am_mcu_apollo.h"
@@ -59,7 +59,6 @@
 //*****************************************************************************
 #define BYTE_NUM_PER_WRITE                          65535
 #define AM_DEVICES_MSPI_RM69330_TIMEOUT             100000
-
 
 static am_devices_mspi_rm69330_graphic_conf_t g_sGraphic_conf =
 {
@@ -439,7 +438,6 @@ am_devices_mspi_rm69330_command_read(void *pHandle,
     return ui32Status;
 }
 
-
 //*****************************************************************************
 //
 //! @brief reset external display
@@ -469,8 +467,6 @@ am_devices_set_row_col(void *pHandle, am_devices_mspi_rm69330_graphic_conf_t *ps
                                                        psGraphic_conf->ui16RowOffset,
                                                        psGraphic_conf->ui16Height);
 }
-
-
 
 //*****************************************************************************
 //
@@ -530,6 +526,22 @@ am_devices_mspi_rm69330_set_scanline_recommended_parameter(void *pHandle,
     return am_devices_mspi_rm69330_set_scanline(pHandle, ui16ScanLine);
 }
 
+//*****************************************************************************
+//
+// Flip image on the panel
+//
+//****************************************************************************
+uint32_t am_devices_mspi_rm69330_flip(void *pHandle, uint8_t ui8FlipXY)
+{
+    uint8_t ui8CMDBuf[10];
+    ui8CMDBuf[0] = ui8FlipXY;
+    if ( am_devices_mspi_rm69330_command_write(pHandle, AM_DEVICES_MSPI_RM69330_SCAN_DIRECTION, ui8CMDBuf, 1) )
+    {
+        return AM_DEVICES_MSPI_RM69330_STATUS_ERROR;
+    }
+    return AM_DEVICES_MSPI_RM69330_STATUS_SUCCESS;
+}
+
 static uint32_t
 am_devices_lcm_init(void *pHandle, am_devices_mspi_rm69330_graphic_conf_t *psGraphic_conf)
 {
@@ -573,11 +585,12 @@ am_devices_lcm_init(void *pHandle, am_devices_mspi_rm69330_graphic_conf_t *psGra
         return AM_DEVICES_MSPI_RM69330_STATUS_ERROR;
     }
 
+#ifdef AM_BSP_DISP_FLIP
+    ui8CMDBuf[0] = AM_BSP_DISP_FLIP;
+#else
     ui8CMDBuf[0] = psGraphic_conf->ui8ScanMode;
-    if ( am_devices_mspi_rm69330_command_write(pHandle, AM_DEVICES_MSPI_RM69330_SCAN_DIRECTION, ui8CMDBuf, 1) )  // scan direction to 0
-    {
-        return AM_DEVICES_MSPI_RM69330_STATUS_ERROR;
-    }
+#endif
+    am_devices_mspi_rm69330_flip(pHandle, ui8CMDBuf[0]);
 
     ui8CMDBuf[0] = psGraphic_conf->ui8ColorMode;
     if ( am_devices_mspi_rm69330_command_write(pHandle, AM_DEVICES_MSPI_RM69330_PIXEL_FORMAT, ui8CMDBuf, 1) )
@@ -660,12 +673,14 @@ am_devices_mspi_rm69330_init(uint32_t ui32Module,
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
+#elif AM_PART_APOLLO3_API
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
     am_hal_mcuctrl_fault_capture_enable();
+#endif
 #endif
 
     switch (pDevCfg->eDeviceConfig)
@@ -820,7 +835,6 @@ am_devices_mspi_rm69330_term(void *pHandle)
     //
     return AM_DEVICES_MSPI_RM69330_STATUS_SUCCESS;
 }
-
 
 //*****************************************************************************
 //
@@ -979,7 +993,6 @@ am_devices_mspi_rm69330_nonblocking_write_adv(void *pHandle,
                                                 false);
 }
 
-
 //*****************************************************************************
 //
 // Programs the given range of display addresses.
@@ -1055,7 +1068,6 @@ am_devices_mspi_rm69330_nonblocking_write_endian(void *pHandle,
 
     return AM_DEVICES_MSPI_RM69330_STATUS_SUCCESS;
 }
-
 
 //*****************************************************************************
 //

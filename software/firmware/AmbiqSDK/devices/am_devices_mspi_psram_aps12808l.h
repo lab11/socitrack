@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -388,7 +388,6 @@ extern uint32_t am_devices_mspi_psram_aps12808l_ddr_nonblocking_read(void *pHand
                            am_hal_mspi_callback_t pfnCallback,
                            void *pCallbackCtxt);
 
-
 //*****************************************************************************
 //
 //! @brief Programs the given range of psram addresses.
@@ -434,7 +433,6 @@ extern uint32_t am_devices_mspi_psram_aps12808l_ddr_nonblocking_write(void *pHan
                            uint32_t ui32NumBytes,
                            am_hal_mspi_callback_t pfnCallback,
                            void *pCallbackCtxt);
-
 
 //*****************************************************************************
 //

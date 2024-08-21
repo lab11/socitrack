@@ -13,7 +13,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_DEVICES_DISPLAY_TYPES_H
@@ -66,7 +66,7 @@
 //! @name Display controller IP type.
 //! @brief The display controller IPs in Apollo SoC to drive the panel.
 //!
-//! @note DC stands for the dedicated Display Controller IP in Apollo4B/Apollo4P SoC,
+//! @note DC stands for the dedicated Display Controller IP in Apollo4B/Apollo4P/Apollo5 SoC,
 //! MSPI stands for the Multi-SPI master interface IP in all Apollo series SoC.
 //! More details please refer to the corresponding datasheet.
 //! @{
@@ -120,12 +120,10 @@
 #  endif
 #endif
 
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
 
 //*****************************************************************************
 //
@@ -138,15 +136,18 @@ extern "C"
 typedef enum
 {
     DISP_IC_RM69330                 = 0x01,
-    DISP_IC_RM67162                 = 0x02
+    DISP_IC_RM67162                 = 0x02,
+    DISP_IC_CO5300                  = 0x03,
+    DISP_IC_NT38350                 = 0x04
 } am_devices_disp_ic_e;
 
 //*****************************************************************************
 //
 //! @brief The interface type between Apollo SoC and the display panel.
 //!
-//! @note Apollo DC IP supports SPI4, DSPI, QSPI and MIPI-DSI together with DSI IP.
-//! Apollo MSPI IP supports QSPI for now.
+//! @note Apollo DC IP supports SPI4, DSPI, QSPI , DBI, JDI and MIPI-DSI together
+//! with DSI IP. Apollo MSPI IP supports QSPI for now. For more details, please
+//! refer to the apollo SoCs datasheet.
 //
 //*****************************************************************************
 typedef enum
@@ -162,10 +163,10 @@ typedef enum
 
 //*****************************************************************************
 //
-//! @brief The interface type between Apollo SoC and the display panel.
+//! @brief The color format supported.
 //!
-//! @note Apollo DC IP supports SPI4, DSPI, QSPI and MIPI-DSI together with DSI IP.
-//! Apollo MSPI IP supports QSPI for now.
+//! @note RGB565 and RGB888 are the coding color formats this driver supports now,
+//! Please contact us if more format is needed.
 //
 //*****************************************************************************
 typedef enum
@@ -188,6 +189,35 @@ typedef enum
     DISP_TE_GPIO,
     DISP_TE_DC
 }am_devices_disp_te_type_e;
+
+//*****************************************************************************
+//
+//! @brief DC used structure
+//
+//*****************************************************************************
+typedef struct
+{
+    uint32_t ui32PixelFormat;
+    uint16_t ui16ResX;
+    uint16_t ui16ResY;
+    uint16_t ui16MinX;
+    uint16_t ui16MinY;
+    bool bTEEnable;
+    bool bFlip;
+    uint8_t ui8Lanes;
+} am_devices_dc_config_t;
+
+//*****************************************************************************
+//
+//! @brief DSI used structure
+//
+//*****************************************************************************
+typedef enum
+{
+    FMT_RGB565 = 0,
+    FMT_RGB888,
+    FMT_NUM
+} pixel_format_t;
 
 //*****************************************************************************
 //

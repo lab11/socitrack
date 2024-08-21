@@ -309,7 +309,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>6</Optim>
+            <Optim>4</Optim>
             <oTime>1</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -333,9 +333,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>AM_DEBUG_ASSERT AM_ASSERT_INVALID_THRESHOLD=0 AM_PART_APOLLO4B keil6</Define>
+              <Define>AM_DEBUG_ASSERT AM_PART_APOLLO4B AM_ASSERT_INVALID_THRESHOLD=0 keil6</Define>
               <Undefine></Undefine>
-              <IncludePath>../../../../../CMSIS/ARM/Include;../../../../../utils;../../../../../mcu/apollo4b;../../../../../CMSIS/AmbiqMicro/Include;../../../../../mcu/apollo4b/hal</IncludePath>
+              <IncludePath>../../../../../CMSIS/ARM/Include;../../../../../mcu/apollo4b;../../../../../mcu/apollo4b/hal;../../../../../CMSIS/AmbiqMicro/Include;../../../../../utils</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -376,96 +376,6 @@
         </TargetArmAds>
       </TargetOption>
       <Groups>
-        <Group>
-          <GroupName>hal</GroupName>
-          <Files>
-            <File>
-              <FileName>am_hal_access.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_access.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_adc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_adc.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_audadc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_audadc.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_dcu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_dcu.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_global.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_global.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_gpio.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_gpio.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_i2s.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_i2s.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_otp.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_otp.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_pdm.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_pdm.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_pin.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_pin.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_pwrctrl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_pwrctrl.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_queue.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_queue.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_security.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_security.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_stimer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_stimer.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_timer.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_timer.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_usb.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_usb.c</FilePath>
-            </File>
-            <File>
-              <FileName>am_hal_wdt.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_wdt.c</FilePath>
-            </File>
-          </Files>
-        </Group>
         <Group>
           <GroupName>mcu</GroupName>
           <Files>
@@ -593,6 +503,96 @@
               <FileName>am_hal_utils.c</FileName>
               <FileType>1</FileType>
               <FilePath>../../../../../mcu/apollo4b/hal/mcu/am_hal_utils.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>hal</GroupName>
+          <Files>
+            <File>
+              <FileName>am_hal_access.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_access.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_adc.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_audadc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_audadc.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_dcu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_dcu.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_global.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_global.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_gpio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_gpio.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_i2s.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_i2s.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_otp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_otp.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_pdm.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_pdm.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_pin.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_pin.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_pwrctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_pwrctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_queue.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_security.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_security.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_stimer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_stimer.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_usb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_usb.c</FilePath>
+            </File>
+            <File>
+              <FileName>am_hal_wdt.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>../../../../../mcu/apollo4b/hal/am_hal_wdt.c</FilePath>
             </File>
           </Files>
         </Group>

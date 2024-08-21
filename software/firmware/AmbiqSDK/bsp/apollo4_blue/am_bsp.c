@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -235,8 +235,7 @@ static uint8_t pui8UartRxBuffer[AM_BSP_UART_BUFFER_SIZE];
 //! @brief Prepare the MCU for low power operation.
 //!
 //! This function enables several power-saving features of the MCU, and
-//! disables some of the less-frequently used peripherals. It also sets the
-//! system clock to 24 MHz.
+//! disables some of the less-frequently used peripherals.
 //!
 //! @return None.
 //
@@ -265,6 +264,12 @@ am_bsp_low_power_init(void)
     // Disable the RTC.
     //
     am_hal_rtc_osc_disable();
+
+    //
+    // Configure the BLE controller nRST PIN to low level
+    //
+    am_hal_gpio_pinconfig(AM_DEVICES_BLECTRLR_RESET_PIN, am_hal_gpio_pincfg_output);
+    am_hal_gpio_state_write(AM_DEVICES_BLECTRLR_RESET_PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
 
 } // am_bsp_low_power_init()
 
@@ -410,6 +415,15 @@ am_bsp_itm_printf_disable(void)
     //
     // Disable the ITM/TPIU
     //
+    am_hal_itm_not_busy();
+
+    am_hal_gpio_state_write(AM_BSP_GPIO_ITM_SWO, AM_HAL_GPIO_OUTPUT_SET);
+
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_ITM_SWO, am_hal_gpio_pincfg_output);
+
+    //
+    // Disable the ITM/TPIU
+    //
     am_hal_itm_disable();
 
     //
@@ -420,7 +434,7 @@ am_bsp_itm_printf_disable(void)
     //
     // Disconnect the SWO pin
     //
-    am_hal_gpio_pinconfig(AM_BSP_GPIO_ITM_SWO, am_hal_gpio_pincfg_disabled);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_ITM_SWO, am_hal_gpio_pincfg_pulledup_disabled);
     g_ePrintInterface = AM_BSP_PRINT_IF_NONE;
 } // am_bsp_itm_printf_disable()
 
@@ -621,60 +635,79 @@ am_bsp_disp_reset_pins_clear(void)
 
 //*****************************************************************************
 //
-//! @brief Set up the SDIO's pins.
-//!
-//! This function configures SDIO's CMD, CLK, DAT0-7 pins
-//!
-//! @return None.
+// Set up the SDIO's pins.
 //
 //*****************************************************************************
 void
 am_bsp_sdio_pins_enable(uint8_t ui8BusWidth)
 {
-    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_CMD,  g_AM_BSP_GPIO_SDIF_CMD);
-    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_CLKOUT,  g_AM_BSP_GPIO_SDIF_CLKOUT);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_CMD,  g_AM_BSP_GPIO_SDIO_CMD);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_CLK,  g_AM_BSP_GPIO_SDIO_CLK);
 
     switch (ui8BusWidth)
     {
-        case 8:
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT4, g_AM_BSP_GPIO_SDIF_DAT4);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT5, g_AM_BSP_GPIO_SDIF_DAT5);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT6, g_AM_BSP_GPIO_SDIF_DAT6);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT7, g_AM_BSP_GPIO_SDIF_DAT7);
-        case 4:
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT1, g_AM_BSP_GPIO_SDIF_DAT1);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT2, g_AM_BSP_GPIO_SDIF_DAT2);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT3, g_AM_BSP_GPIO_SDIF_DAT3);
-        case 1:
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT0, g_AM_BSP_GPIO_SDIF_DAT0);
+        case AM_HAL_HOST_BUS_WIDTH_8:
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT4, g_AM_BSP_GPIO_SDIO_DAT4);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT5, g_AM_BSP_GPIO_SDIO_DAT5);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT6, g_AM_BSP_GPIO_SDIO_DAT6);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT7, g_AM_BSP_GPIO_SDIO_DAT7);
+        case AM_HAL_HOST_BUS_WIDTH_4:
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT1, g_AM_BSP_GPIO_SDIO_DAT1);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT2, g_AM_BSP_GPIO_SDIO_DAT2);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT3, g_AM_BSP_GPIO_SDIO_DAT3);
+        case AM_HAL_HOST_BUS_WIDTH_1:
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT0, g_AM_BSP_GPIO_SDIO_DAT0);
             break;
     }
 
 } // am_bsp_sdio_pins_enable()
 
-
+//*****************************************************************************
+//
+// Disable the SDIO's pins.
+//
+//*****************************************************************************
 void
 am_bsp_sdio_pins_disable(uint8_t ui8BusWidth)
 {
-    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_CMD,  am_hal_gpio_pincfg_default);
-    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_CLKOUT,  am_hal_gpio_pincfg_default);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_CMD,  am_hal_gpio_pincfg_default);
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_CLK,  am_hal_gpio_pincfg_default);
 
     switch (ui8BusWidth)
     {
-        case 8:
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT4, am_hal_gpio_pincfg_default);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT5, am_hal_gpio_pincfg_default);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT6, am_hal_gpio_pincfg_default);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT7, am_hal_gpio_pincfg_default);
-        case 4:
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT1, am_hal_gpio_pincfg_default);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT2, am_hal_gpio_pincfg_default);
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT3, am_hal_gpio_pincfg_default);
-        case 1:
-            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIF_DAT0, am_hal_gpio_pincfg_default);
+        case AM_HAL_HOST_BUS_WIDTH_8:
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT4, am_hal_gpio_pincfg_default);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT5, am_hal_gpio_pincfg_default);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT6, am_hal_gpio_pincfg_default);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT7, am_hal_gpio_pincfg_default);
+        case AM_HAL_HOST_BUS_WIDTH_4:
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT1, am_hal_gpio_pincfg_default);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT2, am_hal_gpio_pincfg_default);
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT3, am_hal_gpio_pincfg_default);
+        case AM_HAL_HOST_BUS_WIDTH_1:
+            am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_DAT0, am_hal_gpio_pincfg_default);
             break;
     }
 } // am_bsp_sdio_pins_disable()
+
+//*****************************************************************************
+//
+//! @brief Set up the SDIO reset pins.
+//!
+//! Reset SDIO device via GPIO
+//!
+//! @return None.
+//
+//*****************************************************************************
+void
+am_bsp_sdio_reset(void)
+{
+    am_hal_gpio_pinconfig(AM_BSP_GPIO_SDIO_RST, am_hal_gpio_pincfg_output);
+    am_hal_gpio_output_clear(AM_BSP_GPIO_SDIO_RST);
+    am_hal_delay_us(10000);
+    am_hal_gpio_output_set(AM_BSP_GPIO_SDIO_RST);
+} // am_bsp_sdio_reset()
+
 
 
 //*****************************************************************************
@@ -1332,7 +1365,7 @@ am_bsp_i2s_pins_enable(uint32_t ui32Module, bool bBidirectionalData)
     {
         return;
     }
-    
+
     switch ( ui32Module )
     {
         case 0:
@@ -1436,7 +1469,7 @@ void am_bsp_pdm_pins_enable(uint32_t ui32Module)
     {
         return;
     }
-    
+
     switch ( ui32Module )
     {
         case 0:
@@ -1474,7 +1507,7 @@ void am_bsp_pdm_pins_disable(uint32_t ui32Module)
     {
         return;
     }
-    
+
     switch ( ui32Module )
     {
         case 0:
@@ -2188,3 +2221,73 @@ am_bsp_mspi_ce_pincfg_get(uint32_t ui32Module,
             break;
     }
 } // am_bsp_mspi_ce_pincfg_get()
+//*****************************************************************************
+//
+// configure or deconfig adc pins
+//
+//*****************************************************************************
+uint32_t
+am_bsp_adc_pin_config( am_bsp_adp_pins_e tADCPin, bool bPinADCModeEnable )
+{
+    am_hal_gpio_pincfg_t tPinCfg;
+
+    uint32_t ui32PinNUm = (uint32_t) tADCPin;
+    switch (ui32PinNUm)
+    {
+#ifdef AM_BSP_GPIO_ADCSE0
+        case AM_BSP_GPIO_ADCSE0:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE0;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE1
+        case AM_BSP_GPIO_ADCSE1:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE1;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE2
+        case AM_BSP_GPIO_ADCSE2:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE2;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE3
+        case AM_BSP_GPIO_ADCSE3:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE3;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE4
+        case AM_BSP_GPIO_ADCSE4:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE4;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE5
+        case AM_BSP_GPIO_ADCSE5:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE5;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE6
+        case AM_BSP_GPIO_ADCSE6:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE6;
+            break;
+#endif
+#ifdef AM_BSP_GPIO_ADCSE7
+        case AM_BSP_GPIO_ADCSE7:
+            tPinCfg = g_AM_BSP_GPIO_ADCSE7;
+            break;
+#endif
+        default:
+            return AM_HAL_STATUS_INVALID_ARG;
+    } // switch
+
+    //
+    // pin name is valid, and at this point in the code the
+    // pin is configurd for ADC. Now look at enable flag in case
+    // the user actually wants to disable the adc pin.
+    //
+    if (!bPinADCModeEnable)
+    {
+        tPinCfg.GP.cfg = 0;
+    }
+
+    return am_hal_gpio_pinconfig(ui32PinNUm, tPinCfg);
+}
+

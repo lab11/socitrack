@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,10 +44,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
 
 #ifndef AM_DEVICES_MSPI_PSRAM_APS25616N_H
 #define AM_DEVICES_MSPI_PSRAM_APS25616N_H
@@ -437,6 +436,20 @@ extern uint32_t am_devices_mspi_psram_aps25616n_ddr_disable_xip(void *pHandle);
 
 //*****************************************************************************
 //
+//! @brief Reconfigure MSPI XIP settings
+//!
+//! @param pHandle - Device handle of the external psram
+//! @param pXipconfig - Pointer to xip settings to be applied
+//!
+//! This function reconfigures MSPI XIP settings.
+//
+//! @return 32-bit status
+//
+//*****************************************************************************
+extern uint32_t am_devices_mspi_psram_aps25616n_xip_config(void *pHandle, am_hal_mspi_xip_config_t *pXipconfig);
+
+//*****************************************************************************
+//
 //! @brief Sets up the MSPI and external psram into scrambling mode.
 //!
 //! @param pHandle - Device handle of the external psram
@@ -587,7 +600,6 @@ extern uint32_t am_devices_mspi_psram_aps25616n_exit_halfsleep(void *pHandle);
 //                                 1us/64 ~= 15.625ns per step (192MHz clock)
 //
 
-
 //*****************************************************************************
 //!
 //! @brief Delay Function to Exit Half Sleep
@@ -620,7 +632,6 @@ extern __stackless inline void APS25616N_tXPHS_delay( uint32_t ui32Iterations );
 #endif
 
 #endif // AM_DEVICES_MSPI_PSRAM_APS25616N_H
-#endif
 
 //*****************************************************************************
 // End Doxygen group.

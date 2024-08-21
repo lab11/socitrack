@@ -1078,6 +1078,13 @@ static void hidAppProcMsg(dmEvt_t *pMsg)
       uiEvent = APP_UI_RESET_CMPL;
       break;
 
+    case DM_ADV_START_IND:
+      uiEvent = APP_UI_ADV_START;
+      break;
+
+    case DM_ADV_STOP_IND:
+      uiEvent = APP_UI_ADV_STOP;
+
     case ATTS_DB_HASH_CALC_CMPL_IND:
       hidAppSetup(pMsg);
       break;

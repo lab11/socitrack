@@ -59,8 +59,7 @@ static am_hal_rtc_time_t to_rtc_time(uint32_t unix_timestamp)
    struct tm *unix_time = gmtime(&timestamp);
    am_hal_rtc_time_t new_rtc_time = {
       .ui32ReadError = 0,
-      .ui32CenturyEnable = 0,
-      .ui32Century = 0,
+      .ui32CenturyBit = RTC_CTRUP_CB_2000,
       .ui32Hour = unix_time->tm_hour,
       .ui32Minute = unix_time->tm_min,
       .ui32Second = unix_time->tm_sec,
@@ -91,8 +90,7 @@ void rtc_set_time_to_compile_time(void)
    const char _datetime[] = _DATETIME;  // Format: "Tue Jan  1 00:00:00 UTC 2000"
    am_hal_rtc_time_t new_rtc_time = {
       .ui32ReadError = 0,
-      .ui32CenturyEnable = 0,
-      .ui32Century = 0,
+      .ui32CenturyBit = RTC_CTRUP_CB_2000,
       .ui32Hour = to_val(&_datetime[11]),
       .ui32Minute = to_val(&_datetime[14]),
       .ui32Second = to_val(&_datetime[17]),

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -484,7 +484,7 @@ extern "C"
 #define AM_HAL_PIN_22_NCE22             7
 #define AM_HAL_PIN_22_OBSBUS6           8
 #define AM_HAL_PIN_22_VCMPO             9
-#define AM_HAL_PIN_22_I3CM1_SCL         10
+#define AM_HAL_PIN_22_RESERVED10        10
 #define AM_HAL_PIN_22_FPIO              11
 #define AM_HAL_PIN_22_RESERVED12        12
 #define AM_HAL_PIN_22_RESERVED13        13
@@ -502,7 +502,7 @@ extern "C"
 #define AM_HAL_PIN_23_NCE23             7
 #define AM_HAL_PIN_23_OBSBUS7           8
 #define AM_HAL_PIN_23_VCMPO             9
-#define AM_HAL_PIN_23_I3CM1_SDA         10
+#define AM_HAL_PIN_23_RESERVED10        10
 #define AM_HAL_PIN_23_FPIO              11
 #define AM_HAL_PIN_23_RESERVED12        12
 #define AM_HAL_PIN_23_RESERVED13        13
@@ -1186,7 +1186,7 @@ extern "C"
 #define AM_HAL_PIN_61_NCE61             7
 #define AM_HAL_PIN_61_OBSBUS13          8
 #define AM_HAL_PIN_61_RESERVED9         9
-#define AM_HAL_PIN_61_I3CM0_SCL         10
+#define AM_HAL_PIN_61_RESERVED10        10
 #define AM_HAL_PIN_61_FPIO              11
 #define AM_HAL_PIN_61_RESERVED12        12
 #define AM_HAL_PIN_61_RESERVED13        13
@@ -1204,7 +1204,7 @@ extern "C"
 #define AM_HAL_PIN_62_NCE62             7
 #define AM_HAL_PIN_62_OBSBUS14          8
 #define AM_HAL_PIN_62_I2S1_SDOUT        9
-#define AM_HAL_PIN_62_I3CM0_SDA         10
+#define AM_HAL_PIN_62_RESERVED10        10
 #define AM_HAL_PIN_62_FPIO              11
 #define AM_HAL_PIN_62_RESERVED12        12
 #define AM_HAL_PIN_62_RESERVED13        13
@@ -2597,10 +2597,6 @@ typedef enum
     AM_HAL_PIN_FN_FPIO,
     AM_HAL_PIN_FN_GPIO,
     AM_HAL_PIN_FN_HFRC_EXT,
-    AM_HAL_PIN_FN_I3CM0_SCL,
-    AM_HAL_PIN_FN_I3CM1_SCL,
-    AM_HAL_PIN_FN_I3CM0_SDA,
-    AM_HAL_PIN_FN_I3CM1_SDA,
     AM_HAL_PIN_FN_I2S0_CLK,
     AM_HAL_PIN_FN_I2S1_CLK,
     AM_HAL_PIN_FN_I2S0_DATA,

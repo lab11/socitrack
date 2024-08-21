@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef HCI_DRV_COOPER_H
@@ -117,10 +117,12 @@ typedef enum
     EVT_MASK_NULL              = 0x00000000,
     /// configure to disable no opreation command code event
     DISABLE_WAKEUP_NOP_EVT_MASK  = 0x00000001,
+    /// configure to enable 2.5ms connection interval
+    CONFIG_CON_INT_2P5_MS_MASK   = 0x00000002,
 }eCfgEvtMsk_type;
 
-// configuration for specified event mask
-#define CFG_EVENT_MASK  (DISABLE_WAKEUP_NOP_EVT_MASK)
+// configuration for specified event mask, default NULL
+#define CFG_EVENT_MASK  (EVT_MASK_NULL)
 
 /*! read memory variable command */
 typedef struct
@@ -197,6 +199,30 @@ typedef struct
     uint8_t reason;
 } hciPlfResetCmd_t;
 
+typedef struct
+{
+    /// Connection handle
+    uint16_t conhdl;
+    /// Preferred event duration (N * 0.625 ms)
+    uint16_t duration;
+    /// Slave transmits a single packet per connection event (False/True)
+    uint8_t single_tx;
+}__attribute__ ((__packed__)) hciVsSetPrefSlaveEvtDurCmd_t;
+
+typedef struct
+{
+    /// Connection handle
+    uint16_t conhdl;
+    /// Preferred latency (in number of connection events)
+    uint16_t latency;
+} hciVsSetPrefSlaveLatencyCmd_t;
+
+typedef struct
+{
+    /// Connection handle
+    uint16_t conhdl;
+} hciVsGetConEvtCntCmd_t;
+
 #define LL_FEATURES_BYTE0  ( HCI_LE_SUP_FEAT_ENCRYPTION  \
                                  | HCI_LE_SUP_FEAT_CONN_PARAM_REQ_PROC \
                                  | HCI_LE_SUP_FEAT_EXT_REJECT_IND \
@@ -254,5 +280,7 @@ void HciVscUpdateNvdsParam(void);
 void HciVscUpdateLinklayerFeature(void);
 void HciVscGetDtmRssi(void);
 void HciVscConfigEvtMask(uint32_t evt_mask);
-
+void HciVsEnableSingleTx(uint16_t con_handle, bool en);
+void HciVsSetSlaveLatency(uint16_t con_handle, uint16_t latency);
+void HciVsGetConEventCounter(uint16_t con_handle);
 #endif // HCI_DRV_COOPER_H

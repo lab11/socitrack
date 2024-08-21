@@ -13,7 +13,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -100,6 +100,70 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_BUTTON0;
 //*****************************************************************************
 #define AM_BSP_GPIO_BUTTON1                 19
 extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_BUTTON1;
+
+//*****************************************************************************
+//
+// ADCSE0 pin: This pin is ADC_SE0  Note: UART3_CTS clock cannot be used simultaneously.
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE0                  19
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE0;
+
+//*****************************************************************************
+//
+// ADCSE1 pin: This pin is ADC_SE1
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE1                  18
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE1;
+
+//*****************************************************************************
+//
+// ADCSE2 pin: This pin is ADC_SE2
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE2                  17
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE2;
+
+//*****************************************************************************
+//
+// ADCSE3 pin: This pin is ADC_SE3
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE3                  16
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE3;
+
+//*****************************************************************************
+//
+// ADCSE4 pin: This pin is ADC_SE4
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE4                  15
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE4;
+
+//*****************************************************************************
+//
+// ADCSE5 pin: This pin is ADC_SE5
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE5                  14
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE5;
+
+//*****************************************************************************
+//
+// ADCSE6 pin: This pin is ADC_SE6
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE6                  13
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE6;
+
+//*****************************************************************************
+//
+// ADCSE7 pin: This pin is ADC_SE7
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_ADCSE7                  12
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE7;
 
 //*****************************************************************************
 //
@@ -1275,83 +1339,91 @@ extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM3_DATA;
 
 //*****************************************************************************
 //
-// SDIF_DAT0 pin: SD Data 0 pin.
+// SDIO_DAT0 pin: eMMC NAND Flash I/F using SDIO data 0.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT0               84
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT0;
+#define AM_BSP_GPIO_SDIO_DAT0               84
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT0;
 
 //*****************************************************************************
 //
-// SDIF_DAT1 pin: SD Data 1 pin.
+// SDIO_DAT1 pin: eMMC NAND Flash I/F using SDIO data 1.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT1               85
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT1;
+#define AM_BSP_GPIO_SDIO_DAT1               85
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT1;
 
 //*****************************************************************************
 //
-// SDIF_DAT2 pin: SD Data 2 pin.
+// SDIO_DAT2 pin: eMMC NAND Flash I/F using SDIO data 2.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT2               86
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT2;
+#define AM_BSP_GPIO_SDIO_DAT2               86
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT2;
 
 //*****************************************************************************
 //
-// SDIF_DAT3 pin: SD Data 3 pin.
+// SDIO_DAT3 pin: eMMC NAND Flash I/F using SDIO data 3.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT3               87
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT3;
+#define AM_BSP_GPIO_SDIO_DAT3               87
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT3;
 
 //*****************************************************************************
 //
-// SDIF_DAT4 pin: SD Data 4 pin.
+// SDIO_DAT4 pin: eMMC NAND Flash I/F using SDIO data 4.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT4               79
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT4;
+#define AM_BSP_GPIO_SDIO_DAT4               79
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT4;
 
 //*****************************************************************************
 //
-// SDIF_DAT5 pin: SD Data 5 pin.
+// SDIO_DAT5 pin: eMMC NAND Flash I/F using SDIO data 5.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT5               80
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT5;
+#define AM_BSP_GPIO_SDIO_DAT5               80
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT5;
 
 //*****************************************************************************
 //
-// SDIF_DAT6 pin: SD Data 6 pin.
+// SDIO_DAT6 pin: eMMC NAND Flash I/F using SDIO data 6.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT6               81
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT6;
+#define AM_BSP_GPIO_SDIO_DAT6               81
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT6;
 
 //*****************************************************************************
 //
-// SDIF_DAT7 pin: SD Data 7 pin.
+// SDIO_DAT7 pin: eMMC NAND Flash I/F using SDIO data 7.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_DAT7               82
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT7;
+#define AM_BSP_GPIO_SDIO_DAT7               82
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT7;
 
 //*****************************************************************************
 //
-// SDIF_CMD pin: SD Command pin.
+// SDIO_CMD pin: eMMC NAND Flash I/F using SDIO CMD
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_CMD                83
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CMD;
+#define AM_BSP_GPIO_SDIO_CMD                83
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_CMD;
 
 //*****************************************************************************
 //
-// SDIF_CLKOUT pin: SD Clock to Card pin.
+// SDIO_CLK pin: eMMC NAND Flash I/F using SDIO clock.
 //
 //*****************************************************************************
-#define AM_BSP_GPIO_SDIF_CLKOUT             88
-extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CLKOUT;
+#define AM_BSP_GPIO_SDIO_CLK                88
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_CLK;
+
+//*****************************************************************************
+//
+// SDIO_RST pin: eMMC NAND Flash I/F using GPIO for Reset.
+//
+//*****************************************************************************
+#define AM_BSP_GPIO_SDIO_RST                73
+extern am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_RST;
 
 //*****************************************************************************
 //

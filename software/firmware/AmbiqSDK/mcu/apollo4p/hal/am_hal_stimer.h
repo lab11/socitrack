@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_STIMER_H
@@ -58,7 +58,7 @@ extern "C"
 //
 //! Compute address of a given COMPARE register.
 //! @note - The parameter n should be 0 (as only 1 stimer module exists).
-//!         For Apollo3, the parameter r should be 0-7 (compare) or 0-3 (capture).
+//!         For Apollo4p, the parameter r should be 0-7 (compare) or 0-3 (capture).
 //
 #define AM_HAL_STIMER_COMPARE_OFFSET (&STIMER->SCMPR1 - &STIMER->SCMPR0)
 #define AM_REG_STIMER_COMPARE(n, r)     ((&STIMER->SCMPR0) +   \
@@ -133,13 +133,8 @@ extern "C"
 //
 //*****************************************************************************
 #define AM_HAL_STIMER_NO_CLK            _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_NOCLK)
-#if defined(AM_PART_APOLLO4)
-#define AM_HAL_STIMER_HFRC_3MHZ         _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_HFRC_3MHZ)
-#define AM_HAL_STIMER_HFRC_187_5KHZ     _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_HFRC_187KHZ)
-#elif defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P)
 #define AM_HAL_STIMER_HFRC_6MHZ         _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_HFRC_6MHZ)
 #define AM_HAL_STIMER_HFRC_375KHZ       _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_HFRC_375KHZ)
-#endif
 #define AM_HAL_STIMER_XTAL_32KHZ        _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_XTAL_32KHZ)
 #define AM_HAL_STIMER_XTAL_16KHZ        _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_XTAL_16KHZ)
 #define AM_HAL_STIMER_XTAL_1KHZ         _VAL2FLD(STIMER_STCFG_CLKSEL, STIMER_STCFG_CLKSEL_XTAL_1KHZ)

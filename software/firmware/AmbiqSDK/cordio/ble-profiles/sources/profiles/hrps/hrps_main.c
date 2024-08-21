@@ -7,13 +7,13 @@
  *  Copyright (c) 2012-2018 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -317,26 +317,26 @@ void hrpsMeasTimerExp(wsfMsgHdr_t *pMsg)
     /* set up heart rate measurement to be sent on all connections */
     hrpsSetupToSend();
 
-    /* read heart rate measurement sensor data */
-    AppHwHrmRead(&hrpsCb.hrm);
-
-    /* if ready to send measurements */
-    if (hrpsCb.txReady)
+    /* if notification confirm received,get the new heart rate,otherwise send the last heart rate for test/demonstration purposes*/
+    if (hrpsCb.txReady)//
     {
-      /* find next connection to send (note ccc idx is stored in timer status) */
-      if ((pConn = hrpsFindNextToSend(pMsg->status)) != NULL)
-      {
-        hrpsSendHrmNtf(pConn->connId);
-        hrpsCb.txReady = FALSE;
-        pConn->hrmToSend = FALSE;
-      }
+      /* read heart rate measurement sensor data */
+      AppHwHrmRead(&hrpsCb.hrm);
+      /* increment energy expended for test/demonstration purposes */
+      hrpsCb.hrm.energyExp++;
+    }
+
+    /* find next connection to send (note ccc idx is stored in timer status) */
+    if ((pConn = hrpsFindNextToSend(pMsg->status)) != NULL)
+    {
+      hrpsSendHrmNtf(pConn->connId);
+      hrpsCb.txReady = FALSE;
+      pConn->hrmToSend = FALSE;
     }
 
     /* restart timer */
     WsfTimerStartMs(&hrpsCb.measTimer, hrpsCb.cfg.period);
 
-    /* increment energy expended for test/demonstration purposes */
-    hrpsCb.hrm.energyExp++;
   }
 }
 

@@ -1,0 +1,83 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="libam_hal" target="8" version="2">
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 balanced" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="Level 2"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 balanced" />
+  <project Name="libam_hal">
+    <configuration
+      Name="Common"
+      arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_fp_abi="Hard"
+      project_directory=""
+      project_type="Library" />
+    <configuration
+      Name="Debug"
+      arm_compiler_variant="SEGGER"
+      build_output_directory="bin"
+      c_preprocessor_definitions="segger;AM_ASSERT_INVALID_THRESHOLD=0;AM_PART_APOLLO4P;AM_DEBUG_ASSERT"
+      c_preprocessor_undefinitions="DEBUG"
+      c_user_include_directories="../../../../../mcu/apollo4p/hal;../../../../../mcu/apollo4p;../../../../../CMSIS/AmbiqMicro/Include;../../../../../CMSIS/ARM/Include;../../../../../utils"
+      gcc_c_language_standard="c11" />
+	          <folder Name="hal">
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_access.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_adc.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_audadc.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_dcu.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_global.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_gpio.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_i2s.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_otp.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_pdm.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_pin.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_pwrctrl.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_queue.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_security.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_stimer.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_timer.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_usb.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/am_hal_wdt.c" />
+          </folder>
+
+          <folder Name="mcu">
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_bootrom_helper.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_cachectrl.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_card.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_card_host.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_clkgen.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_cmdq.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_dsi.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_fault.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_interrupt.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_iom.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_ios.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_itm.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_mcuctrl.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_mpu.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_mram.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_mspi.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_reset.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_rtc.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_sdhc.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_secure_ota.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_sysctrl.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_systick.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_tpiu.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_uart.c" />
+            <file file_name="../../../../../mcu/apollo4p/hal/mcu/am_hal_utils.c" />
+          </folder>
+  </project>
+</solution>
+

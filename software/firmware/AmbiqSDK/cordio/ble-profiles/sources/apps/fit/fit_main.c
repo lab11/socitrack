@@ -55,6 +55,8 @@
 #include "eatt_api.h"
 #endif
 
+
+
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -119,7 +121,7 @@ static const appSecCfg_t fitSecCfg =
 /*! configurable parameters for connection parameter update */
 static const appUpdateCfg_t fitUpdateCfg =
 {
-  3000,                                      /*! Connection idle period in ms before attempting
+  100,                                      /*! Connection idle period in ms before attempting
                                               connection parameter update; set to zero to disable */
   48,                                    /*! Minimum connection interval in 1.25ms units */
   60,                                    /*! Maximum connection interval in 1.25ms units */
@@ -198,7 +200,6 @@ static const uint8_t fitAdvDataDisc[] =
   UINT16_TO_BYTES(ATT_UUID_DEVICE_INFO_SERVICE),
   UINT16_TO_BYTES(ATT_UUID_BATTERY_SERVICE)
 };
-
 /*! scan data, discoverable mode */
 static const uint8_t fitScanDataDisc[] =
 {

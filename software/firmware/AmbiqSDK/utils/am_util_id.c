@@ -15,7 +15,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -87,6 +87,12 @@ static const uint8_t g_PackageType[][4]            = { "SIP", "SIP2", "BGA", "CS
 #if defined(AM_ID_APOLLO4L)
 static const uint8_t g_DeviceNameApollo4l[]   = "Apollo4 Lite";
 #endif
+#if defined(AM_ID_APOLLO5A)
+static const uint8_t g_DeviceNameApollo5a[]   = "Apollo5 revA";
+#endif // AM_ID_APOLLO5A
+#if defined(AM_ID_APOLLO5B)
+static const uint8_t g_DeviceNameApollo5b[]   = "Apollo5 revB";
+#endif // AM_ID_APOLLO5B
 
 static const uint8_t g_TempRange[][11] = { "Commercial", "Military", "Automotive", "Industrial" };
 static const uint8_t g_ui8VendorNameAmbq[]    = "AMBQ";
@@ -164,12 +170,12 @@ am_util_id_device(am_util_id_t *psIDDevice)
     //
     // Go get all the device (hardware) info from the HAL
     //
-#if AM_APOLLO3_MCUCTRL
+#if defined(AM_PART_APOLLO3_API) || defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_DEVICEID, &psIDDevice->sMcuCtrlDevice);
     am_hal_mcuctrl_info_get(AM_HAL_MCUCTRL_INFO_FEATURES_AVAIL, &psIDDevice->sMcuCtrlFeature);
-#else // AM_APOLLO3_MCUCTRL
+#else
     am_hal_mcuctrl_device_info_get(&psIDDevice->sMcuCtrlDevice);
-#endif // AM_APOLLO3_MCUCTRL
+#endif
 
     //
     // Device identification
@@ -180,8 +186,8 @@ am_util_id_device(am_util_id_t *psIDDevice)
     ui32ChipRev = psIDDevice->sMcuCtrlDevice.ui32ChipRev;
 #endif
 
-    if ( ( psIDDevice->sMcuCtrlDevice.ui32VendorID ==
-            (('A' << 24) | ('M' << 16) | ('B' << 8) | ('Q' << 0)) ) )
+    if ( psIDDevice->sMcuCtrlDevice.ui32VendorID ==
+            (('A' << 24) | ('M' << 16) | ('B' << 8) | ('Q' << 0)) )
     {
         //
         // VENDORID is AMBQ. Set the manufacturer string pointer.
@@ -295,6 +301,28 @@ am_util_id_device(am_util_id_t *psIDDevice)
         chiprev_set(psIDDevice, 1);
     }
 #endif // AM_ID_APOLLO4L
+
+#if defined(AM_ID_APOLLO5A)
+    if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5A)            &&
+              ((psIDDevice->sMcuCtrlDevice.ui32JedecPN & 0x0FF) == 0x0D2)   &&
+              ( revmaj_get(ui32ChipRev) == 'A' ) )
+    {
+        psIDDevice->ui32Device = AM_UTIL_ID_APOLLO5A;
+        psIDDevice->pui8DeviceName = g_DeviceNameApollo5a;
+        chiprev_set(psIDDevice, 1);
+    }
+#endif // AM_ID_APOLLO5A
+
+#if defined(AM_ID_APOLLO5B)
+        if ( ( ui32PN == AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5B)            &&
+                  ((psIDDevice->sMcuCtrlDevice.ui32JedecPN & 0x0FF) == 0x0D2)   &&
+                  ( revmaj_get(ui32ChipRev) == 'B' ) )
+        {
+            psIDDevice->ui32Device = AM_UTIL_ID_APOLLO5B;
+            psIDDevice->pui8DeviceName = g_DeviceNameApollo5b;
+            chiprev_set(psIDDevice, 1);
+        }
+#endif // AM_ID_APOLLO5B
 
 
     //

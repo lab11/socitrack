@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -165,6 +165,10 @@ am_hal_rtc_config(const am_hal_rtc_config_t *psConfig)
             ui32Oscillator = CLKGEN_OCTRL_OSEL_RTC_XT;
             break;
 
+        case AM_HAL_RTC_OSC_LFRC:
+            ui32Oscillator = CLKGEN_OCTRL_OSEL_RTC_LFRC;
+            break;
+
         default:
             return AM_HAL_STATUS_INVALID_ARG;
     }
@@ -252,8 +256,7 @@ am_hal_rtc_time_set(am_hal_rtc_time_t *pTime)
     // Write the RTCUP register.
     //
     RTC->CTRUP =
-        _VAL2FLD(RTC_CTRUP_CEB,     (pTime->ui32CenturyEnable))          |
-        _VAL2FLD(RTC_CTRUP_CB,      (pTime->ui32Century))                |
+        _VAL2FLD(RTC_CTRUP_CB,      (pTime->ui32CenturyBit))                |
         _VAL2FLD(RTC_CTRUP_CTRWKDY, (pTime->ui32Weekday))                |
         _VAL2FLD(RTC_CTRUP_CTRYR,   dec_to_bcd((pTime->ui32Year)))       |
         _VAL2FLD(RTC_CTRUP_CTRMO,   dec_to_bcd((pTime->ui32Month)))      |
@@ -314,9 +317,8 @@ am_hal_rtc_time_get(am_hal_rtc_time_t *pTime)
     //
     // Break out the upper word.
     //
-    pTime->ui32CenturyEnable = _FLD2VAL(RTC_CTRUP_CEB, ui32RTCUp);
 
-    pTime->ui32Century      = _FLD2VAL(RTC_CTRUP_CB, ui32RTCUp);
+    pTime->ui32CenturyBit      = _FLD2VAL(RTC_CTRUP_CB, ui32RTCUp);
 
     ui32Value               = _FLD2VAL(RTC_CTRUP_CTRWKDY, ui32RTCUp);
     pTime->ui32Weekday      = bcd_to_dec(ui32Value);
@@ -340,33 +342,6 @@ am_hal_rtc_time_get(am_hal_rtc_time_t *pTime)
     else
     {
         return 0;
-    }
-}
-
-//*****************************************************************************
-//
-// Selects the clock source for the RTC.
-//
-// This function selects the clock source for the RTC.
-//
-// Valid values for ui32OSC are:
-//
-//     AM_HAL_RTC_OSC_LFRC
-//     AM_HAL_RTC_OSC_XT
-//
-// @note After selection of the RTC oscillator, a 2 second delay occurs before
-// the new setting is reflected in status. Therefore the CLKGEN.STATUS.OMODE
-// bit will not reflect the new status until after the 2s wait period.
-//
-//
-//*****************************************************************************
-void
-am_hal_rtc_osc_select(uint32_t ui32OSC)
-{
-    if ( ui32OSC == AM_HAL_RTC_OSC_XT )
-    {
-        // Clear bit to 0 for XTAL
-        CLKGEN->OCTRL &= ~CLKGEN_OCTRL_OSEL_Msk;
     }
 }
 
@@ -537,9 +512,8 @@ am_hal_rtc_alarm_get(am_hal_rtc_time_t *pTime,
         //
         // Break out the upper word.
         //
+        pTime->ui32CenturyBit = 0;
         pTime->ui32ReadError = 0;
-        pTime->ui32CenturyEnable = 0;
-        pTime->ui32Century = 0;
 
         ui32Value = ((ui32ALMUp & RTC_ALMUP_ALMWKDY_Msk) >> RTC_ALMUP_ALMWKDY_Pos);
         pTime->ui32Weekday = bcd_to_dec(ui32Value);

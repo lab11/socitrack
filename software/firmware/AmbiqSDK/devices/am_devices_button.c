@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -64,7 +64,7 @@ am_devices_button_init(am_devices_button_t *psButton)
     //
     // Disable the pin to save power.
     //
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_hal_gpio_pinconfig(psButton->ui32GPIONumber, am_hal_gpio_pincfg_disabled);
 #elif defined(AM_PART_APOLLO3_API)
     am_hal_gpio_pinconfig(psButton->ui32GPIONumber, g_AM_HAL_GPIO_DISABLE);
@@ -120,7 +120,7 @@ am_devices_button_tick_pin_cfg(am_devices_button_t *psButton, am_hal_gpio_pincfg
     // Read the pin state. If the pin is in its normal (unpressed) state, set
     // its "state" counter to zero.
     //
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_hal_gpio_state_read(psButton->ui32GPIONumber, AM_HAL_GPIO_INPUT_READ, &ui32PinState);
 #else
     #if (1 == AM_APOLLO3_GPIO)
@@ -175,7 +175,7 @@ am_devices_button_tick_pin_cfg(am_devices_button_t *psButton, am_hal_gpio_pincfg
     //
     // Disable the button pin to save power.
     //
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_hal_gpio_pinconfig(psButton->ui32GPIONumber, am_hal_gpio_pincfg_disabled);
 #else
     #if AM_APOLLO3_GPIO
@@ -197,7 +197,7 @@ void
 am_devices_button_tick(am_devices_button_t *psButton)
 {
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_devices_button_tick_pin_cfg(psButton, am_hal_gpio_pincfg_input);
 #else
 #if AM_APOLLO3_GPIO

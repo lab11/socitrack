@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,10 +44,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-
 
 #ifndef AM_DEVICES_RM67162_H
 #define AM_DEVICES_RM67162_H
@@ -125,7 +124,6 @@ typedef enum
 
 //! @}
 
-
 #define AM_DEVICES_RM67162_SPI_WRAM                     0x80
 #define AM_DEVICES_RM67162_DSPI_WRAM                    0x81
 
@@ -139,7 +137,6 @@ typedef enum
 #define AM_DEVICES_RM67162_SCAN_MODE_180                0x10
 #define AM_DEVICES_RM67162_SCAN_MODE_270                0x00
 
-
 typedef struct
 {
     uint8_t bus_mode;
@@ -151,7 +148,6 @@ typedef struct
     uint32_t row_offset;
     uint32_t col_offset;
 } am_devices_rm67162_graphic_conf_t;
-
 
 typedef struct
 {

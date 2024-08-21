@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -161,7 +161,6 @@ typedef enum
 #define AM_DEVICES_COOPER_CLKREQ_PIN          75
 #define AM_DEVICES_COOPER_32M_OSCEN_PIN       46
 #define AM_DEVICES_COOPER_SPI_CS              91
-#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM4_CS
 #else
 #define AM_DEVICES_COOPER_IRQ_PIN             73
 #define AM_DEVICES_COOPER_RESET_PIN           57
@@ -169,7 +168,6 @@ typedef enum
 #define AM_DEVICES_COOPER_STATUS_PIN          66
 #define AM_DEVICES_COOPER_32M_OSCEN_PIN       67
 #define AM_DEVICES_COOPER_SPI_CS              72 //!< BGA&SIP share the same CS pin(NCE72) on the QFN shiled board
-#define g_AM_DEVICES_COOPER_SPI_CS            g_AM_BSP_GPIO_IOM2_CS
 #endif
 
 #else
@@ -323,17 +321,17 @@ enum PARAM_ID
 
     //! RSSI threshold tags
     PARAM_ID_RSSI_HIGH_THR              = 0x3A,
-   //! RSSI threshold tags
+    //! RSSI threshold tags
     PARAM_ID_RSSI_LOW_THR               = 0x3B,
-   //! RSSI threshold tags
+    //! RSSI threshold tags
     PARAM_ID_RSSI_INTERF_THR            = 0x3C,
 
     //! RF BTIPT
-    PARAM_ID_RF_BTIPT_VERSION          = 0x3E,
-   //! RF BTIPT
-   PARAM_ID_RF_BTIPT_XO_SETTING       = 0x3F,
-   //! RF BTIPT
-   PARAM_ID_RF_BTIPT_GAIN_SETTING     = 0x40,
+    PARAM_ID_RF_BTIPT_VERSION           = 0x3E,
+    //! RF BTIPT
+    PARAM_ID_RF_BTIPT_XO_SETTING        = 0x3F,
+    //! RF BTIPT
+    PARAM_ID_RF_BTIPT_GAIN_SETTING      = 0x40,
 
 
     PARAM_ID_BT_LINK_KEY_FIRST          = 0x60,
@@ -357,22 +355,20 @@ enum PARAM_ID
 
     //! Application specific
     PARAM_ID_APP_SPECIFIC_FIRST         = 0x90,
-   //! Application specific
-   PARAM_ID_APP_SPECIFIC_LAST          = 0xAF,
+    /// RSSI threshold value specified by user
+    PARAM_ID_APP_RSSI_THRESHOLD         = 0x91,
+    /// The central's minimum used data channel number for channel map update
+    PARAM_ID_APP_DATA_CHN_MIN_CENTRAL   = 0x92,
+    /// The LLCP switch instant delay specified by user
+    PARAM_ID_APP_LLCP_SWITCH_INSTANT_DELAY = 0x93,
+    //! Application specific
+    PARAM_ID_APP_SPECIFIC_LAST          = 0xAF,
 
     //! Mesh NVDS values
     PARAM_ID_MESH_SPECIFIC_FIRST        = 0xB0,
-   //! Mesh NVDS values
-   PARAM_ID_MESH_SPECIFIC_LAST         = 0xF0,
+    //! Mesh NVDS values
+    PARAM_ID_MESH_SPECIFIC_LAST         = 0xF0,
 };
-
-//NVDS_MAGIC_NUMBER
-#define NVDS_PARAMETER_MAGIC_NUMBER     0x4e, 0x56, 0x44, 0x53
-//! Local Bd Address
-#define NVDS_PARAMETER_BD_ADDRESS       PARAM_ID_BD_ADDRESS, 0x06, 0x06, 0x22, 0x44, 0x66, 0x88, 0x48, 0x59
-//! device name
-#define NVDS_PARAMETER_DEVICE_NAME      PARAM_ID_DEVICE_NAME, 0x06, 0x06, 0x43, 0x6F, 0x6F, 0x70, 0x65, 0x72
-#define NVDS_PARAMETER_EXT_32K_CLK_SOURCE PARAM_ID_32K_CLK_SOURCE, 0x06, 0x01, 0x01
 
 //*****************************************************************************
 //
@@ -402,8 +398,6 @@ typedef enum
 
 }eMemAccess_type;
 
-#define HCI_VSC_CMD_HEADER_LENGTH                    4
-
 //*****************************************************************************
 //
 //! @brief Vendor Specific commands.
@@ -424,6 +418,8 @@ typedef enum
     HCI_VSC_RD_FLASH_CMD_OPCODE                    = 0xFC08,
 
     HCI_VSC_PLF_RESET_CMD_OPCODE                   = 0xFC11,
+    HCI_VS_SET_PREF_SLAVE_LATENCY_CMD_OPCODE       = 0xFC13,
+    HCI_VS_SET_PREF_SLAVE_EVT_DUR_CMD_OPCODE       = 0xFC14,
 
     HCI_VSC_REG_RD_CMD_OPCODE                      = 0xFC39,
     HCI_VSC_REG_WR_CMD_OPCODE                      = 0xFC3A,
@@ -450,6 +446,8 @@ typedef enum
     HCI_VSC_GET_DTM_RSSI_CMD_OPCODE                = 0xFC79,
     //! Ambiq Vendor Specific Command configure specified event mask
     HCI_VSC_CFG_EVT_MASK_CMD_OPCODE                = 0xFC7A,
+    // !Ambiq Vendor Specific Command get connection event cnt
+    HCI_DBG_GET_CON_EVT_CNT_CMD_OPCODE             = 0xFC7B,
 
     // SBL use only
     //! Ambiq Vendor Specific Command store info0 trim values to RAM
@@ -467,6 +465,10 @@ typedef enum
 #define HCI_VSC_WR_FLASH_CMD_LENGTH                    134
 #define HCI_VSC_RD_FLASH_CMD_LENGTH                    6
 #define HCI_VSC_PLF_RESET_CMD_LENGTH                   1
+#define HCI_VSC_SET_PREF_SLAVE_EVT_DUR_CMD_LENGTH      5
+#define HCI_VSC_SET_PREF_SLAVE_LATENCY_CMD_LENGTH      4
+#define HCI_VSC_GET_CON_EVT_CNT_CMD_LENGTH             2
+
 #define HCI_VSC_REG_RD_CMD_LENGTH                      4
 #define HCI_VSC_REG_WR_CMD_LENGTH                      8
 #define HCI_VSC_SET_TX_POWER_LEVEL_CFG_CMD_LENGTH      1
@@ -483,11 +485,26 @@ typedef enum
 #define HCI_VSC_GET_DTM_RSSI_CMD_LENGTH                0
 #define HCI_VSC_CFG_EVT_MASK_CMD_LENGTH                4
 
+#define HCI_VSC_CMD_HEADER_LENGTH                      4
 #define HCI_VSC_CMD_LENGTH(n)                          (HCI_VSC_CMD_HEADER_LENGTH + n)
 #define HCI_VSC_UPDATE_NVDS_CFG_CMD_OFFSET             (HCI_VSC_CMD_HEADER_LENGTH + 4) //!< NVDS_PARAMETER_MAGIC_NUMBER
 
 #define HCI_VSC_CMD(CMD, ...)                          {AM_DEVICES_COOPER_CMD, UINT16_TO_BYTE0(CMD##_CMD_OPCODE), UINT16_TO_BYTE1(CMD##_CMD_OPCODE), CMD##_CMD_LENGTH, ##__VA_ARGS__}
 #define HCI_RAW_CMD(OPCODE, LEN, ...)                  {AM_DEVICES_COOPER_CMD, UINT16_TO_BYTE0(OPCODE), UINT16_TO_BYTE1(OPCODE), LEN, ##__VA_ARGS__}
+
+//*****************************************************************************
+//
+//! NVDS parameter definitions
+//
+//*****************************************************************************
+//! NVDS magic number
+#define NVDS_PARAMETER_MAGIC_NUMBER     0x4e, 0x56, 0x44, 0x53
+//! Local BD address
+#define NVDS_PARAMETER_BD_ADDRESS       PARAM_ID_BD_ADDRESS, 0x06, 0x06, 0x22, 0x44, 0x66, 0x88, 0x48, 0x59
+//! Device name
+#define NVDS_PARAMETER_DEVICE_NAME      PARAM_ID_DEVICE_NAME, 0x06, 0x06, 0x43, 0x6F, 0x6F, 0x70, 0x65, 0x72
+//! 32kHz clock source
+#define NVDS_PARAMETER_EXT_32K_CLK_SOURCE PARAM_ID_32K_CLK_SOURCE, 0x06, 0x01, 0x01
 
 #ifndef LPCLK_DRIFT_VALUE
 //! Radio Drift
@@ -543,29 +560,21 @@ typedef enum
 #define NVDS_PARAMETER_LE_DBG_FIXED_P256_KEY  PARAM_ID_LE_DBG_FIXED_P256_KEY, 0x06, 0x01, 0x00
 //! LE Coded PHY 500 Kbps selection
 #define NVDS_PARAMETER_LE_CODED_PHY_500   PARAM_ID_LE_CODED_PHY_500, 0x06, 0x01, 0x00
+//! RSSI threshold value for channel assess
+//! Used for central device channel assessment. When central device receives a faulty packet with a signal strength greater than the threshold,
+//! the channel will be considered as a 'bad channel'.
+#define NVDS_PARAMETER_RSSI_THRESHOLD     PARAM_ID_APP_RSSI_THRESHOLD, 0x06, 0x01, (-95)
+//! Used to define the minimum used data channel for central device channel map update, default is 10
+#define NVDS_PARAMETER_MIN_USED_DATA_CHAN_CENTRAL  PARAM_ID_APP_DATA_CHN_MIN_CENTRAL, 0x06, 0x01, (10)
+//! This is the 'instant' field used in link layer procedures with instant. It will be used during connection update/ phy update/ channel map update procedures. It will decide when the update takes effect.
+//! The default value is 9
+#define NVDS_PARAMETER_LLCP_SWITCH_INSTANT_DELAY  PARAM_ID_APP_LLCP_SWITCH_INSTANT_DELAY, 0x06, 0x01, (9)
 
 //*****************************************************************************
 //
 //! SBL Defines
 //
 //*****************************************************************************
-#define USE_SPI_PIN                     19
-
-//
-//! Slave interrupt pin is connected here
-//
-#define BOOTLOADER_HANDSHAKE_PIN        42
-
-//
-//! This pin is connected to RESET pin of slave
-//
-#define DRIVE_SLAVE_RESET_PIN           17
-
-//
-//! This pin is connected to the 'Override' pin of slave
-//
-#define DRIVE_SLAVE_OVERRIDE_PIN        4
-
 #define AM_DEVICES_COOPER_SBL_UPDATE_STATE_INIT                     0x00
 #define AM_DEVICES_COOPER_SBL_UPDATE_STATE_HELLO                    0x01
 #define AM_DEVICES_COOPER_SBL_UPDATE_STATE_UPDATE                   0x02
@@ -640,11 +649,13 @@ typedef enum
 #define AM_DEVICES_COOPER_SBL_INFO1_PATCH_SIZE_MAX                  0x100
 
 //! Signatures for the image downloads
-#define COOPER_INFO0_UPDATE_SIGN   0xB35D18C9
-//! Signatures for the image downloads
-#define COOPER_INFO1_UPDATE_SIGN   0x38B75A0D
-//! Signatures for the image downloads
-#define COOPER_FW_UPDATE_SIGN      0xC593876A
+#define COOPER_INFO0_UPDATE_SIGN                                    0xB35D18C9
+#define COOPER_INFO1_UPDATE_SIGN                                    0x38B75A0D
+#define COOPER_FW_UPDATE_SIGN                                       0xC593876A
+
+//! SBL Version
+#define AM_DEVICES_COOPER_SBL_VERSION_1                             0x00
+#define AM_DEVICES_COOPER_SBL_VERSION_2                             0x01
 
 //
 //!
@@ -656,7 +667,6 @@ typedef struct
     uint32_t    imageType;
     uint32_t    version;
 } am_devices_cooper_sbl_update_data_t;
-
 
 //
 //!
@@ -680,30 +690,9 @@ typedef struct
     uint32_t    ui32CooperVerRollBackConfig; //Version 2
     uint32_t    ui32copperChipIdWord0;  //Version 2
     uint32_t    ui32copperChipIdWord1;  //Version 2
+
+    bool        bForceUpdateNeeded;
 } am_devices_cooper_sbl_update_state_t;
-
-//
-//!
-//
-typedef struct
-{
-    uint32_t                     crc32;   //!< First word
-    uint16_t                     msgType; //!< am_secboot_wired_msgtype_e
-    uint16_t                     length;
-} am_secboot_wired_msghdr_t;
-
-
-//
-//!
-//
-typedef struct
-{
-    uint32_t                      length  : 16;
-    uint32_t                      resv    : 14;
-    uint32_t                      bEnd    : 1;
-    uint32_t                      bStart  : 1;
-} am_secboot_ios_pkthdr_t;
-
 
 //
 //! Message types
@@ -748,7 +737,8 @@ typedef struct
 {
     am_sbl_host_msg_hdr_t   msgHdr;
     uint32_t                versionNumber;
-    uint32_t                maxImageSize;
+    uint32_t                maxImageSize : 24;
+    uint32_t                sblVersion   : 8;
     uint32_t                bootStatus;
     uint32_t                verRollBackStatus;  //!< Version 2
     uint32_t                copperChipIdWord0;  //!< Version 2
@@ -805,7 +795,6 @@ typedef struct
     uint32_t                nextPacketNum;  //!< only valid for data messages ack
     uint32_t                reserved[3];    //!< Version 2
 } am_sbl_host_msg_ack_nack_t;
-
 
 #define   AM_DEVICES_COOPER_SBL_MAX_INFO_0_PATCH_VALUES         64
 #define   AM_DEVICES_COOPER_SBL_BIT_MASK_PER_WORD               16

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -139,7 +139,6 @@ extern "C"
 #define AM_DEVICES_DS35X1GA_OTP_QC_EN  0x01
 //! @}
 
-
 //*****************************************************************************
 //
 //! @name Global definitions for the MSPI instance to use.
@@ -182,7 +181,7 @@ typedef struct
     uint32_t ui32Turnaround;
     uint32_t ui32Rxneg;
     uint32_t ui32Rxdqsdelay;
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     bool            bTxNeg;
     bool            bRxNeg;
     bool            bRxCap;
@@ -243,7 +242,6 @@ extern uint32_t am_devices_mspi_ds35x1ga_deinit(void *pHandle);
 //*****************************************************************************
 extern uint32_t am_devices_mspi_ds35x1ga_id(void *pHandle, uint32_t *pui32DeviceID);
 
-
 //*****************************************************************************
 //
 //! @brief Read the contents of a certain page from the NAND flash into a buffer.
@@ -270,7 +268,6 @@ extern uint32_t am_devices_mspi_ds35x1ga_read(void *pHandle, uint32_t ui32PageNu
                                                 uint8_t *pui8OobBuffer,
                                                 uint32_t ui32OobLen,
                                                 uint8_t *pui32EccResult);
-
 
 //*****************************************************************************
 //
@@ -307,7 +304,6 @@ extern uint32_t am_devices_mspi_ds35x1ga_write(void *pHandle, uint32_t ui32PageN
 //
 //*****************************************************************************
 extern uint32_t am_devices_mspi_ds35x1ga_block_erase(void *pHandle, uint32_t ui32BlockNum);
-
 
 //*****************************************************************************
 //

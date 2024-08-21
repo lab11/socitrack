@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -331,20 +331,62 @@ static void am_hal_sdhc_prepare_adma_table(am_hal_card_cmd_data_t *pCmdData)
     uint32_t i;
     int32_t i32BlkCnt;
     uint32_t ui32XferBytes;
+    uint32_t ui32IovLen;
+    uint8_t ui8IovCnt = 0;
+    uint8_t ui8IovIndex = 0;
     dma_addr_t ui32DmaAddr;
 
-    i = 0;
-    i32BlkCnt = pCmdData->ui32BlkCnt;
-    ui32DmaAddr = (dma_addr_t)(pCmdData->pui8Buf);
-    while (i32BlkCnt > 0)
+    ui8IovCnt = pCmdData->ui8IovCnt;
+    if ( ui8IovCnt )
     {
-        ui32XferBytes = (i32BlkCnt > AM_HAL_ADMA_MAX_BLKS_PER_ENTRY) ?
-            AM_HAL_ADMA_MAX_BLKS_PER_ENTRY*pCmdData->ui32BlkSize : i32BlkCnt*pCmdData->ui32BlkSize;
-        bEnd = (i32BlkCnt > AM_HAL_ADMA_MAX_BLKS_PER_ENTRY) ? false : true;
-        am_hal_sdhc_prepare_sdhci_adma_desc(i, ui32DmaAddr, ui32XferBytes, bEnd);
-        i++;
-        ui32DmaAddr += ui32XferBytes;
-        i32BlkCnt -= AM_HAL_ADMA_MAX_BLKS_PER_ENTRY;
+        i = 0;
+        while (ui8IovCnt > 0)
+        {
+            ui32DmaAddr = (dma_addr_t)(pCmdData->pIov[ui8IovIndex].pIovBase);
+            ui32IovLen = pCmdData->pIov[ui8IovIndex].ui32IovLen;
+            while (ui32IovLen > 0)
+            {
+                if ( ui8IovCnt > 1 )
+                {
+                    bEnd = false;
+                }
+                else
+                {
+                    bEnd = (ui32IovLen > AM_HAL_ADMA_MAX_BLKS_PER_ENTRY * pCmdData->ui32BlkSize) ? false : true;
+                }
+
+                if ( ui32IovLen > AM_HAL_ADMA_MAX_BLKS_PER_ENTRY * pCmdData->ui32BlkSize )
+                {
+                    ui32XferBytes = AM_HAL_ADMA_MAX_BLKS_PER_ENTRY * pCmdData->ui32BlkSize;
+                }
+                else
+                {
+                    ui32XferBytes = ui32IovLen;
+                }
+                am_hal_sdhc_prepare_sdhci_adma_desc(i, ui32DmaAddr, ui32XferBytes, bEnd);
+                ui32DmaAddr += ui32XferBytes;
+                ui32IovLen  -= ui32XferBytes;
+                i++;
+            }
+            ui8IovIndex++;
+            ui8IovCnt--;
+        }
+    }
+    else
+    {
+        i = 0;
+        i32BlkCnt = (pCmdData->ui32BlkCnt == 0) ? 1 : pCmdData->ui32BlkCnt;
+        ui32DmaAddr = (dma_addr_t)(pCmdData->pui8Buf);
+        while (i32BlkCnt > 0)
+        {
+            ui32XferBytes = (i32BlkCnt > AM_HAL_ADMA_MAX_BLKS_PER_ENTRY) ?
+                AM_HAL_ADMA_MAX_BLKS_PER_ENTRY*pCmdData->ui32BlkSize : i32BlkCnt*pCmdData->ui32BlkSize;
+            bEnd = (i32BlkCnt > AM_HAL_ADMA_MAX_BLKS_PER_ENTRY) ? false : true;
+            am_hal_sdhc_prepare_sdhci_adma_desc(i, ui32DmaAddr, ui32XferBytes, bEnd);
+            i++;
+            ui32DmaAddr += ui32XferBytes;
+            i32BlkCnt -= AM_HAL_ADMA_MAX_BLKS_PER_ENTRY;
+        }
     }
 }
 
@@ -359,7 +401,7 @@ static uint32_t am_hal_sdhc_prepare_xfer(am_hal_sdhc_state_t *pSDHCState, SDIO_T
     if ( pCmdData != NULL )
     {
         pSDHCState->pui32Buf = (uint32_t *)(pCmdData->pui8Buf);
-        pSDHCState->ui32DataLen = pCmdData->ui32BlkCnt * pCmdData->ui32BlkSize;
+        pSDHCState->ui32DataLen = (pCmdData->ui32BlkCnt == 0) ? pCmdData->ui32BlkSize : (pCmdData->ui32BlkCnt * pCmdData->ui32BlkSize);
         pSDHCState->eDataDir = pCmdData->dir;
         pSDHCState->ui32BlkSize = pCmdData->ui32BlkSize;
         pSDHCState->ui32BlkCnt = pCmdData->ui32BlkCnt;
@@ -430,7 +472,7 @@ static uint32_t am_hal_sdhc_prepare_xfer(am_hal_sdhc_state_t *pSDHCState, SDIO_T
             ui32BlkReg |= pCmdData->ui32BlkCnt << SDIO_BLOCK_BLKCNT_Pos;
         }
 
-        pSDHC->BLOCK |= ui32BlkReg;
+        pSDHC->BLOCK = ui32BlkReg;
 
         //
         // Set the data timeout
@@ -641,6 +683,11 @@ static inline am_hal_card_data_err_e am_hal_sdhc_check_data_error_type(uint32_t 
 #define DYNAMIC_SWITCH_SDCLK_FEATURE
 
 //
+// Xfer timeout value depends on the card performance. 80000 is an empirical value.
+//
+#define XFER_DATA_TIMEOUT   80000
+
+//
 // Transfer the block data to the card
 //
 static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
@@ -649,6 +696,7 @@ static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
     bool bXferDone;
     uint32_t ui32BufReadyMask;
     uint32_t ui32IntStatus;
+    uint32_t ui32Timeout = XFER_DATA_TIMEOUT;
 
     SDIO_Type *pSDHC = SDHCn(pSDHCState->ui32Module);
 
@@ -656,8 +704,10 @@ static uint32_t am_hal_sdhc_xfer_data(am_hal_sdhc_state_t *pSDHCState,
     am_hal_card_host_t *pHost = pSDHCState->pHost;
 #endif
 
-    // Xfer timeout value depends on the card performance. 8000 is an empirical value.
-    uint32_t ui32Timeout = 8000*pCmdData->ui32BlkCnt;
+    if ( pCmdData->ui32BlkCnt != 0 )
+    {
+        ui32Timeout = XFER_DATA_TIMEOUT*pCmdData->ui32BlkCnt;
+    }
 
     AM_HAL_SDHC_DEBUG("Xfer Timeout is %d\n", ui32Timeout);
     AM_HAL_SDHC_DEBUG("Xfer BLK Cnt is %d\n", pSDHCState->ui32BlkCnt);
@@ -1021,6 +1071,35 @@ bool am_hal_sdhc_get_cd(void *pHandle)
 
 //*****************************************************************************
 //
+// SDHC detects the card write protection
+//
+// This function detects the card write protection in the slot.
+//
+//*****************************************************************************
+bool am_hal_sdhc_get_wr_protect(void *pHandle)
+{
+    am_hal_sdhc_state_t *pSDHCState = (am_hal_sdhc_state_t *)pHandle;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    //
+    // Check the handle.
+    //
+    if ( !AM_HAL_SDHC_CHK_HANDLE(pHandle) )
+    {
+        return AM_HAL_STATUS_INVALID_HANDLE;
+    }
+
+    if ( !pSDHCState->prefix.s.bEnable )
+    {
+        return AM_HAL_STATUS_INVALID_OPERATION;
+    }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    return SDHCn(pSDHCState->ui32Module)->PRESENT_b.WRPROTSW;
+}
+
+//*****************************************************************************
+//
 // SDHC sets the SDIO bus IO volage
 //
 // This function sets the bus voltage needed to communiate with the card.
@@ -1368,12 +1447,7 @@ uint32_t am_hal_sdhc_enable(void *pHandle)
         AM_HAL_SDHC_DEBUG("Software Reset ALL failed\n");
         return ui32Status;
     }
-    //
-    // Enable the SDIO CD (GPIO75) & WP (GPIO74) pins
-    // remapping to FPGA GP36 and GP35
-    //
-    GPIO->SDIFCDWP_b.SDIFCD = 75;
-    GPIO->SDIFCDWP_b.SDIFWP = 74;
+
 
     //
     // Enable all interrupts
@@ -1531,9 +1605,9 @@ uint32_t am_hal_sdhc_execute_cmd(void *pHandle, am_hal_card_cmd_t *pCmd, am_hal_
     pSDHC->INTSTAT = ((uint32_t)-1);
 
     //
-    // Disable all interrupts firstly
+    // Disable all interrupts firstly except card insert and removal
     //
-    pSDHC->INTSIG = 0x0;
+    pSDHC->INTSIG = ( SDIO_INTSIG_CARDINSERTEN_Msk | SDIO_INTSIG_CARDREMOVALEN_Msk | SDIO_INTSIG_CARDINTEN_Msk);
 
 #ifdef DYNAMIC_SWITCH_SDCLK_FEATURE
     //
@@ -1904,6 +1978,36 @@ uint32_t am_hal_sdhc_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
         AM_HAL_SDHC_DEBUG("Disable the SDCLK\n");
 #endif
 
+    }
+
+    //
+    // SD Card insert or removal interrupt
+    //
+    if (ui32IntStatus & ( SDIO_INTSTAT_CARDREMOVAL_Msk |
+                          SDIO_INTSTAT_CARDINSERTION_Msk))
+    {
+        uint32_t ui32PresentState = SDHCn(pSDHCState->ui32Module)->PRESENT;
+
+        if ( ui32IntStatus & SDIO_INTSTAT_CARDREMOVAL_Msk )
+        {
+            evt.eType = AM_HAL_EVT_CARD_NOT_PRESENT;
+        }
+
+       if ( (ui32IntStatus & SDIO_INTSTAT_CARDINSERTION_Msk) && (ui32PresentState & SDIO_PRESENT_CARDINSERTED_Msk) )
+        {
+            evt.eType = AM_HAL_EVT_CARD_PRESENT;
+        }
+        else
+        {
+            evt.eType = AM_HAL_EVT_CARD_NOT_PRESENT;
+        }
+
+        if ( pSDHCState->pHost->pfunEvtCallback )
+        {
+            pSDHCState->pHost->pfunEvtCallback(&evt);
+        }
+
+        AM_HAL_SDHC_DEBUG("SD Card INT 0x%x\n", ui32IntStatus);
     }
 
     //

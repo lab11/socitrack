@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,13 +44,11 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "am_mcu_apollo.h"
+#include "am_hal_uart.h"
 
 //*****************************************************************************
 //
@@ -467,12 +465,12 @@ am_hal_uart_buffer_configure(void *pHandle, uint8_t *pui8TxBuffer,
     return AM_HAL_STATUS_SUCCESS;
 } // buffer_configure()
 
+#define BAUDCLK     (16) //!< Number of UART clocks needed per bit.
 //*****************************************************************************
 //
 // Set Baud Rate based on the UART clock frequency.
 //
 //*****************************************************************************
-#define BAUDCLK     (16) // Number of UART clocks needed per bit.
 static uint32_t
 config_baudrate(uint32_t ui32Module, uint32_t ui32DesiredBaudrate, uint32_t *pui32ActualBaud)
 {
@@ -543,6 +541,309 @@ config_baudrate(uint32_t ui32Module, uint32_t ui32DesiredBaudrate, uint32_t *pui
     *pui32ActualBaud = (ui32UartClkFreq / ((BAUDCLK * ui32IntegerDivisor) + ui32FractionDivisor / 4));
     return AM_HAL_STATUS_SUCCESS;
 } // config_baudrate()
+
+//*****************************************************************************
+//
+// Manage UART ISR used when uart fifos and tx and rx queues are enabled
+// This is a nonblocking, non-signalling uart driver, it saves incoming rx data
+// in the rx queue, and transmits tx data from the queue.
+//
+//*****************************************************************************
+am_hal_uart_status2_t
+am_hal_uart_interrupt_queue_service(void *pHandle)
+{
+    am_hal_uart_state_t *pState = pHandle;
+    volatile UART0_Type *pUart = UARTn(pState->ui32Module);
+
+    am_hal_uart_status2_t ui32RetStat = AM_HAL_UART_STATUS2_SUCCESS;
+
+    //
+    // manage rx fifo data
+    //
+    if (pUart->MIS & ( UART0_MIS_RTMIS_Msk | UART0_MIS_RXMIS_Msk))
+    {
+        //
+        // read the fifo data, save into the rx queue
+        //
+        am_hal_queue_t *pRxQ = &pState->sRxQueue;
+        uint32_t ui32QueSize = pRxQ->ui32Capacity;
+        uint8_t *pui8QueBuff = pRxQ->pui8Data;
+        //
+        // @note: if the output buffer is read from a higher priority isr
+        //  this next block should be in a critical section
+        //
+        {
+            uint32_t ui32WrtIdx = pRxQ->ui32WriteIndex;
+            uint32_t ui32NumInQue = pRxQ->ui32Length;
+
+            //
+            // loop while there is data in the queue
+            // and there is storage to save the incoming data
+            //
+            while (!(pUart->FR & UART0_FR_RXFE_Msk))
+            {
+                uint32_t ui32RdDr = pUart->DR;
+
+                //
+                // capture any read error flags
+                //
+                ui32RetStat |= (ui32RdDr & AM_HAL_UART_STATUS2_INTRNL_MSK);
+                pui8QueBuff[ui32WrtIdx] = (uint8_t) ui32RdDr;
+                if (++ui32NumInQue > ui32QueSize)
+                {
+                    //
+                    // queue is at the limit, can't write this data
+                    //
+                    ui32NumInQue = ui32QueSize;
+                    ui32RetStat |= AM_HAL_UART_STATUS_RX_QUEUE_FULL;
+                    break;
+                }
+                if (++ui32WrtIdx >= ui32QueSize)
+                {
+                    ui32WrtIdx = 0;
+                }
+            }
+            pRxQ->ui32WriteIndex = ui32WrtIdx;
+            if (pRxQ->ui32Length != ui32NumInQue)
+            {
+                //
+                // new data has been added to the rx buffer
+                //
+                ui32RetStat |= AM_HAL_UART_STATUS2_RX_DATA_AVAIL;
+                pRxQ->ui32Length = ui32NumInQue;
+            }
+
+            //
+            // Clear these Interrupts (rx fifo and rx timeout)
+            //
+            pUart->IEC = (UART0_IEC_RTIC_Msk | UART0_IEC_RXIC_Msk);
+        }
+
+    } // ui32IES_int &  (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT
+
+    //
+    // manage tx fifo data
+    //
+    if (pUart->MIS &  UART0_MIS_TXMIS_Msk)
+    {
+        //
+        // tx interrupt and the interrupt is enabled
+        //
+
+        am_hal_queue_t *pTxQ = &pState->sTxQueue;
+        //
+        // @note: This critical section is not needed if:
+        // uart send isn't called in higher priority ISRs
+        //
+        AM_CRITICAL_BEGIN
+            uint32_t ui32NumInQue = pTxQ->ui32Length;
+            if (ui32NumInQue)
+            {
+                //
+                // There is data to transmit
+                // move data from the tx queue to the tx fifo
+                //
+                uint8_t *pui8QueBuff = pTxQ->pui8Data;
+                uint32_t ui32QueSize = pTxQ->ui32Capacity;
+                uint32_t ui32RdIdx = pTxQ->ui32ReadIndex;
+                //
+                // Clear these Tx Interrupts
+                //
+                pUart->IEC = UART0_IEC_TXCMPMIC_Msk | UART0_IEC_TXIC_Msk;
+
+                while (ui32NumInQue && !(pUart->FR & UART0_FR_TXFF_Msk))
+                {
+                    pUart->DR = pui8QueBuff[ui32RdIdx];
+                    if (++ui32RdIdx >= ui32QueSize)
+                    {
+                        ui32RdIdx = 0;
+                    }
+                    ui32NumInQue--;
+                }
+                pTxQ->ui32ReadIndex = ui32RdIdx;
+                pTxQ->ui32Length = ui32NumInQue;
+                if (ui32NumInQue == 0)
+                {
+                    //
+                    // Nothing left in queue, disable this interrupt
+                    // enable the tx compelte interrupt
+                    //
+                    pUart->IER = (pUart->IER & ~UART0_IER_TXIM_Msk) | UART0_IER_TXCMPMIM_Msk;
+                }
+                else
+                {
+                    //
+                    // There is still data in the queue,
+                    // so at least one more txim interrupt is needed
+                    // tx complete interrupt is not needed until the queue is empty
+                    //
+                    pUart->IER = (pUart->IER & ~UART0_IER_TXCMPMIM_Msk) | UART0_IER_TXIM_Msk;
+                }
+                ui32RetStat |= AM_HAL_UART_STATUS2_TX_BUSY;
+            }
+            else
+            {
+                //
+                // there is nothing in the queue
+                // clear and disable this interrupt, this code should not be executed
+                // there could still be some data in the tx fifo
+                //
+                pUart->IEC = UART0_IEC_TXIC_Msk;
+                pUart->IER &= ~UART0_IER_TXIM_Msk;
+
+            }
+        AM_CRITICAL_END
+
+    } // ui32IES_int & UART0_IER_TXIM_Msk
+
+    if (pUart->MIS & UART0_MIS_TXCMPMMIS_Msk)
+    {
+        //
+        // tx complete, clear and disable this interrupt
+        //
+        pUart->IEC = UART0_IEC_TXCMPMIC_Msk;
+        //
+        // @note: This critical section is not needed if:
+        // uart send isn't called in higher priority ISRs
+        //
+        AM_CRITICAL_BEGIN
+            pUart->IER &= ~UART0_IER_TXCMPMIM_Msk;
+        AM_CRITICAL_END
+        ui32RetStat &= ~AM_HAL_UART_STATUS2_TX_BUSY;
+        ui32RetStat |= AM_HAL_UART_STATUS2_TX_COMPLETE;
+    }
+
+    return ui32RetStat;
+
+} // am_hal_uart_interrupt_queue_service
+
+//*****************************************************************************
+//
+// Append data into the uart tx output queue
+//
+//*****************************************************************************
+uint32_t
+am_hal_uart_append_tx( void *pHandle, uint8_t *pui8Buff, uint32_t ui32NumBytes )
+{
+    am_hal_uart_state_t *pState = (am_hal_uart_state_t *) pHandle;
+
+    if (pState == NULL)
+    {
+        return AM_HAL_STATUS_INVALID_HANDLE;
+    }
+
+    am_hal_queue_t *pTxQ = &pState->sTxQueue;
+    if (pTxQ == NULL || ui32NumBytes == 0)
+    {
+        //
+        // the user needs to define the queue
+        //
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+
+    volatile UART0_Type *pUart = UARTn(pState->ui32Module);
+
+    AM_CRITICAL_BEGIN
+        //
+        // clear pending tx interrupts
+        //
+        pUart->IEC = UART0_IEC_TXCMPMIC_Msk | UART0_IEC_TXIC_Msk;
+
+        uint32_t bytesInQueue = pTxQ->ui32Length;
+
+        //
+        // Only write to fifo once, before or after filling the queue:
+        // if queue is empty write buffer fifo first, then reducing
+        // (or eliminating) the need to save that data in the queue.
+        //
+        bool fifoFilled = false;
+        if (bytesInQueue == 0)
+        {
+            fifoFilled = true;
+            //
+            // nothing in queue, so start by dumping incoming data into fifo
+            // it appears the interrupt will not fire until something is written to the buffer
+            //
+            while (ui32NumBytes && !(pUart->FR & UART0_FR_TXFF_Msk))
+            {
+                pUart->DR = *pui8Buff++;
+                ui32NumBytes--;
+            }
+        }
+
+        uint8_t *txQueuBuff = pTxQ->pui8Data;
+        uint32_t ui32Wi = pTxQ->ui32WriteIndex;
+        uint32_t ui32Maxi = pTxQ->ui32Capacity;
+
+        if (ui32NumBytes)
+        {
+            //
+            // put remainder in queue
+            //
+            bytesInQueue += ui32NumBytes;
+            if (bytesInQueue > ui32Maxi)
+            {
+                return AM_HAL_STATUS_OUT_OF_RANGE;
+            }
+
+            do
+            {
+                //
+                // fill circular buffer
+                //
+                txQueuBuff[ui32Wi] = *pui8Buff++;
+                if (++ui32Wi >= ui32Maxi)
+                {
+                    ui32Wi = 0;
+                }
+
+            } while (--ui32NumBytes);
+            pTxQ->ui32WriteIndex = ui32Wi;
+        }
+
+        if (!fifoFilled)
+        {
+            //
+            // fifo has not been filled this pass, so
+            // fill fifo with data from queue
+            //
+            uint32_t ui32RdIdx = pTxQ->ui32ReadIndex;
+
+            while (bytesInQueue && !(pUart->FR & UART0_FR_TXFF_Msk))
+            {
+                //
+                // move data from circular buffer into queue
+                //
+                pUart->DR = txQueuBuff[ui32RdIdx];
+                if (++ui32RdIdx >= ui32Maxi)
+                {
+                    ui32RdIdx = 0;
+                }
+                bytesInQueue--;
+            }
+            pTxQ->ui32ReadIndex = ui32RdIdx;
+        }
+        pTxQ->ui32Length = bytesInQueue;
+
+        if (bytesInQueue)
+        {
+            //
+            // enable the tx fifo low interrupt, that will manage fifo filling from queue
+            //
+            pUart->IER = (pUart->IER & ~UART0_IER_TXCMPMIM_Msk) | UART0_IER_TXIM_Msk;
+        }
+        else
+        {
+            //
+            // queue is empty, but fifo has data, enable transmit complete interrupt
+            //
+            pUart->IER = (pUart->IER & ~UART0_IER_TXIM_Msk) | UART0_IER_TXCMPMIM_Msk;
+        }
+    AM_CRITICAL_END
+
+    return AM_HAL_STATUS_SUCCESS;
+
+} // am_hal_uart_append_tx
 
 //*****************************************************************************
 //
@@ -1241,6 +1542,14 @@ nonblocking_write_sm(void *pHandle)
         // Start a critical section to avoid problems associated with this
         // function being called from multiple places concurrently.
         //
+        //
+        // When the callback is called, the function must return immediately after
+        // calling the callback. It can't return until the function exits the
+        // critical section.
+        // This flag tracks the callback usage
+        //
+        bool bReturnAfterCritical = false;
+
         AM_CRITICAL_BEGIN
 
         uint32_t i = pState->ui32BytesWritten;
@@ -1262,9 +1571,9 @@ nonblocking_write_sm(void *pHandle)
             ui32WriteSize = (ui32BytesLeft < ui32QueueSpace ?
                              ui32BytesLeft : ui32QueueSpace);
 
-            bool bSuccess;
-            bSuccess = am_hal_queue_item_add(&pState->sTxQueue, pui8Src,
-                                             ui32WriteSize);
+            bool bSuccess = am_hal_queue_item_add(&pState->sTxQueue,
+                                                  pui8Src,
+                                                  ui32WriteSize);
 
             //
             // If something goes wrong with this queue write, even though we've
@@ -1278,11 +1587,15 @@ nonblocking_write_sm(void *pHandle)
                 if (pState->sActiveWrite.pfnCallback)
                 {
                     pState->sActiveWrite.pfnCallback(1, pState->sActiveWrite.pvContext);
-                    return;
+                    // After the callback,
+                    // this function needs to return once the critical section exits with
+                    // no other variables modified.
+                    // Set this flag to keep track of that (early return) state.
+                    bReturnAfterCritical = true;
                 }
             }
         }
-        else
+        else // if ( !pState->bEnableTxQueue )
         {
             //
             // If we're not using a queue, we'll just write straight to the
@@ -1292,17 +1605,30 @@ nonblocking_write_sm(void *pHandle)
             //
             am_hal_uart_fifo_write(pHandle, pui8Src, ui32BytesLeft,
                                    &ui32WriteSize);
-
         }
 
-        //
-        // Before returning, we also need to update the saved transaction,
-        // closing it if we've consumed all of the bytes in the user's
-        // original buffer.
-        //
-        pState->ui32BytesWritten += ui32WriteSize;
+        if ( !bReturnAfterCritical)
+        {
+            //
+            // Before returning, we also need to update the saved transaction,
+            // closing it if we've consumed all the bytes in the user's
+            // original buffer.
+            // This variable is not updated after a callback has been called above.
+            //
+            pState->ui32BytesWritten += ui32WriteSize;
+        } // else/if ( !pState->bEnableTxQueue )
 
         AM_CRITICAL_END
+
+        if (bReturnAfterCritical)
+        {
+            //
+            // the callback was executed in the critical section above,
+            // and now this function needs to exit
+            //
+            return;
+        }
+
     }
 
     //
@@ -1319,6 +1645,9 @@ nonblocking_write_sm(void *pHandle)
     if ( (pState->ui32BytesWritten == pState->sActiveWrite.ui32NumBytes) &&
          pState->bCurrentlyWriting )
     {
+        //
+        // all data has been written and completion notification hasn't been sent yet
+        //
         pState->bCurrentlyWriting = false;
 
         if (pState->sActiveWrite.pfnCallback)
@@ -1326,6 +1655,52 @@ nonblocking_write_sm(void *pHandle)
             pState->sActiveWrite.pfnCallback(0, pState->sActiveWrite.pvContext);
         }
     }
+}
+
+//*****************************************************************************
+//
+// Get Rx Data
+//
+// This function will unload data from the queue and load the data into
+// a user supplied buffer.
+//
+//*****************************************************************************
+int32_t
+am_hal_uart_get_rx_data( void *pHandle, uint8_t *pui8DestBuff, uint32_t ui32MaxBytes )
+{
+
+    am_hal_uart_state_t *pState = (am_hal_uart_state_t *) pHandle;
+
+    //
+    // If we're using an RX queue, take all of the data from the RX FIFO and add
+    // it to the internal queue.
+    //
+    if (pState->bEnableRxQueue)
+    {
+        rx_queue_update(pHandle);
+    }
+
+    uint32_t ui32DatainQueue = am_hal_queue_data_left(&pState->sRxQueue);
+
+    uint32_t ui32BytesToRead = ui32DatainQueue > ui32MaxBytes ? ui32MaxBytes : ui32DatainQueue;
+
+    if (ui32BytesToRead)
+    {
+        bool bSuccess = am_hal_queue_item_get(&pState->sRxQueue,
+                                              pui8DestBuff, ui32BytesToRead);
+
+        //
+        // We checked the amount of data we had available before reading, so
+        // the queue read really shouldn't fail. If it does anyway, we need
+        // to raise an error and abort the read.
+        //
+        if (bSuccess == false)
+        {
+            return -1;
+        }
+    }
+
+    return (int32_t) ui32BytesToRead;
 }
 
 //*****************************************************************************
@@ -1362,6 +1737,13 @@ nonblocking_read_sm(void *pHandle)
     //
     if (pState->bCurrentlyReading)
     {
+        //
+        // When the callback is called the function must return immediately after
+        // calling the callback, but the callback is called in a critical section
+        // this flag tracks the callback usage
+        //
+
+        bool bReturnAfterCritical = false;
         AM_CRITICAL_BEGIN
 
         uint32_t i = pState->ui32BytesRead;
@@ -1382,8 +1764,7 @@ nonblocking_read_sm(void *pHandle)
             ui32ReadSize = (ui32BytesLeft < ui32QueueData ?
                             ui32BytesLeft : ui32QueueData);
 
-            bool bSuccess;
-            bSuccess = am_hal_queue_item_get(&pState->sRxQueue,
+            bool bSuccess = am_hal_queue_item_get(&pState->sRxQueue,
                                              pui8Dest, ui32ReadSize);
 
             //
@@ -1397,7 +1778,12 @@ nonblocking_read_sm(void *pHandle)
                 if (pState->sActiveRead.pfnCallback)
                 {
                     pState->sActiveRead.pfnCallback(1, pState->sActiveRead.pvContext);
-                    return;
+                    //
+                    // This is in a critical section, can't return from function here
+                    // first need to exit critical section, set this flag to keep track
+                    // of the need to return early and do nothing else in this function
+                    //
+                    bReturnAfterCritical = true;
                 }
             }
         }
@@ -1410,11 +1796,20 @@ nonblocking_read_sm(void *pHandle)
             //
             am_hal_uart_fifo_read(pHandle, pui8Dest, ui32BytesLeft,
                                   &ui32ReadSize);
+
         }
 
-        pState->ui32BytesRead += ui32ReadSize;
+        if ( !bReturnAfterCritical)
+        {
+            pState->ui32BytesRead += ui32ReadSize;
+        }
 
         AM_CRITICAL_END
+
+        if (bReturnAfterCritical)
+        {
+            return;
+        }
 
         //
         // At this point we've moved all of the data we can. We need to update
@@ -1661,12 +2056,31 @@ am_hal_uart_interrupt_service(void *pHandle, uint32_t ui32Status)
 
     if ( ui32Status & (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT) )
     {
-        nonblocking_read_sm(pHandle);
+        //
+        // If we're using an RX queue, take all of the data from the RX FIFO and add
+        // it to the internal queue.
+        // @todo next block is modified, check
+        if (pState->bEnableRxQueue)
+        {
+            rx_queue_update(pHandle);
+        }
+        else
+        {
+           nonblocking_read_sm(pHandle);
+        }
+
+        //
+        // clear the RX interrupt
+        // @todo check what rx_timeout really is and if it needs restarting??
+        //
+        am_hal_uart_interrupt_clear(pHandle, AM_HAL_UART_INT_RX | AM_HAL_UART_INT_RX_TMOUT);
+
     }
 
     if ( ui32Status & (AM_HAL_UART_INT_TX) )
     {
         nonblocking_write_sm(pHandle);
+        am_hal_uart_interrupt_clear(pHandle, AM_HAL_UART_INT_TX);  // @todo this is new
     }
 
     if ( ui32Status & (AM_HAL_UART_INT_TXCMP) )

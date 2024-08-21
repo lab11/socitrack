@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -396,7 +396,7 @@ am_hal_pdm_enable(void *pHandle)
     uint32_t ui32Module = pState->ui32Module;
 
     PDMn(ui32Module)->CTRL_b.RSTB = 0;
-    delay_us(5000);
+    delay_us(50);
     PDMn(ui32Module)->CTRL_b.RSTB = 1;
 
     PDMn(ui32Module)->CTRL_b.CLKEN = 1;
@@ -896,7 +896,6 @@ am_hal_pdm_dma_disable(void *pHandle)
     // clear interrupts
     //
     PDMn(ui32Module)->INTCLR = (AM_HAL_PDM_INT_DERR | AM_HAL_PDM_INT_DCMP);
-
 
     PDMn(ui32Module)->DMATOTCOUNT = 0;
 

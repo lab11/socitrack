@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_TIMER_H
@@ -67,32 +67,6 @@ extern "C"
 #define TIMERn(n)   ((TIMER_Type*)(TIMER_BASE + (n * 4 * AM_HAL_TIMER_OFFSET)))
 #define AM_HAL_TIMER_GLOBEN_DEFAULT     0x0000FFFF
 #define AM_HAL_TIMER_MASK(timer, compare) (compare << (2 * timer))
-
-//*****************************************************************************
-//
-//! Timer selection enum
-//
-//*****************************************************************************
-typedef enum
-{
-    AM_HAL_TIMER_TMR0  = TIMER_GLOBEN_ENB0_Msk,
-    AM_HAL_TIMER_TMR1  = TIMER_GLOBEN_ENB1_Msk,
-    AM_HAL_TIMER_TMR2  = TIMER_GLOBEN_ENB2_Msk,
-    AM_HAL_TIMER_TMR3  = TIMER_GLOBEN_ENB3_Msk,
-    AM_HAL_TIMER_TMR4  = TIMER_GLOBEN_ENB4_Msk,
-    AM_HAL_TIMER_TMR5  = TIMER_GLOBEN_ENB5_Msk,
-    AM_HAL_TIMER_TMR6  = TIMER_GLOBEN_ENB6_Msk,
-    AM_HAL_TIMER_TMR7  = TIMER_GLOBEN_ENB7_Msk,
-    AM_HAL_TIMER_TMR8  = TIMER_GLOBEN_ENB8_Msk,
-    AM_HAL_TIMER_TMR9  = TIMER_GLOBEN_ENB9_Msk,
-    AM_HAL_TIMER_TMR10 = TIMER_GLOBEN_ENB10_Msk,
-    AM_HAL_TIMER_TMR11 = TIMER_GLOBEN_ENB11_Msk,
-    AM_HAL_TIMER_TMR12 = TIMER_GLOBEN_ENB12_Msk,
-    AM_HAL_TIMER_TMR13 = TIMER_GLOBEN_ENB13_Msk,
-    AM_HAL_TIMER_TMR14 = TIMER_GLOBEN_ENB14_Msk,
-    AM_HAL_TIMER_TMR15 = TIMER_GLOBEN_ENB15_Msk,
-}
-am_hal_timer_select_e;
 
 //*****************************************************************************
 //

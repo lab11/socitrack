@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -128,7 +128,8 @@ typedef enum
     //! I2C NAK
     //
     AM_HAL_IOM_ERR_I2C_NAK,
-} am_hal_iom_err_e;
+}
+am_hal_iom_err_e;
 
 //*****************************************************************************
 //
@@ -155,10 +156,11 @@ typedef enum
 //
 typedef enum
 {
-  AM_HAL_IOM_SPI_MODE,
-  AM_HAL_IOM_I2C_MODE,
-  AM_HAL_IOM_NUM_MODES
-} am_hal_iom_mode_e;
+    AM_HAL_IOM_SPI_MODE,
+    AM_HAL_IOM_I2C_MODE,
+    AM_HAL_IOM_NUM_MODES
+}
+am_hal_iom_mode_e;
 
 //
 //! Transmit or receive enumerations.
@@ -166,10 +168,11 @@ typedef enum
 //
 typedef enum
 {
-  AM_HAL_IOM_TX,
-  AM_HAL_IOM_RX,
-  AM_HAL_IOM_FULLDUPLEX,
-} am_hal_iom_dir_e;
+    AM_HAL_IOM_TX,
+    AM_HAL_IOM_RX,
+    AM_HAL_IOM_FULLDUPLEX,
+}
+am_hal_iom_dir_e;
 
 //
 //! Enumerate the SPI modes.  Note that these are arranged per the ordering of
@@ -177,11 +180,12 @@ typedef enum
 //
 typedef enum
 {
-  AM_HAL_IOM_SPI_MODE_0,                  // CPOL = 0; CPHA = 0
-  AM_HAL_IOM_SPI_MODE_2,                  // CPOL = 1; CPHA = 0
-  AM_HAL_IOM_SPI_MODE_1,                  // CPOL = 0; CPHA = 1
-  AM_HAL_IOM_SPI_MODE_3,                  // CPOL = 1; CPHA = 1
-} am_hal_iom_spi_mode_e;
+    AM_HAL_IOM_SPI_MODE_0,                  // CPOL = 0; CPHA = 0
+    AM_HAL_IOM_SPI_MODE_2,                  // CPOL = 1; CPHA = 0
+    AM_HAL_IOM_SPI_MODE_1,                  // CPOL = 0; CPHA = 1
+    AM_HAL_IOM_SPI_MODE_3,                  // CPOL = 1; CPHA = 1
+}
+am_hal_iom_spi_mode_e;
 //! @}
 
 #ifdef __cplusplus
@@ -305,9 +309,11 @@ typedef struct
 }
 am_hal_iom_status_t;
 
+//*****************************************************************************
 //
 //! IOM transfer structure
 //
+//*****************************************************************************
 typedef struct
 {
     union
@@ -317,7 +323,8 @@ typedef struct
         //
         uint32_t ui32SpiChipSelect;
         uint32_t ui32I2CDevAddr;
-    } uPeerInfo;
+    }
+    uPeerInfo;
 
     //
     //! Instruction length (0 - 5).
@@ -360,17 +367,23 @@ typedef struct
     //
     uint8_t  ui8Priority;
 
+    //
     //! Command Queue Advanced control on gating conditions for transaction to start
     //
-    uint32_t              ui32PauseCondition;
-
+    uint32_t ui32PauseCondition;
+    //
     //! Command Queue Advanced Post-Transaction status setting
-    uint32_t              ui32StatusSetClr;
-} am_hal_iom_transfer_t;
+    //
+    uint32_t ui32StatusSetClr;
 
+}
+am_hal_iom_transfer_t;
+
+//*****************************************************************************
 //
 //! IOM Sequence End
 //
+//*****************************************************************************
 typedef struct
 {
     //
@@ -380,17 +393,21 @@ typedef struct
 
     //
     //! Command Queue Transaction Gating
+    //
     uint32_t                    ui32PauseCondition;
 
     //
     //! Command Queue Post-Transaction status setting
     //
     uint32_t                    ui32StatusSetClr;
-} am_hal_iom_seq_end_t;
+}
+am_hal_iom_seq_end_t;
 
+//*****************************************************************************
 //
 //! IOM High Priority Config
 //
+//*****************************************************************************
 typedef struct
 {
     //
@@ -402,7 +419,8 @@ typedef struct
     //! Size of buffer in bytes
     //
     uint32_t                    size;
-} am_hal_iom_hiprio_cfg_t;
+}
+am_hal_iom_hiprio_cfg_t;
 
 #define AM_HAL_IOM_DCX_INVALID  0xFF
 
@@ -411,92 +429,118 @@ typedef struct
 //
 typedef struct
 {
-  //! CS for which this configuration applies
-  uint8_t     cs;
 
-  //! alternate CS line used for DCX - AM_HAL_IOM_DCX_INVALID indicates DCX is not used
-  uint8_t     dcx;
-} am_hal_iom_dcx_cfg_t;
+    //
+    //! CS for which this configuration applies
+    //
+    uint8_t cs;
 
+    //
+    //! alternate CS line used for DCX - AM_HAL_IOM_DCX_INVALID indicates DCX is not used
+    //
+    uint8_t dcx;
+}
+am_hal_iom_dcx_cfg_t;
+
+//*****************************************************************************
 //
 //! IOM Command Queue
 //
+//*****************************************************************************
 typedef struct
 {
-  //! Command Queue Advanced control on gating conditions for transaction to start
-  uint32_t              ui32PauseCondition;
+    //
+    //! Command Queue Advanced control on gating conditions for transaction to start
+    //
+    uint32_t ui32PauseCondition;
 
-  //! Command Queue Advanced Post-Transaction status setting
-  uint32_t              ui32StatusSetClr;
+    //
+    //! Command Queue Advanced Post-Transaction status setting
+    //
+    uint32_t ui32StatusSetClr;
 
-  //! Raw Command Queue Entry list.
-  am_hal_cmdq_entry_t    *pCQEntry;
+    //
+    //! Raw Command Queue Entry list.
+    //
+    am_hal_cmdq_entry_t *pCQEntry;
 
-  //! Number of Command Queue Entries in the list.
-  uint32_t               numEntries;
+    //
+    //! Number of Command Queue Entries in the list.
+    //
+    uint32_t numEntries;
 
-  //! Callback function to call at entry completion.
-  am_hal_iom_callback_t  pfnCallback;
+    //
+    //! Callback function to call at entry completion.
+    //
+    am_hal_iom_callback_t pfnCallback;
 
-  //! Callback context
-  void                   *pCallbackCtxt;
+    //
+    //! Callback context
+    //
+    void *pCallbackCtxt;
 
-  //! Jump back address
-  uint32_t               *pJmpAddr;
-} am_hal_iom_cq_raw_t;
+    //
+    //! Jump back address
+    //
+    uint32_t *pJmpAddr;
+}
+am_hal_iom_cq_raw_t;
 
+//*****************************************************************************
 //
 //! IOM Request
 //
+//*****************************************************************************
 typedef enum
 {
-  //! Used to set/clear 8 CQ Pause flags - reserved flags are defined as AM_HAL_IOM_PAUSE_FLAG_RESV
-  //! Pass uint32_t as pArgs
-  AM_HAL_IOM_REQ_FLAG_SETCLR = 0,
-  //! Pass uint32_t as pArgs
-  AM_HAL_IOM_REQ_SPI_LSB,
-  //! Pass uint32_t as pArgs
-  AM_HAL_IOM_REQ_RESV1,
-  //! Pass uint32_t as pArgs
-  AM_HAL_IOM_REQ_SPI_RDTHRESH,
-  //! Pass uint32_t as pArgs
-  AM_HAL_IOM_REQ_SPI_WRTHRESH,
-  //! Pass uint32_t as pArgs
-  AM_HAL_IOM_REQ_LINK_MSPI,
-  //! Pause the CQ gracefully
-  //! pArgs N/A
-  AM_HAL_IOM_REQ_PAUSE,
-  //! Unpause the CQ
-  // pArgs N/A
-  AM_HAL_IOM_REQ_UNPAUSE,
-  //! Get in and out of Sequence Mode - which allows building a sequence, which either runs once, or repeats
-  // Pass in bool as pArgs - true/false
-  AM_HAL_IOM_REQ_SET_SEQMODE,
-  //! pArgs N/A
-  AM_HAL_IOM_REQ_SEQ_END,
-  //! Initialize configuration for high priority trasactions
-  //! These transactions take precedence over existing CQ transactions
-  //! Pass am_hal_iom_hiprio_cfg_t * as pArgs
-  AM_HAL_IOM_REQ_INIT_HIPRIO,
-  //! Create a block of transactions which are not paused in between
-  //! pArgs N/A
-  AM_HAL_IOM_REQ_START_BLOCK,
-  //! pArgs N/A
-  AM_HAL_IOM_REQ_END_BLOCK,
-  //! Control the DCX line
-  //! Pass am_hal_iom_dcx_cfg_t * as pArgs
-  AM_HAL_IOM_REQ_SET_DCX,
-  //! Raw CQ transaction
-  //! Pass am_hal_iom_cq_raw_t * as pArgs
-  AM_HAL_IOM_REQ_CQ_RAW,
-  AM_HAL_IOM_REQ_MAX
-} am_hal_iom_request_e;
+    //! Used to set/clear 8 CQ Pause flags - reserved flags are defined as AM_HAL_IOM_PAUSE_FLAG_RESV
+    //! Pass uint32_t as pArgs
+    AM_HAL_IOM_REQ_FLAG_SETCLR = 0,
+    //! Pass uint32_t as pArgs
+    AM_HAL_IOM_REQ_SPI_LSB,
+    //! Pass uint32_t as pArgs
+    AM_HAL_IOM_REQ_RESV1,
+    //! Pass uint32_t as pArgs
+    AM_HAL_IOM_REQ_SPI_RDTHRESH,
+    //! Pass uint32_t as pArgs
+    AM_HAL_IOM_REQ_SPI_WRTHRESH,
+    //! Pass uint32_t as pArgs
+    AM_HAL_IOM_REQ_LINK_MSPI,
+    //! Pause the CQ gracefully
+    //! pArgs N/A
+    AM_HAL_IOM_REQ_PAUSE,
+    //! Unpause the CQ
+    // pArgs N/A
+    AM_HAL_IOM_REQ_UNPAUSE,
+    //! Get in and out of Sequence Mode - which allows building a sequence, which either runs once, or repeats
+    //! Pass in bool as pArgs - true/false
+    AM_HAL_IOM_REQ_SET_SEQMODE,
+    //! pArgs N/A
+    AM_HAL_IOM_REQ_SEQ_END,
+    //! Initialize configuration for high priority transactions
+    //! These transactions take precedence over existing CQ transactions
+    //! Pass am_hal_iom_hiprio_cfg_t * as pArgs
+    AM_HAL_IOM_REQ_INIT_HIPRIO,
+    //! Create a block of transactions which are not paused in between
+    //! pArgs N/A
+    AM_HAL_IOM_REQ_START_BLOCK,
+    //! pArgs N/A
+    AM_HAL_IOM_REQ_END_BLOCK,
+    //! Control the DCX line
+    //! Pass am_hal_iom_dcx_cfg_t * as pArgs
+    AM_HAL_IOM_REQ_SET_DCX,
+    //! Raw CQ transaction
+    //! Pass am_hal_iom_cq_raw_t * as pArgs
+    AM_HAL_IOM_REQ_CQ_RAW,
+    AM_HAL_IOM_REQ_MAX
+}
+am_hal_iom_request_e;
 
 #define am_hal_iom_buffer(A)            \
 union                                   \
-  {                                       \
+  {                                     \
     uint32_t words[(A + 3) >> 2];       \
-      uint8_t bytes[A];                   \
+      uint8_t bytes[A];                 \
   }
 
 //*****************************************************************************
@@ -547,21 +591,21 @@ union                                   \
 //! @{
 //
 //*****************************************************************************
-#define AM_HAL_IOM_INT_CQERR            IOM0_INTEN_CQERR_Msk        //! Error during command queue operations
-#define AM_HAL_IOM_INT_CQUPD            IOM0_INTEN_CQUPD_Msk        //! Command queue operation  performed a register write with the register address bit 0 set to 1.
-#define AM_HAL_IOM_INT_CQPAUSED         IOM0_INTEN_CQPAUSED_Msk     //! Command queue operation paused
-#define AM_HAL_IOM_INT_DERR             IOM0_INTEN_DERR_Msk         //! DMA error received
-#define AM_HAL_IOM_INT_DCMP             IOM0_INTEN_DCMP_Msk         //! DMA transfer complete
-#define AM_HAL_IOM_INT_ARB              IOM0_INTEN_ARB_Msk          //! Arbitration loss
-#define AM_HAL_IOM_INT_STOP             IOM0_INTEN_STOP_Msk         //! STOP command
-#define AM_HAL_IOM_INT_START            IOM0_INTEN_START_Msk        //! START command
-#define AM_HAL_IOM_INT_ICMD             IOM0_INTEN_ICMD_Msk         //! ILLEGAL command
-#define AM_HAL_IOM_INT_IACC             IOM0_INTEN_IACC_Msk         //! Illegal FIFO access
-#define AM_HAL_IOM_INT_NAK              IOM0_INTEN_NAK_Msk          //! I2C NAK
-#define AM_HAL_IOM_INT_FOVFL            IOM0_INTEN_FOVFL_Msk        //! Write FIFO overflow
-#define AM_HAL_IOM_INT_FUNDFL           IOM0_INTEN_FUNDFL_Msk       //! Read FIFO underflow
-#define AM_HAL_IOM_INT_THR              IOM0_INTEN_THR_Msk          //! FIFO threshold interrupt
-#define AM_HAL_IOM_INT_CMDCMP           IOM0_INTEN_CMDCMP_Msk       //! Command complete
+#define AM_HAL_IOM_INT_CQERR            IOM0_INTEN_CQERR_Msk        //!< Error during command queue operations
+#define AM_HAL_IOM_INT_CQUPD            IOM0_INTEN_CQUPD_Msk        //!< Command queue operation  performed a register write with the register address bit 0 set to 1.
+#define AM_HAL_IOM_INT_CQPAUSED         IOM0_INTEN_CQPAUSED_Msk     //!< Command queue operation paused
+#define AM_HAL_IOM_INT_DERR             IOM0_INTEN_DERR_Msk         //!< DMA error received
+#define AM_HAL_IOM_INT_DCMP             IOM0_INTEN_DCMP_Msk         //!< DMA transfer complete
+#define AM_HAL_IOM_INT_ARB              IOM0_INTEN_ARB_Msk          //!< Arbitration loss
+#define AM_HAL_IOM_INT_STOP             IOM0_INTEN_STOP_Msk         //!< STOP command
+#define AM_HAL_IOM_INT_START            IOM0_INTEN_START_Msk        //!< START command
+#define AM_HAL_IOM_INT_ICMD             IOM0_INTEN_ICMD_Msk         //!< ILLEGAL command
+#define AM_HAL_IOM_INT_IACC             IOM0_INTEN_IACC_Msk         //!< Illegal FIFO access
+#define AM_HAL_IOM_INT_NAK              IOM0_INTEN_NAK_Msk          //!< I2C NAK
+#define AM_HAL_IOM_INT_FOVFL            IOM0_INTEN_FOVFL_Msk        //!< Write FIFO overflow
+#define AM_HAL_IOM_INT_FUNDFL           IOM0_INTEN_FUNDFL_Msk       //!< Read FIFO underflow
+#define AM_HAL_IOM_INT_THR              IOM0_INTEN_THR_Msk          //!< FIFO threshold interrupt
+#define AM_HAL_IOM_INT_CMDCMP           IOM0_INTEN_CMDCMP_Msk       //!< Command complete
 
 #define AM_HAL_IOM_INT_SWERR            (AM_HAL_IOM_INT_ICMD | AM_HAL_IOM_INT_IACC | AM_HAL_IOM_INT_FOVFL | AM_HAL_IOM_INT_FUNDFL)
 #define AM_HAL_IOM_INT_I2CARBERR        (AM_HAL_IOM_INT_ARB)
@@ -876,16 +920,26 @@ extern uint32_t am_hal_iom_uninitialize(void *pHandle);
 
 //*****************************************************************************
 //
-//! @brief Perform a Full Duplex transaction.
+//! @brief Perform a Full Duplex transaction to a selected SPI interface
 //!
 //! @param pHandle              - handle for the interface.
 //! @param psTransaction         - pointer to the uniform transaction control structure.
+//!
+//! @note The actual SPI and I2C interfaces operate in BYTES, not 32-bit words.
+//! This means that you will need to byte-pack the \e pui32TxData array with the
+//! data you intend to send over the interface. One easy way to do this is to
+//! declare the array as a 32-bit integer array, but use an 8-bit pointer to
+//! put your actual data into the array. If there are not enough bytes in your
+//! desired message to completely fill the last 32-bit word, you may pad that
+//! last word with bytes of any value. The IOM hardware will only read the
+//! first \e ui32NumBytes in the \e pui32TxData array.
 //!
 //! @return HAL status of the operation.
 //
 //*****************************************************************************
 extern uint32_t am_hal_iom_spi_blocking_fullduplex(void *pHandle,
                                                    am_hal_iom_transfer_t *psTransaction);
+
 //*****************************************************************************
 //
 //! @brief IOM High Priority transfer function

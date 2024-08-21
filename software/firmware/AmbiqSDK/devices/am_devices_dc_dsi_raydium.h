@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,10 +44,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-
 
 #ifndef AM_DEVICES_DC_DSI_RAYDIUM_H
 #define AM_DEVICES_DC_DSI_RAYDIUM_H
@@ -72,23 +71,8 @@ extern "C"
 //! Global type definitions.
 //
 //*****************************************************************************
-typedef enum
-{
-    FMT_RGB565 = 0,
-    FMT_RGB888,
-    FMT_NUM
-} pixel_format_t;
 
-typedef struct
-{
-    uint32_t ui32PixelFormat;
-    uint16_t ui16ResX;
-    uint16_t ui16ResY;
-    uint16_t ui16MinX;
-    uint16_t ui16MinY;
-    bool bTEEnable;
-    bool bFlip;
-} am_devices_dc_dsi_raydium_config_t;
+typedef am_devices_dc_config_t am_devices_dc_dsi_raydium_config_t;
 
 //*****************************************************************************
 //
@@ -104,6 +88,30 @@ typedef struct
 //
 //*****************************************************************************
 extern void am_devices_dc_dsi_raydium_hardware_reset(void);
+
+//*****************************************************************************
+//
+//! @brief Set the flip along with the x/y-axis or both the x and y-axis.
+//!
+//! @param ui8FlipXY            - how to flip the display
+//!
+//! @note Register bits function for Driver IC RM69330 or CO5300.
+//!       Bitfield 0 - Reserved                 (please don't set this bit)
+//!       Bitfield 1 - Flip along with y-axis   (reserved for CO5300)
+//!       Bitfield 2 - Reserved
+//!       Bitfield 3 - RGB or BGR order
+//!       Bitfield 4 - Flip along with x-axis   (reserved for CO5300)
+//!       Bitfield 5 - Flip along y = x         (reserved for CO5300)
+//!       Bitfield 6 - Flip along with y-axis
+//!       Bitfield 7 - Flip along with x-axis
+//! The x-axis will keep no flip when setting bitfields 4 and 7 same time. In the
+//! same way, the same is true for the y-axis. Please be careful some of the flips
+//! could cause the tear effect.
+//!
+//! @return None.
+//
+//*****************************************************************************
+extern void am_devices_dc_dsi_raydium_flip(uint8_t ui8FlipXY);
 
 //*****************************************************************************
 //

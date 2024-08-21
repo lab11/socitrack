@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -103,7 +103,6 @@ recover_broken_mram_tmc_r_timer1_t recover_broken_mram_tmc_r_timer1 = (recover_b
 #define MRAM_OVERRIDE()     program_mram_tmc_tcycrd(1)
 #define MRAM_REVERT()       program_mram_tmc_tcycrd(0)
 #define MRAM_RECOVER()      recover_broken_mram_tmc_r_timer1()
-
 
 //*****************************************************************************
 //
@@ -330,7 +329,6 @@ am_hal_mram_recovery(uint32_t ui32BrickKey)
 {
     return g_am_hal_bootrom_helper.nv_recovery(ui32BrickKey);
 }
-
 
 //*****************************************************************************
 //

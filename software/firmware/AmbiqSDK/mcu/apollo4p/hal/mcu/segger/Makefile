@@ -2,7 +2,7 @@
 #
 # Makefile - Rules for building the libraries, examples and docs.
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2024, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,18 +34,18 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 #
 #******************************************************************************
 TARGET := libam_hal
-COMPILERNAME := Keil
-PROJECT := libam_hal_Keil
+COMPILERNAME := Segger
+PROJECT := libam_hal_Segger
 CONFIG := bin
 AM_SoftwareRoot ?= ../../../../..
 
 SHELL:=/bin/bash
 #### Required Executables ####
-K := $(shell type -p UV4.exe)
+K := $(shell type -p emBuild.exe)
 RM := $(shell which rm 2>/dev/null)
 
 ifeq ($(K),)
@@ -55,11 +55,11 @@ all clean:
 else
 
 LIBS = 
-INCS = ../../../../../mcu/apollo4p
-INCS+= ../../../../../CMSIS/ARM/Include
+INCS = ../../../../../mcu/apollo4p/hal
+INCS+= ../../../../../mcu/apollo4p
 INCS+= ../../../../../CMSIS/AmbiqMicro/Include
+INCS+= ../../../../../CMSIS/ARM/Include
 INCS+= ../../../../../utils
-INCS+= ../../../../../mcu/apollo4p/hal
 
 all: directories $(CONFIG)/$(TARGET).lib
 
@@ -108,8 +108,8 @@ SRCS += ../../../../../mcu/apollo4p/hal/mcu/am_hal_uart.c
 SRCS += ../../../../../mcu/apollo4p/hal/mcu/am_hal_utils.c
 
 $(CONFIG)/$(TARGET).lib: $(LIBS) $(INCS) $(SRCS)
-	UV4.exe -b -t "libam_hal" libam_hal.uvprojx -j0 || [ $$? -eq 1 ]
-
+	emBuild -config "Debug" libam_hal.emProject
+	
 directories: $(CONFIG)
 
 $(CONFIG):

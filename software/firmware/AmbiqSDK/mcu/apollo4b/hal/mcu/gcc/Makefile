@@ -2,7 +2,7 @@
 #
 # Makefile - Rules for building the libraries, examples and docs.
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2024, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 #
 #******************************************************************************
 TARGET := libam_hal
@@ -86,16 +86,16 @@ all clean:
 	$(RM) -rf bin
 else
 
-DEFINES = -DAM_DEBUG_ASSERT
-DEFINES+= -DAM_ASSERT_INVALID_THRESHOLD=0
+DEFINES = -DAM_ASSERT_INVALID_THRESHOLD=0
+DEFINES+= -DAM_DEBUG_ASSERT
 DEFINES+= -DAM_PART_APOLLO4B
 DEFINES+= -Dgcc
 
 INCLUDES = -I../../../../../CMSIS/ARM/Include
-INCLUDES+= -I../../../../../utils
-INCLUDES+= -I../../../../../mcu/apollo4b
 INCLUDES+= -I../../../../../CMSIS/AmbiqMicro/Include
+INCLUDES+= -I../../../../../mcu/apollo4b
 INCLUDES+= -I../../../../../mcu/apollo4b/hal
+INCLUDES+= -I../../../../../utils
 
 VPATH = ../../../../../mcu/apollo4b/hal
 VPATH+=:../../../../../mcu/apollo4b/hal/mcu
@@ -103,28 +103,18 @@ VPATH+=:../../../../../mcu/apollo4b/hal/mcu
 SRC = am_hal_access.c
 SRC += am_hal_adc.c
 SRC += am_hal_audadc.c
-SRC += am_hal_dcu.c
-SRC += am_hal_global.c
-SRC += am_hal_gpio.c
-SRC += am_hal_i2s.c
-SRC += am_hal_otp.c
-SRC += am_hal_pdm.c
-SRC += am_hal_pin.c
-SRC += am_hal_pwrctrl.c
-SRC += am_hal_queue.c
-SRC += am_hal_security.c
-SRC += am_hal_stimer.c
-SRC += am_hal_timer.c
-SRC += am_hal_usb.c
-SRC += am_hal_wdt.c
 SRC += am_hal_bootrom_helper.c
 SRC += am_hal_cachectrl.c
 SRC += am_hal_card.c
 SRC += am_hal_card_host.c
 SRC += am_hal_clkgen.c
 SRC += am_hal_cmdq.c
+SRC += am_hal_dcu.c
 SRC += am_hal_dsi.c
 SRC += am_hal_fault.c
+SRC += am_hal_global.c
+SRC += am_hal_gpio.c
+SRC += am_hal_i2s.c
 SRC += am_hal_interrupt.c
 SRC += am_hal_iom.c
 SRC += am_hal_ios.c
@@ -133,15 +123,25 @@ SRC += am_hal_mcuctrl.c
 SRC += am_hal_mpu.c
 SRC += am_hal_mram.c
 SRC += am_hal_mspi.c
+SRC += am_hal_otp.c
+SRC += am_hal_pdm.c
+SRC += am_hal_pin.c
+SRC += am_hal_pwrctrl.c
+SRC += am_hal_queue.c
 SRC += am_hal_reset.c
 SRC += am_hal_rtc.c
 SRC += am_hal_sdhc.c
 SRC += am_hal_secure_ota.c
+SRC += am_hal_security.c
+SRC += am_hal_stimer.c
 SRC += am_hal_sysctrl.c
 SRC += am_hal_systick.c
+SRC += am_hal_timer.c
 SRC += am_hal_tpiu.c
 SRC += am_hal_uart.c
+SRC += am_hal_usb.c
 SRC += am_hal_utils.c
+SRC += am_hal_wdt.c
 
 CSRC = $(filter %.c,$(SRC))
 ASRC = $(filter %.s,$(SRC))

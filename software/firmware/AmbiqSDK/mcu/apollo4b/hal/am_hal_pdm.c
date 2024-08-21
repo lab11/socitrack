@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -119,7 +119,42 @@
     }
 //
 //! @}
+
 //
+//! @brief Function for PDM Workaround
+//!
+//! Errata - ERR126:
+//! PDM Workaround
+//!   Some registers power up in a non-default state
+//!   This workaround corrects them
+//
+static void
+pdm_reginit(uint32_t module)
+{
+    //*****************************
+    //
+    // PDMn
+    //
+    //*****************************
+    PDMn(module)->CORECFG0    = 0x21080F64;
+    PDMn(module)->CORECFG1    = 0x00000003;
+    PDMn(module)->CORECTRL    = 0x80000434;
+    PDMn(module)->FIFOTHR     = 0x00000010;
+    PDMn(module)->CTRL        = 0x00000000;
+    PDMn(module)->FIFOCNT     = 0x00000000;
+    PDMn(module)->FIFOREAD    = 0x00000000;
+    PDMn(module)->FIFOFLUSH   = 0x00000000;
+    PDMn(module)->INTEN       = 0x00000000;
+    PDMn(module)->INTSTAT     = 0x00000000;
+    PDMn(module)->INTCLR      = 0x00000000;
+    PDMn(module)->INTSET      = 0x00000000;
+    PDMn(module)->DMATRIGEN   = 0x00000000;
+    PDMn(module)->DMATRIGSTAT = 0x00000000;
+    PDMn(module)->DMACFG      = 0x00000000;
+    PDMn(module)->DMATARGADDR = 0x00000000;
+    PDMn(module)->DMASTAT     = 0x00000000;
+    PDMn(module)->DMATOTCOUNT = 0x00000000;
+}
 
 //*****************************************************************************
 //
@@ -250,6 +285,15 @@ am_hal_pdm_power_control(void *pHandle,
             // Enable power control.
             //
             am_hal_pwrctrl_periph_enable(ePDMPowerModule);
+
+            //
+            // PDM Workaround
+            //
+            AM_CRITICAL_BEGIN;
+
+            pdm_reginit(ui32Module);
+
+            AM_CRITICAL_END;
 
             if (bRetainState)
             {
@@ -396,7 +440,7 @@ am_hal_pdm_enable(void *pHandle)
     uint32_t ui32Module = pState->ui32Module;
 
     PDMn(ui32Module)->CTRL_b.RSTB = 0;
-    delay_us(5000);
+    delay_us(50);
     PDMn(ui32Module)->CTRL_b.RSTB = 1;
 
     PDMn(ui32Module)->CTRL_b.CLKEN = 1;
@@ -896,7 +940,6 @@ am_hal_pdm_dma_disable(void *pHandle)
     // clear interrupts
     //
     PDMn(ui32Module)->INTCLR = (AM_HAL_PDM_INT_DERR | AM_HAL_PDM_INT_DCMP);
-
 
     PDMn(ui32Module)->DMATOTCOUNT = 0;
 

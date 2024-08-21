@@ -718,7 +718,11 @@ static void hciEvtParseVendorSpecCmdStatus(hciEvt_t *pMsg, uint8_t *p, uint8_t l
 /*************************************************************************************************/
 static void hciEvtParseVendorSpecCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
 {
-  if ((len > 3) && ((len - 3) <= HCI_EVT_VENDOR_SPEC_CMD_CMPL_PARAM_MAX_LEN))
+  // the 'len' parameter includes Num_HCI_Command_Packets(1byte),Command_Opcode(2byte) and Return_Parameters,
+  // exclude the 1byte Num_HCI_Command_Packets
+  len = len - 1;
+
+  if ((len >= 3) && ((len - 3) <= HCI_EVT_VENDOR_SPEC_CMD_CMPL_PARAM_MAX_LEN))
   {
     /* roll pointer back to opcode */
     p -= 2;
@@ -1991,7 +1995,7 @@ static void hciEvtParseLeSetCigParamsCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t
  */
 /*************************************************************************************************/
 static void hciEvtParseLeRemoveCigCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
-{  
+{
   BSTREAM_TO_UINT8(pMsg->leRemoveCigCmdCmpl.status, p);
   BSTREAM_TO_UINT8(pMsg->leRemoveCigCmdCmpl.cigId, p);
 
@@ -2011,7 +2015,7 @@ static void hciEvtParseLeRemoveCigCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t le
  */
 /*************************************************************************************************/
 static void hciEvtParseLeSetupIsoDataPathCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
-{  
+{
   BSTREAM_TO_UINT8(pMsg->leSetupIsoDataPathCmdCmpl.status, p);
   BSTREAM_TO_UINT8(pMsg->leSetupIsoDataPathCmdCmpl.handle, p);
 
@@ -2031,7 +2035,7 @@ static void hciEvtParseLeSetupIsoDataPathCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uin
  */
 /*************************************************************************************************/
 static void hciEvtParseLeRemoveIsoDataPathCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
-{  
+{
   BSTREAM_TO_UINT8(pMsg->leRemoveIsoDataPathCmdCmpl.status, p);
   BSTREAM_TO_UINT8(pMsg->leRemoveIsoDataPathCmdCmpl.handle, p);
 
@@ -2051,7 +2055,7 @@ static void hciEvtParseLeRemoveIsoDataPathCmdCmpl(hciEvt_t *pMsg, uint8_t *p, ui
  */
 /*************************************************************************************************/
 static void hciEvtParseConfigDataPathCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
-{  
+{
   BSTREAM_TO_UINT8(pMsg->configDataPathCmdCmpl.status, p);
 
   pMsg->hdr.status = pMsg->configDataPathCmdCmpl.status;
@@ -2167,7 +2171,7 @@ static void hciEvtParseReadLocalSupCodecCapCmdCmpl(hciEvt_t *pMsg, uint8_t *p, u
  */
 /*************************************************************************************************/
 static void hciEvtParseReadLocalSupCtrDlyCmdCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
-{  
+{
   BSTREAM_TO_UINT8(pMsg->readLocalSupCtrDlyCmdCmpl.status, p);
   BSTREAM_TO_UINT24(pMsg->readLocalSupCtrDlyCmdCmpl.minDly, p);
   BSTREAM_TO_UINT24(pMsg->readLocalSupCtrDlyCmdCmpl.maxDly, p);
@@ -2208,7 +2212,7 @@ static void hciEvtParseLeCreateBigCmpl(hciEvt_t *pMsg, uint8_t *p, uint8_t len)
   {
     BSTREAM_TO_UINT16(pMsg->leCreateBigCmpl.bisHandle[i], p);
   }
- 
+
   if (numBis > HCI_MAX_BIS_COUNT)
   {
     /* ignore remaining BIS handles */
@@ -2721,7 +2725,7 @@ void hciEvtProcessMsg(uint8_t *pEvt)
     case HCI_LE_META_EVT:
       BSTREAM_TO_UINT8(subEvt, pEvt);
       hciEvtStats.numLeMetaEvt++;
-      //APP_TRACE_INFO1("LE meta sub event = 0x%x", subEvt);
+      APP_TRACE_INFO1("LE meta sub event = 0x%x", subEvt);
       switch (subEvt)
       {
         case HCI_LE_CONN_CMPL_EVT:

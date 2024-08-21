@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -167,7 +167,6 @@ extern uint32_t am_devices_spipsram_init_no_check(uint32_t ui32Module,
                                                   am_devices_spipsram_config_t *pDevConfig,
                                                   void **ppHandle,
                                                   void **ppIomHandle);
-
 
 //*****************************************************************************
 //
@@ -442,7 +441,6 @@ extern uint32_t am_devices_spipsram_command_read(
                         uint32_t *pData,
                         uint32_t ui32NumBytes,
                         bool bContinue);
-
 
 #ifdef __cplusplus
 }

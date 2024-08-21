@@ -3,7 +3,7 @@
 //! @file am_devices_display_generic.h
 //!
 //! @brief the generic display device driver provides unified display
-//! initialization, frame-transfer operations etc via interfaces on Apollo4
+//! initialization, frame-transfer operations etc via interfaces on Apollo4/Apollo5
 //! SoC, like MSPI and DC (one layer only).
 //!
 //! @addtogroup disp_generic Display Devices Generic Driver
@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_DEVICES_DISPLAY_GENERIC_H
@@ -57,7 +57,6 @@
 #include "am_mcu_apollo.h"
 
 #include "am_devices_display_types.h"
-
 
 #if defined (DISP_CTRL_IP)
 
@@ -70,6 +69,17 @@
 #if (DISP_CTRL_IP == DISP_CTRL_IP_MSPI)
 #include "am_devices_mspi_raydium.h"
 #endif //(DISP_CTRL_IP == DISP_CTRL_IP_MSPI)
+
+#define TE_GPIO_IDX         GPIO_NUM2IDX(DISPLAY_TE_PIN)
+
+#if defined(AM_BSP_GPIO_TOUCH_INT)
+#define TP_GPIO_IDX         GPIO_NUM2IDX(AM_BSP_GPIO_TOUCH_INT)
+#if (TE_GPIO_IDX == TP_GPIO_IDX)
+#define TE_TP_GPIO_IDX TE_GPIO_IDX
+#endif
+#endif
+
+extern const IRQn_Type g_sInterrupts[];
 
 #ifdef __cplusplus
 extern "C"
@@ -108,7 +118,6 @@ typedef void (*am_devices_disp_handler_t)(void*);
 //! @param ui16ResY            - display region resolution Y
 //! @param eColorMode          - display color mode to be used
 //! @param bEnableTE           - turn on or off TE signal from the panel
-//! @param b2TE1Frame          - if transferring one frame takes 2 TE intervals
 //!
 //! This function initializes display panel and display controller.
 //!
@@ -225,6 +234,31 @@ uint32_t am_devices_display_set_region(uint16_t ui16ResX,
                                         uint16_t ui16ResY,
                                         uint16_t ui16MinX,
                                         uint16_t ui16MinY);
+
+//*****************************************************************************
+//
+//! @brief Set the flip along with the x/y-axis or both the x and y-axis.
+//!
+//! @param ui8FlipXY            - how to flip the display
+//!
+//! @note Register bits function for Driver IC RM69330 or CO5300.
+//!       Bitfield 0 - Reserved                 (please don't set this bit)
+//!       Bitfield 1 - Flip along with y-axis   (reserved for CO5300)
+//!       Bitfield 2 - Reserved
+//!       Bitfield 3 - RGB or BGR order
+//!       Bitfield 4 - Flip along with x-axis   (reserved for CO5300)
+//!       Bitfield 5 - Flip along y = x         (reserved for CO5300)
+//!       Bitfield 6 - Flip along with y-axis
+//!       Bitfield 7 - Flip along with x-axis
+//! The x-axis will keep no flip when setting bitfields 4 and 7 same time. In the
+//! same way, the same is true for the y-axis. Please be careful some of the flips
+//! could cause the tear effect. Please adjust the touch coordinate when enabling
+//! this feature.
+//!
+//! @return None.
+//
+//*****************************************************************************
+uint32_t am_devices_display_flip(uint8_t ui8FlipXY);
 
 //
 // TODO: add them

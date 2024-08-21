@@ -21,7 +21,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -53,7 +53,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -72,7 +72,11 @@
 am_util_stdio_print_char_t g_pfnCharPrint;
 
 // buffer for printf
+#ifdef AM_PART_APOLLO5_API
+static char g_prfbuf[AM_PRINTF_BUFSIZE] __attribute__((aligned(4096)));
+#else
 static char g_prfbuf[AM_PRINTF_BUFSIZE];
+#endif
 
 // Flag to do conversion of '\n' to '\n\r' in sprintf()
 static bool g_bTxtXlate = false;
@@ -1052,7 +1056,6 @@ am_util_stdio_vsprintf(char *pcBuf, const char *pcFmt, va_list pArgs)
                 ui32CharCnt += iVal;
                 break;
 
-
             case 'f':
             case 'F':
                 if ( pcBuf )
@@ -1216,7 +1219,6 @@ am_util_stdio_snprintf(char *pcBuf, uint32_t n, const char *pcFmt, ...)
 
     return ui32CharCnt;
 }
-
 
 uint32_t
 am_util_stdio_vprintf(const char *pcFmt, va_list pArgs)

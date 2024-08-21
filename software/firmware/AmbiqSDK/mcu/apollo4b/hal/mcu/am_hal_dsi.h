@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -215,9 +215,10 @@ extern uint32_t am_hal_dsi_register_external_vdd18_callback(const am_hal_dsi_ext
 //
 //! @brief DSI configuration
 //!
-//! @param ui8LanesNum is number of lanes.
-//! @param ui8DBIBusWidth is width of DBI bus.
-//! @param ui32FreqTrim of DSI->AFETRIM1 register
+//! @param ui8LanesNum          - Number of lanes.
+//! @param ui8DBIBusWidth       - Width of DBI bus.
+//! @param ui32FreqTrim         - DPHY output frequency trim.
+//! @param bSendUlpsPattern     - Unused parameter
 //!
 //! This function should be called after DSI power is enabled.
 //!
@@ -225,8 +226,9 @@ extern uint32_t am_hal_dsi_register_external_vdd18_callback(const am_hal_dsi_ext
 //
 //*****************************************************************************
 extern uint32_t am_hal_dsi_para_config(uint8_t ui8LanesNum,
-                                        uint8_t ui8DBIBusWidth,
-                                        uint32_t ui32FreqTrim);
+                                       uint8_t ui8DBIBusWidth,
+                                       uint32_t ui32FreqTrim,
+                                       bool bSendUlpsPattern);
 
 //*****************************************************************************
 //
@@ -253,6 +255,8 @@ extern uint32_t am_hal_dsi_deinit(void);
 //*****************************************************************************
 //
 //! @brief DSI configuration
+//!
+//! @param ui32FreqTrim         - DPHY output frequency trim.
 //!
 //! Configure DSI frequency and timing
 //!
@@ -287,35 +291,44 @@ extern uint32_t am_hal_dsi_ulps_exit(void);
 //
 //! @brief DSI state
 //!
+//! @param bSendUlpsPattern     - Unused paramter
+//!
 //! DSI napping
 //!
 //! @return AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_dsi_napping(void);
+extern uint32_t am_hal_dsi_napping(bool bSendUlpsPattern);
 
 //*****************************************************************************
 //
 //! @brief DSI state
+//!
+//! @param ui8LanesNum          - Number of lanes.
+//! @param ui8DBIBusWidth       - Width of DBI bus.
+//! @param ui32FreqTrim         - DPHY output frequency trim.
+//! @param bSendUlpsPattern     - Unused parameter
 //!
 //! DSI wakeup
 //!
 //! @return AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t am_hal_dsi_wakeup(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim);
+extern uint32_t am_hal_dsi_wakeup(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim, bool bSendUlpsPattern);
 
 //*****************************************************************************
 //
-//! @brief DSI return size
+//! @brief Set DSI return packet size (bytes)
 //!
-//! DSI set return packet size (bytes)
+//! @param ui8DataLen           - Return size(bytes).
+//! @param bHS                  - Transmit Command in HS or LP mode
+//!
+//! DSI Transmits command to set maximum return size.
 //!
 //! @return AM_HAL_STATUS_SUCCESS
 //
 //*****************************************************************************
-extern uint32_t
-am_hal_dsi_set_return_size(uint8_t ui8DataLen, bool bHS);
+extern uint32_t am_hal_dsi_set_return_size(uint8_t ui8DataLen, bool bHS);
 
 #ifdef __cplusplus
 }

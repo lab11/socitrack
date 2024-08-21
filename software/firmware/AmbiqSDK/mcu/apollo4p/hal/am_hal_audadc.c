@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -571,7 +571,6 @@ am_hal_audadc_slot_dc_offset_calculate(void *pHandle,
     uint32_t            ui32PreciMode = 0, ui32NumBits = 0;
     float *             pfTemp;
 
-
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
     // Check the handle.
@@ -681,7 +680,7 @@ am_hal_audadc_slot_dc_offset_calculate(void *pHandle,
             }
             else
             {
-                fLinearGain = pow(10, fSlotGainDB / 20);
+                fLinearGain = powf(10, fSlotGainDB / 20);
                 fOffsetmFS = (pSlotCalib->sCalibCoeff[ui32SlotNumber].fHGSlope * fLinearGain) + pSlotCalib->sCalibCoeff[ui32SlotNumber].fHGIntercept;
             }
 
@@ -874,7 +873,9 @@ am_hal_audadc_configure_dma(void *pHandle,
     //
     if ( g_AUDADCSlotsConfigured > 1 )
     {
+        //
         // Need slot number to distinguish between slot results.
+        //
         ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAEN, AUDADC_DMACFG_DMAEN_DIS);
     }
     else
@@ -882,10 +883,6 @@ am_hal_audadc_configure_dma(void *pHandle,
         ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAEN, AUDADC_DMACFG_DMAEN_EN);
     }
 
-    //
-    // Enable DMA Halt on Status (DMAERR or DMACPL) by default. This bit is reserved in apollo4
-    //
-//    ui32Config |= _VAL2FLD(AUDADC_DMACFG_DMAHONSTAT, AUDADC_DMACFG_DMAHONSTAT_EN);
 
     //
     // Configure the DMA dynamic priority handling.

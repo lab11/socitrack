@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GPIO_H
@@ -771,6 +771,7 @@ typedef struct
 #define AM_HAL_GPIO_ENn(pin)    ((volatile uint32_t *)&GPIO->EN0  + (((pin) >> 5) & 0x3))
 #define AM_HAL_GPIO_ENCn(pin)   ((volatile uint32_t *)&GPIO->ENC0 + (((pin) >> 5) & 0x3))
 #define AM_HAL_GPIO_ENSn(pin)   ((volatile uint32_t *)&GPIO->ENS0 + (((pin) >> 5) & 0x3))
+
 //! @}
 
 //*****************************************************************************
@@ -864,6 +865,14 @@ typedef struct
 #define am_hal_gpio_output_tristate_disable(n)   am_hal_gpio_output_tristate_output_dis(n)
 #define am_hal_gpio_output_tristate_enable(n)    am_hal_gpio_output_tristate_output_en(n)
 #define am_hal_gpio_output_tristate_toggle(n)    am_hal_gpio_output_tristate_output_tog(n)
+
+//*****************************************************************************
+//
+// These macros configure sd card cd and wp pins.
+//
+//*****************************************************************************
+#define am_hal_gpio_cd_pin_config(n)    GPIO->SDIFCDWP_b.SDIFCD = n;
+#define am_hal_gpio_wp_pin_config(n)    GPIO->SDIFCDWP_b.SDIFWP = n;
 
 //*****************************************************************************
 //

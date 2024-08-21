@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_DEBUG_H
@@ -96,7 +96,6 @@ extern "C"
         am_hal_gpio_pin_config(PinNumber, AM_HAL_GPIO_OUTPUT);                \
     }                                                                         \
     while (0)
-
 
 #define am_util_debug_trace_start(PinNumber)                                  \
     am_hal_gpio_out_bit_set(PinNumber)

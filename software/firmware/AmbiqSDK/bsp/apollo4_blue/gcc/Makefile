@@ -2,7 +2,7 @@
 #
 # Makefile - Rules for building the libraries, examples and docs.
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2024, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 #
 #******************************************************************************
 TARGET := libam_bsp
@@ -91,20 +91,20 @@ DEFINES+= -DAM_PART_APOLLO4B
 DEFINES+= -DNEMA_PLATFORM=apollo4b_nemagfx
 DEFINES+= -Dgcc
 
-INCLUDES = -I../../../../third_party/ThinkSi/NemaGFX_SDK/NemaDC
+INCLUDES = -I../../../../CMSIS/ARM/Include
+INCLUDES+= -I../../../../CMSIS/AmbiqMicro/Include
+INCLUDES+= -I../../../../devices
+INCLUDES+= -I../../../../mcu/apollo4b
+INCLUDES+= -I../../../../mcu/apollo4b/hal
 INCLUDES+= -I../../../../mcu/apollo4b/hal/mcu
-INCLUDES+= -I../../../../third_party/ThinkSi/config/apollo4b_nemagfx
+INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/NemaDC
+INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/NemaGFX
+INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/common/mem
+INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/NemaDC
 INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/NemaGFX
 INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/common
-INCLUDES+= -I../../../../mcu/apollo4b
-INCLUDES+= -I../../../../CMSIS/AmbiqMicro/Include
-INCLUDES+= -I../../../../mcu/apollo4b/hal
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/NemaGFX
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/include/tsi/NemaDC
+INCLUDES+= -I../../../../third_party/ThinkSi/config/apollo4b_nemagfx
 INCLUDES+= -I../../../../utils
-INCLUDES+= -I../../../../CMSIS/ARM/Include
-INCLUDES+= -I../../../../devices
-INCLUDES+= -I../../../../third_party/ThinkSi/NemaGFX_SDK/common/mem
 
 VPATH = ..
 

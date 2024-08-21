@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -74,6 +74,19 @@ am_devices_dc_xspi_raydium_hardware_reset(void)
     DELAY(20);
     am_bsp_disp_reset_pins_set();
     DELAY(150);
+}
+
+//*****************************************************************************
+//
+// Flip the image along with x or y or x/y-axis
+//
+//*****************************************************************************
+void
+am_devices_dc_xspi_raydium_flip(uint8_t ui8FlipXY)
+{
+    uint8_t ui8CmdBuffer[4];
+    ui8CmdBuffer[0] = ui8FlipXY;
+    nemadc_mipi_cmd_write(MIPI_set_address_mode, ui8CmdBuffer, 1, true, false);
 }
 
 //*****************************************************************************
@@ -121,6 +134,9 @@ am_devices_dc_xspi_raydium_init(am_devices_dc_xspi_raydium_config_t *psDisplayPa
     nemadc_mipi_cmd_write(MIPI_set_pixel_format, ui8CmdBuffer, 1, true, false);
     DELAY(10);
 
+#ifdef AM_BSP_DISP_FLIP
+    ui8CmdBuffer[0] = AM_BSP_DISP_FLIP;
+#else
     //
     //need to flip display when drive IC is rm67162
     //
@@ -132,8 +148,11 @@ am_devices_dc_xspi_raydium_init(am_devices_dc_xspi_raydium_config_t *psDisplayPa
     {
         ui8CmdBuffer[0] = 0x00;
     }
-
-    nemadc_mipi_cmd_write(MIPI_set_address_mode, ui8CmdBuffer, 1, true, false);
+#endif
+    //
+    // Flip the image
+    //
+    am_devices_dc_xspi_raydium_flip(ui8CmdBuffer[0]);
     DELAY(10);
 
     const int MIPI_set_wr_display_ctrl = 0x53;

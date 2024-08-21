@@ -5,7 +5,7 @@
 //! @brief Driver for eMMC RPMB(Replay Protected Memory Block) feature.
 //! This driver contains functions for accessing eMMC PRMB partition.
 //!
-//! @addtogroup emmc_rpmb emmc driver
+//! @addtogroup emmc_rpmb eMMC RPMB driver
 //! @ingroup devices
 //! @{
 //
@@ -13,7 +13,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>
@@ -411,7 +411,15 @@ am_devices_emmc_rpmb_get_counter(am_hal_card_t *pCard, uint32_t *pCounter, uint8
     ui32Status = am_devices_emmc_rpmb_response(pCard, &g_RpmbFrame, AM_DEVICES_EMMC_RPMB_RESP_WCOUNTER);
     if ( ui32Status != AM_DEVICES_EMMC_RPMB_STATUS_SUCCESS )
     {
-        AM_DEVICE_RPMB_DEBUG("Failed to response when get counter\n");
+        if (ui32Status == AM_DEVICES_EMMC_RPMB_STATUS_KEY_NOT_PROGRAMMED_ERROR)
+        {
+            AM_DEVICE_RPMB_DEBUG("need to programmed Authentication key\n");
+        }
+        else
+        {
+            AM_DEVICE_RPMB_DEBUG("Failed to response when get counter\n");
+        }
+
         return ui32Status;
     }
 
@@ -534,7 +542,6 @@ am_devices_emmc_rpmb_read(am_hal_card_t *pCard, uint8_t *pui8RxBuffer, uint32_t 
 
     return AM_DEVICES_EMMC_RPMB_STATUS_SUCCESS;
 }
-
 
 //*****************************************************************************
 //

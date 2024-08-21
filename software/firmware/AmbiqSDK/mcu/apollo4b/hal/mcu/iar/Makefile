@@ -2,7 +2,7 @@
 #
 # Makefile - Rules for building the libraries, examples and docs.
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2024, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,7 +34,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 #
 #******************************************************************************
 TARGET := libam_hal
@@ -60,24 +60,7 @@ INCS = ${incs}
 all: directories $(CONFIG)/$(TARGET).a
 
 # Source Dependencies must be defined before they are used.
-SRCS = ../../../../../mcu/apollo4b/hal/am_hal_access.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_adc.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_audadc.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_dcu.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_global.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_gpio.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_i2s.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_otp.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_pdm.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_pin.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_pwrctrl.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_queue.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_security.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_stimer.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_timer.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_usb.c
-SRCS += ../../../../../mcu/apollo4b/hal/am_hal_wdt.c
-SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_bootrom_helper.c
+SRCS = ../../../../../mcu/apollo4b/hal/mcu/am_hal_bootrom_helper.c
 SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_cachectrl.c
 SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_card.c
 SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_card_host.c
@@ -102,6 +85,23 @@ SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_systick.c
 SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_tpiu.c
 SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_uart.c
 SRCS += ../../../../../mcu/apollo4b/hal/mcu/am_hal_utils.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_access.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_adc.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_audadc.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_dcu.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_global.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_gpio.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_i2s.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_otp.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_pdm.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_pin.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_pwrctrl.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_queue.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_security.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_stimer.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_timer.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_usb.c
+SRCS += ../../../../../mcu/apollo4b/hal/am_hal_wdt.c
 
 $(CONFIG)/$(TARGET).a: $(LIBS) $(INCS) $(SRCS)
 	IarBuild.exe libam_hal.ewp -make Debug -log info

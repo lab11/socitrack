@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -144,7 +144,7 @@ am_hal_dsi_timing(uint32_t ui32FreqTrim)
 //
 //*****************************************************************************
 uint32_t
-am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim)
+am_hal_dsi_para_config(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim, bool bSendUlpsPattern)
 {
 
     //
@@ -361,7 +361,7 @@ am_hal_dsi_ulps_exit(void)
 //
 //*****************************************************************************
 uint32_t
-am_hal_dsi_napping(void)
+am_hal_dsi_napping(bool bSendUlpsPattern)
 {
     am_hal_dsi_ulps_entry();
     am_hal_dsi_deinit();
@@ -375,11 +375,11 @@ am_hal_dsi_napping(void)
 //
 //*****************************************************************************
 uint32_t
-am_hal_dsi_wakeup(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim)
+am_hal_dsi_wakeup(uint8_t ui8LanesNum, uint8_t ui8DBIBusWidth, uint32_t ui32FreqTrim, bool bSendUlpsPattern)
 {
     am_hal_dsi_init();
 
-    if ( am_hal_dsi_para_config(ui8LanesNum, ui8DBIBusWidth, ui32FreqTrim) != 0 )
+    if ( am_hal_dsi_para_config(ui8LanesNum, ui8DBIBusWidth, ui32FreqTrim, bSendUlpsPattern) != 0 )
     {
         return AM_HAL_STATUS_FAIL;
     }

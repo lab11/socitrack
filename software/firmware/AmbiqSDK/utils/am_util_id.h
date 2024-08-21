@@ -15,7 +15,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -47,7 +47,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_UTIL_ID_H
@@ -59,7 +59,6 @@
 extern "C"
 {
 #endif
-
 
 //*****************************************************************************
 //
@@ -99,6 +98,12 @@ extern "C"
 #if defined(AM_PART_APOLLO4L)
 #define AM_ID_APOLLO4L
 #endif
+#if defined(AM_PART_APOLLO5A)
+#define AM_ID_APOLLO5A
+#endif
+#if defined(AM_PART_APOLLO5B)
+#define AM_ID_APOLLO5B
+#endif
 
 //
 //! Handle AM_ID_APOLLO_ALL
@@ -128,8 +133,13 @@ extern "C"
 #ifndef AM_ID_APOLLO4L
 #define AM_ID_APOLLO4L
 #endif
+#ifndef AM_ID_APOLLO5A
+#define AM_ID_APOLLO5A
+#endif
+#ifndef AM_ID_APOLLO5B
+#define AM_ID_APOLLO5B
+#endif
 #endif // AM_ID_APOLLO_ALL
-
 
 //*****************************************************************************
 //
@@ -193,6 +203,8 @@ am_util_id_t;
 //! @{
 //
 //*****************************************************************************
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5B    0x10000000
+#define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO5A    0x10000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4L    0x09000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO4     0x08000000
 #define AM_UTIL_MCUCTRL_CHIP_INFO_PARTNUM_APOLLO3P    0x07000000
@@ -219,6 +231,9 @@ am_util_id_t;
 #define AM_UTIL_ID_APOLLO4      0x0004      // Apollo4
 #define AM_UTIL_ID_APOLLO4P     0x0104      // Apollo4 Plus
 #define AM_UTIL_ID_APOLLO4L     0x0204      // Apollo4 Lite
+#define AM_UTIL_ID_APOLLO5A     0x0005      // Apollo5 revA
+#define AM_UTIL_ID_APOLLO5B     0x0105      // Apollo5 revB
+
 //! @}
 
 //*****************************************************************************

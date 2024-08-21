@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include "am_mcu_apollo.h"
@@ -58,6 +58,12 @@ uint64_t gDcuEnable   = AM_HAL_DCURAW_ENABLE;
 uint64_t gDcuDisable  = AM_HAL_DCURAW_DISABLE;
 volatile uint32_t *gpDcuEnable = &CRYPTO->HOSTDCUEN2;
 volatile uint32_t *gpDcuLock   = &CRYPTO->HOSTDCULOCK2;
+
+typedef union
+{
+    uint64_t u64;
+    uint32_t u32[2];
+} am_hal_64b_dcu_t;
 
 //*****************************************************************************
 //
@@ -107,20 +113,6 @@ get_ui32_dcu_mask(uint64_t ui64DcuMask, uint8_t threeBitVal)
 
 //*****************************************************************************
 //
-//! @brief Copy words from Register to Register
-//
-//*****************************************************************************
-static void
-copy_words(uint32_t *pDst, uint32_t *pSrc, uint32_t numWords)
-{
-    while (numWords--)
-    {
-        AM_REGVAL((pDst + numWords)) = AM_REGVAL((pSrc + numWords));
-    }
-}
-
-//*****************************************************************************
-//
 //! @brief  Read DCU Lock
 //!
 //! @param  pui64Val -  Pointer to double word for returned data
@@ -133,7 +125,10 @@ copy_words(uint32_t *pDst, uint32_t *pSrc, uint32_t numWords)
 static
 uint32_t am_hal_dcu_raw_lock_status_get(uint64_t *pui64Val)
 {
-    copy_words((uint32_t *)pui64Val, (uint32_t *)gpDcuLock, sizeof(uint64_t) / 4);
+    am_hal_64b_dcu_t value;
+    value.u32[0] = AM_REGVAL(gpDcuLock);
+    value.u32[1] = AM_REGVAL(gpDcuLock + 1);
+    *pui64Val = value.u64;
     return AM_HAL_STATUS_SUCCESS;
 }
 
@@ -227,7 +222,10 @@ uint32_t am_hal_dcu_lock(uint32_t ui32Mask)
 static
 uint32_t am_hal_dcu_raw_get(uint64_t *pui64Val)
 {
-    copy_words((uint32_t *)pui64Val, (uint32_t *)gpDcuEnable, sizeof(uint64_t) / 4);
+    am_hal_64b_dcu_t value;
+    value.u32[0] = AM_REGVAL(gpDcuEnable);
+    value.u32[1] = AM_REGVAL(gpDcuEnable + 1);
+    *pui64Val = value.u64;
     return AM_HAL_STATUS_SUCCESS;
 }
 
@@ -271,23 +269,26 @@ uint32_t am_hal_dcu_get(uint32_t *pui32Val)
 static
 uint32_t am_hal_dcu_raw_update(bool bEnable, uint64_t ui64Mask)
 {
-    uint64_t dcuVal;
-    uint64_t dcuLock;
-    copy_words((uint32_t *)&dcuLock, (uint32_t *)gpDcuLock, sizeof(uint64_t) / 4);
-    if (ui64Mask & dcuLock)
+    am_hal_64b_dcu_t dcuVal;
+    am_hal_64b_dcu_t dcuLock;
+    dcuLock.u32[0] = AM_REGVAL(gpDcuLock);
+    dcuLock.u32[1] = AM_REGVAL(gpDcuLock + 1);
+    if (ui64Mask & dcuLock.u64)
     {
         return AM_HAL_STATUS_INVALID_OPERATION;
     }
-    copy_words((uint32_t *)&dcuVal, (uint32_t *)gpDcuEnable, sizeof(uint64_t) / 4);
+    dcuVal.u32[0] = AM_REGVAL(gpDcuEnable);
+    dcuVal.u32[1] = AM_REGVAL(gpDcuEnable + 1);
     if (bEnable)
     {
-        dcuVal = (dcuVal & ~ui64Mask) | (gDcuEnable & ui64Mask);
+        dcuVal.u64 = (dcuVal.u64 & ~ui64Mask) | (gDcuEnable & ui64Mask);
     }
     else
     {
-        dcuVal = (dcuVal & ~ui64Mask) | (gDcuDisable & ui64Mask);
+        dcuVal.u64 = (dcuVal.u64 & ~ui64Mask) | (gDcuDisable & ui64Mask);
     }
-    copy_words((uint32_t *)gpDcuEnable, (uint32_t *)&dcuVal, sizeof(uint64_t) / 4);
+    AM_REGVAL(gpDcuEnable) = dcuVal.u32[0];
+    AM_REGVAL(gpDcuEnable + 1) = dcuVal.u32[1];
     CRYPTO_CC_IS_IDLE();
     return AM_HAL_STATUS_SUCCESS;
 }

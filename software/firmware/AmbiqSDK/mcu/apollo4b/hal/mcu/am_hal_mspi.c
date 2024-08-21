@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -65,7 +65,6 @@
 #define AM_HAL_MSPI_OCTAL_MODULE        (1)
 
 #define AM_HAL_MSPI_MAX_PIO_TRANS_SIZE          (32 * 4 - 1)  // Due to Errata ERR063 restrictions on FIFO Full condition.
-
 
 // For MSPI - Need to Set the flag for unpausing
 #define AM_HAL_MSPI_SC_PAUSE_CQ         AM_HAL_MSPI_SC_PAUSE(AM_HAL_MSPI_PAUSE_FLAG_CQ)
@@ -3266,7 +3265,7 @@ uint32_t am_hal_mspi_interrupt_service(void *pHandle, uint32_t ui32IntStatus)
 
             //
             // Wait for the command completion.
-            // In Apollo3P - we cannot rely on CMDCMP, as hardware may be splitting
+            // In Apollo4 - we cannot rely on CMDCMP, as hardware may be splitting
             // the transactions internally, and each split transaction generates CMDCMP
             // DMATIP is guaranteed to deassert only once the bus transaction is done
             //
@@ -3552,7 +3551,6 @@ uint32_t am_hal_mspi_power_control(void *pHandle,
                 MSPIn(pMSPIState->ui32Module)->CQENDIDX       = pMSPIState->registerState.regCQENDIDX;
                 MSPIn(pMSPIState->ui32Module)->INTEN          = pMSPIState->registerState.regINTEN;
                 MSPIn(pMSPIState->ui32Module)->CQSETCLEAR     = AM_HAL_MSPI_SC_SET(pMSPIState->registerState.regCQFLAGS & 0xFF);
-
 
                 MSPIn(pMSPIState->ui32Module)->DMABCOUNT      = pMSPIState->registerState.regDMABCOUNT;
                 MSPIn(pMSPIState->ui32Module)->DMATHRESH      = pMSPIState->registerState.regDMATHRESH;

@@ -7,13 +7,13 @@
  *  Copyright (c) 2012-2018 Arm Ltd. All Rights Reserved.
  *
  *  Copyright (c) 2019 Packetcraft, Inc.
- *  
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- *  
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- *  
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -123,8 +123,7 @@ static basConn_t *basFindNextToSend(uint8_t cccIdx)
 
   for (i = 0; i < DM_CONN_MAX; i++, pConn++)
   {
-    if (pConn->connId != DM_CONN_ID_NONE && pConn->battToSend &&
-        pConn->sentBattLevel != basCb.measBattLevel)
+    if (pConn->connId != DM_CONN_ID_NONE && pConn->battToSend)
     {
       if (AttsCccEnabled(pConn->connId, cccIdx))
       {
@@ -216,17 +215,17 @@ void basMeasTimerExp(wsfMsgHdr_t *pMsg)
       /* set up battery measurement to be sent on all connections */
       basSetupToSend();
 
-      /* read battery measurement sensor data */
-      AppHwBattRead(&basCb.measBattLevel);
-
-      /* if ready to send measurements */
+      /* if notification confirm received,get the new battery level,otherwise send the last battery level for test/demonstration purposes*/
       if (basCb.txReady)
       {
-        /* find next connection to send (note ccc idx is stored in timer status) */
-        if ((pConn = basFindNextToSend(pMsg->status)) != NULL)
-        {
-          basSendPeriodicBattlevel(pConn);
-        }
+        /* read battery measurement sensor data */
+        AppHwBattRead(&basCb.measBattLevel);
+      }
+
+      /* find next connection to send (note ccc idx is stored in timer status) */
+      if ((pConn = basFindNextToSend(pMsg->status)) != NULL)
+      {
+        basSendPeriodicBattlevel(pConn);
       }
     }
 

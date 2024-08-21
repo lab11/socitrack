@@ -16,7 +16,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -48,7 +48,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_GLOBAL_H
@@ -118,6 +118,7 @@ extern "C"
 #define AM_RESOURCE_TABLE __attribute__((section("RESOURCE_TABLE"))) __attribute__((used))
 #define AM_USED           __attribute__((used))
 #define AM_SECTION(x)     __attribute__((section(x)))
+#define AM_BIT_ALIGNED(x) __attribute__((aligned(x>>3)))
 //! @}
 
 //*****************************************************************************
@@ -131,6 +132,7 @@ extern "C"
 #define AM_RESOURCE_TABLE __attribute__((section("RESOURCE_TABLE"))) __root
 #define AM_USED           __root
 #define AM_SECTION(x)     __attribute__((section(x)))
+#define AM_BIT_ALIGNED(x) __attribute__((aligned(x>>3)))
 //! @}
 
 //*****************************************************************************
@@ -139,11 +141,12 @@ extern "C"
 //! @{
 //
 //*****************************************************************************
-#elif defined(gcc)
+#elif defined(gcc) || (segger)
 #define AM_SHARED_RW      __attribute__((section(".shared")))
 #define AM_RESOURCE_TABLE __attribute__((section(".resource_table")))
 #define AM_USED           __attribute__((used))
 #define AM_SECTION(x)     __attribute__((section(x)))
+#define AM_BIT_ALIGNED(x) __attribute__((aligned(x>>3)))
 //! @}
 
 //*****************************************************************************
@@ -213,6 +216,21 @@ am_hal_dsp_select_e;
 #define STRINGIZE_VAL(n)                    STRINGIZE_VAL2(n)
 #define STRINGIZE_VAL2(n)                   #n
 //! @}
+
+//
+// The Arm6 compiler defines both GNUC and ARMCC_VERSION. So check ARMCC first.
+//
+#if defined(__ARMCC_VERSION)
+#define COMPILER_VERSION                    ("ARMCC " STRINGIZE_VAL(__ARMCC_VERSION))
+#elif __GNUC__
+#define COMPILER_VERSION                    ("GCC " __VERSION__)
+#elif defined(__KEIL__)
+#define COMPILER_VERSION                    "KEIL_CARM " STRINGIZE_VAL(__CA__)
+#elif defined(__IAR_SYSTEMS_ICC__)
+#define COMPILER_VERSION                    __VERSION__
+#else
+#define COMPILER_VERSION                    "Compiler unknown"
+#endif
 
 //*****************************************************************************
 //

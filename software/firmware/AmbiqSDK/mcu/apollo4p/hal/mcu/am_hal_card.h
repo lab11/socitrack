@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_H
@@ -89,6 +89,16 @@ extern "C"
 #define MMC_CMD_SPI_READ_OCR            58
 #define MMC_CMD_SPI_CRC_ON_OFF          59
 #define MMC_CMD_RES_MAN                 62
+
+#define SDIO_CMD_IO_SEND_OP_COND        5
+#define SDIO_CMD_SEND_IF_COND           8
+#define SDIO_CMD_VOLTAGE_SWITCH         11
+#define SDIO_CMD_IO_RW_DIRECT           52
+#define SDIO_CMD_IO_RW_EXTENDED         53
+
+#define SD_CMD_ERASE_WR_BLK_START       32
+#define SD_CMD_ERASE_WR_BLK_END         33
+#define SD_CMD_SEND_OP_COND             41
 
 #define MMC_RSP_PRESENT (1 << 0)
 #define MMC_RSP_136     (1 << 1) /* 136 bit response */
@@ -361,7 +371,47 @@ extern "C"
 #define EMMC_CMD38_TRIM         0x00000001
 #define EMMC_CMD38_DISCARD      0x00000003
 
+// SD Card HCS operation define
+#define SD_CARD_OCR_MSK_BUSY             0x80000000 // Busy flag
+#define SD_CARD_OCR_MSK_HC               0x40000000 // High Capacity flag
+#define SD_CARD_OCR_MSK_VOLTAGE_ALL      0x00FF8000 // All Voltage flag
+#define SD_CARD_SWITCH_1P8V              0x1000000  // 1 << 24
+#define SD_CARD_DEFAULT_OCR              (SD_CARD_OCR_MSK_VOLTAGE_ALL | SD_CARD_OCR_MSK_HC | SD_CARD_SWITCH_1P8V)
+#define SD_CARD_1P8V_MSK                 (1 << 24)
+
+// SD Card switch function define
+#define SD_CARD_CHECK_FUNCTION           (0 << 31)
+#define SD_CARD_SWITCH_FUNCTION          (1 << 31)
+#define SD_CARD_SWITCH_ARGUMENT          ((0xF << 4) | (0xFF << 8) | (0xFF << 16))
+
+// SD Card function group bit define
+#define SD_CARD_ACCESS_MODE_GROUP         0
+#define SD_CARD_COMMAND_GROUP             4
+#define SD_CARD_DRIVER_STRENGTH_GROUP     8
+#define SD_CARD_POWER_GROUP               12
+
+// SD Card access mode bit define
+#define SD_CARD_CHECK_ALL_SPEED            0
+#define SD_CARD_DEFAULT_SPEED             (0 << SD_CARD_ACCESS_MODE_GROUP)
+#define SD_CARD_HIGH_SPEED                (1 << SD_CARD_ACCESS_MODE_GROUP)
+#define SD_CARD_SDR12                     (0 << SD_CARD_ACCESS_MODE_GROUP)
+#define SD_CARD_SDR25                     (1 << SD_CARD_ACCESS_MODE_GROUP)
+#define SD_CARD_SDR50                     (2 << SD_CARD_ACCESS_MODE_GROUP)
+#define SD_CARD_SDR104                    (3 << SD_CARD_ACCESS_MODE_GROUP)
+#define SD_CARD_DDR50                     (4 << SD_CARD_ACCESS_MODE_GROUP)
+
+// SD Card max capacity define
+#define SDSC_MAX_BLK_CNT                  0x400000      // SDSC max capacity is 2GB , so max block is 2*1024*1024*1024/512 = 0x400000
+#define SDHC_MAX_BLK_CNT                  0x4000000     // SDHC max capacity is 32GB , so max block is 32*1024*1024*1024/512 = 0x4000000
+#define SDXC_MAX_BLK_CNT                  0x100000000   // SDXC max capacity is 2TB , so max block is 2*1024*1024*1024*1024/512 = 0x100000000
+
+// SD Card voltage check operation define
+#define SD_CARD_CHECK_PATTERN               (0xAA << 0)
+#define SD_CARD_2P7_3P6_VOLTAGE_SUPPLY      (1 << 8)
+#define SD_CARD_LOW_VOLTAGE_RESERVE         (2 << 8)
+
 #define DEFAULT_CMD6_TIMEOUT_MS  500
+#define DEFAULT_GET_STATUS_TIMEOUT_MS  20
 
 #define MMC_STATUS_MASK         (~0x0206BF7F)
 #define MMC_STATUS_SWITCH_ERROR (1 << 7)
@@ -369,9 +419,96 @@ extern "C"
 #define MMC_STATUS_CURR_STATE   (0xf << 9)
 #define MMC_STATUS_ERROR        (1 << 19)
 
+// Card voltage setting
+#define MMC_VDD_17_18           0x00000020
+#define MMC_VDD_18_19           0x00000040
+#define MMC_VDD_19_20           0x00000080
+
+// SDIO CCCR Registers
+#define SDIO_CCCR_CCCR_REV          0x00
+#define SDIO_CCCR_SD_REV            0x01
+#define SDIO_CCCR_IO_ENABLE         0x02
+#define SDIO_CCCR_IO_RDY            0x03
+#define SDIO_CCCR_INT_ENABLE        0x04
+#define SDIO_CCCR_INT_RDY           0x05
+#define SDIO_CCCR_IO_ABORT          0x06
+#define SDIO_CCCR_BUS_CNTRL         0x07
+#define SDIO_CCCR_CARD_CAPAB        0x08
+#define SDIO_CCCR_CIS_PTR1          0x09
+#define SDIO_CCCR_CIS_PTR2          0x0A
+#define SDIO_CCCR_CIS_PTR3          0x0B
+#define SDIO_CCCR_BUS_SUSPEND       0x0C
+#define SDIO_CCCR_FN_SELECT         0x0D
+#define SDIO_CCCR_EXEC_FLAGS        0x0E
+#define SDIO_CCCR_RDY_FLAGS         0x0F
+#define SDIO_CCCR_FN_BLK_SIZE1      0x10
+#define SDIO_CCCR_FN_BLK_SIZE2      0x11
+#define SDIO_CCCR_PWR_CNTRL         0x12
+#define SDIO_CCCR_BUS_SPEED_SELECT  0x13
+#define SDIO_CCCR_UHS_SUPPORT       0x14
+#define SDIO_CCCR_DRIVER_STRENGTH   0x15
+
+// SDIO Card Capability Register Bits
+#define  SDIO_CCCR_CAP_SDC          0x01    /* can do CMD52 while data transfer */
+#define  SDIO_CCCR_CAP_SMB          0x02    /* can do multi-block xfers (CMD53) */
+#define  SDIO_CCCR_CAP_SRW          0x04    /* supports read-wait protocol */
+#define  SDIO_CCCR_CAP_SBS          0x08    /* supports suspend/resume */
+#define  SDIO_CCCR_CAP_S4MI         0x10    /* interrupt during 4-bit CMD53 */
+#define  SDIO_CCCR_CAP_E4MI         0x20    /* enable ints during 4-bit CMD53 */
+#define  SDIO_CCCR_CAP_LSC          0x40    /* low speed card */
+#define  SDIO_CCCR_CAP_4BLS         0x80    /* 4 bit low speed card */
+
+// SDIO Card Power Control Register Bits
+#define  SDIO_POWER_SMPC            0x01    /* Supports Master Power Control */
+#define  SDIO_POWER_EMPC            0x02    /* Enable Master Power Control */
+
+// SDIO Card Bus Speed Select Register Bits
+#define  SDIO_SPEED_SHS             0x01    /* Supports High-Speed mode */
+
+// SDIO Card Tuple Definitions
+#define SDIO_CIS_TPL_NULL           0x00
+#define SDIO_CIS_TPL_MANFID         0x20
+#define SDIO_CIS_TPL_FUNID          0x21
+#define SDIO_CIS_TPL_FUNCE          0x22
+#define SDIO_CIS_TPL_END            0xFF
+
+#define SDIO_CARD_MISMATCH_CNT_MAX  0x02
+
+// SDIO Card Speed Setting
+#define SDIO_HIGHSPEED_SUPPORT      0x1
+#define SDIO_HIGHSPEED_ENABLED      0x3
+#define SDIO_FULLSPEED_ENABLED      0x0
+#define SDIO_CARD_MAX_SPEED_LIMIT   96000000
+#define SDIO_CARD_FULL_SPEED_LIMIT  25000000
+
+// EMMC Speed
+#define MMC_LEGACY_HS 26000000
+#define MMC_SDR_HS    52000000
+#define MMC_DDR_HS    52000000
+#define MMC_HS200    200000000
+
 //
-// SD/MMC/eMMC/SDIO protocl driver APIs
+// apollo4 SDHC speed limitation settings
 //
+#define MMC_HS200_MAX_SPEED_LIMIT   96000000
+#define MMC_HS_MAX_SPEED_LIMIT      48000000
+
+//
+// Internal macros
+//
+#define SDIO_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH  2 // Acceptable length should be determined based on system level test.
+#define AM_HAL_CARD_DEBUG(fmt, ...) am_util_debug_printf("[CARD] line %04d - "fmt, __LINE__, ##__VA_ARGS__)
+
+#define SECTOR_MODE       0x4
+#define CARD_RDY_BIT      ((uint32_t)0x1 << 31)
+
+#define SDIO_SCAN_TXDELAY_MAX    16
+#define SDIO_SCAN_RXDELAY_MAX    32
+
+//
+// SDHC auto cmd23 enable
+//
+#define ENABLE_SDHC_AUTO_CMD23_FEATURE
 
 static inline uint32_t am_hal_unstuff_bits(uint32_t *resp, uint32_t start, uint32_t size)
 {
@@ -423,6 +560,7 @@ typedef enum
     AM_HAL_CARD_TYPE_EMMC,
     AM_HAL_CARD_TYPE_SDSC,
     AM_HAL_CARD_TYPE_SDHC,
+    AM_HAL_CARD_TYPE_SDXC,
     AM_HAL_CARD_TYPE_SDIO,
     AM_HAL_CARD_TYPE_COMBO,
 } am_hal_card_type_e;
@@ -451,7 +589,7 @@ typedef struct
 {
     am_hal_card_type_e  eType;        // Card type
     uint16_t ui16CmdClass;            // Card command classes
-    uint8_t  ui8RCA;                  // Relative card address
+    uint32_t ui32RCA;                 // Relative card address
     uint32_t ui32MaxBlks;             // Card capacity in blocks
     uint32_t ui32BlkSize;             // Block size in bytes
     uint32_t ui32LogiMaxBlks;         // Card logical capacity in blocks
@@ -462,9 +600,19 @@ typedef enum
 {
     AM_HAL_CARD_PWR_ON,
     AM_HAL_CARD_PWR_OFF,
+    AM_HAL_CARD_PWR_CYCLE,
+    AM_HAL_CARD_PWR_SWITCH,
 } am_hal_card_pwr_e;
 
+typedef enum
+{
+    AM_HAL_SD_CARD_3_3_V,
+    AM_HAL_SD_CARD_1_8_V,
+} am_hal_sd_card_voltage_e;
+
 typedef uint32_t (*am_hal_card_pwr_ctrl_func)(am_hal_card_pwr_e eCardPwr);
+
+typedef uint32_t (*am_hal_sdio_card_reset_func)(void);
 
 typedef enum
 {
@@ -473,6 +621,44 @@ typedef enum
     AM_HAL_CARD_PWR_CTRL_SDHC_OFF_AND_CARD_SLEEP,
     AM_HAL_CARD_PWR_CTRL_SDHC_AND_CARD_OFF,
 } am_hal_card_pwr_ctrl_policy_e;
+
+typedef struct
+{
+    uint8_t ui8CccrRev;
+    uint8_t ui8SdRev;
+    uint8_t bMultiBlock:1,
+            bFullSpeed:1,
+            bWideBus:1,
+            bHighPower:1,
+            bHighSpeed:1;
+}am_hal_sdio_card_cccr_t;
+
+typedef struct
+{
+    uint32_t  ui32Vendor;
+    uint32_t  ui32Device;
+    uint32_t  ui32BlkSize;
+    uint32_t  ui32MaxSpeed;
+}am_hal_sdio_card_cis_t;
+
+typedef struct
+{
+    bool        bHighSpeed;
+    bool        bWrProtect;
+    bool        bSupportLowVolt;
+    bool        bSupportDefaultSpeed;
+    bool        bSupportHighSpeed;
+    bool        bSupportSDR12;
+    bool        bSupportSDR25;
+    bool        bSupportSDR50;
+    bool        bSupportSDR104;
+    bool        bSupportDDR50;
+    uint32_t    ui32CsdVersion;
+    uint32_t    ui32CSize;
+    uint32_t    ui32CSizeMult;
+    uint32_t    ui32RdBlockLen;
+    uint32_t    ui32CurrentVolt;
+}am_hal_sd_card_info_t;
 
 //
 // SDHC card
@@ -485,7 +671,8 @@ typedef struct
     uint32_t bCsdValid:1;
     uint32_t bExtCsdValid:1;
     uint32_t ui32OCR;
-    uint8_t  ui8RCA;
+    uint32_t ui32RCA;
+    uint32_t ui32FuncNum;
     uint32_t ui32CID[4];
     uint32_t ui32CSD[4];
     uint32_t ui32ExtCSD[128];
@@ -507,11 +694,19 @@ typedef struct
     uint32_t ui32BlkSize;
     uint32_t ui32RpmbSizeMult;
     uint16_t ui16CmdClass;
+    bool     bCardTypeDetect;
     am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc;
     am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy;
     am_hal_card_cfg_t cfg;
     am_hal_card_host_t *pHost;
+    am_hal_sdio_card_cccr_t cccr;
+    am_hal_sdio_card_cis_t cis;
+    am_hal_sd_card_info_t sdcard;
 }  am_hal_card_t;
+
+//
+// SD/MMC/eMMC/SDIO protocl driver APIs
+//
 
 //*****************************************************************************
 //
@@ -588,6 +783,7 @@ extern uint32_t am_hal_card_cfg_set(am_hal_card_t *pCard, am_hal_card_type_e eTy
 //! @brief Initialize the card instance function
 //!
 //! @param pCard              - pointer to the card instance.
+//! @param eType              - card type like eMMC, MMC, SDIO, .etc
 //! @param pCardPwrCtrlFunc   - pointer to the User defined Card Pwr Ctrl Func
 //! @param eCardPwrCtrlPolicy - Power Control Policy can be:
 //!     AM_HAL_CARD_PWR_CTRL_NONE
@@ -601,8 +797,9 @@ extern uint32_t am_hal_card_cfg_set(am_hal_card_t *pCard, am_hal_card_type_e eTy
 //! @return status      - generic or interface specific status..
 //
 //*****************************************************************************
-extern uint32_t am_hal_card_init(am_hal_card_t *pCard, am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc,
-    am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy);
+extern uint32_t am_hal_card_init(am_hal_card_t *pCard, am_hal_card_type_e eType,
+                                 am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc,
+                                 am_hal_card_pwr_ctrl_policy_e eCardPwrCtrlPolicy);
 
 //*****************************************************************************
 //
@@ -700,6 +897,88 @@ extern uint32_t am_hal_card_block_read_async(am_hal_card_t *pCard, uint32_t ui32
 //
 //*****************************************************************************
 extern uint32_t am_hal_card_block_write_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf);
+
+//*****************************************************************************
+//
+//! @brief emmc scatter write synchronous function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param pIoVec       - pointer to the write vector.
+//!
+//! @param ui8IovCnt    - write vector count
+//!
+//! This function writes 'ui8IovCnt' write vector to emmc card and starting from 'ui32Blk'
+//! block. The caller will be blocked until all data has been sent out or failed.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_emmc_card_scatter_write_sync(am_hal_card_t *pCard, uint32_t ui32Blk, am_hal_card_iovec_t *pIoVec, uint8_t ui8IovCnt);
+
+//*****************************************************************************
+//
+//! @brief emmc scatter read synchronous function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param pIoVec       - pointer to the read vector.
+//!
+//! @param ui8IovCnt    - read vector count
+//!
+//! This function reads 'ui8IovCnt' read vector starting from 'ui32Blk', and saves the data in 'pIoVec'.
+//! The caller will be blocked until all data has been received or failed.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_emmc_card_scatter_read_sync(am_hal_card_t *pCard, uint32_t ui32Blk, am_hal_card_iovec_t *pIoVec, uint8_t ui8IovCnt);
+
+//*****************************************************************************
+//
+//! @brief emmc scatter write asynchronous function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param pIoVec       - pointer to the write vector.
+//!
+//! @param ui8IovCnt    - write vector count
+//!
+//! This function writes 'ui8IovCnt' write vector to emmc card and starting from 'ui32Blk'
+//! block. The caller will not be blocked, Completion of data transfer will be notified by
+//! the register callback function.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_emmc_card_scatter_write_async(am_hal_card_t *pCard, uint32_t ui32Blk, am_hal_card_iovec_t *pIoVec, uint8_t ui8IovCnt);
+
+//*****************************************************************************
+//
+//! @brief emmc scatter read asynchronous function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param pIoVec       - pointer to the read vector.
+//!
+//! @param ui8IovCnt    - read vector count
+//!
+//! This function reads 'ui8IovCnt' read vector starting from 'ui32Blk', and saves the data in 'pIoVec'.
+//! The caller will not be blocked, Completion of data transfer will be notified by
+//! the register callback function.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_emmc_card_scatter_read_async(am_hal_card_t *pCard, uint32_t ui32Blk, am_hal_card_iovec_t *pIoVec, uint8_t ui8IovCnt);
 
 //*****************************************************************************
 //
@@ -872,11 +1151,39 @@ extern uint32_t am_hal_card_emmc_calibrate(am_hal_host_uhs_mode_e eUHSMode,
 
 //*****************************************************************************
 //
+//! @brief Get the TX/RX delay setting by calibration
+//!
+//! @param eUHSMode     - card UHS mode
+//! @param ui32Clock    - card bus clock speed
+//! @param eBusWidth    - SDIO bus width.
+//! @param ui8CalibBuf  - data buffer used to do the calibration
+//! @param ui32StartBlk - sd card start block used to do the calibration
+//! @param ui32BlkCnt   - sd card block number used to do the calibration
+//! @param ui8TxRxDelays- an averaged the TX/RX delay values
+//! @param pCardPwrCtrlFunc - pointer to the User defined Card Pwr Ctrl Func
+//!
+//! This function get the tx rx delay setting by finding all workable TX/RX delay
+//! settings, then an average TX/RX values are returned.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_calibrate(am_hal_host_uhs_mode_e eUHSMode,
+                                           uint32_t ui32Clock,
+                                           am_hal_host_bus_width_e eBusWidth,
+                                           uint8_t *ui8CalibBuf,
+                                           uint32_t ui32StartBlk,
+                                           uint32_t ui32BlkCnt,
+                                           uint8_t ui8TxRxDelays[2],
+                                           am_hal_card_pwr_ctrl_func pCardPwrCtrlFunc);
+
+//*****************************************************************************
+//
 //! @brief Read blocks of data from the card (GEN_CMD) asynchronously
 //!
 //! @param pCard    - pointer to the card instance.
 //! @param ui32Arg  - command arguments
-//! @param pui8Buf  - mode switch timeout
+//! @param pui8Buf  - read buffer
 //!
 //! @return status  - generic or interface specific status..
 //
@@ -888,13 +1195,207 @@ extern uint32_t am_hal_card_cmd56_read_async(am_hal_card_t *pCard, uint32_t ui32
 //! @brief Read blocks of data from the card (GEN_CMD) synchronously
 //!
 //! @param pCard    - pointer to the card instance.
-//! @param ui32Arg  - command arguments
-//! @param pui8Buf  - mode switch timeout
+//! @param ui32Arg - command arguments
+//! @param pui8Buf  - read buffer
 //!
 //! @return status  - generic or interface specific status..
 //
 //*****************************************************************************
 extern uint32_t am_hal_card_cmd56_read_sync(am_hal_card_t *pCard, uint32_t ui32Arg, uint8_t *pui8Buf);
+
+//*****************************************************************************
+//
+//! @brief Enable SDIO card function
+//!
+//! @param pCard    - pointer to the card instance.
+//! @param ui32Func - SDIO card function number.
+//!
+//! @return status  - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_func_enable(am_hal_card_t *pCard, uint32_t ui32Func);
+
+//*****************************************************************************
+//
+//! @brief Disable SDIO card function
+//!
+//! @param pCard    - pointer to the card instance.
+//! @param ui32Func - SDIO card function number.
+//!
+//! @return status  - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_func_disable(am_hal_card_t *pCard, uint32_t ui32Func);
+
+//*****************************************************************************
+//
+//! @brief Enable SDIO card function's interrupt
+//!
+//! @param pCard    - pointer to the card instance.
+//! @param ui32Func - SDIO card function number.
+//!
+//! @return status  - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_func_interrupt_enable(am_hal_card_t *pCard, uint32_t ui32Func);
+
+//*****************************************************************************
+//
+//! @brief Disable SDIO card function's interrupt
+//!
+//! @param pCard    - pointer to the card instance.
+//! @param ui32Func - SDIO card function number.
+//!
+//! @return status  - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_func_interrupt_disable(am_hal_card_t *pCard, uint32_t ui32Func);
+
+//*****************************************************************************
+//
+//! @brief Get SDIO card function block size
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param pui32BlkSize - pointer to SDIO card block size.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_get_block_size(am_hal_card_t *pCard, uint32_t ui32Func, uint32_t *pui32BlkSize);
+
+//*****************************************************************************
+//
+//! @brief Set SDIO card function block size
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32BlkSize  - SDIO card block size.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_set_block_size(am_hal_card_t *pCard, uint32_t ui32Func, uint32_t ui32BlkSize);
+
+//*****************************************************************************
+//
+//! @brief Read single byte from SDIO card
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32Addr     - read address
+//! @param pui8Data     - read data
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_byte_read(am_hal_card_t *pCard, uint32_t ui32Func, uint32_t ui32Addr, uint8_t *pui8Data);
+
+//*****************************************************************************
+//
+//! @brief Write single byte to SDIO card
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32Addr     - write address
+//! @param ui8Data      - write data
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_byte_write(am_hal_card_t *pCard, uint32_t ui32Func, uint32_t ui32Addr, uint8_t ui8Data);
+
+//*****************************************************************************
+//
+//! @brief Read multiple bytes/blocks from SDIO card in sync/blocking mode
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32Addr     - read address
+//! @param pui8Buf      - read buffer
+//! @param ui32BlkCnt   - block or byte count
+//! @param ui32BlkSize  - block size
+//! @param bIncrAddr    - Selection for incrementing/fixed address
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_multi_bytes_read_sync(am_hal_card_t *pCard,
+                                                            uint32_t ui32Func,
+                                                            uint32_t ui32Addr,
+                                                            uint8_t *pui8Buf,
+                                                            uint32_t ui32BlkCnt,
+                                                            uint32_t ui32BlkSize,
+                                                            bool     bIncrAddr);
+
+//*****************************************************************************
+//
+//! @brief Write multiple bytes/blocks to SDIO card in sync/blocking mode
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32Addr     - write address
+//! @param pui8Buf      - write buffer
+//! @param ui32BlkCnt   - block or byte count
+//! @param ui32BlkSize  - block size
+//! @param bIncrAddr    - Selection for incrementing/fixed address
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_multi_bytes_write_sync(am_hal_card_t *pCard,
+                                                             uint32_t ui32Func,
+                                                             uint32_t ui32Addr,
+                                                             uint8_t *pui8Buf,
+                                                             uint32_t ui32BlkCnt,
+                                                             uint32_t ui32BlkSize,
+                                                             bool     bIncrAddr);
+
+//*****************************************************************************
+//
+//! @brief Read multiple bytes/blocks from SDIO card in async/non-blocking mode
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32Addr     - read address
+//! @param pui8Buf      - read buffer
+//! @param ui32BlkCnt   - block or byte count
+//! @param ui32BlkSize  - block size
+//! @param bIncrAddr    - Selection for incrementing/fixed address
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_multi_bytes_read_async(am_hal_card_t *pCard,
+                                                             uint32_t ui32Func,
+                                                             uint32_t ui32Addr,
+                                                             uint8_t *pui8Buf,
+                                                             uint32_t ui32BlkCnt,
+                                                             uint32_t ui32BlkSize,
+                                                             bool     bIncrAddr);
+
+//*****************************************************************************
+//
+//! @brief Write multiple bytes/blocks to SDIO card in async/non-blocking mode
+//!
+//! @param pCard        - pointer to the card instance.
+//! @param ui32Func     - SDIO card function number.
+//! @param ui32Addr     - write address
+//! @param pui8Buf      - write buffer
+//! @param ui32BlkCnt   - block or byte count
+//! @param ui32BlkSize  - block size
+//! @param bIncrAddr    - Selection for incrementing/fixed address
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_multi_bytes_write_async(am_hal_card_t *pCard,
+                                                              uint32_t ui32Func,
+                                                              uint32_t ui32Addr,
+                                                              uint8_t *pui8Buf,
+                                                              uint32_t ui32BlkCnt,
+                                                              uint32_t ui32BlkSize,
+                                                              bool     bIncrAddr);
 
 //*****************************************************************************
 //
@@ -915,6 +1416,207 @@ extern uint32_t am_hal_card_cmd56_read_sync(am_hal_card_t *pCard, uint32_t ui32A
 //*****************************************************************************
 extern uint32_t
 am_hal_card_block_rpmb_rw(am_hal_card_t *pCard, uint8_t *pui8Buf, bool bRead, bool bRelWrite);
+
+//*****************************************************************************
+//
+//! @brief Enable SD Card detect function
+//!
+//! @param pCard         - pointer to the card instance.
+//!
+//! @param pfunCallback  - function pointer to the call back function.
+//!
+//! This function detect the card insert or removal in the slot
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_enable_card_detect(am_hal_card_t *pCard, am_hal_host_event_cb_t pfunCallback);
+
+//*****************************************************************************
+//
+//! @brief Disable SD Card detect function
+//!
+//! @param pCard         - pointer to the card instance.
+//!
+//! This function only support for sd card operation.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_disable_card_detect(am_hal_card_t *pCard);
+
+//*****************************************************************************
+//
+//! @brief SD Card write protect detect function
+//!
+//! @param pCard         - pointer to the card instance.
+//!
+//! This function detect the card write is protected or enabled in the slot.
+//! must config SD card's WP pin in bsp before write protect detection.
+//! return 0: write enable, 1:write protect
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_write_protect_detect(am_hal_card_t *pCard);
+
+//*****************************************************************************
+//
+//! @brief SD Card get block count function
+//!
+//! @param pCard         - pointer to the card instance.
+//!
+//! This function get sd card block count.
+//!
+//! @return ui32MaxBlks      - sd card block count.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_get_block_count(am_hal_card_t *pCard);
+
+//*****************************************************************************
+//
+//! @brief SD card synchronous block-oriented read function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param ui32BlkCnt   - read block count
+//!
+//! @param pui8Buf      - read buffer
+//!
+//! This function reads the 'ui32BlkCnt' blocks starting from 'ui32Blk' block and
+//! saves the data in the 'pui8Buf' read buffer. The caller will be blocked until all
+//! data has been received or failed.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_block_read_sync(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf);
+
+//*****************************************************************************
+//
+//! @brief SD card synchronous block-oriented write function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param ui32BlkCnt   - write block count
+//!
+//! @param pui8Buf      - write buffer
+//!
+//! This function writes 'ui32BlkCnt' blocks in the 'pui8Buf' write buffer to the card blocks
+//! starting from 'ui32Blk' block. The caller will be blocked until all data has been sent
+//! out or failed.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_block_write_sync(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf);
+
+//*****************************************************************************
+//
+//! @brief SD card asynchronous block-oriented read function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param ui32BlkCnt   - read block count
+//!
+//! @param pui8Buf      - read buffer
+//!
+//! This function reads the 'ui32BlkCnt' blocks starting from 'ui32Blk' block and
+//! saves the data in the 'pui8Buf' read buffer. The caller will not be blocked,
+//! Data is ready in the buffer will be notified by the register callback function.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_block_read_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf);
+
+//*****************************************************************************
+//
+//! @brief SD card asynchronous block-oriented write function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param ui32BlkCnt   - write block count
+//!
+//! @param pui8Buf      - write buffer
+//!
+//! This function writes 'ui32BlkCnt' blocks in the 'pui8Buf' write buffer to the card blocks
+//! starting from 'ui32Blk' block. The caller will not be blocked, Completion of data transfer
+//! will be notified by the register callback function.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_block_write_async(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint8_t *pui8Buf);
+
+//*****************************************************************************
+//
+//! @brief SD card block-oriented erase function
+//!
+//! @param pCard        - pointer to the card instance.
+//!
+//! @param ui32Blk      - start block number
+//!
+//! @param ui32BlkCnt   - write block count
+//!
+//! @param ui32TimeoutMS - erase timeout value in millisecond
+//!
+//! This function erases 'ui32BlkCnt' blocks staring from 'ui32Blk' block. The caller will be blocked
+//! until the erase is done or failed.
+//!
+//! @return status      - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_sd_card_block_erase(am_hal_card_t *pCard, uint32_t ui32Blk, uint32_t ui32BlkCnt, uint32_t ui32TimeoutMS);
+
+//*****************************************************************************
+//
+//! @brief Get the TX/RX delay setting by calibration
+//!
+//! @param eIndex         - index to the underlying card host instance.s
+//!
+//! @param eUHSMode       - card UHS mode
+//!
+//! @param ui32Clock      - card bus clock speed
+//!
+//! @param eBusWidth      - SDIO bus width.
+//!
+//! @param ui8CalibBuf    - data buffer used to do the calibration
+//!
+//! @param ui32StartAddr  - SDIO card start address used to do the calibration
+//!
+//! @param ui32BlockCnt   - SDIO card block number used to do the calibration
+//!
+//! @param eIoVoltage     - card bus operation voltage
+//!
+//! @param ui8TxRxDelays  - an averaged the TX/RX delay values
+//!
+//! @param pSdioCardReset - pointer to the User reset sdio card
+//!
+//! This function get the tx rx delay setting by finding all workable TX/RX delay
+//! settings, then an average TX/RX values are returned.
+//!
+//! @return status      - generic or interface specific status..
+//
+//*****************************************************************************
+extern uint32_t am_hal_sdio_card_calibrate(am_hal_host_inst_index_e eIndex,
+                                    am_hal_host_uhs_mode_e eUHSMode,
+                                    uint32_t ui32Clock,
+                                    am_hal_host_bus_width_e eBusWidth,
+                                    uint8_t *ui8CalibBuf,
+                                    uint32_t ui32StartAddr,
+                                    uint32_t ui32BlockCnt,
+                                    am_hal_host_bus_voltage_e eIoVoltage,
+                                    uint8_t ui8TxRxDelays[2],
+                                    am_hal_sdio_card_reset_func pSdioCardReset);
 
 #ifdef __cplusplus
 }

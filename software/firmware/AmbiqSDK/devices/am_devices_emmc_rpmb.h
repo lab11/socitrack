@@ -13,7 +13,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -45,7 +45,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_DEVICES_EMMC_RPMB_H
@@ -143,7 +143,6 @@ typedef enum
     AM_DEVICES_EMMC_RPMB_STATUS_INIT_ERROR,
     AM_DEVICES_EMMC_RPMB_STATUS_CNT_EXPIRED_ERROR = 0x80,
 } am_devices_emmc_rpmb_status_e;
-
 
 typedef enum
 {

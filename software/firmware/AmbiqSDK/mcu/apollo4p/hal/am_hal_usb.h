@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -61,6 +61,7 @@ extern "C" {
 //! used in function am_hal_usb_setHFRC2 arguments
 //
 //*****************************************************************************
+
 typedef enum
 {
     AM_HAL_USB_HS_CLK_DISABLE,            ///< hfrc2 will be disabled, default off method
@@ -159,7 +160,6 @@ typedef enum
 }
 am_hal_usb_xfer_code_e;
 
-
 //*****************************************************************************
 //
 //! @brief Enum for the USB control call
@@ -181,7 +181,6 @@ typedef enum
     //! this is controller by an argument of type am_hal_usb_hs_clock_type
     //! this is how modules configure the HFRC2
     AM_HAL_CLKGEN_CONTROL_SET_HFRC2_TYPE,
-
 
 } am_hal_usb_control_e;
 
@@ -837,8 +836,6 @@ extern void am_hal_usb_interrupt_service(void *pHandle,
                                          uint32_t ui32IntrInStatus,
                                          uint32_t ui32IntrOutStatus);
 
-
-
 //*****************************************************************************
 //
 //! @brief Apply various specific commands / controls to the USB module
@@ -863,7 +860,6 @@ extern uint32_t am_hal_usb_control(am_hal_usb_control_e eControl, void *pArgs);
 //
 //*****************************************************************************
 extern uint32_t am_hal_usb_setHFRC2(am_hal_usb_hs_clock_type tUsbHsClockType);
-
 
 #ifdef __cplusplus
 }

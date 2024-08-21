@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -222,7 +222,7 @@ extern "C"
 //!       voltage when VDDC_LV and VDDC are shorted together. When the device
 //!       switches from SIMOBUCK to LDO mode, VDDC_LV and VDDC are shorted.
 //!       this happens prior to deepsleep and in am_hal_settings_restore call.
-//! 
+//!
 //!  AM_HAL_PWRCTL_SHORT_VDDC_TO_VDDCLV
 //!      Set trims to short. Uses extra power in Deepsleep.
 //!  Default: undefined
@@ -403,8 +403,6 @@ typedef enum
     AM_HAL_PWRCTRL_CONTROL_XTAL_PWDN_DEEPSLEEP, // Allow the crystal to power down during deepsleep
     AM_HAL_PWRCTRL_CONTROL_DIS_PERIPHS_ALL,     // Power down all peripherals
 } am_hal_pwrctrl_control_e;
-
-
 
 //*****************************************************************************
 //

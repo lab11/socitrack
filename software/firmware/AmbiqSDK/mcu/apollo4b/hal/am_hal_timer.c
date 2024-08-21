@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -714,6 +714,60 @@ am_hal_timer_read(uint32_t ui32TimerNumber)
 
 //*****************************************************************************
 //
+// Configure timer pin output.
+//
+//*****************************************************************************
+uint32_t
+am_hal_timer_output_config(uint32_t ui32PadNum,
+                           uint32_t eOutputType)
+{
+    uint32_t volatile *outcfg;
+    uint32_t ui32OutcfgValue, ui32OutcfgMsk, ui32CfgShf, ui32OutcfgFnc;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
+    if ( (ui32PadNum >= AM_HAL_GPIO_MAX_PADS) || (eOutputType > AM_HAL_TIMER_OUTPUT_STIMER7) )
+    {
+        return AM_HAL_STATUS_INVALID_ARG;
+    }
+#endif
+
+    //
+    // there are 4 6 bit fileds areas per register,
+    // compute the register offset shift by keeping the
+    // bottom two bits and multiplying by 8 (left shift 3)
+    // compute the mask to clear the 6 bits
+    // and compute the new value to be inserted in that slot
+    //
+    ui32CfgShf = (ui32PadNum & 0x03) << 3;
+    ui32OutcfgMsk = 0x3F << ui32CfgShf;
+    ui32OutcfgFnc = eOutputType << ui32CfgShf;
+
+    //
+    // compute address offset into outCFG registers
+    // since there are four outputs defined per register,
+    // divide by  4
+    //
+    outcfg = &(TIMER->OUTCFG0) + (ui32PadNum >> 2);
+    //
+    // Begin critical section.
+    //
+    AM_CRITICAL_BEGIN
+
+    ui32OutcfgValue = *outcfg;
+    ui32OutcfgValue &= ~ui32OutcfgMsk;
+    ui32OutcfgValue |=  ui32OutcfgFnc;
+    *outcfg = ui32OutcfgValue;
+
+    //
+    // Done with critical section.
+    //
+    AM_CRITICAL_END
+
+    return AM_HAL_STATUS_SUCCESS;
+} // am_hal_timer_output_config()
+
+//*****************************************************************************
+//
 // Set the COMPARE0 value for a single timer.
 //
 //*****************************************************************************
@@ -727,7 +781,7 @@ am_hal_timer_compare0_set(uint32_t ui32TimerNumber,
     TIMERn(ui32TimerNumber)->TMR0CMP0 = ui32CompareValue;
 
     return AM_HAL_STATUS_SUCCESS;
-}
+} // am_hal_timer_compare0_set
 
 //*****************************************************************************
 //

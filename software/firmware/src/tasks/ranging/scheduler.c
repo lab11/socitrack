@@ -301,7 +301,7 @@ void scheduler_run(schedule_role_t role)
 
    // Disable all ranging timers and interrupts
    const am_hal_rtc_time_t scheduler_interval = {
-      .ui32ReadError = 0, .ui32CenturyEnable = 0, .ui32Weekday = 0, .ui32Century = 0, .ui32Year = 0,
+      .ui32ReadError = 0, .ui32Weekday = 0, .ui32CenturyBit = RTC_CTRUP_CB_2000, .ui32Year = 0,
       .ui32Month = 0, .ui32DayOfMonth = 0, .ui32Hour = 0, .ui32Minute = 0, .ui32Second = 0, .ui32Hundredths = 0 };
    am_hal_rtc_alarm_set((am_hal_rtc_time_t*)&scheduler_interval, AM_HAL_RTC_ALM_RPT_DIS);
    am_hal_timer_interrupt_disable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));

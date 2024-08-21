@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <string.h>
@@ -95,6 +95,15 @@ am_hal_mspi_xip_config_t gWBDDRXipConfig[] =
     .scramblingStartAddr  = 0,
     .scramblingEndAddr    = 0,
   },
+#if defined(AM_PART_APOLLO5_API)
+  {
+    .ui32APBaseAddr       = MSPI3_APERTURE_START_ADDR,
+    .eAPMode              = AM_HAL_MSPI_AP_READ_WRITE,
+    .eAPSize              = AM_HAL_MSPI_AP_SIZE64M,
+    .scramblingStartAddr  = 0,
+    .scramblingEndAddr    = 0,
+  }
+#endif
 };
 
 am_hal_mspi_dqs_t gWBDDRDqsCfg[] =
@@ -147,6 +156,24 @@ am_hal_mspi_dqs_t gWBDDRDqsCfg[] =
     .ui8RxDQSDelayNegHi     = 0,
     .bRxDQSDelayHiEN        = 0,
   },
+#if defined(AM_PART_APOLLO5_API)
+  {
+#ifdef W958D6NW_USE_NON_DQS_MODE
+    .bDQSEnable             = 0,
+#else
+    .bDQSEnable             = 1,
+#endif
+    .bDQSSyncNeg            = 0,
+    .bEnableFineDelay       = 0,
+    .ui8TxDQSDelay          = 0,
+    .ui8RxDQSDelay          = 16,
+    .ui8RxDQSDelayNeg       = 0,
+    .bRxDQSDelayNegEN       = 0,
+    .ui8RxDQSDelayHi        = 0,
+    .ui8RxDQSDelayNegHi     = 0,
+    .bRxDQSDelayHiEN        = 0,
+  }
+#endif
 };
 
 am_hal_mspi_xip_misc_t gWBXipMiscCfg[] =
@@ -175,6 +202,16 @@ am_hal_mspi_xip_misc_t gWBXipMiscCfg[] =
     .bBEOn              = false,
     .eBEPolarity        = AM_HAL_MSPI_BE_LOW_ENABLE,
   },
+#if defined(AM_PART_APOLLO5_API)
+  {
+    .ui32CEBreak        = 10,
+    .bXIPBoundary       = true,
+    .bXIPOdd            = true,
+    .bAppndOdd          = false,
+    .bBEOn              = false,
+    .eBEPolarity        = AM_HAL_MSPI_BE_LOW_ENABLE,
+  }
+#endif
 };
 
 am_hal_mspi_config_t gWBDDRMspiCfg =
@@ -219,8 +256,20 @@ am_hal_mspi_dev_config_t  WBDDROctalCE0MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
+#if defined(AM_PART_APOLLO5_API)
+#if defined(USE_NEW_DDR)
+  .bNewDDR              = true,
+#else
+  .bNewDDR              = false,
+#endif
+  .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+#endif
 
+#if defined(APOLLO4_FPGA) || defined(APOLLO5_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
+#endif
 
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
@@ -246,8 +295,20 @@ am_hal_mspi_dev_config_t  WBDDROctalCE1MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
+#if defined(AM_PART_APOLLO5_API)
+#if defined(USE_NEW_DDR)
+  .bNewDDR              = true,
+#else
+  .bNewDDR              = false,
+#endif
+  .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+#endif
 
+#if defined(APOLLO4_FPGA) || defined(APOLLO5_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
+#endif
 
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
@@ -273,8 +334,20 @@ am_hal_mspi_dev_config_t  WBDDRHEXCE0MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
+#if defined(AM_PART_APOLLO5_API)
+#if defined(USE_NEW_DDR)
+  .bNewDDR              = true,
+#else
+  .bNewDDR              = false,
+#endif
+  .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+#endif
 
+#if defined(APOLLO4_FPGA) || defined(APOLLO5_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
+#endif
 
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
@@ -300,12 +373,23 @@ am_hal_mspi_dev_config_t  WBDDRHEXCE1MSPIConfig =
 #endif
   .bEnWriteLatency      = true,
   .bEmulateDDR          = true,
+#if defined(AM_PART_APOLLO5_API)
+#if defined(USE_NEW_DDR)
+  .bNewDDR              = true,
+#else
+  .bNewDDR              = false,
+#endif
+  .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+#endif
 
+#if defined(APOLLO4_FPGA) || defined(APOLLO5_FPGA)
+  .ui16DMATimeLimit     = 20,
+#else
   .ui16DMATimeLimit     = 40,
+#endif
 
   .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_BREAK1K,
 };
-
 
 typedef struct
 {
@@ -318,7 +402,6 @@ typedef struct
 
 am_devices_mspi_psram_t gWBDDRPsram[AM_DEVICES_MSPI_PSRAM_MAX_DEVICE_NUM];
 
-
 //*****************************************************************************
 //
 //! @brief
@@ -329,8 +412,15 @@ am_devices_mspi_psram_t gWBDDRPsram[AM_DEVICES_MSPI_PSRAM_MAX_DEVICE_NUM];
 
 void pfnMSPI_WBPSRAM_DDR_Callback(void *pCallbackCtxt, uint32_t status)
 {
+#if defined(AM_PART_APOLLO5_API)
+  //
+  // Flush and invalidate whole cache
+  // Recommend user to manage cache coherency based on application usage
+  //
+  am_hal_cachectrl_dcache_invalidate(NULL, true);
+#endif
   // Set the DMA complete flag.
-  *(volatile bool *)pCallbackCtxt = true;
+  *(volatile uint32_t *)pCallbackCtxt = status;
 }
 
 //*****************************************************************************
@@ -368,6 +458,13 @@ am_device_command_write(void *pMspiHandle,
   Transaction.bEnWRLatency            = false;
   Transaction.bContinue               = false;  // MSPI CONT is deprecated for Apollo4
   Transaction.pui32Buffer             = pData;
+
+#if defined (USE_NEW_DDR) && !defined(AM_PART_APOLLO5A)
+  if ( ui32NumBytes < 4 )
+  {
+    *pData = *pData << (4 - ui32NumBytes) * 8;
+  }
+#endif
 
   // Execute the transction over MSPI.
   return am_hal_mspi_blocking_transfer(pMspiHandle,
@@ -443,6 +540,95 @@ am_devices_mspi_psram_w958d6nw_get_ilc(am_devices_mspi_psram_w958d6nw_ilc_e eWLC
     return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
+#if defined(AM_PART_APOLLO5_API)
+static uint32_t
+am_devices_mspi_psram_w958d6nw_config(void *pHandle, am_hal_mspi_dev_config_t *pMSPISetting)
+{
+    uint8_t ui8ILC;
+    uint32_t ui32Rawdata;
+    uint32_t ui32Status;
+
+    switch(pMSPISetting->eClockFreq)
+    {
+      case AM_HAL_MSPI_CLK_250MHZ:
+        ui8ILC = AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_5;
+        break;
+      case AM_HAL_MSPI_CLK_192MHZ:
+        ui8ILC = AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_4;
+        break;
+      default:
+        ui8ILC = AM_DEVICES_MSPI_PSRAM_W958D6NW_ILC_3;
+        break;
+    }
+
+
+    ui32Status = am_device_command_read(pHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_READ_REGISTER, true, PSRAM_W958D6NW_REG_CFG0_ADDR, &ui32Rawdata, 2);
+    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
+    {
+        am_util_debug_printf("Failed to read PSRAM Latency Code!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    ui32Rawdata &= 0x0000FF0F;
+    ui32Rawdata |= (uint32_t)ui8ILC << 4;
+
+#ifdef W958D6NW_USE_NON_DQS_MODE
+    ui32Rawdata = ( ui32Rawdata & 0xFFF0 ) | 0x000C; // Fixed Latency, burst length=128
+    am_util_debug_printf("Set PSRAM Register CFG0 for NON-DQS mode\n");
+#else
+    ui32Rawdata = ( ui32Rawdata & 0xFFF0 ) | 0x0004; // Variable Latency, burst length=128
+    am_util_debug_printf("Set PSRAM Register CFG0 for DQS mode\n");
+#endif
+
+    ui32Status = am_device_command_write(pHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_WRITE_REGISTER, true, PSRAM_W958D6NW_REG_CFG0_ADDR, &ui32Rawdata, 2);
+    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
+    {
+        am_util_debug_printf("Failed to write PSRAM Latency Code!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    am_devices_mspi_psram_w958d6nw_get_ilc(ui8ILC, &pMSPISetting->ui8WriteLatency);
+
+    pMSPISetting->ui8WriteLatency *= 2;
+    pMSPISetting->ui8TurnAround = pMSPISetting->ui8WriteLatency;
+
+    uint32_t ui32RawDataArray[3];
+    am_util_debug_printf("Verify PSRAM Register CFG0\n");
+    ui32Status = am_device_command_read(pHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_READ_REGISTER, true, PSRAM_W958D6NW_REG_CFG0_ADDR, (uint32_t *)&ui32RawDataArray, 12);
+    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
+    {
+        am_util_debug_printf("Failed to read PSRAM Register CFG0!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+    else
+    {
+        uint16_t ui16PsramReg = ui32RawDataArray[2] & 0x0000FFFF;
+        am_util_debug_printf("PSRAM Register CFG0 = 0x%04X\n\n", ui16PsramReg);
+        ui16PsramReg &= 0x00FF;
+        if ((ui16PsramReg >> 4) != ui8ILC)
+        {
+            am_util_debug_printf("Config PSRAM Latency Code failed!\n");
+            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+        }
+        ui16PsramReg &= 0x000F;
+#ifdef W958D6NW_USE_NON_DQS_MODE
+        if (ui16PsramReg != 0x000C)
+        {
+            am_util_debug_printf("Config PSRAM non DQS mode failed!\n");
+            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+        }
+#else
+        if (ui16PsramReg != 0x0004)
+        {
+            am_util_debug_printf("Config PSRAM DQS mode failed!\n");
+            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+        }
+#endif
+    }
+
+    return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
+}
+#endif
 
 //*****************************************************************************
 //
@@ -457,9 +643,14 @@ am_devices_mspi_psram_w958d6nw_reset(uint32_t ui32Module, am_hal_mspi_device_e e
   //
   uint32_t ui32PinNum;
   am_hal_gpio_pincfg_t sPinCfg;
+#if defined(AM_PART_APOLLO5_API)
+  am_bsp_mspi_reset_pincfg_get(ui32Module, eMSPIDevice, &ui32PinNum, &sPinCfg);
+  am_hal_gpio_pinconfig(ui32PinNum, sPinCfg);
+#else
   ui32PinNum = AM_BSP_GPIO_PSRAM_RESET;
   sPinCfg = am_hal_gpio_pincfg_output;
   am_hal_gpio_pinconfig(ui32PinNum, sPinCfg);
+#endif
   am_hal_gpio_output_set(ui32PinNum);
   am_util_delay_us(200);
   am_hal_gpio_output_clear(ui32PinNum);
@@ -467,7 +658,6 @@ am_devices_mspi_psram_w958d6nw_reset(uint32_t ui32Module, am_hal_mspi_device_e e
   am_hal_gpio_output_set(ui32PinNum);
 
 }
-
 
 //*****************************************************************************
 //
@@ -592,7 +782,6 @@ am_devices_mspi_psram_w958d6nw_device_init(void *pMspiHandle, am_devices_mspi_ps
      am_util_debug_printf("Set PSRAM Register CFG0 into 0x%04X\n", ui32Rawdata);
   }
 
-
   //
   // Read PSRAM Register CFG0 again
   //
@@ -666,10 +855,8 @@ psram_nonblocking_transfer(am_devices_mspi_psram_t *pPsram,
   // Set the DMA priority
   Transaction.ui8Priority = 1;
 
-
   // Set the transfer direction to RX (Read)
   Transaction.eDirection = bWrite ? AM_HAL_MSPI_TX: AM_HAL_MSPI_RX;
-
 
   // Initialize the CQ stimulus.
   Transaction.ui32PauseCondition = ui32PauseCondition;
@@ -754,7 +941,9 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
     am_hal_fault_capture_enable();
+#endif
 
     // Allocate a vacant device handle
     for ( ui32Index = 0; ui32Index < AM_DEVICES_MSPI_PSRAM_MAX_DEVICE_NUM; ui32Index++ )
@@ -899,6 +1088,16 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
         return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
 
+#if defined(AM_PART_APOLLO5_API)
+    //
+    // Config device Latency code
+    //
+    if ( AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != am_devices_mspi_psram_w958d6nw_config(pMspiHandle, mspiMemDevCfg) )
+    {
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+#endif
+
     //
     // Switch back to little endian for accessing PSRAM memory
     //
@@ -926,10 +1125,20 @@ am_devices_mspi_psram_w958d6nw_ddr_init(uint32_t ui32Module, am_devices_mspi_psr
         return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
 
+  #if defined (AM_PART_APOLLO5_API)
+    if (AM_HAL_MSPI_CLK_250MHZ == pDevCfg->eClockFreq
+     || AM_HAL_MSPI_CLK_192MHZ == pDevCfg->eClockFreq
+     || AM_HAL_MSPI_CLK_125MHZ == pDevCfg->eClockFreq
+     || AM_HAL_MSPI_CLK_96MHZ == pDevCfg->eClockFreq)
+    {
+      RxCfg.ui8RxSmp = 2;
+    }
+  #else
     if (AM_HAL_MSPI_CLK_96MHZ == pDevCfg->eClockFreq)
     {
       RxCfg.ui8RxSmp = 2;
     }
+  #endif
     ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_RXCFG, &RxCfg);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
@@ -1057,7 +1266,7 @@ am_devices_mspi_psram_w958d6nw_ddr_read(void *pHandle,
   if (bWaitForCompletion)
   {
     // Start the transaction.
-    volatile bool bDMAComplete = false;
+    volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
     ui32Status = psram_nonblocking_transfer(pPsram, false, false,
                                             pui8RxBuffer,
                                             ui32ReadAddress,
@@ -1065,7 +1274,7 @@ am_devices_mspi_psram_w958d6nw_ddr_read(void *pHandle,
                                             0,
                                             0,
                                             pfnMSPI_WBPSRAM_DDR_Callback,
-                                            (void *)&bDMAComplete);
+                                            (void *)&ui32DMAStatus);
 
     // Check the transaction status.
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
@@ -1076,7 +1285,7 @@ am_devices_mspi_psram_w958d6nw_ddr_read(void *pHandle,
     // Wait for DMA Complete or Timeout
     for (uint32_t i = 0; i < AM_DEVICES_W958D6NW_PSRAM_TIMEOUT ; i++)
     {
-      if (bDMAComplete)
+      if (ui32DMAStatus != 0xFFFFFFFF)
       {
         break;
       }
@@ -1087,7 +1296,7 @@ am_devices_mspi_psram_w958d6nw_ddr_read(void *pHandle,
     }
 
     // Check the status.
-    if (!bDMAComplete)
+    if (ui32DMAStatus != AM_HAL_STATUS_SUCCESS)
     {
       return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
@@ -1226,7 +1435,6 @@ am_devices_mspi_psram_w958d6nw_ddr_nonblocking_read(void *pHandle,
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
-
 //*****************************************************************************
 //
 // Programs the given range of psram addresses.
@@ -1245,7 +1453,7 @@ am_devices_mspi_psram_w958d6nw_ddr_write(void *pHandle,
   if (bWaitForCompletion)
   {
     // Start the transaction.
-    volatile bool bDMAComplete = false;
+    volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
     ui32Status = psram_nonblocking_transfer(pPsram, false, true,
                                             pui8TxBuffer,
                                             ui32WriteAddress,
@@ -1253,7 +1461,7 @@ am_devices_mspi_psram_w958d6nw_ddr_write(void *pHandle,
                                             0,
                                             0,
                                             pfnMSPI_WBPSRAM_DDR_Callback,
-                                            (void *)&bDMAComplete);
+                                            (void *)&ui32DMAStatus);
 
     // Check the transaction status.
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
@@ -1264,7 +1472,7 @@ am_devices_mspi_psram_w958d6nw_ddr_write(void *pHandle,
     // Wait for DMA Complete or Timeout
     for (uint32_t i = 0; i < AM_DEVICES_W958D6NW_PSRAM_TIMEOUT ; i++)
     {
-      if (bDMAComplete)
+      if (ui32DMAStatus != 0xFFFFFFFF)
       {
         break;
       }
@@ -1275,7 +1483,7 @@ am_devices_mspi_psram_w958d6nw_ddr_write(void *pHandle,
     }
 
     // Check the status.
-    if (!bDMAComplete)
+    if (ui32DMAStatus != AM_HAL_STATUS_SUCCESS)
     {
       return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
     }
@@ -1415,7 +1623,6 @@ am_devices_mspi_psram_w958d6nw_ddr_nonblocking_write(void *pHandle,
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
-
 //*****************************************************************************
 //
 // Sets up the MSPI and external psram into XIP mode.
@@ -1428,18 +1635,9 @@ am_devices_mspi_psram_w958d6nw_ddr_enable_xip(void *pHandle)
   am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
 
   //
-  // Set Aperture XIP range
-  //
-  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_XIP_CONFIG, &gWBDDRXipConfig[pPsram->ui32Module]);
-  if (AM_HAL_STATUS_SUCCESS != ui32Status)
-  {
-    return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
-  }
-
-  //
   // Enable XIP on the MSPI.
   //
-  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_XIP_EN, &gWBDDRXipConfig[pPsram->ui32Module]);
+  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_XIP_EN, NULL);
   if (AM_HAL_STATUS_SUCCESS != ui32Status)
   {
     return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
@@ -1462,7 +1660,7 @@ am_devices_mspi_psram_w958d6nw_ddr_disable_xip(void *pHandle)
   //
   // Disable XIP on the MSPI.
   //
-  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_XIP_DIS, &gWBDDRXipConfig[pPsram->ui32Module]);
+  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_XIP_DIS, NULL);
   if (AM_HAL_STATUS_SUCCESS != ui32Status)
   {
     return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
@@ -1485,7 +1683,7 @@ am_devices_mspi_psram_w958d6nw_ddr_enable_scrambling(void *pHandle)
   //
   // Enable scrambling on the MSPI.
   //
-  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_EN, &gWBDDRXipConfig[pPsram->ui32Module]);
+  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_EN, NULL);
   if (AM_HAL_STATUS_SUCCESS != ui32Status)
   {
     return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
@@ -1507,7 +1705,7 @@ am_devices_mspi_psram_w958d6nw_ddr_disable_scrambling(void *pHandle)
   //
   // Disable Scrambling on the MSPI.
   //
-  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_DIS, &gWBDDRXipConfig[pPsram->ui32Module]);
+  ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_DIS, NULL);
   if (AM_HAL_STATUS_SUCCESS != ui32Status)
   {
     return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
@@ -1554,7 +1752,6 @@ uint32_t am_devices_mspi_psram_w958d6nw_ddr_info(void *pHandle, am_devices_mspi_
   return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
 }
 
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
 //*****************************************************************************
 //
 //! @brief write and read back check.
@@ -1805,6 +2002,8 @@ find_mid_point(uint32_t* pVal)
     return pick_point;
 }
 
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+
 //*****************************************************************************
 //
 //! @brief Checks PSRAM timing and determine a delay setting.
@@ -1818,7 +2017,7 @@ find_mid_point(uint32_t* pVal)
 //! @return 32-bit status, scan result in structure type
 //
 //*****************************************************************************
-#define PSRAM_TIMING_SCAN_SIZE_BYTES (128*1024)
+#define PSRAM_TIMING_SCAN_SIZE_BYTES (128*AM_DEVICES_MSPI_PSRAM_PAGE_SIZE)
 static const uint32_t ui32MspiXipBaseAddress[] =
 {
     MSPI0_APERTURE_START_ADDR, // mspi0
@@ -1940,7 +2139,6 @@ am_devices_mspi_psram_hex_ddr_init_timing_check(uint32_t module,
     am_util_stdio_printf("Timing Scan set the fine delay to %d steps.\n", dqsdelay);
 #endif
 
-
     //
     // Deinitialize the MSPI interface
     //
@@ -1983,6 +2181,454 @@ am_devices_mspi_psram_apply_hex_ddr_timing(void *pHandle,
 }
 #endif
 
+#if defined (AM_PART_APOLLO5_API)
+
+//*****************************************************************************
+//
+// Configurable parameters for a scan
+//
+//*****************************************************************************
+#define PSRAM_TIMING_SCAN_SIZE_BYTES (4*AM_DEVICES_MSPI_PSRAM_PAGE_SIZE)
+
+#define SCAN_TXDQSDELAY
+#define SCAN_RXDQSDELAY
+
+#if defined(SCAN_TXNEG)
+#define SCAN_TXNEG_START 0
+#define SCAN_TXNEG_END   1
+#endif
+
+#if defined(SCAN_RXNEG)
+#define SCAN_RXNEG_START 0
+#define SCAN_RXNEG_END   1
+#endif
+
+#if defined(SCAN_RXCAP)
+#define SCAN_RXCAP_START 0
+#define SCAN_RXCAP_END   1
+#endif
+
+#if defined(SCAN_TURNAROUND)
+#define SCAN_TURNAROUND_START 0
+#define SCAN_TURNAROUND_END   1
+#endif
+
+#if defined(SCAN_TXDQSDELAY)
+#define SCAN_TXDQSDELAY_START 0
+#define SCAN_TXDQSDELAY_END   10
+#endif
+
+#if defined(SCAN_RXDQSDELAY)
+#define SCAN_RXDQSDELAY_START 0
+#define SCAN_RXDQSDELAY_END   31
+#endif
+
+//*****************************************************************************
+//
+// Checks PSRAM timing and determine a delay setting.
+//
+//*****************************************************************************
+uint32_t am_devices_mspi_psram_hex_ddr_init_timing_check(uint32_t ui32Module,
+                                                am_devices_mspi_psram_config_t *pDevCfg,
+                                                am_devices_mspi_psram_ddr_timing_config_t *pDevDdrCfg)
+{
+    uint32_t ui32Status;
+    am_devices_mspi_psram_t *pPsram;
+    void *pHandle;
+    uint32_t Txdqsdelay = 0;
+    uint32_t Rxdqsdelay = 0;
+
+    uint32_t ui32CheckAddress;
+    uint32_t ui32CCOResult = 0;
+    uint32_t ui32TxResult = 0;
+    uint32_t ui32RxResultArray[32] = {0};
+
+    am_hal_mspi_timing_scan_t scanCfg;
+    //
+    // initialize interface
+    //
+    ui32Status = am_devices_mspi_psram_w958d6nw_ddr_init(ui32Module, pDevCfg, (void **)&pPsram, &pHandle);
+    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
+    {
+        am_util_debug_printf("    Failed to configure the MSPI and PSRAM Device correctly!\n");
+        return ui32Status;
+    }
+
+    //
+    //get value configured by init & hal
+    //
+    ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN_GET, &scanCfg);
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Put the MSPI into XIP mode.
+    //
+    ui32Status = am_devices_mspi_psram_w958d6nw_ddr_enable_xip(pPsram);
+    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
+    {
+        am_util_debug_printf("    Failed to disable XIP mode in the MSPI!\n");
+        return ui32Status;
+    }
+
+    am_util_debug_printf("    Start Use XIP to Timing Scan!\n");
+    uint32_t ui32TxNeg = scanCfg.bTxNeg;
+    uint32_t ui32RxNeg = scanCfg.bRxNeg;
+    uint32_t ui32RxCap = scanCfg.bRxCap;
+    uint32_t ui32Turnaround = scanCfg.ui8Turnaround;
+#if defined(SCAN_TXNEG)
+    for ( ui32TxNeg = SCAN_TXNEG_START; ui32TxNeg <= SCAN_TXNEG_END; ui32TxNeg++ )
+#endif
+    {
+        scanCfg.bTxNeg = (bool)ui32TxNeg;
+#if defined(SCAN_RXNEG)
+        for ( ui32RxNeg = SCAN_RXNEG_START; ui32RxNeg <= SCAN_RXNEG_END; ui32RxNeg++ )
+#endif
+        {
+            scanCfg.bRxNeg = (bool)ui32RxNeg;
+#if defined(SCAN_RXCAP)
+            for ( ui32RxCap = SCAN_RXCAP_START; ui32RxCap <= SCAN_RXCAP_END; ui32RxCap++ )
+#endif
+            {
+                scanCfg.bRxCap = (bool)ui32RxCap;
+#if defined(SCAN_TURNAROUND)
+                for (scanCfg.ui8Turnaround = ui32Turnaround + SCAN_TURNAROUND_START; scanCfg.ui8Turnaround <= ui32Turnaround + SCAN_TURNAROUND_END; scanCfg.ui8Turnaround++ )
+#endif
+                {
+                    am_util_debug_printf("    TxNeg=%d, RxNeg=%d, RxCap=%d, Turnaround=%d\n", scanCfg.bTxNeg, scanCfg.bRxNeg, scanCfg.bRxCap, scanCfg.ui8Turnaround)
+                    ui32TxResult = 0;
+                    memset(ui32RxResultArray, 0, sizeof(ui32RxResultArray));
+#if defined(SCAN_TXDQSDELAY)
+                    for (scanCfg.ui8TxDQSDelay = SCAN_TXDQSDELAY_START; scanCfg.ui8TxDQSDelay <= SCAN_TXDQSDELAY_END; scanCfg.ui8TxDQSDelay++)
+#endif
+                    {
+#if defined(SCAN_RXDQSDELAY)
+                        for (scanCfg.ui8RxDQSDelay = SCAN_RXDQSDELAY_START; scanCfg.ui8RxDQSDelay <= SCAN_RXDQSDELAY_END; scanCfg.ui8RxDQSDelay++)
+#endif
+                        {
+                            //
+                            // apply settings
+                            //
+                            ui32Status = am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &scanCfg);
+                            if (AM_HAL_STATUS_SUCCESS != ui32Status)
+                            {
+                                return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+                            }
+                            uint32_t ui32Offset = (scanCfg.bTxNeg + scanCfg.bRxNeg + scanCfg.bRxCap + scanCfg.ui8Turnaround) * PSRAM_TIMING_SCAN_SIZE_BYTES + (scanCfg.ui8TxDQSDelay + scanCfg.ui8RxDQSDelay) * 2;
+                            ui32CheckAddress = gWBDDRXipConfig[ui32Module].ui32APBaseAddr + ui32Offset;
+                            //
+                            // run data check
+                            //
+                            if ( psram_check(PSRAM_TIMING_SCAN_SIZE_BYTES, ui32CheckAddress) )
+                            {
+                                //
+                                // data check failed
+                                //
+                            }
+                            else
+                            {
+                                //
+                                // data check pass
+                                //
+                                ui32RxResultArray[scanCfg.ui8TxDQSDelay] |= 0x01 << scanCfg.ui8RxDQSDelay;
+                            }
+                        }
+#if defined(SCAN_RXDQSDELAY)
+                        ui32CCOResult = count_consecutive_ones(&ui32RxResultArray[scanCfg.ui8TxDQSDelay]);
+                        if ( ui32CCOResult > PSRAM_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH )
+                        {
+                            ui32TxResult |= 0x01 << scanCfg.ui8TxDQSDelay;
+                        }
+                        am_util_debug_printf("    TxDQSDelay: %d, RxDQSDelay Scan = 0x%08X, Window size = %d\n", scanCfg.ui8TxDQSDelay, ui32RxResultArray[scanCfg.ui8TxDQSDelay], ui32CCOResult);
+#else
+                        if ( ui32RxResultArray[scanCfg.ui8TxDQSDelay] != 0 )
+                        {
+                            ui32TxResult |= 0x01 << scanCfg.ui8TxDQSDelay;
+                        }
+                        am_util_debug_printf("    TxDQSDelay: %d, RxDQSDelay Scan = 0x%08X\n", scanCfg.ui8TxDQSDelay, ui32RxResultArray[scanCfg.ui8TxDQSDelay]);
+#endif
+                    }
+                    //
+                    // Check Result
+                    //
+                    if ( ui32TxResult == 0 )
+                    {
+                        //
+                        // no window is found
+                        //
+#if defined(SCAN_TXNEG) || defined(SCAN_RXNEG) || defined(SCAN_RXCAP) || defined(SCAN_TURNAROUND)
+                        continue;
+#else
+                        am_util_debug_printf("Timing Scan found no window!\n");
+                        //
+                        // Deinitialize the MSPI interface
+                        //
+                        am_devices_mspi_psram_w958d6nw_ddr_deinit(pPsram);
+                        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+#endif
+                    }
+#if defined(SCAN_TXDQSDELAY)
+                    //
+                    // Find TXDQSDELAY Value
+                    //
+                    Txdqsdelay = find_mid_point(&ui32TxResult);
+#else
+                    Txdqsdelay = scanCfg.ui8TxDQSDelay;
+#endif
+
+#if defined(SCAN_RXDQSDELAY)
+                    //
+                    // Find RXDQSDELAY Value
+                    //
+                    Rxdqsdelay = find_mid_point(&ui32RxResultArray[Txdqsdelay]);
+#else
+                    Rxdqsdelay = scanCfg.ui8RxDQSDelay;
+#endif
+
+                    am_util_debug_printf("Selected timing scan setting: TxNeg=%d, RxNeg=%d, RxCap=%d, Turnaround=%d, TxDQSDelay=%d, RxDQSDelay=%d\n", scanCfg.bTxNeg, scanCfg.bRxNeg, scanCfg.bRxCap, scanCfg.ui8Turnaround, Txdqsdelay, Rxdqsdelay);
+
+                    scanCfg.ui8TxDQSDelay = Txdqsdelay;
+                    scanCfg.ui8RxDQSDelay = Rxdqsdelay;
+
+                    //
+                    // Set output values
+                    //
+                    *pDevDdrCfg = scanCfg;
+                    am_devices_mspi_psram_w958d6nw_ddr_deinit(pPsram);
+                    return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
+                }
+            }
+        }
+    }
+    am_util_debug_printf("Timing Scan found no window!\n");
+    //
+    // Deinitialize the MSPI interface
+    //
+    am_devices_mspi_psram_w958d6nw_ddr_deinit(pPsram);
+
+    return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+}
+
+//*****************************************************************************
+//
+//  Apply given DDR timing settings to target MSPI instance.
+//
+//*****************************************************************************
+uint32_t
+am_devices_mspi_psram_apply_hex_ddr_timing(void *pHandle,
+                                           am_devices_mspi_psram_ddr_timing_config_t *pDevDdrCfg)
+{
+    am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
+    if ( pHandle == NULL )
+    {
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+    //
+    // apply timing settings
+    //
+    am_util_stdio_printf("    Apply Timing TxNeg=%d, RxNeg=%d, RxCap=%d, Turnaround=%d, TxDQSDelay=%d, RxDQSDelay=%d\n", pDevDdrCfg->bTxNeg,
+                                                                                                                         pDevDdrCfg->bRxNeg,
+                                                                                                                         pDevDdrCfg->bRxCap,
+                                                                                                                         pDevDdrCfg->ui8Turnaround,
+                                                                                                                         pDevDdrCfg->ui8TxDQSDelay,
+                                                                                                                         pDevDdrCfg->ui8RxDQSDelay);
+    return am_hal_mspi_control(pPsram->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, pDevDdrCfg);
+
+}
+
+//*****************************************************************************
+//
+// Enter hybrid sleep part of apollo5a CE workaround
+//
+// Send a command to enter hybrid sleep mode.
+//
+//*****************************************************************************
+uint32_t
+am_devices_mspi_psram_w958d6nw_enter_hybridsleep(void *pHandle)
+{
+    uint32_t     ui32Status;
+    uint32_t     ui32Rawdata = 0;
+    am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
+    if ( pHandle == NULL )
+    {
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    am_hal_mspi_device_e lcl_devCfg = pPsram->eDeviceConfig;
+    am_hal_mspi_dev_config_t    mspiRegDevCfg;
+    //
+    // Reconfigure MSPI to OCTAL
+    //
+    switch (pPsram->eDeviceConfig)
+    {
+        case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE0:
+        case AM_HAL_MSPI_FLASH_HEX_DDR_CE0:
+            lcl_devCfg = AM_HAL_MSPI_FLASH_OCTAL_DDR_CE0;
+            mspiRegDevCfg = WBDDROctalCE0MSPIConfig;
+            break;
+        case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE1:
+        case AM_HAL_MSPI_FLASH_HEX_DDR_CE1:
+            lcl_devCfg = AM_HAL_MSPI_FLASH_OCTAL_DDR_CE1;
+            mspiRegDevCfg = WBDDROctalCE1MSPIConfig;
+            break;
+        default:
+            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Disable MSPI defore re-configuring it
+    //
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_disable(pPsram->pMspiHandle))
+    {
+        am_util_debug_printf("Error - Failed to Disable MSPI.\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    mspiRegDevCfg.eClockFreq = AM_HAL_MSPI_CLK_48MHZ;
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pPsram->pMspiHandle, &mspiRegDevCfg))
+    {
+        am_util_debug_printf("Error - Failed to configure MSPI device.\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Re-Enable MSPI
+    //
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pPsram->pMspiHandle))
+    {
+        am_util_debug_printf("Error - Failed to Enable MSPI!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Re-config the MSPI pins.
+    //
+    am_bsp_mspi_pins_enable(pPsram->ui32Module, lcl_devCfg);
+
+    //
+    // Read PSRAM Register CFG1
+    //
+    am_util_debug_printf("Read PSRAM Register CFG1\n");
+    ui32Status = am_device_command_read(pPsram->pMspiHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_READ_REGISTER, true, PSRAM_W958D6NW_REG_CFG1_ADDR, &ui32Rawdata, 2);
+    if (AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS != ui32Status)
+    {
+        am_util_debug_printf("Failed to read PSRAM Register CFG1!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+    else
+    {
+        am_util_debug_printf("PSRAM Register CFG1 = 0x%04X\n\n", ui32Rawdata);
+    }
+
+    //
+    // For CR1:
+    //          [15-8] - When writing this register, these bits should keep FFh for future compatibility.
+    //          [7]    - When writing this register, these bits should keep 1b for future compatibility.
+    //          [5]    - Hybrid Sleep - 1b - Writing 1 to CR1[5] causes the device to enter Hybrid Sleep (HS) State
+    //
+    ui32Rawdata |= 0xFFa0;
+
+    //
+    // Send command to enter hybrid sleep
+    //
+    if (AM_HAL_STATUS_SUCCESS != am_device_command_write(pPsram->pMspiHandle, AM_DEVICES_MSPI_PSRAM_W958D6NW_DDR_WRITE_REGISTER, true, PSRAM_W958D6NW_REG_CFG1_ADDR, &ui32Rawdata, 2))
+    {
+        am_util_debug_printf("Failed to write PSRAM CFG1 register!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    // tHSIN min = 3us
+    am_util_delay_us(W958D6NW_tHS_MAX_US);
+
+    return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+// Enter hybrid sleep
+//
+// This function soft-resets the device to bring it out of hybrid sleep.
+//
+//*****************************************************************************
+uint32_t
+am_devices_mspi_psram_w958d6nw_exit_hybridsleep(void *pHandle)
+{
+    am_devices_mspi_psram_t *pPsram = (am_devices_mspi_psram_t *)pHandle;
+
+    if ( pHandle == NULL )
+    {
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    uint32_t ui32PIOBuffer = 0;
+    //
+    // Send dummy command to pull CE for tXPHS
+    //
+    if (AM_HAL_STATUS_SUCCESS != am_device_command_write(pPsram->pMspiHandle, 0x0000, true, 0, &ui32PIOBuffer, 2))
+    {
+      am_util_debug_printf("Error - Failed to send dummy command.\n");
+      return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Delay after setting pin high to allow for device to accept command
+    // and exit hybrid sleep mode.
+    //
+    am_util_delay_us(W958D6NW_tEXTHS_MIN_US);
+
+    //
+    // Disable MSPI defore re-configuring it
+    //
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_disable(pPsram->pMspiHandle))
+    {
+        am_util_debug_printf("Error - Failed to Disable MSPI.\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Reconfigure MSPI
+    //
+    am_hal_mspi_dev_config_t*    mspiMemDevCfg;
+    switch (pPsram->eDeviceConfig)
+    {
+        case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE0:
+        case AM_HAL_MSPI_FLASH_HEX_DDR_CE0:
+            mspiMemDevCfg = &WBDDRHEXCE0MSPIConfig;
+            break;
+        case AM_HAL_MSPI_FLASH_OCTAL_DDR_CE1:
+        case AM_HAL_MSPI_FLASH_HEX_DDR_CE1:
+            mspiMemDevCfg = &WBDDRHEXCE1MSPIConfig;
+            break;
+        default:
+            return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pPsram->pMspiHandle, mspiMemDevCfg))
+    {
+        am_util_debug_printf("Error - Failed to configure MSPI device.\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Re-Enable MSPI
+    //
+    if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_enable(pPsram->pMspiHandle))
+    {
+        am_util_debug_printf("Error - Failed to Enable MSPI!\n");
+        return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
+    }
+
+    //
+    // Re-config the MSPI pins.
+    //
+    am_bsp_mspi_pins_enable(pPsram->ui32Module, pPsram->eDeviceConfig);
+
+    return AM_DEVICES_MSPI_PSRAM_STATUS_SUCCESS;
+}
+#else
 //*****************************************************************************
 //
 // Enter hybrid sleep
@@ -2044,7 +2690,7 @@ am_devices_mspi_psram_w958d6nw_enter_hybridsleep(void *pHandle)
 
         if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pPsram->pMspiHandle, mspiRegDevCfg))
         {
-            am_util_debug_printf("Error - Failed to configure Device MSPI.\n");
+            am_util_debug_printf("Error - Failed to configure MSPI device.\n");
             return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
         }
 
@@ -2183,7 +2829,7 @@ am_devices_mspi_psram_w958d6nw_exit_hybridsleep(void *pHandle)
 
         if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pPsram->pMspiHandle, mspiMemDevCfg))
         {
-            am_util_debug_printf("Error - Failed to configure Device MSPI.\n");
+            am_util_debug_printf("Error - Failed to configure MSPI device.\n");
             return AM_DEVICES_MSPI_PSRAM_STATUS_ERROR;
         }
 
@@ -2204,7 +2850,7 @@ am_devices_mspi_psram_w958d6nw_exit_hybridsleep(void *pHandle)
 
     return AM_HAL_STATUS_SUCCESS;
 }
-
+#endif
 //*****************************************************************************
 //
 // End Doxygen group.

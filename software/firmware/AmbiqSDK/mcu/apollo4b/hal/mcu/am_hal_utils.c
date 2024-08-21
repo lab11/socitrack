@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -96,34 +96,7 @@ typedef enum
 
 //*****************************************************************************
 //
-//! @brief Use the bootrom to implement a spin loop.
-//!
-//! @param ui32us - Number of microseconds to delay.  Must be >=1; the
-//! value of 0 will result in an extremely long delay.
-//!
-//! Use this function to implement a CPU busy waiting spin loop without cache
-//! or delay uncertainties.
-//!
-//! Notes for Apollo3:
-//! - The ROM-based function executes at 3 cycles per iteration plus the normal
-//!   function call, entry, and exit overhead and latencies.
-//! - Cache settings affect call overhead.  However, the cache does not affect
-//!   the time while inside the BOOTROM function.
-//! - The function accounts for burst vs normal mode, along with some of the
-//!   overhead encountered with executing the function itself (such as the
-//!   check for burst mode).
-//! - Use of the FLASH_CYCLES_US() or FLASH_CYCLES_US_NOCACHE() macros for the
-//!   ui32Iterations parameter will result in approximate microsecond timing.
-//! - The parameter ui32Iterations==0 is allowed but is still incurs a delay.
-//!
-//! Example:
-//! - MCU operating at 48MHz -> 20.83 ns / cycle
-//! - Therefore each iteration (once inside the bootrom function) will consume
-//!   62.5ns (non-burst-mode).
-//!
-//! @note Interrupts are not disabled during execution of this function.
-//!       Therefore, any interrupt taken will affect the delay timing.
-//!
+// Use the bootrom to implement a spin loop.
 //
 //*****************************************************************************
 void
@@ -302,7 +275,7 @@ am_hal_load_ui32(uint32_t *pui32Address)
 //!
 //! Use this function to store a value to various peripheral or SRAM locations
 //! that can not be touched from code running in SRAM or FLASH.  There is no
-//! known need for this function in Apollo3 at this time.
+//! known need for this function in Apollo4 at this time.
 //!
 //
 //*****************************************************************************

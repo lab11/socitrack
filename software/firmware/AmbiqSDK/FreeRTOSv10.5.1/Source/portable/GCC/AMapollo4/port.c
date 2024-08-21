@@ -902,11 +902,9 @@ void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
 		xExpectedIdleTime = xMaximumPossibleSuppressedTicks;
 	}
 
-
 	/* Calculate the reload value required to wait xExpectedIdleTime
-	tick periods.  -1 is used because this code will execute part way
-	through one of the tick periods. */
-	ulReloadValue =  ulTimerCountsForOneTick * ( xExpectedIdleTime - 1 );
+	tick periods. */
+	ulReloadValue =  ulTimerCountsForOneTick * ( xExpectedIdleTime );
 
 	/* Enter a critical section but don't use the taskENTER_CRITICAL()
 	method as that will mask interrupts that should exit sleep mode. */
@@ -1011,12 +1009,21 @@ void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
 
         Delta_Sleep /= ulTimerCountsForOneTick;
 
+        //
         // Correct System Tick after Sleep
-        vTaskStepTick( Delta_Sleep );
+        // Make sure we call the correct function
+        //
+        if (Delta_Sleep > 1)
+        {
+            vTaskStepTick( Delta_Sleep - 1 );
+        }
+        if (Delta_Sleep > 0)
+        {
+            xTaskIncrementTick();
+        }
 
-		/* Restart System Tick */
+        /* Restart System Tick */
 #ifdef AM_FREERTOS_USE_STIMER_FOR_TICK
-
         // Clear the interrupt - to avoid extra tick counting in ISR
 #ifdef AM_FREERTOS_STIMER_BACKUP
         am_hal_stimer_int_clear(AM_HAL_STIMER_INT_COMPAREA | AM_HAL_STIMER_INT_COMPAREB);
@@ -1034,7 +1041,26 @@ void vPortSuppressTicksAndSleep( TickType_t xExpectedIdleTime )
 
         am_hal_timer_start(configTIMER_NUM);
 #endif
-		/* Re-enable interrupts - see comments above the cpsid instruction()
+
+        //
+        // We are about to clear the and reset STIMER. We need to clear the Pending NVIC
+        // so that the STIMER ISR doesn't without COMPARE A/B set which would cause a
+        // do-nothing interrupt.
+        //
+#ifdef AM_FREERTOS_USE_STIMER_FOR_TICK
+        //
+        // Clear the NVIC
+        //
+        NVIC_ClearPendingIRQ(STIMER_CMPR0_IRQn);
+#ifdef AM_FREERTOS_STIMER_BACKUP
+        //
+        // Clear the NVIC
+        //
+        NVIC_ClearPendingIRQ(STIMER_CMPR1_IRQn);
+#endif
+#endif
+
+        /* Re-enable interrupts - see comments above the cpsid instruction()
 		above. */
 		__asm volatile( "cpsie i" );
 

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -488,7 +488,7 @@ const uint16_t am_hal_pin_fn_list[AM_HAL_PIN_TOTAL_GPIOS][AM_HAL_PIN_NUMFUNCS] =
         AM_HAL_PIN_FN_NCE22,
         AM_HAL_PIN_FN_OBSBUS6,
         AM_HAL_PIN_FN_VCMPO,
-        AM_HAL_PIN_FN_I3CM1_SCL,
+        AM_HAL_PIN_FN_RESERVED10,
         AM_HAL_PIN_FN_FPIO,
         AM_HAL_PIN_FN_RESERVED12,
         AM_HAL_PIN_FN_RESERVED13,
@@ -507,7 +507,7 @@ const uint16_t am_hal_pin_fn_list[AM_HAL_PIN_TOTAL_GPIOS][AM_HAL_PIN_NUMFUNCS] =
         AM_HAL_PIN_FN_NCE23,
         AM_HAL_PIN_FN_OBSBUS7,
         AM_HAL_PIN_FN_VCMPO,
-        AM_HAL_PIN_FN_I3CM1_SDA,
+        AM_HAL_PIN_FN_RESERVED10,
         AM_HAL_PIN_FN_FPIO,
         AM_HAL_PIN_FN_RESERVED12,
         AM_HAL_PIN_FN_RESERVED13,
@@ -1229,7 +1229,7 @@ const uint16_t am_hal_pin_fn_list[AM_HAL_PIN_TOTAL_GPIOS][AM_HAL_PIN_NUMFUNCS] =
         AM_HAL_PIN_FN_NCE61,
         AM_HAL_PIN_FN_OBSBUS13,
         AM_HAL_PIN_FN_RESERVED9,
-        AM_HAL_PIN_FN_I3CM0_SCL,
+        AM_HAL_PIN_FN_RESERVED10,
         AM_HAL_PIN_FN_FPIO,
         AM_HAL_PIN_FN_RESERVED12,
         AM_HAL_PIN_FN_RESERVED13,
@@ -1248,7 +1248,7 @@ const uint16_t am_hal_pin_fn_list[AM_HAL_PIN_TOTAL_GPIOS][AM_HAL_PIN_NUMFUNCS] =
         AM_HAL_PIN_FN_NCE62,
         AM_HAL_PIN_FN_OBSBUS14,
         AM_HAL_PIN_FN_I2S1_SDOUT,
-        AM_HAL_PIN_FN_I3CM0_SDA,
+        AM_HAL_PIN_FN_RESERVED10,
         AM_HAL_PIN_FN_FPIO,
         AM_HAL_PIN_FN_RESERVED12,
         AM_HAL_PIN_FN_RESERVED13,

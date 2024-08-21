@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -136,12 +136,16 @@ typedef struct
     uint32_t ui32ScramblingEndAddr;
 } am_devices_mspi_psram_config_t;
 
+#if defined(AM_PART_APOLLO5_API)
+#define am_devices_mspi_psram_ddr_timing_config_t am_hal_mspi_timing_scan_t
+#else
 typedef struct
 {
     uint32_t ui32Turnaround;
     uint32_t ui32Rxneg;
     uint32_t ui32Rxdqsdelay;
 } am_devices_mspi_psram_ddr_timing_config_t;
+#endif
 
 //*****************************************************************************
 //

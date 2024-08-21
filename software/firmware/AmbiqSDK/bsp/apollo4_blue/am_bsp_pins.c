@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -163,6 +163,198 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_BUTTON1 =
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_100K,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE0 (19) - This pin is ADC_SE0  Note: UART3_CTS clock cannot be used simultaneously.
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE0 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_19_ADCSE0,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE1 (18) - This pin is ADC_SE1
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE1 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_18_ADCSE1,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE2 (17) - This pin is ADC_SE2
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE2 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_17_ADCSE2,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE3 (16) - This pin is ADC_SE3
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE3 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_16_ADCSE3,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE4 (15) - This pin is ADC_SE4
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE4 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_15_ADCSE4,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE5 (14) - This pin is ADC_SE5
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE5 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_14_ADCSE5,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE6 (13) - This pin is ADC_SE6
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE6 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_13_ADCSE6,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// ADCSE7 (12) - This pin is ADC_SE7
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_ADCSE7 =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_12_ADCSE7,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P1X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,
     .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
     .GP.cfg_b.uRsvd_0              = 0,
@@ -3654,10 +3846,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_PDM3_DATA =
 
 //*****************************************************************************
 //
-// SDIF_DAT0 (84) - SD Data 0 pin.
+// SDIO_DAT0 (84) - eMMC NAND Flash I/F using SDIO data 0.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT0 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT0 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_84_SDIF_DAT0,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3666,7 +3858,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT0 =
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
     .GP.cfg_b.uSlewRate            = 0,
-    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_12K,
     .GP.cfg_b.uNCE                 = 0,
     .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
     .GP.cfg_b.uRsvd_0              = 0,
@@ -3678,10 +3870,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT0 =
 
 //*****************************************************************************
 //
-// SDIF_DAT1 (85) - SD Data 1 pin.
+// SDIO_DAT1 (85) - eMMC NAND Flash I/F using SDIO data 1.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT1 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT1 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_85_SDIF_DAT1,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3690,7 +3882,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT1 =
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
     .GP.cfg_b.uSlewRate            = 0,
-    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_12K,
     .GP.cfg_b.uNCE                 = 0,
     .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
     .GP.cfg_b.uRsvd_0              = 0,
@@ -3702,10 +3894,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT1 =
 
 //*****************************************************************************
 //
-// SDIF_DAT2 (86) - SD Data 2 pin.
+// SDIO_DAT2 (86) - eMMC NAND Flash I/F using SDIO data 2.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT2 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT2 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_86_SDIF_DAT2,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3714,7 +3906,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT2 =
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
     .GP.cfg_b.uSlewRate            = 0,
-    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_12K,
     .GP.cfg_b.uNCE                 = 0,
     .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
     .GP.cfg_b.uRsvd_0              = 0,
@@ -3726,10 +3918,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT2 =
 
 //*****************************************************************************
 //
-// SDIF_DAT3 (87) - SD Data 3 pin.
+// SDIO_DAT3 (87) - eMMC NAND Flash I/F using SDIO data 3.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT3 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT3 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_87_SDIF_DAT3,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3738,7 +3930,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT3 =
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
     .GP.cfg_b.uSlewRate            = 0,
-    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_12K,
     .GP.cfg_b.uNCE                 = 0,
     .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
     .GP.cfg_b.uRsvd_0              = 0,
@@ -3750,10 +3942,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT3 =
 
 //*****************************************************************************
 //
-// SDIF_DAT4 (79) - SD Data 4 pin.
+// SDIO_DAT4 (79) - eMMC NAND Flash I/F using SDIO data 4.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT4 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT4 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_79_SDIF_DAT4,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3774,10 +3966,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT4 =
 
 //*****************************************************************************
 //
-// SDIF_DAT5 (80) - SD Data 5 pin.
+// SDIO_DAT5 (80) - eMMC NAND Flash I/F using SDIO data 5.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT5 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT5 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_80_SDIF_DAT5,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3798,10 +3990,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT5 =
 
 //*****************************************************************************
 //
-// SDIF_DAT6 (81) - SD Data 6 pin.
+// SDIO_DAT6 (81) - eMMC NAND Flash I/F using SDIO data 6.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT6 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT6 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_81_SDIF_DAT6,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3822,10 +4014,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT6 =
 
 //*****************************************************************************
 //
-// SDIF_DAT7 (82) - SD Data 7 pin.
+// SDIO_DAT7 (82) - eMMC NAND Flash I/F using SDIO data 7.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT7 =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_DAT7 =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_82_SDIF_DAT7,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3846,10 +4038,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_DAT7 =
 
 //*****************************************************************************
 //
-// SDIF_CMD (83) - SD Command pin.
+// SDIO_CMD (83) - eMMC NAND Flash I/F using SDIO CMD
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CMD =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_CMD =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_83_SDIF_CMD,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3858,7 +4050,7 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CMD =
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
     .GP.cfg_b.uSlewRate            = 0,
-    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_12K,
     .GP.cfg_b.uNCE                 = 0,
     .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
     .GP.cfg_b.uRsvd_0              = 0,
@@ -3870,10 +4062,10 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CMD =
 
 //*****************************************************************************
 //
-// SDIF_CLKOUT (88) - SD Clock to Card pin.
+// SDIO_CLK (88) - eMMC NAND Flash I/F using SDIO clock.
 //
 //*****************************************************************************
-am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CLKOUT =
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_CLK =
 {
     .GP.cfg_b.uFuncSel             = AM_HAL_PIN_88_SDIF_CLKOUT,
     .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
@@ -3881,6 +4073,30 @@ am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIF_CLKOUT =
     .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
     .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_DISABLE,
     .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_1P0X,
+    .GP.cfg_b.uSlewRate            = 0,
+    .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_12K,
+    .GP.cfg_b.uNCE                 = 0,
+    .GP.cfg_b.eCEpol               = AM_HAL_GPIO_PIN_CEPOL_ACTIVELOW,
+    .GP.cfg_b.uRsvd_0              = 0,
+    .GP.cfg_b.ePowerSw             = AM_HAL_GPIO_PIN_POWERSW_NONE,
+    .GP.cfg_b.eForceInputEn        = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.eForceOutputEn       = AM_HAL_GPIO_PIN_FORCEEN_NONE,
+    .GP.cfg_b.uRsvd_1              = 0,
+};
+
+//*****************************************************************************
+//
+// SDIO_RST (73) - eMMC NAND Flash I/F using GPIO for Reset.
+//
+//*****************************************************************************
+am_hal_gpio_pincfg_t g_AM_BSP_GPIO_SDIO_RST =
+{
+    .GP.cfg_b.uFuncSel             = AM_HAL_PIN_73_GPIO,
+    .GP.cfg_b.eGPInput             = AM_HAL_GPIO_PIN_INPUT_NONE,
+    .GP.cfg_b.eGPRdZero            = AM_HAL_GPIO_PIN_RDZERO_READPIN,
+    .GP.cfg_b.eIntDir              = AM_HAL_GPIO_PIN_INTDIR_NONE,
+    .GP.cfg_b.eGPOutCfg            = AM_HAL_GPIO_PIN_OUTCFG_PUSHPULL,
+    .GP.cfg_b.eDriveStrength       = AM_HAL_GPIO_PIN_DRIVESTRENGTH_0P5X,
     .GP.cfg_b.uSlewRate            = 0,
     .GP.cfg_b.ePullup              = AM_HAL_GPIO_PIN_PULLUP_NONE,
     .GP.cfg_b.uNCE                 = 0,

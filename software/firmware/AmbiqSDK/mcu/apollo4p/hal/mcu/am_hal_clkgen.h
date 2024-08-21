@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,21 +44,18 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CLKGEN_H
 #define AM_HAL_CLKGEN_H
 
+#include "am_hal_mcuctrl.h"
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-//
-//! Designate this peripheral.
-//
-#define AM_APOLLO3_CLKGEN   1
 
 //*****************************************************************************
 //
@@ -93,16 +90,6 @@ typedef enum
     AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE,
     AM_HAL_CLKGEN_CONTROL_HFRC2_START,
     AM_HAL_CLKGEN_CONTROL_HFRC2_STOP,
-    AM_HAL_CLKGEN_CONTROL_XTAL24M_ENABLE,
-    AM_HAL_CLKGEN_CONTROL_XTAL24M_DISABLE,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_0,      // Drive strength
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_1,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_2,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_3,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_4,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_5,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_6,
-    AM_HAL_CLKGEN_CONTROL_XTAL24MDS_7,
     AM_HAL_CLKGEN_CONTROL_DCCLK_ENABLE,
     AM_HAL_CLKGEN_CONTROL_DCCLK_DISABLE,
     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_OFF,
@@ -115,7 +102,8 @@ typedef enum
     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC12,
     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC6,
     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFXT
-} am_hal_clkgen_control_e;
+}
+am_hal_clkgen_control_e;
 
 //
 //! Current RTC oscillator.
@@ -124,7 +112,8 @@ typedef enum
 {
     AM_HAL_CLKGEN_STATUS_RTCOSC_XTAL,
     AM_HAL_CLKGEN_STATUS_RTCOSC_LFRC,
-} am_hal_clkgen_status_rtcosc_e;
+}
+am_hal_clkgen_status_rtcosc_e;
 
 //
 //! Clock Generation CLKOUT
@@ -176,42 +165,68 @@ typedef enum
     AM_HAL_CLKGEN_CLKOUT_XTALNE_2048    = CLKGEN_CLKOUT_CKSEL_XTNE_DIV16,   // XTALNE / 16  =  2048 Hz
     AM_HAL_CLKGEN_CLKOUT_LFRCNE         = CLKGEN_CLKOUT_CKSEL_LFRCNE,       // LFRCNE / 32  =    32 Hz
     AM_HAL_CLKGEN_CLKOUT_LFRCNE_32      = CLKGEN_CLKOUT_CKSEL_LFRCNE_DIV32, // LFRCNE / 32  =    32 Hz
-    AM_HAL_CLKGEN_CLKOUT_HFRCNE_96M     = CLKGEN_CLKOUT_CKSEL_HFRCNE,       // HFRCNE / 1   = 96MHz
-    AM_HAL_CLKGEN_CLKOUT_HFRCNE_12M     = CLKGEN_CLKOUT_CKSEL_HFRCNE_DIV8,  // HFRCNE / 8   = 12MHz
 
     // Misc clocks
     AM_HAL_CLKGEN_CLKOUT_RTC_1HZ        = CLKGEN_CLKOUT_CKSEL_RTC_1Hz,      // RTC
     AM_HAL_CLKGEN_CLKOUT_CG_100         = CLKGEN_CLKOUT_CKSEL_CG_100Hz,     // ClkGen 100Hz
-    AM_HAL_CLKGEN_CLKOUT_FLASHCLK       = CLKGEN_CLKOUT_CKSEL_FLASH_CLK,
-} am_hal_clkgen_clkout_e;
+}
+am_hal_clkgen_clkout_e;
 
 #define AM_HAL_CLKGEN_CLKOUT_MAX        CLKGEN_CLKOUT_CKSEL_HFRC2_24MHz     // Highest valid CKSEL enum value
 
 //
-//! enum for HFCR2 FLL computation
+//! enum for HFRC2 FLL computation
 //
 typedef enum
 {
     //
-    //! compute the hf2adj parameters from input and output freqs
+    //! compute the hf2adj parameters from input and output freqs.
     //
-    AM_HAL_CLKGEN_HF2ADJ_COMP_COMP_FREQ = 1 ,
+    AM_HAL_CLKGEN_HF2ADJ_COMP_COMP_FREQ = 0x01,
     //
     //! use passed in values directory
     //
-    AM_HAL_CLKGEN_HF2ADJ_COMP_DIRECT_ARG = 2,
+    AM_HAL_CLKGEN_HF2ADJ_COMP_DIRECT_ARG = 0x02,
+
+    //
+    //! when set the HFRC2ADJ is started during the HFRC2 adjust resample
+    //
+    AM_HAL_CLKGEN_HFRC2ADJ_RECOMPUTE_START = 0x04,
+    //
+    //! when set the HFRC2ADJ is sampled during the HFRC2 adjust resample
+    //
+    AM_HAL_CLKGEN_HFRC2ADJ_RECOMPUTE_SAMPLE = 0x08,
+    //
+    //! both start hfrc2 and sample (combination of two bits)
+    //
+    AM_HAL_CLKGEN_HFRC2ADJ_START_AND_SAMPLE = AM_HAL_CLKGEN_HFRC2ADJ_RECOMPUTE_START | AM_HAL_CLKGEN_HFRC2ADJ_RECOMPUTE_SAMPLE,
+
     //
     //! force this enum to be sizeof 4 bytes
     //
     AM_HAL_CLKGEN_HF2ADJ_COMP_ALIGH = 0x70000000,
 
-} am_hal_clockgen_hf2adj_compute_e;
+}
+am_hal_clockgen_hf2adj_compute_e;
+
+typedef enum
+{
+
+    AM_HAL_CLKGEN_STAT_REV_RD_FAIL  = AM_HAL_STATUS_MODULE_SPECIFIC_START | 0x01,
+    AM_HAL_CLKGEN_STAT_PATCH_RD_FAIL  = AM_HAL_STATUS_MODULE_SPECIFIC_START | 0x02,
+    AM_HAL_CLKGEN_STAT_NOT_PATCHED  = AM_HAL_STATUS_MODULE_SPECIFIC_START | 0x03,
+
+}
+am_hal_clockgen_custom_status_e;
 
 //
 //! struct used to pass data for AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE
 //
 typedef struct
 {
+    //
+    //!
+    //
     am_hal_clockgen_hf2adj_compute_e eHF2AdjType;
     //
     //! the xref oscillator frequency in hz
@@ -222,7 +237,94 @@ typedef struct
     //
     uint32_t ui32Target_freq_in_hz;
 
-} am_hal_clockgen_hf2adj_compute_t;
+    //
+    // !This is the un-shifted value of register HF2ADJ1.HF2ADJTRIMOFFSET
+    // !This is an 11 bit signed value (max)
+    //
+    uint32_t ui32TrimValue;    // max is 0x7FFF
+
+    //
+    //! the max value for this is 7, if this is > 7 or 0
+    //! the default value of 7 will be used
+    //
+    uint8_t ui8TrimSetting;
+
+    //
+    //! HFRC2-adj is default enabled,
+    //! set this true to prevent HFRC2-adj being enabled
+    //
+    bool    bDoNotEnableHFRC2;
+
+    //
+    //! struct length align to 4 byte multiple
+    //
+    uint8_t reserved_1[2];
+}
+am_hal_clockgen_hf2adj_compute_t;
+
+//
+//! struct used to pass data for AM_HAL_CLKGEN_CONTROL_HF2ADJ_RECOMPUTE
+//
+typedef struct
+{
+    //
+    //! specify HFRC2 adjust enable, sample and update, or both
+    //!  -- that is
+    //!  -- AM_HAL_CLKGEN_HFRC2ADJ_RECOMPUTE_START  (Section 1)
+    //!  -- AM_HAL_CLKGEN_HFRC2ADJ_RECOMPUTE_SAMPLE  (Section 2)
+    //!  -- AM_HAL_CLKGEN_HFRC2ADJ_START_AND_SAMPLE  (Section 1 and Section 2)
+    //
+    am_hal_clockgen_hf2adj_compute_e eHF2RecomputeControl;
+
+    //
+    //! the number of samples to average
+    //
+    uint32_t ui32NumSamples;
+
+    //
+    //! This is the delay between restarting HFRC2-adjust (Section1)
+    //! and sampling it's output(Section2).
+    //!
+    //! It is recommended there be at least 1000usec delay between
+    //! Section 1 and Section 2
+    //
+    uint32_t ui32StartupDelay_us;
+
+    //
+    //! the delay between samples
+    //! it is recommended this value be at least 1
+    //
+    uint32_t ui32SampleDelay_us;    // max is 0x7FFF
+
+    //
+    //! if the user wants to disable the XTHS and this
+    //! pointer is provided, this will be used for api calls
+    //! to enable and disable the 32Mhz clock(XTHS)
+    //! this cannot be on the stack.
+    //! @Todo check if this is on the stack on init one-time?
+    //! is the a good way to check for stack variable
+    //!
+
+    am_hal_mcuctrl_control_arg_t mcu_ctrl_xths_controlArg;
+
+    //
+    //! 32Mhz clock startup delay
+    //! it is recommended this value be at least 200usec
+    //
+    uint32_t ui32Post32MhzRestartDelay_us;
+
+    //
+    //! Disable the 32Mhz XTALHS between HFRC2 tune samples sessions
+    //
+    bool    bDisableXTALHS;
+
+    //
+    //! struct align to 4 byte multiple
+    //
+    uint8_t  align[2];
+
+}
+am_hal_clockgen_hf2adj_recompute_t;
 
 
 //
@@ -260,7 +362,11 @@ typedef struct
     //uint32_t    ui32Clockenstat;
     //uint32_t    ui32Clocken2stat;
     //uint32_t    ui32Clocken3stat;
-} am_hal_clkgen_status_t;
+}
+am_hal_clkgen_status_t;
+
+extern const am_hal_clockgen_hf2adj_recompute_t tReComputeCtrlDefault;
+extern const am_hal_clockgen_hf2adj_recompute_t tReComputeCtrlNo32MhzDefault;
 
 // ****************************************************************************
 //
@@ -270,18 +376,30 @@ typedef struct
 //!
 //! @note IMPORTANT! This function MUST be called very early in execution of
 //!       an application with the parameter AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX
-//!       in order to set Apollo3 to its required operating frequency.
+//!       in order to set Apollo4p to its required operating frequency.
 //!
 //! @param eControl - One of the following:
-//!     AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX
-//!     AM_HAL_CLKGEN_CONTROL_XTAL_START
-//!     AM_HAL_CLKGEN_CONTROL_LFRC_START
-//!     AM_HAL_CLKGEN_CONTROL_XTAL_STOP
-//!     AM_HAL_CLKGEN_CONTROL_LFRC_STOP
-//!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL
 //!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC
+//!     AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL
 //!     AM_HAL_CLKGEN_CONTROL_HFADJ_ENABLE
 //!     AM_HAL_CLKGEN_CONTROL_HFADJ_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_HF2ADJ_ENABLE
+//!     AM_HAL_CLKGEN_CONTROL_HF2ADJ_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_HFRC2_START
+//!     AM_HAL_CLKGEN_CONTROL_HFRC2_STOP
+//!     AM_HAL_CLKGEN_CONTROL_DCCLK_ENABLE
+//!     AM_HAL_CLKGEN_CONTROL_DCCLK_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_OFF
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_HFRC48
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_HFRC96
+//!     AM_HAL_CLKGEN_CONTROL_DISPCLKSEL_DPHYPLL
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLK_ENABLE
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLK_DISABLE
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_OFF
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC12
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFRC6
+//!     AM_HAL_CLKGEN_CONTROL_PLLCLKSEL_HFXT
+//!     AM_HAL_CLKGEN_CONTROL_HF2ADJ_COMPUTE
 //! @param pArgs - Pointer to arguments for Control Switch Case
 //!
 //! @return status      - generic or interface specific status.
@@ -361,19 +479,57 @@ extern uint32_t am_hal_clkgen_status_get(am_hal_clkgen_status_t *psStatus);
 //!     AM_HAL_CLKGEN_CLKOUT_XTALNE_2048
 //!     AM_HAL_CLKGEN_CLKOUT_LFRCNE
 //!     AM_HAL_CLKGEN_CLKOUT_LFRCNE_32
-//!     AM_HAL_CLKGEN_CLKOUT_HFRCNE_96M
-//!     AM_HAL_CLKGEN_CLKOUT_HFRCNE_12M
 //!
 //!     // Misc clocks
 //!     AM_HAL_CLKGEN_CLKOUT_RTC_1HZ
 //!     AM_HAL_CLKGEN_CLKOUT_CG_100
-//!     AM_HAL_CLKGEN_CLKOUT_FLASHCLK
 //!
 //! @return status      - generic or interface specific status.
 //
 // ****************************************************************************
 extern uint32_t am_hal_clkgen_clkout_enable(bool bEnable,
                                             am_hal_clkgen_clkout_e eClkSelect);
+
+//*****************************************************************************
+//
+//! @brief Setup hfrc2 adjust based on input values
+//!
+//! @param psHf2Cfg  am_hal_clockgen_hf2adj_compute_t containing configuration settings
+//!
+//! @return standard hal status
+//
+//*****************************************************************************
+extern uint32_t am_hal_hfrc2_adj_control( const am_hal_clockgen_hf2adj_compute_t *psHf2Cfg);
+
+//*****************************************************************************
+//
+//! @brief sample the HFRC2-adjust output and use enable as a fixed output.
+//!
+//! @details This is intended to reduce jitter from HFRC2 adjust.
+//! This code will:\n
+//!     1. Section 1\n
+//!         - start the HFRC2-adjust\n
+//!         - wait a programmable amount of time for HFRC2-adjust startup\n
+//!             - this delay should be at least 1000 usec\n
+//!     2. Section 2\n
+//!         - sample a programmable number of adjust mux output values\n
+//!             - Use a programmable intersample delay  (minimum 1 usec)\n
+//!             - sign-extend and average the samples\n
+//!         - save the averaged value to the tune register\n
+//!         - disable HFRC2 adjust\n
+//!
+//! @note It is recommended this function be called every 10 seconds.
+//!
+//! @note Section 1 and 2 can be run independently depending on eSampleControl.
+//!
+//! @param psRecomputeCtrl  am_hal_clockgen_hf2adj_recompute_t see structure definition
+//!                          for details and recommendations of each field.
+//!
+//! @return Generic success status.
+//
+//*****************************************************************************
+extern uint32_t am_hal_clkgen_HFRC2_adj_recompute( const am_hal_clockgen_hf2adj_recompute_t *psRecomputeCtrl);
+
 #ifdef __cplusplus
 }
 #endif

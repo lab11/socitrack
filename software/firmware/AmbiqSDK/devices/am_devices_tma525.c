@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -53,18 +53,33 @@
 #include "am_bsp.h"
 #include "string.h"
 #include "am_util_delay.h"
+#include "am_devices_display_generic.h"
 
 //*****************************************************************************
 //
 // Local definitions.
 //
 //*****************************************************************************
-am_hal_iom_config_t     g_sI2cTms525Cfg =
+#if defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+static uint32_t DMATCBBuffer[256] __attribute__((aligned(4096)));
+#else
+static uint32_t DMATCBBuffer[1024];
+#endif
+
+static am_hal_iom_config_t g_sI2cNBConfig =
 {
-    .eInterfaceMode       = AM_HAL_IOM_I2C_MODE,
-    .ui32ClockFreq        = AM_HAL_IOM_400KHZ,
-    .ui32NBTxnBufLength   = 0,
-    .pNBTxnBuf = NULL,
+    .eInterfaceMode         = AM_HAL_IOM_I2C_MODE,
+    .ui32ClockFreq          = AM_HAL_IOM_400KHZ,
+    .ui32NBTxnBufLength     = sizeof(DMATCBBuffer) / 4,
+    .pNBTxnBuf              = DMATCBBuffer
+};
+
+static am_hal_iom_config_t g_sI2cTms525Cfg =
+{
+    .eInterfaceMode         = AM_HAL_IOM_I2C_MODE,
+    .ui32ClockFreq          = AM_HAL_IOM_400KHZ,
+    .ui32NBTxnBufLength     = 0,
+    .pNBTxnBuf              = NULL,
 };
 
 //*****************************************************************************
@@ -83,6 +98,8 @@ static void *g_tma525_IOMHandle;
 static uint32_t tma525_i2c_read(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size);
 static uint32_t tma525_i2c_write(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size);
 static uint32_t tma525_master_xfer(struct rt_i2c_msg          *msgs, unsigned int num);
+static uint32_t tma525_i2c_noblocking_read(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size, am_hal_iom_callback_t pfnCallback, void *pCallbackCtxt);
+static uint32_t tma525_master_noblocking_xfer(struct rt_i2c_msg *msgs, rt_uint32_t num, am_hal_iom_callback_t pfnCallback, void *pCallbackCtxt);
 
 //*****************************************************************************
 //
@@ -120,6 +137,51 @@ tma525_read(uint16_t addr, uint8_t *buffer, unsigned long length)
     };
 
     ret = tma525_master_xfer(msgs, 2);
+
+    if ( ret == (msgs[0].len - 1 + msgs[1].len) )
+    {
+        return AM_DEVICES_TMA525_STATUS_SUCCESS;
+    }
+
+    return AM_DEVICES_TMA525_STATUS_ERROR;
+}
+
+//*****************************************************************************
+//
+//! @brief
+//! @param addr
+//! @param buffer
+//! @param length
+//! @return
+//
+//*****************************************************************************
+static uint32_t
+tma525_noblocking_read(uint16_t addr, uint8_t *buffer, unsigned long length, am_hal_iom_callback_t pfnCallback, void *pCallbackCtxt)
+{
+    int ret;
+
+    if (buffer == NULL)
+    {
+        return -1;
+    }
+
+    struct rt_i2c_msg msgs[] =
+    {
+        {
+            .addr   = TMA525_SLAVE_ADDR,
+            .flags  = AM_DEVICES_TMA525_I2C_WR,
+            .len    = sizeof(addr),
+            .buf    = (uint8_t *)&addr,
+        },
+        {
+            .addr   = TMA525_SLAVE_ADDR,
+            .flags  = AM_DEVICES_TMA525_I2C_RD,
+            .len    = length,
+            .buf    = buffer,
+        },
+    };
+
+    ret = tma525_master_noblocking_xfer(msgs, 2, pfnCallback, pCallbackCtxt);
 
     if ( ret == (msgs[0].len - 1 + msgs[1].len) )
     {
@@ -346,7 +408,7 @@ tma525_i2c_read(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size)
 
     Transaction.ui8Priority     = 1;
     Transaction.ui32InstrLen    = 0;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
     Transaction.ui64Instr       = 0;
 #else
     Transaction.ui32Instr       = 0;
@@ -378,13 +440,51 @@ tma525_i2c_read(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size)
 //
 //*****************************************************************************
 static uint32_t
+tma525_i2c_noblocking_read(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size, am_hal_iom_callback_t pfnCallback, void *pCallbackCtxt)
+{
+    am_hal_iom_transfer_t       Transaction;
+
+    Transaction.ui8Priority     = 1;
+    Transaction.ui32InstrLen    = 0;
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
+    Transaction.ui64Instr       = 0;
+#else
+    Transaction.ui32Instr       = 0;
+#endif
+    Transaction.eDirection      = AM_HAL_IOM_RX;
+    Transaction.ui32NumBytes    = size;
+    Transaction.pui32RxBuffer   = pBuf;
+    Transaction.bContinue       = false;
+    Transaction.ui8RepeatCount  = 0;
+    Transaction.ui32PauseCondition = 0;
+    Transaction.ui32StatusSetClr = 0;
+
+    Transaction.uPeerInfo.ui32I2CDevAddr = ui32BusAddress;
+    if (am_hal_iom_nonblocking_transfer(g_tma525_IOMHandle, &Transaction, pfnCallback, pCallbackCtxt) != AM_HAL_STATUS_SUCCESS)
+    {
+        return AM_DEVICES_TMA525_STATUS_ERROR;
+    }
+
+    return AM_DEVICES_TMA525_STATUS_SUCCESS;
+}
+
+//*****************************************************************************
+//
+//! @brief
+//! @param ui32BusAddress
+//! @param pBuf
+//! @param size
+//! @return
+//
+//*****************************************************************************
+static uint32_t
 tma525_i2c_write(uint32_t ui32BusAddress, uint32_t *pBuf, uint32_t size)
 {
     am_hal_iom_transfer_t       Transaction;
 
     Transaction.ui8Priority     = 1;
     Transaction.ui32InstrLen    = 0;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
     Transaction.ui64Instr       = 0;
 #else
     Transaction.ui32Instr       = 0;    //IOSOFFSET_WRITE_CMD;
@@ -437,6 +537,39 @@ tma525_master_xfer(struct rt_i2c_msg          *msgs, rt_uint32_t num)
         }
     }
 
+    return msg_len;
+}
+
+//*****************************************************************************
+//
+//! @brief
+//! @param msgs
+//! @param num
+//! @return
+//
+//*****************************************************************************
+static uint32_t
+tma525_master_noblocking_xfer(struct rt_i2c_msg *msgs, rt_uint32_t num, am_hal_iom_callback_t pfnCallback, void *pCallbackCtxt)
+{
+    struct rt_i2c_msg *msg;
+    int i;
+    rt_uint32_t msg_len = 0;
+
+    for (i = 0; i < num; i++)
+    {
+        msg = &msgs[i];
+
+        if (msg->flags == AM_DEVICES_TMA525_I2C_RD)
+        {
+            tma525_i2c_noblocking_read(msg->addr, (uint32_t *)msg->buf, msg->len, pfnCallback, pCallbackCtxt);
+            msg_len += msg->len;
+        }
+        else if ( msg->flags == AM_DEVICES_TMA525_I2C_WR )
+        {
+            tma525_i2c_write(msg->addr, (uint32_t *)msg->buf, msg->len);
+            msg_len += (msg->len - 1);
+        }
+    }
     return msg_len;
 }
 
@@ -507,7 +640,7 @@ am_devices_tma525_data_read(uint8_t *pui8RxBuffer, uint32_t RxNumBytes)
     Transaction.ui32PauseCondition = 0;
     Transaction.eDirection      = AM_HAL_IOM_RX;
     Transaction.ui32InstrLen    = 1;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5A) || defined(AM_PART_APOLLO5B)
     Transaction.ui64Instr       = 0;
 #else
     Transaction.ui32Instr       = 0;
@@ -529,13 +662,85 @@ am_devices_tma525_data_read(uint8_t *pui8RxBuffer, uint32_t RxNumBytes)
     return AM_DEVICES_TMA525_STATUS_SUCCESS;
 }
 
+static void pfnTMA_READATA_Callback(void *pCallbackCtxt, uint32_t status)
+{
+    uint16_t touch_x, touch_y;
+    uint8_t touch_event;
+    touch_info_t *touch_info = (touch_info_t*)pCallbackCtxt;
+    if ( status == AM_DEVICES_TMA525_STATUS_SUCCESS )
+    {
+        touch_x = touch_info->touch_data[10];
+        touch_x <<= 8;
+        touch_x += touch_info->touch_data[9];
+        *(touch_info->x) = AM_DEVICES_TMA525_DISP_RESX - touch_x;
+
+        touch_y = touch_info->touch_data[12];
+        touch_y <<= 8;
+        touch_y += touch_info->touch_data[11];
+        *(touch_info->y) = AM_DEVICES_TMA525_DISP_RESY - touch_y;
+
+        touch_event = touch_info->touch_data[8];
+        touch_event >>= 5;
+        touch_event &= 0x03;
+        switch (touch_event)
+        {
+            case AM_DEVICES_TMA525_STATUS_NO_EVENT:
+            break;
+
+            case AM_DEVICES_TMA525_STATUS_TOUCH_DOWN:
+                *(touch_info->touch_release) = false;
+            break;
+
+            case AM_DEVICES_TMA525_STATUS_SIGNIFICANT_DISPLACEMENT:
+            break;
+
+            case AM_DEVICES_TMA525_STATUS_LIFT_OFF:
+                *(touch_info->touch_release) = true;
+            break;
+
+            default:break;
+        }
+    }
+}
+
+static void pfnTMA_READINFO_Callback(void *pCallbackCtxt, uint32_t status)
+{
+    uint32_t size;
+    static uint8_t buf_data[256];
+    touch_info_t *touch_message_temp = (touch_info_t*)pCallbackCtxt;
+    size = get_unaligned_le16(&touch_message_temp->touch_data[0]);
+    if (size > 2)
+    {
+        touch_message_temp->touch_data = buf_data;
+        tma525_noblocking_read(AM_DEVICES_TMA525_READ_DATA_BLOCK, buf_data, size, pfnTMA_READATA_Callback, pCallbackCtxt);
+    }
+}
+
 // ****************************************************************************
 //
 //  Get the actual touch x coordinate and y coordinate
 //
 // ****************************************************************************
 uint32_t
-am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released)
+am_devices_tma525_nonblocking_get_point(am_devices_tc_tma525_info_t *touch_info)
+{
+    static touch_info_t touch_message;
+    static uint8_t buf_info[2];
+    touch_message.x = &touch_info->x0;
+    touch_message.y = &touch_info->y0;
+    touch_message.touch_release = &touch_info->touch_released;
+    touch_message.touch_data = buf_info;
+    tma525_noblocking_read(AM_DEVICES_TMA525_READ_DATA_BLOCK, buf_info, 2, pfnTMA_READINFO_Callback, &touch_message);
+    return AM_DEVICES_TMA525_STATUS_SUCCESS;
+}
+
+// ****************************************************************************
+//
+//  Get the actual touch x coordinate and y coordinate
+//
+// ****************************************************************************
+uint32_t
+am_devices_tma525_get_point(am_devices_tc_tma525_info_t *touch_info)
 {
     uint32_t size;
     uint8_t buf[2];
@@ -554,12 +759,12 @@ am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released)
         touch_x = buf_data[10];
         touch_x <<= 8;
         touch_x += buf_data[9];
-        *x = AM_DEVICES_TMA525_DISP_RESX - touch_x;
+        touch_info->x0 = AM_DEVICES_TMA525_DISP_RESX - touch_x;
 
         touch_y = buf_data[12];
         touch_y <<= 8;
         touch_y += buf_data[11];
-        *y = AM_DEVICES_TMA525_DISP_RESY - touch_y;
+        touch_info->y0 = AM_DEVICES_TMA525_DISP_RESY - touch_y;
 
         touch_event = buf_data[8];
         touch_event >>= 5;
@@ -570,14 +775,14 @@ am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released)
             break;
 
             case AM_DEVICES_TMA525_STATUS_TOUCH_DOWN:
-                *touch_released = false;
+                touch_info->touch_released = false;
             break;
 
             case AM_DEVICES_TMA525_STATUS_SIGNIFICANT_DISPLACEMENT:
             break;
 
             case AM_DEVICES_TMA525_STATUS_LIFT_OFF:
-                *touch_released = true;
+                touch_info->touch_released = true;
             break;
 
             default:break;
@@ -586,13 +791,53 @@ am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released)
     return AM_DEVICES_TMA525_STATUS_SUCCESS;
 }
 
+//
+// Take over the interrupt handler for whichever IOM we're using.
+//
+#define fram_iom_isr                                                          \
+    am_iom_isr1(AM_BSP_TP_IOM_MODULE)
+#define am_iom_isr1(n)                                                        \
+    am_iom_isr(n)
+#define am_iom_isr(n)                                                         \
+    am_iomaster ## n ## _isr
+
+//*****************************************************************************
+//
+// IOM ISRs.
+//
+//*****************************************************************************
+#if defined(RUNNING_IN_TESTCASE)
+#if defined(__IAR_SYSTEMS_ICC__)
+__weak
+#else
+__attribute__ ((weak))
+#endif
+#endif
+void
+fram_iom_isr(void)
+{
+    uint32_t ui32Status;
+
+    if (g_sDispCfg.eIC != DISP_IC_CO5300)
+    {
+        if (!am_hal_iom_interrupt_status_get(g_tma525_IOMHandle, true, &ui32Status))
+        {
+            if ( ui32Status )
+            {
+                am_hal_iom_interrupt_clear(g_tma525_IOMHandle, ui32Status);
+                am_hal_iom_interrupt_service(g_tma525_IOMHandle, ui32Status);
+            }
+        }
+    }
+}
+
 // ****************************************************************************
 //
 //  Initialize the TMA525 driver for IOM I2C and DMA
 //
 // ****************************************************************************
 uint32_t
-am_devices_tma525_init(uint32_t ui32Module, am_hal_iom_config_t *psIOMSettings, void **ppIomHandle)
+am_devices_tma525_init(uint32_t ui32Module, am_hal_gpio_handler_t touch_handler, void *pArg)
 {
     if ( ui32Module > AM_REG_IOM_NUM_MODULES )
     {
@@ -613,18 +858,29 @@ am_devices_tma525_init(uint32_t ui32Module, am_hal_iom_config_t *psIOMSettings, 
     //
     if (am_hal_iom_initialize(ui32Module, &g_tma525_IOMHandle) ||
         am_hal_iom_power_ctrl(g_tma525_IOMHandle, AM_HAL_SYSCTRL_WAKE, false) ||
-        am_hal_iom_configure(g_tma525_IOMHandle, psIOMSettings) ||
+        am_hal_iom_configure(g_tma525_IOMHandle, &g_sI2cNBConfig) ||
         am_hal_iom_enable(g_tma525_IOMHandle))
     {
         return AM_DEVICES_TMA525_STATUS_ERROR;
     }
-    else
-    {
-        *ppIomHandle = g_tma525_IOMHandle;
-        //
-        // Return the status.
-        //
-    }
+
+    #define FRAM_IOM_IRQn           ((IRQn_Type)(IOMSTR0_IRQn + ui32Module))
+    NVIC_ClearPendingIRQ(FRAM_IOM_IRQn);
+    NVIC_EnableIRQ(FRAM_IOM_IRQn);
+
+    //
+    // Configure the Touch GPIO interrupt.
+    //
+    uint32_t IntNum = AM_BSP_GPIO_TOUCH_INT;
+    am_hal_gpio_mask_t IntMask = AM_HAL_GPIO_MASK_DECLARE_ZERO;
+    IntMask.U.Msk[GPIO_NUM2IDX(IntNum)] = GPIO_NUM2MSK(IntNum);
+    am_hal_gpio_interrupt_clear(AM_HAL_GPIO_INT_CHANNEL_0, &IntMask);
+    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, IntNum, touch_handler, pArg);
+    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0,
+                                  AM_HAL_GPIO_INT_CTRL_INDV_ENABLE,
+                                  (void *)&IntNum);
+    NVIC_SetPriority(g_sInterrupts[TP_GPIO_IDX], 0x4);
+    NVIC_EnableIRQ(g_sInterrupts[TP_GPIO_IDX]);
 
     tma525_finish_init();
 
@@ -676,7 +932,7 @@ am_devices_tma525_multidrop_iom_init(uint32_t ui32Module, am_hal_iom_config_t *p
         AM_BSP_IOM4_CS_CHNL,
         0
     };
-#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5A)  || defined(AM_PART_APOLLO5B)
     { 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
 
@@ -719,12 +975,14 @@ am_devices_tma525_multidrop_iom_init(uint32_t ui32Module, am_hal_iom_config_t *p
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
+#elif AM_PART_APOLLO3_API
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
     am_hal_mcuctrl_fault_capture_enable();
+#endif
 #endif
 
     //

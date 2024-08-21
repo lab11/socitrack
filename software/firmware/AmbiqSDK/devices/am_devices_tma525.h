@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -194,7 +194,6 @@ extern "C"
 
 //! @}
 
-
 //! @name Test Mode (Monitoring Raw Data)
 //! @{
 #define SEC_DND_N_COUNT                 10
@@ -209,7 +208,6 @@ extern "C"
 #define SEC_PDND_U_COUNT_119_42         9
 #define SEC_PDND_FREQUENCY_119_42       37
 //! @}
-
 
 //! preriod raw data interval
 #define RAWDATA_DELAY_FOR_HOST      100
@@ -285,7 +283,6 @@ typedef unsigned char                   rt_uint8_t;
 typedef unsigned short                  rt_uint16_t;
 typedef unsigned int                    rt_uint32_t;
 
-
 struct rt_i2c_msg
 {
     uint16_t addr;
@@ -300,6 +297,35 @@ struct touch_message
     rt_uint16_t y;
     rt_uint8_t event;
 };
+
+typedef struct touch_info
+{
+    uint16_t *x;
+    uint16_t *y;
+    bool *touch_release;
+    uint8_t *touch_data;
+}touch_info_t;
+
+typedef struct
+{
+    uint16_t x0;
+    uint16_t y0;
+    uint16_t x1;
+    uint16_t y1;
+    uint16_t dx0;
+    uint16_t dy0;
+    uint16_t dx1;
+    uint16_t dy1;
+    uint32_t event;
+    uint32_t state;
+    uint32_t kb_event;
+    uint8_t  kb_key;
+    uint8_t  finger_number;
+    bool     touch_released;
+    uint32_t timer_id;
+    uint32_t timer_expirations;
+    uint8_t  fw_ver;
+} am_devices_tc_tma525_info_t;
 
 //*****************************************************************************
 //
@@ -319,7 +345,6 @@ typedef enum
     AM_DEVICES_TMA525_STATUS_SIGNIFICANT_DISPLACEMENT,
     AM_DEVICES_TMA525_STATUS_LIFT_OFF
 } am_devices_tma525_event_status_t;
-
 
 //*****************************************************************************
 //
@@ -347,16 +372,28 @@ extern uint32_t am_devices_tma525_data_read(uint8_t *pui8RxBuffer, uint32_t RxNu
 //! @brief tma525_get_point the Device Driver and IOM for the TMA525 Touch
 //! Sensor
 //!
-//! @param x - coordinate X information.
-//! @param y - coordinate Y information.
-//! @param touch_released - touch status.
+//! @param am_devices_tc_tma525_info_t - Pointer to the all touch information
 //!
 //! This function disables power to the IOM module on tma525
 //!
 //! @return status - generic or interface specific status.
 //
 //*****************************************************************************
-extern uint32_t am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touch_released);
+extern uint32_t am_devices_tma525_get_point(am_devices_tc_tma525_info_t *touch_info);
+
+//*****************************************************************************
+//
+//! @brief am_devices_tma525_nonblocking_get_point the Device Driver and IOM for
+//! the TMA525 Touch Sensor
+//!
+//! @param am_devices_tc_tma525_info_t - Pointer to the all touch information
+//!
+//! This function disables power to the IOM module on tma525
+//!
+//! @return status - generic or interface specific status.
+//
+//*****************************************************************************
+extern uint32_t am_devices_tma525_nonblocking_get_point(am_devices_tc_tma525_info_t *touch_info);
 
 //*****************************************************************************
 //
@@ -372,7 +409,10 @@ extern uint32_t am_devices_tma525_get_point(uint16_t *x, uint16_t *y, bool *touc
 //! @return status - generic or interface specific status.
 //
 //*****************************************************************************
-extern uint32_t am_devices_tma525_init(uint32_t ui32Module, am_hal_iom_config_t *psIOMSettings, void **ppIomHandle);
+extern uint32_t
+am_devices_tma525_init(uint32_t ui32Module,
+                       am_hal_gpio_handler_t touch_handler,
+                       void *pArg);
 
 //*****************************************************************************
 //
@@ -386,7 +426,6 @@ extern uint32_t am_devices_tma525_init(uint32_t ui32Module, am_hal_iom_config_t 
 //
 //*****************************************************************************
 extern uint32_t am_devices_tma525_deinit(uint32_t ui32Module);
-
 
 //*****************************************************************************
 //

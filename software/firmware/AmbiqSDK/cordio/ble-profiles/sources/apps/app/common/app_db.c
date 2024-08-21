@@ -208,7 +208,7 @@ int32_t AppDbUpdateNVM(appDbHdl_t hdl)
 {
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO4P)
     uint32_t* pNvmRec =  (uint32_t *)pRecListNvmPointer;
-    uint32_t * pRamBufRec = (uint32_t *)ui8DbRamBuffer;
+    uint8_t * pRamBufRec = ui8DbRamBuffer;
 #else
     appDbRec_t* pNvmRec =  pRecListNvmPointer;
     appDbRec_t* pRamBufRec = (appDbRec_t*)ui8DbRamBuffer;

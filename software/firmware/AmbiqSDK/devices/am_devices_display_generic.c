@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include "am_bsp.h"
@@ -158,6 +158,10 @@ static am_devices_display_tranfer_t sDispTransfer =
 //
 //! Default DC layer
 //
+#if !defined(USE_NEMAGUI_LIB)
+//
+//! NemaGUI will not use the sDefaultDCLayer
+//
 static nemadc_layer_t sDefaultDCLayer =
 {
     .startx        = 0,
@@ -177,7 +181,9 @@ static nemadc_layer_t sDefaultDCLayer =
     .alpha         = 0xff,
     .flipx_en      = 0,
     .flipy_en      = 0,
+    .extra_bits    = 0
 };
+#endif
 #endif // DISP_CTRL_IP == DISP_CTRL_IP_DC
 
 #if (DISP_CTRL_IP == DISP_CTRL_IP_MSPI)
@@ -239,7 +245,7 @@ display_mspi_isr(void)
 //! GPIO TE interrupts.
 //
 //*****************************************************************************
-static const IRQn_Type te_interrupts[] =
+const IRQn_Type g_sInterrupts[] =
 {
     GPIO0_001F_IRQn,
     GPIO0_203F_IRQn,
@@ -247,16 +253,36 @@ static const IRQn_Type te_interrupts[] =
     GPIO0_607F_IRQn
 };
 
-#define TE_GPIO_IDX GPIO_NUM2IDX(DISPLAY_TE_PIN)
-
+#if (TE_GPIO_IDX == TP_GPIO_IDX)
 #if TE_GPIO_IDX == 0
-#define display_te_isr        am_gpio0_001f_isr
+#define disp_te_tp_isr        am_gpio0_001f_isr
 #elif TE_GPIO_IDX == 1
-// #define display_te_isr        am_gpio0_203f_isr  // conflict with nema_event.c
+#define disp_te_tp_isr        am_gpio0_203f_isr
 #elif TE_GPIO_IDX == 2
-#define display_te_isr        am_gpio0_405f_isr
+#define disp_te_tp_isr        am_gpio0_405f_isr
 #elif TE_GPIO_IDX == 3
-#define display_te_isr        am_gpio0_607f_isr
+#define disp_te_tp_isr        am_gpio0_607f_isr
+#endif
+#else
+#if TE_GPIO_IDX == 0
+#define disp_te_isr           am_gpio0_001f_isr
+#elif TE_GPIO_IDX == 1
+#define disp_te_isr           am_gpio0_203f_isr
+#elif TE_GPIO_IDX == 2
+#define disp_te_isr           am_gpio0_405f_isr
+#elif TE_GPIO_IDX == 3
+#define disp_te_isr           am_gpio0_607f_isr
+#endif
+
+#if TP_GPIO_IDX == 0
+#define disp_tp_isr           am_gpio0_001f_isr
+#elif TP_GPIO_IDX == 1
+#define disp_tp_isr           am_gpio0_203f_isr
+#elif TP_GPIO_IDX == 2
+#define disp_tp_isr           am_gpio0_405f_isr
+#elif TP_GPIO_IDX == 3
+#define disp_tp_isr           am_gpio0_607f_isr
+#endif
 #endif
 
 //*****************************************************************************
@@ -264,7 +290,29 @@ static const IRQn_Type te_interrupts[] =
 //! TE & VSYNC interrupts sync.
 //
 //*****************************************************************************
+#ifdef APOLLO5_FPGA
+//
+//! the time consumption per frame is Resolution_X * Resolution_Y * Color_format / Bits_per_clk / DC_clk
+//! Resolution_X is 456
+//! Resolution_Y is 456
+//! Color_format is
+//!     24 - for color format RGB24(Default color format)
+//!     16 - for color format RGB565.
+//! Bits_per_clk is
+//!     4 - for the QSPI interface(Default display interface)
+//!     2 - for the DSPI interface
+//!     1 - for the SPI4 interface
+//! DC_clk frequency is
+//!     (APOLLO5_FPGA / 2) - for XSPI interfaces its actual output clock is the half of DC clock source.
+//! so XFER_MAX_WAIT_MS should be greater than
+//!     (456 * 456 * 24 / 4 / (APOLLO5_FPGA / 2) / 1000) - for QSPI interface.(Default interface on FPGA)
+//!     (456 * 456 * 24 / 2 / (APOLLO5_FPGA / 2) / 1000) - for DSPI interface.
+//!     (456 * 456 * 24 / 1 / (APOLLO5_FPGA / 2) / 1000) - for SPI4 interface.
+//
+#define XFER_MAX_WAIT_MS                (2600 / (APOLLO5_FPGA))
+#else
 #define XFER_MAX_WAIT_MS                100
+#endif
 
 #ifdef BAREMETAL
 static bool bXferDone                   = false;
@@ -274,20 +322,50 @@ static SemaphoreHandle_t semXferDone    = NULL;
 
 //*****************************************************************************
 //
-//! @brief TE interrupt handle function
+//! @brief TE and TP interrupt handle function
 //!
 //! Interrupt handler for the GPIO pins.
 //
 //*****************************************************************************
+#if defined(AM_BSP_GPIO_TOUCH_INT)
+#if (TE_GPIO_IDX == TP_GPIO_IDX)
 void
-display_te_isr(void)
+disp_te_tp_isr(void)
 {
     uint32_t ui32Status;
-
-    am_hal_gpio_interrupt_irq_status_get(te_interrupts[TE_GPIO_IDX], false, &ui32Status);
-    am_hal_gpio_interrupt_irq_clear(te_interrupts[TE_GPIO_IDX], ui32Status);
-    am_hal_gpio_interrupt_service(te_interrupts[TE_GPIO_IDX], ui32Status);
+    am_hal_gpio_interrupt_irq_status_get(g_sInterrupts[TE_TP_GPIO_IDX], false, &ui32Status);
+    am_hal_gpio_interrupt_irq_clear(g_sInterrupts[TE_TP_GPIO_IDX], ui32Status);
+    am_hal_gpio_interrupt_service(g_sInterrupts[TE_TP_GPIO_IDX], ui32Status);
 }
+#else
+void
+disp_te_isr(void)
+{
+    uint32_t ui32Status;
+    am_hal_gpio_interrupt_irq_status_get(g_sInterrupts[TE_GPIO_IDX], false, &ui32Status);
+    am_hal_gpio_interrupt_irq_clear(g_sInterrupts[TE_GPIO_IDX], ui32Status);
+    am_hal_gpio_interrupt_service(g_sInterrupts[TE_GPIO_IDX], ui32Status);
+}
+
+void
+disp_tp_isr(void)
+{
+    uint32_t ui32Status;
+    am_hal_gpio_interrupt_irq_status_get(g_sInterrupts[TP_GPIO_IDX], false, &ui32Status);
+    am_hal_gpio_interrupt_irq_clear(g_sInterrupts[TP_GPIO_IDX], ui32Status);
+    am_hal_gpio_interrupt_service(g_sInterrupts[TP_GPIO_IDX], ui32Status);
+}
+#endif
+#else
+void
+disp_te_isr(void)
+{
+    uint32_t ui32Status;
+    am_hal_gpio_interrupt_irq_status_get(g_sInterrupts[TE_GPIO_IDX], false, &ui32Status);
+    am_hal_gpio_interrupt_irq_clear(g_sInterrupts[TE_GPIO_IDX], ui32Status);
+    am_hal_gpio_interrupt_service(g_sInterrupts[TE_GPIO_IDX], ui32Status);
+}
+#endif
 
 //*****************************************************************************
 //
@@ -384,27 +462,25 @@ am_devices_display_init(uint16_t ui16ResX,
     //
     // store the user setting
     //
+    sDispUserSetting.ui16ResX = ui16ResX;
     if (ui16ResX < g_sDispCfg.ui16ResX)
     {
-        sDispUserSetting.ui16ResX = ui16ResX;
+        sDispUserSetting.ui16MinX = ((g_sDispCfg.ui16ResX - sDispUserSetting.ui16ResX) >> 2) << 1;
     }
     else
     {
-        sDispUserSetting.ui16ResX = g_sDispCfg.ui16ResX;
+        sDispUserSetting.ui16MinX = 0;
     }
 
-    sDispUserSetting.ui16MinX = ((g_sDispCfg.ui16ResX - sDispUserSetting.ui16ResX) >> 2) << 1;
-
+    sDispUserSetting.ui16ResY = ui16ResY;
     if (ui16ResY < g_sDispCfg.ui16ResY)
     {
-        sDispUserSetting.ui16ResY = ui16ResY;
+        sDispUserSetting.ui16MinY = ((g_sDispCfg.ui16ResY - sDispUserSetting.ui16ResY) >> 2) << 1;
     }
     else
     {
-        sDispUserSetting.ui16ResY = g_sDispCfg.ui16ResY;
+        sDispUserSetting.ui16MinY = 0;
     }
-
-    sDispUserSetting.ui16MinY = ((g_sDispCfg.ui16ResY - sDispUserSetting.ui16ResY) >> 2) << 1;
 
     sDispUserSetting.eColorMode   = eColorMode;
     sDispTransfer.bXferPending = false;
@@ -479,7 +555,7 @@ am_devices_display_init(uint16_t ui16ResX,
         if (sDispUserSetting.eColorMode == COLOR_FORMAT_RGB565)
         {
             eFormat = FMT_RGB565;
-            if (g_sDispCfg.eDsiFreq > AM_HAL_DSI_FREQ_TRIM_X13)
+            if ((g_sDispCfg.eDsiFreq & 0x0f) > (AM_HAL_DSI_FREQ_TRIM_X13 & 0x0f))
             {
                 return AM_DEVICES_DISPLAY_STATUS_OUT_OF_RANGE;
             }
@@ -487,13 +563,22 @@ am_devices_display_init(uint16_t ui16ResX,
         if (sDispUserSetting.eColorMode == COLOR_FORMAT_RGB888)
         {
             eFormat = FMT_RGB888;
-            if (g_sDispCfg.eDsiFreq > AM_HAL_DSI_FREQ_TRIM_X20)
+            if ( (g_sDispCfg.eDsiFreq & 0x40) == 0 )
             {
-                return AM_DEVICES_DISPLAY_STATUS_OUT_OF_RANGE;
+                if ((g_sDispCfg.eDsiFreq & 0x0f) > (AM_HAL_DSI_FREQ_TRIM_X20 & 0x0f))
+                {
+                    return AM_DEVICES_DISPLAY_STATUS_OUT_OF_RANGE;
+                }
+            }
+            else
+            {
+                if ((g_sDispCfg.eDsiFreq & 0x0f) >= (AM_HAL_DSI_FREQ_TRIM_X20 & 0x0f))
+                {
+                    return AM_DEVICES_DISPLAY_STATUS_OUT_OF_RANGE;
+                }
             }
         }
-
-        if (am_hal_dsi_para_config(ui8LanesNum, ui8DbiWidth, ui32FreqTrim) != 0)
+        if (am_hal_dsi_para_config(ui8LanesNum, ui8DbiWidth, ui32FreqTrim, false) != 0)
         {
             return AM_DEVICES_DISPLAY_STATUS_ERROR;
         }
@@ -672,8 +757,8 @@ am_devices_display_init(uint16_t ui16ResX,
                                        (am_hal_gpio_handler_t)am_devices_display_te_handler,
                                         NULL);
         am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, (void *)&IntNum);
-        NVIC_SetPriority(te_interrupts[TE_GPIO_IDX], 0x4);
-        NVIC_EnableIRQ(te_interrupts[TE_GPIO_IDX]);
+        NVIC_SetPriority(g_sInterrupts[TE_GPIO_IDX], 0x4);
+        NVIC_EnableIRQ(g_sInterrupts[TE_GPIO_IDX]);
     }
 
 #if (DISP_CTRL_IP == DISP_CTRL_IP_DC)
@@ -685,7 +770,6 @@ am_devices_display_init(uint16_t ui16ResX,
 
     return AM_DEVICES_DISPLAY_STATUS_SUCCESS;
 }
-
 
 //*****************************************************************************
 //
@@ -715,16 +799,26 @@ am_devices_display_set_region(uint16_t ui16ResX,
                                                   ui16ResY,
                                                   ui16MinX,
                                                   ui16MinY);
+#ifdef AM_PART_APOLLO5_API
+            nemadc_timing(ui16ResX,  1, 1, 1,
+                          ui16ResY, 1, 1, 1);
+#else
             nemadc_timing(ui16ResX, 4, 10, 10,
                           ui16ResY, 10, 50, 10);
+#endif //(defined AM_PART_APOLLO5_API)
             break;
         case DISP_IF_DSI:
             am_devices_dc_dsi_raydium_set_region(ui16ResX,
                                                  ui16ResY,
                                                  ui16MinX,
                                                  ui16MinY);
+#ifdef AM_PART_APOLLO5_API
+            nemadc_timing(ui16ResX,  1, 10, 1,
+                          ui16ResY, 1, 1, 1);
+#else
             nemadc_timing(ui16ResX, 4, 10, 1,
                           ui16ResY, 1, 1, 1);
+#endif //(defined AM_PART_APOLLO5_API)
             break;
         default:
             return AM_DEVICES_DISPLAY_STATUS_INVALID_ARG;
@@ -741,6 +835,37 @@ am_devices_display_set_region(uint16_t ui16ResX,
     return ui32Status;
 }
 
+//*****************************************************************************
+//
+// Flip display.
+//
+//*****************************************************************************
+uint32_t
+am_devices_display_flip(uint8_t ui8FlipXY)
+{
+    uint32_t ui32Status = 0;
+
+#if (DISP_CTRL_IP == DISP_CTRL_IP_DC)
+    switch (g_sDispCfg.eInterface) // TODO
+    {
+        case DISP_IF_SPI4:
+        case DISP_IF_DSPI:
+        case DISP_IF_QSPI:
+            am_devices_dc_xspi_raydium_flip(ui8FlipXY);
+            break;
+        case DISP_IF_DSI:
+            am_devices_dc_dsi_raydium_flip(ui8FlipXY);
+            break;
+        default:
+            return AM_DEVICES_DISPLAY_STATUS_INVALID_ARG;
+    }
+#endif //(DISP_CTRL_IP == DISP_CTRL_IP_DC)
+
+#if (DISP_CTRL_IP == DISP_CTRL_IP_MSPI)
+    ui32Status = am_devices_mspi_rm69330_flip(g_DisplayHandle, ui8FlipXY);
+#endif //(DISP_CTRL_IP == DISP_CTRL_IP_MSPI)
+    return ui32Status;
+}
 //*****************************************************************************
 //
 //! @brief MSPI transfer framebuffer completed Callbacks function
@@ -785,13 +910,6 @@ display_transfer_complete(void *pCallbackCtxt, uint32_t transactionStatus)
 //
 //! @brief prepare for frame transfer
 //!
-//! @param ui16ResX     - X resolution of frame buffer/layer
-//! @param ui16ResY     - Y resolution of frame buffer/layer
-//! @param ui32Address  - Address of frame buffer
-//! @param fnXferDoneCb - Transfer done callback
-//! @param pArgXferDone - Transfer done argument
-//! @param bContinue    - continue transfer (use COMMAND MEM_WRITE_CONTINUE)
-//!
 //! This function does the neccessary steps for frame transfer
 //
 //*****************************************************************************
@@ -799,7 +917,7 @@ static uint32_t
 am_devices_display_prepare_transfer(void)
 {
 #if (DISP_CTRL_IP == DISP_CTRL_IP_DC)
-    nemadc_transfer_frame_prepare(g_sDispCfg.eTEType != DISP_TE_DISABLE);
+    nemadc_transfer_frame_prepare(false);
 
 #if !defined(USE_NEMAGUI_LIB)
     //
@@ -828,6 +946,19 @@ am_devices_display_prepare_transfer(void)
     nemadc_set_layer(0, &sDefaultDCLayer);
 #endif
 
+#ifdef AM_PART_APOLLO5_API
+    if (g_sDispCfg.eInterface == DISP_IF_DSI)
+    {
+        nemadc_timing(sDispTransfer.ui16XferResX, 1, 10, 1,
+                      sDispTransfer.ui16XferResY, 1, 1, 1);
+    }
+    else
+    {
+        nemadc_timing(sDispTransfer.ui16XferResX, 1, 1, 1,
+                      sDispTransfer.ui16XferResY, 1, 1, 1);
+    }
+#else
+
     if (g_sDispCfg.eInterface == DISP_IF_DSI)
     {
         nemadc_timing(sDispTransfer.ui16XferResX, 4, 10, 1,
@@ -838,6 +969,7 @@ am_devices_display_prepare_transfer(void)
         nemadc_timing(sDispTransfer.ui16XferResX, 4, 10, 10,
                       sDispTransfer.ui16XferResY, 10, 50, 10);
     }
+#endif // (defined AM_PART_APOLLO5_API)
 
     nemadc_set_vsync_interrupt_callback(display_transfer_complete, (void*)0);
 #endif // DISP_CTRL_IP == DISP_CTRL_IP_DC
@@ -955,7 +1087,6 @@ am_devices_display_transfer_frame_inter(void)
     //
     am_devices_display_prepare_transfer();
 
-
     if (g_sDispCfg.eTEType == DISP_TE_DISABLE)
     {
         //
@@ -1008,7 +1139,6 @@ am_devices_display_transfer_frame(uint16_t ui16ResX,
 
     return am_devices_display_transfer_frame_inter();
 }
-
 
 //*****************************************************************************
 //

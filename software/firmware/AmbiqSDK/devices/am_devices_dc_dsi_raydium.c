@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -75,6 +75,19 @@ am_devices_dc_dsi_raydium_hardware_reset(void)
     DELAY(20);
     am_bsp_disp_reset_pins_set();
     DELAY(150);
+}
+
+//*****************************************************************************
+//
+// Flip the image along with x or y or x/y-axis
+//
+//*****************************************************************************
+void
+am_devices_dc_dsi_raydium_flip(uint8_t ui8FlipXY)
+{
+    uint8_t ui8CmdBuf[4];
+    ui8CmdBuf[0] = ui8FlipXY;
+    nemadc_mipi_cmd_write(MIPI_set_address_mode, ui8CmdBuf, 1, true, false);
 }
 
 //*****************************************************************************
@@ -120,6 +133,10 @@ am_devices_dc_dsi_raydium_init(am_devices_dc_dsi_raydium_config_t *psDisplayPane
     ui8CmdBuf[1] = 0x00; // UCS
     nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
     DELAY(10);
+
+#ifdef AM_BSP_DISP_FLIP
+    ui8CmdBuf[0] = AM_BSP_DISP_FLIP;
+#else
     //
     // Need to flip display when drive IC is RM67162
     //
@@ -131,9 +148,42 @@ am_devices_dc_dsi_raydium_init(am_devices_dc_dsi_raydium_config_t *psDisplayPane
     {
         ui8CmdBuf[0] = 0x00;
     }
-
-    nemadc_mipi_cmd_write(MIPI_set_address_mode, ui8CmdBuf, 1, true, false);
+#endif
+    //
+    // Flip the image
+    //
+    am_devices_dc_dsi_raydium_flip(ui8CmdBuf[0]);
     DELAY(10);
+
+    //
+    // CMD2 password
+    //
+    if (g_sDispCfg.eIC == DISP_IC_CO5300)
+    {
+        ui8CmdBuf[0] = MIPI_set_cmd_page;
+        ui8CmdBuf[1] = 0x20; // RFE 20
+        nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
+
+        ui8CmdBuf[0] = 0xF4;
+        ui8CmdBuf[1] = 0x5A; // RF4 5A
+        nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
+
+        ui8CmdBuf[0] = 0xF5;
+        ui8CmdBuf[1] = 0x59; // RF5 59
+        nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
+
+        ui8CmdBuf[0] = MIPI_set_cmd_page;
+        ui8CmdBuf[1] = 0x80; // RFE 80
+        nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
+
+        ui8CmdBuf[0] = 0x00;
+        ui8CmdBuf[1] = 0xF8; // R00 F8
+        nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
+
+        ui8CmdBuf[0] = 0xFE;
+        ui8CmdBuf[1] = 0x00; // UCS
+        nemadc_mipi_cmd_write(0, ui8CmdBuf, 2, false, false);
+    }
 
     //
     // Enable MIPI Panel

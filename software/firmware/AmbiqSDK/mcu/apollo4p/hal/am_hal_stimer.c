@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -257,18 +257,13 @@ am_hal_stimer_compare_delta_set(uint32_t ui32CmprInstance, uint32_t ui32Delta)
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 #endif
-
-    // We cannot set COMPARE back to back
-    // Make sure we disable any previous COMPARE interrupts coming while we wait
-    // NOTE: This does not address stale interrupts once we have written the COMPARE...
-    // as it takes another 2 clocks for Writes to go through.
-    // So - a stale interrupt could still come, that needs to be ignored by application
-    uint32_t ui32CompareRestoreMsk = STIMER->STCFG & (STIMER_STCFG_COMPAREAEN_Msk << ui32CmprInstance);
-
     //
-    // Disable the Compare
+    //! @note Due to latency in write to COMPARE register to take effect, it is
+    //!  possible that the application could get a stale interrupt even after
+    //!  this API returns (a result of previous value of COMPARE).
+    //!
+    //! The application needs to handle these cases gracefully.
     //
-    STIMER->STCFG &= ~(STIMER_STCFG_COMPAREAEN_Msk << ui32CmprInstance);
 
     do
     {
@@ -301,10 +296,6 @@ am_hal_stimer_compare_delta_set(uint32_t ui32CmprInstance, uint32_t ui32Delta)
             // Set the delta
             //
             AM_REGVAL(AM_REG_STIMER_COMPARE(0, ui32CmprInstance)) = ui32Delta;
-            //
-            // Restore the Compare Enable
-            //
-            STIMER->STCFG |= ui32CompareRestoreMsk;
             //
             // Get a snapshot when we set COMPARE
             //

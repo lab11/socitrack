@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_RTC_H
@@ -64,12 +64,11 @@ extern "C"
 //! Used with am_hal_rtc_config
 //
 //*****************************************************************************
-typedef enum
-{
-    AM_HAL_RTC_OSC_XT   = 0x0,
-}
-am_hal_rtc_osc_select_e;
+#define AM_HAL_RTC_OSC_XT AM_HAL_CLKGEN_CONTROL_RTC_SEL_XTAL
+#define AM_HAL_RTC_OSC_LFRC AM_HAL_CLKGEN_CONTROL_RTC_SEL_LFRC
 //! @}
+
+typedef uint8_t am_hal_rtc_osc_select_e;
 
 //*****************************************************************************
 //
@@ -138,9 +137,8 @@ am_hal_rtc_config_t;
 typedef struct am_hal_rtc_time_struct
 {
     uint32_t ui32ReadError;
-    uint32_t ui32CenturyEnable;
     uint32_t ui32Weekday;
-    uint32_t ui32Century;
+    uint32_t ui32CenturyBit;
     uint32_t ui32Year;
     uint32_t ui32Month;
     uint32_t ui32DayOfMonth;
@@ -150,6 +148,13 @@ typedef struct am_hal_rtc_time_struct
     uint32_t ui32Hundredths;
 }
 am_hal_rtc_time_t;
+
+//*****************************************************************************
+//
+//! am_hal_rtc_osc_select has been deprecated
+//
+//*****************************************************************************
+#define am_hal_rtc_osc_select(ui32OSC) am_hal_clkgen_control(ui32OSC, 0)
 
 //*****************************************************************************
 //
@@ -192,28 +197,6 @@ extern uint32_t am_hal_rtc_osc_enable(void);
 //
 //*****************************************************************************
 extern uint32_t am_hal_rtc_osc_disable(void);
-
-//*****************************************************************************
-//
-//! @brief Enable/Start the RTC.
-//!
-//! Starts the RTC.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
-//
-//*****************************************************************************
-extern uint32_t am_hal_rtc_enable(void);
-
-//*****************************************************************************
-//
-//! @brief Disable/Stop the RTC.
-//!
-//! Stops the RTC.
-//!
-//! @return AM_HAL_STATUS_SUCCESS or relevant HAL error code.
-//
-//*****************************************************************************
-extern uint32_t am_hal_rtc_disable(void);
 
 //*****************************************************************************
 //
@@ -376,28 +359,6 @@ extern uint32_t am_hal_rtc_interrupt_set(uint32_t ui32InterruptMask);
 extern uint32_t am_hal_rtc_interrupt_status_get(bool bEnabledOnly,
                                                 uint32_t *pui32InterruptMask);
 
-#if 1
-//*****************************************************************************
-//
-//! @brief Selects the clock source for the RTC.
-//!
-//! @param ui32OSC the clock source for the RTC.
-//!
-//! This function selects the clock source for the RTC.
-//!
-//! Valid values for ui32OSC are:
-//!
-//!     AM_HAL_RTC_OSC_LFRC
-//!     AM_HAL_RTC_OSC_XT
-//!
-//! @note After selection of the RTC oscillator, a 2 second delay occurs before
-//! the new setting is reflected in status. Therefore the CLKGEN.STATUS.OMODE
-//! bit will not reflect the new status until after the 2s wait period.
-//!
-//
-//*****************************************************************************
-extern void am_hal_rtc_osc_select(uint32_t ui32OSC);
-
 //*****************************************************************************
 //
 //! @brief Sets the alarm repeat interval.
@@ -422,7 +383,6 @@ extern void am_hal_rtc_osc_select(uint32_t ui32OSC);
 //
 //*****************************************************************************
 extern void am_hal_rtc_alarm_interval_set(uint32_t ui32RepeatInterval);
-#endif
 
 #ifdef __cplusplus
 }

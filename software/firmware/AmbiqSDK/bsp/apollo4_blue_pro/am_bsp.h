@@ -14,7 +14,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -46,7 +46,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -74,6 +74,13 @@ extern "C"
 //*****************************************************************************
 extern am_devices_display_hw_config_t g_sDispCfg;
 #endif // DISP_CTRL_IP
+
+//*****************************************************************************
+//
+//! BLE Controller present
+//
+//*****************************************************************************
+#define AM_BSP_BLE 1
 
 //*****************************************************************************
 //
@@ -133,6 +140,44 @@ extern am_devices_led_t am_bsp_psLEDs[AM_BSP_NUM_LEDS];
 #ifndef AM_BSP_ENABLE_SIMOBUCK
 #define AM_BSP_ENABLE_SIMOBUCK   1
 #endif
+
+
+//*****************************************************************************
+//
+// ADC pin config definitions
+//
+//*****************************************************************************
+typedef enum
+{
+#ifdef AM_BSP_GPIO_ADCSE0
+    eADCSE0 = AM_BSP_GPIO_ADCSE0,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE1
+    eADCSE1 = AM_BSP_GPIO_ADCSE1,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE2
+    eADCSE2 = AM_BSP_GPIO_ADCSE2,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE3
+    eADCSE3 = AM_BSP_GPIO_ADCSE3,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE4
+    eADCSE4 = AM_BSP_GPIO_ADCSE4,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE5
+    eADCSE5 = AM_BSP_GPIO_ADCSE5,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE6
+    eADCSE6 = AM_BSP_GPIO_ADCSE6,
+#endif
+#ifdef AM_BSP_GPIO_ADCSE7
+    eADCSE7 = AM_BSP_GPIO_ADCSE7,
+#endif
+    //
+    //! force enum to 32 bits, and need one item that is not conditional on #ifdef
+    //
+    eADC_x32 = 0x7FFFFFFF,
+} am_bsp_adp_pins_e;
 
 
 //*****************************************************************************
@@ -232,8 +277,7 @@ extern void am_bsp_external_vddusb0p9_switch(bool bEnable);
 //! @brief Prepare the MCU for low power operation.
 //!
 //! This function enables several power-saving features of the MCU, and
-//! disables some of the less-frequently used peripherals. It also sets the
-//! system clock to 24 MHz.
+//! disables some of the less-frequently used peripherals.
 //!
 //! @return None.
 //
@@ -328,29 +372,34 @@ extern void am_bsp_disp_qspi_pins_disable(void);
 
 //*****************************************************************************
 //
-//! @brief Set up the SDIO's pins.
+//! @brief Set up the SDIO pins.
 //!
 //! @param ui8BusWidth - Bus Width of SDIO
 //!
-//! This function configures SDIO's CMD, CLK, DAT0-7 pins
-//!
-//! @return None.
+//! This function configures SDIO CMD, CLK, DAT0-7 pins
 //
 //*****************************************************************************
 extern void am_bsp_sdio_pins_enable(uint8_t ui8BusWidth);
 
 //*****************************************************************************
 //
-//! @brief Disable the SDIO's pins.
+//! @brief Disable the SDIO pins.
 //!
 //! @param ui8BusWidth - Bus Width of SDIO
 //!
-//! This function deconfigures SDIO's CMD, CLK, DAT0-7 pins
-//!
-//! @return None.
+//! This function deconfigures SDIO CMD, CLK, DAT0-7 pins
 //
 //*****************************************************************************
 extern void am_bsp_sdio_pins_disable(uint8_t ui8BusWidth);
+
+//*****************************************************************************
+//
+//! @brief Reset SDIO device via GPIO.
+//!
+//! This function reset SDIO device via GPIO
+//
+//*****************************************************************************
+extern void am_bsp_sdio_reset(void);
 
 //*****************************************************************************
 //
@@ -621,6 +670,20 @@ extern void am_bsp_mspi_ce_pincfg_get( uint32_t ui32Module,
 #ifdef __cplusplus
 }
 #endif
+
+//*****************************************************************************
+//
+//! @brief configure or de-configure adc pins
+//!
+//! @param tADCPin   adc ping number
+//! @param bPinADCModeEnable enable adc fucntion on pin when true
+//!
+//! @return standard Hal status code
+//
+//*****************************************************************************
+extern uint32_t am_bsp_adc_pin_config( am_bsp_adp_pins_e tADCPin,
+                                       bool bPinADCModeEnable ) ;
+
 
 #endif // AM_BSP_H
 //*****************************************************************************

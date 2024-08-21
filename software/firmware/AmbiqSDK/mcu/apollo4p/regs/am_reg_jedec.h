@@ -9,7 +9,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_REG_JEDEC_H
@@ -338,8 +338,6 @@ typedef struct
 #define JEDEC_CID3_CID_Pos                  0U
 #define JEDEC_CID3_CID_Msk                  (0x000000FFUL)
 
-
-
 #define JEDEC_BASE  (0xF0000F00UL)                            /*!< JEDEC Base Address */
 
 #define JEDEC   ((JEDEC_Type       *)     JEDEC_BASE      )   /*!< JEDEC configuration struct */
@@ -360,7 +358,6 @@ typedef struct
 #elif defined (__CSMC__)
   /* anonymous unions are enabled by default */
 #endif
-
 
 #endif // AM_REG_JEDEC_H
 

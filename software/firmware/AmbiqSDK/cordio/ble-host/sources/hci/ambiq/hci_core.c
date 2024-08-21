@@ -34,7 +34,6 @@
 #include "hci_main.h"
 #include "l2c_defs.h"
 #include "am_mcu_apollo.h"
-
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -147,7 +146,6 @@ uint64_t hciLeSupFeatCfg =
 
 /* Control block */
 hciCoreCb_t hciCoreCb;
-
 /*************************************************************************************************/
 /*!
  *  \fn     hciCoreConnAlloc
@@ -552,8 +550,13 @@ bool_t hciCoreTxAclContinue(hciCoreConn_t *pConn)
           pConn->pNextTxFrag += aclLen;
         }
         hciCoreTxAclComplete(pConn, pConn->pNextTxFrag);
+
+        return TRUE;
       }
-      return TRUE;
+      else
+      {
+        return FALSE;
+      }
     }
   }
 
@@ -994,8 +997,8 @@ void HciSendAclData(uint8_t *pData)
   /* look up connection structure */
   if ((pConn = hciCoreConnByHandle(handle)) != NULL)
   {
-    /* queue data - message handler ID 'handerId' not used */
-    WsfMsgEnq(&hciCoreCb.aclQueue, 0, pData);
+      /* queue data - message handler ID 'handerId' not used */
+      WsfMsgEnq(&hciCoreCb.aclQueue, 0, pData);
 
     HCI_TRACE_WARN1("enq acl pkt %x", pData);
 

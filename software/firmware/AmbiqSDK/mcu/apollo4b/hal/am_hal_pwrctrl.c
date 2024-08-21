@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #include <stdint.h>
@@ -126,7 +126,6 @@
 //
 extern uint32_t internal_timer_config(uint32_t ui32TimerNumber,
                                       am_hal_timer_config_t *psTimerConfig);
-
 
 //****************************************************************************
 //
@@ -523,6 +522,68 @@ am_get_pwrctrl(struct am_pwr_s *pwr_ctrl, uint32_t ePeripheral)
     return AM_HAL_STATUS_SUCCESS;
 }
 #endif // AM_HAL_PWRCTRL_RAM_TABLE
+
+//*****************************************************************************
+//
+//! @brief  HFADJ check for peripheral enable/disable
+//!
+//! ERR126: CLKGEN: HFADJ enabled with no modules powered causes incorrect clock generation
+//!
+//! When no peripheral is enabled, HFADJEN should not be enabled
+//! When used with peripheral disable, there is no need to restore
+//!
+//! Please see am_hal_clkgen.c for further implementation
+//!
+//! @param  pRestoreHFADJ pointer to boolean for storing state
+//! @param  pRegValue pointer to ui32 Register Value
+//
+//*****************************************************************************
+static void hfadj_enable_check(bool * pRestoreHFADJ)
+{
+    if (pRestoreHFADJ != NULL)
+    {
+        *pRestoreHFADJ = false;
+    }
+
+    if (CLKGEN->HFADJ_b.HFADJEN == CLKGEN_HFADJ_HFADJEN_EN)
+    {
+        if (PWRCTRL->DEVPWRSTATUS == 0)
+        {
+            if (pRestoreHFADJ != NULL)
+            {
+                *pRestoreHFADJ = true;
+            }
+
+            am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFADJ_DISABLE, NULL);
+        }
+    }
+}
+
+//*****************************************************************************
+//
+//! @brief  HFADJ restore for peripheral enable
+//!
+//! ERR126: CLKGEN: HFADJ enabled with no modules powered causes incorrect clock generation
+//!
+//! When no peripheral is enabled HFADJEN should not be enabled
+//! When used with peripheral disable, there is no need to restore
+//!
+//! Please see am_hal_clkgen.c for further implementation
+//!
+//! @param  bRestoreHFADJ boolean for storing state
+//! @param  pRegValue pointer to ui32 Register Value
+//
+//*****************************************************************************
+static void hfadj_enable_restore(bool bRestoreHFADJ)
+{
+    if (bRestoreHFADJ == true)
+    {
+        if (PWRCTRL->DEVPWRSTATUS != 0)
+        {
+            am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_HFADJ_ENABLE, NULL);
+        }
+    }
+}
 
 //*****************************************************************************
 //
@@ -2174,12 +2235,20 @@ am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral)
     uint32_t      ui32Status;
     struct am_pwr_s pwr_ctrl;
 
+    //
+    //! HFADJ Boolean to be stored off and restored with
+    //!   hfadj_enable_check and hfadj_enable_restore
+    //
+    bool bRestoreHFADJ = false;
+
     ui32Status = am_get_pwrctrl(&pwr_ctrl, ePeripheral);
 
     if ( AM_HAL_STATUS_SUCCESS != ui32Status )
     {
         return ui32Status;
     }
+
+    hfadj_enable_check(&bRestoreHFADJ);
 
 #ifdef AM_HAL_PWRCTL_CRYPTO_WA
     //
@@ -2214,6 +2283,7 @@ am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral)
         //
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
+            hfadj_enable_restore(bRestoreHFADJ);
             return ui32Status;
         }
     }
@@ -2235,20 +2305,19 @@ am_hal_pwrctrl_periph_enable(am_hal_pwrctrl_periph_e ePeripheral)
                                                         (uint32_t)&CRYPTO->NVMISIDLE,
                                                         CRYPTO_NVMISIDLE_NVMISIDLEREG_Msk,
                                                         CRYPTO_NVMISIDLE_NVMISIDLEREG_Msk);
-            //
-            // Done, return the final status (the delay status in this case).
-            //
-            return ui32Status;
         }
         else
         {
-            return AM_HAL_STATUS_SUCCESS;
+            ui32Status = AM_HAL_STATUS_SUCCESS;
         }
     }
     else
     {
-        return AM_HAL_STATUS_FAIL;
+        ui32Status = AM_HAL_STATUS_FAIL;
     }
+
+    hfadj_enable_restore(bRestoreHFADJ);
+    return ui32Status;
 } // am_hal_pwrctrl_periph_enable()
 
 //****************************************************************************
@@ -2357,6 +2426,7 @@ am_hal_pwrctrl_periph_disable(am_hal_pwrctrl_periph_e ePeripheral)
 
             if (AM_HAL_STATUS_SUCCESS != ui32Status)
             {
+                hfadj_enable_check(NULL);
                 return ui32Status;
             }
         }
@@ -2379,11 +2449,11 @@ am_hal_pwrctrl_periph_disable(am_hal_pwrctrl_periph_e ePeripheral)
         if ( (AM_REGVAL(pwr_ctrl.ui32PwrStatReqAddr) &
               pwr_ctrl.ui32PeriphStatus) == 0 )
         {
-            return AM_HAL_STATUS_SUCCESS;
+            ui32Status = AM_HAL_STATUS_SUCCESS;
         }
         else
         {
-            return AM_HAL_STATUS_FAIL;
+            ui32Status = AM_HAL_STATUS_FAIL;
         }
     }
     else
@@ -2413,15 +2483,14 @@ am_hal_pwrctrl_periph_disable(am_hal_pwrctrl_periph_e ePeripheral)
         //
         // Check for success.
         //
-        if (AM_HAL_STATUS_SUCCESS == ui32Status)
+        if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
-            return ui32Status;
-        }
-        else
-        {
-            return pwrctrl_periph_disable_msk_check(ePeripheral);
+            ui32Status = pwrctrl_periph_disable_msk_check(ePeripheral);
         }
     }
+
+    hfadj_enable_check(NULL);
+    return ui32Status;
 } // am_hal_pwrctrl_periph_disable()
 
 //****************************************************************************
@@ -2756,7 +2825,6 @@ buck_interval_check(uint32_t *pui32IntervalUs, uint32_t channel)
                     _VAL2FLD(MCUCTRL_VRCTRL_MEMLDOACTIVEEARLY, 1)   |
                     _VAL2FLD(MCUCTRL_VRCTRL_MEMLDOPDNB, 1)          |
                     _VAL2FLD(MCUCTRL_VRCTRL_MEMLDOOVER, 1);
-
 
     if (MCUCTRL->VRCTRL & ui32LdoStatus)
     {

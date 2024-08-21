@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -62,7 +62,11 @@
 //*****************************************************************************
 //#define ATXP032_QUAD_CLKON4_MODE_EN
 
+#if defined(APOLLO4_FPGA) || defined(APOLLO5_FPGA)
+#define USE_NON_DQS_MODE
+#else
 //#define USE_NON_DQS_MODE
+#endif
 
 #define AM_DEVICES_MSPI_ATXP032_TIMEOUT                     1000000
 #define AM_DEVICES_MSPI_ATXP032_ERASE_TIMEOUT               1000000
@@ -72,7 +76,7 @@
                                                                     // this amount of consecutive
                                                                     // passing settings to be accepted.
 #define FLASH_CHECK_DATA_SIZE_BYTES                         AM_DEVICES_MSPI_ATXP032_PAGE_SIZE   // Data trunk size
-#define FLASH_TIMING_SCAN_SIZE_BYTES                        AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE // Total scan size
+#define FLASH_TIMING_SCAN_SIZE_BYTES                        AM_DEVICES_MSPI_ATXP032_BLOCK_SIZE  // Total scan size
 #define FLASH_TEST_PATTERN_NUMBER                           5       // 5 patterns
 
 typedef struct
@@ -83,7 +87,7 @@ typedef struct
     bool                        bOccupied;
 } am_devices_mspi_atxp032_t;
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 am_hal_mspi_xip_config_t gXipConfig[] =
 {
   {
@@ -107,6 +111,15 @@ am_hal_mspi_xip_config_t gXipConfig[] =
     .scramblingStartAddr  = 0,
     .scramblingEndAddr    = 0,
   },
+#if defined(AM_PART_APOLLO5_API)
+  {
+    .ui32APBaseAddr       = MSPI3_APERTURE_START_ADDR,
+    .eAPMode              = AM_HAL_MSPI_AP_READ_WRITE,
+    .eAPSize              = AM_HAL_MSPI_AP_SIZE64M,
+    .scramblingStartAddr  = 0,
+    .scramblingEndAddr    = 0,
+  }
+#endif
 };
 
 am_hal_mspi_config_t gMspiCfg =
@@ -134,7 +147,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Serial_CE0_MSPIConfig =
     .bSendInstr           = true,
     .bSendAddr            = true,
     .bTurnaround          = true,
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
   .ui16ReadInstr         = AM_DEVICES_MSPI_ATXP032_FAST_READ,
   .ui16WriteInstr        = AM_DEVICES_MSPI_ATXP032_PAGE_PROGRAM,
 #else
@@ -156,6 +169,14 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Serial_CE0_MSPIConfig =
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
+#elif defined(AM_PART_APOLLO5_API)
+    .ui8WriteLatency      = 0,
+    .bEnWriteLatency      = false,
+    .bEmulateDDR          = false,
+    .bNewDDR              = false,
+    .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+    .ui16DMATimeLimit     = 0,
+    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
 #else
     .ui32TCBSize          = 0,
     .pTCB                 = NULL,
@@ -175,7 +196,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Serial_CE1_MSPIConfig =
     .bSendInstr           = true,
     .bSendAddr            = true,
     .bTurnaround          = true,
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
   .ui16ReadInstr         = AM_DEVICES_MSPI_ATXP032_FAST_READ,
   .ui16WriteInstr        = AM_DEVICES_MSPI_ATXP032_PAGE_PROGRAM,
 #else
@@ -197,6 +218,14 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Serial_CE1_MSPIConfig =
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
+#elif defined(AM_PART_APOLLO5_API)
+    .ui8WriteLatency      = 0,
+    .bEnWriteLatency      = false,
+    .bEmulateDDR          = false,
+    .bNewDDR              = false,
+    .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+    .ui16DMATimeLimit     = 0,
+    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
 #else
     .ui32TCBSize          = 0,
     .pTCB                 = NULL,
@@ -216,7 +245,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Quad_CE0_MSPIConfig =
   .bSendInstr           = true,
   .bSendAddr            = true,
   .bTurnaround          = true,
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
   .ui16ReadInstr         = AM_DEVICES_MSPI_ATXP032_FAST_READ,
   .ui16WriteInstr        = AM_DEVICES_MSPI_ATXP032_PAGE_PROGRAM,
 #else
@@ -233,6 +262,17 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Quad_CE0_MSPIConfig =
     .ui8WriteLatency      = 0,
     .bEnWriteLatency      = false,
     .bEmulateDDR          = false,
+    .ui16DMATimeLimit     = 0,
+    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
+#if defined(AM_PART_APOLLO4)
+    .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
+#endif
+#elif defined(AM_PART_APOLLO5_API)
+    .ui8WriteLatency      = 0,
+    .bEnWriteLatency      = false,
+    .bEmulateDDR          = false,
+    .bNewDDR              = false,
+    .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
     .ui16DMATimeLimit     = 0,
     .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
 #else
@@ -254,7 +294,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Quad_CE1_MSPIConfig =
     .bSendInstr           = true,
     .bSendAddr            = true,
     .bTurnaround          = true,
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
   .ui16ReadInstr         = AM_DEVICES_MSPI_ATXP032_FAST_READ,
   .ui16WriteInstr        = AM_DEVICES_MSPI_ATXP032_PAGE_PROGRAM,
 #else
@@ -276,6 +316,14 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Quad_CE1_MSPIConfig =
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
+#elif defined(AM_PART_APOLLO5_API)
+    .ui8WriteLatency      = 0,
+    .bEnWriteLatency      = false,
+    .bEmulateDDR          = false,
+    .bNewDDR              = false,
+    .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+    .ui16DMATimeLimit     = 0,
+    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
 #else
     .ui32TCBSize          = 0,
     .pTCB                 = NULL,
@@ -295,7 +343,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Octal_CE0_MSPIConfig =
   .bSendInstr           = true,
   .bSendAddr            = true,
   .bTurnaround          = true,
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
   .ui16ReadInstr         = AM_DEVICES_MSPI_ATXP032_FAST_READ,
   .ui16WriteInstr        = AM_DEVICES_MSPI_ATXP032_PAGE_PROGRAM,
 #else
@@ -317,6 +365,14 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Octal_CE0_MSPIConfig =
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
+#elif defined(AM_PART_APOLLO5_API)
+    .ui8WriteLatency      = 0,
+    .bEnWriteLatency      = false,
+    .bEmulateDDR          = false,
+    .bNewDDR              = false,
+    .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+    .ui16DMATimeLimit     = 0,
+    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
 #else
     .ui32TCBSize          = 0,
     .pTCB                 = NULL,
@@ -336,7 +392,7 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Octal_CE1_MSPIConfig =
   .bSendInstr           = true,
   .bSendAddr            = true,
   .bTurnaround          = true,
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
   .ui16ReadInstr         = AM_DEVICES_MSPI_ATXP032_FAST_READ,
   .ui16WriteInstr        = AM_DEVICES_MSPI_ATXP032_PAGE_PROGRAM,
 #else
@@ -358,6 +414,14 @@ am_hal_mspi_dev_config_t MSPI_ATXP032_Octal_CE1_MSPIConfig =
 #if defined(AM_PART_APOLLO4)
     .eDeviceNum           = AM_HAL_MSPI_DEVICE0,
 #endif
+#elif defined(AM_PART_APOLLO5_API)
+    .ui8WriteLatency      = 0,
+    .bEnWriteLatency      = false,
+    .bEmulateDDR          = false,
+    .bNewDDR              = false,
+    .eCeLatency           = AM_HAL_MSPI_CE_LATENCY_NORMAL,
+    .ui16DMATimeLimit     = 0,
+    .eDMABoundary         = AM_HAL_MSPI_BOUNDARY_NONE,
 #else
     .ui32TCBSize          = 0,
     .pTCB                 = NULL,
@@ -396,7 +460,8 @@ am_devices_mspi_atxp032_sdr_timing_config_t SDRTimingConfigDefault =
 static bool bSDRTimingConfigSaved = false;
 static am_devices_mspi_atxp032_sdr_timing_config_t SDRTimingConfigStored;
 
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
+
 //
 // SDR timing default setting
 //
@@ -416,7 +481,7 @@ static bool bSDRTimingConfigSaved = false;
 static am_devices_mspi_atxp032_sdr_timing_config_t SDRTimingConfigStored;
 #endif
 
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
 am_hal_mspi_rxcfg_t gAtxp032MspiRxCfg =
 {
     .ui8DQSturn         = 2,
@@ -435,9 +500,9 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
 {
   {
 #ifdef USE_NON_DQS_MODE
-    .bDQSEnable             = 0,
+    .bDQSEnable             = false,
 #else
-    .bDQSEnable             = 1,
+    .bDQSEnable             = true,
 #endif
     .bDQSSyncNeg            = 0,
     .bEnableFineDelay       = 0,
@@ -451,9 +516,9 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
   },
   {
 #ifdef USE_NON_DQS_MODE
-    .bDQSEnable             = 0,
+    .bDQSEnable             = false,
 #else
-    .bDQSEnable             = 1,
+    .bDQSEnable             = true,
 #endif
     .bDQSSyncNeg            = 0,
     .bEnableFineDelay       = 0,
@@ -467,9 +532,9 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
   },
   {
 #ifdef USE_NON_DQS_MODE
-    .bDQSEnable             = 0,
+    .bDQSEnable             = false,
 #else
-    .bDQSEnable             = 1,
+    .bDQSEnable             = true,
 #endif
     .bDQSSyncNeg            = 0,
     .bEnableFineDelay       = 0,
@@ -481,16 +546,39 @@ am_hal_mspi_dqs_t gAtxp032DqsCfg[] =
     .ui8RxDQSDelayNegHi     = 0,
     .bRxDQSDelayHiEN        = 0,
   },
+#if defined(AM_PART_APOLLO5_API)
+  {
+#ifdef USE_NON_DQS_MODE
+    .bDQSEnable             = false,
+#else
+    .bDQSEnable             = true,
+#endif
+    .bDQSSyncNeg            = 0,
+    .bEnableFineDelay       = 0,
+    .ui8TxDQSDelay          = 0,
+    .ui8RxDQSDelay          = 16,
+    .ui8RxDQSDelayNeg       = 0,
+    .bRxDQSDelayNegEN       = 0,
+    .ui8RxDQSDelayHi        = 0,
+    .ui8RxDQSDelayNegHi     = 0,
+    .bRxDQSDelayHiEN        = 0,
+  }
+#endif
 };
 #endif
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+//
 //! MSPI interrupts.
+//
 static const IRQn_Type mspi_interrupts[] =
 {
     MSPI0_IRQn,
     MSPI1_IRQn,
     MSPI2_IRQn,
+#if defined(AM_PART_APOLLO5_API)
+    MSPI3_IRQn,
+#endif
 };
 
 static const uint32_t ui32MspiXipBaseAddress[] =
@@ -498,6 +586,9 @@ static const uint32_t ui32MspiXipBaseAddress[] =
     0x14000000, // mspi0
     0x18000000, // mspi1
     0x1C000000, // mspi2
+#if defined(AM_PART_APOLLO5_API)
+    MSPI3_APERTURE_START_ADDR,
+#endif
 };
 #endif
 
@@ -516,7 +607,6 @@ static uint32_t am_devices_mspi_atxp032_command_read(void *pHandle,
                                                      uint32_t ui32Addr,
                                                      uint32_t *pData,
                                                      uint32_t ui32NumBytes);
-
 
 //*****************************************************************************
 //
@@ -537,12 +627,14 @@ am_device_init_flash(void *pHandle)
     //
     am_devices_mspi_atxp032_command_write(pHandle, AM_DEVICES_MSPI_ATXP032_WRITE_ENABLE, false, 0, ui32PIOBuffer, 0);
 
-#if defined(AM_PART_APOLLO4_API)
+#if !defined(APOLLO4_FPGA) && !defined(APOLLO5_FPGA)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     if ( pFlash->stSetting.eClockFreq == AM_HAL_MSPI_CLK_96MHZ )
     {
         ui32PIOBuffer[0] = 0x00000103;
     }
     else
+#endif
 #endif
 
     {
@@ -599,7 +691,9 @@ am_device_deinit_flash(void *pHandle)
     {
         case AM_HAL_MSPI_FLASH_SERIAL_CE0:
         case AM_HAL_MSPI_FLASH_SERIAL_CE1:
+            //
             // Nothing to do.  Device defaults to SPI mode.
+            //
             break;
         case AM_HAL_MSPI_FLASH_QUAD_CE0:
         case AM_HAL_MSPI_FLASH_QUAD_CE1:
@@ -613,7 +707,6 @@ am_device_deinit_flash(void *pHandle)
             break;
         default:
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            //break;
     }
 
     ui32Status = am_devices_mspi_atxp032_command_write(pHandle, AM_DEVICES_MSPI_ATXP032_WRITE_DISABLE, false, 0, ui32PIOBuffer, 0);
@@ -638,26 +731,32 @@ am_devices_mspi_atxp032_command_write(void *pHandle, uint8_t ui8Instr, bool bSen
     uint32_t ui32Status;
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
     am_hal_mspi_pio_transfer_t  stMSPIFlashPIOTransaction = {0};
+
+#if defined(AM_PART_APOLLO4B)
     am_hal_mspi_dqs_t dqsCfg;
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     am_hal_mspi_timing_scan_t timingCfg;
 #endif
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_hal_mspi_clock_e clkCfg;
 
+    //
     // Check if we are trying to send the command at 96MHz.
+    //
     if (AM_HAL_MSPI_CLK_96MHZ == pFlash->stSetting.eClockFreq)
     {
-      clkCfg = AM_HAL_MSPI_CLK_48MHZ;  // Set the clock to 48MHz for commmands.
-      ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
-      if (AM_HAL_STATUS_SUCCESS != ui32Status)
-      {
-        return ui32Status;
-      }
+        clkCfg = AM_HAL_MSPI_CLK_48MHZ;  // Set the clock to 48MHz for commmands.
+        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
+        if (AM_HAL_STATUS_SUCCESS != ui32Status)
+        {
+            return ui32Status;
+        }
     }
 #endif
+    //
     // Create the individual write transaction.
+    //
     stMSPIFlashPIOTransaction.ui32NumBytes       = ui32NumBytes;
     stMSPIFlashPIOTransaction.eDirection         = AM_HAL_MSPI_TX;
     stMSPIFlashPIOTransaction.bSendAddr          = bSendAddr;
@@ -670,27 +769,32 @@ am_devices_mspi_atxp032_command_write(void *pHandle, uint8_t ui8Instr, bool bSen
 #endif
     stMSPIFlashPIOTransaction.pui32Buffer        = pData;
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4)
     stMSPIFlashPIOTransaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
 #endif
     stMSPIFlashPIOTransaction.bDCX               = false;
     stMSPIFlashPIOTransaction.bEnWRLatency       = false;
    stMSPIFlashPIOTransaction.bContinue           = false;   // MSPI CONT is deprecated for Apollo4
-#endif // AM_PART_APOLLO4_API
+#endif // AM_PART_APOLLO4_API || AM_PART_APOLLO5_API
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     if ( ui8Instr == AM_DEVICES_ATXP032_WRITE_STATUS_CTRL )
     {
+        //
         // Write status/control register command uses 1 byte address
+        //
         am_hal_mspi_instr_addr_t sInstAddrCfg;
         sInstAddrCfg.eAddrCfg = AM_HAL_MSPI_ADDR_1_BYTE;
         sInstAddrCfg.eInstrCfg = pFlash->stSetting.eInstrCfg;   // keep instruction setting the same
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
 
+#if !defined(APOLLO4_FPGA) && !defined(APOLLO5_FPGA)
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
-    // do not use enable fine delay for command read
+    //
+    // do not use enable fine delay for command write
+    //
     dqsCfg.bDQSEnable           = false;
     dqsCfg.bDQSSyncNeg          = false;
     dqsCfg.bEnableFineDelay     = false;
@@ -698,23 +802,12 @@ am_devices_mspi_atxp032_command_write(void *pHandle, uint8_t ui8Instr, bool bSen
     dqsCfg.bOverrideTXDQSDelay  = false;
     dqsCfg.bRxNeg               = 0;
     dqsCfg.ui8DQSDelay          = 0;        // not used
-    dqsCfg.ui8PioTurnaround     = 4;        // Read command 0x77 and 0x5A requrest 8 dummy bytes (not supported) others 4
-    dqsCfg.ui8XipTurnaround     = 4;        // Read command 0x77 and 0x5A requrest 8 dummy bytes (not supported) others 4
+    dqsCfg.ui8PioTurnaround     = 4;        // Read command 0x77 and 0x5A request 8 dummy bytes (not supported) others 4
+    dqsCfg.ui8XipTurnaround     = 4;        // Read command 0x77 and 0x5A request 8 dummy bytes (not supported) others 4
     dqsCfg.ui8RxDQSDelay        = 15;       // not used
     dqsCfg.ui8TxDQSDelay        = 0;
     am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &dqsCfg);
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-    // do not use enable fine delay for command read
-    dqsCfg.bDQSEnable           = false;
-    dqsCfg.bDQSSyncNeg          = false;
-    dqsCfg.bEnableFineDelay     = false;
-    dqsCfg.ui8RxDQSDelayNeg     = 0;
-    dqsCfg.bRxDQSDelayNegEN     = false;
-    dqsCfg.bRxDQSDelayHiEN      = false;
-    dqsCfg.ui8RxDQSDelay        = 16;
-    dqsCfg.ui8TxDQSDelay        = 0;
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &dqsCfg);
-
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     timingCfg.bTxNeg            = false;
     timingCfg.bRxNeg            = false;
     timingCfg.bRxCap            = false;
@@ -724,40 +817,53 @@ am_devices_mspi_atxp032_command_write(void *pHandle, uint8_t ui8Instr, bool bSen
     am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &timingCfg);
 #endif
 #endif
+#endif
 
-
-    // Execute the transction over MSPI.
+    //
+    // Execute the transaction over MSPI.
+    //
     ui32Status = am_hal_mspi_blocking_transfer(pFlash->pMspiHandle, &stMSPIFlashPIOTransaction,
                                          AM_DEVICES_MSPI_ATXP032_TIMEOUT);
 
-#if defined(AM_PART_APOLLO4_API)
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+        return ui32Status;
+    }
+
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+    //
+    // Check if we had to step down the command to 48MHz.
+    //
+    if (AM_HAL_MSPI_CLK_96MHZ == pFlash->stSetting.eClockFreq)
+    {
+        //
+        // Reset the clock to 96MHz.
+        //
+        clkCfg = AM_HAL_MSPI_CLK_96MHZ;
+        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
+    }
+
+    //
     // restore enable fine delay timing settings
+    //
     if ( bSDRTimingConfigSaved == true )
     {
         am_devices_mspi_atxp032_apply_sdr_timing(pFlash, &SDRTimingConfigStored);
     }
+    else
+    {
+        am_devices_mspi_atxp032_apply_sdr_timing(pFlash, &SDRTimingConfigDefault);
+    }
 
+    //
     // restore the address length setting
+    //
     if ( ui8Instr == AM_DEVICES_ATXP032_WRITE_STATUS_CTRL )
     {
         am_hal_mspi_instr_addr_t sInstAddrCfg;
         sInstAddrCfg.eAddrCfg = pFlash->stSetting.eAddrCfg;
         sInstAddrCfg.eInstrCfg = pFlash->stSetting.eInstrCfg;
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
-    }
-#endif
-
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-      return ui32Status;
-    }
-
-#if defined(AM_PART_APOLLO4_API)
-    // Check if we had to step down the command to 48MHz.
-    if (AM_HAL_MSPI_CLK_96MHZ == pFlash->stSetting.eClockFreq)
-    {
-      clkCfg = AM_HAL_MSPI_CLK_96MHZ;  // Reset the clock to 96MHz.
-      ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
     }
 #endif
     return ui32Status;
@@ -777,37 +883,44 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
     am_hal_mspi_pio_transfer_t      stMSPIFlashPIOTransaction = {0};
 
+#if defined(AM_PART_APOLLO4B)
     am_hal_mspi_dqs_t dqsCfg;
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     am_hal_mspi_timing_scan_t timingCfg;
 #endif
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     am_hal_mspi_clock_e clkCfg;
 
+    //
     // Check if we are trying to send the command at 96MHz.
+    //
     if ((AM_HAL_MSPI_CLK_96MHZ == pFlash->stSetting.eClockFreq)
         && (ui8Instr != AM_DEVICES_ATXP032_ECHO_WITH_INVSERSION))
     {
-      clkCfg = AM_HAL_MSPI_CLK_48MHZ;  // Set the clock to 48MHz for commmands.
-      ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
-      if (AM_HAL_STATUS_SUCCESS != ui32Status)
-      {
-        return ui32Status;
-      }
+        clkCfg = AM_HAL_MSPI_CLK_48MHZ;  // Set the clock to 48MHz for commmands.
+        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
+        if (AM_HAL_STATUS_SUCCESS != ui32Status)
+        {
+            return ui32Status;
+        }
     }
 #endif
+    //
     // Create the individual write transaction.
+    //
     stMSPIFlashPIOTransaction.eDirection         = AM_HAL_MSPI_RX;
     stMSPIFlashPIOTransaction.bSendAddr          = bSendAddr;
     stMSPIFlashPIOTransaction.ui32DeviceAddr     = ui32Addr;
     stMSPIFlashPIOTransaction.bSendInstr         = true;
     stMSPIFlashPIOTransaction.ui16DeviceInstr    = ui8Instr;
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     if ( ui8Instr == AM_DEVICES_MSPI_ATXP032_READ_STATUS )
     {
+        //
         // Read status/control register command uses 1 byte address
+        //
         am_hal_mspi_instr_addr_t sInstAddrCfg;
         sInstAddrCfg.eAddrCfg = AM_HAL_MSPI_ADDR_1_BYTE;
         sInstAddrCfg.eInstrCfg = pFlash->stSetting.eInstrCfg;   // keep instruction setting the same
@@ -825,8 +938,11 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
         stMSPIFlashPIOTransaction.bTurnaround    = false;
     }
 
+#if !defined(APOLLO4_FPGA) && !defined(APOLLO5_FPGA)
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
+    //
     // do not use enable fine delay for command read
+    //
     dqsCfg.bDQSEnable           = false;
     dqsCfg.bDQSSyncNeg          = false;
     dqsCfg.bEnableFineDelay     = false;
@@ -834,23 +950,12 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
     dqsCfg.bOverrideTXDQSDelay  = false;
     dqsCfg.bRxNeg               = 0;
     dqsCfg.ui8DQSDelay          = 0;        // not used
-    dqsCfg.ui8PioTurnaround     = 4;        // Read command 0x77 and 0x5A requrest 8 dummy bytes (not supported) others 4
-    dqsCfg.ui8XipTurnaround     = 4;        // Read command 0x77 and 0x5A requrest 8 dummy bytes (not supported) others 4
+    dqsCfg.ui8PioTurnaround     = 4;        // Read command 0x77 and 0x5A request 8 dummy bytes (not supported) others 4
+    dqsCfg.ui8XipTurnaround     = 4;        // Read command 0x77 and 0x5A request 8 dummy bytes (not supported) others 4
     dqsCfg.ui8RxDQSDelay        = 15;       // not used
     dqsCfg.ui8TxDQSDelay        = 0;
     am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &dqsCfg);
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-    // do not use enable fine delay for command read
-    dqsCfg.bDQSEnable           = false;
-    dqsCfg.bDQSSyncNeg          = false;
-    dqsCfg.bEnableFineDelay     = false;
-    dqsCfg.ui8RxDQSDelayNeg     = 0;
-    dqsCfg.bRxDQSDelayNegEN     = false;
-    dqsCfg.bRxDQSDelayHiEN      = false;
-    dqsCfg.ui8RxDQSDelay        = 16;
-    dqsCfg.ui8TxDQSDelay        = 0;
-    am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &dqsCfg);
-
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     timingCfg.bTxNeg            = false;
     timingCfg.bRxNeg            = false;
     timingCfg.bRxCap            = false;
@@ -859,14 +964,16 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
     timingCfg.ui8Turnaround     = 4;
     am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &timingCfg);
 #endif
+#endif
 
 #if 0 // Deprecate MSPI CONT
     stMSPIFlashPIOTransaction.bContinue          = false;   // MSPI CONT is deprecated for Apollo4
+
 #endif //
     stMSPIFlashPIOTransaction.ui32NumBytes       = ui32NumBytes;
     stMSPIFlashPIOTransaction.pui32Buffer        = pData;
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4)
     stMSPIFlashPIOTransaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
 #endif
@@ -875,13 +982,31 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
    stMSPIFlashPIOTransaction.bContinue           = false;   // MSPI CONT is deprecated for Apollo4
 #endif
 
-    // Execute the transction over MSPI.
+    //
+    // Execute the transaction over MSPI.
+    //
     ui32Status = am_hal_mspi_blocking_transfer(pFlash->pMspiHandle, &stMSPIFlashPIOTransaction,
                                          AM_DEVICES_MSPI_ATXP032_TIMEOUT);
 
-#if defined(AM_PART_APOLLO4_API)
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+        return ui32Status;
+    }
 
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+    //
+    // Check if we had to step down the command to 48MHz.
+    //
+    if ((AM_HAL_MSPI_CLK_96MHZ == pFlash->stSetting.eClockFreq)
+        && (ui8Instr != AM_DEVICES_ATXP032_ECHO_WITH_INVSERSION))
+    {
+        clkCfg = AM_HAL_MSPI_CLK_96MHZ;  // Reset the clock to 96MHz.
+        ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
+    }
+
+    //
     // restore the address length setting
+    //
     if ( ui8Instr == AM_DEVICES_MSPI_ATXP032_READ_STATUS )
     {
         am_hal_mspi_instr_addr_t sInstAddrCfg;
@@ -890,26 +1015,16 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
         am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SET_INSTR_ADDR_LEN, &sInstAddrCfg);
     }
 
+    //
     // restore enable fine delay timing settings
+    //
     if ( bSDRTimingConfigSaved == true )
     {
         am_devices_mspi_atxp032_apply_sdr_timing(pFlash, &SDRTimingConfigStored);
     }
-#endif
-
-
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    else
     {
-      return ui32Status;
-    }
-
-#if defined(AM_PART_APOLLO4_API)
-    // Check if we had to step down the command to 48MHz.
-    if ((AM_HAL_MSPI_CLK_96MHZ == pFlash->stSetting.eClockFreq)
-        && (ui8Instr != AM_DEVICES_ATXP032_ECHO_WITH_INVSERSION))
-    {
-      clkCfg = AM_HAL_MSPI_CLK_96MHZ;  // Reset the clock to 96MHz.
-      ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_CLOCK_CONFIG, &clkCfg);
+        am_devices_mspi_atxp032_apply_sdr_timing(pFlash, &SDRTimingConfigDefault);
     }
 #endif
     return ui32Status;
@@ -918,7 +1033,16 @@ am_devices_mspi_atxp032_command_read(void *pHandle, uint8_t ui8Instr, bool bSend
 static void
 pfnMSPI_ATXP032_Callback(void *pCallbackCtxt, uint32_t status)
 {
+#if defined(AM_PART_APOLLO5_API)
+    //
+    // Flush and invalidate whole cache
+    // Recommend user to manage cache coherency based on application usage
+    //
+    am_hal_cachectrl_dcache_invalidate(NULL, true);
+#endif
+    //
     // Set the DMA complete flag.
+    //
     *(volatile uint32_t *)pCallbackCtxt = status;
 }
 
@@ -941,7 +1065,9 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
+    //
     // Allocate a vacant device handle
+    //
     for ( ui32Index = 0; ui32Index < AM_DEVICES_MSPI_ATXP032_MAX_DEVICE_NUM; ui32Index++ )
     {
         if ( gAmAtxp032[ui32Index].bOccupied == false )
@@ -961,7 +1087,7 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         {
             psConfig = g_ATXP032_DevConfig[i].psDevConfig;
             psConfig->eClockFreq = psMSPISettings->eClockFreq;
-#if !defined(AM_PART_APOLLO4_API)
+#if !defined(AM_PART_APOLLO4_API) && !defined(AM_PART_APOLLO5_API)
             psConfig->pTCB = psMSPISettings->pNBTxnBuf;
             psConfig->ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
             psConfig->scramblingStartAddr = psMSPISettings->ui32ScramblingStartAddr;
@@ -978,15 +1104,29 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
+#if defined(AM_PART_APOLLO5_API)
+#if !defined(APOLLO5_FPGA)
+    if (psConfig->eClockFreq == AM_HAL_MSPI_CLK_250MHZ ||
+        psConfig->eClockFreq == AM_HAL_MSPI_CLK_192MHZ ||
+        psConfig->eClockFreq == AM_HAL_MSPI_CLK_125MHZ)
+    {
+        am_util_debug_printf("Error - eClockFreq too high.\n");
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+#endif
+#endif
+
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
+#elif AM_PART_APOLLO3_API
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
     am_hal_mcuctrl_fault_capture_enable();
+#endif
 #endif
 
     if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_initialize(ui32Module, &pMspiHandle))
@@ -1000,7 +1140,7 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     {
         am_hal_mspi_config_t    mspiCfg = gMspiCfg;
         mspiCfg.ui32TCBSize = psMSPISettings->ui32NBTxnBufLength;
@@ -1024,14 +1164,17 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
             gAmAtxp032[ui32Index].stSetting = MSPI_ATXP032_Serial_CE0_MSPIConfig;
             tempDevCfg = MSPI_ATXP032_Serial_CE0_MSPIConfig;
 
-#if defined(AM_PART_APOLLO4_API)
+#if !defined(APOLLO4_FPGA) && !defined(APOLLO5_FPGA)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+            //
             // Adjust turnaround for the highest clock speed as part of MSPI SW Workaround.
+            //
             if (AM_HAL_MSPI_CLK_96MHZ == tempDevCfg.eClockFreq)
             {
                 tempDevCfg.ui8TurnAround++;
             }
 #endif
-
+#endif
             break;
 
         case AM_HAL_MSPI_FLASH_SERIAL_CE1:
@@ -1040,16 +1183,21 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
             gAmAtxp032[ui32Index].stSetting = MSPI_ATXP032_Serial_CE1_MSPIConfig;
             tempDevCfg = MSPI_ATXP032_Serial_CE1_MSPIConfig;
 
-#if defined(AM_PART_APOLLO4_API)
+#if !defined(APOLLO4_FPGA) && !defined(APOLLO5_FPGA)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+            //
             // Adjust turnaround for the highest clock speed as part of MSPI SW Workaround.
+            //
             if (AM_HAL_MSPI_CLK_96MHZ == tempDevCfg.eClockFreq)
             {
-              tempDevCfg.ui8TurnAround++;
+                tempDevCfg.ui8TurnAround++;
             }
 #endif
+#endif
+        break;
+
         default:
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-            //break;
     }
 
     if (AM_HAL_STATUS_SUCCESS != am_hal_mspi_device_configure(pMspiHandle, &tempDevCfg))
@@ -1087,21 +1235,42 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
-    am_devices_mspi_atxp032_enable_xip((void*)&gAmAtxp032[ui32Index]);
+
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
+    //
+    // Set Aperture XIP range
+    //
+    am_hal_mspi_xip_config_t    xipCfg = gXipConfig[ui32Module];
+    xipCfg.scramblingStartAddr  = psMSPISettings->ui32ScramblingStartAddr;
+    xipCfg.scramblingEndAddr    = psMSPISettings->ui32ScramblingEndAddr;
+    ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_XIP_CONFIG, &xipCfg);
+    if (AM_HAL_STATUS_SUCCESS != ui32Status)
+    {
+      return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+#endif
+
+    //
     // Disable MSPI defore re-configuring it
+    //
     ui32Status = am_hal_mspi_disable(pMspiHandle);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
+
+    //
     // Adjust turnaround for the highest clock speed as part of MSPI SW Workaround.
+    //
     am_hal_mspi_dev_config_t psTempConfig = *psConfig;  // We cannot change the static global config.
 
-#if defined(AM_PART_APOLLO4_API)
+#if !defined(APOLLO4_FPGA) && !defined(APOLLO5_FPGA)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
     if (AM_HAL_MSPI_CLK_96MHZ == psTempConfig.eClockFreq)
     {
-      psTempConfig.ui8TurnAround++;
+        psTempConfig.ui8TurnAround++;
     }
+#endif
 #endif
 
     //
@@ -1113,23 +1282,25 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     am_hal_mspi_dqs_t dqsCfg = gAtxp032DqsCfg[ui32Module];
     ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_DQS, &dqsCfg);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
-      return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
     am_hal_mspi_rxcfg_t RxCfg = gAtxp032MspiRxCfg;
     ui32Status = am_hal_mspi_control(pMspiHandle, AM_HAL_MSPI_REQ_RXCFG, &RxCfg);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
-      return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 #endif
 
+    //
     // Re-Enable MSPI
+    //
     ui32Status = am_hal_mspi_enable(pMspiHandle);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
@@ -1139,7 +1310,6 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
     //
     // Configure the MSPI pins.
     //
-
 #if defined(ATXP032_QUAD_CLKON4_MODE_EN)
     am_bsp_mspi_clkond4_pins_enable(ui32Module, psConfig->eDeviceConfig);
 #else
@@ -1149,7 +1319,6 @@ am_devices_mspi_atxp032_init(uint32_t ui32Module, am_devices_mspi_atxp032_config
     //
     // Enable MSPI interrupts.
     //
-
     ui32Status = am_hal_mspi_interrupt_clear(pMspiHandle, AM_HAL_MSPI_INT_CQUPD | AM_HAL_MSPI_INT_ERR );
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
@@ -1207,12 +1376,12 @@ am_devices_mspi_atxp032_deinit(void *pHandle)
     ui32Status = am_hal_mspi_interrupt_disable(pFlash->pMspiHandle, 0xFFFFFFFF);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
-      return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
     ui32Status = am_hal_mspi_interrupt_clear(pFlash->pMspiHandle, 0xFFFFFFFF);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
-      return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
     //
@@ -1239,13 +1408,15 @@ am_devices_mspi_atxp032_deinit(void *pHandle)
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
+    //
     // Free this device handle
+    //
     pFlash->bOccupied = false;
 
     //
     // Clear the Flash Caching.
     //
-#if !defined(AM_PART_APOLLO4_API)
+#if !defined(AM_PART_APOLLO4_API) && !defined(AM_PART_APOLLO5_API)
 #if AM_CMSIS_REGS
     CACHECTRL->CACHECFG = 0;
 #else // AM_CMSIS_REGS
@@ -1253,7 +1424,7 @@ am_devices_mspi_atxp032_deinit(void *pHandle)
 #endif // AM_CMSIS_REGS
 #endif // !AM_PART_APOLLO4
     //
-    // Return the status.
+    // Return success status.
     //
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
@@ -1268,7 +1439,6 @@ am_devices_mspi_atxp032_reset(void *pHandle)
 {
     uint32_t      ui32Status;
     uint32_t      ui32PIOBuffer[32] = {0};
-
 
     //
     // Enable write.
@@ -1324,7 +1494,9 @@ am_devices_mspi_atxp032_echo_with_inversion(void *pHandle,
 {
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
 
+    //
     // Read status/control register command uses 1 byte address
+    //
     am_hal_mspi_instr_addr_t sInstAddrCfg;
     sInstAddrCfg.eAddrCfg = AM_HAL_MSPI_ADDR_1_BYTE;
     sInstAddrCfg.eInstrCfg = pFlash->stSetting.eInstrCfg;   // keep instruction setting the same
@@ -1360,13 +1532,18 @@ am_devices_mspi_atxp032_id(void *pHandle)
 {
     uint32_t      ui32Status;
     uint32_t      ui32DeviceID;
+    uint8_t       ui8Response[11];
 
     //
     // Send the command sequence to read the Device ID and return status.
     //
-    uint8_t       ui8Response[11];
     ui32Status = am_devices_mspi_atxp032_command_read(pHandle, AM_DEVICES_MSPI_ATXP032_READ_ID, false, 0, (uint32_t *)&ui8Response[0], 11);
+
+    //
+    // Parse Device ID from the response
+    //
     ui32DeviceID = (ui8Response[7] << 16) | (ui8Response[8] << 8) | ui8Response[9];
+
     if ( ((ui32DeviceID & AM_DEVICES_MSPI_ATXP032_ID_MASK) == AM_DEVICES_MSPI_ATXP032_ID) &&
        (AM_HAL_STATUS_SUCCESS == ui32Status) )
     {
@@ -1418,31 +1595,48 @@ am_devices_mspi_atxp032_read_adv(void *pHandle, uint8_t *pui8RxBuffer,
     uint32_t                      ui32Status;
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
 
+    //
     // Set the DMA priority
+    //
     Transaction.ui8Priority = 1;
 
+    //
     // Set the transfer direction to RX (Read)
+    //
     Transaction.eDirection = AM_HAL_MSPI_RX;
 
+    //
     // Set the transfer count in bytes.
+    //
     Transaction.ui32TransferCount = ui32NumBytes;
 
+    //
     // Set the address to read data from.
+    //
     Transaction.ui32DeviceAddress = ui32ReadAddress;
 
+    //
     // Set the target SRAM buffer address.
+    //
     Transaction.ui32SRAMAddress = (uint32_t)pui8RxBuffer;
 
+    //
     // Clear the CQ stimulus.
+    //
     Transaction.ui32PauseCondition = ui32PauseCondition;
+
+    //
     // Clear the post-processing
+    //
     Transaction.ui32StatusSetClr = ui32StatusSetClr;
 
 #if defined(AM_PART_APOLLO4)
     Transaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
 #endif
 
+    //
     // Check the transaction status.
+    //
     ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction,
                                                   AM_HAL_MSPI_TRANS_DMA, pfnCallback, pCallbackCtxt);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
@@ -1455,7 +1649,6 @@ am_devices_mspi_atxp032_read_adv(void *pHandle, uint8_t *pui8RxBuffer,
     //
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
-
 
 //*****************************************************************************
 //
@@ -1472,24 +1665,39 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
     uint32_t                      ui32Status;
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
 
+    //
     // Set the DMA priority
+    //
     Transaction.ui8Priority = 1;
 
+    //
     // Set the transfer direction to RX (Read)
+    //
     Transaction.eDirection = AM_HAL_MSPI_RX;
 
+    //
     // Set the transfer count in bytes.
+    //
     Transaction.ui32TransferCount = ui32NumBytes;
 
+    //
     // Set the address to read data from.
+    //
     Transaction.ui32DeviceAddress = ui32ReadAddress;
 
+    //
     // Set the target SRAM buffer address.
+    //
     Transaction.ui32SRAMAddress = (uint32_t)pui8RxBuffer;
 
+    //
     // Clear the CQ stimulus.
+    //
     Transaction.ui32PauseCondition = 0;
+
+    //
     // Clear the post-processing
+    //
     Transaction.ui32StatusSetClr = 0;
 
 #if defined(AM_PART_APOLLO4)
@@ -1498,20 +1706,26 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
 
     if (bWaitForCompletion)
     {
+        //
         // Start the transaction.
+        //
         volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
         ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void *)&ui32DMAStatus);
 
+        //
         // Check the transaction status.
+        //
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
 
+        //
         // Wait for DMA Complete or Timeout
+        //
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
             if ( (AM_HAL_STATUS_SUCCESS == ui32DMAStatus) || (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus) )
             {
                 break;
@@ -1529,7 +1743,7 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
             am_util_delay_us(1);
         }
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
         if (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus)
         {
             am_hal_gpio_output_toggle(22);
@@ -1552,7 +1766,9 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
     }
     else
     {
+        //
         // Check the transaction status.
+        //
         ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction,
                                                       AM_HAL_MSPI_TRANS_DMA, NULL, NULL);
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
@@ -1567,7 +1783,7 @@ am_devices_mspi_atxp032_read(void *pHandle, uint8_t *pui8RxBuffer,
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 static uint32_t
 mspi_atxp032_dma_read(void *pHandle, uint8_t *pui8RxBuffer,
                       uint32_t ui32ReadAddress,
@@ -1577,45 +1793,68 @@ mspi_atxp032_dma_read(void *pHandle, uint8_t *pui8RxBuffer,
     uint32_t                      ui32Status;
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
 
+    //
     // Set the DMA priority
+    //
     Transaction.ui8Priority = 1;
 
+    //
     // Set the transfer direction to RX (Read)
+    //
     Transaction.eDirection = AM_HAL_MSPI_RX;
 
+    //
     // Set the transfer count in bytes.
+    //
     Transaction.ui32TransferCount = ui32NumBytes;
 
+    //
     // Set the address to read data from.
+    //
     Transaction.ui32DeviceAddress = ui32ReadAddress;
 
+    //
     // Set the target SRAM buffer address.
+    //
     Transaction.ui32SRAMAddress = (uint32_t)pui8RxBuffer;
 
+    //
     // Clear the CQ stimulus.
+    //
     Transaction.ui32PauseCondition = 0;
+
+    //
     // Clear the post-processing
+    //
     Transaction.ui32StatusSetClr = 0;
 
 #if defined(AM_PART_APOLLO4)
     Transaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
 #endif
 
+    //
     // Start the transaction.
+    //
     volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
     ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void *)&ui32DMAStatus);
 
+    //
     // Check the transaction status.
+    //
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
+    //
     // Wait for DMA Complete or Timeout
+    //
     for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
     {
 
+        //
         // check DMA status without using ISR
+        //
         am_hal_mspi_interrupt_status_get(pFlash->pMspiHandle, &ui32Status, false);
         am_hal_mspi_interrupt_clear(pFlash->pMspiHandle, ui32Status);
         am_hal_mspi_interrupt_service(pFlash->pMspiHandle, ui32Status);
@@ -1658,7 +1897,7 @@ mspi_atxp032_dma_read(void *pHandle, uint8_t *pui8RxBuffer,
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 }
-#endif // defined(AM_PART_APOLLO4_API)
+#endif // defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 
 
 //*****************************************************************************
@@ -1676,24 +1915,39 @@ am_devices_mspi_atxp032_read_hiprio(void *pHandle, uint8_t *pui8RxBuffer,
     uint32_t                      ui32Status;
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
 
+    //
     // Set the DMA priority
+    //
     Transaction.ui8Priority = 1;
 
+    //
     // Set the transfer direction to RX (Read)
+    //
     Transaction.eDirection = AM_HAL_MSPI_RX;
 
+    //
     // Set the transfer count in bytes.
+    //
     Transaction.ui32TransferCount = ui32NumBytes;
 
+    //
     // Set the address to read data from.
+    //
     Transaction.ui32DeviceAddress = ui32ReadAddress;
 
+    //
     // Set the target SRAM buffer address.
+    //
     Transaction.ui32SRAMAddress = (uint32_t)pui8RxBuffer;
 
+    //
     // Clear the CQ stimulus.
+    //
     Transaction.ui32PauseCondition = 0;
+
+    //
     // Clear the post-processing
+    //
     Transaction.ui32StatusSetClr = 0;
 
 #if defined(AM_PART_APOLLO4)
@@ -1702,38 +1956,71 @@ am_devices_mspi_atxp032_read_hiprio(void *pHandle, uint8_t *pui8RxBuffer,
 
     if (bWaitForCompletion)
     {
+        //
         // Start the transaction.
-        volatile bool bDMAComplete = false;
-        ui32Status = am_hal_mspi_highprio_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void*)&bDMAComplete);
+        //
+        volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
+        ui32Status = am_hal_mspi_highprio_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void *)&ui32DMAStatus);
 
+        //
         // Check the transaction status.
+        //
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
 
+        //
         // Wait for DMA Complete or Timeout
+        //
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
-            if (bDMAComplete)
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
+            if ( (AM_HAL_STATUS_SUCCESS == ui32DMAStatus) || (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus) )
             {
                 break;
             }
+#else
+            if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+            {
+                break;
+            }
+#endif
+
             //
             // Call the BOOTROM cycle function to delay for about 1 microsecond.
             //
             am_util_delay_us(1);
         }
 
+        //
         // Check the status.
-        if (!bDMAComplete)
+        //
+#if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
+        if (AM_HAL_MSPI_FIFO_FULL_CONDITION == ui32DMAStatus)
+        {
+            return AM_HAL_MSPI_FIFO_FULL_CONDITION;
+        }
+        else if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+        {
+            return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
+        }
+#else
+        if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
+        {
+            return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
+        }
+#endif
+        else
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
     }
     else
     {
+        //
         // Check the transaction status.
+        //
         ui32Status = am_hal_mspi_highprio_transfer(pFlash->pMspiHandle, &Transaction,
                                                       AM_HAL_MSPI_TRANS_DMA, NULL, NULL);
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
@@ -1747,7 +2034,6 @@ am_devices_mspi_atxp032_read_hiprio(void *pHandle, uint8_t *pui8RxBuffer,
     //
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
-
 
 
 //*****************************************************************************
@@ -1781,53 +2067,76 @@ am_devices_mspi_atxp032_write(void *pHandle, uint8_t *pui8TxBuffer,
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
 
+        //
         // Set the DMA priority
+        //
         Transaction.ui8Priority = 1;
 
+        //
         // Set the transfer direction to TX (Write)
+        //
         Transaction.eDirection = AM_HAL_MSPI_TX;
 
         if (ui32BytesLeft > AM_DEVICES_MSPI_ATXP032_PAGE_SIZE)
         {
+            //
             // Set the transfer count in bytes.
+            //
             Transaction.ui32TransferCount = AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
             ui32BytesLeft -= AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
         }
         else
         {
+            //
             // Set the transfer count in bytes.
+            //
             Transaction.ui32TransferCount = ui32BytesLeft;
             ui32BytesLeft = 0;
         }
 
+        //
         // Set the address to read data to.
+        //
         Transaction.ui32DeviceAddress = ui32PageAddress;
         ui32PageAddress += AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
 
+        //
         // Set the source SRAM buffer address.
+        //
         Transaction.ui32SRAMAddress = ui32BufferAddress;
         ui32BufferAddress += AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
 
+        //
         // Clear the CQ stimulus.
+        //
         Transaction.ui32PauseCondition = 0;
+
+        //
         // Clear the post-processing
+        //
         Transaction.ui32StatusSetClr = 0;
 
 #if defined(AM_PART_APOLLO4)
     Transaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
 #endif
 
+        //
         // Start the transaction.
+        //
         volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
-        ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void*)&ui32DMAStatus);
+        ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void *)&ui32DMAStatus);
 
+        //
         // Check the transaction status.
+        //
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
 
+        //
         // Wait for DMA Complete or Timeout
+        //
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
             if (AM_HAL_STATUS_SUCCESS == ui32DMAStatus)
@@ -1840,7 +2149,9 @@ am_devices_mspi_atxp032_write(void *pHandle, uint8_t *pui8TxBuffer,
             am_util_delay_us(1);
         }
 
+        //
         // Check the status.
+        //
         if (AM_HAL_STATUS_SUCCESS != ui32DMAStatus)
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -1851,7 +2162,9 @@ am_devices_mspi_atxp032_write(void *pHandle, uint8_t *pui8TxBuffer,
         //
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
+            //
             // ATXP032 has different number of bytes for each speed of status read.
+            //
             switch ( pFlash->stSetting.eDeviceConfig )
             {
                 case AM_HAL_MSPI_FLASH_SERIAL_CE0:
@@ -1908,7 +2221,7 @@ am_devices_mspi_atxp032_write(void *pHandle, uint8_t *pui8TxBuffer,
   return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 static uint32_t
 mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
                        uint32_t ui32WriteAddress,
@@ -1923,7 +2236,6 @@ mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
     uint32_t      ui32PIOBuffer[32] = {0};
 
-
     while (ui32BytesLeft > 0)
     {
         //
@@ -1935,56 +2247,81 @@ mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
 
+        //
         // Set the DMA priority
+        //
         Transaction.ui8Priority = 1;
 
+        //
         // Set the transfer direction to TX (Write)
+        //
         Transaction.eDirection = AM_HAL_MSPI_TX;
 
         if (ui32BytesLeft > AM_DEVICES_MSPI_ATXP032_PAGE_SIZE)
         {
+            //
             // Set the transfer count in bytes.
+            //
             Transaction.ui32TransferCount = AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
             ui32BytesLeft -= AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
         }
         else
         {
+            //
             // Set the transfer count in bytes.
+            //
             Transaction.ui32TransferCount = ui32BytesLeft;
             ui32BytesLeft = 0;
         }
 
+        //
         // Set the address to read data to.
+        //
         Transaction.ui32DeviceAddress = ui32PageAddress;
         ui32PageAddress += AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
 
+        //
         // Set the source SRAM buffer address.
+        //
         Transaction.ui32SRAMAddress = ui32BufferAddress;
         ui32BufferAddress += AM_DEVICES_MSPI_ATXP032_PAGE_SIZE;
 
+        //
         // Clear the CQ stimulus.
+        //
         Transaction.ui32PauseCondition = 0;
+
+        //
         // Clear the post-processing
+        //
         Transaction.ui32StatusSetClr = 0;
 
 #if defined(AM_PART_APOLLO4)
     Transaction.eDeviceNum         = AM_HAL_MSPI_DEVICE0;
 #endif
 
+        //
         // Start the transaction.
+        //
         volatile uint32_t ui32DMAStatus = 0xFFFFFFFF;
-        ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void*)&ui32DMAStatus);
+        ui32Status = am_hal_mspi_nonblocking_transfer(pFlash->pMspiHandle, &Transaction, AM_HAL_MSPI_TRANS_DMA, pfnMSPI_ATXP032_Callback, (void *)&ui32DMAStatus);
 
+        //
         // Check the transaction status.
+        //
         if (AM_HAL_STATUS_SUCCESS != ui32Status)
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
         }
 
+        //
         // Wait for DMA Complete or Timeout
+        //
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
+            //
             // check DMA status without using ISR
+            //
             am_hal_mspi_interrupt_status_get(pFlash->pMspiHandle, &ui32Status, false);
             am_hal_mspi_interrupt_clear(pFlash->pMspiHandle, ui32Status);
             am_hal_mspi_interrupt_service(pFlash->pMspiHandle, ui32Status);
@@ -1999,7 +2336,9 @@ mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
             am_util_delay_us(1);
         }
 
+        //
         // Check the status.
+        //
         if (AM_HAL_STATUS_SUCCESS != ui32DMAStatus)
         {
             return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -2010,7 +2349,9 @@ mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
         //
         for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_TIMEOUT; i++)
         {
+            //
             // ATXP032 has different number of bytes for each speed of status read.
+            //
             switch ( pFlash->stSetting.eDeviceConfig )
             {
                 case AM_HAL_MSPI_FLASH_SERIAL_CE0:
@@ -2066,7 +2407,7 @@ mspi_atxp032_dma_write(void *pHandle, uint8_t *pui8TxBuffer,
   //
   return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
-#endif // defined(AM_PART_APOLLO4_API)
+#endif // defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 
 //*****************************************************************************
 //
@@ -2078,7 +2419,6 @@ am_devices_mspi_atxp032_mass_erase(void *pHandle)
 {
     bool          bEraseComplete = false;
     uint32_t      ui32Status;
-    //am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
     uint32_t      ui32PIOBuffer[32] = {0};
 
     //
@@ -2164,7 +2504,7 @@ am_devices_mspi_atxp032_sector_erase(void *pHandle, uint32_t ui32SectorAddress)
     ui32Status = am_devices_mspi_atxp032_command_write(pHandle, AM_DEVICES_ATXP032_UNPROTECT_SECTOR, true, ui32SectorAddress, ui32PIOBuffer, 0);
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
-      return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
     //
@@ -2190,7 +2530,9 @@ am_devices_mspi_atxp032_sector_erase(void *pHandle, uint32_t ui32SectorAddress)
     //
     for (uint32_t i = 0; i < AM_DEVICES_MSPI_ATXP032_ERASE_TIMEOUT; i++)
     {
+        //
         // ATXP032 has different number of bytes for each speed of status read.
+        //
         switch ( pFlash->stSetting.eDeviceConfig )
         {
             case AM_HAL_MSPI_FLASH_SERIAL_CE0:
@@ -2265,32 +2607,19 @@ am_devices_mspi_atxp032_enable_xip(void *pHandle)
     uint32_t ui32Status;
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
 
-#if defined(AM_PART_APOLLO4_API)
-    //
-    // Set Aperture XIP range
-    //
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_CONFIG, &gXipConfig[pFlash->ui32Module]);
-    if (AM_HAL_STATUS_SUCCESS != ui32Status)
-    {
-        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
-    }
-#endif
-
     //
     // Enable XIP on the MSPI.
     //
-#if defined(AM_PART_APOLLO4_API)
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_EN, &gXipConfig[pFlash->ui32Module]);
-#else
     ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_EN, NULL);
-#endif
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
 
 #if !MSPI_USE_CQ
+    //
     // Disable the DMA interrupts.
+    //
     ui32Status = am_hal_mspi_interrupt_disable(pFlash->pMspiHandle,
                                                AM_HAL_MSPI_INT_DMAERR |
                                                AM_HAL_MSPI_INT_DMACMP );
@@ -2327,11 +2656,7 @@ am_devices_mspi_atxp032_disable_xip(void *pHandle)
     //
     // Disable XIP on the MSPI.
     //
-#if defined(AM_PART_APOLLO4_API)
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_DIS, &gXipConfig[pFlash->ui32Module]);
-#else
     ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_DIS, NULL);
-#endif
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -2354,11 +2679,7 @@ am_devices_mspi_atxp032_enable_scrambling(void *pHandle)
     //
     // Enable scrambling on the MSPI.
     //
-#if defined(AM_PART_APOLLO4_API)
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_EN, &gXipConfig[pFlash->ui32Module]);
-#else
     ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_EN, NULL);
-#endif
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -2390,11 +2711,7 @@ am_devices_mspi_atxp032_disable_scrambling(void *pHandle)
     //
     // Disable Scrambling on the MSPI.
     //
-#if defined(AM_PART_APOLLO4_API)
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_DIS, &gXipConfig[pFlash->ui32Module]);
-#else
     ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_SCRAMB_DIS, NULL);
-#endif
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -2403,7 +2720,7 @@ am_devices_mspi_atxp032_disable_scrambling(void *pHandle)
     return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 }
 
-#if defined(AM_PART_APOLLO4_API)
+#if defined(AM_PART_APOLLO4_API) || defined(AM_PART_APOLLO5_API)
 
 
 static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t len)
@@ -2411,7 +2728,9 @@ static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t 
     uint32_t *pui32TxPtr = (uint32_t*)buff;
     uint8_t  *pui8TxPtr  = (uint8_t*)buff;
 
+    //
     // length has to be multiple of 4 bytes
+    //
     if ( len % 4 )
     {
         return -1;
@@ -2420,43 +2739,57 @@ static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t 
     switch ( pattern_index )
     {
         case 0:
+            //
             // 0x5555AAAA
+            //
             for (uint32_t i = 0; i < len / 4; i++)
             {
                pui32TxPtr[i] = (0x5555AAAA);
             }
             break;
         case 1:
+            //
             // 0xFFFF0000
+            //
             for (uint32_t i = 0; i < len / 4; i++)
             {
                pui32TxPtr[i] = (0xFFFF0000);
             }
             break;
         case 2:
+            //
             // walking
+            //
             for (uint32_t i = 0; i < len; i++)
             {
                pui8TxPtr[i] = 0x01 << (i % 8);
             }
             break;
         case 3:
+            //
             // incremental from 1
+            //
             for (uint32_t i = 0; i < len; i++)
             {
                pui8TxPtr[i] = ((i + 1) & 0xFF);
             }
             break;
         case 4:
+            //
             // decremental from 0xff
+            //
             for ( uint32_t i = 0; i < len; i++ )
             {
+                //
                 // decrement starting from 0xff
+                //
                 pui8TxPtr[i] = (0xff - i) & 0xFF;
             }
             break;
         default:
+            //
             // incremental from 1
+            //
             for (uint32_t i = 0; i < len; i++)
             {
                pui8TxPtr[i] = ((i + 1) & 0xFF);
@@ -2468,15 +2801,29 @@ static int prepare_test_pattern(uint32_t pattern_index, uint8_t* buff, uint32_t 
     return 0;
 }
 
+#if defined(AM_PART_APOLLO4_API)
+static AM_SHARED_RW uint8_t  ui8TxBuffer[FLASH_TIMING_SCAN_SIZE_BYTES] AM_BIT_ALIGNED(128);
+static AM_SHARED_RW uint8_t  ui8RxBuffer[FLASH_TIMING_SCAN_SIZE_BYTES] AM_BIT_ALIGNED(128);
+#elif defined(AM_PART_APOLLO5_API)
+static AM_SHARED_RW uint8_t  ui8TxBuffer[FLASH_TIMING_SCAN_SIZE_BYTES] __attribute__((aligned(32)));
+static AM_SHARED_RW uint8_t  ui8RxBuffer[FLASH_TIMING_SCAN_SIZE_BYTES] __attribute__((aligned(32)));
+#else
+static AM_SHARED_RW uint8_t  ui8TxBuffer[FLASH_TIMING_SCAN_SIZE_BYTES];
+static AM_SHARED_RW uint8_t  ui8RxBuffer[FLASH_TIMING_SCAN_SIZE_BYTES];
+#endif
+
 bool
 flash_write(void* flashHandle, uint32_t length)
 {
+    //
     // Try to use as less ram as possible in stack
+    //
     uint32_t ui32NumberOfBytesLeft = length;
     uint32_t ui32TestBytes = 0;
     uint32_t ui32AddressOffset = 0;
     uint8_t  ui8PatternCounter = 0;
-    uint8_t  ui8TxBuffer[FLASH_CHECK_DATA_SIZE_BYTES];
+    uint8_t  *pui8TxBuffer = ui8TxBuffer;
+
     uint32_t ui32Status = AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 
     while ( ui32NumberOfBytesLeft )
@@ -2496,12 +2843,20 @@ flash_write(void* flashHandle, uint32_t length)
         // Write to target address with test pattern with given length
         // Use 5 patterns: 0x5555AAAA, 0xFFFF0000, Walking, incremental and decremental
         //
-
-        prepare_test_pattern((ui8PatternCounter) % FLASH_TEST_PATTERN_NUMBER, ui8TxBuffer, ui32TestBytes);
+        prepare_test_pattern((ui8PatternCounter) % FLASH_TEST_PATTERN_NUMBER, pui8TxBuffer, ui32TestBytes);
         ui8PatternCounter++;
-
+#if defined(AM_PART_APOLLO5_API)
+        am_hal_cachectrl_range_t sRange =
+        {
+            .ui32StartAddr = (uint32_t)pui8TxBuffer,
+            .ui32Size = ui32TestBytes,
+        };
+        am_hal_cachectrl_dcache_clean(&sRange);
+#endif
+        //
         // write to target address
-        ui32Status = mspi_atxp032_dma_write(flashHandle, ui8TxBuffer,
+        //
+        ui32Status = mspi_atxp032_dma_write(flashHandle, pui8TxBuffer,
                                             (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + ui32AddressOffset,
                                             ui32TestBytes);
         if ( ui32Status ==  AM_DEVICES_MSPI_ATXP032_STATUS_ERROR)
@@ -2510,12 +2865,13 @@ flash_write(void* flashHandle, uint32_t length)
         }
 
         ui32AddressOffset += ui32TestBytes;
+        pui8TxBuffer += ui32TestBytes;
     }
 
     return false;
 }
 
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
 #else
 static uint32_t
 mspi_atxp032_disable_xip(void *pHandle)
@@ -2526,11 +2882,7 @@ mspi_atxp032_disable_xip(void *pHandle)
     //
     // Disable XIP on the MSPI.
     //
-#if defined(AM_PART_APOLLO4_API)
-    ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_DIS, &gXipConfig[pFlash->ui32Module]);
-#else
     ui32Status = am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_XIP_DIS, NULL);
-#endif
     if (AM_HAL_STATUS_SUCCESS != ui32Status)
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -2543,91 +2895,62 @@ mspi_atxp032_disable_xip(void *pHandle)
 bool
 flash_check(void* flashHandle, uint32_t length)
 {
-    // Try to use as less ram as possible in stack
-    uint32_t ui32NumberOfBytesLeft = length;
-    uint32_t ui32TestBytes = 0;
-    uint32_t ui32AddressOffset = 0;
-    uint8_t  ui8PatternCounter = 0;
-    uint8_t  ui8TxBuffer[FLASH_CHECK_DATA_SIZE_BYTES];
-    uint8_t  ui8RxBuffer[FLASH_CHECK_DATA_SIZE_BYTES];
     uint32_t ui32Status = AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
 
-    while ( ui32NumberOfBytesLeft )
-    {
-        if ( ui32NumberOfBytesLeft > FLASH_CHECK_DATA_SIZE_BYTES )
-        {
-            ui32TestBytes = FLASH_CHECK_DATA_SIZE_BYTES;
-            ui32NumberOfBytesLeft -= FLASH_CHECK_DATA_SIZE_BYTES;
-        }
-        else
-        {
-            ui32TestBytes = ui32NumberOfBytesLeft;
-            ui32NumberOfBytesLeft = 0;
-        }
-
-        //
-        // Write to target address with test pattern with given length
-        // Use 5 patterns: 0x5555AAAA, 0xFFFF0000, Walking, incremental and decremental
-        //
-        prepare_test_pattern((ui8PatternCounter) % FLASH_TEST_PATTERN_NUMBER, ui8TxBuffer, ui32TestBytes);
-        ui8PatternCounter++;
-
-        //
-        // Read back data
-        //
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
-        ui32Status = mspi_atxp032_dma_read(flashHandle, ui8RxBuffer,
-                                    (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + ui32AddressOffset,
-                                    ui32TestBytes);
+    //
+    // Read back data
+    //
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
+    ui32Status = mspi_atxp032_dma_read(flashHandle, ui8RxBuffer,
+                                (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16),
+                                length);
 #else
-        am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)flashHandle;
-        if ( pFlash->stSetting.eClockFreq == AM_HAL_MSPI_CLK_96MHZ )
+    am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)flashHandle;
+    if ( pFlash->stSetting.eClockFreq == AM_HAL_MSPI_CLK_96MHZ )
+    {
+        //
+        // Read the data back into the RX buffer using XIP
+        //
+        ui32Status = am_devices_mspi_atxp032_enable_xip(flashHandle);
+        if (AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS != ui32Status)
         {
-            //
-            // Read the data back into the RX buffer using XIP
-            //
-            ui32Status = am_devices_mspi_atxp032_enable_xip(flashHandle);
-            if (AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS != ui32Status)
-            {
-                am_util_debug_printf("Failed to put the MSPI into XIP mode!\n");
-            }
-            am_hal_sysctrl_bus_write_flush();
-            uint8_t * xipPointer = (uint8_t *)(ui32MspiXipBaseAddress[pFlash->ui32Module] + (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + ui32AddressOffset);
-            memcpy((uint8_t*)ui8RxBuffer, xipPointer, ui32TestBytes);
+            am_util_debug_printf("Failed to put the MSPI into XIP mode!\n");
+        }
+        am_hal_sysctrl_bus_write_flush();
+        uint8_t * xipPointer = (uint8_t *)(ui32MspiXipBaseAddress[pFlash->ui32Module] + (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16));
+        memcpy((uint8_t*)ui8RxBuffer, xipPointer, length);
 
-            //
-            // Quit XIP mode
-            //
-            ui32Status = mspi_atxp032_disable_xip(flashHandle);
-            if (AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS != ui32Status)
-            {
-                am_util_debug_printf("Failed to disable XIP mode in the MSPI!\n");
-            }
-        }
-        else
+        //
+        // Quit XIP mode
+        //
+        ui32Status = mspi_atxp032_disable_xip(flashHandle);
+        if (AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS != ui32Status)
         {
-            ui32Status = mspi_atxp032_dma_read(flashHandle, ui8RxBuffer,
-                                                (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + ui32AddressOffset,
-                                                ui32TestBytes);
+            am_util_debug_printf("Failed to disable XIP mode in the MSPI!\n");
         }
+    }
+    else
+    {
+        ui32Status = mspi_atxp032_dma_read(flashHandle, ui8RxBuffer,
+                                            (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16),
+                                            length);
+    }
 #endif
 
-        if ( ui32Status ==  AM_DEVICES_MSPI_ATXP032_STATUS_ERROR)
-        {
-            return true;
-        }
+    if ( ui32Status ==  AM_DEVICES_MSPI_ATXP032_STATUS_ERROR)
+    {
+        return true;
+    }
 
+    //
+    // Verify the result
+    //
+    if ( memcmp(ui8RxBuffer, ui8TxBuffer, length) )
+    {
         //
-        // Verify the result
+        // verify failed, return directly
         //
-        if ( memcmp(ui8RxBuffer, ui8TxBuffer, ui32TestBytes) )
-        {
-            //am_util_debug_printf("    Failed to verify at offset 0x%08x!\n", ui32AddressOffset);
-            // verify failed, return directly
-            return true;
-        }
-
-        ui32AddressOffset += ui32TestBytes;
+        return true;
     }
 
     return false;
@@ -2705,23 +3028,28 @@ find_mid_point(uint32_t* pVal)
 
     if ( (pick_point < 16) && (val & 0x00000002) )
     {
+        //
         // window is likely on low side
+        //
         pick_point = pick_point - remainder;    // minus only when pattern length is odd
     }
     else if ( (pick_point > 15) && (val & 0x40000000) )
     {
+        //
         // window is likely on high side
+        //
         pick_point = pick_point + 1;
     }
     else
     {
+        //
         // window is in the middle, no action
+        //
     }
 
     return pick_point;
 }
 #endif
-
 
 #if defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B)
 
@@ -2766,7 +3094,7 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
 
     am_hal_mspi_dqs_t scanCfg =
     {
-        .bDQSEnable             = 0,
+        .bDQSEnable             = false,
         .bEnableFineDelay       = 1,
         .bOverrideRXDQSDelay    = 1,
         .ui8RxDQSDelay          = 15,
@@ -2779,7 +3107,9 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
         .bRxNeg                 = 0,
     };
 
+    //
     // clear previous saved config, rescan
+    //
     if ( bSDRTimingConfigSaved == true )
     {
         bSDRTimingConfigSaved                   = false;
@@ -2799,15 +3129,15 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     }
 
     //
-    // erase target sector first (each "sector is 64Kbyte block")
+    // erase target sector first (each 0xD8 command erase 64Kbyte block")
     //
+    uint32_t ui32EraseCnt = FLASH_TIMING_SCAN_SIZE_BYTES / AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE;
     if ( FLASH_TIMING_SCAN_SIZE_BYTES % AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE )
     {
-        // scan size shall be at block boundary
-        am_util_debug_printf("ERROR: Timing scan data size shall be at sector boundary!\n");
-        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        ui32EraseCnt += 1;
     }
-    for ( uint8_t i = 0; i < (FLASH_TIMING_SCAN_SIZE_BYTES / AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE); i++ )
+
+    for ( uint8_t i = 0; i < ui32EraseCnt; i++ )
     {
         ui32Status = am_devices_mspi_atxp032_sector_erase(pDevHandle,
                                                         (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + i*AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE);
@@ -2819,7 +3149,9 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
         }
     }
 
+    //
     // write test pattern into target sector
+    //
     if ( flash_write(pDevHandle, FLASH_TIMING_SCAN_SIZE_BYTES) )
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
@@ -2830,29 +3162,42 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     //
     for ( uint8_t i = 0; i < ui32TestSize; i++ )
     {
+        //
         // set Turnaround and RXNEG
+        //
         scanCfg.ui8PioTurnaround    = scanCfg.ui8XipTurnaround = atxp032_sConfigArray[i].ui32Turnaround;
         scanCfg.bRxNeg              = atxp032_sConfigArray[i].ui32Rxneg;
         for ( uint8_t RxDqs_Index = 1; RxDqs_Index < 31; RxDqs_Index++ )
         {
+            //
             // set RXDQSDELAY0 value
+            //
             scanCfg.ui8RxDQSDelay   = RxDqs_Index;
+
+            //
             // apply settings
+            //
             ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_DQS, &scanCfg);
             if (AM_HAL_STATUS_SUCCESS != ui32Status)
             {
                 return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
             }
 
+            //
             // run data check
+            //
             if ( false == flash_check(pDevHandle, FLASH_TIMING_SCAN_SIZE_BYTES) )
             {
+                //
                 // data check pass
+                //
                 ui32ResultArray[i] |= 0x01 << RxDqs_Index;
             }
             else
             {
+                //
                 // data check failed
+                //
             }
         }
     }
@@ -2896,7 +3241,9 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     //
     if ( ui32MaxOnes < ATXP032_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH )
     {
+        //
         // too short is the passing settings, use default setting
+        //
         pDevSdrCfg->ui32Rxdqsdelay = SDRTimingConfigDefault.ui32Rxdqsdelay;
         pDevSdrCfg->ui32Rxneg = SDRTimingConfigDefault.ui32Rxneg;
         pDevSdrCfg->ui32Turnaround = SDRTimingConfigDefault.ui32Turnaround;
@@ -2927,7 +3274,7 @@ am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
     am_hal_mspi_dqs_t applyCfg =
     {
-        .bDQSEnable             = 0,
+        .bDQSEnable             = false,
         .bEnableFineDelay       = 1,
         .bOverrideRXDQSDelay    = 1,
         .bOverrideTXDQSDelay    = 0,
@@ -2936,31 +3283,35 @@ am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
         .ui8DQSDelay            = 0,
     };
 
+    //
     // apply timing settings: Turnaround, RXNEG and RXDQSDELAY
+    //
     applyCfg.ui8RxDQSDelay      = pDevSdrCfg->ui32Rxdqsdelay;
     applyCfg.ui8PioTurnaround   = pDevSdrCfg->ui32Turnaround;
     applyCfg.ui8XipTurnaround   = pDevSdrCfg->ui32Turnaround;
     applyCfg.bRxNeg             = pDevSdrCfg->ui32Rxneg;
 
+    //
     // save a local copy of the timing settings
-    if ( bSDRTimingConfigSaved == false )
-    {
-        bSDRTimingConfigSaved                   = true;
-        SDRTimingConfigStored.ui32Rxdqsdelay    = pDevSdrCfg->ui32Rxdqsdelay;
-        SDRTimingConfigStored.ui32Rxneg         = pDevSdrCfg->ui32Rxneg;
-        SDRTimingConfigStored.ui32Turnaround    = pDevSdrCfg->ui32Turnaround;
-    }
+    //
+
+    bSDRTimingConfigSaved                   = true;
+    SDRTimingConfigStored.ui32Rxdqsdelay    = pDevSdrCfg->ui32Rxdqsdelay;
+    SDRTimingConfigStored.ui32Rxneg         = pDevSdrCfg->ui32Rxneg;
+    SDRTimingConfigStored.ui32Turnaround    = pDevSdrCfg->ui32Turnaround;
 
     return am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_DQS, &applyCfg);
 
 }
 #endif
 
-#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
 
 const am_devices_mspi_atxp032_sdr_timing_config_t atxp032_sConfigArray[] =
 {
+//
 //TXNEG RXNEG RXCAP TXDLY RXDLY TURNAROUND
+//
     {1 ,  0,   0,    1,    1,      6},
     {1 ,  0,   0,    2,    1,      6},
     {1 ,  0,   0,    3,    1,      6},
@@ -3180,17 +3531,15 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     };
 
     am_hal_mspi_dqs_t dqsCfg;
-
+#if defined(FAST_TIMING_SCAN)
+    bool bTimingConfigSaved = bSDRTimingConfigSaved;
+#endif
+    //
     // clear previous saved config, rescan
+    //
     if ( bSDRTimingConfigSaved == true )
     {
-        bSDRTimingConfigSaved                   = false;
-        SDRTimingConfigStored.bTxNeg            = SDRTimingConfigDefault.bTxNeg;
-        SDRTimingConfigStored.bRxNeg            = SDRTimingConfigDefault.bRxNeg;
-        SDRTimingConfigStored.bRxCap            = SDRTimingConfigDefault.bRxCap;
-        SDRTimingConfigStored.ui8TxDQSDelay     = SDRTimingConfigDefault.ui8TxDQSDelay;
-        SDRTimingConfigStored.ui8RxDQSDelay     = SDRTimingConfigDefault.ui8RxDQSDelay;
-        SDRTimingConfigStored.ui8Turnaround     = SDRTimingConfigDefault.ui8Turnaround;
+        bSDRTimingConfigSaved = false;
     }
 
     //
@@ -3203,8 +3552,14 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
         return ui32Status;
     }
 
+    //
     // do not use enable fine delay for command read
-    dqsCfg.bDQSEnable           = false;
+    //
+#ifdef USE_NON_DQS_MODE
+    dqsCfg.bDQSEnable             = false;
+#else
+    dqsCfg.bDQSEnable             = true;
+#endif
     dqsCfg.bDQSSyncNeg          = false;
     dqsCfg.bEnableFineDelay     = false;
     dqsCfg.ui8RxDQSDelayNeg     = 0;
@@ -3215,16 +3570,15 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_DQS, &dqsCfg);
 
     //
-    // erase target sector first (each "sector is 64Kbyte block")
+    // erase target sector first (each 0xD8 command erase 64Kbyte block")
     //
+    uint32_t ui32EraseCnt = FLASH_TIMING_SCAN_SIZE_BYTES / AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE;
     if ( FLASH_TIMING_SCAN_SIZE_BYTES % AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE )
     {
-        // scan size shall be at block boundary
-        am_util_debug_printf("ERROR: Timing scan data size shall be at sector boundary!\n");
-        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        ui32EraseCnt += 1;
     }
 
-    for ( uint8_t i = 0; i < (FLASH_TIMING_SCAN_SIZE_BYTES / AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE); i++ )
+    for ( uint8_t i = 0; i < ui32EraseCnt; i++ )
     {
         ui32Status = am_devices_mspi_atxp032_sector_erase(pDevHandle,
                                                         (AM_DEVICES_MSPI_ATXP032_SECTOR_FOR_TIMING_CHECK << 16) + i*AM_DEVICES_MSPI_ATXP032_SECTOR_SIZE);
@@ -3236,11 +3590,50 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
         }
     }
 
+    //
     // write test pattern into target sector
+    //
     if ( flash_write(pDevHandle, FLASH_TIMING_SCAN_SIZE_BYTES) )
     {
         return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
     }
+#if defined(FAST_TIMING_SCAN)
+    if (bTimingConfigSaved)
+    {
+        scanCfg.bTxNeg                = SDRTimingConfigStored.bTxNeg;
+        scanCfg.bRxNeg                = SDRTimingConfigStored.bRxNeg;
+        scanCfg.bRxCap                = SDRTimingConfigStored.bRxCap;
+        scanCfg.ui8TxDQSDelay         = SDRTimingConfigStored.ui8TxDQSDelay;
+        scanCfg.ui8RxDQSDelay         = SDRTimingConfigStored.ui8RxDQSDelay;
+        scanCfg.ui8Turnaround         = SDRTimingConfigStored.ui8Turnaround;
+
+        //
+        // apply settings
+        //
+        ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &scanCfg);
+        if (AM_HAL_STATUS_SUCCESS != ui32Status)
+        {
+            return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+        }
+
+        //
+        // run data check
+        //
+        if ( false == flash_check(pDevHandle, FLASH_TIMING_SCAN_SIZE_BYTES) )
+        {
+            //
+            // data check pass
+            //
+            *pDevSdrCfg = SDRTimingConfigStored;
+
+            //
+            // Deinitialize the MSPI interface
+            //
+            am_devices_mspi_atxp032_deinit(pDevHandle);
+            return AM_DEVICES_MSPI_ATXP032_STATUS_SUCCESS;
+        }
+    }
+#endif
 
     am_util_debug_printf("\nStart MSPI Timing Scan!\n");
 
@@ -3249,7 +3642,9 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     //
     for ( uint8_t i = 0; i < ui32TestSize; i++ )
     {
+        //
         // set Timing Scan Parameters
+        //
         scanCfg.bTxNeg                = atxp032_sConfigArray[i].bTxNeg;
         scanCfg.bRxNeg                = atxp032_sConfigArray[i].bRxNeg;
         scanCfg.bRxCap                = atxp032_sConfigArray[i].bRxCap;
@@ -3258,27 +3653,41 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
 
         for ( uint8_t RxDqs_Index = 0; RxDqs_Index <= 31; RxDqs_Index++ )
         {
+            //
             // set RXDQSDELAY0 value
+            //
             scanCfg.ui8RxDQSDelay   = RxDqs_Index;
+
+            //
             // apply settings
+            //
             ui32Status = am_hal_mspi_control(pHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &scanCfg);
             if (AM_HAL_STATUS_SUCCESS != ui32Status)
             {
                 return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
             }
 
+            //
             // run data check
+            //
             if ( false == flash_check(pDevHandle, FLASH_TIMING_SCAN_SIZE_BYTES) )
             {
+                //
                 // data check pass
+                //
                 ui32ResultArray[i] |= 0x01 << RxDqs_Index;
             }
             else
             {
+                //
                 // data check failed
+                //
             }
+
         }
+        am_util_debug_printf(".");
     }
+    am_util_debug_printf("\n");
 
     //
     // Check result
@@ -3327,7 +3736,9 @@ am_devices_mspi_atxp032_sdr_init_timing_check(uint32_t module,
     //
     if ( ui32MaxOnes < ATXP032_TIMING_SCAN_MIN_ACCEPTANCE_LENGTH )
     {
+        //
         // too short is the passing settings, use default setting
+        //
         pDevSdrCfg->bTxNeg                = SDRTimingConfigDefault.bTxNeg;
         pDevSdrCfg->bRxNeg                = SDRTimingConfigDefault.bRxNeg;
         pDevSdrCfg->bRxCap                = SDRTimingConfigDefault.bRxCap;
@@ -3360,6 +3771,11 @@ uint32_t
 am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
                                          am_devices_mspi_atxp032_sdr_timing_config_t *pDevSdrCfg)
 {
+    if ( pHandle == NULL )
+    {
+        return AM_DEVICES_MSPI_ATXP032_STATUS_ERROR;
+    }
+
     am_devices_mspi_atxp032_t *pFlash = (am_devices_mspi_atxp032_t *)pHandle;
     am_hal_mspi_timing_scan_t applyCfg =
     {
@@ -3371,7 +3787,9 @@ am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
         .ui8Turnaround     = 8,
     };
 
+    //
     // apply timing setting
+    //
     applyCfg.bTxNeg                = pDevSdrCfg->bTxNeg;
     applyCfg.bRxNeg                = pDevSdrCfg->bRxNeg;
     applyCfg.bRxCap                = pDevSdrCfg->bRxCap;
@@ -3379,20 +3797,19 @@ am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
     applyCfg.ui8RxDQSDelay         = pDevSdrCfg->ui8RxDQSDelay;
     applyCfg.ui8Turnaround         = pDevSdrCfg->ui8Turnaround;
 
+    //
     // save a local copy of the timing settings
-    if ( bSDRTimingConfigSaved == false )
-    {
-        bSDRTimingConfigSaved                   = true;
-        SDRTimingConfigStored.bTxNeg            = pDevSdrCfg->bTxNeg;
-        SDRTimingConfigStored.bRxNeg            = pDevSdrCfg->bRxNeg;
-        SDRTimingConfigStored.bRxCap            = pDevSdrCfg->bRxCap;
-        SDRTimingConfigStored.ui8TxDQSDelay     = pDevSdrCfg->ui8TxDQSDelay;
-        SDRTimingConfigStored.ui8RxDQSDelay     = pDevSdrCfg->ui8RxDQSDelay;
-        SDRTimingConfigStored.ui8Turnaround     = pDevSdrCfg->ui8Turnaround;
-    }
+    //
+    bSDRTimingConfigSaved                   = true;
+    SDRTimingConfigStored.bTxNeg            = pDevSdrCfg->bTxNeg;
+    SDRTimingConfigStored.bRxNeg            = pDevSdrCfg->bRxNeg;
+    SDRTimingConfigStored.bRxCap            = pDevSdrCfg->bRxCap;
+    SDRTimingConfigStored.ui8TxDQSDelay     = pDevSdrCfg->ui8TxDQSDelay;
+    SDRTimingConfigStored.ui8RxDQSDelay     = pDevSdrCfg->ui8RxDQSDelay;
+    SDRTimingConfigStored.ui8Turnaround     = pDevSdrCfg->ui8Turnaround;
+
 
     return am_hal_mspi_control(pFlash->pMspiHandle, AM_HAL_MSPI_REQ_TIMING_SCAN, &applyCfg);
-
 }
 #endif
 
@@ -3402,4 +3819,3 @@ am_devices_mspi_atxp032_apply_sdr_timing(void *pHandle,
 //! @}
 //
 //*****************************************************************************
-

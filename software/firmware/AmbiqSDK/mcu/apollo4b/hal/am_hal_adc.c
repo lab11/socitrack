@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -239,47 +239,6 @@ uint32_t                       g_ADCSlotsConfigured;
 
 bool     g_bDoADCadjust   = false;
 
-//*****************************************************************************
-//
-//! @brief ForceFIFOpop()
-//
-// ERR090: ADC "No CNVCMP interrupt for first single scan"
-// Please refer to the Apollo4B errata for further information.
-//
-//*****************************************************************************
-static void
-ForceFIFOpop(void *pHandle)
-{
-    uint32_t ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
-
-    //
-    // Make sure the ADC is properly configured and enabled.
-    //
-    if ( !((ADCn(ui32Module)->CFG_b.RPTEN == ADC_CFG_RPTEN_SINGLE_SCAN)     &&
-           (ADCn(ui32Module)->CFG_b.ADCEN == ADC_CFG_ADCEN_EN))                 &&
-         !((ADCn(ui32Module)->CFG_b.ADCEN == ADC_CFG_ADCEN_EN)              &&
-           (ADCn(ui32Module)->CFG_b.RPTEN == ADC_CFG_RPTEN_REPEATING_SCAN)  &&
-           (ADCn(ui32Module)->INTTRIGTIMER_b.TIMEREN == ADC_INTTRIGTIMER_TIMEREN_EN)) )
-    {
-        return;
-    }
-
-    //
-    // ERR090: After enable, a forced FIFO pop is required to make
-    //         sure that the first sample actually emitted is valid.
-    //
-    while ( _FLD2VAL(ADC_FIFO_COUNT, ADCn(ui32Module)->FIFO) == 0 )
-    {
-        am_hal_adc_sw_trigger(pHandle);
-        am_hal_delay_us(30);
-    }
-
-    while ( _FLD2VAL(ADC_FIFO_COUNT, ADCn(ui32Module)->FIFO) )
-    {
-        ADCn(ui32Module)->FIFO = 0;     // Pop the FIFO
-    }
-
-} // ForceFIFOpop()
 
 //*****************************************************************************
 //
@@ -394,6 +353,13 @@ am_hal_adc_initialize(uint32_t ui32Module, void **ppHandle)
     //
     MCUCTRL->ADCCAL_b.CALONPWRUP = MCUCTRL_ADCCAL_CALONPWRUP_DIS;
 
+    //
+    // These values were characterized to give the best performance while maintaining
+    // accuracy.
+    //
+    MCUCTRL->ADCPWRDLY_b.ADCPWR0 = 0;
+    MCUCTRL->ADCPWRDLY_b.ADCPWR1 = 4;
+
     if ( (ui32Ret != 0)                                             ||
          (priv_correction_trims.ui32.ui32ADCgain   == 0xFFFFFFFF)   ||
          (priv_correction_trims.ui32.ui32ADCoffset == 0xFFFFFFFF) )
@@ -474,7 +440,6 @@ am_hal_adc_configure(void *pHandle,
 {
     uint32_t            ui32Config;
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -485,6 +450,8 @@ am_hal_adc_configure(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     ui32Config = 0;
 
@@ -565,8 +532,6 @@ am_hal_adc_configure_slot(void *pHandle,
 {
     uint32_t            ui32Config;
     uint32_t            ui32RegOffset;
-    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -585,12 +550,14 @@ am_hal_adc_configure_slot(void *pHandle,
         return AM_HAL_STATUS_OUT_OF_RANGE;
     }
 
-    if ( (pSlotConfig->ui32TrkCyc < AM_HAL_ADC_MIN_TRKCYC) ||
-         (pSlotConfig->ui32TrkCyc > _FLD2VAL(ADC_SL0CFG_TRKCYC0, 0xFFFFFFFF)) )
+    if (pSlotConfig->ui32TrkCyc > _FLD2VAL(ADC_SL0CFG_TRKCYC0, 0xFFFFFFFF))
     {
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     ui32Config = 0;
 
@@ -663,7 +630,6 @@ am_hal_adc_configure_irtt(void *pHandle,
                           am_hal_adc_irtt_config_t *pConfig)
 {
     uint32_t    ui32Config = 0;
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -674,6 +640,8 @@ am_hal_adc_configure_irtt(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
     //
     // Disable ADC internal repeating trigger timer
@@ -719,7 +687,6 @@ uint32_t
 am_hal_adc_irtt_enable(void *pHandle)
 {
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -729,6 +696,11 @@ am_hal_adc_irtt_enable(void *pHandle)
     {
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
+#endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t            ui32Module = pADCState->ui32Module;
+
+#ifndef AM_HAL_DISABLE_API_VALIDATION
 
     //
     // Make sure the ADC has been enabled.
@@ -744,7 +716,6 @@ am_hal_adc_irtt_enable(void *pHandle)
     //
     ADC_CRITICAL_BEGIN(ui32Module)
     ADCn(ui32Module)->INTTRIGTIMER_b.TIMEREN = ADC_INTTRIGTIMER_TIMEREN_EN;
-    ForceFIFOpop(pHandle);  // See errata ERR090
     ADC_CRITICAL_END(ui32Module)
 
     //
@@ -769,7 +740,6 @@ uint32_t
 am_hal_adc_irtt_disable(void *pHandle)
 {
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -780,6 +750,8 @@ am_hal_adc_irtt_disable(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     //
     // Enable the ADC.
@@ -810,7 +782,6 @@ am_hal_adc_configure_dma(void *pHandle,
                          am_hal_adc_dma_config_t *pDMAConfig)
 {
     uint32_t    ui32Config;
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -821,6 +792,8 @@ am_hal_adc_configure_dma(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
     ui32Config = 0;
 
@@ -891,7 +864,18 @@ am_hal_adc_configure_dma(void *pHandle,
 
 //*****************************************************************************
 //
-// ADC device specific control function.
+//! @brief ADC device specific control function.
+//!
+//! @param pHandle   - handle for the module instance.
+//! @param eRequest - One of:
+//!      AM_HAL_ADC_REQ_WINDOW_CONFIG
+//!   @n AM_HAL_ADC_REQ_TEMP_CELSIUS_GET (pArgs is required, see enums).
+//!   @n AM_HAL_ADC_REQ_TEMP_TRIMS_GET   (pArgs is required, see enums).
+//! @param pArgs - Pointer to arguments for Control Switch Case
+//!
+//! This function provides for special control functions for the ADC operation.
+//!
+//! @return status      - generic or interface specific status.
 //
 //*****************************************************************************
 uint32_t
@@ -899,7 +883,6 @@ am_hal_adc_control(void *pHandle,
                    am_hal_adc_request_e eRequest,
                    void *pArgs)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -910,6 +893,8 @@ am_hal_adc_control(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
     switch ( eRequest )
     {
@@ -1132,7 +1117,6 @@ uint32_t
 am_hal_adc_enable(void *pHandle)
 {
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1149,6 +1133,8 @@ am_hal_adc_enable(void *pHandle)
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
 
+    uint32_t            ui32Module = pADCState->ui32Module;
+
     //
     // Enable the ADC.
     //
@@ -1159,7 +1145,6 @@ am_hal_adc_enable(void *pHandle)
     // Set flag to indicate module is enabled.
     //
     pADCState->prefix.s.bEnable = true;
-    ForceFIFOpop(pHandle);  // See errata ERR090
     ADC_CRITICAL_END(ui32Module)
 
     //
@@ -1184,7 +1169,6 @@ uint32_t
 am_hal_adc_disable(void *pHandle)
 {
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1195,6 +1179,8 @@ am_hal_adc_disable(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     //
     // Before disabling the ADC, clear RPTEN per the register description, "When
@@ -1234,7 +1220,6 @@ am_hal_adc_disable(void *pHandle)
 uint32_t
 am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1245,6 +1230,8 @@ am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t *)pHandle)->ui32Module;
 
     //
     // Get the power status.
@@ -1287,7 +1274,6 @@ am_hal_adc_status_get(void *pHandle, am_hal_adc_status_t *pStatus )
 uint32_t
 am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1298,6 +1284,8 @@ am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Enable the interrupts.
@@ -1326,7 +1314,6 @@ am_hal_adc_interrupt_enable(void *pHandle, uint32_t ui32IntMask)
 uint32_t
 am_hal_adc_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1337,6 +1324,8 @@ am_hal_adc_interrupt_disable(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Disable the interrupts.
@@ -1368,7 +1357,6 @@ am_hal_adc_interrupt_status(void *pHandle,
                             uint32_t  *pui32Status,
                             bool bEnabledOnly)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1379,6 +1367,8 @@ am_hal_adc_interrupt_status(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // if requested, only return the interrupts that are enabled.
@@ -1415,7 +1405,6 @@ am_hal_adc_interrupt_status(void *pHandle,
 uint32_t
 am_hal_adc_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1426,6 +1415,8 @@ am_hal_adc_interrupt_clear(void *pHandle, uint32_t ui32IntMask)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Clear the interrupts.
@@ -1463,13 +1454,13 @@ sample_correction_apply(uint32_t ui32Sample, bool bApplyCorrection)
             //
             fSampleAdj = (float)(AM_HAL_ADC_FIFO_SAMPLE(ui32Sample) * AM_HAL_ADC_VREFMV / AM_HAL_ADC_SAMPLE_DIVISOR);
             fSampleAdj /= (1.0F - priv_correction_trims.flt.fADCgain);
-            
+
             //
             // Convert the offset from volts to mv.
             //
             fSampleAdj -= (priv_correction_trims.flt.fADCoffset * 1000.0F);
             fSampleAdj  = fSampleAdj * AM_HAL_ADC_SAMPLE_DIVISORF / AM_HAL_ADC_VREFMVF;
-            
+
             //
             // Check for overflow
             //
@@ -1477,7 +1468,7 @@ sample_correction_apply(uint32_t ui32Sample, bool bApplyCorrection)
             {
                 fSampleAdj = 4095.0F;
             }
-            
+
             ui32Sample &= 0xFFF00000;
             ui32Sample |= ((((uint32_t)fSampleAdj) << 6) & AM_HAL_ADC_SAMPLE_MASK_FULL);
         }
@@ -1501,8 +1492,6 @@ am_hal_adc_samples_read(void *pHandle,
                         am_hal_adc_sample_t *pui32OutBuffer)
 {
     uint32_t      ui32Sample;
-    uint32_t      ui32RequestedSamples = *pui32InOutNumberSamples;
-    uint32_t ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
     uint32_t ui32slot, ui32slotcfgaddr, ui32chsel, ui32TempMask;
     bool bTempChnl;
 
@@ -1523,6 +1512,9 @@ am_hal_adc_samples_read(void *pHandle,
         return AM_HAL_STATUS_INVALID_ARG;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t  ui32RequestedSamples  = *pui32InOutNumberSamples;
+    uint32_t  ui32Module            = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     *pui32InOutNumberSamples = 0;
 
@@ -1618,7 +1610,6 @@ am_hal_adc_samples_read(void *pHandle,
 uint32_t
 am_hal_adc_sw_trigger(void *pHandle)
 {
-    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1629,6 +1620,8 @@ am_hal_adc_sw_trigger(void *pHandle)
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t    ui32Module = ((am_hal_adc_state_t*)pHandle)->ui32Module;
 
     //
     // Write to the Software trigger register in the ADC.
@@ -1661,8 +1654,8 @@ am_hal_adc_power_control(void *pHandle,
                          am_hal_sysctrl_power_state_e ePowerState,
                          bool bRetainState)
 {
+
     am_hal_adc_state_t  *pADCState = (am_hal_adc_state_t *)pHandle;
-    uint32_t            ui32Module = pADCState->ui32Module;
 
 #ifndef AM_HAL_DISABLE_API_VALIDATION
     //
@@ -1673,6 +1666,8 @@ am_hal_adc_power_control(void *pHandle,
         return AM_HAL_STATUS_INVALID_HANDLE;
     }
 #endif // AM_HAL_DISABLE_API_VALIDATION
+
+    uint32_t            ui32Module = pADCState->ui32Module;
 
     //
     // Decode the requested power state and update ADC operation accordingly.
@@ -1689,6 +1684,12 @@ am_hal_adc_power_control(void *pHandle,
             // Enable the ADC power domain.
             //
             am_hal_pwrctrl_periph_enable(AM_HAL_PWRCTRL_PERIPH_ADC);
+
+            //
+            // Set ISODLY and RESETDLY to 0x3FF to optimize ADC startup performance.
+            //
+            ADCn(ui32Module)->CALCTRL_b.ISODLY = 0x3FF;
+            ADCn(ui32Module)->CALCTRL_b.RESETDLY = 0x3FF;
 
             if ( bRetainState )
             {
@@ -1707,7 +1708,6 @@ am_hal_adc_power_control(void *pHandle,
                 ADCn(ui32Module)->INTEN         = 0x0;
                 ADC_CRITICAL_BEGIN(ui32Module)
                 ADCn(ui32Module)->CFG           = pADCState->registerState.regCFG;
-                ForceFIFOpop(pHandle);  // See errata ERR090
                 ADC_CRITICAL_END(ui32Module)
                 ADCn(ui32Module)->INTEN         = pADCState->registerState.regINTEN;
                 pADCState->registerState.bValid = false;

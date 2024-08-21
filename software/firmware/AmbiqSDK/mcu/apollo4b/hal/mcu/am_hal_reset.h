@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_RSTGEN_H
@@ -54,11 +54,6 @@
 extern "C"
 {
 #endif
-
-//
-// Designate this peripheral.
-//
-#define AM_APOLLO3_RESET    1
 
 //*****************************************************************************
 //
@@ -279,7 +274,6 @@ extern uint32_t am_hal_reset_interrupt_clear(uint32_t ui32IntMask);
 //*****************************************************************************
 extern uint32_t am_hal_reset_interrupt_status_get(bool bEnabledOnly,
                                                   uint32_t *pui32IntStatus);
-
 
 #ifdef __cplusplus
 }

@@ -26,7 +26,7 @@
 
 # *****************************************************************************
 #
-# Copyright (c) 2023, Ambiq Micro, Inc.
+# Copyright (c) 2024, Ambiq Micro, Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -58,7 +58,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+# This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 #
 # *****************************************************************************
 
@@ -229,6 +229,56 @@ pin
     pullup          = 100K
     GPinput         = ENABLE
     intdir          = HI2LO
+# *****************************************************************************
+#  ADC pins.
+# *****************************************************************************
+pin
+    name            = ADCSE0
+    desc            = This pin is ADC_SE0  Note: UART3_CTS clock cannot be used simultaneously.
+    pinnum          = 19
+    func_sel        = ADCSE0
+
+pin
+    name            = ADCSE1
+    desc            = This pin is ADC_SE1
+    pinnum          = 18
+    func_sel        = ADCSE1
+
+pin
+    name            = ADCSE2
+    desc            = This pin is ADC_SE2
+    pinnum          = 17
+    func_sel        = ADCSE2
+
+pin
+    name            = ADCSE3
+    desc            = This pin is ADC_SE3
+    pinnum          = 16
+    func_sel        = ADCSE3
+
+pin
+    name            = ADCSE4
+    desc            = This pin is ADC_SE4
+    pinnum          = 15
+    func_sel        = ADCSE4
+
+pin
+    name            = ADCSE5
+    desc            = This pin is ADC_SE5
+    pinnum          = 14
+    func_sel        = ADCSE5
+
+pin
+    name            = ADCSE6
+    desc            = This pin is ADC_SE6
+    pinnum          = 13
+    func_sel        = ADCSE6
+
+pin
+    name            = ADCSE7
+    desc            = This pin is ADC_SE7
+    pinnum          = 12
+    func_sel        = ADCSE7
 
 # *****************************************************************************
 #  COM UART pins (UART0 used by J-Link).
@@ -1437,7 +1487,7 @@ pin
     drvstrength     = 1P0X
 
 # *****************************************************************************
-#  I2S0 pins. 
+#  I2S0 pins.
 # *****************************************************************************
 pin
     name            = I2S0_DATA
@@ -1581,77 +1631,91 @@ pin
     drvstrength     = 0P5X
 
 # *****************************************************************************
-# SDIF  pins.
+# SDIO  pins.
 # *****************************************************************************
 pin
-    name            = SDIF_DAT0
-    desc            = SD Data 0 pin.
+    name            = SDIO_DAT0
+    desc            = eMMC NAND Flash I/F using SDIO data 0.
     pinnum          = 84
     func_sel        = SDIF_DAT0
+    pullup          = 12K
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT1
-    desc            = SD Data 1 pin.
+    name            = SDIO_DAT1
+    desc            = eMMC NAND Flash I/F using SDIO data 1.
     pinnum          = 85
     func_sel        = SDIF_DAT1
+    pullup          = 12K
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT2
-    desc            = SD Data 2 pin.
+    name            = SDIO_DAT2
+    desc            = eMMC NAND Flash I/F using SDIO data 2.
     pinnum          = 86
     func_sel        = SDIF_DAT2
+    pullup          = 12K
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT3
-    desc            = SD Data 3 pin.
+    name            = SDIO_DAT3
+    desc            = eMMC NAND Flash I/F using SDIO data 3.
     pinnum          = 87
     func_sel        = SDIF_DAT3
+    pullup          = 12K
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT4
-    desc            = SD Data 4 pin.
+    name            = SDIO_DAT4
+    desc            = eMMC NAND Flash I/F using SDIO data 4.
     pinnum          = 79
     func_sel        = SDIF_DAT4
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT5
-    desc            = SD Data 5 pin.
+    name            = SDIO_DAT5
+    desc            = eMMC NAND Flash I/F using SDIO data 5.
     pinnum          = 80
     func_sel        = SDIF_DAT5
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT6
-    desc            = SD Data 6 pin.
+    name            = SDIO_DAT6
+    desc            = eMMC NAND Flash I/F using SDIO data 6.
     pinnum          = 81
     func_sel        = SDIF_DAT6
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_DAT7
-    desc            = SD Data 7 pin.
+    name            = SDIO_DAT7
+    desc            = eMMC NAND Flash I/F using SDIO data 7.
     pinnum          = 82
     func_sel        = SDIF_DAT7
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_CMD
-    desc            = SD Command pin.
+    name            = SDIO_CMD
+    desc            = eMMC NAND Flash I/F using SDIO CMD
     pinnum          = 83
     func_sel        = SDIF_CMD
+    pullup          = 12K
     drvstrength     = 1P0X
 
 pin
-    name            = SDIF_CLKOUT
-    desc            = SD Clock to Card pin.
+    name            = SDIO_CLK
+    desc            = eMMC NAND Flash I/F using SDIO clock.
     pinnum          = 88
     func_sel        = SDIF_CLKOUT
+    pullup          = 12K
     drvstrength     = 1P0X
+
+pin
+    name            = SDIO_RST
+    desc            = eMMC NAND Flash I/F using GPIO for Reset.
+    pinnum          = 73
+    func_sel        = GPIO
+    GPOutcfg        = PUSHPULL
+    drvstrength     = 0P5X
 
 # *****************************************************************************
 #  CORE pins.

@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -99,9 +99,10 @@ const struct
     {AM_HAL_IOM_8MHZ,  AM_DEVICES_SPIPSRAM_8MHZ_MAX_BYTES}  //!< Leave this in for PSRAM initialization at 8MHz.
 };
 
-
 #define AM_DEVICES_SPIPSRAM_TIMEOUT             1000000
 
+#define AM_HAL_IOM_MAX_PENDING_WAIT             1000
+#define AM_HAL_IOM_MAX_PENDING_TRANSACTIONS     256
 
 //*****************************************************************************
 //
@@ -130,7 +131,7 @@ typedef struct
    uint32_t    ui32DMATARGADDRVal;
    uint32_t    ui32DMACFGAddr; //!< Configure for the Read (second transaction)
    uint32_t    ui32DMACFGVal;
-#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
+#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L) && !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B)
    uint32_t    ui32FIFOPushAddr1;
    uint32_t    ui32FIFOPushVal1; // Pointer to a variable initialized with 4 bytes value as : 1 Byte Command + 3 byte address
    uint32_t    ui32FIFOPushAddr2;
@@ -156,7 +157,7 @@ typedef struct
     uint32_t    ui32DMATOTCOUNTVal; //!< Corresponding to the Write size
     uint32_t    ui32DMATARGADDRAddr;
     uint32_t    ui32DMATARGADDRVal;
-#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
+#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)  && !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B)
     uint32_t    ui32FIFOPushAddr1;
     uint32_t    ui32FIFOPushVal1; //!< Pointer to a variable initialized with 4 bytes value as : 1 Byte Command + 3 byte address
 #endif
@@ -167,7 +168,6 @@ typedef struct
 } spi_psram_trans_write_txn_t;
 
 spi_psram_trans_write_txn_t  gIomTransWriteTxn;
-
 
 //*****************************************************************************
 //
@@ -273,7 +273,7 @@ iom_init_cq_element(uint32_t ui32Module)
     //
     pIomCqWr->ui32DMATARGADDRAddr = pIomCqRd->ui32DMATARGADDRAddr = (uint32_t)&IOMn(ui32Module)->DMATARGADDR;
 
-#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
+#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L) && !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B)
     //
     // Command to set FIFO
     //
@@ -288,7 +288,7 @@ iom_init_cq_element(uint32_t ui32Module)
     pIomCqWr->ui32DMACFGVal = ui32DMACFGValWr;
     pIomCqRd->ui32DMACFGVal = ui32DMACFGValRd;
 
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     pIomCqWr->ui32CMD1Addr = (uint32_t)&IOMn(ui32Module)->CMD;
     pIomCqRd->ui32CMD2Addr = (uint32_t)&IOMn(ui32Module)->CMD;
 #else
@@ -297,7 +297,7 @@ iom_init_cq_element(uint32_t ui32Module)
 #endif
 }
 
-#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L)
+#if !defined(AM_PART_APOLLO4B) && !defined(AM_PART_APOLLO4P) && !defined(AM_PART_APOLLO4L) && !defined(AM_PART_APOLLO5A) && !defined(AM_PART_APOLLO5B)
 //*****************************************************************************
 //
 //! @brief creates an iom read transaction
@@ -490,7 +490,7 @@ am_devices_spipsram_command_write(void *pHandle,
     // Create the transaction.
     //
     Transaction.ui32InstrLen    = ui32InstrLen;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     Transaction.ui64Instr       = ui64Instr;
 #else
     Transaction.ui32Instr       = (uint32_t)ui64Instr;
@@ -549,7 +549,7 @@ am_devices_spipsram_command_read(void *pHandle,
     // Create the transaction.
     //
     Transaction.ui32InstrLen    = ui32InstrLen;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     Transaction.ui64Instr       = ui64Instr;
 #else
     Transaction.ui32Instr       = (uint32_t)ui64Instr;
@@ -705,12 +705,14 @@ am_devices_spipsram_init(uint32_t ui32Module,
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
+#elif AM_PART_APOLLO3_API
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
     am_hal_mcuctrl_fault_capture_enable();
+#endif
 #endif
 
     //
@@ -753,7 +755,6 @@ am_devices_spipsram_init(uint32_t ui32Module,
     gAmAps6404l[ui32Index].sSpiPsramCfg.ui32ClockFreq        = pDevConfig->ui32ClockFreq;
     gAmAps6404l[ui32Index].sSpiPsramCfg.eInterfaceMode       = AM_HAL_IOM_SPI_MODE;
     gAmAps6404l[ui32Index].sSpiPsramCfg.eSpiMode             = AM_HAL_IOM_SPI_MODE_0;
-
 
     if ( !already_inited )
     {
@@ -810,7 +811,6 @@ am_devices_spipsram_init(uint32_t ui32Module,
     return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
 }
 
-
 //*****************************************************************************
 //
 //
@@ -834,10 +834,9 @@ am_devices_spipsram_init_no_check(uint32_t ui32Module,
         AM_BSP_IOM4_CS_CHNL,
         0
     };
-#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
     { 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
-
 
     uint32_t      ui32Index = 0;
 
@@ -889,12 +888,14 @@ am_devices_spipsram_init_no_check(uint32_t ui32Module,
     //
     // Enable fault detection.
     //
+#if !defined(AM_PART_APOLLO5_API)
 #if defined(AM_PART_APOLLO4_API)
     am_hal_fault_capture_enable();
-#elif AM_APOLLO3_MCUCTRL
+#elif AM_PART_APOLLO3_API
     am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_FAULT_CAPTURE_ENABLE, 0);
 #else
     am_hal_mcuctrl_fault_capture_enable();
+#endif
 #endif
 
     //
@@ -989,7 +990,7 @@ am_devices_spipsram_blocking_write(void *pHandle,
         // Create the transaction.
         //
         Transaction.ui32InstrLen    = 1;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
         Transaction.ui64Instr       = AM_DEVICES_SPIPSRAM_WRITE;
 #else
         Transaction.ui32Instr       = AM_DEVICES_SPIPSRAM_WRITE;
@@ -1019,7 +1020,7 @@ am_devices_spipsram_blocking_write(void *pHandle,
         // Create the transaction.
         //
         Transaction.ui32InstrLen    = 3;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
         Transaction.ui64Instr       = ui32WriteAddress & 0x00FFFFFF;
 #else
         Transaction.ui32Instr       = ui32WriteAddress & 0x00FFFFFF;
@@ -1066,7 +1067,7 @@ am_devices_spipsram_blocking_read(void *pHandle,
         // attempting to do a 0-byte RX transfer.
         Transaction.eDirection      = AM_HAL_IOM_TX;
         Transaction.ui32InstrLen    = 1;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
         Transaction.ui64Instr       = AM_DEVICES_SPIPSRAM_READ;
 #else
         Transaction.ui32Instr       = AM_DEVICES_SPIPSRAM_READ;
@@ -1093,7 +1094,7 @@ am_devices_spipsram_blocking_read(void *pHandle,
         //
         Transaction.eDirection      = AM_HAL_IOM_RX;
         Transaction.ui32InstrLen    = 3;
-#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#if defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
         Transaction.ui64Instr       = ui32ReadAddress & 0x00FFFFFF;
 #else
         Transaction.ui32Instr       = ui32ReadAddress & 0x00FFFFFF;
@@ -1151,6 +1152,7 @@ spi_psram_nonblocking_transfer(void *pHandle,
     am_hal_iom_cq_raw_t rawIomCfg;
     am_devices_iom_aps6404l_t *pIom = (am_devices_iom_aps6404l_t *)pHandle;
     uint32_t size;
+    am_hal_iom_status_t iom_status;
 
 
     rawIomCfg.ui32PauseCondition = ui32PauseCondition;
@@ -1184,6 +1186,28 @@ spi_psram_nonblocking_transfer(void *pHandle,
         rawIomCfg.pfnCallback = bLast ? pfnCallback : NULL;
         rawIomCfg.pCallbackCtxt = bLast ? pCallbackCtxt : NULL;
         rawIomCfg.pJmpAddr = 0;
+
+        //
+        // Make sure there is enough space in the pending queue
+        //
+        for (uint32_t i = 0; i < AM_HAL_IOM_MAX_PENDING_WAIT; i++)
+        {
+            am_hal_iom_status_get(pIom->pIomHandle, &iom_status);
+            if (iom_status.ui32NumPendTransactions < (AM_HAL_IOM_MAX_PENDING_TRANSACTIONS - 1))
+            {
+                break;
+            }
+            //
+            // Call the BOOTROM cycle function to delay for about 1 microsecond.
+            //
+#if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
+            am_hal_flash_delay( FLASH_CYCLES_US(1) );
+#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
+            am_hal_delay_us(1);
+#else
+#warning "Driver is only defined for APOLLO3, APOLLO3P, APOLLO4 and APOLLO5!!!"
+#endif
+        }
         if ( am_hal_iom_control(pIom->pIomHandle, AM_HAL_IOM_REQ_CQ_RAW, &rawIomCfg) )
         {
             return AM_DEVICES_SPIPSRAM_STATUS_ERROR;
@@ -1314,10 +1338,10 @@ am_devices_spipsram_read(void *pHandle, uint8_t *pui8RxBuffer,
             //
 #if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
             am_hal_flash_delay( FLASH_CYCLES_US(1) );
-#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
             am_hal_delay_us(1);
 #else
-#warning "Driver is only defined for APOLLO3, APOLLO3P, and APOLLO4!!!"
+#warning "Driver is only defined for APOLLO3, APOLLO3P, APOLLO4 and APOLLO5!!!"
 #endif
         }
 
@@ -1396,10 +1420,10 @@ am_devices_spipsram_write(void *pHandle,
             //
 #if defined(AM_PART_APOLLO3) || defined(AM_PART_APOLLO3P)
             am_hal_flash_delay( FLASH_CYCLES_US(1) );
-#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4) || defined(AM_PART_APOLLO4B) || defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
             am_hal_delay_us(1);
 #else
-#warning "Driver is only defined for APOLLO3, APOLLO3P, and APOLLO4!!!"
+#warning "Driver is only defined for APOLLO3, APOLLO3P, APOLLO4 and APOLLO5!!!"
 #endif
         }
 

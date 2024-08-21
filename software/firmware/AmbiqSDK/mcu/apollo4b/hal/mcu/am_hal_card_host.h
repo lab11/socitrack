@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +44,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 #ifndef AM_HAL_CARD_HOST_H
@@ -56,7 +56,7 @@ extern "C"
 #endif
 
 //
-// SD/MMC/SDIO host instance index
+//! SD/MMC/SDIO Host Controller index
 //
 typedef enum
 {
@@ -64,6 +64,9 @@ typedef enum
     AM_HAL_CARD_HOST_NUM ,
 } am_hal_host_inst_index_e;
 
+//
+//! Command Errors Types
+//
 typedef enum
 {
     AM_HAL_CMD_ERR_NONE,
@@ -73,8 +76,12 @@ typedef enum
     AM_HAL_CMD_ERR_CRC,
     AM_HAL_CMD_ERR_ENDBIT,
     AM_HAL_CMD_ERR_NO_RESPONSE,
+    AM_HAL_CMD_ERR_INVALID_RESPONSE,
 } am_hal_card_cmd_err_e;
 
+//
+//! Data Errors Types
+//
 typedef enum
 {
     AM_HAL_DATA_ERR_NONE,
@@ -85,12 +92,18 @@ typedef enum
     AM_HAL_DATA_ERR_TIMEOUT,
 } am_hal_card_data_err_e;
 
+//
+//! Data Direction
+//
 typedef enum
 {
     AM_HAL_DATA_DIR_READ,
     AM_HAL_DATA_DIR_WRITE,
 } am_hal_data_dir_e;
 
+//
+//! SDHC bus Voltage
+//
 typedef enum
 {
     AM_HAL_HOST_BUS_VOLTAGE_1_8,
@@ -98,6 +111,9 @@ typedef enum
     AM_HAL_HOST_BUS_VOLTAGE_3_3,
 } am_hal_host_bus_voltage_e;
 
+//
+//! SDHC bus width
+//
 typedef enum
 {
     AM_HAL_HOST_BUS_WIDTH_1 = 1,
@@ -105,6 +121,9 @@ typedef enum
     AM_HAL_HOST_BUS_WIDTH_8 = 8,
 } am_hal_host_bus_width_e;
 
+//
+//! SDHC bus transfer mode
+//
 typedef enum
 {
     AM_HAL_HOST_XFER_DEFAULT,
@@ -113,6 +132,9 @@ typedef enum
     AM_HAL_HOST_XFER_ADMA,
 } am_hal_host_xfer_mode_e;
 
+//
+//! SDHC bus UHS mode
+//
 typedef enum
 {
     AM_HAL_HOST_UHS_NONE = 0,
@@ -123,6 +145,18 @@ typedef enum
     AM_HAL_HOST_UHS_DDR50 = 4,
 } am_hal_host_uhs_mode_e;
 
+//
+//! Scatter IO Struct
+//
+typedef struct
+{
+    void     *pIovBase;
+    uint32_t ui32IovLen;
+} am_hal_card_iovec_t;
+
+//
+//! Command Data Struct
+//
 typedef struct
 {
     am_hal_data_dir_e dir;
@@ -131,9 +165,14 @@ typedef struct
     uint8_t *pui8Buf;
     uint32_t ui32BlkSize;
     uint32_t ui32BlkCnt;
+    uint8_t  ui8IovCnt;
+    am_hal_card_iovec_t *pIov;
     am_hal_card_data_err_e eDataError;
 } am_hal_card_cmd_data_t;
 
+//
+//! Command Struct
+//
 typedef struct
 {
     uint8_t  ui8Idx;
@@ -149,6 +188,9 @@ typedef struct
 
 typedef struct am_hal_card_host_ops am_hal_card_host_ops_t;
 
+//
+//! SDHC Event Type
+//
 typedef enum
 {
     AM_HAL_EVT_CARD_NOT_PRESENT,
@@ -160,6 +202,9 @@ typedef enum
     AM_HAL_EVT_DAT_ERR,
 } am_hal_host_evt_type_e;
 
+//
+//! SDHC Host Event Struct
+//
 typedef struct
 {
     am_hal_host_evt_type_e eType;
@@ -169,6 +214,9 @@ typedef struct
 
 typedef void (*am_hal_host_event_cb_t)(am_hal_host_evt_t *pEvt);
 
+//
+//! SDHC Host Struct
+//
 typedef struct am_hal_card_host
 {
     void *pHandle;
@@ -191,7 +239,10 @@ typedef struct am_hal_card_host
     am_hal_host_event_cb_t pfunEvtCallback;
 } am_hal_card_host_t;
 
-typedef struct
+//
+//! SDHC Config
+//
+typedef struct am_hal_card_cfg_t
 {
     uint32_t ui32Clock;
     am_hal_host_bus_width_e eBusWidth;
@@ -199,6 +250,9 @@ typedef struct
     am_hal_host_uhs_mode_e eUHSMode;
 } am_hal_card_cfg_t;
 
+//
+//! SDHC Host Operations
+//
 struct am_hal_card_host_ops
 {
     uint32_t (*init)(am_hal_card_host_t *pHost);
@@ -211,6 +265,7 @@ struct am_hal_card_host_ops
     uint32_t (*set_uhs_mode)(void *pHandle, am_hal_host_uhs_mode_e eUHSMode);
     void (*set_txrx_delay)(void *pHandle, uint8_t ui8TxRxDelays[2]);
     bool (*get_cd)(void *pHandle);
+    bool (*get_wr_protect)(void *pHandle);
     uint32_t (*card_busy)(void *pHandle, uint32_t ui32TimeoutMS);
 };
 
@@ -219,7 +274,6 @@ struct am_hal_card_host_ops
 //! @brief Get the card host instance function
 //!
 //! @param eIndex       - index to the underlying card host instance.
-//!
 //! @param bReInit      - flag that controling the reinitialization of the card host.
 //!
 //! This function will find a card host instance and trying to initialize it. if

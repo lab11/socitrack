@@ -8,7 +8,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,7 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
 
@@ -288,6 +288,10 @@ static void HciDrvIntService(void *pArg)
 
 static void ClkReqIntService(void *pArg)
 {
+    // There is case that Cooper will be waken up immediately after it went to sleep.
+    // To prevent the loss of the clock on interrupt, the GPIO toggle action is moved forward.
+    am_hal_gpio_intdir_toggle(AM_DEVICES_COOPER_CLKREQ_PIN);
+
     if (am_devices_cooper_clkreq_read(g_IomDevHdl))
     {
         // Power up the 32MHz Crystal
@@ -297,7 +301,6 @@ static void ClkReqIntService(void *pArg)
     {
         am_hal_mcuctrl_control(AM_HAL_MCUCTRL_CONTROL_EXTCLK32M_DISABLE,(void *) &g_amHalMcuctrlArgBLEDefault);
     }
-    am_hal_gpio_intdir_toggle(AM_DEVICES_COOPER_CLKREQ_PIN);
 }
 
 
@@ -378,6 +381,12 @@ HciDrvRadioShutdown(void)
                                   (void *)&IntNum);
 
     am_devices_cooper_term(g_IomDevHdl);
+
+    //
+    // Configure the BLE controller nRST PIN to low level
+    //
+    am_hal_gpio_pinconfig(AM_DEVICES_COOPER_RESET_PIN, am_hal_gpio_pincfg_output);
+    am_hal_gpio_state_write(AM_DEVICES_COOPER_RESET_PIN, AM_HAL_GPIO_OUTPUT_CLEAR);
 }
 
 //*****************************************************************************
@@ -725,7 +734,7 @@ bool HciVscWriteMem(uint32_t start_addr, eMemAccess_type access_type, uint8_t le
     UINT32_TO_BSTREAM(p, start_addr);
     UINT8_TO_BSTREAM(p, access_type);
     UINT8_TO_BSTREAM(p, length);
-    
+
     memset(wrMemCmd.data, 0x0, MAX_MEM_ACCESS_SIZE);
     memcpy(wrMemCmd.data, data, length);
 
@@ -984,7 +993,10 @@ uint8_t nvds_data[HCI_VSC_UPDATE_NVDS_CFG_CMD_LENGTH]=
     NVDS_PARAMETER_SLEEP_ALGO_DUR,
     NVDS_PARAMETER_LPCLK_DRIFT,
     NVDS_PARAMETER_EXT_WAKEUP_TIME,
-    NVDS_PARAMETER_OSC_WAKEUP_TIME
+    NVDS_PARAMETER_OSC_WAKEUP_TIME,
+    NVDS_PARAMETER_RSSI_THRESHOLD,
+    NVDS_PARAMETER_MIN_USED_DATA_CHAN_CENTRAL,
+    NVDS_PARAMETER_LLCP_SWITCH_INSTANT_DELAY
 };
 
 void HciVscUpdateNvdsParam(void)
@@ -1021,4 +1033,66 @@ void HciVscGetDtmRssi(void)
 {
     HciVendorSpecificCmd(HCI_VSC_GET_DTM_RSSI_CMD_OPCODE, HCI_VSC_GET_DTM_RSSI_CMD_LENGTH, NULL);
 }
+
+/*************************************************************************************************/
+/*!
+ *  \brief  Enable the featue to transmit one single packet in one connection event.
+ *          The application may explicitly call this API to enable this feature,which is disabled by default.
+ *
+ *  \param  con_handle: connection identifier
+ *          en        : true to enable transmitting one single packet during the connection interval,
+ *                      else disable the feature
+ */
+/*************************************************************************************************/
+void HciVsEnableSingleTx(uint16_t con_handle, bool en)
+{
+    hciVsSetPrefSlaveEvtDurCmd_t setSlaveEvtDurCmd = {0};
+
+    uint8_t *p = (uint8_t *)&setSlaveEvtDurCmd;
+
+    UINT16_TO_BSTREAM(p, con_handle);
+    p += 2;
+    UINT8_TO_BSTREAM(p, en);
+
+    HciVendorSpecificCmd(HCI_VS_SET_PREF_SLAVE_EVT_DUR_CMD_OPCODE, HCI_VSC_SET_PREF_SLAVE_EVT_DUR_CMD_LENGTH, (uint8_t *)&setSlaveEvtDurCmd);
+}
+
+/*************************************************************************************************/
+/*!
+ *  \brief  To change slave latency for a connection dynamically.
+ *
+ *  \param  con_handle: connection identifier
+ *          latency   : connection latency value to set
+ */
+/*************************************************************************************************/
+void HciVsSetSlaveLatency(uint16_t con_handle, uint16_t latency)
+{
+    hciVsSetPrefSlaveLatencyCmd_t setLatencyCmd = {0};
+
+    uint8_t *p = (uint8_t *)&setLatencyCmd;
+
+    UINT16_TO_BSTREAM(p, con_handle);
+    UINT16_TO_BSTREAM(p, latency);
+
+    HciVendorSpecificCmd(HCI_VS_SET_PREF_SLAVE_LATENCY_CMD_OPCODE, HCI_VSC_SET_PREF_SLAVE_LATENCY_CMD_LENGTH, (uint8_t *)&setLatencyCmd);
+}
+
+/*************************************************************************************************/
+/*!
+ *  \brief  Get connection event counter for specified connection
+ *
+ *  \param  con_handle: connection identifier
+ */
+/*************************************************************************************************/
+void HciVsGetConEventCounter(uint16_t con_handle)
+{
+    hciVsGetConEvtCntCmd_t getConEvtCntCmd = {0};
+
+    uint8_t *p = (uint8_t *)&getConEvtCntCmd;
+
+    UINT16_TO_BSTREAM(p, con_handle);
+
+    HciVendorSpecificCmd(HCI_DBG_GET_CON_EVT_CNT_CMD_OPCODE, HCI_VSC_GET_CON_EVT_CNT_CMD_LENGTH, (uint8_t *)&getConEvtCntCmd);
+}
+
 

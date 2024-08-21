@@ -12,7 +12,7 @@
 
 //*****************************************************************************
 //
-// Copyright (c) 2023, Ambiq Micro, Inc.
+// Copyright (c) 2024, Ambiq Micro, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,10 +44,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 //
-// This is part of revision release_sdk_4_4_1-7498c7b770 of the AmbiqSuite Development Package.
+// This is part of revision release_sdk_4_5_0-a1ef3b89f9 of the AmbiqSuite Development Package.
 //
 //*****************************************************************************
-
 
 #ifndef AM_DEVICES_MSPI_IS25WX064_H
 #define AM_DEVICES_MSPI_IS25WX064_H
@@ -183,11 +182,9 @@ extern "C"
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_WRITE_PASSWORD_REGISTER_CMD          0x2828U   /*!< Octa Write Password                             */
 #define AM_DEVICES_MSPI_IS25WX064_OCTA_PASSWORD_UNLOCK_CMD                  0x2929U   /*!< Octa Unlock Password                            */
 
-
 #define AM_DEVICES_MSPI_IS25WX064_3BYTE_ADDRESS                         0xFF
 #define AM_DEVICES_MSPI_IS25WX064_4BYTE_ADDRESS                         0xFE
 //! @}
-
 
 //*****************************************************************************
 //
@@ -401,7 +398,7 @@ typedef struct
     uint32_t ui32Rxneg;
     uint32_t ui32Rxdqsdelay;
 } am_devices_mspi_is25wx064_timing_config_t;
-#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L)
+#elif defined(AM_PART_APOLLO4P) || defined(AM_PART_APOLLO4L) || defined(AM_PART_APOLLO5_API)
 typedef struct
 {
     bool            bTxNeg;
@@ -694,7 +691,6 @@ extern uint32_t am_devices_mspi_is25wx064_init_timing_check(uint32_t module,
 //*****************************************************************************
 extern uint32_t am_devices_mspi_is25wx064_apply_ddr_timing(void *pHandle,
                 am_devices_mspi_is25wx064_timing_config_t *psDevTimingCfg);
-
 
 
 #ifdef __cplusplus
