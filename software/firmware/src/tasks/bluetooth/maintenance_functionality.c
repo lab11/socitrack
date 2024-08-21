@@ -12,6 +12,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint32_t download_start_timestamp = 0, download_end_timestamp = 0;
+static uint16_t previous_max_length = 0;
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
@@ -60,6 +61,9 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             continueSendingLogData(connId, 0, false);
 #endif
             break;
+         case BLE_MAINTENANCE_DOWNLOAD_LOG_CONTINUE:
+            continueSendingLogData(connId, previous_max_length, true);
+            break;
          default:
             break;
    }
@@ -75,6 +79,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
    static uint16_t buffer_index, buffer_length, previous_length;
 
    // Determine whether this is a new transmission or a continuation
+   previous_max_length = max_length;
    if (max_length == 0)
    {
       // Send meaningless packet just to kick off reading

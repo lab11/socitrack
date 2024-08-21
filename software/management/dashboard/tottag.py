@@ -33,10 +33,12 @@ MAINTENANCE_NEW_EXPERIMENT = 0x01
 MAINTENANCE_DELETE_EXPERIMENT = 0x02
 MAINTENANCE_DOWNLOAD_LOG = 0x03
 MAINTENANCE_SET_LOG_DOWNLOAD_DATES = 0x04
+MAINTENANCE_DOWNLOAD_LOG_CONTINUE = 0x05
 MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
 MAX_RANGING_DISTANCE_MM = 16000
+MAX_IMU_DATA_LENGTH = 10
 MAX_LABEL_LENGTH = 16
 MAX_NUM_DEVICES = 10
 
@@ -44,6 +46,9 @@ STORAGE_TYPE_VOLTAGE = 1
 STORAGE_TYPE_CHARGING_EVENT = 2
 STORAGE_TYPE_MOTION = 3
 STORAGE_TYPE_RANGES = 4
+STORAGE_TYPE_IMU = 5
+STORAGE_TYPE_BLE_SCAN = 6
+STORAGE_NUM_TYPES = 7
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'
@@ -133,10 +138,10 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
       with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
          file.write(data)
    try:
-      while i < len(data):
+      while i + 5 < len(data):
          timestamp_raw = struct.unpack('<I', data[i+1:i+5])[0]
          timestamp = experiment_start_time + (timestamp_raw / 1000)
-         if timestamp > int(time.time()) or ((timestamp_raw % 500) != 0) or data[i] < 1 or data[i] > 4:
+         if timestamp > int(time.time()) or ((timestamp_raw % 500) != 0) or data[i] < 1 or data[i] >= STORAGE_NUM_TYPES:
             i += 1
          elif data[i] == STORAGE_TYPE_VOLTAGE:
             datum = struct.unpack('<I', data[i+5:i+9])[0]
@@ -168,6 +173,24 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
                i += 6 + data[i+5]*3
             else:
                i += 1
+         elif data[i] == STORAGE_TYPE_IMU:
+            #TODO: Uncomment the following after all in-field TotTags have been updated:
+            #if data[i+5] <= MAX_IMU_DATA_LENGTH:
+            #   i += 6 + data[i+5]
+            #else:
+            i += 1
+         elif data[i] == STORAGE_TYPE_BLE_SCAN:
+            if data[i+5] < MAX_NUM_DEVICES:
+               log_data[timestamp]['b'] = []
+               for j in range(data[i+5]):
+                  uid = data[i+6+j]
+                  if uid in uid_to_labels:
+                     log_data[timestamp]['b'].append(uid_to_labels[uid])
+               i += 6 + data[i+5]
+            else:
+               i += 1
+         else:
+            i += 1
    except Exception:
       pass
    log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
@@ -183,6 +206,7 @@ class TotTagBLE(threading.Thread):
       super().__init__()
       self.operations = { 'SCAN': self.scan_for_tottags,
                           'CONNECT': self.connect_to_tottag,
+                          'RECONNECT': self.reconnect_to_tottag,
                           'DISCONNECT': self.disconnect_from_tottag,
                           'SUBSCRIBE_RANGES': self.subscribe_to_ranges,
                           'FIND_TOTTAG': self.find_my_tottag,
@@ -227,7 +251,11 @@ class TotTagBLE(threading.Thread):
          self.command_queue.task_done()
 
    def disconnected_callback(self, _device):
-      self.result_queue.put_nowait(('DISCONNECTED', True))
+      if self.downloading_log_file:
+         self.downloading_log_file = False
+         self.result_queue.put_nowait(('DISRECONNECT', True))
+      else:
+         self.result_queue.put_nowait(('DISCONNECTED', True))
       self.connected_device = None
 
    def ranges_callback(self, _sender_uuid, data):
@@ -277,6 +305,19 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('CONNECTING', False))
          self.result_queue.put_nowait(('ERROR', ('TotTag Connection Error', 'Timed out attempting to connect to the specified TotTag')))
       self.command_queue.task_done()
+
+   async def reconnect_to_tottag(self):
+      device_address = (await self.command_queue.get()).split()[-1]
+      device = BleakClient(self.discovered_devices[device_address], partial(self.disconnected_callback))
+      try:
+         await device.connect(timeout=3.0)
+         if device.is_connected:
+            self.connected_device = device
+            await self.download_log_continuation()
+      except Exception as e:
+         traceback.print_exc()
+         self.result_queue.put_nowait(('DISCONNECTED', True))
+         self.result_queue.put_nowait(('ERROR', ('TotTag Connection Error', 'Timed out communicating with the specified TotTag')))
 
    async def disconnect_from_tottag(self):
       if self.connected_device:
@@ -397,6 +438,16 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve log files from the TotTag')))
       self.command_queue.task_done()
 
+   async def download_log_continuation(self):
+      try:
+         await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
+         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG_CONTINUE), True)
+         self.downloading_log_file = True
+      except Exception:
+         await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
+         self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve log files from the TotTag')))
+      self.command_queue.task_done()
+
    async def download_logs_done(self):
       if self.downloading_log_file:
          try:
@@ -498,8 +549,8 @@ class TotTagGUI(tk.Frame):
       self.ble_comms.join()
       self.master.destroy()
 
-   def _connect(self):
-      ble_issue_command(self.event_loop, self.ble_command_queue, 'CONNECT')
+   def _connect(self, reconnect=False):
+      ble_issue_command(self.event_loop, self.ble_command_queue, 'RECONNECT' if reconnect else 'CONNECT')
       ble_issue_command(self.event_loop, self.ble_command_queue, self.tottag_selection.get())
 
    def _delete_experiment(self):
@@ -813,6 +864,8 @@ class TotTagGUI(tk.Frame):
                   item.configure(state=['disabled'])
             self.schedule_button['state'] = ['enabled']
             tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
+         elif key == 'DISRECONNECT':
+            self._connect(True)
          elif key == 'RETRIEVING':
             self._clear_canvas()
             if data:
