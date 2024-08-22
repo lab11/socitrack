@@ -20,6 +20,8 @@ import argparse
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
 
 DEVICE_ID_UUID = '00002a23-0000-1000-8000-00805f9b34fb'
+FIRMWARE_VERSION_UUID = '00002a26-0000-1000-8000-00805f9b34fb'
+HARDWARE_REVISION_UUID = '00002a27-0000-1000-8000-00805f9b34fb'
 LOCATION_SERVICE_UUID = 'd68c3156-a23f-ee90-0c45-5231395e5d2e'
 FIND_MY_TOTTAG_SERVICE_UUID = 'd68c3155-a23f-ee90-0c45-5231395e5d2e'
 MODE_SWITCH_UUID = 'd68c3164-a23f-ee90-0c45-5231395e5d2e'
@@ -212,6 +214,7 @@ class TotTagBLE(threading.Thread):
                           'FIND_TOTTAG': self.find_my_tottag,
                           'TIMESTAMP': self.retrieve_timestamp,
                           'VOLTAGE': self.retrieve_voltage,
+                          'VERSIONS': self.retrieve_version_details,
                           'NEW_EXPERIMENT_FULL': self.create_new_experiment,
                           'NEW_EXPERIMENT_SINGLE': self.update_new_experiment,
                           'GET_EXPERIMENT': self.retrieve_experiment,
@@ -370,6 +373,15 @@ class TotTagBLE(threading.Thread):
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve current battery level from TotTag')))
 
+   async def retrieve_version_details(self):
+      self.result_queue.put_nowait(('RETRIEVING', True))
+      try:
+         firmware_version = await self.connected_device.read_gatt_char(FIRMWARE_VERSION_UUID)
+         hardware_revision = await self.connected_device.read_gatt_char(HARDWARE_REVISION_UUID)
+         self.result_queue.put_nowait(('VERSIONS', (hardware_revision.decode().strip('\x00'), firmware_version.decode().strip('\x00'))))
+      except Exception:
+         self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve device details from TotTag')))
+
    async def create_new_experiment(self):
       self.result_queue.put_nowait(('SCHEDULING', True))
       details = await self.command_queue.get()
@@ -515,19 +527,20 @@ class TotTagGUI(tk.Frame):
       self.operations_bar = tk.Frame(self)
       self.operations_bar.pack(side=tk.LEFT, fill=tk.Y, padx=5, expand=False)
       ttk.Label(self.operations_bar, text="TotTag Actions", padding=6).grid(row=0)
-      ttk.Button(self.operations_bar, text="Subscribe to Live Ranging Data", command=self._subscribe_to_live_ranges, state=['disabled']).grid(row=1, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Activate Find my TotTag", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'FIND_TOTTAG'), state=['disabled']).grid(row=2, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Retrieve Current Timestamp", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'TIMESTAMP'), state=['disabled']).grid(row=3, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Retrieve Battery Voltage", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'VOLTAGE'), state=['disabled']).grid(row=4, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Get Device Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'VERSIONS'), state=['disabled']).grid(row=1, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Subscribe to Live Ranging Data", command=self._subscribe_to_live_ranges, state=['disabled']).grid(row=2, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Activate Find my TotTag", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'FIND_TOTTAG'), state=['disabled']).grid(row=3, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Retrieve Current Timestamp", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'TIMESTAMP'), state=['disabled']).grid(row=4, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Retrieve Battery Voltage", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'VOLTAGE'), state=['disabled']).grid(row=5, sticky=tk.W+tk.E)
       self.schedule_button = ttk.Button(self.operations_bar, text="Schedule New Pilot Deployment", command=self._create_new_experiment, state=['disabled'])
-      self.schedule_button.grid(row=5, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Get Scheduled Deployment Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'GET_EXPERIMENT'), state=['disabled']).grid(row=6, sticky=tk.W+tk.E)
+      self.schedule_button.grid(row=6, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Get Scheduled Deployment Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'GET_EXPERIMENT'), state=['disabled']).grid(row=7, sticky=tk.W+tk.E)
       self.cancel_button = ttk.Button(self.operations_bar, text="Cancel Scheduled Pilot Deployment", command=self._delete_experiment, state=['disabled'])
-      self.cancel_button.grid(row=7, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled']).grid(row=8, sticky=tk.W+tk.E)
+      self.cancel_button.grid(row=8, sticky=tk.W+tk.E)
+      ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled']).grid(row=9, sticky=tk.W+tk.E)
       if mode_switch_visibility:
           self.switch_button = ttk.Button(self.operations_bar, text="Mode Switch", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'ENABLE_STORAGE_MAINTENANCE'), state=['disabled'])
-          self.switch_button.grid(row=9)
+          self.switch_button.grid(row=10)
 
       # Create the workspace canvas
       self.canvas = tk.Frame(self)
@@ -886,6 +899,10 @@ class TotTagGUI(tk.Frame):
          elif key == 'VOLTAGE':
             self._clear_canvas()
             tk.Label(self.canvas, text="Current Device Voltage: {} mV".format(data)).pack(fill=tk.BOTH, expand=True)
+         elif key == 'VERSIONS':
+            self._clear_canvas()
+            (hardware_revision, firmware_version) = data
+            tk.Label(self.canvas, text="Hardware Revision: {}\nFirmware Build Date: {}".format(hardware_revision, firmware_version)).pack(fill=tk.BOTH, expand=True)
          elif key == 'SCHEDULING':
             self._clear_canvas()
             self.failed_devices.clear()
