@@ -120,7 +120,7 @@ void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = ble_data_index, .type = STORAGE_TYPE_BLE_SCAN };
    ble_data[ble_data_index].data[0] = (uint8_t)num_devices;
    memcpy(ble_data[ble_data_index].data + 1, found_devices, num_devices);
-   ble_data[ble_data_index].length = num_devices;
+   ble_data[ble_data_index].length = 1 + num_devices;
    ble_data_index = (ble_data_index + 1) % MAX_NUM_DATA_ITEMS;
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
