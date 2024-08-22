@@ -63,7 +63,7 @@ def extract_simple_event_log(logpath):
 def load_data(filename):
     with open(filename, 'rb') as file:
         data = pd.json_normalize(data=pickle.load(file)).groupby('t').first()
-    return data.reindex(pd.Series(np.arange(data.head(1).index[0], data.tail(1).index[0], 0.5))).T \
+    return data.reindex(pd.Series(np.arange(data.head(1).index[0], 1+data.tail(1).index[0], 0.5))).T \
            if data is not None and len(data.index) > 0 else None
 
 def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
@@ -89,6 +89,17 @@ def get_motion_time_series(data, tottag_label):
     motions = data.loc['m'].ffill()
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in motions.keys()])
     plot_data(f'Motion Status for {tottag_label}', 'Date and Time', 'Motion Status', timestamps, motions)
+
+def get_ble_scan_time_series(data, tottag_label):
+    ble_devices = data.loc['b'].apply(lambda val: 0 if not isinstance(val, list) or not len(val) else len(val))
+    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ble_devices.keys()])
+    plot_data(f'BLE Scan Results for {tottag_label}', 'Date and Time', 'Num Detected TotTags', timestamps, ble_devices)
+    ble_devices = data.loc['b'].dropna()
+    ble_devices = ble_devices[ble_devices.astype(bool)]
+    timestamps = [datetime.fromtimestamp(ts).strftime("%m/%d/%Y, %H:%M:%S") for ts in ble_devices.keys()]
+    pd.set_option('display.max_rows', None)
+    print(pd.DataFrame(list(zip(timestamps, ble_devices.values)), columns=['Datetime', 'TotTags']))
+    pd.reset_option('display.max_rows')
 
 def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft'):
     if unit == 'ft':
