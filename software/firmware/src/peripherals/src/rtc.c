@@ -9,6 +9,7 @@
 static const char *month_strings[] = { "Invalid Entry", "January", "February", "March", "April", "May", "June", "July",
                                        "August", "September", "October", "November", "December", "Invalid Month" };
 static const char *day_strings[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+static volatile uint32_t rtc_stat;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -127,18 +128,21 @@ uint32_t rtc_get_timestamp(void)
 
 uint32_t rtc_get_timestamp_diff_ms(uint32_t starting_timestamp)
 {
+   rtc_stat = RTC->RTCSTAT;  // Read RTCSTAT to mitigate RTC hanging as per errata
    static am_hal_rtc_time_t rtc_time;
    return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) ? ((1000 * (to_unix_timestamp(&rtc_time) - starting_timestamp)) + (10 * rtc_time.ui32Hundredths)) : 0;
 }
 
 uint32_t rtc_get_time_of_day(void)
 {
+   rtc_stat = RTC->RTCSTAT;  // Read RTCSTAT to mitigate RTC hanging as per errata
    static am_hal_rtc_time_t rtc_time;
    return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) ? ((3600 * rtc_time.ui32Hour) + (60 * rtc_time.ui32Minute) + rtc_time.ui32Second) : 0;
 }
 
 bool rtc_is_valid(void)
 {
+   rtc_stat = RTC->RTCSTAT;  // Read RTCSTAT to mitigate RTC hanging as per errata
    static am_hal_rtc_time_t rtc_time;
    return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) && (rtc_time.ui32Year > 22) && (rtc_time.ui32Year < 40);
 }
