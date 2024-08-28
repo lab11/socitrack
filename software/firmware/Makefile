@@ -33,6 +33,7 @@ ID_FLASH_LOCATION = 0x001FFFF8
 
 DEFINES  = -D_HW_REVISION=$(REVISION)
 DEFINES += -D_DATETIME="\"$(shell date -u)\""
+DEFINES += -D_FW_REVISION=$(shell cd ../.. && git log --pretty=format:'%h' -n 1)
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
 DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'

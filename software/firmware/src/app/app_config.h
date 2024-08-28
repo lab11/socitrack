@@ -66,6 +66,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define MANUFACTURER                                "Lab11"
 #define HW_MODEL                                    "TotTag"
 #define HW_REVISION                                 "Rev. "STRINGIZE_VAL(_HW_REVISION)
+#define FW_REVISION                                 "Commit "STRINGIZE_VAL(_FW_REVISION)
 
 #define MAX_NUM_CONNECTIONS                         2
 
