@@ -37,9 +37,9 @@ DEFINES += -D_FW_REVISION=$(shell cd ../.. && git log --pretty=format:'%h' -n 1)
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
 DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
-DEFINES += -D__USE_FREERTOS__
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
+DEFINES += -D__USE_FREERTOS__
 DEFINES += -Dgcc
 
 DW_LIBRARY := ./src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.14.a
@@ -254,10 +254,10 @@ DEPS = $(CSRC:%.c=$(CONFIG)/%.d)
 DEPS+= $(ASRC:%.s=$(CONFIG)/%.d)
 
 LIBS = AmbiqSDK/bsp/$(BSP)/gcc/bin/libam_bsp.a
-LIBS += AmbiqSDK/mcu/$(PART)/hal/mcu/gcc/bin/libam_hal.a
+LIBS+= AmbiqSDK/mcu/$(PART)/hal/mcu/gcc/bin/libam_hal.a
 
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
-CFLAGS+= -ffunction-sections -fdata-sections -fomit-frame-pointer
+CFLAGS+= -ffunction-sections -fdata-sections -fno-omit-frame-pointer
 CFLAGS+= -MMD -MP -std=c99 -Wall -O0
 CFLAGS+= $(DEFINES)
 CFLAGS+= $(INCLUDES)

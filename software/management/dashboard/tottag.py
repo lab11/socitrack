@@ -304,7 +304,6 @@ class TotTagBLE(threading.Thread):
             self.connected_device = device
             self.result_queue.put_nowait(('CONNECTED', device_address))
       except Exception as e:
-         traceback.print_exc()
          self.result_queue.put_nowait(('CONNECTING', False))
          self.result_queue.put_nowait(('ERROR', ('TotTag Connection Error', 'Timed out attempting to connect to the specified TotTag')))
       self.command_queue.task_done()
@@ -318,7 +317,6 @@ class TotTagBLE(threading.Thread):
             self.connected_device = device
             await self.download_log_continuation()
       except Exception as e:
-         traceback.print_exc()
          self.result_queue.put_nowait(('DISCONNECTED', True))
          self.result_queue.put_nowait(('ERROR', ('TotTag Connection Error', 'Timed out communicating with the specified TotTag')))
 
