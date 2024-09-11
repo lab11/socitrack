@@ -3,15 +3,16 @@
 
 # PYTHON INCLUSIONS ---------------------------------------------------------------------------------------------------
 
+try: from .tkcal import DateEntry
+except: from tkcal import DateEntry
 from functools import partial
 from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog
 from collections import defaultdict
 import struct, queue, datetime, tzlocal
 import os, pickle, pytz, time
-import traceback
 import tkinter as tk
-import tkcalendar
+import traceback
 import threading
 import asyncio
 import argparse
@@ -505,8 +506,9 @@ class TotTagGUI(tk.Frame):
       self.daily_end_time = tk.StringVar(self.master, "22:00")
       self.start_time = tk.StringVar(self.master, "07:00")
       self.end_time = tk.StringVar(self.master, "22:00")
-      self.start_date = tk.StringVar()
-      self.end_date = tk.StringVar()
+      self.start_date = tk.StringVar(self.master, datetime.datetime.today().strftime('%m/%d/%Y'))
+      self.end_date = tk.StringVar(self.master, datetime.datetime.today().strftime('%m/%d/%Y'))
+      self.active_data_entry = None
       self.data_length = 0
 
       # Create the control bar
@@ -572,6 +574,17 @@ class TotTagGUI(tk.Frame):
       ttk.Button(prompt_area, text="Yes", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'DELETE_EXPERIMENT')).grid(column=1, row=1)
       ttk.Button(prompt_area, text="No", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=1)
 
+   def _focus_in(self, event):
+      if self.active_data_entry is not None:
+         self.active_data_entry.drop_down()
+
+   def _date_entry_clicked(self, event):
+      self.focus_set()
+      self.active_data_entry = event.widget
+
+   def _date_entry_changed(self, event):
+      self.active_data_entry = None
+
    def _download_logs(self):
       self._clear_canvas()
       self.download_raw_data.set(0)
@@ -595,8 +608,16 @@ class TotTagGUI(tk.Frame):
       end_time_controls = tk.Frame(prompt_area)
       end_time_controls.grid(column=2, row=7, columnspan=2, sticky=tk.W+tk.E+tk.N+tk.S)
       ttk.Label(start_time_controls, text="Start Date: ").pack(side=tk.LEFT)
-      tkcalendar.DateEntry(start_time_controls, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy').pack(side=tk.LEFT)
-      tkcalendar.DateEntry(end_time_controls, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy').pack(side=tk.RIGHT)
+      date_entry = DateEntry(start_time_controls, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
+      date_entry.pack(side=tk.LEFT)
+      date_entry.bind('<FocusIn>', self._focus_in)
+      date_entry.bind('<Button-1>', self._date_entry_clicked)
+      date_entry.bind("<<DateEntrySelected>>", self._date_entry_changed)
+      date_entry = DateEntry(end_time_controls, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
+      date_entry.pack(side=tk.RIGHT)
+      date_entry.bind('<FocusIn>', self._focus_in)
+      date_entry.bind('<Button-1>', self._date_entry_clicked)
+      date_entry.bind("<<DateEntrySelected>>", self._date_entry_changed)
       ttk.Label(end_time_controls, text="End Date: ").pack(side=tk.RIGHT)
       ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=8, pady=5, sticky=tk.W+tk.N)
       def begin_download(self):
@@ -628,9 +649,17 @@ class TotTagGUI(tk.Frame):
       tk.Label(prompt_area, text="             ").grid(column=2, row=7)
       tk.Label(prompt_area, text="End Date").grid(column=3, row=7, sticky=tk.W)
       tk.Label(prompt_area, text="End Time").grid(column=4, row=7, sticky=tk.W)
-      tkcalendar.DateEntry(prompt_area, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy').grid(column=0, row=8, sticky=tk.W)
+      date_entry = DateEntry(prompt_area, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
+      date_entry.grid(column=0, row=8, sticky=tk.W)
+      date_entry.bind('<FocusIn>', self._focus_in)
+      date_entry.bind('<Button-1>', self._date_entry_clicked)
+      date_entry.bind("<<DateEntrySelected>>", self._date_entry_changed)
       ttk.Entry(prompt_area, textvariable=self.start_time, width=10, validate='all', validatecommand=(prompt_area.register(validate_time), '%P')).grid(column=1, row=8, sticky=tk.W)
-      tkcalendar.DateEntry(prompt_area, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy').grid(column=3, row=8, sticky=tk.W)
+      date_entry = DateEntry(prompt_area, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
+      date_entry.grid(column=3, row=8, sticky=tk.W)
+      date_entry.bind('<FocusIn>', self._focus_in)
+      date_entry.bind('<Button-1>', self._date_entry_clicked)
+      date_entry.bind("<<DateEntrySelected>>", self._date_entry_changed)
       ttk.Entry(prompt_area, textvariable=self.end_time, width=10, validate='all', validatecommand=(prompt_area.register(validate_time), '%P')).grid(column=4, row=8, sticky=tk.W)
       ttk.Label(prompt_area, text=" ", font=('Helvetica', '4')).grid(column=0, row=9)
       daily_label_start = tk.Label(prompt_area, text="Daily Start Time", state=['normal' if self.use_daily_times.get() else 'disabled'])

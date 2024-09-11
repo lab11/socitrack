@@ -1,14 +1,14 @@
 import setuptools
 
-with open('requirements.txt') as file:
+with open('requirements.txt', encoding='utf8') as file:
    install_deps = [line for line in file]
 
-with open('README.rst', 'r') as fh:
+with open('README.rst', 'r', encoding='utf8') as fh:
    long_description = fh.read()
 
 setuptools.setup(
    name='tottag',
-   version='1.0.1',
+   version='1.0.2',
    author='Will Hedgecock',
    author_email='ronald.w.hedgecock@vanderbilt.edu',
    description='TotTag Management Dashboard',
