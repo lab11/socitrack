@@ -8575,8 +8575,8 @@ on the KXR Package</text>
 </pinmapping>
 </spice>
 <attribute name="DESCRIPTION" value="FIXED IND 2.0NH0.1NH SMD"/>
-<attribute name="MANUFACTURER" value="Central Technologies"/>
-<attribute name="MPN" value="CTTF0402F-2N0B"/>
+<attribute name="MANUFACTURER" value="Murata"/>
+<attribute name="MPN" value="LQG15HS2N0B02D"/>
 <attribute name="TOLERANCE" value="+/- 0.1 nH"/>
 </part>
 <part name="L8" library="Inductor" deviceset="L" device="CHIP-0402(1006-METRIC)" package3d_urn="urn:adsk.eagle:package:16378468/1" technology="_" value="2.2nH">
@@ -8587,8 +8587,8 @@ on the KXR Package</text>
 </pinmapping>
 </spice>
 <attribute name="DESCRIPTION" value="FIXED IND 2.2NH0.1NH SMD"/>
-<attribute name="MANUFACTURER" value="Central Technologies"/>
-<attribute name="MPN" value="CTTF0402F-2N2B"/>
+<attribute name="MANUFACTURER" value="Murata"/>
+<attribute name="MPN" value="LQG15HN2N2B02D"/>
 <attribute name="TOLERANCE" value="+/- 0.1 nH"/>
 </part>
 <part name="C77" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0201_CAP" package3d_urn="urn:adsk.eagle:package:20904643/2" value="1uF">
@@ -8658,7 +8658,7 @@ on the KXR Package</text>
 </spice>
 <attribute name="DESCRIPTION" value="CAP CER 1.5PF 50V C0G/NP0 0402"/>
 <attribute name="MANUFACTURER" value="KEMET"/>
-<attribute name="MPN" value="C0402C159C5GAC7867"/>
+<attribute name="MPN" value="C0402C159C5GACTU"/>
 <attribute name="TEMPCOEFF" value="NP0"/>
 <attribute name="TOLERANCE" value="+/- 0.25pF"/>
 </part>
@@ -8708,7 +8708,11 @@ on the KXR Package</text>
 <part name="C26" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="CAPACITOR" device="0402_CAP" package3d_urn="urn:adsk.eagle:package:20904654/3" value="0.1uF">
 <attribute name="MPN" value="CL05A104KP5NNNC"/>
 </part>
-<part name="X4" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="TXC-8Y" device="" package3d_urn="urn:adsk.eagle:package:20878596/1"/>
+<part name="X4" library="crystals" library_urn="urn:adsk.eagle:library:20878509" deviceset="TXC-8Y" device="" package3d_urn="urn:adsk.eagle:package:20878596/1">
+<attribute name="FREQ" value="38.4 MHz"/>
+<attribute name="MANUFACTURER" value="TXC"/>
+<attribute name="MPN" value="8Y38472012"/>
+</part>
 <part name="SUPPLY24" library="regulators" deviceset="GND" device=""/>
 <part name="SUPPLY25" library="regulators" deviceset="GND" device=""/>
 <part name="VR3" library="regulators" library_urn="urn:adsk.eagle:library:20878889" deviceset="TPS7A02" device="18PDQNR" package3d_urn="urn:adsk.eagle:package:38978642/2"/>
@@ -11096,8 +11100,11 @@ low-power mode</text>
 <attribute name="MPN" x="76.2" y="81.28" size="1.778" layer="96" display="off"/>
 </instance>
 <instance part="X4" gate="G$1" x="203.2" y="132.08" smashed="yes" rot="R270">
-<attribute name="NAME" x="208.28" y="134.62" size="1.27" layer="95" rot="R270"/>
+<attribute name="NAME" x="208.28" y="132.08" size="1.27" layer="95"/>
 <attribute name="VALUE" x="208.28" y="134.62" size="1.27" layer="96" rot="R270"/>
+<attribute name="MANUFACTURER" x="203.2" y="132.08" size="1.778" layer="96" rot="R270" display="off"/>
+<attribute name="MPN" x="208.28" y="127.508" size="1.27" layer="96"/>
+<attribute name="FREQ" x="208.28" y="130.048" size="1.27" layer="96"/>
 </instance>
 <instance part="SUPPLY24" gate="G1" x="195.58" y="127" smashed="yes">
 <attribute name="VALUE" x="193.04" y="124.46" size="1.778" layer="96"/>
