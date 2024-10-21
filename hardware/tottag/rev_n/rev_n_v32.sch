@@ -8103,8 +8103,7 @@ on the KXR Package</text>
 <part name="SUPPLY2" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="SUPPLY14" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="R15" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="RESISTOR" device="0402_RES" package3d_urn="urn:adsk.eagle:package:20904668/2" value="2.2k">
-<attribute name="DIGIKEY" value="RMCF0402JT2K20CT-ND"/>
-<attribute name="MPN" value="RMCF0402JT2K20"/>
+<attribute name="MPN" value="RC0402FR-072K2L"/>
 </part>
 <part name="JP2" library="SparkFun-Jumpers" library_urn="urn:adsk.eagle:library:528" deviceset="JUMPER-SMT_3_1-NC_TRACE" device="_SILK" package3d_urn="urn:adsk.eagle:package:39288/1"/>
 <part name="XR19" library="passives" deviceset="RESISTOR" device="0402_RES" value="10k">
@@ -8202,8 +8201,11 @@ on the KXR Package</text>
 <attribute name="MPN" value="GRM155R71C104KA88J "/>
 </part>
 <part name="SUPPLY39" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="R13" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
-<part name="R14" library="passives" deviceset="RESISTOR" device="0402_RES" value="1k"/>
+<part name="R13" library="passives" deviceset="RESISTOR" device="0402_RES" value="2.2k">
+<attribute name="MPN" value="RC0402FR-072K2L"/>
+<attribute name="TOL" value="1%"/>
+</part>
+<part name="RX14" library="passives" deviceset="RESISTOR" device="0402_RES" value="DNP"/>
 <part name="GND6" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="LS1" library="audio" library_urn="urn:adsk.eagle:library:20947603" deviceset="PUI_SMT-0440-T-2-R" device="" package3d_urn="urn:adsk.eagle:package:21033088/3"/>
 <part name="D4" library="passives" library_urn="urn:adsk.eagle:library:20904581" deviceset="DIODE" device="0402" package3d_urn="urn:adsk.eagle:package:20904648/2">
@@ -8877,7 +8879,7 @@ to allow trim.</text>
 Need to - 2*97.6 = 328Ω</text>
 <wire x1="76.2" y1="116.84" x2="137.16" y2="116.84" width="0.127" layer="98" style="shortdash"/>
 <wire x1="76.2" y1="116.84" x2="76.2" y2="149.86" width="0.127" layer="98" style="shortdash"/>
-<text x="77.47" y="148.844" size="0.8128" layer="98" align="top-left">Reference: Datasheet §7.3.13 TS Resistor Network
+<text x="76.962" y="145.288" size="0.6096" layer="98" align="top-left">Reference: Datasheet §7.3.13 TS Resistor Network
 ----
 Properties from the BQ51013B datasheet:
 Internal to chip (behind TS pad) is a 20kΩ pull-up to 2.2V
@@ -8892,7 +8894,9 @@ Thermistor datasheet values (where does it hit those R's?):
 "Safe to touch" std says 60ºC
 NTC is 2.97kΩ @ 60ºC
 easy shift is add 2kΩ offset to NTC
-now V_COLD trips when NTC is 26.5kΩ (1.8ºC)</text>
+now V_COLD trips when NTC is 26.5kΩ (1.8ºC)
+----
+Rev N: use 2.2kΩ to reduce BOM count</text>
 <wire x1="76.2" y1="149.86" x2="137.16" y2="149.86" width="0.127" layer="98" style="shortdash"/>
 <wire x1="137.16" y1="116.84" x2="137.16" y2="149.86" width="0.127" layer="98" style="shortdash"/>
 <text x="74.93" y="68.58" size="0.8128" layer="98" align="top-left">Datasheet wants a 10k NTC B=3370
@@ -8937,11 +8941,11 @@ Guess
 small
 filter</text>
 <text x="110.744" y="128.27" size="0.8128" layer="98" rot="R90" align="top-left">Fig32 NTC</text>
-<text x="87.122" y="122.174" size="0.8128" layer="98" align="top-left">Fig32 R1</text>
-<wire x1="97.79" y1="128.27" x2="82.55" y2="128.27" width="0.127" layer="98" style="shortdash"/>
-<wire x1="82.55" y1="128.27" x2="82.55" y2="120.65" width="0.127" layer="98" style="shortdash"/>
-<wire x1="97.79" y1="128.27" x2="97.79" y2="120.65" width="0.127" layer="98" style="shortdash"/>
-<wire x1="97.79" y1="120.65" x2="82.55" y2="120.65" width="0.127" layer="98" style="shortdash"/>
+<text x="87.884" y="119.634" size="0.8128" layer="98" align="top-left">Fig32 R1</text>
+<wire x1="98.552" y1="128.27" x2="82.042" y2="128.27" width="0.127" layer="98" style="shortdash"/>
+<wire x1="82.042" y1="128.27" x2="82.042" y2="118.364" width="0.127" layer="98" style="shortdash"/>
+<wire x1="98.552" y1="128.27" x2="98.552" y2="118.364" width="0.127" layer="98" style="shortdash"/>
+<wire x1="98.552" y1="118.364" x2="82.042" y2="118.364" width="0.127" layer="98" style="shortdash"/>
 <text x="39.37" y="63.5" size="0.8128" layer="98" align="top-left">ISET controls constant charge current
 Battery wants 0.2C * 1200 mAh = 240 mA
 
@@ -9142,7 +9146,6 @@ Pins</text>
 <instance part="R15" gate="G$1" x="48.26" y="88.9" smashed="yes" rot="R90">
 <attribute name="NAME" x="46.7614" y="85.09" size="1.778" layer="95" rot="R90"/>
 <attribute name="VALUE" x="51.562" y="85.09" size="1.778" layer="96" rot="R90"/>
-<attribute name="DIGIKEY" x="48.26" y="88.9" size="1.27" layer="96" rot="R90" align="top-left" display="off"/>
 <attribute name="MPN" x="48.26" y="88.9" size="1.27" layer="96" rot="R90" align="top-left" display="off"/>
 </instance>
 <instance part="JP2" gate="G$1" x="101.6" y="71.12" smashed="yes" rot="R270">
@@ -9316,8 +9319,10 @@ Pins</text>
 <instance part="R13" gate="G$1" x="96.52" y="124.46" smashed="yes">
 <attribute name="NAME" x="92.71" y="125.9586" size="1.778" layer="95"/>
 <attribute name="VALUE" x="92.71" y="121.158" size="1.778" layer="96"/>
+<attribute name="MPN" x="96.52" y="124.46" size="1.778" layer="96" display="off"/>
+<attribute name="TOL" x="92.456" y="119.888" size="0.8128" layer="96" display="both"/>
 </instance>
-<instance part="R14" gate="G$1" x="86.36" y="124.46" smashed="yes">
+<instance part="RX14" gate="G$1" x="86.36" y="124.46" smashed="yes">
 <attribute name="NAME" x="82.55" y="125.9586" size="1.778" layer="95"/>
 <attribute name="VALUE" x="82.55" y="121.158" size="1.778" layer="96"/>
 </instance>
@@ -9573,7 +9578,7 @@ Pins</text>
 <wire x1="129.54" y1="127" x2="129.54" y2="124.46" width="0.1524" layer="91"/>
 </segment>
 <segment>
-<pinref part="R14" gate="G$1" pin="1"/>
+<pinref part="RX14" gate="G$1" pin="1"/>
 <pinref part="SUPPLY38" gate="1" pin="GND"/>
 <wire x1="81.28" y1="124.46" x2="78.74" y2="124.46" width="0.1524" layer="91"/>
 <wire x1="78.74" y1="124.46" x2="78.74" y2="121.92" width="0.1524" layer="91"/>
@@ -10121,7 +10126,7 @@ Pins</text>
 <net name="N$70" class="0">
 <segment>
 <pinref part="R13" gate="G$1" pin="1"/>
-<pinref part="R14" gate="G$1" pin="2"/>
+<pinref part="RX14" gate="G$1" pin="2"/>
 <wire x1="91.44" y1="124.46" x2="88.9" y2="124.46" width="0.1524" layer="91"/>
 </segment>
 </net>
