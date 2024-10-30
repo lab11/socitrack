@@ -619,7 +619,7 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
          {
             const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
             const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
-            if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && (potential_timestamp1 < ending_timestamp))
+            if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && (potential_timestamp1 < ending_timestamp) && ((potential_timestamp2 - potential_timestamp1) <= 600000))
             {
                found_valid_timestamp = true;
                if (potential_timestamp1 >= starting_timestamp)
@@ -692,7 +692,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
             {
                const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
                const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
-               if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0))
+               if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && ((potential_timestamp2 - potential_timestamp1) <= 600000))
                {
                   found_valid_timestamp = true;
                   if (potential_timestamp1 > ending_timestamp)
