@@ -593,7 +593,7 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
 }
 
-void storage_begin_reading(uint32_t starting_timestamp)
+void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp)
 {
 #ifdef _TEST_IMU_DATA
    reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
@@ -603,42 +603,35 @@ void storage_begin_reading(uint32_t starting_timestamp)
    experiment_details_t details;
    storage_retrieve_experiment_details(&details);
    starting_timestamp = (starting_timestamp >= details.experiment_start_time) ? (1000 * (starting_timestamp - details.experiment_start_time)) : 0;
+   ending_timestamp = (ending_timestamp >= details.experiment_start_time) ? (1000 * (ending_timestamp - details.experiment_start_time)) : (1000 * (details.experiment_end_time - details.experiment_start_time));
    reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
    last_reading_page = reading_page;
    is_reading = in_maintenance_mode;
 
    // Search for the page that contains the starting timestamp
    bool timestamp_found = !starting_timestamp;
-   uint32_t last_timestamp = 0, timestamp_jump = 0;
    while (!timestamp_found && (reading_page != current_page))
       if (read_page(transfer_buffer, reading_page))
       {
          bool found_valid_timestamp = false;
          uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
-         for (uint32_t i = 0; !found_valid_timestamp && ((i + 5) < num_bytes_retrieved); ++i)
+         for (uint32_t i = 0; !found_valid_timestamp && ((i + 14) < num_bytes_retrieved); ++i)
          {
-            const uint32_t potential_timestamp = *(uint32_t*)(transfer_buffer + 5 + i);
-            if (transfer_buffer[4 + i] && (transfer_buffer[4 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp % 500) == 0))
+            const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
+            const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
+            if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && (potential_timestamp1 < ending_timestamp))
             {
-               if (((potential_timestamp - last_timestamp) < 900000) || ((potential_timestamp - timestamp_jump) < 900000))
+               found_valid_timestamp = true;
+               if (potential_timestamp1 >= starting_timestamp)
                {
-                  found_valid_timestamp = true;
-                  if ((potential_timestamp >= timestamp_jump) && (timestamp_jump >= starting_timestamp))
-                     timestamp_found = true;
-                  else if (potential_timestamp > starting_timestamp)
-                  {
-                     reading_page = last_reading_page;
-                     timestamp_found = true;
-                  }
-                  else
-                  {
-                     last_reading_page = reading_page;
-                     reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
-                  }
-                  last_timestamp = timestamp_jump = potential_timestamp;
+                  reading_page = last_reading_page;
+                  timestamp_found = true;
                }
                else
-                  timestamp_jump = potential_timestamp;
+               {
+                  last_reading_page = reading_page;
+                  reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+               }
             }
          }
          if (!found_valid_timestamp)
@@ -688,38 +681,31 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       // Search for the page that contains the ending timestamp
       bool timestamp_found = false;
       last_reading_page = reading_page;
-      uint32_t previous_reading_page = last_reading_page, last_timestamp = 0, timestamp_jump = 0;
+      uint32_t previous_reading_page = last_reading_page;
       while (!timestamp_found && (last_reading_page != current_page))
          if (read_page(transfer_buffer, last_reading_page))
          {
             bool found_valid_timestamp = false;
             uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
             log_data_size += num_bytes_retrieved;
-            for (uint32_t i = 0; !found_valid_timestamp && ((i + 5) < num_bytes_retrieved); ++i)
+            for (uint32_t i = 0; !found_valid_timestamp && ((i + 14) < num_bytes_retrieved); ++i)
             {
-               const uint32_t potential_timestamp = *(uint32_t*)(transfer_buffer + 5 + i);
-               if (transfer_buffer[4 + i] && (transfer_buffer[4 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp % 500) == 0))
+               const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
+               const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
+               if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0))
                {
-                  if (((potential_timestamp - last_timestamp) < 900000) || ((potential_timestamp - timestamp_jump) < 900000))
+                  found_valid_timestamp = true;
+                  if (potential_timestamp1 > ending_timestamp)
                   {
-                     found_valid_timestamp = true;
-                     if ((potential_timestamp >= timestamp_jump) && (timestamp_jump >= ending_timestamp))
-                        timestamp_found = true;
-                     else if (potential_timestamp > ending_timestamp)
-                     {
-                        last_reading_page = previous_reading_page;
-                        log_data_size -= num_bytes_retrieved;
-                        timestamp_found = true;
-                     }
-                     else
-                     {
-                        previous_reading_page = last_reading_page;
-                        last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
-                     }
-                     last_timestamp = timestamp_jump = potential_timestamp;
+                     last_reading_page = previous_reading_page;
+                     log_data_size -= num_bytes_retrieved;
+                     timestamp_found = true;
                   }
                   else
-                     timestamp_jump = potential_timestamp;
+                  {
+                     previous_reading_page = last_reading_page;
+                     last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+                  }
                }
             }
             if (!found_valid_timestamp)

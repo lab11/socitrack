@@ -92,8 +92,8 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       buffer_index = 0;
       started_reading = true;
       experiment_details_t details;
-      storage_begin_reading(download_start_timestamp);
       storage_retrieve_experiment_details(&details);
+      storage_begin_reading(download_start_timestamp, download_end_timestamp);
       total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
 #ifdef _TEST_IMU_DATA
       total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;

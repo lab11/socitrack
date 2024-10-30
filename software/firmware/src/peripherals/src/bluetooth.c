@@ -287,7 +287,7 @@ void bluetooth_deinit(void)
    // Stop all running timers
    am_hal_timer_disable(BLE_ERROR_TIMER_NUMBER);
    NVIC_DisableIRQ(TIMER0_IRQn + BLE_ERROR_TIMER_NUMBER);
-   am_hal_timer_interrupt_disable(AM_HAL_TIMER_MASK(BLE_ERROR_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));;
+   am_hal_timer_interrupt_disable(AM_HAL_TIMER_MASK(BLE_ERROR_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
 
    // Shut down the BLE controller
    HciDrvRadioShutdown();
