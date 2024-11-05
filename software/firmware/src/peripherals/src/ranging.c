@@ -234,7 +234,7 @@ void ranging_radio_init(uint8_t *uid)
 #endif
 
    // Set up the DW3000 antenna selection pins
-#if REVISION_ID < REVISION_L
+#if (REVISION_ID < REVISION_L) || (REVISION_ID > REVISION_M)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT1, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT2, am_hal_gpio_pincfg_output));
@@ -488,7 +488,7 @@ void ranging_radio_choose_channel(uint8_t channel)
 void ranging_radio_choose_antenna(uint8_t antenna_number)
 {
    // Enable the desired antenna
-#if REVISION_ID < REVISION_L
+#if (REVISION_ID < REVISION_L) || (REVISION_ID > REVISION_M)
    switch (antenna_number)
    {
       case 0:
@@ -518,7 +518,7 @@ void ranging_radio_disable(void)
 void ranging_radio_sleep(bool deep_sleep)
 {
    // Disable all antennas
-#if REVISION_ID < REVISION_L
+#if (REVISION_ID < REVISION_L) || (REVISION_ID > REVISION_M)
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
 #endif
