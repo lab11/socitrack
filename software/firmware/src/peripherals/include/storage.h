@@ -25,9 +25,7 @@ typedef enum {
 #define MEMORY_PAGE_SIZE_BYTES                      2048
 #define MEMORY_PAGES_PER_BLOCK                      64
 #define MEMORY_BLOCK_SIZE_BYTES                     (MEMORY_PAGE_SIZE_BYTES * MEMORY_PAGES_PER_BLOCK)
-#define MEMORY_BLOCK_COUNT                          1024
 #define MEMORY_PAGE_COUNT                           (MEMORY_PAGES_PER_BLOCK * MEMORY_BLOCK_COUNT)
-#define MEMORY_ECC_BYTES_PER_PAGE                   64
 #define MEMORY_PAGE_WITH_ECC_SIZE_BYTES             (MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE)
 #define MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL      3
 #define MEMORY_NUM_DATA_BYTES_PER_PAGE              (MEMORY_PAGE_SIZE_BYTES - 4)

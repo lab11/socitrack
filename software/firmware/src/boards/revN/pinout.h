@@ -3,7 +3,7 @@
 
 // Hardware Revision ID
 #include "revisions.h"
-#define REVISION_ID                                 REVISION_L
+#define REVISION_ID                                 REVISION_N
 
 // Battery
 #define PIN_BATTERY_VOLTAGE                         18
@@ -19,40 +19,41 @@
 #define PIN_BUZZER_DRIVER                           55
 
 // DecaWave Radio
-#define RADIO_SPI_NUMBER                            3
-#define PIN_RADIO_SPI_SCK                           31
-#define PIN_RADIO_SPI_MISO                          33
-#define PIN_RADIO_SPI_MOSI                          32
-#define PIN_RADIO_SPI_CS                            29
-#define PIN_RADIO_SPI_CS2                           24
-#define PIN_RADIO_SPI_CS3                           25
+#define RADIO_SPI_NUMBER                            1
+#define PIN_RADIO_SPI_SCK                           8
+#define PIN_RADIO_SPI_MISO                          10
+#define PIN_RADIO_SPI_MOSI                          9
+#define PIN_RADIO_SPI_CS                            14
 #define PIN_RADIO_INTERRUPT                         27
-#define PIN_RADIO_INTERRUPT2                        51
-#define PIN_RADIO_INTERRUPT3                        79
 #define PIN_RADIO_RESET                             50
 #define PIN_RADIO_WAKEUP                            26
-#define PIN_RADIO_WAKEUP2                           53
-#define PIN_RADIO_WAKEUP3                           88
-#define PIN_RADIO_SPI_SCK_FUNCTION                  AM_HAL_PIN_31_M3SCK
-#define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_33_M3MISO
-#define PIN_RADIO_SPI_MOSI_FUNCTION                 AM_HAL_PIN_32_M3MOSI
-#define PIN_RADIO_SPI_CS_FUNCTION                   AM_HAL_PIN_29_NCE29
-#define PIN_RADIO_SPI_CS2_FUNCTION                  AM_HAL_PIN_24_NCE24
-#define PIN_RADIO_SPI_CS3_FUNCTION                  AM_HAL_PIN_25_NCE25
+#define PIN_RADIO_ANTENNA_SELECT1                   24
+#define PIN_RADIO_ANTENNA_SELECT2                   25
+#define PIN_RADIO_SPI_SCK_FUNCTION                  AM_HAL_PIN_8_M1SCK
+#define PIN_RADIO_SPI_MISO_FUNCTION                 AM_HAL_PIN_10_M1MISO
+#define PIN_RADIO_SPI_MOSI_FUNCTION                 AM_HAL_PIN_9_M1MOSI
+#define PIN_RADIO_SPI_CS_FUNCTION                   AM_HAL_PIN_14_NCE14
 
 // IMU
-#define IMU_I2C_NUMBER                              1
-#define IMU_I2C_ADDRESS                             0x29
-#define PIN_IMU_I2C_SCL                             8
-#define PIN_IMU_I2C_SDA                             9
-#define PIN_IMU_I2C_SCL_FUNCTION                    AM_HAL_PIN_8_M1SCL
-#define PIN_IMU_I2C_SDA_FUNCTION                    AM_HAL_PIN_9_M1SDAWIR3
+#define IMU_SPI_NUMBER                              3
+#define PIN_IMU_SPI_SCK                             31
+#define PIN_IMU_SPI_MISO                            33
+#define PIN_IMU_SPI_MOSI                            32
+#define PIN_IMU_SPI_CS                              72
+#define PIN_IMU_SPI_SCK_FUNCTION                    AM_HAL_PIN_31_M3SCK
+#define PIN_IMU_SPI_MISO_FUNCTION                   AM_HAL_PIN_33_M3MISO
+#define PIN_IMU_SPI_MOSI_FUNCTION                   AM_HAL_PIN_32_M3MOSI
+#define PIN_IMU_SPI_CS_FUNCTION                     AM_HAL_PIN_72_NCE72
 #define PIN_IMU_INTERRUPT                           17
 #define PIN_IMU_RESET                               65
+#define PIN_IMU_BOOT                                13  // TODO: WHY?
+#define PIN_IMU_WAKEUP                              63  // TODO: WHY?
 
 // LEDs
-#define PIN_LED1_RED                                11  // INCORRECT MAPPING DUE TO SHARED PINS
-#define PIN_LED1_GREEN                              12  // INCORRECT MAPPING DUE TO SHARED PINS
+#define PIN_LED1_RED                                53
+#define PIN_LED1_GREEN                              51
+#define PIN_LED2_RED                                79
+#define PIN_LED2_YELLOW                             88
 
 // Logging
 #define PIN_SWO                                     3
@@ -80,9 +81,9 @@
 #define PIN_STORAGE_SPI_CS_FUNCTION                 AM_HAL_PIN_69_NCE69
 #define PIN_STORAGE_WRITE_PROTECT                   30
 #define PIN_STORAGE_HOLD                            6
-#define MEMORY_BLOCK_COUNT                          1024
-#define MEMORY_ECC_BYTES_PER_PAGE                   64
-#define STORAGE_DEVICE_ID                           { 0xEF, 0xBA, 0x21 }
+#define MEMORY_BLOCK_COUNT                          4096
+#define MEMORY_ECC_BYTES_PER_PAGE                   128
+#define STORAGE_DEVICE_ID                           { 0xEF, 0xBA, 0x23 }
 
 // Timers
 #define BUZZER_TIMER_NUMBER                         0
