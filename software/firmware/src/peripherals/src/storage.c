@@ -10,8 +10,6 @@
 
 #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
-#define STORAGE_DEVICE_ID                           { 0xEF, 0xBA, 0x21 }
-
 #define COMMAND_READ_DEVICE_ID                      0x9F
 #define COMMAND_DEVICE_RESET                        0xFF
 #define COMMAND_READ_STATUS_REGISTER                0x0F
@@ -45,6 +43,7 @@
 #define BBM_EXTERNAL_LUT_NUM_ENTRIES                20
 #define BBM_NUM_RESERVED_BLOCKS                     40
 #define BBM_LUT_BASE_ADDRESS                        ((MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS) * MEMORY_PAGES_PER_BLOCK)
+#define BBM_MAX_NUM_BAD_BLOCKS                      80 // TODO: USE THIS IN NEW VERSION
 
 
 // Helper Structures ---------------------------------------------------------------------------------------------------
@@ -171,14 +170,14 @@ static void wait_until_not_busy(void)
 static bool write_page_raw(const uint8_t *data, uint32_t page_number)
 {
    const uint16_t byte_offset = 0;
-   const uint16_t page_number_reordered = (uint16_t)(((page_number & 0x0000FF00) >> 8) | ((page_number & 0x000000FF) << 8));
+   const uint8_t page_number_reordered[] = { (uint8_t)((page_number & 0x00FF0000) >> 16), (uint8_t)((page_number & 0x0000FF00) >> 8), (uint8_t)(page_number & 0x000000FF) };
    for (uint8_t retry_index = 0; retry_index < MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL; ++retry_index)
    {
       wait_until_not_busy();
       spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
       spi_write(COMMAND_PROGRAM_DATA_LOAD, &byte_offset, 2, data, MEMORY_PAGE_SIZE_BYTES);
       wait_until_not_busy();
-      spi_write(COMMAND_PROGRAM_EXECUTE, &byte_offset, 1, &page_number_reordered, 2);
+      spi_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
       wait_until_not_busy();
       if ((read_register(STATUS_REGISTER_3) & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
          return true;
@@ -189,9 +188,9 @@ static bool write_page_raw(const uint8_t *data, uint32_t page_number)
 static bool read_page(uint8_t *buffer, uint32_t page_number)
 {
    const uint32_t byte_offset = 0;
-   const uint16_t page_number_reordered = (uint16_t)(((page_number & 0x0000FF00) >> 8) | ((page_number & 0x000000FF) << 8));
+   const uint8_t page_number_reordered[] = { (uint8_t)((page_number & 0x00FF0000) >> 16), (uint8_t)((page_number & 0x0000FF00) >> 8), (uint8_t)(page_number & 0x000000FF) };
    wait_until_not_busy();
-   spi_write(COMMAND_PAGE_DATA_READ, &byte_offset, 1, &page_number_reordered, 2);
+   spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
    wait_until_not_busy();
    spi_read(COMMAND_READ, &byte_offset, 3, buffer, MEMORY_PAGE_SIZE_BYTES);
    wait_until_not_busy();
@@ -276,8 +275,8 @@ static void write_page(uint16_t data_length)
       else
       {
          // Transfer any already-written pages in the current block to the next block
-         uint32_t next_block = ((current_page + MEMORY_PAGES_PER_BLOCK) & 0x0000FFC0) % BBM_LUT_BASE_ADDRESS;
-         transfer_block(original_page & 0x0000FFC0, next_block, current_page & 0x003F);
+         uint32_t next_block = ((current_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
+         transfer_block(original_page & 0xFFFFFFC0, next_block, current_page & 0x003F);
          add_bad_block(current_page);
          current_page = (current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
       }
@@ -297,8 +296,8 @@ static void erase_block(uint32_t starting_page, uint32_t ending_page)
    write_register(STATUS_REGISTER_1, 0b00000010);
 
    // Iterate through all blocks to be erased
-   ending_page &= 0x0000FFC0;
-   starting_page &= 0x0000FFC0;
+   ending_page &= 0xFFFFFFC0;
+   starting_page &= 0xFFFFFFC0;
    const uint8_t num_iterations = (starting_page <= ending_page) ? 1 : 2;
    uint32_t end = (starting_page <= ending_page) ? ending_page : (BBM_LUT_BASE_ADDRESS - 1);
    for (uint8_t i = 0; i < num_iterations; ++i)
@@ -306,10 +305,10 @@ static void erase_block(uint32_t starting_page, uint32_t ending_page)
       for (uint32_t page = starting_page; page <= end; page += MEMORY_PAGES_PER_BLOCK)
       {
          // Erase the current page and ensure that the command was successful
-         const uint16_t page_number_reordered = (uint16_t)(((page & 0x0000FF00) >> 8) | ((page & 0x000000FF) << 8));
+         const uint8_t page_number_reordered[] = { (uint8_t)((page & 0x00FF0000) >> 16), (uint8_t)((page & 0x0000FF00) >> 8), (uint8_t)(page & 0x000000FF) };
          wait_until_not_busy();
          spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-         spi_write(COMMAND_BLOCK_ERASE, &page, 1, &page_number_reordered, 2);
+         spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
          wait_until_not_busy();
          if ((read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) == STATUS_ERASE_FAILURE)
             add_bad_block(page);
@@ -327,7 +326,7 @@ static void ensure_empty_memory(void)
 {
    // Ensure that all memory blocks have been successfully erased
    bool current_block_erased = false;
-   const uint32_t current_block = current_page & 0x0000FFC0;
+   const uint32_t current_block = current_page & 0xFFFFFFC0;
    for (uint32_t block = 0; block < (MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS); ++block)
       if (!read_page(transfer_buffer, block * MEMORY_PAGES_PER_BLOCK) || (transfer_buffer[0] != 0xFF) || (transfer_buffer[1] != 0xFF))
       {
@@ -343,7 +342,7 @@ static bool is_first_boot(void)
 {
    bool first_boot = false;
    uint8_t device_id[3] = STORAGE_DEVICE_ID;
-   write_register(STATUS_REGISTER_2, 0b01011000);
+   write_register(STATUS_REGISTER_2, 0b01011001);
    read_page(transfer_buffer, FIRST_BOOT_ADDRESS);
    if (memcmp(transfer_buffer, device_id, sizeof(device_id)))
    {
@@ -353,7 +352,7 @@ static bool is_first_boot(void)
       spi_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
       first_boot = true;
    }
-   write_register(STATUS_REGISTER_2, 0b00011000);
+   write_register(STATUS_REGISTER_2, 0b00011001);
    return first_boot;
 }
 
@@ -406,7 +405,7 @@ void storage_init(void)
 
    // Configure the memory chip
    const uint8_t status_register_1_bits = 0b01111110;
-   const uint8_t status_register_2_bits = 0b00011000;
+   const uint8_t status_register_2_bits = 0b00011001;
    write_register(STATUS_REGISTER_1, status_register_1_bits);
    write_register(STATUS_REGISTER_2, status_register_2_bits);
 
@@ -504,7 +503,7 @@ void storage_store_experiment_details(const experiment_details_t *details)
    {
       // Erase all existing used pages and update storage metadata
       ensure_empty_memory();
-      starting_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0x0000FFC0;
+      starting_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
       cache_index = 0;
 
@@ -595,18 +594,15 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
 
 void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp)
 {
-#ifdef _TEST_IMU_DATA
+   // Update the data reading details
    reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
    is_reading = in_maintenance_mode;
-#else
-   // Update the data reading details
+#ifndef _TEST_IMU_DATA
    experiment_details_t details;
    storage_retrieve_experiment_details(&details);
    starting_timestamp = (starting_timestamp >= details.experiment_start_time) ? (1000 * (starting_timestamp - details.experiment_start_time)) : 0;
    ending_timestamp = (ending_timestamp >= details.experiment_start_time) ? (1000 * (ending_timestamp - details.experiment_start_time)) : (1000 * (details.experiment_end_time - details.experiment_start_time));
-   reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
    last_reading_page = reading_page;
-   is_reading = in_maintenance_mode;
 
    // Search for the page that contains the starting timestamp
    bool timestamp_found = !starting_timestamp;
