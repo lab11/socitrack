@@ -492,14 +492,17 @@ void ranging_radio_choose_antenna(uint8_t antenna_number)
    switch (antenna_number)
    {
       case 0:
+         dwt_setlnapamode(DWT_LNA_ENABLE);
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);
          break;
       case 1:
+         dwt_setlnapamode(DWT_LNA_PA_DISABLE);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
          break;
       case 2:
+         dwt_setlnapamode(DWT_LNA_PA_DISABLE);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);
          break;
