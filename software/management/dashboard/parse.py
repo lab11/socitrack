@@ -44,11 +44,10 @@ def process_tottag_data(data, experiment_start_time):
          else:
             i += 1
       elif data[i] == STORAGE_TYPE_IMU:
-         #TODO: Uncomment the following after all in-field TotTags have been updated:
-         #if data[i+5] <= MAX_IMU_DATA_LENGTH:
-         #   i += 6 + data[i+5]
-         #else:
-         i += 1
+         if data[i+5] <= MAX_IMU_DATA_LENGTH:
+            i += 6 + data[i+5]
+         else:
+            i += 1
       elif data[i] == STORAGE_TYPE_BLE_SCAN:
          if data[i+5] < MAX_NUM_DEVICES:
             log_data[timestamp]['b'] = []

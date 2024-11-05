@@ -177,11 +177,10 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
             else:
                i += 1
          elif data[i] == STORAGE_TYPE_IMU:
-            #TODO: Uncomment the following after all in-field TotTags have been updated:
-            #if data[i+5] <= MAX_IMU_DATA_LENGTH:
-            #   i += 6 + data[i+5]
-            #else:
-            i += 1
+            if data[i+5] <= MAX_IMU_DATA_LENGTH:
+               i += 6 + data[i+5]
+            else:
+               i += 1
          elif data[i] == STORAGE_TYPE_BLE_SCAN:
             if data[i+5] < MAX_NUM_DEVICES:
                log_data[timestamp]['b'] = []
@@ -438,6 +437,8 @@ class TotTagBLE(threading.Thread):
       params = await self.command_queue.get()
       self.storage_directory = params['dir']
       self.download_raw_logs = params['raw']
+      if params['full']:
+         params['start'] = params['end'] = 0
       try:
          self.data_length = 0
          await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
@@ -497,6 +498,7 @@ class TotTagGUI(tk.Frame):
       self.failed_devices = []
       self.use_daily_times = tk.IntVar()
       self.download_raw_data = tk.IntVar()
+      self.download_full_log = tk.IntVar()
       self.ble_command_queue = asyncio.Queue()
       self.ble_result_queue = queue.Queue()
       self.tottag_selection = tk.StringVar(self.master, 'Press "Scan for TotTags" to begin...')
@@ -588,6 +590,7 @@ class TotTagGUI(tk.Frame):
    def _download_logs(self):
       self._clear_canvas()
       self.download_raw_data.set(0)
+      self.download_full_log.set(0)
       prompt_area = tk.Frame(self.canvas)
       prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
       tk.Label(prompt_area, text="Download Deployment Log Files").grid(column=0, row=0, columnspan=4, sticky=tk.W+tk.E+tk.N+tk.S)
@@ -608,29 +611,34 @@ class TotTagGUI(tk.Frame):
       end_time_controls = tk.Frame(prompt_area)
       end_time_controls.grid(column=2, row=7, columnspan=2, sticky=tk.W+tk.E+tk.N+tk.S)
       ttk.Label(start_time_controls, text="Start Date: ").pack(side=tk.LEFT)
-      date_entry = DateEntry(start_time_controls, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
-      date_entry.pack(side=tk.LEFT)
-      date_entry.bind('<FocusIn>', self._focus_in)
-      date_entry.bind('<Button-1>', self._date_entry_clicked)
-      date_entry.bind("<<DateEntrySelected>>", self._date_entry_changed)
-      date_entry = DateEntry(end_time_controls, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
-      date_entry.pack(side=tk.RIGHT)
-      date_entry.bind('<FocusIn>', self._focus_in)
-      date_entry.bind('<Button-1>', self._date_entry_clicked)
-      date_entry.bind("<<DateEntrySelected>>", self._date_entry_changed)
+      date_entry_start = DateEntry(start_time_controls, textvariable=self.start_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
+      date_entry_start.pack(side=tk.LEFT)
+      date_entry_start.bind('<FocusIn>', self._focus_in)
+      date_entry_start.bind('<Button-1>', self._date_entry_clicked)
+      date_entry_start.bind("<<DateEntrySelected>>", self._date_entry_changed)
+      date_entry_end = DateEntry(end_time_controls, textvariable=self.end_date, selectmode='day', firstweekday='sunday', showweeknumbers=False, date_pattern='mm/dd/yyyy')
+      date_entry_end.pack(side=tk.RIGHT)
+      date_entry_end.bind('<FocusIn>', self._focus_in)
+      date_entry_end.bind('<Button-1>', self._date_entry_clicked)
+      date_entry_end.bind("<<DateEntrySelected>>", self._date_entry_changed)
       ttk.Label(end_time_controls, text="End Date: ").pack(side=tk.RIGHT)
-      ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=8, pady=5, sticky=tk.W+tk.N)
+      def change_dl_times_state(self):
+         date_entry_start['state'] = ['disabled' if self.download_full_log.get() else 'normal']
+         date_entry_end['state'] = ['disabled' if self.download_full_log.get() else 'normal']
+      ttk.Checkbutton(prompt_area, text="Download Full Logs", variable=self.download_full_log, command=partial(change_dl_times_state, self)).grid(column=0, columnspan=4, row=8, pady=(5, 0), sticky=tk.W+tk.N)
+      ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=9, pady=5, sticky=tk.W+tk.N)
       def begin_download(self):
          self.data_length = 0
          ble_issue_command(self.event_loop, self.ble_command_queue, 'DOWNLOAD')
          ble_issue_command(self.event_loop, self.ble_command_queue, {
             'dir': self.save_directory.get(),
             'raw': self.download_raw_data.get(),
+            'full': self.download_full_log.get(),
             'start': pack_datetime(str(tzlocal.get_localzone()), self.start_date.get(), "00:00", False),
             'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False) + 86400
          })
-      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=9)
-      ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=9)
+      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=10)
+      ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=10)
 
    def _create_new_experiment(self):
       self._clear_canvas()
@@ -726,6 +734,12 @@ class TotTagGUI(tk.Frame):
                   tk.messagebox.showerror('TotTag Error', 'ERROR: You have chosen the same label for multiple TotTags!')
                else:
                   chosen_labels.append(labels[i])
+         if not errors:
+            start_timestamp = int(datetime.datetime.strptime(self.start_date.get(), '%m/%d/%Y').astimezone(pytz.utc).timestamp())
+            end_timestamp = int(datetime.datetime.strptime(self.end_date.get(), '%m/%d/%Y').astimezone(pytz.utc).timestamp())
+            if end_timestamp - start_timestamp > 1814400:
+               tk.messagebox.showerror('TotTag Error', 'ERROR: Deployment duration cannot last longer than 21 days')
+               errors = True
          if not errors:
             details = {
                'start_time': pack_datetime(self.tottag_timezone.get(), self.start_date.get(), self.start_time.get(), False),
