@@ -227,7 +227,7 @@ static void handle_notification(app_notification_t notification)
       experiment_details_t details;
 
       // Transmit estimated total data length
-      storage_begin_reading(download_start_timestamp);
+      storage_begin_reading(download_start_timestamp, download_end_timestamp);
       storage_retrieve_experiment_details(&details);
       uint32_t total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
    #ifdef _TEST_IMU_DATA

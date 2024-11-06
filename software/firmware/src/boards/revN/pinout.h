@@ -69,7 +69,7 @@
 #define PIN_SWTRACE_3                               83
 #define PIN_SWTRACE_3_FUNCTION                      AM_HAL_PIN_83_SWTRACE3
 
-// Memory Storage (SPI)
+// Storage
 #define STORAGE_SPI_NUMBER                          5
 #define PIN_STORAGE_SPI_SCK                         47
 #define PIN_STORAGE_SPI_MISO                        49

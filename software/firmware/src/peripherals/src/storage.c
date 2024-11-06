@@ -21,10 +21,16 @@
 #define COMMAND_PROGRAM_EXECUTE                     0x10
 #define COMMAND_PAGE_DATA_READ                      0x13
 #define COMMAND_READ                                0x03
-#define COMMAND_WRITE_BBM_LUT                       0xA1
-#define COMMAND_READ_BBM_LUT                        0xA5
 #define COMMAND_ENABLE_RESET                        0x66
 #define COMMAND_RESET_DEVICE                        0x99
+
+#if REVISION_ID < REVISION_N
+#define COMMAND_WRITE_BBM_LUT                       0xA1
+#define COMMAND_READ_BBM_LUT                        0xA5
+#else
+#define COMMAND_ENTER_LOW_POWER_MODE                0xB9
+#define COMMAND_EXIT_LOW_POWER_MODE                 0xAB
+#endif
 
 #define STATUS_REGISTER_1                           0xA0
 #define STATUS_REGISTER_2                           0xB0
@@ -39,22 +45,32 @@
 #define STATUS_ERASE_FAILURE                        0b00000100
 #define STATUS_BUSY                                 0b00000001
 
-#define BBM_INTERNAL_LUT_NUM_ENTRIES                20
-#define BBM_EXTERNAL_LUT_NUM_ENTRIES                20
+#if REVISION_ID < REVISION_N
+#define BBM_LUT_NUM_ENTRIES                         20
 #define BBM_NUM_RESERVED_BLOCKS                     40
+#define BBM_TABLE_SIZE                              BBM_LUT_NUM_ENTRIES
+#else
+#define BBM_NUM_RESERVED_BLOCKS                     20
+#define BBM_TABLE_SIZE                              256
+#endif
 #define BBM_LUT_BASE_ADDRESS                        ((MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS) * MEMORY_PAGES_PER_BLOCK)
-#define BBM_MAX_NUM_BAD_BLOCKS                      80 // TODO: USE THIS IN NEW VERSION
+#define MEMORY_MAX_PAGE_ADDRESS                     (MEMORY_BLOCK_COUNT * MEMORY_PAGES_PER_BLOCK)
 
 
 // Helper Structures ---------------------------------------------------------------------------------------------------
 
+#if REVISION_ID < REVISION_N
 typedef struct __attribute__ ((__packed__)) { uint16_t lba, pba; } bbm_lut_t;
+#else
+typedef uint32_t bbm_lut_t;
+static volatile uint32_t bbm_index, bbm_storage_page;
+#endif
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static void *spi_handle;
-static bbm_lut_t bad_block_lookup_table_internal[BBM_INTERNAL_LUT_NUM_ENTRIES];
+static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES];
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
 static volatile bool is_reading, in_maintenance_mode, disabled;
@@ -167,6 +183,21 @@ static void wait_until_not_busy(void)
       am_hal_delay_us(10);
 }
 
+static void enter_low_power_mode(void)
+{
+#if REVISION_ID > REVISION_M
+   spi_write(COMMAND_ENTER_LOW_POWER_MODE, NULL, 0, NULL, 0);
+#endif
+}
+
+static void exit_low_power_mode(void)
+{
+#if REVISION_ID > REVISION_M
+   spi_write(COMMAND_EXIT_LOW_POWER_MODE, NULL, 0, NULL, 0);
+   wait_until_not_busy();
+#endif
+}
+
 static bool write_page_raw(const uint8_t *data, uint32_t page_number)
 {
    const uint16_t byte_offset = 0;
@@ -209,7 +240,19 @@ static bool transfer_block(uint32_t source, uint32_t destination, uint32_t num_p
    return true;
 }
 
-static void add_bad_block(uint16_t block_address)
+#if REVISION_ID < REVISION_N
+
+static bool is_bad_block(uint32_t block_address)
+{
+   // Search for the block address in the bad block lookup table
+   block_address = (block_address & 0x0000FFC0) >> 6;
+   for (uint32_t i = 0; i < BBM_LUT_NUM_ENTRIES; ++i)
+      if (bad_block_lookup_table[i].lba == (uint16_t)block_address)
+         return true;
+   return false;
+}
+
+static void add_bad_block(uint32_t block_address)
 {
    // Find first available workaround block
    uint16_t workaround_block = 0;
@@ -218,8 +261,8 @@ static void add_bad_block(uint16_t block_address)
       {
          // Ensure that the candidate block is not already in use
          workaround_block = (uint16_t)((page & 0x0000FFC0) >> 6);
-         for (uint32_t i = 0; i < BBM_INTERNAL_LUT_NUM_ENTRIES; ++i)
-            if (bad_block_lookup_table_internal[i].pba == workaround_block)
+         for (uint32_t i = 0; i < BBM_LUT_NUM_ENTRIES; ++i)
+            if (bad_block_lookup_table[i].pba == workaround_block)
             {
                workaround_block = 0;
                break;
@@ -229,9 +272,9 @@ static void add_bad_block(uint16_t block_address)
    // Update LUT with the workaround block
    if (workaround_block)
    {
-      block_address = (uint16_t)(((uint32_t)block_address & 0x0000FFC0) >> 6);
+      block_address = (block_address & 0x0000FFC0) >> 6;
       bbm_lut_t destination_address = {
-         .lba = ((block_address << 8) & 0xFF00) | ((block_address >> 8) & 0x00FF),
+         .lba = (uint16_t)(((block_address << 8) & 0xFF00) | ((block_address >> 8) & 0x00FF)),
          .pba = ((workaround_block << 8) & 0xFF00) | ((workaround_block >> 8) & 0x00FF)
       };
       spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
@@ -239,21 +282,83 @@ static void add_bad_block(uint16_t block_address)
       wait_until_not_busy();
 
       // Update the bad block lookup table
-      for (uint32_t i = 0; i < BBM_INTERNAL_LUT_NUM_ENTRIES; ++i)
-         if ((bad_block_lookup_table_internal[i].pba == 0) && (bad_block_lookup_table_internal[i].lba == 0))
+      for (uint32_t i = 0; i < BBM_LUT_NUM_ENTRIES; ++i)
+         if ((bad_block_lookup_table[i].pba == 0) && (bad_block_lookup_table[i].lba == 0))
          {
-            bad_block_lookup_table_internal[i].lba = block_address;
-            bad_block_lookup_table_internal[i].pba = workaround_block;
+            bad_block_lookup_table[i].lba = (uint16_t)block_address;
+            bad_block_lookup_table[i].pba = workaround_block;
             break;
          }
    }
 }
 
+#else
+
+static bool is_bad_block(uint32_t block_address)
+{
+   // Search for the block address in the bad block lookup table
+   block_address &= 0xFFFFFFC0;
+   for (uint32_t i = 0; i < bbm_index; ++i)
+      if (bad_block_lookup_table[i] == block_address)
+         return true;
+   return false;
+}
+
+static void add_bad_block(uint32_t block_address)
+{
+   // Disable memory page write protection
+   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   write_register(STATUS_REGISTER_1, 0b00000010);
+
+   // Erase the BBM LUT page and ensure that the command was successful
+   bool success = false;
+   while (!success)
+   {
+      const uint8_t page_number_reordered[] = {
+         (uint8_t)((bbm_storage_page & 0x00FF0000) >> 16),
+         (uint8_t)((bbm_storage_page & 0x0000FF00) >> 8),
+         (uint8_t)(bbm_storage_page & 0x000000FF)
+      };
+      wait_until_not_busy();
+      spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+      wait_until_not_busy();
+      if ((read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) == STATUS_ERASE_FAILURE)
+      {
+         uint32_t next_bbm_storage_page = (bbm_storage_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0;
+         while (is_bad_block(next_bbm_storage_page))
+            next_bbm_storage_page = (next_bbm_storage_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0;
+         if (next_bbm_storage_page < MEMORY_MAX_PAGE_ADDRESS)
+            bbm_storage_page = next_bbm_storage_page;
+         else
+            success = true;
+      }
+      else
+         success = true;
+   }
+
+   // Update the LUT with the bad block
+   bad_block_lookup_table[bbm_index++] = block_address & 0xFFFFFFC0;
+   memset(transfer_buffer, 0, sizeof(transfer_buffer));
+   memcpy(transfer_buffer, "BBM_", 4);
+   memcpy(transfer_buffer + 4, bad_block_lookup_table, sizeof(bad_block_lookup_table));
+   write_page_raw(transfer_buffer, bbm_storage_page);
+
+   // Re-enable memory page write protection
+   write_register(STATUS_REGISTER_1, 0b01111110);
+   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+}
+
+#endif
+
 static void write_page(uint16_t data_length)
 {
    // Disable memory page write protection
    if (!in_maintenance_mode)
+   {
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
    am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
    write_register(STATUS_REGISTER_1, 0b00000010);
    const uint32_t original_page = current_page;
@@ -276,9 +381,11 @@ static void write_page(uint16_t data_length)
       {
          // Transfer any already-written pages in the current block to the next block
          uint32_t next_block = ((current_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
+         while (is_bad_block(next_block))
+            next_block = ((next_block + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
          transfer_block(original_page & 0xFFFFFFC0, next_block, current_page & 0x003F);
          add_bad_block(current_page);
-         current_page = (current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
+         current_page = next_block | (current_page & 0x003F);
       }
    }
 
@@ -286,7 +393,10 @@ static void write_page(uint16_t data_length)
    write_register(STATUS_REGISTER_1, 0b01111110);
    am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
    if (!in_maintenance_mode)
+   {
+      enter_low_power_mode();
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   }
 }
 
 static void erase_block(uint32_t starting_page, uint32_t ending_page)
@@ -320,22 +430,6 @@ static void erase_block(uint32_t starting_page, uint32_t ending_page)
    // Re-enable memory page write protection
    write_register(STATUS_REGISTER_1, 0b01111110);
    am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
-}
-
-static void ensure_empty_memory(void)
-{
-   // Ensure that all memory blocks have been successfully erased
-   bool current_block_erased = false;
-   const uint32_t current_block = current_page & 0xFFFFFFC0;
-   for (uint32_t block = 0; block < (MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS); ++block)
-      if (!read_page(transfer_buffer, block * MEMORY_PAGES_PER_BLOCK) || (transfer_buffer[0] != 0xFF) || (transfer_buffer[1] != 0xFF))
-      {
-         erase_block(block * MEMORY_PAGES_PER_BLOCK, block * MEMORY_PAGES_PER_BLOCK);
-         if ((block * MEMORY_PAGES_PER_BLOCK) == current_block)
-            current_block_erased = true;
-      }
-   if (!current_block_erased)
-      erase_block(current_page, current_page);
 }
 
 static bool is_first_boot(void)
@@ -410,21 +504,45 @@ void storage_init(void)
    write_register(STATUS_REGISTER_2, status_register_2_bits);
 
    // Retrieve the list of existing bad storage blocks
+#if REVISION_ID < REVISION_N
    uint8_t dummy_value = 0;
-   spi_read(COMMAND_READ_BBM_LUT, &dummy_value, 1, &bad_block_lookup_table_internal, sizeof(bad_block_lookup_table_internal));
-   for (uint32_t i = 0; i < BBM_INTERNAL_LUT_NUM_ENTRIES; ++i)
+   spi_read(COMMAND_READ_BBM_LUT, &dummy_value, 1, &bad_block_lookup_table, sizeof(bad_block_lookup_table));
+   for (uint32_t i = 0; i < BBM_LUT_NUM_ENTRIES; ++i)
    {
-      bad_block_lookup_table_internal[i].lba = (((bad_block_lookup_table_internal[i].lba << 8) & 0xFF00) | ((bad_block_lookup_table_internal[i].lba >> 8) & 0x00FF)) & 0x3FF;
-      bad_block_lookup_table_internal[i].pba = (((bad_block_lookup_table_internal[i].pba << 8) & 0xFF00) | ((bad_block_lookup_table_internal[i].pba >> 8) & 0x00FF)) & 0x3FF;
+      bad_block_lookup_table[i].lba = (((bad_block_lookup_table[i].lba << 8) & 0xFF00) | ((bad_block_lookup_table[i].lba >> 8) & 0x00FF)) & 0x3FF;
+      bad_block_lookup_table[i].pba = (((bad_block_lookup_table[i].pba << 8) & 0xFF00) | ((bad_block_lookup_table[i].pba >> 8) & 0x00FF)) & 0x3FF;
    }
+#else
+   bbm_index = 0;
+   memset(bad_block_lookup_table, 0, sizeof(bad_block_lookup_table));
+   for (bbm_storage_page = MEMORY_MAX_PAGE_ADDRESS - MEMORY_PAGES_PER_BLOCK; bbm_storage_page >= BBM_LUT_BASE_ADDRESS; bbm_storage_page -= MEMORY_PAGES_PER_BLOCK)
+      if (read_page(transfer_buffer, bbm_storage_page) && (memcmp(transfer_buffer, "BBM_", 4) == 0))
+      {
+         memcpy(bad_block_lookup_table, transfer_buffer + 4, sizeof(bad_block_lookup_table));
+         break;
+      }
+#endif
 
    // Check for bad storage blocks if this is the first boot
    if (is_first_boot())
    {
       write_register(STATUS_REGISTER_1, 0b00000010);
+#if REVISION_ID < REVISION_N
       for (uint32_t page = 0; page < BBM_LUT_BASE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
          if (!read_page(transfer_buffer, page) || (transfer_buffer[0] != 0xFF))
             add_bad_block(page);
+#else
+      for (uint32_t page = 0; page < MEMORY_MAX_PAGE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
+         if (!read_page(transfer_buffer, page) || (transfer_buffer[0] != 0xFF))
+            bad_block_lookup_table[bbm_index++] = page;
+      bbm_storage_page = BBM_LUT_BASE_ADDRESS;
+      while (is_bad_block(bbm_storage_page))
+         bbm_storage_page = (bbm_storage_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0;
+      memset(transfer_buffer, 0, sizeof(transfer_buffer));
+      memcpy(transfer_buffer, "BBM_", 4);
+      memcpy(transfer_buffer + 4, bad_block_lookup_table, sizeof(bad_block_lookup_table));
+      write_page_raw(transfer_buffer, bbm_storage_page);
+#endif
       write_register(STATUS_REGISTER_1, 0b01111110);
    }
 
@@ -477,6 +595,7 @@ void storage_init(void)
    }
 
    // Put the storage SPI peripheral into Deep Sleep mode and disable writes
+   enter_low_power_mode();
    configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
    am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
 }
@@ -485,7 +604,10 @@ void storage_deinit(void)
 {
    // Disable all SPI communications
    if (!in_maintenance_mode)
+   {
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
    am_hal_iom_uninitialize(spi_handle);
    is_reading = in_maintenance_mode = false;
 }
@@ -502,8 +624,10 @@ void storage_store_experiment_details(const experiment_details_t *details)
    if (in_maintenance_mode)
    {
       // Erase all existing used pages and update storage metadata
-      ensure_empty_memory();
+      erase_block(0, BBM_LUT_BASE_ADDRESS - MEMORY_PAGES_PER_BLOCK);
       starting_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+      while (is_bad_block(starting_page))
+         starting_page = ((starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
       cache_index = 0;
 
@@ -531,6 +655,8 @@ void storage_store_experiment_details(const experiment_details_t *details)
             erase_block(starting_page, starting_page);
             add_bad_block(starting_page);
             starting_page = (starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
+            while (is_bad_block(starting_page))
+               starting_page = ((starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
             current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
          }
       }
@@ -571,6 +697,8 @@ void storage_flush(bool write_partial_pages)
       write_page(MEMORY_NUM_DATA_BYTES_PER_PAGE);
       cache_index -= MEMORY_NUM_DATA_BYTES_PER_PAGE;
       current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
+      while (is_bad_block(current_page))
+         current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       memmove(cache, cache + MEMORY_NUM_DATA_BYTES_PER_PAGE, cache_index);
    }
 
@@ -583,13 +711,19 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
 {
    // Retrieve experiment details
    if (!in_maintenance_mode)
+   {
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
    if (read_page(transfer_buffer, starting_page))
       memcpy(details, transfer_buffer + 4, sizeof(*details));
    else
       memset(details, 0, sizeof(*details));
    if (!in_maintenance_mode)
+   {
+      enter_low_power_mode();
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   }
 }
 
 void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp)
@@ -607,7 +741,10 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
    // Search for the page that contains the starting timestamp
    bool timestamp_found = !starting_timestamp;
    while (!timestamp_found && (reading_page != current_page))
-      if (read_page(transfer_buffer, reading_page))
+   {
+      if (is_bad_block(reading_page))
+         reading_page = ((reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+      else if (read_page(transfer_buffer, reading_page))
       {
          bool found_valid_timestamp = false;
          uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
@@ -633,6 +770,9 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
          if (!found_valid_timestamp)
             reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
       }
+      else
+         reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+   }
 #endif
 }
 
@@ -645,7 +785,10 @@ void storage_end_reading(void)
 void storage_enter_maintenance_mode(void)
 {
    if (!in_maintenance_mode)
+   {
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
    in_maintenance_mode = true;
 }
 
@@ -653,7 +796,10 @@ void storage_exit_maintenance_mode(void)
 {
    storage_end_reading();
    if (in_maintenance_mode)
+   {
+      enter_low_power_mode();
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   }
    in_maintenance_mode = false;
 }
 
@@ -679,7 +825,10 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       last_reading_page = reading_page;
       uint32_t previous_reading_page = last_reading_page;
       while (!timestamp_found && (last_reading_page != current_page))
-         if (read_page(transfer_buffer, last_reading_page))
+      {
+         if (is_bad_block(last_reading_page))
+            last_reading_page = ((last_reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+         else if (read_page(transfer_buffer, last_reading_page))
          {
             bool found_valid_timestamp = false;
             uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
@@ -707,6 +856,9 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
             if (!found_valid_timestamp)
                last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
          }
+         else
+            last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+      }
    }
    else
    {
@@ -714,9 +866,14 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       last_reading_page = current_page;
       while (page != current_page)
       {
-         if (read_page(transfer_buffer, page))
-            log_data_size += *(uint16_t*)(transfer_buffer+2);
-         page = (page + 1) % BBM_LUT_BASE_ADDRESS;
+         if (is_bad_block(page))
+            page = ((page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+         else
+         {
+            if (read_page(transfer_buffer, page))
+               log_data_size += *(uint16_t*)(transfer_buffer+2);
+            page = (page + 1) % BBM_LUT_BASE_ADDRESS;
+         }
       }
    }
    return (reading_page <= last_reading_page) ? (1 + last_reading_page - reading_page) : (BBM_LUT_BASE_ADDRESS - reading_page + last_reading_page + 1);
@@ -765,6 +922,8 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    else
    {
       // Read the next page of memory and update the reading metadata
+      while (is_bad_block(reading_page))
+         reading_page = ((reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       if (read_page(buffer, reading_page))
       {
          num_bytes_retrieved = *(uint16_t*)(buffer+2);
