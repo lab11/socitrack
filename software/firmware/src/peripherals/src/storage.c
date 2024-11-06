@@ -567,11 +567,12 @@ void storage_init(void)
          current_page = 0;
 
       // Search for the last page containing valid data
-      bool curr_page_found = false;
-      for ( ; !curr_page_found && (current_page != starting_page); current_page = (current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS)
-         if (!read_page(transfer_buffer, current_page) || memcmp(transfer_buffer, "DA", 2))
+      for (uint32_t curr_page_found_count = 0; (current_page != starting_page) && (curr_page_found_count < 2); current_page = (current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS)
+         if (read_page(transfer_buffer, current_page) && (memcmp(transfer_buffer, "DA", 2) == 0))
+            curr_page_found_count = 0;
+         else if (++curr_page_found_count == 2)
          {
-            curr_page_found = true;
+            current_page = (current_page ? current_page : BBM_LUT_BASE_ADDRESS) - MEMORY_PAGES_PER_BLOCK;
             current_page = (current_page ? current_page : BBM_LUT_BASE_ADDRESS) - MEMORY_PAGES_PER_BLOCK;
             for (uint32_t i = 0; i < MEMORY_PAGES_PER_BLOCK; ++i)
                if (read_page(transfer_buffer, current_page + i) && ((memcmp(transfer_buffer, "META", 4) == 0) || (memcmp(transfer_buffer, "DA", 2) == 0)))
@@ -752,7 +753,7 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
          {
             const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
             const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
-            if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && (potential_timestamp1 < ending_timestamp) && ((potential_timestamp2 - potential_timestamp1) <= 600000))
+            if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && (potential_timestamp1 < ending_timestamp) && ((potential_timestamp2 - potential_timestamp1) <= (BATTERY_CHECK_INTERVAL_S * 1000)))
             {
                found_valid_timestamp = true;
                if (potential_timestamp1 >= starting_timestamp)
@@ -837,7 +838,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
             {
                const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
                const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
-               if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && ((potential_timestamp2 - potential_timestamp1) <= 600000))
+               if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && ((potential_timestamp2 - potential_timestamp1) <= (BATTERY_CHECK_INTERVAL_S * 1000)))
                {
                   found_valid_timestamp = true;
                   if (potential_timestamp1 > ending_timestamp)
