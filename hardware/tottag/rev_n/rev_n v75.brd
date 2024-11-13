@@ -37,9 +37,9 @@
 <layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
-<layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
+<layer number="29" name="tStop" color="7" fill="3" visible="yes" active="yes"/>
 <layer number="30" name="bStop" color="7" fill="6" visible="no" active="yes"/>
-<layer number="31" name="tCream" color="7" fill="4" visible="no" active="yes"/>
+<layer number="31" name="tCream" color="7" fill="4" visible="yes" active="yes"/>
 <layer number="32" name="bCream" color="7" fill="5" visible="no" active="yes"/>
 <layer number="33" name="tFinish" color="6" fill="3" visible="no" active="yes"/>
 <layer number="34" name="bFinish" color="6" fill="6" visible="no" active="yes"/>
@@ -2981,115 +2981,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </package3d>
 </packages3d>
 </library>
-<library name="switches" urn="urn:adsk.eagle:library:20878764">
-<description>&lt;b&gt;LAB11&lt;/b&gt; - Switches.</description>
-<packages>
-<package name="SKY13373" urn="urn:adsk.eagle:footprint:38871634/2" library_version="5">
-<polygon width="0.1524" layer="1" pour="solid">
-<vertex x="-0.27400625" y="-0.3038"/>
-<vertex x="0.27400625" y="-0.3038"/>
-<vertex x="0.287065625" y="-0.30173125"/>
-<vertex x="0.29343125" y="-0.2984875"/>
-<vertex x="0.2984875" y="-0.29343125"/>
-<vertex x="0.30173125" y="-0.287065625"/>
-<vertex x="0.3038" y="-0.27400625"/>
-<vertex x="0.3038" y="0.27400625"/>
-<vertex x="0.30173125" y="0.287065625"/>
-<vertex x="0.2984875" y="0.29343125"/>
-<vertex x="0.29343125" y="0.2984875"/>
-<vertex x="0.287065625" y="0.30173125"/>
-<vertex x="0.27400625" y="0.3038"/>
-<vertex x="-0.129253125" y="0.3038"/>
-<vertex x="-0.129253125" y="0.303434375"/>
-<vertex x="-0.131215625" y="0.2987"/>
-<vertex x="-0.131884375" y="0.2936125"/>
-<vertex x="-0.13696875" y="0.28480625"/>
-<vertex x="-0.149121875" y="0.255465625"/>
-<vertex x="-0.151753125" y="0.2456375"/>
-<vertex x="-0.154878125" y="0.241565625"/>
-<vertex x="-0.156834375" y="0.236840625"/>
-<vertex x="-0.1640125" y="0.229659375"/>
-<vertex x="-0.183371875" y="0.204434375"/>
-<vertex x="-0.18845" y="0.1956375"/>
-<vertex x="-0.192515625" y="0.192515625"/>
-<vertex x="-0.1956375" y="0.18845"/>
-<vertex x="-0.204434375" y="0.183371875"/>
-<vertex x="-0.229659375" y="0.1640125"/>
-<vertex x="-0.236840625" y="0.156834375"/>
-<vertex x="-0.241565625" y="0.154878125"/>
-<vertex x="-0.2456375" y="0.151753125"/>
-<vertex x="-0.255465625" y="0.149121875"/>
-<vertex x="-0.28480625" y="0.13696875"/>
-<vertex x="-0.2936125" y="0.131884375"/>
-<vertex x="-0.2987" y="0.131215625"/>
-<vertex x="-0.303434375" y="0.129253125"/>
-<vertex x="-0.3038" y="0.129253125"/>
-<vertex x="-0.3038" y="-0.27400625"/>
-<vertex x="-0.30173125" y="-0.287065625"/>
-<vertex x="-0.2984875" y="-0.29343125"/>
-<vertex x="-0.29343125" y="-0.2984875"/>
-<vertex x="-0.287065625" y="-0.30173125"/>
-</polygon>
-<smd name="11" x="0" y="0.93" dx="0.2" dy="0.44" layer="1"/>
-<smd name="10" x="0.5" y="0.93" dx="0.2" dy="0.44" layer="1"/>
-<smd name="12" x="-0.5" y="0.93" dx="0.2" dy="0.44" layer="1"/>
-<smd name="4" x="-0.5" y="-0.93" dx="0.2" dy="0.44" layer="1"/>
-<smd name="5" x="0" y="-0.93" dx="0.2" dy="0.44" layer="1"/>
-<smd name="6" x="0.5" y="-0.93" dx="0.2" dy="0.44" layer="1"/>
-<smd name="7" x="0.93" y="-0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
-<smd name="9" x="0.93" y="0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
-<smd name="8" x="0.93" y="0" dx="0.2" dy="0.44" layer="1" rot="R90"/>
-<smd name="2" x="-0.93" y="0" dx="0.2" dy="0.44" layer="1" rot="R90"/>
-<smd name="1" x="-0.93" y="0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
-<smd name="3" x="-0.93" y="-0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
-<smd name="PAD" x="0" y="0" dx="0.2" dy="0.44" layer="1"/>
-<wire x1="-1" y1="1" x2="1" y2="1" width="0.1524" layer="21"/>
-<wire x1="1" y1="1" x2="1" y2="-1" width="0.1524" layer="21"/>
-<wire x1="1" y1="-1" x2="-1" y2="-1" width="0.1524" layer="21"/>
-<wire x1="-1" y1="-1" x2="-1" y2="1" width="0.1524" layer="21"/>
-<circle x="-1.5" y="1" radius="0.14141875" width="0.1524" layer="21"/>
-<text x="0" y="1.778" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-1.778" size="0.762" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center">&gt;VALUE</text>
-</package>
-<package name="TDFN2X2X0P6-8" urn="urn:adsk.eagle:footprint:38873993/1" library_version="4">
-<wire x1="-1" y1="1" x2="1" y2="1" width="0.1524" layer="21"/>
-<wire x1="1" y1="1" x2="1" y2="-0.96148125" width="0.1524" layer="21"/>
-<wire x1="1" y1="-0.96148125" x2="-1" y2="-0.96148125" width="0.1524" layer="21"/>
-<wire x1="-1" y1="-0.96148125" x2="-1" y2="1" width="0.1524" layer="21"/>
-<smd name="1" x="-0.8" y="0.75" dx="0.4" dy="0.24" layer="1"/>
-<smd name="2" x="-0.8" y="0.25" dx="0.4" dy="0.24" layer="1"/>
-<smd name="3" x="-0.8" y="-0.25" dx="0.4" dy="0.24" layer="1"/>
-<smd name="4" x="-0.8" y="-0.75" dx="0.4" dy="0.24" layer="1"/>
-<smd name="5" x="0.8" y="-0.75" dx="0.4" dy="0.24" layer="1"/>
-<smd name="6" x="0.8" y="-0.25" dx="0.4" dy="0.24" layer="1"/>
-<smd name="7" x="0.8" y="0.25" dx="0.4" dy="0.24" layer="1"/>
-<smd name="8" x="0.8" y="0.75" dx="0.4" dy="0.24" layer="1"/>
-<smd name="PAD" x="0" y="0" dx="0.4" dy="0.24" layer="1"/>
-<polygon width="0.1524" layer="1" pour="solid">
-<vertex x="-0.3238" y="-0.6488"/>
-<vertex x="0.3238" y="-0.6488"/>
-<vertex x="0.3238" y="0.6488"/>
-<vertex x="-0.1684375" y="0.6488"/>
-<vertex x="-0.3238" y="0.4934375"/>
-</polygon>
-<circle x="-1.524" y="1.524" radius="0.215525" width="0.1524" layer="21"/>
-<text x="0" y="2.032" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
-<text x="0" y="-2.032" size="0.762" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center">&gt;VALUE</text>
-</package>
-</packages>
-<packages3d>
-<package3d name="SKY13373" urn="urn:adsk.eagle:package:38871635/2" type="model">
-<packageinstances>
-<packageinstance name="SKY13373"/>
-</packageinstances>
-</package3d>
-<package3d name="TDFN2X2X0P6-8" urn="urn:adsk.eagle:package:38873994/1" type="model">
-<packageinstances>
-<packageinstance name="TDFN2X2X0P6-8"/>
-</packageinstances>
-</package3d>
-</packages3d>
-</library>
 <library name="antennas" urn="urn:adsk.eagle:library:21218934">
 <packages>
 <package name="AMCA72-2R470G-S1F-T" urn="urn:adsk.eagle:footprint:21218935/2" library_version="5">
@@ -3939,11 +3830,180 @@ See datasheet for
 <rectangle x1="-0.18" y1="0.79" x2="0.18" y2="1.15" layer="31"/>
 <rectangle x1="-0.18" y1="-1.15" x2="0.18" y2="-0.79" layer="31"/>
 </package>
+<package name="TDFN2X2X0P6-8" urn="urn:adsk.eagle:footprint:38873993/2" library_version="20">
+<wire x1="-1" y1="1" x2="1" y2="1" width="0.1524" layer="21"/>
+<wire x1="1" y1="1" x2="1" y2="-0.96148125" width="0.1524" layer="21"/>
+<wire x1="1" y1="-0.96148125" x2="-1" y2="-0.96148125" width="0.1524" layer="21"/>
+<wire x1="-1" y1="-0.96148125" x2="-1" y2="1" width="0.1524" layer="21"/>
+<smd name="1" x="-0.8" y="0.75" dx="0.4" dy="0.24" layer="1"/>
+<smd name="2" x="-0.8" y="0.25" dx="0.4" dy="0.24" layer="1"/>
+<smd name="3" x="-0.8" y="-0.25" dx="0.4" dy="0.24" layer="1"/>
+<smd name="4" x="-0.8" y="-0.75" dx="0.4" dy="0.24" layer="1"/>
+<smd name="5" x="0.8" y="-0.75" dx="0.4" dy="0.24" layer="1"/>
+<smd name="6" x="0.8" y="-0.25" dx="0.4" dy="0.24" layer="1"/>
+<smd name="7" x="0.8" y="0.25" dx="0.4" dy="0.24" layer="1"/>
+<smd name="8" x="0.8" y="0.75" dx="0.4" dy="0.24" layer="1"/>
+<smd name="PAD" x="0" y="0" dx="0.4" dy="0.24" layer="1"/>
+<polygon width="0.1524" layer="1" pour="solid">
+<vertex x="-0.3238" y="-0.6488"/>
+<vertex x="0.3238" y="-0.6488"/>
+<vertex x="0.3238" y="0.6488"/>
+<vertex x="-0.1684375" y="0.6488"/>
+<vertex x="-0.3238" y="0.4934375"/>
+</polygon>
+<polygon width="0.1524" layer="29" pour="solid">
+<vertex x="-0.3438" y="-0.6638"/>
+<vertex x="0.3438" y="-0.6638"/>
+<vertex x="0.3438" y="0.6638"/>
+<vertex x="-0.1684375" y="0.6638"/>
+<vertex x="-0.3438" y="0.4884375"/>
+</polygon>
+<circle x="-1.524" y="1.524" radius="0.215525" width="0.1524" layer="21"/>
+<text x="0" y="2.032" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-2.032" size="0.762" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center">&gt;VALUE</text>
+<rectangle x1="-0.2" y1="0.4" x2="0.2" y2="0.58" layer="31"/>
+<rectangle x1="-0.22" y1="-0.6" x2="0.24" y2="-0.42" layer="31"/>
+</package>
+<package name="SKY13373" urn="urn:adsk.eagle:footprint:38871634/3" library_version="20">
+<polygon width="0.1524" layer="1" pour="solid">
+<vertex x="-0.27400625" y="-0.3038"/>
+<vertex x="0.27400625" y="-0.3038"/>
+<vertex x="0.287065625" y="-0.30173125"/>
+<vertex x="0.29343125" y="-0.2984875"/>
+<vertex x="0.2984875" y="-0.29343125"/>
+<vertex x="0.30173125" y="-0.287065625"/>
+<vertex x="0.3038" y="-0.27400625"/>
+<vertex x="0.3038" y="0.27400625"/>
+<vertex x="0.30173125" y="0.287065625"/>
+<vertex x="0.2984875" y="0.29343125"/>
+<vertex x="0.29343125" y="0.2984875"/>
+<vertex x="0.287065625" y="0.30173125"/>
+<vertex x="0.27400625" y="0.3038"/>
+<vertex x="-0.129253125" y="0.3038"/>
+<vertex x="-0.129253125" y="0.303434375"/>
+<vertex x="-0.131215625" y="0.2987"/>
+<vertex x="-0.131884375" y="0.2936125"/>
+<vertex x="-0.13696875" y="0.28480625"/>
+<vertex x="-0.149121875" y="0.255465625"/>
+<vertex x="-0.151753125" y="0.2456375"/>
+<vertex x="-0.154878125" y="0.241565625"/>
+<vertex x="-0.156834375" y="0.236840625"/>
+<vertex x="-0.1640125" y="0.229659375"/>
+<vertex x="-0.183371875" y="0.204434375"/>
+<vertex x="-0.18845" y="0.1956375"/>
+<vertex x="-0.192515625" y="0.192515625"/>
+<vertex x="-0.1956375" y="0.18845"/>
+<vertex x="-0.204434375" y="0.183371875"/>
+<vertex x="-0.229659375" y="0.1640125"/>
+<vertex x="-0.236840625" y="0.156834375"/>
+<vertex x="-0.241565625" y="0.154878125"/>
+<vertex x="-0.2456375" y="0.151753125"/>
+<vertex x="-0.255465625" y="0.149121875"/>
+<vertex x="-0.28480625" y="0.13696875"/>
+<vertex x="-0.2936125" y="0.131884375"/>
+<vertex x="-0.2987" y="0.131215625"/>
+<vertex x="-0.303434375" y="0.129253125"/>
+<vertex x="-0.3038" y="0.129253125"/>
+<vertex x="-0.3038" y="-0.27400625"/>
+<vertex x="-0.30173125" y="-0.287065625"/>
+<vertex x="-0.2984875" y="-0.29343125"/>
+<vertex x="-0.29343125" y="-0.2984875"/>
+<vertex x="-0.287065625" y="-0.30173125"/>
+</polygon>
+<polygon width="0.1524" layer="29" pour="solid">
+<vertex x="-0.275003125" y="-0.3638"/>
+<vertex x="0.275003125" y="-0.3638"/>
+<vertex x="0.30153125" y="-0.36030625"/>
+<vertex x="0.321571875" y="-0.35200625"/>
+<vertex x="0.338790625" y="-0.338790625"/>
+<vertex x="0.35200625" y="-0.321571875"/>
+<vertex x="0.36030625" y="-0.30153125"/>
+<vertex x="0.3638" y="-0.275003125"/>
+<vertex x="0.3638" y="0.275003125"/>
+<vertex x="0.36030625" y="0.30153125"/>
+<vertex x="0.35200625" y="0.321571875"/>
+<vertex x="0.338790625" y="0.338790625"/>
+<vertex x="0.321571875" y="0.35200625"/>
+<vertex x="0.30153125" y="0.36030625"/>
+<vertex x="0.275003125" y="0.3638"/>
+<vertex x="-0.174" y="0.3638"/>
+<vertex x="-0.180884375" y="0.362709375"/>
+<vertex x="-0.181675" y="0.36230625"/>
+<vertex x="-0.18230625" y="0.361675"/>
+<vertex x="-0.182709375" y="0.360884375"/>
+<vertex x="-0.18351875" y="0.355771875"/>
+<vertex x="-0.189165625" y="0.320128125"/>
+<vertex x="-0.19011875" y="0.30800625"/>
+<vertex x="-0.191521875" y="0.30525625"/>
+<vertex x="-0.192003125" y="0.302209375"/>
+<vertex x="-0.19835625" y="0.291840625"/>
+<vertex x="-0.209840625" y="0.2693"/>
+<vertex x="-0.214496875" y="0.258059375"/>
+<vertex x="-0.21668125" y="0.255875"/>
+<vertex x="-0.218084375" y="0.253121875"/>
+<vertex x="-0.22734375" y="0.2452125"/>
+<vertex x="-0.24521875" y="0.2273375"/>
+<vertex x="-0.253121875" y="0.218084375"/>
+<vertex x="-0.255875" y="0.21668125"/>
+<vertex x="-0.258059375" y="0.214496875"/>
+<vertex x="-0.2693" y="0.209840625"/>
+<vertex x="-0.291840625" y="0.19835625"/>
+<vertex x="-0.302209375" y="0.192003125"/>
+<vertex x="-0.30525625" y="0.191521875"/>
+<vertex x="-0.30800625" y="0.19011875"/>
+<vertex x="-0.320128125" y="0.189165625"/>
+<vertex x="-0.360884375" y="0.182709375"/>
+<vertex x="-0.361675" y="0.18230625"/>
+<vertex x="-0.36230625" y="0.181675"/>
+<vertex x="-0.362709375" y="0.180884375"/>
+<vertex x="-0.3638" y="0.174"/>
+<vertex x="-0.3638" y="-0.275003125"/>
+<vertex x="-0.36030625" y="-0.30153125"/>
+<vertex x="-0.35200625" y="-0.321571875"/>
+<vertex x="-0.338790625" y="-0.338790625"/>
+<vertex x="-0.321571875" y="-0.35200625"/>
+<vertex x="-0.30153125" y="-0.36030625"/>
+</polygon>
+<smd name="11" x="0" y="0.93" dx="0.2" dy="0.44" layer="1"/>
+<smd name="10" x="0.5" y="0.93" dx="0.2" dy="0.44" layer="1"/>
+<smd name="12" x="-0.5" y="0.93" dx="0.2" dy="0.44" layer="1"/>
+<smd name="4" x="-0.5" y="-0.93" dx="0.2" dy="0.44" layer="1"/>
+<smd name="5" x="0" y="-0.93" dx="0.2" dy="0.44" layer="1"/>
+<smd name="6" x="0.5" y="-0.93" dx="0.2" dy="0.44" layer="1"/>
+<smd name="7" x="0.93" y="-0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
+<smd name="9" x="0.93" y="0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
+<smd name="8" x="0.93" y="0" dx="0.2" dy="0.44" layer="1" rot="R90"/>
+<smd name="2" x="-0.93" y="0" dx="0.2" dy="0.44" layer="1" rot="R90"/>
+<smd name="1" x="-0.93" y="0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
+<smd name="3" x="-0.93" y="-0.5" dx="0.2" dy="0.44" layer="1" rot="R90"/>
+<smd name="PAD" x="0" y="0" dx="0.2" dy="0.44" layer="1"/>
+<wire x1="-1" y1="1" x2="1" y2="1" width="0.1524" layer="21"/>
+<wire x1="1" y1="1" x2="1" y2="-1" width="0.1524" layer="21"/>
+<wire x1="1" y1="-1" x2="-1" y2="-1" width="0.1524" layer="21"/>
+<wire x1="-1" y1="-1" x2="-1" y2="1" width="0.1524" layer="21"/>
+<circle x="-1.5" y="1" radius="0.14141875" width="0.1524" layer="21"/>
+<text x="0" y="1.778" size="0.762" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-1.778" size="0.762" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center">&gt;VALUE</text>
+<rectangle x1="-0.34" y1="-0.22" x2="-0.26" y2="0.16" layer="31"/>
+<rectangle x1="-0.2" y1="-0.34" x2="0.24" y2="-0.28" layer="31"/>
+<rectangle x1="0.26" y1="-0.22" x2="0.34" y2="0.22" layer="31"/>
+<rectangle x1="-0.16" y1="0.28" x2="0.3" y2="0.34" layer="31"/>
+</package>
 </packages>
 <packages3d>
 <package3d name="MM8030-2610" urn="urn:adsk.eagle:package:40585162/3" type="box">
 <packageinstances>
 <packageinstance name="MM8030-2610"/>
+</packageinstances>
+</package3d>
+<package3d name="TDFN2X2X0P6-8" urn="urn:adsk.eagle:package:38873994/2" type="model">
+<packageinstances>
+<packageinstance name="TDFN2X2X0P6-8"/>
+</packageinstances>
+</package3d>
+<package3d name="SKY13373" urn="urn:adsk.eagle:package:38871635/3" type="model">
+<packageinstances>
+<packageinstance name="SKY13373"/>
 </packageinstances>
 </package3d>
 </packages3d>
@@ -4434,7 +4494,7 @@ design rules under a new name.</description>
 <attribute name="NAME" x="25.5555" y="4.191" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
 <attribute name="VALUE" x="25.5555" y="5.3086" size="1.016" layer="27" font="vector" ratio="12" rot="R180" align="bottom-center"/>
 </element>
-<element name="S2" library="switches" library_urn="urn:adsk.eagle:library:20878764" package="SKY13373" package3d_urn="urn:adsk.eagle:package:38871635/2" value="SKY13373" x="0.4064" y="6.2992" smashed="yes" rot="R90">
+<element name="S2" library="switches" library_urn="urn:adsk.wipprod:fs.file:vf.sV98CE8UT7SakaUTJeLD4w" package="SKY13373" package3d_urn="urn:adsk.eagle:package:38871635/3" value="SKY13373" x="0.4064" y="6.2992" smashed="yes" rot="R90">
 <attribute name="MANUFACTURER" value="Skyworks" x="0.4064" y="6.2992" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="MPN" value="SKY13373-460LF" x="0.4064" y="6.2992" size="1.778" layer="27" rot="R90" display="off"/>
 <attribute name="NAME" x="-1.3716" y="6.2992" size="0.508" layer="25" font="vector" ratio="18" rot="R90" align="bottom-center"/>
@@ -4469,7 +4529,7 @@ design rules under a new name.</description>
 </element>
 <element name="TP4" library="headers" package="PAD.03X.03" value="TEST-POINT" x="-16.0528" y="10.16" smashed="yes">
 </element>
-<element name="S3" library="switches" library_urn="urn:adsk.eagle:library:20878764" package="TDFN2X2X0P6-8" package3d_urn="urn:adsk.eagle:package:38873994/1" value="SIP3241XSIP32414" x="-11.8624" y="23.072" smashed="yes">
+<element name="S3" library="switches" library_urn="urn:adsk.wipprod:fs.file:vf.sV98CE8UT7SakaUTJeLD4w" package="TDFN2X2X0P6-8" package3d_urn="urn:adsk.eagle:package:38873994/2" value="SIP3241XSIP32414" x="-11.8624" y="23.072" smashed="yes">
 <attribute name="MANUFACTURER" value="Vishay" x="-11.8624" y="23.072" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="SIP32414DNP-T1-GE4" x="-11.8624" y="23.072" size="1.778" layer="27" display="off"/>
 <attribute name="NAME" x="-11.1258" y="24.2404" size="0.508" layer="25" font="vector" ratio="18" align="bottom-center"/>
