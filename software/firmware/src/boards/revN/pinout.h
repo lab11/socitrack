@@ -46,8 +46,8 @@
 #define PIN_IMU_SPI_CS_FUNCTION                     AM_HAL_PIN_72_NCE72
 #define PIN_IMU_INTERRUPT                           17
 #define PIN_IMU_RESET                               65
-#define PIN_IMU_BOOT                                13  // TODO: WHY?
-#define PIN_IMU_WAKEUP                              63  // TODO: WHY?
+#define PIN_IMU_BOOT                                13
+#define PIN_IMU_WAKEUP                              63
 
 // LEDs
 #define PIN_LED1_RED                                53

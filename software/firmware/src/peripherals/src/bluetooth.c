@@ -58,9 +58,7 @@ enum
 {
    TOTTAG_GATT_SERVICE_CHANGED_CCC_IDX,
    TOTTAG_RANGING_CCC_IDX,
-#ifdef _LIVE_IMU_DATA
    TOTTAG_IMU_DATA_CCC_IDX,
-#endif
    TOTTAG_MAINTENANCE_RESULT_CCC_IDX,
    TOTTAG_NUM_CCC_CHARACTERISTICS
 };
@@ -69,9 +67,7 @@ static const attsCccSet_t characteristicSet[TOTTAG_NUM_CCC_CHARACTERISTICS] =
 {
    { GATT_SERVICE_CHANGED_CCC_HANDLE,  ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE },
    { RANGES_CCC_HANDLE,                  ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
-#ifdef _LIVE_IMU_DATA
    { IMU_DATA_CCC_HANDLE,                ATT_CLIENT_CFG_NOTIFY,  DM_SEC_LEVEL_NONE },
-#endif
    { MAINTENANCE_RESULT_CCC_HANDLE,    ATT_CLIENT_CFG_INDICATE,  DM_SEC_LEVEL_NONE }
 };
 
@@ -229,14 +225,20 @@ static void cccCallback(attsCccEvt_t *pEvt)
 {
    // Handle various BLE notification requests
    print("TotTag BLE: cccCallback: index = %d, handle = %d, value = %d\n", pEvt->idx, pEvt->handle, pEvt->value);
-   if (pEvt->idx == TOTTAG_RANGING_CCC_IDX)
-      ranges_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
-#ifdef _LIVE_IMU_DATA
-   else if (pEvt->idx == TOTTAG_IMU_DATA_CCC_IDX)
-      imu_data_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
-#endif
-   else if (pEvt->idx == TOTTAG_MAINTENANCE_RESULT_CCC_IDX)
-      data_requested = (pEvt->value == ATT_CLIENT_CFG_INDICATE);
+   switch (pEvt->idx)
+   {
+      case TOTTAG_RANGING_CCC_IDX:
+         ranges_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
+         break;
+      case TOTTAG_IMU_DATA_CCC_IDX:
+         imu_data_requested = (pEvt->value == ATT_CLIENT_CFG_NOTIFY);
+         break;
+      case TOTTAG_MAINTENANCE_RESULT_CCC_IDX:
+         data_requested = (pEvt->value == ATT_CLIENT_CFG_INDICATE);
+         break;
+      default:
+         break;
+   }
 }
 
 
@@ -383,11 +385,9 @@ void bluetooth_write_range_results(const uint8_t *results, uint16_t results_leng
 
 void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length)
 {
-#ifdef _LIVE_IMU_DATA
    // Update the current raw IMU data
    if (imu_data_requested)
-      updateIMUData(AppConnIsOpen(), results, results_length);
-#endif
+      updateImuData(AppConnIsOpen(), results, results_length);
 }
 
 void bluetooth_start_advertising(void)

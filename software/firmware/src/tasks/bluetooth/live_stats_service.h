@@ -24,12 +24,10 @@ enum
    RANGES_HANDLE,                           // Current ranges
    RANGES_DESC_HANDLE,                      // Current ranges description
    RANGES_CCC_HANDLE,                       // Current ranges CCCD
-#ifdef _LIVE_IMU_DATA
-   IMU_DATA_CHAR_HANDLE,                    // Current imu data characteristic
-   IMU_DATA_HANDLE,                         // Current imu data
-   IMU_DATA_DESC_HANDLE,                    // Current imu data description
-   IMU_DATA_CCC_HANDLE,                     // Current imu data CCCD
-#endif
+   IMU_DATA_CHAR_HANDLE,                    // Current IMU data characteristic
+   IMU_DATA_HANDLE,                         // Current IMU data
+   IMU_DATA_DESC_HANDLE,                    // Current IMU data description
+   IMU_DATA_CCC_HANDLE,                     // Current IMU data CCCD
    LIVE_STATS_MAX_HANDLE                    // Maximum live statistics handle
 };
 

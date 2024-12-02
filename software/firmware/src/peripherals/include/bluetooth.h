@@ -23,6 +23,7 @@ void bluetooth_register_discovery_callback(ble_discovery_callback_t callback);
 uint8_t bluetooth_get_current_ranging_role(void);
 void bluetooth_set_current_ranging_role(uint8_t ranging_role);
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length);
+void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length);
 void bluetooth_start_advertising(void);
 void bluetooth_stop_advertising(void);
 bool bluetooth_is_advertising(void);
@@ -33,6 +34,5 @@ bool bluetooth_is_scanning(void);
 bool bluetooth_is_connected(void);
 void bluetooth_clear_whitelist(void);
 void bluetooth_add_device_to_whitelist(uint8_t* uid);
-void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length);
 
 #endif  // #ifndef __BLUETOOTH_HEADER_H__
