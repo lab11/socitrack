@@ -16,22 +16,15 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static uint8_t device_uid_short;
 static TaskHandle_t app_task_handle;
+static uint8_t device_uid_short, imu_accuracy;
 static uint8_t ble_scan_results[MAX_NUM_RANGING_DEVICES];
 static volatile uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
 static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
 static volatile bool devices_found, motion_changed, imu_data_ready;
 static uint32_t download_start_timestamp, download_end_timestamp;
-
-#ifdef _TEST_IMU_DATA
-static uint32_t imu_raw_data_length;
-static uint8_t imu_raw_data[MAX_IMU_DATA_LENGTH];
-#else
-static uint8_t imu_calibration_data;
 static int16_t imu_accel_data[3];
-#endif
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -122,21 +115,17 @@ static void handle_notification(app_notification_t notification)
          // Write IMU data over the BLE characteristic
          imu_data_ready = false;
          print("INFO: IMU data received\n");
-#ifdef _TEST_IMU_DATA
-         bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
-#endif
+         bluetooth_write_imu_data((uint8_t*)imu_accel_data, sizeof(imu_accel_data));
 
          // Store relevant IMU data
 #ifndef _TEST_NO_STORAGE
-   #ifdef _TEST_IMU_DATA
-         storage_write_imu_data(imu_raw_data, imu_raw_data_length);
-   #else
-         storage_write_imu_data(&imu_calibration_data, imu_accel_data);
-   #endif
+         storage_write_imu_data((uint8_t*)imu_accel_data, sizeof(imu_accel_data));
 #endif
       }
 #ifndef _TEST_IMU_DATA
+#if REVISION_ID < REVISION_N
       imu_clear_interrupts();
+#endif
 #endif
    }
    if (((notification & APP_NOTIFY_NETWORK_LOST)) || ((notification & APP_NOTIFY_NETWORK_CONNECTED)) ||
@@ -264,21 +253,11 @@ static void motion_change_handler(bool in_motion)
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
 
-#ifdef _TEST_IMU_DATA
-static void data_ready_handler(uint8_t *raw_data, uint32_t raw_data_length)
-#else
-static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data)
-#endif
+static void data_ready_handler(imu_data_type_t data_types_ready)
 {
    // Notify the app about a change in IMU data
    imu_data_ready = true;
-#ifdef _TEST_IMU_DATA
-   memcpy(imu_raw_data, raw_data, raw_data_length);
-   imu_raw_data_length = raw_data_length;
-#else
-   imu_calibration_data = *calib_data;
-   memcpy(imu_accel_data, linear_accel_data, 3 * sizeof(int16_t));
-#endif
+   imu_read_linear_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
 
@@ -416,11 +395,10 @@ void AppTaskRanging(void *uid)
    imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(data_ready_handler);
 #ifdef _TEST_IMU_DATA
-   imu_set_power_mode(POWER_MODE_NORMAL);
+   imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
 #else
-   imu_set_power_mode(POWER_MODE_LOWPOWER);
+   imu_enable_data_outputs(IMU_MOTION_DETECT, 100000);
 #endif
-   imu_set_fusion_mode(OPERATION_MODE_NDOF);
 #ifndef _TEST_NO_STORAGE
    storage_write_motion_status(imu_read_in_motion());
 #endif

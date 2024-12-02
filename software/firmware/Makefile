@@ -215,7 +215,11 @@ SRC += battery.c
 SRC += bluetooth.c
 SRC += button.c
 SRC += buzzer.c
+ifeq ($(REVISION), M)
+SRC += imu_bno055.c
+else
 SRC += imu.c
+endif
 SRC += led.c
 SRC += logging.c
 SRC += ranging.c

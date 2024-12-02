@@ -7,21 +7,25 @@ static void motion_changed(bool in_motion)
    print("Device is %s\n", in_motion ? "IN MOTION" : "STATIONARY");
 }
 
-static void data_ready(uint8_t *raw_data, uint32_t raw_data_length)
+static void data_ready(imu_data_type_t data_types_ready)
 {
-   // Pick the relevant data types from the raw data buffer
-   const uint8_t *calib, *lacc, *quat, *gyro;
-   imu_pick_data_from_raw(&calib, raw_data, STAT_DATA);
-   imu_pick_data_from_raw(&lacc, raw_data, LACC_DATA);
-   imu_pick_data_from_raw(&quat, raw_data, QUAT_DATA);
-   imu_pick_data_from_raw(&gyro, raw_data, GYRO_DATA);
+   static float x, y, z;
+   static int16_t q_x, q_y, q_z;
+   static uint8_t accuracy;
 
-   // Print a summary of the IMU data
-   print("IMU Data:\n");
-   print("  Calibration status: sys %u, gyro %u, accel %u, mag %u\n", calib[0] >> 6, (calib[0] >> 4) & 0x03, (calib[0] >> 2) & 0x03, calib[0] & 0x03);
-   print("  Linear Accel: X = %d, Y = %d, Z = %d\n", lacc[0], lacc[1], lacc[2]);
-   print("  Quaternion: qw = %d, qx = %d, qy = %d, qz = %d\n", quat[0], quat[1], quat[2], quat[3]);
-   print("  Gyroscope: gx = %d, gy = %d, gz = %d\n", gyro[0], gyro[1], gyro[2]);
+   // Read and print a summary of the IMU data
+   if ((data_types_ready & IMU_LINEAR_ACCELEROMETER))
+   {
+      imu_read_linear_accel_data(&q_x, &q_y, &q_z, &accuracy);
+      imu_convert_q_format_to_float(IMU_LINEAR_ACCELEROMETER, q_x, q_y, q_z, 0, 0, &x, &y, &z, NULL, NULL);
+      print("Accelerometer Data: X = %0.4f, Y = %0.4f, Z = %0.4f (Accuracy = %u)\n", x, y, z, accuracy);
+   }
+   if ((data_types_ready & IMU_GYROSCOPE))
+   {
+      imu_read_gyro_data(&q_x, &q_y, &q_z, &accuracy);
+      imu_convert_q_format_to_float(IMU_GYROSCOPE, q_x, q_y, q_z, 0, 0, &x, &y, &z, NULL, NULL);
+      print("Gyroscope Data: X = %0.4f, Y = %0.4f, Z = %0.4f (Accuracy = %u)\n", x, y, z, accuracy);
+   }
 }
 
 int main(void)
@@ -31,29 +35,19 @@ int main(void)
    imu_init();
    system_enable_interrupts(true);
 
-   uint8_t rev_msb, rev_lsb;
-   //bno055_axis_remap_t remap = {.x_remap_val = 1, .y_remap_val = 0, .z_remap_val = 2};
-   //bno055_axis_remap_t remap = {0};
-   imu_read_fw_version(&rev_msb, &rev_lsb);
-   print("BNO055 firmware version: %x.%x\n", rev_msb, rev_lsb);
-
+   // Register IMU data callbacks and sensors of interest
    imu_register_motion_change_callback(motion_changed);
    imu_register_data_ready_callback(data_ready);
-
-   imu_set_power_mode(POWER_MODE_NORMAL);
-   imu_set_fusion_mode(OPERATION_MODE_NDOF);
-
-
-   //imu_read_axis_remap(&remap);
-   //if (imu_set_axis_remap(remap)){print("remap success!\n");}
-   //print("BNO055 X mapping:%u, Y mapping:%u, Z mapping:%u, X sign:%u, Y sign:%u, Z sign:%u\n", remap.x_remap_val, remap.y_remap_val, remap.z_remap_val, remap.x_remap_sign, remap.y_remap_sign, remap.z_remap_sign);
+   imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
 
    while (true)
    {
       // Sleep until awoken by an interrupt
       am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
       print("Interrupt received\n");
+#if REVISION_ID < REVISION_N
       imu_clear_interrupts();
+#endif
    }
 
    // Should never reach this point

@@ -125,25 +125,7 @@ void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
-#ifdef _TEST_IMU_DATA
-void storage_write_imu_data(const uint8_t *raw_data, uint32_t raw_data_len)
-{
-   static uint32_t imu_data_index = 0;
-   const bno055_data_type_t data_types[] = { STAT_DATA, LACC_DATA, GYRO_DATA, QUAT_DATA};
-   const storage_item_t storage_item = { .timestamp = app_get_experiment_time(ranging_timestamp_offset), .value = imu_data_index, .type = STORAGE_TYPE_IMU };
-   imu_data[imu_data_index].length = 0;
-   for (uint8_t i = 0; i < sizeof(data_types) / sizeof(data_types[0]); ++i)
-   {
-      const uint8_t *data;
-      uint8_t data_len = imu_pick_data_from_raw(&data, raw_data, data_types[i]);
-      memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, data, data_len);
-      imu_data[imu_data_index].length += data_len;
-   }
-   imu_data_index = (imu_data_index + 1) % MAX_NUM_DATA_ITEMS;
-   xQueueSendToBack(storage_queue, &storage_item, 0);
-}
-#else
-void storage_write_imu_data(const uint8_t *calib_data, const int16_t *accel_data)
+void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
 {
    // Ensure that IMU data is not stored more frequently than 2Hz
    static uint32_t imu_data_index = 0;
@@ -153,16 +135,13 @@ void storage_write_imu_data(const uint8_t *calib_data, const int16_t *accel_data
       previous_imu_timestamp = rounded_timestamp;
       const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
       imu_data[imu_data_index].length = 1;
-      memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, calib_data, sizeof(uint8_t));
-      imu_data[imu_data_index].length += sizeof(uint8_t);
-      memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, accel_data, 3 * sizeof(int16_t));
-      imu_data[imu_data_index].length += 3 * sizeof(int16_t);
+      memcpy(imu_data[imu_data_index].data + imu_data[imu_data_index].length, data, data_len);
+      imu_data[imu_data_index].length += data_len;
       imu_data[imu_data_index].data[0] = (uint8_t)imu_data[imu_data_index].length;
       imu_data_index = (imu_data_index + 1) % MAX_NUM_DATA_ITEMS;
       xQueueSendToBack(storage_queue, &storage_item, 0);
    }
 }
-#endif  // #ifdef _TEST_IMU_DATA
 
 #else
 
@@ -170,6 +149,8 @@ void storage_flush_and_shutdown(void) {}
 void storage_write_battery_level(uint32_t battery_voltage_mV) {}
 void storage_write_motion_status(bool in_motion) {}
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
+void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices) {}
+void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
 
 #endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
