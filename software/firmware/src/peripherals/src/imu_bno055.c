@@ -348,7 +348,6 @@ static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
       if (motion_change_callback)
          motion_change_callback(previously_in_motion);
    }
-   print("INT: %u\n", (uint32_t)interrupt_status);
 
    // Read the data-ready status and trigger the registered callback
    if (data_ready_callback)
@@ -641,6 +640,11 @@ void imu_enable_data_outputs(imu_data_type_t data_types, uint32_t report_interva
          imu_set_op_mode(OPERATION_MODE_MAGONLY);
       else if ((data_types & IMU_GYROSCOPE))
          imu_set_op_mode(OPERATION_MODE_GYRONLY);
+   }
+   else if ((data_types & IMU_MOTION_DETECT))
+   {
+      i2c_write8(BNO055_PWR_MODE_ADDR, POWER_MODE_LOWPOWER);
+      imu_set_op_mode(OPERATION_MODE_ACCONLY);
    }
    else
       i2c_write8(BNO055_PWR_MODE_ADDR, POWER_MODE_LOWPOWER);

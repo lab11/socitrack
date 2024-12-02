@@ -256,8 +256,11 @@ static void motion_change_handler(bool in_motion)
 static void data_ready_handler(imu_data_type_t data_types_ready)
 {
    // Notify the app about a change in IMU data
-   imu_data_ready = true;
-   imu_read_linear_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
+   if (data_types_ready == IMU_LINEAR_ACCELEROMETER)
+   {
+      imu_data_ready = true;
+      imu_read_linear_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
+   }
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
 
