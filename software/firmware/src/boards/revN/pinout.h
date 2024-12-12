@@ -52,8 +52,8 @@
 // LEDs
 #define PIN_LED1_RED                                53
 #define PIN_LED1_GREEN                              51
-#define PIN_LED2_RED                                79
-#define PIN_LED2_YELLOW                             88
+#define PIN_LED2_YELLOW                             79
+#define PIN_LED2_RED                                88
 
 // Logging
 #define PIN_SWO                                     3
