@@ -8,7 +8,7 @@
 
 // Peripheral Type Definitions -----------------------------------------------------------------------------------------
 
-typedef enum { LED_RED, LED_GREEN, LED_ALL } led_color_t;
+typedef enum { LED_RED, LED_GREEN, LED_YELLOW, LED_ALL } led_color_t;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------

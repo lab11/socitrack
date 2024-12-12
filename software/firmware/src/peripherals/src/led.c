@@ -7,7 +7,10 @@
 
 static const am_devices_led_t leds[] = {
    {PIN_LED1_RED,   AM_DEVICES_LED_ON_LOW | AM_DEVICES_LED_POL_OPEN_DRAIN},
-   {PIN_LED1_GREEN, AM_DEVICES_LED_ON_LOW | AM_DEVICES_LED_POL_OPEN_DRAIN}
+   {PIN_LED1_GREEN, AM_DEVICES_LED_ON_LOW | AM_DEVICES_LED_POL_OPEN_DRAIN},
+#if REVISION_ID > REVISION_M
+   {PIN_LED2_YELLOW, AM_DEVICES_LED_ON_LOW | AM_DEVICES_LED_POL_OPEN_DRAIN},
+#endif
 };
 
 
@@ -41,9 +44,17 @@ void led_on(led_color_t color)
       case LED_GREEN:
          am_devices_led_on((am_devices_led_t*)leds, 1);
          break;
+#if REVISION_ID > REVISION_M
+      case LED_YELLOW:
+         am_devices_led_on((am_devices_led_t*)leds, 2);
+         break;
+#endif
       case LED_ALL:
          am_devices_led_on((am_devices_led_t*)leds, 0);
          am_devices_led_on((am_devices_led_t*)leds, 1);
+#if REVISION_ID > REVISION_M
+         am_devices_led_on((am_devices_led_t*)leds, 2);
+#endif
          break;
       default:
          break;
@@ -63,9 +74,17 @@ void led_off(led_color_t color)
       case LED_GREEN:
          am_devices_led_off((am_devices_led_t*)leds, 1);
          break;
+#if REVISION_ID > REVISION_M
+      case LED_YELLOW:
+         am_devices_led_off((am_devices_led_t*)leds, 2);
+         break;
+#endif
       case LED_ALL:
          am_devices_led_off((am_devices_led_t*)leds, 0);
          am_devices_led_off((am_devices_led_t*)leds, 1);
+#if REVISION_ID > REVISION_M
+         am_devices_led_off((am_devices_led_t*)leds, 2);
+#endif
          break;
       default:
          break;
