@@ -657,7 +657,8 @@ typedef struct __attribute__((packed)) {
 
 static void *spi_handle;
 static bool reset_occurred, save_dcd_status;
-static volatile bool imu_is_initialized = false, awaiting_interrupt, in_motion;
+static volatile uint8_t awaiting_interrupt_count;
+static volatile bool imu_is_initialized = false, in_motion;
 static uint8_t sequence_number[SEQUENCE_SIZE], command_sequence_number;
 static uint8_t shtp_header[HEADER_SIZE], shtp_data[RX_PACKET_SIZE];
 static motion_change_callback_t motion_change_callback;
@@ -677,7 +678,7 @@ static BNO_Error_t errors;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-static void wait_for_spi(void)
+static bool wait_for_spi(void)
 {
    // Wait until the SPI interrupt line has been pulled low
    bool spi_ready = (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) == 0);
@@ -686,17 +687,16 @@ static void wait_for_spi(void)
       am_util_delay_ms(1);
       spi_ready = (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) == 0);
    }
+   return spi_ready;
 }
 
-static void spi_read(uint32_t header_length, uint8_t *header_buffer, uint32_t read_length, uint8_t *read_buffer, bool continuation)
+static void spi_read(uint32_t read_length, uint8_t *read_buffer, bool continuation)
 {
    // Create the SPI read transaction structure
-   uint64_t instruction = 0;
-   memcpy(&instruction, header_buffer, header_length);
    am_hal_iom_transfer_t read_transaction = {
       .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = header_length,
-      .ui64Instr                    = instruction,
+      .ui32InstrLen                 = 0,
+      .ui64Instr                    = 0,
       .eDirection                   = AM_HAL_IOM_RX,
       .ui32NumBytes                 = read_length,
       .pui32TxBuffer                = NULL,
@@ -713,15 +713,13 @@ static void spi_read(uint32_t header_length, uint8_t *header_buffer, uint32_t re
    while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
 }
 
-static void spi_write(uint32_t header_length, const uint8_t *header_buffer, uint32_t body_length, const uint8_t *body_buffer)
+static void spi_write(uint32_t body_length, const uint8_t *body_buffer)
 {
    // Create the SPI write transaction structure
-   uint64_t instruction = 0;
-   memcpy(&instruction, header_buffer, header_length);
    am_hal_iom_transfer_t write_transaction = {
       .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = header_length,
-      .ui64Instr                    = instruction,
+      .ui32InstrLen                 = 0,
+      .ui64Instr                    = 0,
       .eDirection                   = AM_HAL_IOM_TX,
       .ui32NumBytes                 = body_length,
       .pui32TxBuffer                = (uint32_t*)body_buffer,
@@ -770,28 +768,39 @@ static void send_packet(uint8_t channel_number)
       }
    }
 
-   // Wait until the device is ready to communicate, then send the data currently in shtp_data
+   // Wake up the IMU for communication
+   ++awaiting_interrupt_count;
+   am_hal_gpio_output_clear(PIN_IMU_WAKEUP);
    wait_for_spi();
-   uint8_t packet_header[4] = { packet_length, 0, channel_number, sequence_number[channel_number]++ };
-   spi_write(sizeof(packet_header), packet_header, packet_length - 4, shtp_data);
+   am_hal_gpio_output_set(PIN_IMU_WAKEUP);
+   --awaiting_interrupt_count;
+
+   // Write a header and send the data currently in shtp_data
+   memmove(shtp_data + 4, shtp_data, packet_length - 4);
+   shtp_data[0] = packet_length;
+   shtp_data[1] = 0;
+   shtp_data[2] = channel_number;
+   shtp_data[3] = sequence_number[channel_number]++;
+   spi_write(packet_length, shtp_data);
 }
 
 static bool receive_packet()
 {
    // Wait until the device is ready to communicate
-   wait_for_spi();
+   if (!wait_for_spi())
+      return false;
 
    // Read the packet header to determine the total number of pending bytes
-   spi_read(0, NULL, sizeof(shtp_header), shtp_header, true);
-   const uint16_t data_length = *(uint16_t*)shtp_header;
+   spi_read(sizeof(shtp_header), shtp_header, true);
+   const uint16_t data_length = *(uint16_t*)shtp_header & 0x7FFF;
    if (!data_length || (data_length > RX_PACKET_SIZE))
    {
-      spi_read(0, NULL, 0, NULL, false);
+      spi_read(0, NULL, false);
       return false;
    }
 
    // Read the remainder of the packet
-   spi_read(0, NULL, data_length - 4, shtp_data, false);
+   spi_read(data_length - 4, shtp_data, false);
    return true;
 }
 
@@ -1140,9 +1149,11 @@ static bool wait_for_command_response(void)
 
    // Send the command and wait for a response
    bool success = false;
+   ++awaiting_interrupt_count;
    send_packet(CHANNEL_CONTROL);
    for (uint8_t retry = 0; !success && (retry < 5); ++retry)
       success = receive_packet() && (shtp_header[2] == receive_channel) && (shtp_data[0] == expected_response);
+   --awaiting_interrupt_count;
    return success ? process_response() : false;
 }
 
@@ -1188,9 +1199,10 @@ static void set_feature(uint8_t report_id, uint32_t report_interval_us)
    shtp_data[1] = report_id;
    *(uint32_t*)&shtp_data[5] = report_interval_us;
    send_packet(CHANNEL_CONTROL);
+
+   // TODO: Should this be a wait_for_command_response instead? Datasheet says it should respond with SHTP_REPORT_GET_FEATURE_RESPONSE
 }
 
-/* UNUSED BUT HERE FOR FUTURE USE:
 static BNO_Feature_t get_feature(uint8_t report_id)
 {
    // Request the settings for the specified feature
@@ -1201,6 +1213,7 @@ static BNO_Feature_t get_feature(uint8_t report_id)
    return wait_for_command_response() ? sensor_features : empty_settings;
 }
 
+/* UNUSED BUT HERE FOR FUTURE USE:
 static bool write_frs(uint16_t length, uint16_t frs_type)
 {
    // Send an FRS write request command
@@ -1272,14 +1285,12 @@ static void reset_imu(void)
    am_hal_gpio_output_set(PIN_IMU_RESET);
 }
 
-static void enter_sleep_mode(void)
+static void enter_sleep_mode(bool start_sleeping)
 {
-   // Send a "sleep" command to the IMU and flush and incoming data
+   // Send a "sleep" or "wakeup" command to the IMU and flush and incoming data
    memset(shtp_data, 0, TX_PACKET_SIZE);
-   shtp_data[0] = COMMAND_INITIALIZE_SLEEP;
+   shtp_data[0] = start_sleeping ? COMMAND_INITIALIZE_SLEEP : COMMAND_INITIALIZE_ON;
    send_packet(CHANNEL_EXECUTABLE);
-   receive_packet();
-   receive_packet();
 }
 
 
@@ -1287,16 +1298,22 @@ static void enter_sleep_mode(void)
 
 static void imu_isr(void *args)
 {
-   // Attempt to retrieve the IMU data packet
-   imu_data_type_t data_type = IMU_UNKNOWN;
-   if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
-      data_type = parse_input_report();
+   // Only handle if not synchronously waiting for an interrupt
+   print("Int\n");
+   if (!awaiting_interrupt_count)
+   {
+      // Attempt to retrieve the IMU data packet
+      imu_data_type_t data_type = IMU_UNKNOWN;
+      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
+         data_type = parse_input_report();
+      print("Type: %u\n", (uint32_t)shtp_data[0]);
 
-   // Notify the appropriate data callback
-   if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
-      motion_change_callback(in_motion);
-   else if ((data_type != IMU_UNKNOWN) && data_ready_callback)
-      data_ready_callback(data_type);
+      // Notify the appropriate data callback
+      if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
+         motion_change_callback(in_motion);
+      else if ((data_type != IMU_UNKNOWN) && data_ready_callback)
+         data_ready_callback(data_type);
+   }
 }
 
 void imu_iom_isr(void)
@@ -1331,8 +1348,8 @@ void imu_init(void)
    memset(&device_id, 0, sizeof(device_id));
    memset(&counts, 0, sizeof(counts));
    memset(&errors, 0, sizeof(errors));
-   in_motion = awaiting_interrupt = false;
-   reset_occurred = save_dcd_status = false;
+   in_motion = reset_occurred = save_dcd_status = false;
+   awaiting_interrupt_count = 0;
    command_sequence_number = 0;
    motion_change_callback = NULL;
    data_ready_callback = NULL;
@@ -1375,7 +1392,6 @@ void imu_init(void)
    // Set up incoming interrupts from the IMU
    uint32_t imu_interrupt_pin = PIN_IMU_INTERRUPT;
    am_hal_gpio_pincfg_t int_config = AM_HAL_GPIO_PINCFG_INPUT;
-   int_config.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLUP_100K;
    int_config.GP.cfg_b.eIntDir = AM_HAL_GPIO_PIN_INTDIR_HI2LO;
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_INTERRUPT, int_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
@@ -1385,10 +1401,9 @@ void imu_init(void)
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
    NVIC_EnableIRQ(IOMSTR0_IRQn + IMU_SPI_NUMBER);
 
-   // Reset the device and read its "advertisement" and "initialize response" messages
+   // Reset the device and read until it stops sending messages
    reset_imu();
-   receive_packet();
-   receive_packet();
+   while (receive_packet());
 
    // Validate device communications
    memset(shtp_data, 0, TX_PACKET_SIZE);
@@ -1413,13 +1428,12 @@ void imu_deinit(void)
    motion_change_callback = NULL;
    data_ready_callback = NULL;
 
-   // Reset the device to stop all data processing and read its "advertisement" and "initialize response" messages
+   // Reset the device to stop all data processing and read until it stops sending messages
    reset_imu();
-   receive_packet();
-   receive_packet();
+   while (receive_packet());
 
-   // TODO: put the device into sleep mode, can we do this even when running? When to use PIN_AWAKE
-   enter_sleep_mode();
+   // TODO: put the device into sleep mode, can we do this even when running?
+   enter_sleep_mode(true);
 
    // Disable all IMU-based interrupts
    uint32_t imu_interrupt_pin = PIN_IMU_INTERRUPT;
@@ -1481,7 +1495,7 @@ void imu_enable_data_outputs(imu_data_type_t data_types, uint32_t report_interva
    if ((data_types & IMU_STEP_COUNTER) > 0)
       set_feature(SENSOR_REPORTID_STEP_COUNTER, report_interval_us);
    if ((data_types & IMU_MOTION_DETECT) > 0)
-      set_feature(SENSOR_REPORTID_STABILITY_DETECTOR, 0);
+      set_feature(SENSOR_REPORTID_STABILITY_DETECTOR, 1);
    if ((data_types & IMU_GRAVITY) > 0)
       set_feature(SENSOR_REPORTID_GRAVITY, report_interval_us);
 }
@@ -1600,4 +1614,29 @@ bool imu_read_in_motion(void)
 {
    // Return the most recent motion status
    return in_motion;
+}
+
+imu_data_type_t imu_data_outputs_enabled(void)
+{
+   // Determine which output data types have been enabled
+   imu_data_type_t outputs_enabled = 0;
+   if (get_feature(SENSOR_REPORTID_ROTATION_VECTOR).reportInterval_us > 0)
+      outputs_enabled |= IMU_ROTATION_VECTOR;
+   if (get_feature(SENSOR_REPORTID_GAME_ROTATION_VECTOR).reportInterval_us > 0)
+      outputs_enabled |= IMU_GAME_ROTATION_VECTOR;
+   if (get_feature(SENSOR_REPORTID_ACCELEROMETER).reportInterval_us > 0)
+      outputs_enabled |= IMU_ACCELEROMETER;
+   if (get_feature(SENSOR_REPORTID_LINEAR_ACCELERATION).reportInterval_us > 0)
+      outputs_enabled |= IMU_LINEAR_ACCELEROMETER;
+   if (get_feature(SENSOR_REPORTID_GYROSCOPE).reportInterval_us > 0)
+      outputs_enabled |= IMU_GYROSCOPE;
+   if (get_feature(SENSOR_REPORTID_MAGNETIC_FIELD).reportInterval_us > 0)
+      outputs_enabled |= IMU_MAGNETOMETER;
+   if (get_feature(SENSOR_REPORTID_STEP_COUNTER).reportInterval_us > 0)
+      outputs_enabled |= IMU_STEP_COUNTER;
+   if (get_feature(SENSOR_REPORTID_STABILITY_DETECTOR).reportInterval_us > 0)
+      outputs_enabled |= IMU_MOTION_DETECT;
+   if (get_feature(SENSOR_REPORTID_GRAVITY).reportInterval_us > 0)
+      outputs_enabled |=IMU_GRAVITY;
+   return outputs_enabled;
 }

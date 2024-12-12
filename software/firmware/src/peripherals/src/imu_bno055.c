@@ -759,3 +759,18 @@ void imu_clear_interrupts(void)
    // Reset the interrupt trigger bits
    i2c_write8(BNO055_SYS_TRIGGER_ADDR, 0xC0);
 }
+
+imu_data_type_t imu_data_outputs_enabled(void)
+{
+   // Determine which output data types have been enabled
+   imu_data_type_t outputs_enabled = 0;
+   if (i2c_read8(OPERATION_MODE_ACCONLY) || i2c_read8(OPERATION_MODE_ACCMAG) || i2c_read8(OPERATION_MODE_ACCGYRO) || i2c_read8(OPERATION_MODE_NDOF))
+      outputs_enabled |= IMU_ACCELEROMETER | IMU_LINEAR_ACCELEROMETER;
+   if (i2c_read8(OPERATION_MODE_GYRONLY) || i2c_read8(OPERATION_MODE_ACCGYRO) || i2c_read8(OPERATION_MODE_MAGGYRO) || i2c_read8(OPERATION_MODE_NDOF))
+      outputs_enabled |= IMU_GYROSCOPE;
+   if (i2c_read8(OPERATION_MODE_MAGONLY) || i2c_read8(OPERATION_MODE_ACCMAG) || i2c_read8(OPERATION_MODE_MAGGYRO) || i2c_read8(OPERATION_MODE_NDOF))
+      outputs_enabled |= IMU_MAGNETOMETER;
+   if (i2c_read8(OPERATION_MODE_ACCONLY))
+      outputs_enabled |= IMU_MOTION_DETECT;
+   return outputs_enabled;
+}

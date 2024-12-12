@@ -55,6 +55,7 @@ void imu_read_magnetometer_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *acc
 uint16_t imu_read_step_count();
 bool imu_read_in_motion(void);
 void imu_convert_q_format_to_float(imu_data_type_t data_type, int16_t q_x, int16_t q_y, int16_t q_z, int16_t q_w_optional, int16_t q_accuracy_optional, float *x, float *y, float *z, float *w, float *accuracy);
+imu_data_type_t imu_data_outputs_enabled(void);
 
 #if REVISION_ID < REVISION_N
 void imu_clear_interrupts(void);
