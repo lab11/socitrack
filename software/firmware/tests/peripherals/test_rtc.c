@@ -14,13 +14,14 @@ int main(void)
    rtc_set_time_to_compile_time();
    int i = 0;
 #endif
-   device_start_time = rtc_get_timestamp();
+
    // Output timestamp every second
+   device_start_time = rtc_get_timestamp();
    while (true)
    {
       uint32_t timestamp = rtc_get_timestamp();
 	  uint32_t diff = get_experiment_time(0);
-      print("Current Timestamp: %u Time Diff in milliseconds: %u\n", timestamp, diff);
+      print("Current Timestamp: %u, Time Diff in milliseconds: %u\n", timestamp, diff);
 #ifdef SET_RTC
       if (i++ == 15)
       {

@@ -18,7 +18,7 @@
 				</extensions>
 			</storageModule>
 			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
-				<configuration artifactName="${ProjName}" buildProperties="" description="" id="ilg.gnuarmeclipse.managedbuild.cross.toolchain.base.1790597438" name="Default" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.dockerdpath=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=" parent="org.eclipse.cdt.build.core.emptycfg">
+				<configuration artifactName="${ProjName}" buildProperties="" description="" id="ilg.gnuarmeclipse.managedbuild.cross.toolchain.base.1790597438" name="Default" optionalBuildProperties="org.eclipse.cdt.docker.launcher.containerbuild.property.dockerdpath=,org.eclipse.cdt.docker.launcher.containerbuild.property.selectedvolumes=,org.eclipse.cdt.docker.launcher.containerbuild.property.volumes=" parent="org.eclipse.cdt.build.core.emptycfg">
 					<folderInfo id="ilg.gnuarmeclipse.managedbuild.cross.toolchain.base.1790597438.1033093985" name="/" resourcePath="">
 						<toolChain id="ilg.gnuarmeclipse.managedbuild.cross.toolchain.base.1406672748" name="Arm Cross GCC" superClass="ilg.gnuarmeclipse.managedbuild.cross.toolchain.base">
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.architecture.275751269" name="Architecture" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.architecture" value="ilg.gnuarmeclipse.managedbuild.cross.option.architecture.arm" valueType="enumerated"/>
@@ -96,11 +96,11 @@
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.other.1119811857" name="Other debugging flags" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.other"/>
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.showDevicesTab.1064225102" name="showDevicesTab" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.showDevicesTab"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform.2110508977" isAbstract="false" osList="all" superClass="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform"/>
-							<builder arguments="BUILT_BY=eclipse BOARD_REV=M" id="ilg.gnuarmeclipse.managedbuild.cross.builder.1122401273" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
+							<builder arguments="BUILT_BY=eclipse BOARD_REV=N" id="ilg.gnuarmeclipse.managedbuild.cross.builder.1122401273" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.723795831" name="GNU Arm Cross Assembler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor.681086204" name="Use preprocessor" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.158799126" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revN}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/bsp/apollo4_blue_pro}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/devices}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/mcu/apollo4p}&quot;"/>
@@ -114,13 +114,13 @@
 									<listOptionValue builtIn="false" value="DM_NUM_ADV_SETS=1"/>
 									<listOptionValue builtIn="false" value="gcc=1"/>
 									<listOptionValue builtIn="false" value="PART_apollo4p=1"/>
-									<listOptionValue builtIn="false" value="_HW_REVISION=M"/>
+									<listOptionValue builtIn="false" value="_HW_REVISION=N"/>
 								</option>
 								<inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.input.1736996519" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.input"/>
 							</tool>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.930969168" name="GNU Arm Cross C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.601223693" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="true" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revN}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/bsp/apollo4_blue_pro}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/devices}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/mcu/apollo4p}&quot;"/>
@@ -134,13 +134,13 @@
 									<listOptionValue builtIn="false" value="DM_NUM_ADV_SETS=1"/>
 									<listOptionValue builtIn="false" value="gcc=1"/>
 									<listOptionValue builtIn="false" value="PART_apollo4p=1"/>
-									<listOptionValue builtIn="false" value="_HW_REVISION=M"/>
+									<listOptionValue builtIn="false" value="_HW_REVISION=N"/>
 								</option>
 								<inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input.691389536" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.input"/>
 							</tool>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.2135267146" name="GNU Arm Cross C++ Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths.372913830" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths" useByScannerDiscovery="true" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revM}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revN}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/bsp/apollo4_blue_pro}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/devices}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/mcu/apollo4p}&quot;"/>
@@ -154,7 +154,7 @@
 									<listOptionValue builtIn="false" value="DM_NUM_ADV_SETS=1"/>
 									<listOptionValue builtIn="false" value="gcc=1"/>
 									<listOptionValue builtIn="false" value="PART_apollo4p=1"/>
-									<listOptionValue builtIn="false" value="_HW_REVISION=M"/>
+									<listOptionValue builtIn="false" value="_HW_REVISION=N"/>
 								</option>
 								<inputType id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.input.379966945" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.input"/>
 							</tool>
@@ -339,7 +339,7 @@
 			</target>
 			<target name="UID" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>ID=c0:98:e5:42:01:1a</buildArguments>
+				<buildArguments>ID=c0:98:e5:42:00:01</buildArguments>
 				<buildTarget>UID</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>false</useDefaultCommand>
