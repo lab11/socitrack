@@ -21,21 +21,16 @@
 #define COMMAND_PROGRAM_EXECUTE                     0x10
 #define COMMAND_PAGE_DATA_READ                      0x13
 #define COMMAND_READ                                0x03
-#define COMMAND_ENABLE_RESET                        0x66
-#define COMMAND_RESET_DEVICE                        0x99
 
 #if REVISION_ID < REVISION_N
 #define COMMAND_WRITE_BBM_LUT                       0xA1
 #define COMMAND_READ_BBM_LUT                        0xA5
-#else
-#define COMMAND_ENTER_LOW_POWER_MODE                0xB9
-#define COMMAND_EXIT_LOW_POWER_MODE                 0xAB
 #endif
 
 #define STATUS_REGISTER_1                           0xA0
 #define STATUS_REGISTER_2                           0xB0
 #define STATUS_REGISTER_3                           0xC0
-#define OTP_BASE_ADDRESS                            0x02
+#define OTP_BASE_ADDRESS                            0x03
 #define FIRST_BOOT_ADDRESS                          OTP_BASE_ADDRESS
 
 #define STATUS_LUT_FULL                             0b01000000
@@ -50,7 +45,7 @@
 #define BBM_NUM_RESERVED_BLOCKS                     40
 #define BBM_TABLE_SIZE                              BBM_LUT_NUM_ENTRIES
 #else
-#define BBM_NUM_RESERVED_BLOCKS                     20
+#define BBM_NUM_RESERVED_BLOCKS                     80
 #define BBM_TABLE_SIZE                              256
 #endif
 #define BBM_LUT_BASE_ADDRESS                        ((MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS) * MEMORY_PAGES_PER_BLOCK)
@@ -71,7 +66,7 @@ static volatile uint32_t bbm_index, bbm_storage_page;
 
 static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
-static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES];
+static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE];
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
 static volatile bool is_reading, in_maintenance_mode, disabled;
 
@@ -104,19 +99,29 @@ static void spi_read(uint8_t command, const void *address, uint32_t address_leng
    if (!retries_remaining)
       system_reset(true);
 
-   // Update the SPI transaction structure
-   retries_remaining = 4;
-   spi_transaction.eDirection = AM_HAL_IOM_RX;
-   spi_transaction.ui32NumBytes = read_length;
-   spi_transaction.pui32TxBuffer = NULL,
-   spi_transaction.pui32RxBuffer = read_buffer;
-   spi_transaction.bContinue = false;
+   // Split SPI reads if necessary
+   uint32_t read_offset = 0;
+   while (read_length)
+   {
+      // Determine the actual read size for this transaction
+      uint32_t read_bytes = (read_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : read_length;
+      read_length -= read_bytes;
 
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
+      // Update the SPI transaction structure
+      retries_remaining = 4;
+      spi_transaction.eDirection = AM_HAL_IOM_RX;
+      spi_transaction.ui32NumBytes = read_bytes;
+      spi_transaction.pui32TxBuffer = NULL,
+      spi_transaction.pui32RxBuffer = (uint32_t*)((uint8_t*)read_buffer + read_offset);
+      spi_transaction.bContinue = read_length > 0;
+      read_offset += read_bytes;
+
+      // Repeat the transfer until it succeeds or requires a device reset
+      while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+         am_hal_delay_us(10);
+      if (!retries_remaining)
+         system_reset(true);
+   }
 }
 
 static void spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
@@ -145,17 +150,27 @@ static void spi_write(uint8_t command, const void *address, uint32_t address_len
    if (!retries_remaining)
       system_reset(true);
 
-   // Update the SPI transaction structure
-   retries_remaining = 4;
-   spi_transaction.ui32NumBytes = write_length;
-   spi_transaction.pui32TxBuffer = (uint32_t*)write_buffer,
-   spi_transaction.bContinue = false;
+   // Split SPI writes if necessary
+   uint32_t write_offset = 0;
+   while (write_length)
+   {
+      // Determine the actual read size for this transaction
+      uint32_t write_bytes = (write_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : write_length;
+      write_length -= write_bytes;
 
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
+      // Update the SPI transaction structure
+      retries_remaining = 4;
+      spi_transaction.ui32NumBytes = write_bytes;
+      spi_transaction.pui32TxBuffer = (uint32_t*)((uint8_t*)write_buffer + write_offset);
+      spi_transaction.bContinue = write_length > 0;
+      write_offset += write_bytes;
+
+      // Repeat the transfer until it succeeds or requires a device reset
+      while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+         am_hal_delay_us(10);
+      if (!retries_remaining)
+         system_reset(true);
+   }
 }
 
 static uint8_t read_register(uint8_t register_number)
@@ -172,9 +187,16 @@ static void write_register(uint8_t register_number, uint8_t value)
 
 static bool verify_device_id(void)
 {
+#if REVISION_ID < REVISION_N
    uint8_t device_id_read[4], device_id_known[3] = STORAGE_DEVICE_ID;
    spi_read(COMMAND_READ_DEVICE_ID, NULL, 0, device_id_read, sizeof(device_id_read));
    return (memcmp(device_id_read + 1, device_id_known, sizeof(device_id_known)) == 0);
+#else
+   static const uint8_t address = 0x01;
+   uint8_t device_id_read[1], device_id_known[1] = STORAGE_DEVICE_ID;
+   spi_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), device_id_read, sizeof(device_id_read));
+   return (memcmp(device_id_read, device_id_known, sizeof(device_id_known)) == 0);
+#endif
 }
 
 static void wait_until_not_busy(void)
@@ -185,17 +207,12 @@ static void wait_until_not_busy(void)
 
 static void enter_low_power_mode(void)
 {
-#if REVISION_ID > REVISION_M
-   spi_write(COMMAND_ENTER_LOW_POWER_MODE, NULL, 0, NULL, 0);
-#endif
+   // Placeholder in case a future version has a low-power mode
 }
 
 static void exit_low_power_mode(void)
 {
-#if REVISION_ID > REVISION_M
-   spi_write(COMMAND_EXIT_LOW_POWER_MODE, NULL, 0, NULL, 0);
-   wait_until_not_busy();
-#endif
+   // Placeholder in case a future version has a low-power mode
 }
 
 static bool write_page_raw(const uint8_t *data, uint32_t page_number)
@@ -227,6 +244,20 @@ static bool read_page(uint8_t *buffer, uint32_t page_number)
    wait_until_not_busy();
    return (read_register(STATUS_REGISTER_3) & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
 }
+
+#if REVISION_ID > REVISION_M
+static bool read_page_with_spare_data(uint8_t *buffer, uint32_t page_number)
+{
+   const uint32_t byte_offset = 0;
+   const uint8_t page_number_reordered[] = { (uint8_t)((page_number & 0x00FF0000) >> 16), (uint8_t)((page_number & 0x0000FF00) >> 8), (uint8_t)(page_number & 0x000000FF) };
+   wait_until_not_busy();
+   spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+   wait_until_not_busy();
+   spi_read(COMMAND_READ, &byte_offset, 3, buffer, MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE);
+   wait_until_not_busy();
+   return (read_register(STATUS_REGISTER_3) & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
+}
+#endif
 
 static bool transfer_block(uint32_t source, uint32_t destination, uint32_t num_pages)
 {
@@ -339,9 +370,10 @@ static void add_bad_block(uint32_t block_address)
 
    // Update the LUT with the bad block
    bad_block_lookup_table[bbm_index++] = block_address & 0xFFFFFFC0;
-   memset(transfer_buffer, 0, sizeof(transfer_buffer));
+   memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
    memcpy(transfer_buffer, "BBM_", 4);
-   memcpy(transfer_buffer + 4, bad_block_lookup_table, sizeof(bad_block_lookup_table));
+   memcpy(transfer_buffer + 4, (uint32_t*)&bbm_index, sizeof(bbm_index));
+   memcpy(transfer_buffer + 4 + sizeof(bbm_index), bad_block_lookup_table, sizeof(bad_block_lookup_table));
    write_page_raw(transfer_buffer, bbm_storage_page);
 
    // Re-enable memory page write protection
@@ -436,17 +468,25 @@ static bool is_first_boot(void)
 {
    bool first_boot = false;
    uint8_t device_id[3] = STORAGE_DEVICE_ID;
+#if REVISION_ID < REVISION_N
    write_register(STATUS_REGISTER_2, 0b01011001);
+#else
+   write_register(STATUS_REGISTER_2, 0b01010000);
+#endif
    read_page(transfer_buffer, FIRST_BOOT_ADDRESS);
    if (memcmp(transfer_buffer, device_id, sizeof(device_id)))
    {
-      memset(transfer_buffer, 0, sizeof(transfer_buffer));
+      memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
       memcpy(transfer_buffer, device_id, sizeof(device_id));
       write_page_raw(transfer_buffer, FIRST_BOOT_ADDRESS);
       spi_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
       first_boot = true;
    }
+#if REVISION_ID < REVISION_N
    write_register(STATUS_REGISTER_2, 0b00011001);
+#else
+   write_register(STATUS_REGISTER_2, 0b00010000);
+#endif
    return first_boot;
 }
 
@@ -499,7 +539,11 @@ void storage_init(void)
 
    // Configure the memory chip
    const uint8_t status_register_1_bits = 0b01111110;
+#if REVISION_ID < REVISION_N
    const uint8_t status_register_2_bits = 0b00011001;
+#else
+   const uint8_t status_register_2_bits = 0b00010000;
+#endif
    write_register(STATUS_REGISTER_1, status_register_1_bits);
    write_register(STATUS_REGISTER_2, status_register_2_bits);
 
@@ -518,7 +562,8 @@ void storage_init(void)
    for (bbm_storage_page = MEMORY_MAX_PAGE_ADDRESS - MEMORY_PAGES_PER_BLOCK; bbm_storage_page >= BBM_LUT_BASE_ADDRESS; bbm_storage_page -= MEMORY_PAGES_PER_BLOCK)
       if (read_page(transfer_buffer, bbm_storage_page) && (memcmp(transfer_buffer, "BBM_", 4) == 0))
       {
-         memcpy(bad_block_lookup_table, transfer_buffer + 4, sizeof(bad_block_lookup_table));
+         memcpy((uint32_t*)&bbm_index, transfer_buffer + 4, sizeof(bbm_index));
+         memcpy(bad_block_lookup_table, transfer_buffer + 4 + sizeof(bbm_index), sizeof(bad_block_lookup_table));
          break;
       }
 #endif
@@ -533,14 +578,19 @@ void storage_init(void)
             add_bad_block(page);
 #else
       for (uint32_t page = 0; page < MEMORY_MAX_PAGE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
+#if REVISION_ID < REVISION_N
          if (!read_page(transfer_buffer, page) || (transfer_buffer[0] != 0xFF))
+#else
+         if ((!read_page_with_spare_data(transfer_buffer, page) || (transfer_buffer[MEMORY_PAGE_SIZE_BYTES] != 0xFF)) && !is_bad_block(page))
+#endif
             bad_block_lookup_table[bbm_index++] = page;
       bbm_storage_page = BBM_LUT_BASE_ADDRESS;
       while (is_bad_block(bbm_storage_page))
          bbm_storage_page = (bbm_storage_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0;
-      memset(transfer_buffer, 0, sizeof(transfer_buffer));
+      memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
       memcpy(transfer_buffer, "BBM_", 4);
-      memcpy(transfer_buffer + 4, bad_block_lookup_table, sizeof(bad_block_lookup_table));
+      memcpy(transfer_buffer + 4, (uint32_t*)&bbm_index, sizeof(bbm_index));
+      memcpy(transfer_buffer + 4 + sizeof(bbm_index), bad_block_lookup_table, sizeof(bad_block_lookup_table));
       write_page_raw(transfer_buffer, bbm_storage_page);
 #endif
       write_register(STATUS_REGISTER_1, 0b01111110);
@@ -588,7 +638,7 @@ void storage_init(void)
    {
       current_page = 1;
       starting_page = 0;
-      memset(transfer_buffer, 0, sizeof(transfer_buffer));
+      memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
       memcpy(transfer_buffer, "META", 4);
       write_register(STATUS_REGISTER_1, 0b00000010);
       write_page_raw(transfer_buffer, starting_page);
@@ -641,7 +691,7 @@ void storage_store_experiment_details(const experiment_details_t *details)
          write_register(STATUS_REGISTER_1, 0b00000010);
 
          // Perform the write
-         memset(transfer_buffer, 0, sizeof(transfer_buffer));
+         memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
          memcpy(transfer_buffer, "META", 4);
          memcpy(transfer_buffer + 4, details, sizeof(*details));
          success = write_page_raw(transfer_buffer, starting_page) && read_page(transfer_buffer, starting_page);
