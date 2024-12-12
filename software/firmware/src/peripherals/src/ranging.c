@@ -385,7 +385,8 @@ void ranging_radio_reset(void)
    // Initialize the DW3000 driver and transceiver
    if (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
    {
-      print("ERROR: Could not successfully reset DW3000 peripheral...resetting entire device\n");
+      print("ERROR: Could not successfully probe DW3000 peripheral...resetting entire device\n");
+      am_util_delay_ms(1000);
       system_reset(false);
    }
    configASSERT0(dwt_initialise(DWT_DW_IDLE));
