@@ -231,7 +231,10 @@ void system_reset(bool immediate)
    }
    else
 #endif
-   am_hal_reset_control(AM_HAL_RESET_CONTROL_SWPOR, NULL);
+   {
+      am_util_delay_ms(1000);
+      am_hal_reset_control(AM_HAL_RESET_CONTROL_SWPOR, NULL);
+   }
 }
 
 void system_enable_interrupts(bool enabled)
