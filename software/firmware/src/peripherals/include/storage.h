@@ -22,7 +22,6 @@ typedef enum {
 
 // Chip-Specific Definitions -------------------------------------------------------------------------------------------
 
-#define MEMORY_PAGE_SIZE_BYTES                      2048
 #define MEMORY_PAGES_PER_BLOCK                      64
 #define MEMORY_BLOCK_SIZE_BYTES                     (MEMORY_PAGE_SIZE_BYTES * MEMORY_PAGES_PER_BLOCK)
 #define MEMORY_PAGE_COUNT                           (MEMORY_PAGES_PER_BLOCK * MEMORY_BLOCK_COUNT)
