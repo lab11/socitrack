@@ -953,8 +953,12 @@ static imu_data_type_t parse_input_report(void)
          break;
       case SENSOR_REPORTID_STABILITY_DETECTOR:
          data.value.StabilityDetector = *(uint16_t*)&shtp_data[9];
-         in_motion = data.value.StabilityDetector & 0x0001;
-         data_type = IMU_MOTION_DETECT;
+         if ((in_motion && (data.value.StabilityDetector & STABILITY_ENTERED)) ||
+             (!in_motion && (data.value.StabilityDetector & STABILITY_EXITED)))
+         {
+            in_motion = data.value.StabilityDetector & STABILITY_EXITED;
+            data_type = IMU_MOTION_DETECT;
+         }
          break;
       case SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER:
          data.value.PersonalActivityClassifier.Page = shtp_data[9] & 0x7F;
@@ -1283,6 +1287,7 @@ static void reset_imu(void)
    am_hal_gpio_output_clear(PIN_IMU_RESET);
    am_util_delay_ms(1);
    am_hal_gpio_output_set(PIN_IMU_RESET);
+   am_util_delay_ms(200);
 }
 
 static void enter_sleep_mode(bool start_sleeping)
@@ -1299,14 +1304,12 @@ static void enter_sleep_mode(bool start_sleeping)
 static void imu_isr(void *args)
 {
    // Only handle if not synchronously waiting for an interrupt
-   print("Int\n");
    if (!awaiting_interrupt_count)
    {
       // Attempt to retrieve the IMU data packet
       imu_data_type_t data_type = IMU_UNKNOWN;
       if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
          data_type = parse_input_report();
-      print("Type: %u\n", (uint32_t)shtp_data[0]);
 
       // Notify the appropriate data callback
       if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
@@ -1432,7 +1435,7 @@ void imu_deinit(void)
    reset_imu();
    while (receive_packet());
 
-   // TODO: put the device into sleep mode, can we do this even when running?
+   // Put the device into sleep mode
    enter_sleep_mode(true);
 
    // Disable all IMU-based interrupts
@@ -1504,6 +1507,7 @@ void imu_register_motion_change_callback(motion_change_callback_t callback)
 {
    // Store the motion-change callback
    motion_change_callback = callback;
+   motion_change_callback(false);
 }
 
 void imu_register_data_ready_callback(data_ready_callback_t callback)

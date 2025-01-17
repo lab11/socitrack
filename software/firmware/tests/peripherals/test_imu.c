@@ -44,7 +44,6 @@ int main(void)
    {
       // Sleep until awoken by an interrupt
       am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
-      print("Interrupt received\n");
 #if REVISION_ID < REVISION_N
       imu_clear_interrupts();
 #endif
