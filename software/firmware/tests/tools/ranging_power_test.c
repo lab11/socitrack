@@ -57,6 +57,11 @@ int main(void)
    ranging_radio_enable_rx_diagnostics();
    ranging_radio_register_callbacks(tx_callback, rx_done_callback, rx_error_callback, rx_error_callback);
 
+   // Select the appropriate antenna and channel
+   ranging_radio_disable();
+   ranging_radio_choose_antenna(0);
+   ranging_radio_choose_channel(5);
+
    // Loop forever running ranging power tests
    while (true)
    {
