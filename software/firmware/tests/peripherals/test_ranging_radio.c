@@ -20,7 +20,7 @@ static void rx_done_callback(const dwt_cb_data_t *rxData)
    print("Callback 'rx_callback' fired at %lu us\n", DWT_TO_US(rx_timestamp));
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
-   print("Message Length: %u, Type: %u, Seq: %u\n", (uint32_t)rxData->datalength, (uint32_t)read_buffer[sizeof(ieee154_header_t)], (uint32_t)read_buffer[2]);
+   print("Message Length: %u, Seq: %u, Type: %u\n", (uint32_t)rxData->datalength, (uint32_t)read_buffer[sizeof(ieee154_header_t)], (uint32_t)read_buffer[2]);
 }
 
 static void rx_error_callback(const dwt_cb_data_t *rxData)

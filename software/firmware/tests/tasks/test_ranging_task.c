@@ -74,7 +74,7 @@ void TestTask(void *uid)
       xTaskNotify(ranging_task_handle, ROLE_MASTER, eSetValueWithOverwrite);
    else
       xTaskNotify(ranging_task_handle, ROLE_PARTICIPANT, eSetValueWithOverwrite);
-   vTaskSuspend(test_task_handle);
+   vTaskDelay(1000);
 #endif
 }
 
