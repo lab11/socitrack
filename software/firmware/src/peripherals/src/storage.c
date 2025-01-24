@@ -30,7 +30,11 @@
 #define STATUS_REGISTER_1                           0xA0
 #define STATUS_REGISTER_2                           0xB0
 #define STATUS_REGISTER_3                           0xC0
+#if REVISION_ID < REVISION_N
+#define OTP_BASE_ADDRESS                            0x02
+#else
 #define OTP_BASE_ADDRESS                            0x03
+#endif
 #define FIRST_BOOT_ADDRESS                          OTP_BASE_ADDRESS
 
 #define STATUS_LUT_FULL                             0b01000000
@@ -578,11 +582,7 @@ void storage_init(void)
             add_bad_block(page);
 #else
       for (uint32_t page = 0; page < MEMORY_MAX_PAGE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
-#if REVISION_ID < REVISION_N
-         if (!read_page(transfer_buffer, page) || (transfer_buffer[0] != 0xFF))
-#else
          if ((!read_page_with_spare_data(transfer_buffer, page) || (transfer_buffer[MEMORY_PAGE_SIZE_BYTES] != 0xFF)) && !is_bad_block(page))
-#endif
             bad_block_lookup_table[bbm_index++] = page;
       bbm_storage_page = BBM_LUT_BASE_ADDRESS;
       while (is_bad_block(bbm_storage_page))
