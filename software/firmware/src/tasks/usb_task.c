@@ -62,12 +62,12 @@ const uint8_t* tud_descriptor_device_cb(void)
    return (const uint8_t*)&usb_descriptor;
 }
 
-const uint8_t* tud_descriptor_configuration_cb(uint8_t)
+const uint8_t* tud_descriptor_configuration_cb(uint8_t index)
 {
    return (tud_speed_get() == TUSB_SPEED_HIGH) ? high_speed_configuration : full_speed_configuration;
 }
 
-const uint16_t* tud_descriptor_string_cb(uint8_t index, uint16_t)
+const uint16_t* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
 {
    static uint16_t string_description[32];
    uint8_t chr_count;
@@ -101,7 +101,7 @@ AM_USED void tud_umount_cb(void)
    print("tud_umount_cb\n");
 }
 
-AM_USED void tud_suspend_cb(bool)
+AM_USED void tud_suspend_cb(bool remote_wakeup_en)
 {
    print("tud_suspend_cb\n");
 }
@@ -168,7 +168,7 @@ AM_USED void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void UsbTask(void*)
+void UsbTask(void *params)
 {
    // Initialize the TinyUSB library
    tusb_init();
@@ -179,7 +179,7 @@ void UsbTask(void*)
       tud_task();
 }
 
-void UsbCdcTask(void*)
+void UsbCdcTask(void *params)
 {
    // Loop forever listening for incoming data
    while (true)
