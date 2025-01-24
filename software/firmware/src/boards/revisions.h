@@ -7,5 +7,6 @@
 #define REVISION_L                          0x12
 #define REVISION_M                          0x13
 #define REVISION_N                          0x14
+#define REVISION_O                          0x15
 
 #endif  // #ifndef __REVISIONS_HEADER_H__

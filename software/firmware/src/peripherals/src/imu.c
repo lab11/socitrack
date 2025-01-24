@@ -109,7 +109,7 @@ enum Channels
 #define SIG_MOTION_DETECT_CONFIG                        0xC274
 #define SHAKE_DETECT_CONFIG                             0x7D7D
 #define MAX_FUSION_PERIOD                               0xD7D7
-#define SERIAL_NUMBER                                   0x4B4B
+#define IMU_SERIAL_NUMBER                               0x4B4B
 #define ES_PRESSURE_CAL                                 0x39AF
 #define ES_TEMPERATURE_CAL                              0x4D20
 #define ES_HUMIDITY_CAL                                 0x1AC9
