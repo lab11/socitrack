@@ -741,7 +741,9 @@ dcd_deInit(uint8_t rhport)
     (void) rhport;
 
     if ( !dcd_usb_states.isInited ) {
+#ifdef AM_DEBUG_PRINTF
         am_util_stdio_printf("dcd_deInit second call\n");
+#endif
 
         return ;
     }
@@ -801,7 +803,9 @@ dcd_powerup(uint8_t rhport, bool force)
         {
             dcd_usb_states.isPoweredUp = true;
 
+#ifdef AM_DEBUG_PRINTF
             am_util_stdio_printf("in usb pwr up\n");
+#endif
 
             //
             // enable internal power rail
@@ -831,13 +835,17 @@ dcd_powerup(uint8_t rhport, bool force)
         }
         else
         {
+#ifdef AM_DEBUG_PRINTF
             am_util_stdio_printf("in usb pwr up, already up\n");
+#endif
 
         }
     }
     else
     {
+#ifdef AM_DEBUG_PRINTF
         am_util_stdio_printf("in usb pwr up do init\n");
+#endif
         dcd_init(rhport);
     }
 }
@@ -852,7 +860,9 @@ dcd_powerdown(uint8_t rhport, bool force)
 
     if (dcd_usb_states.isPoweredUp || force)
     {
+#ifdef AM_DEBUG_PRINTF
         am_util_stdio_printf("in usb pwr dwn\n");
+#endif
         dcd_usb_states.isPoweredUp = false;
 
         am_hal_usb_enable_phy_reset_override();
@@ -878,8 +888,9 @@ dcd_powerdown(uint8_t rhport, bool force)
 //*****************************************************************************
 void tud_umount_cb(void)
 {
+#ifdef AM_DEBUG_PRINTF
     am_util_stdio_printf("tud_umount_cb\n");
-
+#endif
     dcd_deInit(0) ;
 }
 
