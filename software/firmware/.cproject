@@ -96,11 +96,11 @@
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.other.1119811857" name="Other debugging flags" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.debugging.other"/>
 							<option id="ilg.gnuarmeclipse.managedbuild.cross.option.showDevicesTab.1064225102" name="showDevicesTab" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.showDevicesTab"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform.2110508977" isAbstract="false" osList="all" superClass="ilg.gnuarmeclipse.managedbuild.cross.targetPlatform"/>
-							<builder arguments="BUILT_BY=eclipse BOARD_REV=N" id="ilg.gnuarmeclipse.managedbuild.cross.builder.1122401273" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
+							<builder arguments="BUILT_BY=eclipse BOARD_REV=O" id="ilg.gnuarmeclipse.managedbuild.cross.builder.1122401273" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" superClass="ilg.gnuarmeclipse.managedbuild.cross.builder"/>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler.723795831" name="GNU Arm Cross Assembler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.assembler">
 								<option id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor.681086204" name="Use preprocessor" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.usepreprocessor" useByScannerDiscovery="false" value="true" valueType="boolean"/>
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths.158799126" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.assembler.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revO}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/bsp/apollo4_blue_pro}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/devices}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/mcu/apollo4p}&quot;"/>
@@ -121,7 +121,7 @@
 							</tool>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler.930969168" name="GNU Arm Cross C Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.c.compiler">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths.601223693" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.c.compiler.include.paths" useByScannerDiscovery="true" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revO}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/bsp/apollo4_blue_pro}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/devices}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/mcu/apollo4p}&quot;"/>
@@ -142,7 +142,7 @@
 							</tool>
 							<tool id="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler.2135267146" name="GNU Arm Cross C++ Compiler" superClass="ilg.gnuarmeclipse.managedbuild.cross.tool.cpp.compiler">
 								<option IS_BUILTIN_EMPTY="false" IS_VALUE_EMPTY="false" id="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths.372913830" name="Include paths (-I)" superClass="ilg.gnuarmeclipse.managedbuild.cross.option.cpp.compiler.include.paths" useByScannerDiscovery="true" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revN}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/src/boards/revO}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/bsp/apollo4_blue_pro}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/devices}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/SociTrack/AmbiqSDK/mcu/apollo4p}&quot;"/>
@@ -246,7 +246,7 @@
 			</target>
 			<target name="led" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=I</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>led</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -350,7 +350,7 @@
 			</target>
 			<target name="ble_and_range" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>ble_and_range</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -358,7 +358,7 @@
 			</target>
 			<target name="ble_reset" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>ble_reset</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -366,7 +366,7 @@
 			</target>
 			<target name="ranging_power" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>ranging_power</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -374,7 +374,7 @@
 			</target>
 			<target name="full_segger" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>full_segger</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -382,7 +382,7 @@
 			</target>
 			<target name="full_exp" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>full_exp</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -390,7 +390,7 @@
 			</target>
 			<target name="uwb_cont_wave" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>uwb_cont_wave</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -398,7 +398,7 @@
 			</target>
 			<target name="uwb_cont_frame" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=M</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>uwb_cont_frame</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -406,7 +406,7 @@
 			</target>
 			<target name="usb" path="tests" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>${cross_make}</buildCommand>
-				<buildArguments>BUILT_BY=eclipse BOARD_REV=N</buildArguments>
+				<buildArguments>BUILT_BY=eclipse</buildArguments>
 				<buildTarget>usb</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>

@@ -6,7 +6,7 @@ SHELL := /bin/bash
 ifdef BOARD_REV
 REVISION := $(BOARD_REV)
 else
-REVISION := N
+REVISION := O
 endif
 
 ifeq ($(REVISION), I)
@@ -36,6 +36,9 @@ DEFINES += -D_DATETIME="\"$(shell date -u)\""
 DEFINES += -D_FW_REVISION=$(shell cd ../.. && git log --pretty=format:'%h' -n 1)
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
+DEFINES += -DCFG_TUSB_DEBUG=0
+DEFINES += -DCFG_TUSB_MCU=OPT_MCU_APOLLO4
+DEFINES += -D'CFG_TUD_MEM_SECTION=__attribute__((section(".usb")))'
 DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
@@ -105,6 +108,8 @@ INCLUDES += -Isrc/boards
 INCLUDES += -Isrc/boards/rev$(REVISION)
 INCLUDES += -Isrc/external/decadriver
 INCLUDES += -Isrc/external/segger
+INCLUDES += -Isrc/external/tinyusb
+INCLUDES += -Isrc/external/tinyusb/src
 INCLUDES += -Isrc/peripherals/include
 INCLUDES += -Isrc/tasks
 INCLUDES += -Isrc/tasks/bluetooth
@@ -137,6 +142,11 @@ VPATH += src/boards
 VPATH += src/boards/rev$(REVISION)
 VPATH += src/external/decadriver
 VPATH += src/external/segger
+VPATH += src/external/tinyusb
+VPATH += src/external/tinyusb/src
+VPATH += src/external/tinyusb/src/common
+VPATH += src/external/tinyusb/src/device
+VPATH += src/external/tinyusb/src/class/cdc
 VPATH += src/peripherals/src
 VPATH += src/tasks
 VPATH += src/tasks/bluetooth
@@ -163,7 +173,9 @@ SRC += atts_read.c
 SRC += atts_write.c
 SRC += bda.c
 SRC += calc128.c
+SRC += cdc_device.c
 SRC += cfg_stack.c
+SRC += dcd_apollo4.c
 SRC += dm_adv.c
 SRC += dm_adv_leg.c
 SRC += dm_conn.c
@@ -202,6 +214,10 @@ SRC += smp_main.c
 SRC += startup_gcc.c
 SRC += tasks.c
 SRC += timers.c
+SRC += tusb.c
+SRC += tusb_fifo.c
+SRC += usbd.c
+SRC += usbd_control.c
 SRC += wsf_assert.c
 SRC += wsf_buf.c
 SRC += wsf_msg.c
@@ -247,6 +263,7 @@ SRC += status_phase.c
 SRC += storage_task.c
 SRC += subscription_phase.c
 SRC += time_aligned_task.c
+SRC += usb_task.c
 
 CSRC = $(filter %.c,$(SRC))
 ASRC = $(filter %.s,$(SRC))

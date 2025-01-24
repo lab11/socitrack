@@ -92,6 +92,13 @@ SECTIONS
         __heap_end__ = _eheap;
         __HeapLimit = _eheap;
     } > MCU_TCM
+    
+    .usb (NOLOAD):
+    {
+        . = ALIGN(4);
+        KEEP(*(.usb))
+        . = ALIGN(4);
+    } > MCU_TCM AT>MCU_MRAM
 
     .stack (NOLOAD):
     {

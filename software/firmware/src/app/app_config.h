@@ -61,12 +61,19 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define DW_PREAMBLE_LENGTH_US                       ((1 + 128 + 16) * 64 / 62.89133858)   // (1 + Preamble length + SFD length) * 64 / 62.89133858
 
 
+// USB Configuration ---------------------------------------------------------------------------------------------------
+
+#define USB_VID                                     0x1209
+#define USB_PID                                     0x2828
+
+
 // Bluetooth LE Configuration ------------------------------------------------------------------------------------------
 
 #define MANUFACTURER                                "Lab11"
 #define HW_MODEL                                    "TotTag"
 #define HW_REVISION                                 "Rev. "STRINGIZE_VAL(_HW_REVISION)
 #define FW_REVISION                                 "Commit "STRINGIZE_VAL(_FW_REVISION)
+#define SERIAL_NUMBER                               HW_MODEL"Rev"STRINGIZE_VAL(_HW_REVISION)
 
 #define MAX_NUM_CONNECTIONS                         2
 

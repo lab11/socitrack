@@ -59,6 +59,8 @@ void BLETask(void *params);
 void RangingTask(void *uid);
 void StorageTask(void *params);
 void TimeAlignedTask(void *params);
+void UsbTask(void *params);
+void UsbCdcTask(void *params);
 
 // Task Startup Function
 void run_tasks(void);

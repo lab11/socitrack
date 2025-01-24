@@ -5,7 +5,7 @@ SHELL := /bin/bash
 ifdef BOARD_REV
 REVISION := $(BOARD_REV)
 else
-REVISION := N
+REVISION := O
 endif
 
 ifeq ($(REVISION), I)
@@ -35,6 +35,9 @@ DEFINES += -D_DATETIME="\"$(shell date -u)\""
 DEFINES += -D_FW_REVISION=$(shell cd ../../.. && git log --pretty=format:'%h' -n 1)
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
+DEFINES += -DCFG_TUSB_DEBUG=1
+DEFINES += -DCFG_TUSB_MCU=OPT_MCU_APOLLO4
+DEFINES += -D'CFG_TUD_MEM_SECTION=__attribute__((section(".usb")))'
 DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
@@ -105,6 +108,8 @@ INCLUDES += -I../src/boards
 INCLUDES += -I../src/boards/rev$(REVISION)
 INCLUDES += -I../src/external/decadriver
 INCLUDES += -I../src/external/segger
+INCLUDES += -I../src/external/tinyusb
+INCLUDES += -I../src/external/tinyusb/src
 INCLUDES += -I../src/peripherals/include
 INCLUDES += -I../src/tasks
 INCLUDES += -I../src/tasks/bluetooth
@@ -140,6 +145,11 @@ VPATH += ../src/boards
 VPATH += ../src/boards/rev$(REVISION)
 VPATH += ../src/external/decadriver
 VPATH += ../src/external/segger
+VPATH += ../src/external/tinyusb
+VPATH += ../src/external/tinyusb/src
+VPATH += ../src/external/tinyusb/src/common
+VPATH += ../src/external/tinyusb/src/device
+VPATH += ../src/external/tinyusb/src/class/cdc
 VPATH += ../src/peripherals/src
 VPATH += ../src/tasks
 VPATH += ../src/tasks/bluetooth
@@ -169,7 +179,9 @@ SRC += atts_read.c
 SRC += atts_write.c
 SRC += bda.c
 SRC += calc128.c
+SRC += cdc_device.c
 SRC += cfg_stack.c
+SRC += dcd_apollo4.c
 SRC += dm_adv.c
 SRC += dm_adv_leg.c
 SRC += dm_conn.c
@@ -209,6 +221,10 @@ SRC += smp_main.c
 SRC += startup_gcc.c
 SRC += tasks.c
 SRC += timers.c
+SRC += tusb.c
+SRC += tusb_fifo.c
+SRC += usbd.c
+SRC += usbd_control.c
 SRC += wsf_assert.c
 SRC += wsf_buf.c
 SRC += wsf_msg.c
@@ -253,13 +269,14 @@ SRC += status_phase.c
 SRC += storage_task.c
 SRC += subscription_phase.c
 SRC += time_aligned_task.c
+SRC += usb_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -361,6 +378,10 @@ storage: $(CONFIG) $(CONFIG)/test_storage.o $(CONFIG)/$$(TARGET).bin program
 system: TARGET = TestSystem
 system: SRC += test_system.c
 system: $(CONFIG) $(CONFIG)/test_system.o $(CONFIG)/$$(TARGET).bin program
+
+usb: TARGET = TestUSB
+usb: SRC += test_usb.c
+usb: $(CONFIG) $(CONFIG)/test_usb.o $(CONFIG)/$$(TARGET).bin program
 
 uwb_cont_wave: TARGET = UwbContWave
 uwb_cont_wave: SRC += uwb_continuous_wave.c
