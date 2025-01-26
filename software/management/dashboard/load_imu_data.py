@@ -3,6 +3,8 @@ from dataclasses import dataclass, asdict
 import struct
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import glob
 
 GYRO_DATA,ACC_DATA,LACC_DATA,GACC_DATA,QUAT_DATA,STAT_DATA = 0,1,2,3,4,5
 
@@ -106,7 +108,13 @@ IMU_DATA_LEN = sum([data_type_len[x] for x in data_types])
 
 if __name__ == "__main__":
     #a = load_data("./0_Yankee_doodle_Saloon_style_padded_100.pkl")
-    a = load_data("./Unknown.pkl")
+    # Get a list of all .pkl files in the ./ folder
+    pkl_files = glob.glob("./*.pkl")
+    # Find the latest created .pkl file based on creation time
+    latest_file = max(pkl_files, key=os.path.getctime)
+    # Load the latest .pkl file
+    a = load_data(latest_file)
+
     all_data = []
     for segment in a.loc["i"]:
         if not isinstance(segment, list):

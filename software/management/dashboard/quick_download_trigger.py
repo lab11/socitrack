@@ -34,6 +34,8 @@ MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 async def quick_download_trigger(tag_hex_address=None, command=1):
     """
     Connect to the device and trigger segger offloading
+    When command is set to 1, the device will stop imu and storage
+    When command is set to 0, the device will start imu and storage
     """
     # Scan for TotTag devices for 6 seconds
     scanner = BleakScanner(cb={"use_bdaddr": True})
@@ -62,6 +64,7 @@ async def quick_download_trigger(tag_hex_address=None, command=1):
                                 await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack("<BII", MAINTENANCE_SET_LOG_DOWNLOAD_DATES, start, end), True)
                                 await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack("B", MAINTENANCE_DOWNLOAD_LOG), True)
                 except Exception as e:
+                    await client.stop_notify(MODE_SWITCH_UUID)
                     print("ERROR: Unable to connect to TotTag {}".format(device_address))
                     traceback.print_exc()
                 finally:

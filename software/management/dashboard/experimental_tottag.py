@@ -133,7 +133,7 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
    i = 0
    log_data = defaultdict(dict)
    if save_raw_file:
-      with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
+      with open(os.path.join(storage_directory, hex(from_uid)[2:] + '.ttg'), 'wb') as file:
          file.write(data)
    try:
       most_recent_aligned_timestamp = 0
@@ -145,70 +145,72 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          most_recent_aligned_timestamp = (timestamp//0.5)*0.5
          if timestamp > int(time.time()) or data[i] < 1 or data[i] > 5:
             i += 1
-            print(i)
+            print(i, timestamp, data[i], "wrong time or wrong type")
          elif timestamp_raw % 500 == 0:
               #most_recent_aligned_timestamp = timestamp
               if data[i] == STORAGE_TYPE_VOLTAGE:
                  datum = struct.unpack('<I', data[i+5:i+9])[0]
                  if datum > 0 and datum < 4500:
-                    print(timestamp)
+                    print(timestamp,"voltage")
                     log_data[timestamp]['v'] = datum
                     i += 9
                     saved_data_len+=9
                  else:
                     i += 1
-                    print(i)
+                    print(i, timestamp,"wrong voltage")
               elif data[i] == STORAGE_TYPE_CHARGING_EVENT:
                  if data[i+5] > 0 and data[i+5] < 5:
-                    print(timestamp)
+                    print(timestamp,"charging")
                     log_data[timestamp]['c'] = BATTERY_CODES[data[i+5]]
                     i += 6
                     saved_data_len+=6
                  else:
                     i += 1
-                    print(i)
+                    print(i, timestamp,"wrong charging event")
               elif data[i] == STORAGE_TYPE_MOTION:
                  if data[i+5] == 0 or data[i+5] == 1:
-                    print(timestamp)
+                    print(timestamp,"motion")
                     log_data[timestamp]['m'] = data[i+5] > 0
                     i += 6
                     saved_data_len+=6
                  else:
                     i += 1
-                    print(i)
+                    print(i, timestamp,"wrong motion")
               elif data[i] == STORAGE_TYPE_RANGES:
                  log_data[timestamp]['r'] = {}
                  if data[i+5] < MAX_NUM_DEVICES:
                     for j in range(data[i+5]):
                        uid = data[i+6+(j*3)]
                        datum = struct.unpack('<H', data[i+7+(j*3):i+9+(j*3)])[0]
-                       if uid in uid_to_labels and datum < MAX_RANGING_DISTANCE_MM:
-                          log_data[timestamp]['r'][uid_to_labels[uid]] = datum
+                       #if uid in uid_to_labels and datum < MAX_RANGING_DISTANCE_MM:
+                          #log_data[timestamp]['r'][uid_to_labels[uid]] = datum
+                       if datum < MAX_RANGING_DISTANCE_MM:
+                           log_data[timestamp]['r'][hex(uid)[2:]] = datum
                     i += 6 + data[i+5]*3
                     saved_data_len+=6 + data[i+5]*3
                  else:
                     i += 1
-                    print(i)
+                    print(i, timestamp,"wrong ranges")
               elif data[i] == STORAGE_TYPE_IMU:
                   # for STAT_DATA,LACC_DATA,GYRO_DATA, status_reg: i+5
                   # for continuous data from 0x14 (GYRO), status_reg: i+33
                   reg_val = data[i+5]
                   if ( (reg_val & 0x03) < 4) and (((reg_val >> 2) & 0x03) < 4) and (((reg_val >> 4) & 0x03) < 4) and (((reg_val >> 6) & 0x03) < 4):
-                     print("imu data found", timestamp)
+                     print("imu data found", i, timestamp)
                      imu_data = data[i+5:i+5+IMU_DATA_LEN]
                      log_data.setdefault(most_recent_aligned_timestamp, {}).setdefault('i', []).append((timestamp, imu_data))
                      i += 5 + IMU_DATA_LEN
                      saved_data_len+=5 + IMU_DATA_LEN
                   else:
                      i+=1
-                     print(i)
+                     print(i, timestamp,"wrong imu")
               else:
                   i+=1
-                  print(i)
+                  print(i, timestamp,"wrong 500")
          elif data[i] == STORAGE_TYPE_IMU:
              reg_val = data[i+5]
              if ( (reg_val & 0x03) < 4) and (((reg_val >> 2) & 0x03) < 4) and (((reg_val >> 4) & 0x03) < 4) and (((reg_val >> 6) & 0x03) < 4):
-                 print("imu data found", timestamp)
+                 print("imu data found", i, timestamp)
                  imu_data = data[i+5:i+5+IMU_DATA_LEN]
                  if (timestamp>=most_recent_aligned_timestamp) and (timestamp-most_recent_aligned_timestamp<0.5):
                      log_data.setdefault(most_recent_aligned_timestamp, {}).setdefault('i', []).append((timestamp, imu_data))
@@ -216,15 +218,15 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
                  i += 5 + IMU_DATA_LEN
              else:
                  i+=1
-                 print(i)
+                 print(i, timestamp,"wrong imu 2")
          else:
             i+=1
-            print(i)
+            print(i, timestamp, "wrong unknown")
    except Exception:
        traceback.print_exc()
    print(f"len data: {len(data)}, saved: {saved_data_len}")
    log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
-   with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
+   with open(os.path.join(storage_directory, hex(from_uid)[2:] + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
 
