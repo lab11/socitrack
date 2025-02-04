@@ -121,7 +121,7 @@ static void handle_notification(app_notification_t notification)
       {
          // Write IMU data over the BLE characteristic
          imu_data_ready = false;
-         print("INFO: IMU data received\n");
+         //print("INFO: IMU rx\n");
 #ifdef _TEST_IMU_DATA
          bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
 #endif
@@ -208,7 +208,7 @@ static void handle_notification(app_notification_t notification)
       devices_found = false;
       for (uint8_t i = 0; i < num_discovered_devices; ++i)
          ble_scan_results[i] = discovered_devices[i][0];
-      storage_write_ble_scan_results(ble_scan_results, num_discovered_devices);
+      //storage_write_ble_scan_results(ble_scan_results, num_discovered_devices);
       verify_app_configuration();
    }
    if ((notification & APP_NOTIFY_BATTERY_EVENT))
@@ -272,6 +272,7 @@ static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data)
 {
    // Notify the app about a change in IMU data
    imu_data_ready = true;
+   print("%d\n",app_get_experiment_time(0));
 #ifdef _TEST_IMU_DATA
    memcpy(imu_raw_data, raw_data, raw_data_length);
    imu_raw_data_length = raw_data_length;
