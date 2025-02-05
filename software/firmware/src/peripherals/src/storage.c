@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "buzzer.h"
+#include "logging.h"
 #include "rtc.h"
 #include "storage.h"
 #include "system.h"
@@ -132,6 +133,7 @@ static void spi_write(uint8_t command, const void *address, uint32_t address_len
 {
    // Create the SPI transaction structure
    uint32_t instruction = command, retries_remaining = 4;
+   uint32_t num_writes = 1 + (write_length / (1 + AM_HAL_IOM_MAX_TXNSIZE_SPI));
    memcpy(((uint8_t*)&instruction) + 1, address, address_length);
    am_hal_iom_transfer_t spi_transaction = {
       .uPeerInfo.ui32SpiChipSelect  = 0,
@@ -156,7 +158,7 @@ static void spi_write(uint8_t command, const void *address, uint32_t address_len
 
    // Split SPI writes if necessary
    uint32_t write_offset = 0;
-   while (write_length)
+   while (num_writes--)
    {
       // Determine the actual read size for this transaction
       uint32_t write_bytes = (write_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : write_length;
