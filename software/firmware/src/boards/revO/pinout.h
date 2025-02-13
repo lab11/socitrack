@@ -58,16 +58,6 @@
 // Logging
 #define PIN_SWO                                     3
 #define PIN_SWO_FUNCTION                            AM_HAL_PIN_3_SWO
-#define PIN_SWTRACE_CLK                             38
-#define PIN_SWTRACE_CLK_FUNCTION                    AM_HAL_PIN_38_SWTRACECLK
-#define PIN_SWTRACE_0                               80
-#define PIN_SWTRACE_0_FUNCTION                      AM_HAL_PIN_80_SWTRACE0
-#define PIN_SWTRACE_1                               81
-#define PIN_SWTRACE_1_FUNCTION                      AM_HAL_PIN_81_SWTRACE1
-#define PIN_SWTRACE_2                               82
-#define PIN_SWTRACE_2_FUNCTION                      AM_HAL_PIN_82_SWTRACE2
-#define PIN_SWTRACE_3                               83
-#define PIN_SWTRACE_3_FUNCTION                      AM_HAL_PIN_83_SWTRACE3
 
 // Storage
 #define STORAGE_SPI_NUMBER                          5
@@ -94,5 +84,10 @@
 #define BLE_ERROR_TIMER_TICK_RATE_HZ                (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
 #define BLE_SCANNING_TIMER_NUMBER                   4
 #define BLE_SCANNING_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
+
+// USB
+#define PIN_USB_ENABLE1                             78
+#define PIN_USB_ENABLE2                             81
+#define PIN_USB_DETECT                              80
 
 #endif  // #ifndef __PINOUT_HEADER_H__
