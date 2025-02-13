@@ -410,6 +410,11 @@ void ranging_radio_reset(void)
    dwt_setpanid(MODULE_PANID);
    dwt_seteui(eui64_array);
 
+   // Enable use of an external LNA
+#if REVISION_ID > REVISION_N
+   dwt_setlnapamode(DWT_LNA_ENABLE);
+#endif
+
    // Disable double-buffer mode, receive timeouts, and auto-ack mode
    dwt_setdblrxbuffmode(DBL_BUF_STATE_DIS, DBL_BUF_MODE_MAN);
    dwt_setpreambledetecttimeout(0);
@@ -482,6 +487,11 @@ void ranging_radio_choose_channel(uint8_t channel)
       // Update the RF TX spectrum configuration for the given channel
       dwt_configuretxrf((channel == 5) ? &tx_config_ch5 : &tx_config_ch9);
       dwt_configmrxlut(channel);
+
+      // Ensure that LNA mode is enabled
+#if REVISION_ID > REVISION_N
+      dwt_setlnapamode(DWT_LNA_ENABLE);
+#endif
    }
 }
 
@@ -492,17 +502,23 @@ void ranging_radio_choose_antenna(uint8_t antenna_number)
    switch (antenna_number)
    {
       case 0:
+#if REVISION_ID == REVISION_N
          dwt_setlnapamode(DWT_LNA_ENABLE);
+#endif
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);
          break;
       case 1:
+#if REVISION_ID == REVISION_N
          dwt_setlnapamode(DWT_LNA_PA_DISABLE);
+#endif
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
          break;
       case 2:
+#if REVISION_ID == REVISION_N
          dwt_setlnapamode(DWT_LNA_PA_DISABLE);
+#endif
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);
          break;
