@@ -12,6 +12,7 @@
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
+#include "hci_cmd.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -110,6 +111,7 @@ void appUiBtnPoll(void) {}
 
 void am_timer03_isr(void)
 {
+   print("am_timer03_isr\n");
    // Force stop the BLE scanning cycle
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(BLE_ERROR_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
    if (is_initialized && (expected_advertising || expected_scanning))
@@ -159,8 +161,10 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_ADV_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_STOP_IND\n");
          is_advertising = false;
-         if (is_initialized && expected_advertising)
-            bluetooth_start_advertising();
+         if (is_initialized && expected_advertising){
+			 //HciReadLocalVerInfoCmd();
+			 bluetooth_start_advertising();
+		 } 
          break;
       case DM_SCAN_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_START_IND\n");
@@ -171,8 +175,10 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_SCAN_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
          is_scanning = false;
-         if (is_initialized && expected_scanning)
-            bluetooth_start_scanning();
+         if (is_initialized && expected_scanning){
+			 bluetooth_start_scanning();
+			 //HciReadLocalVerInfoCmd();
+		 }
          break;
       case DM_SCAN_REPORT_IND:
       {

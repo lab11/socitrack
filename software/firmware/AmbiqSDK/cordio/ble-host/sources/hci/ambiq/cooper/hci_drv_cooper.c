@@ -67,6 +67,7 @@
 #include "hci_dbg_trc.h"
 
 #include <string.h>
+#include "logging.h"
 
 //*****************************************************************************
 //
@@ -416,6 +417,7 @@ hciDrvWrite(uint8_t type, uint16_t len, uint8_t *pData)
         //
         // Restart the heartbeat timer.
         //
+		//print("BLE_HEARTBEAT_RESTART in hciDrvWrite\n");
         BLE_HEARTBEAT_RESTART();
         return len;
     }
@@ -485,6 +487,11 @@ HciDrvHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
     uint32_t ui32ErrorStatus = 0;
 
 #if ENABLE_BLE_HEARTBEAT
+    //print("verify that heartbeat is actually enabled\n");
+	//if (pMsg->event == BLE_HEARTBEAT_EVENT){
+	//	print("confirm there is actually heartbeat event\n");
+	//}
+
     //
     // If this handler was called in response to a heartbeat event, then it's
     // time to run a benign HCI command. Normally, the BLE controller should
@@ -575,6 +582,7 @@ HciDrvHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
             // Reset
             g_ui32NumBytes = 0;
             ui32ErrorStatus = am_devices_cooper_blocking_read(g_IomDevHdl, g_pui32ReadBuffer, &g_ui32NumBytes);
+			//print("BLE_HEARTBEAT_RESTART in HciDrvHandler\n");
             BLE_HEARTBEAT_RESTART();
 
             if (g_ui32NumBytes > AM_DEVICES_COOPER_MAX_RX_PACKET)

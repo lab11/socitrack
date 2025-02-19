@@ -32,6 +32,7 @@
 #include "hci_evt.h"
 #include "hci_api.h"
 #include "hci_main.h"
+#include "logging.h"
 
 /*************************************************************************************************/
 /*!
@@ -170,12 +171,14 @@ void HciCoreHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
       /* Handle incoming HCI events */
       if (handlerId == HCI_EVT_TYPE)
       {
+		//print("HCI_EVT_TYPE in HciCoreHandler\n");
         /* Parse/process events */
         hciEvtProcessMsg(pBuf);
 
         /* Handle events during reset sequence */
         if (hciCb.resetting)
         {
+		  print("HCI_EVT_RX-HCI_EVT_TYPE: hciCoreResetSequence\n");
           hciCoreResetSequence(pBuf);
         }
         
@@ -185,6 +188,7 @@ void HciCoreHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
       /* Handle ACL data */
       else if (handlerId == HCI_ACL_TYPE)
       {
+		//print("HCI_ACL_TYPE in HciCoreHandler\n");
         /* Reassemble */
         if ((pBuf = hciCoreAclReassembly(pBuf)) != NULL)
         {

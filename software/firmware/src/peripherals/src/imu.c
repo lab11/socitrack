@@ -48,6 +48,7 @@ static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
 
 static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
 {
+   //print("i2c_read_complete!\n");
    // Read the device motion status and trigger the registered callback
    uint8_t *raw_data = (uint8_t*)imu_buffer;
    const uint8_t interrupt_status = *(raw_data + BNO055_INTR_STAT_ADDR - BURST_READ_BASE_ADDR);

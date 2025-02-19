@@ -30,6 +30,7 @@
 #include "hci_drv.h"
 
 #include "am_mcu_apollo.h"
+#include "logging.h"
 
 
 
@@ -71,6 +72,7 @@ typedef enum
 uint16_t hciTrSendAclData(void *pContext, uint8_t *pData)
 {
   uint16_t   len;
+  //print("hciTrSendAclData called\n");
 
   /* get 16-bit length */
   BYTES_TO_UINT16(len, &pData[2]);
@@ -104,7 +106,7 @@ uint16_t hciTrSendAclData(void *pContext, uint8_t *pData)
 bool_t hciTrSendCmd(uint8_t *pData)
 {
   uint16_t   len;  // in case like LE set periodic advertising data, the maximum HCI command parameter length is 255
-
+  //print("hciTrSendCmd called\n");
   /* get length */
   len = pData[2] + HCI_CMD_HDR_LEN;
 

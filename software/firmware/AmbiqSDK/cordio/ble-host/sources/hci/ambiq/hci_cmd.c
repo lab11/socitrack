@@ -36,6 +36,7 @@
 #include "dm_api.h"
 
 #include "am_mcu_apollo.h"
+#include "logging.h"
 
 /**************************************************************************************************
   Macros
@@ -133,6 +134,7 @@ bool_t hciCmdSend(uint8_t *pData)
       /* send command to transport */
       if (hciTrSendCmd(p) == TRUE)
       {
+		//print("hciTrSendCmd success: opcode=%x\n",hciCmdCb.cmdOpcode);
 
         /* remove from the queue*/
         WsfMsgDeq(&hciCmdCb.cmdQueue, &handlerId);
@@ -145,6 +147,9 @@ bool_t hciCmdSend(uint8_t *pData)
 
         return TRUE;
       }
+	  else{
+	  	//print("hciTrSendCmd failed: opcode=%x\n",hciCmdCb.cmdOpcode);
+	  }
     }
   }
   return FALSE;
@@ -182,7 +187,8 @@ void hciCmdInit(void)
 /*************************************************************************************************/
 void hciCmdTimeout(wsfMsgHdr_t *pMsg)
 {
-  HCI_TRACE_INFO1("hciCmdTimeout, opcode=0x%x", hciCmdCb.cmdOpcode);
+  //HCI_TRACE_INFO1("hciCmdTimeout, opcode=0x%x", hciCmdCb.cmdOpcode);
+  print("hciCmdTimeout, opcode=0x%x, cmdQuqueCount=%d, rxQueueCount=%d\n", hciCmdCb.cmdOpcode, WsfQueueCount(&hciCmdCb.cmdQueue), WsfQueueCount(&hciCb.rxQueue));
   // When it times out, pretty much we have to
   // reset/reboot controller and initialize HCI
   // layer and SPI transport layer again.
@@ -205,6 +211,7 @@ void hciCmdTimeout(wsfMsgHdr_t *pMsg)
 /*************************************************************************************************/
 void hciCmdRecvCmpl(uint8_t numCmdPkts)
 {
+  //print("hciCmdRecvCmpl:opcode=%x\n",hciCmdCb.cmdOpcode);
   /* stop the command timeout timer */
   WsfTimerStop(&hciCmdCb.cmdTimer);
 
@@ -1112,6 +1119,7 @@ void HciReadLocalSupFeatCmd(void)
 void HciReadLocalVerInfoCmd(void)
 {
   uint8_t *pBuf;
+  //print("HciReadLocalVerInfoCmd Called!\n");
 
   if ((pBuf = hciCmdAlloc(HCI_OPCODE_READ_LOCAL_VER_INFO, HCI_LEN_READ_LOCAL_VER_INFO)) != NULL)
   {

@@ -34,6 +34,7 @@
 #include "hci_main.h"
 #include "l2c_defs.h"
 #include "am_mcu_apollo.h"
+#include "logging.h"
 /**************************************************************************************************
   Macros
 **************************************************************************************************/
@@ -333,6 +334,7 @@ void hciCoreConnClose(uint16_t handle)
 /*************************************************************************************************/
 bool_t hciCoreSendAclData(hciCoreConn_t *pConn, uint8_t *pData)
 {
+  //print("hciCoreSendAclData called\n");
   /* send to transport */
   if ( hciTrSendAclData(pConn, pData) > 0)
   {
@@ -447,6 +449,7 @@ bool_t hciCoreTxReady(uint8_t bufs)
 /*************************************************************************************************/
 bool_t hciCoreTxAclStart(hciCoreConn_t *pConn, uint16_t len, uint8_t *pData)
 {
+  //print("hciCoreTxAclStart called\n");
   uint16_t hciLen;
 
   /* make sure not already fragmenting on this connection */
@@ -517,6 +520,7 @@ bool_t hciCoreTxAclStart(hciCoreConn_t *pConn, uint16_t len, uint8_t *pData)
 bool_t hciCoreTxAclContinue(hciCoreConn_t *pConn)
 {
   uint16_t aclLen;
+  //print("hciCoreTxAclContinue called\n");
 
   if (pConn == NULL)
   {
