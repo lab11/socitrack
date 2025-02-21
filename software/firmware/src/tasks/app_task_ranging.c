@@ -125,7 +125,7 @@ static void handle_notification(app_notification_t notification)
          //print("INFO: IMU rx\n");
 #ifdef _TEST_IMU_DATA
          counter++;
-         if (counter==1){
+         if (counter==4){
             bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
             counter=0;
          }
