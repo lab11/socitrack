@@ -27,7 +27,7 @@ static uint32_t download_start_timestamp, download_end_timestamp;
 
 #ifdef _TEST_IMU_DATA
 static uint32_t imu_raw_data_length;
-static uint8_t imu_raw_data[MAX_IMU_DATA_LENGTH];
+static uint8_t imu_raw_data[MAX_IMU_DATA_LENGTH*2];
 static uint16_t counter = 0;
 #else
 static uint8_t imu_calibration_data;
@@ -125,7 +125,7 @@ static void handle_notification(app_notification_t notification)
          //print("INFO: IMU rx\n");
 #ifdef _TEST_IMU_DATA
          counter++;
-         if (counter==4){
+         if (counter==2){
             bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
             counter=0;
          }
@@ -280,7 +280,8 @@ static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data)
    //print("%d\n",app_get_experiment_time(0));
 #ifdef _TEST_IMU_DATA
    memcpy(imu_raw_data, raw_data, raw_data_length);
-   imu_raw_data_length = raw_data_length;
+   memcpy(imu_raw_data+raw_data_length, raw_data, raw_data_length);
+   imu_raw_data_length = raw_data_length*2;
 #else
    imu_calibration_data = *calib_data;
    memcpy(imu_accel_data, linear_accel_data, 3 * sizeof(int16_t));
