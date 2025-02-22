@@ -28,7 +28,7 @@ typedef void (*data_ready_callback_t)(uint8_t *calib_data, int16_t *linear_accel
 #endif
 
 // Burst data transfer definitions
-#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
+#define BURST_READ_BASE_ADDR    BNO055_ACCEL_DATA_X_LSB_ADDR
 #define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
 #define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
 

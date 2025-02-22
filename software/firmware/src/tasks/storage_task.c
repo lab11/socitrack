@@ -23,11 +23,10 @@ static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
 static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
 static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
-static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
 
-
+int32_t ranging_timestamp_offset;
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
 #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)

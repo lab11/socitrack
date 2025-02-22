@@ -513,6 +513,9 @@ void imu_clear_interrupts(void)
 uint8_t imu_pick_data_from_raw(const uint8_t **const picked, const uint8_t *raw_data, bno055_data_type_t data_type)
 {
    switch (data_type) {
+      case ACC_DATA:
+         *picked = raw_data + BNO055_ACCEL_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR;
+         return ACC_DATA_LEN;
       case GYRO_DATA:
          *picked = raw_data + BNO055_GYRO_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR;
          return GYRO_DATA_LEN;

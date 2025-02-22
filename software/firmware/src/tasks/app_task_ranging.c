@@ -22,13 +22,16 @@ static uint8_t ble_scan_results[MAX_NUM_RANGING_DEVICES];
 static volatile uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
 static volatile uint32_t seconds_to_activate_buzzer;
 static volatile uint8_t num_discovered_devices;
-static volatile bool devices_found, motion_changed, imu_data_ready;
+static volatile bool devices_found, motion_changed, imu_data_ready, imu_ble_data_ready;
 static uint32_t download_start_timestamp, download_end_timestamp;
 
 #ifdef _TEST_IMU_DATA
 static uint32_t imu_raw_data_length;
-static uint8_t imu_raw_data[MAX_IMU_DATA_LENGTH*2];
+static uint8_t imu_raw_data[MAX_IMU_DATA_LENGTH];
+static uint32_t imu_ble_raw_data_length;
+static uint8_t imu_ble_raw_data[(MAX_IMU_DATA_LENGTH+4)*2];
 static uint16_t counter = 0;
+extern int32_t ranging_timestamp_offset;
 #else
 static uint8_t imu_calibration_data;
 static int16_t imu_accel_data[3];
@@ -124,11 +127,10 @@ static void handle_notification(app_notification_t notification)
          imu_data_ready = false;
          //print("INFO: IMU rx\n");
 #ifdef _TEST_IMU_DATA
-         counter++;
-         if (counter==2){
-            bluetooth_write_imu_data(imu_raw_data, imu_raw_data_length);
-            counter=0;
-         }
+      if (imu_ble_data_ready){
+         bluetooth_write_imu_data(imu_ble_raw_data, imu_ble_raw_data_length);
+         imu_ble_data_ready = false;
+      }
 #endif
 
          // Store relevant IMU data
@@ -275,18 +277,31 @@ static void data_ready_handler(uint8_t *raw_data, uint32_t raw_data_length)
 static void data_ready_handler(uint8_t *calib_data, int16_t *linear_accel_data)
 #endif
 {
-   // Notify the app about a change in IMU data
-   imu_data_ready = true;
    //print("%d\n",app_get_experiment_time(0));
 #ifdef _TEST_IMU_DATA
-   memcpy(imu_raw_data, raw_data, raw_data_length);
-   memcpy(imu_raw_data+raw_data_length, raw_data, raw_data_length);
-   imu_raw_data_length = raw_data_length*2;
+   //raw_data_length is BURST_READ_LEN (without timestamp)
+   if (!imu_data_ready){
+      memcpy(imu_raw_data, raw_data, raw_data_length);
+   }
+   if (!imu_ble_data_ready){
+      //copy the timestamp
+      uint32_t timestamp = app_get_experiment_time(ranging_timestamp_offset);
+      memcpy(imu_ble_raw_data+(4+raw_data_length)*counter, &timestamp, sizeof(timestamp));
+      memcpy(imu_ble_raw_data+(4+raw_data_length)*counter+4, raw_data, raw_data_length);
+      counter++;
+   }
+   if (counter==2){
+      imu_ble_data_ready = true;
+      counter = 0;
+   }
+   imu_ble_raw_data_length = (raw_data_length+4)*2;
+   imu_raw_data_length = raw_data_length;
 #else
    imu_calibration_data = *calib_data;
    memcpy(imu_accel_data, linear_accel_data, 3 * sizeof(int16_t));
 #endif
-   app_notify(APP_NOTIFY_IMU_EVENT, true);
+imu_data_ready = true;
+app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
