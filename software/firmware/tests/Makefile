@@ -48,6 +48,7 @@ DEFINES += -Dgcc
 DW_LIBRARY := ../src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.14.a
 LINKER_FILE := ../AmbiqSDK/bsp/$(BSP)/linker/socitrack.ld
 STARTUP_FILE := ../AmbiqSDK/bsp/$(BSP)/linker/startup_gcc.c
+BLE_FW_FILE := ../AmbiqSDK/bsp/ble_firmware_update.bin
 
 #### Required Executables ####
 CC = $(TOOLCHAIN)-gcc
