@@ -379,8 +379,8 @@ void ranging_radio_reset(void)
       am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET);
       deca_usleep(1);
       am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET);
-      deca_sleep(10);
    }
+   deca_sleep(50);
 
    // Initialize the DW3000 driver and transceiver
    if (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
