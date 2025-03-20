@@ -5,6 +5,8 @@
 #include "usb.h"
 
 
+#if REVISION_ID >= REVISION_O
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint32_t cable_connected;
@@ -61,3 +63,10 @@ bool usb_cable_connected(void)
    // Return current USB cable connection status
    return cable_connected;
 }
+
+#else
+
+void usb_init(void) {}
+bool usb_cable_connected(void) { return false; }
+
+#endif  // #if REVISION_ID >= REVISION_O
