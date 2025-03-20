@@ -1,8 +1,13 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_tasks.h"
+#include "battery.h"
 #include "logging.h"
+#include "rtc.h"
+#include "storage.h"
+#include "system.h"
 #include "tusb.h"
+#include "usb.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -91,88 +96,34 @@ const uint16_t* tud_descriptor_string_cb(uint8_t index, uint16_t langid)
    return string_description;
 }
 
-AM_USED void tud_mount_cb(void)
-{
-   print("tud_mount_cb\n");
-}
-
-AM_USED void tud_umount_cb(void)
-{
-   print("tud_umount_cb\n");
-}
-
 AM_USED void tud_suspend_cb(bool remote_wakeup_en)
 {
-   print("tud_suspend_cb\n");
-}
-
-AM_USED void tud_resume_cb(void)
-{
-   print("tud_resume_cb\n");
+   // USB cable disconnected, reboot
+   print("INFO: USB cable disconnected...rebooting!\n");
+   system_reset(true);
 }
 
 AM_USED void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 {
-   (void) itf;
-   (void) rts;
-
-   // connected
-   if (dtr)
-   {
-      // print initial message when connected
-      am_util_stdio_printf("dtr up\r\n");
-      tud_cdc_write_str("\r\nTinyUSB CDC device example\r\n");
-      tud_cdc_write_flush();
-   }
-   else
-      am_util_stdio_printf("dtr down\r\n");
+   // Log that a USB connection change has occurred
+   print("INFO: USB connection %s\n", dtr ? "opened" : "closed");
 }
 
 
-// Private Helper Functions --------------------------------------------------------------------------------------------
-
-//*****************************************************************************
-//
-//! @brief callback called from tinyusb tud_task code on powerup (reconnect)
-//!
-//! @param x unused
-//
-//*****************************************************************************
-/*static void usb_disconn_pwrUpCB(void*)
-{
-   print("usb_disconn_pwrUpCB\n");
-   dcd_powerup(0, false);
-   tud_connect();
-}*/
-
-//*****************************************************************************
-//
-//! @brief callback called from tinyusb code on powerloss (shutdown)
-//!
-//! @details this is called from the USB task in response to a powerDown event
-//! the powerDown event was issued above in the usb_disconnect_callPowerDown call
-//! this will perform a graceful usb shutdown
-//!
-//! @note This function should only be called from the tusb_task. It is called in the
-//! background or in the tud_task(if rtos).
-//!
-//! @param x unused
-//
-//*****************************************************************************
-/*static void usb_disconn_pwrDownCB(void*)
-{
-   print("usb_disconn_pwrDownCB\n");
-   dcd_powerdown(0, false);
-}*/
-
-
 // Public API Functions ------------------------------------------------------------------------------------------------
+
+extern void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate);
+extern void app_maintenance_download_log_file(uint32_t start_time, uint32_t end_time);
+
+uint32_t usb_write(const void* data, uint32_t num_bytes)
+{
+   return tud_cdc_write(data, num_bytes);
+}
 
 void UsbTask(void *params)
 {
    // Initialize the TinyUSB library
    tusb_init();
-   NVIC_SetPriority(USB0_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
 
    // Loop forever handling USB device events
    while (true)
@@ -181,25 +132,99 @@ void UsbTask(void *params)
 
 void UsbCdcTask(void *params)
 {
+   // Set up task variables
+   usb_command_t command;
+   uint8_t uid[EUI_LEN + 1];
+   uint32_t download_start_timestamp = 0, download_end_timestamp = 0;
+   system_read_UID(uid, sizeof(uid));
+   uid[EUI_LEN] = '\n';
+
+   // Put the storage peripheral into maintenance mode
+   storage_enter_maintenance_mode();
+
    // Loop forever listening for incoming data
    while (true)
    {
-      // Check for rx and tx buffer watermark
-      uint32_t rx_count = tud_cdc_available();
-      uint32_t tx_avail = tud_cdc_write_available();
-
-      // If data received and there is enough tx buffer to echo back. Else
-      // keep rx FIFO and wait for next service.
-      if ((rx_count != 0) && (tx_avail >= rx_count))
-      {
-         uint8_t buf_rx[CFG_TUD_CDC_RX_BUFSIZE];
-
-         // read and echo back
-         uint32_t count = tud_cdc_read(buf_rx, sizeof(buf_rx));
-
-         tud_cdc_write(buf_rx, count);
-         tud_cdc_write_flush();
-      }
+      // Read from USB
+      if (tud_cdc_available() && tud_cdc_read(&command, 1) == 1)
+         switch (command)
+         {
+            case USB_VERSION_COMMAND:
+            {
+               static const uint8_t firmware_ver[] = FW_REVISION"\n";
+               static const uint8_t hardware_ver[] = HW_REVISION"\n";
+               tud_cdc_write(firmware_ver, sizeof(firmware_ver) - 1);
+               tud_cdc_write(hardware_ver, sizeof(hardware_ver) - 1);
+               tud_cdc_write_flush();
+               break;
+            }
+            case USB_VOLTAGE_COMMAND:
+            {
+               uint16_t voltage = (uint16_t)battery_monitor_get_level_mV();
+               tud_cdc_write(&voltage, sizeof(voltage));
+               tud_cdc_write_flush();
+               break;
+            }
+            case USB_GET_TIMESTAMP_COMMAND:
+            {
+               uint32_t timestamp = rtc_get_timestamp();
+               tud_cdc_write(&timestamp, sizeof(timestamp));
+               tud_cdc_write_flush();
+               break;
+            }
+            case USB_SET_TIMESTAMP_COMMAND:
+            {
+               uint32_t timestamp = 0;
+               if (tud_cdc_read(&timestamp, sizeof(timestamp)) == sizeof(timestamp))
+                  rtc_set_time_from_timestamp(timestamp);
+               break;
+            }
+            case USB_FIND_MY_TOTTAG_COMMAND:
+               app_maintenance_activate_find_my_tottag(10);
+               break;
+            case USB_GET_EXPERIMENT_COMMAND:
+            {
+               experiment_details_t details = { 0 };
+               uint16_t details_len = (uint16_t)sizeof(details);
+               storage_retrieve_experiment_details(&details);
+               tud_cdc_write(&details_len, sizeof(details_len));
+               tud_cdc_write(&details, sizeof(details));
+               tud_cdc_write_flush();
+               break;
+            }
+            case USB_DELETE_EXPERIMENT_COMMAND:
+            {
+               const experiment_details_t empty_details = { 0 };
+               storage_store_experiment_details(&empty_details);
+               break;
+            }
+            case USB_NEW_EXPERIMENT_COMMAND:
+            {
+               experiment_details_t new_details = { 0 };
+               if (tud_cdc_read(&new_details, sizeof(new_details)) == sizeof(new_details))
+                  storage_store_experiment_details(&new_details);
+               break;
+            }
+            case USB_SET_LOG_DL_DATES_COMMAND:
+            {
+               tud_cdc_read(&download_start_timestamp, sizeof(download_start_timestamp));
+               tud_cdc_read(&download_end_timestamp, sizeof(download_end_timestamp));
+               break;
+            }
+            case USB_DOWNLOAD_LOG_COMMAND:
+            {
+               print("INFO: Transferring log over USB...\n");
+               uint16_t details_len = (uint16_t)sizeof(experiment_details_t);
+               tud_cdc_write(uid, sizeof(uid));
+               tud_cdc_write(&details_len, sizeof(details_len));
+               app_maintenance_download_log_file(download_start_timestamp, download_end_timestamp);
+               tud_cdc_write_flush();
+               print("INFO: USB log transfer complete!\n");
+               break;
+            }
+            default:
+               break;
+         }
 
       // Allow lower priority tasks to run
       taskYIELD();

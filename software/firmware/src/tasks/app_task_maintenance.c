@@ -11,6 +11,8 @@
 #include "rtc.h"
 #include "storage.h"
 #include "system.h"
+#include "tusb.h"
+#include "usb.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -33,7 +35,6 @@ static void handle_notification(app_notification_t notification)
       }
    if ((notification & APP_NOTIFY_BATTERY_EVENT) != 0)
       storage_flush_and_shutdown();
-#ifdef __USE_SEGGER__
    if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
    {
       // Define log file transmission variables
@@ -61,7 +62,6 @@ static void handle_notification(app_notification_t notification)
       }
       storage_end_reading();
    }
-#endif  // #ifdef __USE_SEGGER__
 }
 
 static void battery_event_handler(battery_event_t battery_event)
@@ -100,29 +100,34 @@ void AppTaskMaintenance(void *uid)
    static uint32_t notification_bits = 0;
    app_task_handle = xTaskGetCurrentTaskHandle();
 
-   // Register handler for battery status changes and verify correct mode of operation
-   battery_register_event_callback(battery_event_handler);
-   if (!battery_monitor_is_plugged_in())
-      storage_flush_and_shutdown();
-
-   // Wait until the BLE stack has been fully initialized
-   for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
-      vTaskDelay(pdMS_TO_TICKS(100));
-   if (!bluetooth_is_initialized())
+   // Determine if we are in USB maintenance mode
+   bool usb_maintenance = (((uint8_t*)uid)[0] == 0xEF) && (((uint8_t*)uid)[1] == 0xEF) && (((uint8_t*)uid)[2] == 0xEF) && (((uint8_t*)uid)[3] == 0xEF);
+   if (!usb_maintenance)
    {
-      bluetooth_reset();
+      // Register handler for battery status changes and verify correct mode of operation
+      battery_register_event_callback(battery_event_handler);
+      if (!battery_monitor_is_plugged_in())
+         storage_flush_and_shutdown();
+
+      // Wait until the BLE stack has been fully initialized
       for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
          vTaskDelay(pdMS_TO_TICKS(100));
       if (!bluetooth_is_initialized())
-         system_reset(true);
+      {
+         bluetooth_reset();
+         for (int i = 0; !bluetooth_is_initialized() && (i < BLE_INIT_TIMEOUT_MS); i += 100)
+            vTaskDelay(pdMS_TO_TICKS(100));
+         if (!bluetooth_is_initialized())
+            system_reset(true);
+      }
+
+      // Clear the BLE address whitelist
+      bluetooth_clear_whitelist();
+
+      // Update the BLE role to ASLEEP and start advertising
+      bluetooth_set_current_ranging_role(ROLE_ASLEEP);
+      bluetooth_start_advertising();
    }
-
-   // Clear the BLE address whitelist
-   bluetooth_clear_whitelist();
-
-   // Update the BLE role to ASLEEP and start advertising
-   bluetooth_set_current_ranging_role(ROLE_ASLEEP);
-   bluetooth_start_advertising();
 
    // Loop forever, sleeping until an application notification is received
    while (true)

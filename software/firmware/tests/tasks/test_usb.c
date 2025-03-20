@@ -2,12 +2,14 @@
 #include "logging.h"
 #include "rtc.h"
 #include "system.h"
+#include "usb.h"
 
 int main(void)
 {
    // Set up system hardware
    setup_hardware();
    rtc_init();
+   usb_init();
 
    // Create the USB task and start the task scheduler
    static StaticTask_t usb_task_tcb, usb_cdc_task_tcb;

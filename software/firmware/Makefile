@@ -243,6 +243,7 @@ SRC += ranging.c
 SRC += rtc.c
 SRC += storage.c
 SRC += system.c
+SRC += usb.c
 
 SRC += main.c
 SRC += app_tasks.c
