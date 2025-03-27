@@ -26,12 +26,14 @@ with open(input_file, "r") as infile:
         date_match = date_pattern.match(line)
         if date_match:
             current_date = date_match.group(1)
+            print(f"Date found: {current_date}")  # Debugging line
             continue
         
         # Extract entity
         entity_match = entity_pattern.match(line)
         if entity_match:
             current_entity = entity_match.group(1)
+            print(f"Entity found: {current_entity}")  # Debugging line
             continue
         
         # Extract statistics
@@ -47,6 +49,7 @@ with open(input_file, "r") as infile:
             mean_distance = mean_distance_match.group(1)  # Keep as string for 'nan' handling
 
             # Save extracted data
+            print(f"Adding data: {current_date}, {current_entity}, {minutes_range}, {minutes_touch}, {mean_distance}")  # Debugging line
             data.append([current_date, current_entity, minutes_range, minutes_touch, mean_distance])
 
 # Write to CSV
@@ -56,4 +59,3 @@ with open(output_file, "w", newline="") as outfile:
     writer.writerows(data)
 
 print(f"Data successfully written to {output_file}")
-
