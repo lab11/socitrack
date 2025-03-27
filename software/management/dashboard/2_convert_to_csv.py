@@ -2,8 +2,8 @@ import csv
 import re
 
 # Input and output file paths
-input_file = "tottagfiles.txt"
-output_file = "tottagfiles.csv"
+input_file = "/Users/hannahpiersiak/Desktop/tottags/ranging_statistics.txt"
+output_file = "/Users/hannahpiersiak/Desktop/tottags/ranging_statistics.txt"
 
 # Regular expressions to extract relevant data
 date_pattern = re.compile(r"Ranging Statistics on (\d{2}/\d{2}/\d{4}):")
