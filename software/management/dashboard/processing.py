@@ -180,6 +180,17 @@ def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distan
             minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
             mean_distance_in_range = pd.concat([in_range_data[col] for col in in_range_data.columns]).mean()
             print(f'      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}')
+        if len(target_tottag_labels) == 2:
+            print(f'   More statistics')
+            in_range_data_exlusive_0 = day_ranges[day_ranges['r.'+target_tottag_labels[1]].isna() & day_ranges['r.'+target_tottag_labels[0]].notna()]
+            in_range_data_exlusive_1 = day_ranges[day_ranges['r.'+target_tottag_labels[0]].isna() & day_ranges['r.'+target_tottag_labels[1]].notna()]
+            in_range_data_both = day_ranges[day_ranges['r.'+target_tottag_labels[0]].notna() & day_ranges['r.'+target_tottag_labels[1]].notna()]
+            minutes_in_range_exclusive_0 = len(in_range_data_exlusive_0.index) / 120
+            minutes_in_range_exclusive_1 = len(in_range_data_exlusive_1.index) / 120
+            minutes_in_range_both = len(in_range_data_both.index) / 120
+            print(f"      Minutes in range with {target_tottag_labels[0]} but not {target_tottag_labels[1]}: {minutes_in_range_exclusive_0}")
+            print(f"      Minutes in range with {target_tottag_labels[1]} but not {target_tottag_labels[0]}: {minutes_in_range_exclusive_1}")
+            print(f"      Minutes in range with both targets: {minutes_in_range_both}")
 
 def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit='ft', events=dict()):
     ylabel = f'Range ({unit})'
