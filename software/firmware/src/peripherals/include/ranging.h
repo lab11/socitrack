@@ -50,6 +50,8 @@ void ranging_radio_sleep(bool deep_sleep);
 void ranging_radio_wakeup(void);
 bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
+uint32_t ranging_radio_readrxtimestamp_lo(void);
+uint32_t ranging_radio_readrxtimestamp_hi(void);
 uint64_t ranging_radio_readtxtimestamp(void);
 float ranging_radio_received_signal_level(bool first_signal_level);
 int ranging_radio_time_to_millimeters(double dwtime);

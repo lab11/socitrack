@@ -1,17 +1,16 @@
-/*! ----------------------------------------------------------------------------
- * @file    deca_device_api.h
- * @brief   DW3000 API Functions
+/**
+ * @file      deca_device_api.h
+ * 
+ * @brief     QM33xxx Device API Functions
  *
- * @attention
+ * @author    Decawave Applications
  *
- * Copyright 2013 - 2021(c) Decawave Ltd, Dublin, Ireland.
- *
- * All rights reserved.
+ * @copyright SPDX-FileCopyrightText: Copyright (c) 2024 Qorvo US, Inc.
+ *            SPDX-License-Identifier: LicenseRef-QORVO-2
  *
  */
-
-#ifndef _DECA_DEVICE_API_H_
-#define _DECA_DEVICE_API_H_
+#ifndef DECA_DEVICE_API_H
+#define DECA_DEVICE_API_H
 
 #ifdef __cplusplus
 extern "C"
@@ -24,68 +23,46 @@ extern "C"
 #define DWT_NUM_DW_DEV (1)
 #endif
 
-#define DW3000_SPI_FAC      (0<<6 | 1<<0)
-#define DW3000_SPI_FARW     (0<<6 | 0<<0)
-#define DW3000_SPI_EAMRW    (1<<6)
-#define SPICRC_CFG_ID                        0x18
-
-#define CHAN_CTRL_TX_PCODE_BIT_MASK          0xf8U
-#define CHAN_CTRL_RX_PCODE_BIT_MASK          0x1f00U
-#define CHAN_CTRL_SFD_TYPE_BIT_MASK          0x6U
-#define CHAN_CTRL_TX_PCODE_BIT_OFFSET        (3U)
-#define CHAN_CTRL_RX_PCODE_BIT_OFFSET        (8U)
-#define CHAN_CTRL_SFD_TYPE_BIT_OFFSET        (1U)
-#define CHAN_CTRL_ID                         0x10014
-#define CHAN_CTRL_RF_CHAN_BIT_MASK           0x1U
-
-#define TX_CTRL_HI_ID                        0x7001c
-#define RX_CTRL_HI_ID                        0x70010
-
-#define PLL_CFG_ID                           0x90000
-#define RF_PLL_CFG_CH5                       0x1F3C
-#define RF_PLL_CFG_CH9                       0x0F3C
-#define RF_PLL_CFG_LD                        0x81
-
-#define RF_TXCTRL_CH5                        0x1C071134UL
-#define RF_TXCTRL_CH9                        0x1C010034UL
-
-#define RF_RXCTRL_CH9                        0x08B5A833UL
-
-#define LDO_RLOAD_ID                         0x70050
-#define LDO_RLOAD_VAL_B1                     0x14
-#define TX_CTRL_LO_ID                        0x70018
-#define RF_TXCTRL_LO_B2                      0x0E
-#define PLL_CAL_ID                           0x90008
-
-#define SYS_STATUS_ID                        0x44
-#define SYS_STATUS_CP_LOCK_BIT_MASK          0x00000002U
-
 #define DWT_BIT_MASK(bit_num) (((uint32_t)1) << (bit_num))
-#define FCS_LEN               (2)
+#define FCS_LEN               2UL
 
-#define GPIO_MFIO_MODE_MASK 0x7U
-#define STS_CONFIG_HI_B0_MASK 0xFF  // STS_CONFIG_HI Byte 0 mask.
+#define GPIO_MFIO_MODE_MASK 0x7UL
+#define STS_CONFIG_HI_B0_MASK 0xFFUL // STS_CONFIG_HI Byte 0 mask.
 #define RX_SFD_HLDOFF 0x20000000UL  //Number of symbols of accumulation to wait before checking for an SFD pattern, when Ipatov len > 64.
 #define RX_SFD_HLDOFF_DEF 0x14000000UL   //Default number of symbols of accumulation to wait before checking for an SFD pattern.
-#define RX_BUFFER_MAX_LEN (1023)
+#define RX_BUFFER_MAX_LEN 1023U
+#define TX_BUFFER_MAX_LEN 1024U
 
     /* Default interface implementation functions */
 
-#define DW3000_CHIP_FREQ    499200000
-#define DW3000_CHIP_PER_DTU 2
-#define DW3000_CHIP_PER_DLY 512
+#define DW3000_CHIP_FREQ    499200000ULL
+#define DW3000_CHIP_PER_DTU 2ULL
+#define DW3000_CHIP_PER_DLY 512U
 #define DW3000_DTU_FREQ     (DW3000_CHIP_FREQ / DW3000_CHIP_PER_DTU)
-#define DTU_TO_US(x)        (int)((uint64_t)(x)*1000000 / DW3000_DTU_FREQ)
-#define US_TO_DTU(x)        (int)((uint64_t)(x)*DW3000_DTU_FREQ / 1000000)
-#define COEX_TIME_US        1000
+#define DW3000_DTU_FREQ_S   ((int64_t)DW3000_CHIP_FREQ / (int64_t)DW3000_CHIP_PER_DTU)
+#define DTU_TO_US(x)        (uint32_t)((uint64_t)(x) * 1000000ULL / DW3000_DTU_FREQ)
+#define US_TO_DTU(x)        (uint32_t)((uint64_t)(x) * DW3000_DTU_FREQ / 1000000ULL)
+#define DTU_TO_US_S(x)      (int32_t)((int64_t)(x) * 1000000LL / DW3000_DTU_FREQ_S)
+#define US_TO_DTU_S(x)      (int32_t)((int64_t)(x) * DW3000_DTU_FREQ_S / 1000000LL)
+#define COEX_TIME_US        1000UL
 #define COEX_TIME_DTU       US_TO_DTU(COEX_TIME_US)
-#define COEX_MARGIN_US      20
+#define COEX_MARGIN_US      20UL
 #define COEX_MARGIN_DTU     US_TO_DTU(COEX_MARGIN_US)
 
 #define DWT_DW3720_PDOA_DEV_ID   DWT_QM33120_PDOA_DEV_ID   /* Backward compatibility definition of the P/N */
 
+#ifdef AUTO_DW3300Q_DRIVER
+/* Automotive build: define below to enable hardened PLL calibration for automotive application. */
+#define AUTO_PLL_CAL
+#endif
+
 // Enable CRC functionality. Disable to save space when CRC not required.
-//#define DWT_ENABLE_CRC
+#define DWT_ENABLE_CRC
+
+#define DWT_DEBUG_PRINT  0 //debug
+#if (DWT_DEBUG_PRINT == 1)
+#include <stdio.h>
+#endif
 
     /* */
     typedef enum
@@ -106,13 +83,13 @@ extern "C"
         DWT_DW3000_DEV_ID = (int)(0xDECA0302),      //!< DW3000 (non PDOA) silicon device ID
         DWT_QM33110_DEV_ID = (int)(0xDECA0304),     //!< QM33110 (non PDOA) silicon device ID
         DWT_DW3000_PDOA_DEV_ID = (int)(0xDECA0312), //!< DW3000 (with PDOA) silicon device ID
-        DWT_DW3700_PDOA_DEV_ID = (int)(0xDECA0313), //!< DW3700 (with PDOA) silicon device ID
         DWT_QM33120_PDOA_DEV_ID = (int)(0xDECA0314) //!< QM33120 (with PDOA) silicon device ID
     } dw_chip_id_e;
 
-#define DELAY_20uUSec       (20) /*Delay of 20uSec(measured 24uSec)*/
-#define MAX_RETRIES_FOR_PLL (50) /*The PLL calibration should take less than 400us, typically it is < 100us (however on some corners with ch9 it can take ~900us)*/
-#define MAX_RETRIES_FOR_PGF (3)
+#define DELAY_20uUSec       (20UL) /*Delay of 20uSec(measured 24uSec)*/
+#define MAX_RETRIES_FOR_PLL (50U) /*The PLL calibration should take less than 400us, typically it is < 100us (however on some corners with ch9 it can take ~900us)*/
+#define MAX_RETRIES_FOR_PGF (3U)
+#define MAX_PLL_CAL_LOOP    (2)
 
     typedef enum
     {
@@ -152,10 +129,10 @@ extern "C"
     //! enums for specifying Preamble Acquisition Chunk (PAC) Size in symbols
     typedef enum
     {
-        DWT_PAC8 = 0,  //!< PAC  8 (recommended for RX of preamble length  128 and below
-        DWT_PAC16 = 1, //!< PAC 16 (recommended for RX of preamble length  256
-        DWT_PAC32 = 2, //!< PAC 32 (recommended for RX of preamble length  512
-        DWT_PAC4 = 3,  //!< PAC  4 (recommended for RX of preamble length  < 127
+        DWT_PAC8 = 0,  //!< PAC  8 (recommended for RX of preamble length 128 and below)
+        DWT_PAC16 = 1, //!< PAC 16 (recommended for RX of preamble length 256)
+        DWT_PAC32 = 2, //!< PAC 32 (recommended for RX of preamble length 512)
+        DWT_PAC4 = 3,  //!< PAC  4 (recommended for RX of preamble length < 127)
     } dwt_pac_size_e;
 
     //! enums for specifying SFD Types and size
@@ -169,24 +146,25 @@ extern "C"
         DWT_SFD_LEN16 = 16,  //!< DW 16-bit is length 16
     } dwt_sfd_type_e;
 
-    //! enums for specifying TX Preamble length in symbols
-    //! These are defined to allow them be directly written into byte 2 of the TX_FCTRL register
-    //! (i.e. a four bit value destined for bits 20..18 but shifted left by 2 for byte alignment)
-    typedef enum
-    {
-        DWT_PLEN_4096 = 0x03, //! Standard preamble length 4096 symbols
-        DWT_PLEN_2048 = 0x0A, //! Non-standard preamble length 2048 symbols
-        DWT_PLEN_1536 = 0x06, //! Non-standard preamble length 1536 symbols
-        DWT_PLEN_1024 = 0x02, //! Standard preamble length 1024 symbols
-        DWT_PLEN_512 = 0x0d,  //! Non-standard preamble length 512 symbols
-        DWT_PLEN_256 = 0x09,  //! Non-standard preamble length 256 symbols
-        DWT_PLEN_128 = 0x05,  //! Non-standard preamble length 128 symbols
-        DWT_PLEN_64 = 0x01,   //! Standard preamble length 64 symbols
-        DWT_PLEN_32 = 0x04,   //! Non-standard length 32
-        DWT_PLEN_72 = 0x07,   //! Non-standard length 72
-    } dwt_tx_plen_e;
+    /*! @name Common preamble length codes
+    *
+    * These constants can be used with for dwt_setplenfine() and dwt_configure().
+    * However, DWT_PLEN_4096 can only be used with dwt_configure().
+    * @{
+    */
+    #define DWT_PLEN_4096 (0x1FFU) //!< Standard preamble length 4096 symbols
+    #define DWT_PLEN_2048 (0xFFU ) //!< Non-standard preamble length 2048 symbols
+    #define DWT_PLEN_1536 (0xBFU ) //!< Non-standard preamble length 1536 symbols
+    #define DWT_PLEN_1024 (0x7FU ) //!< Standard preamble length 1024 symbols
+    #define DWT_PLEN_512  (0x3FU ) //!< Non-standard preamble length 512 symbols
+    #define DWT_PLEN_256  (0x1FU ) //!< Non-standard preamble length 256 symbols
+    #define DWT_PLEN_128  (0x0FU ) //!< Non-standard preamble length 128 symbols
+    #define DWT_PLEN_72   (0x08U ) //!< Non-standard length 72
+    #define DWT_PLEN_64   (0x07U ) //!< Standard preamble length 64 symbols
+    #define DWT_PLEN_32   (0x03U ) //!< Non-standard length 32
+    /**@}*/
 
-#define DWT_SFDTOC_DEF 129 // default SFD timeout value
+#define DWT_SFDTOC_DEF 129U // default SFD timeout value
 
     //! enums for selecting PHR modes
     typedef enum
@@ -201,6 +179,14 @@ extern "C"
         DWT_PHRRATE_STD = 0x0, // standard PHR rate
         DWT_PHRRATE_DTA = 0x1, // PHR at data rate (6M81)
     } dwt_phr_rate_e;
+
+    //! enums for selecting FSC TX/RX modes
+    typedef enum
+    {
+        DWT_FCS_ENABLE = 0x0, // default mode - enable FCS gen. in the tx and check in rx
+        DWT_FCS_TX_OFF = 0x1, // disable FCS generation in the transmitter
+        DWT_FCS_RX_OFF = 0x2  // disable FCS checking in the receiver
+    } dwt_fcs_mode_e;
 
     // Define DW3000 PDOA modes
     typedef enum
@@ -221,6 +207,45 @@ extern "C"
         DWT_STS_CONFIG_MASK = 0xB,
         DWT_STS_CONFIG_MASK_NO_SDC = 0x3,
     } dwt_sts_mode_e;
+
+    /*
+        Accumulator index codes used in various API calls.
+        The values are arranged sequentially as [0 .. NUM_OF_DWT_ACC_IDX-1]
+        and can be used as array indexes.
+        Ipatov is at complex sample offset 0x0 from ACC_MEM_ID
+        STS1 is at complex sample offset 0x400 from ACC_MEM_ID
+        STS2 is at complex sample offset 0x600 from ACC_MEM_ID
+    */
+    typedef enum
+    {
+        DWT_ACC_IDX_IP_M = 0,  // Ipatov preamble
+        DWT_ACC_IDX_STS0_M,    // STS1 (1st half in case of PDOA Mode3 used)
+        DWT_ACC_IDX_STS1_M,    // STS2 (2nd half in case of PDOA Mode3 used)
+        NUM_OF_DWT_ACC_IDX
+    } dwt_acc_idx_e;
+
+    //! check whether the accumulator index is for Ipatov (master or slave)
+    #define DWT_ACC_IDX_IS_IPATOV(acc_idx) ((acc_idx) == DWT_ACC_IDX_IP_M)
+
+    //! check whether the accumulator index is for STS (any segment, master or slave)
+    #define DWT_ACC_IDX_IS_STS(acc_idx) (!DWT_ACC_IDX_IS_IPATOV(acc_idx))
+
+    // Dummy enum for compatibility
+    // Define CIR segments/blocks (used for reading RX timestamps)
+    typedef enum
+    {
+        DWT_IP_M = 0x0,    // Ipatov main receiver
+        DWT_STS0_M = 0x8,  // STS0 main receiver
+        DWT_STS1_M = 0x10, // STS1 main receiver
+        DWT_STS2_M = 0x18, // STS1 main receiver
+        DWT_STS3_M = 0x20, // STS1 main receiver
+        DWT_IP_S = 0x28,   // Ipatov slave receiver
+        DWT_STS0_S = 0x30, // STS0 slave receiver
+        DWT_STS1_S = 0x38, // STS1 slave receiver
+        DWT_STS2_S = 0x40, // STS2 slave receiver
+        DWT_STS3_S = 0x48, // STS3 slave receiver
+        DWT_COMPAT_NONE = 0xFF, // Use for retro-compatibility with DW3XXX dwt_uwb_driver.
+    } dwt_ip_sts_segment_e;
 
 #define DWT_SFD_COUNT_WARN (0x2000 >> 7) // SFD count warning bit (STS quality status bit)
 
@@ -301,36 +326,38 @@ extern "C"
         DWT_RDB_STATUS_RXFCG0_BIT_MASK = 0x1U,    // Frame CC good in RX buffer 0
     } dwt_rdb_e;
 
-/* RX events mask relating to reception into RX buffer 0,  when double buffer is used */
+/* RX events mask relating to reception into RX buffer 0, when double buffer is used */
 #define DWT_RDB_STATUS_CLEAR_BUFF0_EVENTS (RDB_STATUS_CP_ERR0_BIT_MASK | RDB_STATUS_CIADONE0_BIT_MASK | RDB_STATUS_RXFR0_BIT_MASK | RDB_STATUS_RXFCG0_BIT_MASK)
-/* RX events mask relating to reception into RX buffer 1,  when double buffer is used */
+/* RX events mask relating to reception into RX buffer 1, when double buffer is used */
 #define DWT_RDB_STATUS_CLEAR_BUFF1_EVENTS (RDB_STATUS_CP_ERR1_BIT_MASK | RDB_STATUS_CIADONE1_BIT_MASK | RDB_STATUS_RXFR1_BIT_MASK | RDB_STATUS_RXFCG1_BIT_MASK)
 
-#define RDB_STATUS_RXOK                                                                                                                                        \
-    (DWT_RDB_STATUS_RXFCG0_BIT_MASK | DWT_RDB_STATUS_RXFR0_BIT_MASK | DWT_RDB_STATUS_CIADONE0_BIT_MASK | DWT_RDB_STATUS_CP_ERR0_BIT_MASK                       \
-        | DWT_RDB_STATUS_RXFCG1_BIT_MASK | DWT_RDB_STATUS_RXFR1_BIT_MASK | DWT_RDB_STATUS_CIADONE1_BIT_MASK | DWT_RDB_STATUS_CP_ERR1_BIT_MASK)
+#define RDB_STATUS_RXOK  ((uint8_t)DWT_RDB_STATUS_RXFCG0_BIT_MASK | (uint8_t)DWT_RDB_STATUS_RXFR0_BIT_MASK | \
+                          (uint8_t)DWT_RDB_STATUS_CIADONE0_BIT_MASK | (uint8_t)DWT_RDB_STATUS_CP_ERR0_BIT_MASK | \
+                          (uint8_t)DWT_RDB_STATUS_RXFCG1_BIT_MASK | (uint8_t)DWT_RDB_STATUS_RXFR1_BIT_MASK | \
+                          (uint8_t)DWT_RDB_STATUS_CIADONE1_BIT_MASK | (uint8_t)DWT_RDB_STATUS_CP_ERR1_BIT_MASK)
 
-//DW37xx double RX buffer interrupt events
+//DW3720 double RX buffer interrupt events
 #define DWT_DB_INT_RX           (RDB_STATUS_RXOK)
 
 // DW3000 interrupt events
 #define DWT_INT_RX                                                                                                                                             \
     (DWT_INT_CIADONE_BIT_MASK | DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXPHE_BIT_MASK | DWT_INT_RXFR_BIT_MASK | DWT_INT_RXFCE_BIT_MASK | DWT_INT_RXFSL_BIT_MASK      \
         | DWT_INT_RXFTO_BIT_MASK | DWT_INT_CIAERR_BIT_MASK | DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK)
-#define DWT_INT_ALL_LO (0xffffffff)
-#define DWT_INT_ALL_HI (0xffffffff)
+#define DWT_INT_ALL_LO (0xffffffffUL)
+#define DWT_INT_ALL_HI (0xffffffffUL)
 
 /* User defined RX timeouts (frame wait timeout and preamble detect timeout) mask. */
-#define SYS_STATUS_ALL_RX_TO (DWT_INT_RXFTO_BIT_MASK | DWT_INT_RXPTO_BIT_MASK | DWT_INT_CPERR_BIT_MASK)
+#define SYS_STATUS_ALL_RX_TO ((uint32_t)DWT_INT_RXFTO_BIT_MASK | (uint32_t)DWT_INT_RXPTO_BIT_MASK | (uint32_t)DWT_INT_CPERR_BIT_MASK)
 
 /* All RX errors mask. */
 #define SYS_STATUS_ALL_RX_ERR                                                                                                                                  \
-    (DWT_INT_RXPHE_BIT_MASK | DWT_INT_RXFCE_BIT_MASK | DWT_INT_RXFSL_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK | DWT_INT_CIAERR_BIT_MASK       \
-        | DWT_INT_CPERR_BIT_MASK)
+    ((uint32_t)DWT_INT_RXPHE_BIT_MASK | (uint32_t)DWT_INT_RXFCE_BIT_MASK | (uint32_t)DWT_INT_RXFSL_BIT_MASK  | \
+     (uint32_t)DWT_INT_RXSTO_BIT_MASK | (uint32_t)DWT_INT_ARFE_BIT_MASK  | (uint32_t)DWT_INT_CIAERR_BIT_MASK | \
+     (uint32_t)DWT_INT_CPERR_BIT_MASK)
 
 /* All RX events after a correct packet reception mask. */
 #define SYS_STATUS_ALL_RX_GOOD                                                                                                                                 \
-    (DWT_INT_RXFR_BIT_MASK | DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXPRD_BIT_MASK | DWT_INT_RXSFDD_BIT_MASK | DWT_INT_RXPHD_BIT_MASK | DWT_INT_CIADONE_BIT_MASK)
+    ((uint32_t)DWT_INT_RXFR_BIT_MASK | (uint32_t)DWT_INT_RXFCG_BIT_MASK | (uint32_t)DWT_INT_RXPRD_BIT_MASK | (uint32_t)DWT_INT_RXSFDD_BIT_MASK | (uint32_t)DWT_INT_RXPHD_BIT_MASK | (uint32_t)DWT_INT_CIADONE_BIT_MASK)
 
 /* All STS Mode 3 RX errors mask. */
 #define SYS_STATUS_ALL_ND_RX_ERR     (DWT_INT_CIAERR_BIT_MASK | DWT_INT_RXSTO_BIT_MASK)
@@ -348,7 +375,7 @@ extern "C"
     typedef enum
     {
         DWT_SPI_CRC_MODE_NO = 0, /* No CRC */
-        DWT_SPI_CRC_MODE_WR, /* This is used to enable SPI CRC check (the SPI CRC check will be enabled on DW3000 and CRC-8 added for SPI write transactions) */
+        DWT_SPI_CRC_MODE_WR,  /* This is used to enable SPI CRC check (the SPI CRC check will be enabled on DW3000 and CRC-8 added for SPI write transactions) */
         DWT_SPI_CRC_MODE_WRRD /* This is used to optionally enable additional CRC check on the SPI read operations, while the CRC check on the SPI write
                                  operations is also enabled */
     } dwt_spi_crc_mode_e;
@@ -371,9 +398,9 @@ extern "C"
         GPIO_PIN2_RXLED  = 0x1 << (2*3), /* The pin operates as the RXLED output */
         GPIO_PIN3_TXLED  = 0x1 << (3*3), /* The pin operates as the TXLED output */
         GPIO_PIN4_EXTDA  = 0x1 << (4*3), /* Deprecated, only works for DW3000. The pin operates to support external DA/PA */
-        GPIO_PIN4_EXTTXE = 0x2 << (4*3), /* Deprecated, only works for DW37xx. The pin operates as the EXTTXE output (output TX state) */
+        GPIO_PIN4_EXTTXE = 0x2 << (4*3), /* Deprecated, only works for DW3720. The pin operates as the EXTTXE output (output TX state) */
         GPIO_PIN5_EXTTX  = 0x1 << (5*3), /* Deprecated, only works for DW3000. The pin operates to support external PA / TX enable */
-        GPIO_PIN5_EXTRXE = 0x2 << (5*3), /* Deprecated, only works for DW37xx. The pin operates as the EXTRXE output (output RX state) */
+        GPIO_PIN5_EXTRXE = 0x2 << (5*3), /* Deprecated, only works for DW3720. The pin operates as the EXTRXE output (output RX state) */
         GPIO_PIN6_EXTRX  = 0x1 << (6*3), /* Deprecated, only works for DW3000. The pin operates to support external LNA */
         // DW3000
         DW3000_GPIO_PIN0_GPIO        = 0x0,
@@ -399,7 +426,7 @@ extern "C"
         DW3000_GPIO_PIN7_GPIO        = 0x1 << (7*3),
         DW3000_GPIO_PIN8_IRQ         = 0x0 << (8*3),
         DW3000_GPIO_PIN8_GPIO        = 0x1 << (8*3),
-        // DW3700 and DW3720
+        // DW3720
         DW37XX_GPIO_PIN0_SPI2_CLK    = 0x0,
         DW37XX_GPIO_PIN0_RXOKLED     = 0x1,
         DW37XX_GPIO_PIN0_GPIO        = 0x2,
@@ -430,7 +457,7 @@ extern "C"
 
     /* Mask that can be used in e.g ull_setgpiomode to use the GPIO mode of all GPIO pins on a DW3000 IC */
     #define DW3000_ENABLE_ALL_GPIOS_MASK  0x1200000
-    /* Mask that can be used in e.g ull_setgpiomode to use the GPIO mode of all GPIO pins on a DW3700 or DW3720 IC*/
+    /* Mask that can be used in e.g ull_setgpiomode to use the GPIO mode of all GPIO pins on a DW3720 IC*/
     #define DW37XX_ENABLE_ALL_GPIOS_MASK  0x1200492
 
     typedef enum
@@ -476,8 +503,6 @@ extern "C"
         GPIO_8 = GPIO8_BIT_MASK,
         GPIO_ALL = GPIO_BIT_MASK_ALL,
     } gpio_num_e;
-
-    #define GPIO_MFIO_MODE_MASK 0x7U
 
     /* Enable/disable WiFi co-existence */
     typedef enum
@@ -609,23 +634,25 @@ extern "C"
         DWT_READ_OTP_TMP = 0x80, // read ref temperature from OTP
     } dwt_read_otp_modes_e;
 
-    // DW3xxx RF Port configuration set selection
-    typedef enum
-    {
-        DWT_RF_PORT_DEF = 0, // Configure RF port to default value 0 (device will internally switch depending on the PDoA mode)
-        DWT_RF_PORT_1 = 1,   // select RF port 1
-        DWT_RF_PORT_2 = 2,   // select RF port 2
-    } dwt_rf_port_selection_e;
-
     // DW3xxx enabling manual control of antenna selection
     typedef enum
     {
-        DWT_RF_PORT_MAN_CTRL_EN = 1,    // enabling manual control of antenna selection bits
-        DWT_RF_PORT_MAN_CTRL_DISEN = 0, // disabling manual control of antenna selection bits
+	DWT_RF_PORT_MANUAL_DISABLED = 0UL,
+        /* Force RF Port 1. PDoA is not possible in that mode. */
+        DWT_RF_PORT_MANUAL_1 = 1UL,
+        /* Force RF Port 2. PDoA is not possible in that mode. */
+        DWT_RF_PORT_MANUAL_2 = 2UL,
+	/* The RF port is automatically switched depending on PDoA mode, starting by RF Port 1. */
+        DWT_RF_PORT_AUTO_1_2 = 3UL,
+        /* The RF port is automatically switched depending on PDoA mode, starting by RF Port 2. */
+        DWT_RF_PORT_AUTO_2_1 = 4UL,
     } dwt_rf_port_ctrl_e;
 
 // Conversion factor to convert clock offset from PPM to ratio
 #define CLOCK_OFFSET_PPM_TO_RATIO (1.0 / (1 << 26))
+
+#define TEMP_INIT -127
+#define DEFAULT_XTAL_TRIM_TEMP 25
 
     typedef enum
     {
@@ -633,6 +660,7 @@ extern "C"
         AON_SLPCNT_HI = (0x103),       // address of SLEEP counter bits [27:20] in AON memory
         AON_SLPCNT_CAL_CTRL = (0x104), // address of SLEEP counter cal control
         AON_LPOSC_TRIM = (0x10B),      // address of LP OSC trim code
+        AON_VDD_DIG    = (0x10C),      // address of VDD DIG configuration
         AON_SLPCNT_CAL_LO = (0x10E),   // address of SLEEP counter cal value low byte
         AON_SLPCNT_CAL_HI = (0x10F),   // address of SLEEP counter cal value high byte
     } dwt_aon_sleep_conf_e;
@@ -690,27 +718,44 @@ extern "C"
     typedef void (*dwt_spierrcb_t)(void);
 
     // Call-back type for all interrupt events
-    typedef void (*dwt_cb_t)(const dwt_cb_data_t *);
+    typedef void (*dwt_cb_t)(const dwt_cb_data_t *cb_data);
 
-#define SQRT_FACTOR       181 /*Factor of sqrt(2) for calculation*/
-#define STS_LEN_SUPPORTED 7 /*The supported STS length options*/
-#define SQRT_SHIFT_VAL    7
-#define SHIFT_VALUE       11
-#define MOD_VALUE         2048
-#define HALF_MOD          (MOD_VALUE >> 1)
+    typedef struct
+    {
+        dwt_cb_t cbTxDone;         // Callback for TX confirmation event
+        dwt_cb_t cbRxOk;           // Callback for RX good frame event
+        dwt_cb_t cbRxTo;           // Callback for RX timeout events
+        dwt_cb_t cbRxErr;          // Callback for RX error events
+        // DWT needs
+        dwt_cb_t cbSPIErr;         // Callback for SPI error events
+    	dwt_spierrcb_t cbSPIRDErr; // Callback for SPI read error events
+        dwt_cb_t cbSPIRdy;         // Callback for SPI ready events
+        dwt_cb_t cbDualSPIEv;      // Callback for dual SPI events
+        // PEG needs
+        dwt_cb_t cbFrmRdy;         // Callback for RX frame ready events
+        dwt_cb_t cbCiaDone;        // Callback for RX CIA processing done events
+        dwt_cb_t devErr;           // Callback for device error events such as: PGF calibration error
+        dwt_cb_t cbSysEvent;       // Callback for UWB ready, timer or other system events
+    } dwt_callbacks_s;
 
-    /*This Enum holds INT working options.*/
+#define SQRT_FACTOR       181UL /* Factor of sqrt(2) for calculation */
+#define STS_LEN_SUPPORTED 7 /* The supported STS length options */
+#define SQRT_SHIFT_VAL    7UL
+#define SHIFT_VALUE       11UL
+#define MOD_VALUE         2048UL
+#define HALF_MOD          (MOD_VALUE >> 1UL)
+
+    /* This Enum holds INT working options. */
     typedef enum
     {
         DWT_DISABLE_INT = 0,          /* Disable these INT    */
         DWT_ENABLE_INT,               /* Enable these INT     */
         DWT_ENABLE_INT_ONLY,          /* Enable only these INT*/
         DWT_ENABLE_INT_DUAL_SPI,      /* Enable these INT, dual SPI mode */
-        DWT_ENABLE_INT_ONLY_DUAL_SPI, /* Enable only these INT, dual SPI mode */
-
+        DWT_ENABLE_INT_ONLY_DUAL_SPI  /* Enable only these INT, dual SPI mode */
     } dwt_INT_options_e;
 
-    /*This Enum holds the index for factor calculation.*/
+    /* This Enum holds the index for factor calculation. */
     typedef enum
     {
         DWT_STS_LEN_32 = 0,
@@ -723,7 +768,7 @@ extern "C"
     } dwt_sts_lengths_e;
 
     /* Returns the value to set in CP_CFG0_ID for STS length. The x is the enum value from dwt_sts_lengths_e */
-#define GET_STS_REG_SET_VALUE(x) ((uint16_t)1 << ((x) + 2))
+#define GET_STS_REG_SET_VALUE(x) ((uint16_t)1 << ((x) + 2U))
 
     /* Enum used for selecting channel for DGC on-wake kick. */
     typedef enum
@@ -748,7 +793,7 @@ extern "C"
     typedef struct
     {
         uint8_t chan;                 //!< Channel number (5 or 9)
-        dwt_tx_plen_e txPreambLength; //!< DWT_PLEN_64..DWT_PLEN_4096
+        uint16_t txPreambLength;      //!< DWT_PLEN_32..DWT_PLEN_4096
         dwt_pac_size_e rxPAC;         //!< Acquisition Chunk Size (Relates to RX preamble length)
         uint8_t txCode;               //!< TX preamble code (the code configures the PRF, e.g. 9 -> PRF of 64 MHz)
         uint8_t rxCode;               //!< RX preamble code (the code configures the PRF, e.g. 9 -> PRF of 64 MHz)
@@ -763,7 +808,7 @@ extern "C"
 #ifndef WIN32
     } __attribute__((packed)) dwt_config_t;
 #else
-} dwt_config_t;
+    } dwt_config_t;
 #endif // WIN32
 
     typedef struct
@@ -779,7 +824,18 @@ extern "C"
 #ifndef WIN32
     } __attribute__((packed)) dwt_txconfig_t;
 #else
-} dwt_txconfig_t;
+    } dwt_txconfig_t;
+#endif // WIN32
+
+    typedef struct
+    {
+        int16_t tdoa;
+        int16_t pdoa;
+        int8_t fp_ok;
+#ifndef WIN32
+    } __attribute__((packed)) dwt_pdoa_tdoa_res_t;
+#else
+    } dwt_pdoa_tdoa_res_t;
 #endif // WIN32
 
     typedef struct
@@ -833,6 +889,23 @@ extern "C"
 
     typedef struct
     {
+        uint32_t power;      //!< Channel area allows estimation of channel power for the CIR sequence, [30:0].
+        uint32_t F1;         //!< F1 for the CIR sequence, [21:0].
+        uint32_t F2;         //!< F2 for the CIR sequence, [21:0].
+        uint32_t F3;         //!< F3 for the CIR sequence, [21:0].
+        uint32_t peakAmp;    //!< Amplitude of peak sample in the CIR (Q20.2 format)
+        uint16_t peakIndex;  //!< Index of peak sample in the CIR
+        uint16_t FpIndex;    //!< First path index for the CIR (Q10.6 format).
+        uint16_t accumCount; //!< Number accumulated symbols for the CIR
+
+#ifndef WIN32
+    } __attribute__((packed)) dwt_cirdiags_t;
+#else
+} dwt_cirdiags_t;
+#endif // WIN32
+
+    typedef struct
+    {
         // all of the below are mapped to a register in DW3000
         uint16_t PHE;   // 12-bit number of received header error events
         uint16_t RSL;   // 12-bit number of received frame sync loss event events
@@ -855,7 +928,7 @@ extern "C"
 } dwt_deviceentcnts_t;
 #endif // WIN32
 
-    /* BEGIN: CHIP_SPECIFIC_SECTION DW37xx */
+    /* BEGIN: CHIP_SPECIFIC_SECTION DW3720 */
 
     /* Hosts for the SPI bus */
     typedef enum
@@ -872,7 +945,7 @@ extern "C"
         HOST_EN_SLEEP = 0x00, /* Host enable Sleep/Deepsleep */
         HOST_DIS_SLEEP = 0x60 /* Host disable Sleep/Deepsleep */
     } dwt_host_sleep_en_e;
-    /* END: CHIP_SPECIFIC_SECTION DW37xx */
+    /* END: CHIP_SPECIFIC_SECTION DW3720 */
 
     /********************************************************************************************************************/
     /*                                                AES BLOCK                                                         */
@@ -1029,8 +1102,8 @@ extern "C"
 #define ERROR_WRONG_MODE     (-2)
 #define ERROR_WRONG_MIC_SIZE (-3)
 #define ERROR_PAYLOAD_SIZE   (-4)
-#define MIC_ERROR            (0xff)
-#define STS_LEN_128BIT       (16)
+#define MIC_ERROR            0xFFU
+#define STS_LEN_128BIT       16U
 
     typedef enum
     {
@@ -1059,6 +1132,30 @@ extern "C"
         STS2 = 0x2,   // Select STS2 Diagnostic
     } dwt_diag_type_e;
 
+/* Accumulator sizes (in the number of complex samples) */
+#define DWT_CIR_LEN_STS      512  // max number of STS CIR samples
+#define DWT_CIR_LEN_IP_PRF16 992  // max number of Ipatov CIR samples with PRF16
+#define DWT_CIR_LEN_IP_PRF64 1016 // max number of Ipatov CIR samples with PRF64
+#define DWT_CIR_LEN_MAX      DWT_CIR_LEN_IP_PRF64 // max number of CIR samples
+
+#define PCODE_PRF16_START 1U
+#define PCODE_PRF64_START 9U
+#define PCODE_PRF64_END 24U
+
+/* Important definitions for CIR reading algorithm */
+#define DWT_CIR_VALUE_NO_SIGN_18BIT_MASK 0x0003FFFFUL
+#define DWT_CIR_SIGN_24BIT_EXTEND_32BIT_MASK 0xFFFC0000UL
+/* Read out by chunks of up to 16 complex samples i.e 16*(24bits+24bits) = 16*48 bytes */
+#define CHUNK_CIR_NB_SAMP 16U
+
+    /* This defines the CIR read mode (complex sample size) */
+    typedef enum {
+        DWT_CIR_READ_FULL = 0, // full 48-bit complex samples
+        DWT_CIR_READ_LO   = 1, // reduced 32-bit complex samples: bits [15:0] for real/imag parts
+        DWT_CIR_READ_MID  = 2, // reduced 32-bit complex samples: bits [16:1] for real/imag parts
+        DWT_CIR_READ_HI   = 3, // reduced 32-bit complex samples: bits [17:2] for real/imag parts
+    } dwt_cir_read_mode_e;
+
     //NLOS structs
     typedef struct
     {
@@ -1078,16 +1175,87 @@ extern "C"
         uint32_t index_pp_u32;  // the Peak Path Index
     } dwt_nlos_ipdiag_t;
 
+    typedef enum
+    {
+        DWT_CH5 = 5,      //!< Ch 5 configuration with PLL using 38.4 MHz crystal
+        DWT_CH9 = 9,      //!< Ch 9 configuration with PLL using 38.4 MHz crystal
+    } dwt_pll_ch_type_e;
+
+    typedef struct
+    {
+        int8_t *buffer;               // pointer to a buffer into which to read captured ADC results (-1,0,1)
+        uint16_t length;              // must be divisible by 16, number of ADC results (-1,0,1) requested (max is 2048x32 / 2) div by 2 because each pair of I-,I+ produces 1 result
+        uint16_t sample_start_offset; // must be divisible by 16, offset in the CIR from which to start reading ADC sample data
+        uint8_t thresholds[4];        // returns the ADC thresholds at time of capture, for I and Q
+        uint8_t test_mode_wrap;       // returns pointer to array of data of length 2*length (i and q samples)
+    } dwt_capture_adc_t;
+
+/*
+ * Enum for linear Tx power control
+ * */
+    typedef enum
+    {
+        DWT_DATA_INDEX = 0,
+        DWT_PHR_INDEX = 1,
+        DWT_SHR_INDEX = 2,
+        DWT_STS_INDEX = 3,
+        DWT_MAX_POWER_INDEX = 4
+    } dwt_power_indexes_e;
+
+    typedef struct {
+        uint8_t input[DWT_MAX_POWER_INDEX];
+        uint8_t output[DWT_MAX_POWER_INDEX];
+    } power_indexes_t;
+
+    typedef struct
+    {
+        uint32_t tx_power_setting;
+        uint32_t pll_cfg;
+    } tx_adj_cfg_t;
+
+    typedef struct
+    {
+        tx_adj_cfg_t tx_frame_cfg;
+    } tx_adj_res_t;
+    
+    /*! ISR configuration flags
+     *
+     * Use with dwt_configureisr().
+     */
+    typedef enum
+    {
+        DWT_LEN0_RXGOOD   = 0x1, /*!< Treat 0-length packets as good RX */
+    } dwt_isr_flags_e;
+
+
 /*
  * The default XTAL TRIM value for load capacitors of 2pF.
  * During the initialization the XTAL TRIM value can be read from the OTP and in case it is not present, the default would be used instead
  * */
-#define DEFAULT_XTAL_TRIM 0x2E
+#define DEFAULT_XTAL_TRIM 0x2EU
+
 
 /*
  * Max allowed value for XTAL trim
  * */
-#define XTAL_TRIM_BIT_MASK 0x3F
+#ifdef AUTO_PLL_CAL
+#define XTAL_TRIM_BIT_MASK 0x7FU
+#else
+#define XTAL_TRIM_BIT_MASK 0x3FU
+#endif
+
+/*
+ * XTAL temperature compensation set parameters structure
+* */
+    typedef struct 
+    {
+        int8_t temperature;               //!< pass in TEMP_INIT (-127) to use on chip temperature sensor
+        uint8_t crystal_trim;             //!< pass in 0 if you want to use the calibration value from OTP
+        int8_t crystal_trim_temperature;  //!< temperature of the crystal for crystal_trim, if TEMP_INIT (-127) will assume 25C.
+        int32_t crystal_alpha;            //!< * 2^22 scaled alpha value 
+        int32_t crystal_beta;             //!< * 2^22 scaled beta value 
+    } dwt_xtal_trim_t;
+
 
 /*
  * Antenna configuration
@@ -1103,7 +1271,7 @@ extern "C"
 
 
  /*
-  * DW37xx - enable/disable equaliser in the CIA
+  * DW3720 - enable/disable equaliser in the CIA
   */
     typedef enum
     {
@@ -1146,11 +1314,35 @@ extern "C"
         *         toggle the correct pin depending on the HW/MCU connections with DW3000.
         */
         void(*wakeup_device_with_io)(void);
+        /*! ------------------------------------------------------------------------------------------------------------------
+            * @brief dw pointer to an externally defined dwt_driver_s structure list
+            * NB: see dwt_driver_s structure definition for details in deca_interface.h
+        */
+        struct dwt_driver_s **driver_list;
+        /*! ------------------------------------------------------------------------------------------------------------------
+        * @brief  Number of availabe DW drivers.
+        */
+        uint8_t dw_driver_num;
     };
+
+    /* Extern definition for the driver descriptors */
+#ifndef WIN32
+#ifdef USE_DRV_DW3000
+    extern const struct dwt_driver_s dw3000_driver;
+#endif
+#ifdef USE_DRV_DW3720
+    extern const struct dwt_driver_s dw3720_driver;
+#endif
+#endif /* WIN32 */
 
     /********************************************************************************************************************/
     /*                                                     API LIST                                                     */
     /********************************************************************************************************************/
+
+/* Functions added for compatibility with QSOC.*/
+#define dwt_configurerfport_override(x)
+#define dwt_configurerfport(x,y)
+#define dwt_rfsw_config_t int /* whatever built-in type as it just to compile. Used as `dwt_configurerfport` parameter. */
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function selects the correct DecaDriver from the list
@@ -1162,7 +1354,7 @@ extern "C"
      *
      * returns ret - DWT_ERROR  if no driver found or DWT_SUCCESS if driver is found.
      */
-    int dwt_probe(struct dwt_probe_s *probe_interf);
+    int32_t dwt_probe(struct dwt_probe_s *probe_interf);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function returns the version of the API
@@ -1174,7 +1366,7 @@ extern "C"
      * returns version (DW3xxx_DRIVER_VERSION)
      */
     int32_t dwt_apiversion(void);
-    
+
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function will update dw pointer used by interrupt
      *
@@ -1196,19 +1388,7 @@ extern "C"
      *
      * returns version string
      */
-    char *dwt_version_string(void);
-
-    /*! ------------------------------------------------------------------------------------------------------------------
-     * @brief This function sets the local data structure pointer to point to the element in the local array as given by the index.
-     *
-     * input parameters
-     * @param index    - selects the array element to point to. Must be within the array bounds, i.e. < DWT_NUM_DW_DEV
-     *
-     * output parameters
-     *
-     * returns DWT_SUCCESS for success, or DWT_ERROR for error
-     */
-    int dwt_setlocaldataptr(unsigned int index);
+    const char *dwt_version_string(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to return the read V measured @ 3.0 V value recorded in OTP address 0x8 (VBAT_ADDRESS)
@@ -1258,9 +1438,9 @@ extern "C"
      *
      * output parameters
      *
-     * returns the 32 bit lot ID value as programmed in the factory
+     * returns the 64 bit lot ID value as programmed in the factory
      */
-    uint32_t dwt_getlotid(void);
+    uint64_t dwt_getlotid(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to return the read device type and revision information of the DW UWB chip
@@ -1287,6 +1467,30 @@ extern "C"
     uint8_t dwt_otprevision(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This function overrides the temperature to be used for PLL calibration of the device.
+    *        If set to -127, the next time dwt_initialise is called the onchip temperature sensor
+    *        will be used to set it.
+    * input parameters
+    * @param temperature - expected operating temperature in celcius
+    *
+    * output parameters none
+    *
+    * no return value
+    */
+    void dwt_settemperature(int8_t temperature);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This function reads the temperature in celcius that will be used for PLL calibrations
+    *
+    * input parameters
+    *
+    * output parameters none
+    *
+    * returns the temperature in celcius that will be used by PLL calibrations
+    */
+    int8_t dwt_getpllcalibrationtemperature(void);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function enables/disables the fine grain TX sequencing (enabled by default).
      *
      * input parameters
@@ -1296,7 +1500,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_setfinegraintxseq(int enable);
+    void dwt_setfinegraintxseq(int32_t enable);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to enable GPIO for external LNA or PA functionality - HW dependent, consult the DW3000 User Manual.
@@ -1313,7 +1517,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_setlnapamode(int lna_pa);
+    void dwt_setlnapamode(int32_t lna_pa);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to configure GPIO function
@@ -1353,7 +1557,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_setgpiovalue(uint16_t gpio, int value);
+    void dwt_setgpiovalue(uint16_t gpio, int32_t value);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the raw value of the GPIO pins.
@@ -1382,7 +1586,7 @@ extern "C"
      *
      * returns DWT_SUCCESS for success, or DWT_ERROR for error
      */
-    int dwt_initialise(int mode);
+    int32_t dwt_initialise(int32_t mode);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function can place DW3000 into IDLE/IDLE_PLL or IDLE_RC mode when it is not actively in TX or RX.
@@ -1393,9 +1597,9 @@ extern "C"
      *
      * output parameters none
      *
-     * no return value
+     * returns DWT_SUCCESS for success, or DWT_ERROR for error
      */
-    void dwt_setdwstate(int state);
+    int dwt_setdwstate(int state);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to enable GPIO clocks. The clocks are needed to ensure correct GPIO operation
@@ -1413,11 +1617,13 @@ extern "C"
      * configuration which has not been automatically restored from AON
      *
      * input parameters
+     * @param full_restore - If set to 0, the function will skip DGC update, PGC and ADC offset calibration.
+     *                     - If set to any other value, the function will perform the complete update.
      *
      * return DWT_SUCCESS
      *
      */
-    void dwt_restoreconfig(void);
+    void dwt_restoreconfig(int32_t full_restore);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function configures STS mode: e.g. DWT_STS_MODE_OFF, DWT_STS_MODE_1 etc
@@ -1444,7 +1650,20 @@ extern "C"
      *
      * return DWT_SUCCESS or DWT_ERROR (e.g. when PLL CAL fails / PLL fails to lock)
      */
-    int dwt_configure(dwt_config_t *config);
+    int32_t dwt_configure(dwt_config_t *config);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function provides the API for the configuration of the TX power
+     * The input is the desired tx power to configure.
+     *
+     * input parameters
+     * @param power     -   tx power to configure 32 bits.
+     *
+     * output parameters
+     *
+     * no return value
+     */
+    void dwt_settxpower(uint32_t power);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function provides the API for the configuration of the TX spectrum
@@ -1479,7 +1698,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_configmrxlut(int channel);
+    void dwt_configmrxlut(int32_t channel);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function configures the STS AES 128 bit key value.
@@ -1521,7 +1740,7 @@ extern "C"
      * no return value
      */
     void dwt_setrxantennadelay(uint16_t antennaDly);
-    
+
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This API function reads the antenna delay (in time units) from the RX antenna delay register
      *
@@ -1578,7 +1797,7 @@ extern "C"
      *
      * returns DWT_SUCCESS for success, or DWT_ERROR for error
      */
-    int dwt_writetxdata(uint16_t txDataLength, uint8_t *txDataBytes, uint16_t txBufferOffset);
+    int32_t dwt_writetxdata(uint16_t txDataLength, uint8_t *txDataBytes, uint16_t txBufferOffset);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This API function configures the TX frame control register before the transmission of a frame
@@ -1598,18 +1817,25 @@ extern "C"
     void dwt_writetxfctrl(uint16_t txFrameLength, uint16_t txBufferOffset, uint8_t ranging);
 
     /*! ------------------------------------------------------------------------------------------------------------------
-     * @brief This API function is used to configure frame preamble length, the frame premable length can be
-     * configured in steps of 8, from 16 to 2048 symbols. If a non-zero value is configured, then the TXPSR_PE setting is ignored.
-     *
-     * input parameters:
-     * @param preambleLength - sets the length of the preamble, value of 0 disables this setting and the length of the
-     *                         frame will be dependent on the TXPSR_PE setting as configured by dwt_configure function
-     *
-     * output parameters
-     *
-     * no return value
-     */
-    void dwt_setplenfine(uint8_t preambleLength);
+    * @brief This API function is used to configure frame preamble length, the frame premable length can be
+    * configured in steps of 8, from 16 to 2048 symbols. If a non-zero value is configured, then the TXPSR_PE setting is ignored.
+    *
+    * input parameters:
+    * @param preambleLength - sets the length of the preamble, value of 0 disables this setting and the length of the
+    *                         frame will be dependent on the TXPSR_PE setting as configured by dwt_configure function
+    * 
+    * @note preambleLength is uint16_t only to keep compatibility with QM35xxx devices but cannot be > 0xFF.
+    * 
+    * Valid range for the preamble length code is [1..0xFF] which corresponds to [16..2048] symbols.
+    * You can use convenience constants DWT_PLEN_32..DWT_PLEN_2048 defined for some
+    * common preamble lengths. Note that setting preamble length smaller than 32 symbols
+    * should be used for testing only and will likely result in poor performance.
+    * 
+    * output parameters
+    *
+    * no return value
+    */
+    void dwt_setplenfine(uint16_t preambleLength);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This call initiates the transmission, input parameter indicates which TX mode is used see below
@@ -1635,7 +1861,7 @@ extern "C"
      *
      * returns DWT_SUCCESS for success, or DWT_ERROR for error (e.g. a delayed transmission will be cancelled if the delayed time has passed)
      */
-    int dwt_starttx(uint8_t mode);
+    int32_t dwt_starttx(uint8_t mode);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This API function configures the reference time used for relative timing of delayed sending and reception.
@@ -1740,16 +1966,37 @@ extern "C"
     void dwt_readtdoa(uint8_t *tdoa);
 
     /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function is used to read the TDOA (Time Difference On Arrival) and the PDOA result (Phase Difference Of Arrival).
+     * The device can measure 3 TDOA/PDOA results based on the configuration of the PDOA table.
+     *
+     * The TDOA value that is read from the register is 16-bits in length. It is a signed number, in device time units.
+     *
+     * The PDOA value that is read from the register is 15-bits in length. It is a signed number s[1:-11] (radians).
+     * NOTE: To convert to degrees: float pdoa_deg = ((float)pdoa / (1 << 11)) * 180 / M_PI
+     *
+     * input parameters
+     *
+     * output parameters
+     * @param *result - pointer to dwt_pdoa_tdoa_res_t structure which into which PDOA, TDOA and FP_OK will be read
+     * @param index   - specifies which of 3 possible results are to be read (0, 1, 2)
+     *
+     * no return value
+     */
+    void dwt_read_tdoa_pdoa(dwt_pdoa_tdoa_res_t *result, int32_t index);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the RX timestamp (adjusted time of arrival)
      *
      * input parameters
      * @param timestamp - a pointer to a 5-byte buffer which will store the read RX timestamp time
+     * @param segment - which IP/STS segment this RX time relates to (see dwt_ip_sts_segment_e) - not used
+     *                  segment should be set as DWT_COMPAT_NONE
      *
      * output parameters - the timestamp buffer will contain the value after the function call
      *
      * no return value
      */
-    void dwt_readrxtimestamp(uint8_t *timestamp);
+    void dwt_readrxtimestamp(uint8_t *timestamp, dwt_ip_sts_segment_e segment);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the RX timestamp (unadjusted time of arrival)
@@ -1808,12 +2055,14 @@ extern "C"
      * used:  dwt_readrxtimestamp_ipatov or dwt_readrxtimestamp_sts or dwt_readrxtimestamp
      *
      * input parameters
+     * @param segment - which IP/STS segment this RX time relates to (see dwt_ip_sts_segment_e) - not used
+     *                  segment should be set as DWT_COMPAT_NONE
      *
      * output parameters
      *
      * returns low 32-bits of RX timestamp
      */
-    uint32_t dwt_readrxtimestamplo32(void);
+    uint32_t dwt_readrxtimestamplo32(dwt_ip_sts_segment_e segment);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the high 32-bits of the system time
@@ -1872,7 +2121,7 @@ extern "C"
     *
     * returns DWT_SUCCESS for success, or DWT_ERROR for error (e.g. a delayed receive enable will be too far in the future if delayed time has passed)
     */
-    int dwt_rxenable(int mode);
+    int32_t dwt_rxenable(int32_t mode);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief enable/disable and configure SNIFF mode.
@@ -1891,7 +2140,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_setsniffmode(int enable, uint8_t timeOn, uint8_t timeOff);
+    void dwt_setsniffmode(int32_t enable, uint8_t timeOn, uint8_t timeOff);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This call enables the double receive buffer mode
@@ -1922,15 +2171,15 @@ extern "C"
      * @brief This call enables RX timeout (SY_STAT_RFTO event)
      *
      * input parameters
-     * @param time - how long the receiver remains on from the RX enable command
-     *               The time parameter used here is in 1.0256 us (512/499.2MHz) units
-     *               If set to 0 the timeout is disabled.
+     * @param rx_time - how long the receiver remains on from the RX enable command
+     *                  The time parameter used here is in 1.0256 us (512/499.2MHz) units
+     *                  If set to 0 the timeout is disabled.
      *
      * output parameters
      *
      * no return value
      */
-    void dwt_setrxtimeout(uint32_t time);
+    void dwt_setrxtimeout(uint32_t rx_time);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This call enables preamble timeout (SY_STAT_RXPTO event)
@@ -2035,7 +2284,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_entersleep(int idle_rc);
+    void dwt_entersleep(int32_t idle_rc);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief sets or clears the auto TX to sleep bit. This means that after a frame
@@ -2051,7 +2300,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_entersleepaftertx(int enable);
+    void dwt_entersleepaftertx(int32_t enable);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief Sets or clears the auto TX and/or RX to sleep bits.
@@ -2070,7 +2319,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_entersleepafter(int event_mask);
+    void dwt_entersleepafter(int32_t event_mask);
 
 #ifdef WIN32
     /*! ------------------------------------------------------------------------------------------------------------------
@@ -2096,7 +2345,7 @@ extern "C"
      *
      * returns DWT_SUCCESS for success, or DWT_ERROR for error
      */
-    int dwt_spicswakeup(uint8_t *buff, uint16_t length);
+    int32_t dwt_spicswakeup(uint8_t *buff, uint16_t length);
 #endif
 
     /*! ------------------------------------------------------------------------------------------------------------------
@@ -2106,19 +2355,13 @@ extern "C"
      * callback will not be called.
      *
      * input parameters
-     * @param cbTxDone - the pointer to the TX confirmation event callback function
-     * @param cbRxOk - the pointer to the RX good frame event callback function
-     * @param cbRxTo - the pointer to the RX timeout events callback function
-     * @param cbRxErr - the pointer to the RX error events callback function
-     * @param cbSPIErr - the pointer to the SPI error events callback function
-     * @param cbSPIRdy - the pointer to the SPI ready events callback function
-    * @param cbDualSPIEv - the pointer to the Dual SPI events callback function (SPI1 Avail, SPI2 Avail)
-    *
-    * output parameters
-    *
-    * no return value
-    */
-    void dwt_setcallbacks(dwt_cb_t cbTxDone, dwt_cb_t cbRxOk, dwt_cb_t cbRxTo, dwt_cb_t cbRxErr, dwt_cb_t cbSPIErr, dwt_cb_t cbSPIRdy, dwt_cb_t cbDualSPIEv);
+     * @param callbacks - reference to struct containing references for needed callback.
+     *
+     * output parameters
+     *
+     * no return value
+     */
+     void dwt_setcallbacks(dwt_callbacks_s *callbacks);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function checks if the IRQ line is active - this is used instead of interrupt handler
@@ -2134,16 +2377,16 @@ extern "C"
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function checks if the DW3000 is in IDLE_RC state
      *
-     * The DW3XXX states are described in the User Manual. On power up, or following a reset the device will progress from INIT_RC to IDLE_RC. 
+     * The DW3XXX states are described in the User Manual. On power up, or following a reset the device will progress from INIT_RC to IDLE_RC.
      * Once the device is in IDLE_RC SPI rate ca be increased to more than 7 MHz. The device will automatically proceed from INIT_RC to IDLE_RC
-     * and both INIT_RC and SPI_RDY event flags will be set, once device is in IDLE_RC. 
+     * and both INIT_RC and SPI_RDY event flags will be set, once device is in IDLE_RC.
      *
-     * It is recommended that host waits for SPI_RDY event, which will also generate interrupt once device is ready after reset/power on. 
-     * If the host cannot use interrupt as a way to check device is ready for SPI comms, then we recommend the host waits for 2 ms and reads this function, 
-     * which checks if the device is in IDLE_RC state by reading the SYS_STATUS register and checking for the IDLE_RC event to be set. 
-     * If host initiates SPI transaction with the device prior to it being ready, the SPI transaction may be incorrectly decoded by the device and 
-     * the device may be misconfigured. Reading registers over SPI prior to device being ready may return garbage on the MISO, which may confuse the host application. 
-     * 
+     * It is recommended that host waits for SPI_RDY event, which will also generate interrupt once device is ready after reset/power on.
+     * If the host cannot use interrupt as a way to check device is ready for SPI comms, then we recommend the host waits for 2 ms and reads this function,
+     * which checks if the device is in IDLE_RC state by reading the SYS_STATUS register and checking for the IDLE_RC event to be set.
+     * If host initiates SPI transaction with the device prior to it being ready, the SPI transaction may be incorrectly decoded by the device and
+     * the device may be misconfigured. Reading registers over SPI prior to device being ready may return garbage on the MISO, which may confuse the host application.
+     *
      * input parameters
      *
      * output parameters
@@ -2273,19 +2516,19 @@ extern "C"
      *
      * input parameters
      * @param enabletype (bitmask) - enables/disables the frame filtering and configures 802.15.4 type
-     *       DWT_FF_ENABLE_802_15_4      0x2             // use 802.15.4 filtering rules
-     *       DWT_FF_DISABLE              0x0             // disable FF
+     *       DWT_FF_ENABLE_802_15_4      0x2             - use 802.15.4 filtering rules
+     *       DWT_FF_DISABLE              0x0             - disable FF
      * @param filtermode (bitmask) - configures the frame filtering options according to
-     *       DWT_FF_BEACON_EN            0x001           // beacon frames allowed
-     *       DWT_FF_DATA_EN              0x002           // data frames allowed
-     *       DWT_FF_ACK_EN               0x004           // ack frames allowed
-     *       DWT_FF_MAC_EN               0x008           // mac control frames allowed
-     *       DWT_FF_RSVD_EN              0x010           // reserved frame types allowed
-     *       DWT_FF_MULTI_EN             0x020           // multipurpose frames allowed
-     *       DWT_FF_FRAG_EN              0x040           // fragmented frame types allowed
-     *       DWT_FF_EXTEND_EN            0x080           // extended frame types allowed
-     *       DWT_FF_COORD_EN             0x100           // behave as coordinator (can receive frames with no dest address (PAN ID has to match))
-     *       DWT_FF_IMPBRCAST_EN         0x200           // allow MAC implicit broadcast
+     *       DWT_FF_BEACON_EN            0x001           - beacon frames allowed
+     *       DWT_FF_DATA_EN              0x002           - data frames allowed
+     *       DWT_FF_ACK_EN               0x004           - ack frames allowed
+     *       DWT_FF_MAC_EN               0x008           - mac control frames allowed
+     *       DWT_FF_RSVD_EN              0x010           - reserved frame types allowed
+     *       DWT_FF_MULTI_EN             0x020           - multipurpose frames allowed
+     *       DWT_FF_FRAG_EN              0x040           - fragmented frame types allowed
+     *       DWT_FF_EXTEND_EN            0x080           - extended frame types allowed
+     *       DWT_FF_COORD_EN             0x100           - behave as coordinator (can receive frames with no dest address (PAN ID has to match))
+     *       DWT_FF_IMPBRCAST_EN         0x200           - allow MAC implicit broadcast
      *
      * output parameters
      *
@@ -2305,7 +2548,7 @@ extern "C"
      *
      * returns 8-bit calculate CRC value
      */
-    uint8_t dwt_generatecrc8(const uint8_t *byteArray, int flen, uint8_t crcInit);
+    uint8_t dwt_generatecrc8(const uint8_t *byteArray, uint32_t flen, uint8_t crcInit);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to enable SPI CRC check in DW3000
@@ -2338,7 +2581,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_enableautoack(uint8_t responseDelayTime, int enable);
+    void dwt_enableautoack(uint8_t responseDelayTime, int32_t enable);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This sets the receiver turn on delay time after a transmission of a frame
@@ -2364,7 +2607,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_softreset(int reset_semaphore);
+    void dwt_softreset(int32_t reset_semaphore);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the data from the RX buffer, from an offset location give by offset parameter
@@ -2426,8 +2669,55 @@ extern "C"
      * output parameters
      *
      * no return value
+     *
+     * @deprecated This function is now deprecated for new development. Plase use @ref dwt_readcir or @ref dwt_readcir_48b
      */
     void dwt_readaccdata(uint8_t *buffer, uint16_t len, uint16_t accOffset);
+
+    /*!
+    * This is used to read complex samples from the CIR/Accumulator buffer specifying the read mode.
+    *
+    * - Full sample mode: DWT_CIR_READ_FULL:
+    * 48 bit complex samples with 24-bit real and 24-bit imaginary (18bits dynamic)
+    * - Reduced sample mode: (DWT_CIR_READ_LO, DWT_CIR_READ_MID, DWT_CIR_READ_HI)
+    * 32-bit complex samples with 16-bit real and 16-bit imaginary.
+    *
+    * Note that multiple CIRs cannot be read in one go, as the accumulator memory is not contiguous.
+    *
+    * Accumulator sizes depend on the accumulator and on the PRF setting, see the following constants
+    *     DWT_CIR_LEN_STS
+    *     DWT_CIR_LEN_IP_PRF16
+    *     DWT_CIR_LEN_IP_PRF64
+    *
+    * input parameters
+    * @param buffer[out] - the buffer into which the data will be read. The buffer should be big enough to accommodate
+    *                 num_samples of size 64 bit (2 words) for DWT_CIR_READ_FULL, or 32 bit (1 word) for the "faster"
+    *                 reading modes.
+    * @param cir_idx[in]      - accumulator index. It is used to defines the CIR accumulator address offset to read from (dwt_acc_idx_e)
+    * @param sample_offs[in]   - the sample index offset within the selected accumulator to start reading from
+    * @param num_samples[in]   - the number of complex samples to read
+    * @param mode[in]          - CIR read mode, see documentation for dwt_cir_read_mode_e
+    *
+    * @return None
+    */
+    void dwt_readcir(uint32_t *buffer, dwt_acc_idx_e cir_idx, uint16_t sample_offs,
+                        uint16_t num_samples, dwt_cir_read_mode_e mode);
+
+    /*!
+     * This function reads the CIR/accumulator data in the compact 48-bit sample mode.
+     *
+     * This is used to read 48-bit complex samples from the CIR/Accumulator buffer, from an offset location
+     * given by offset parameter. Each sample is 6 bytes (3 real and 3 imaginary).
+     *
+     *
+     * @param[out] buffer      the buffer into which the data will be read - NOTE: the buffer size needs to be >= num_samples*6 bytes
+     * @param[in] acc_idx      Index of the accumulator to read data from
+     * @param[in] sample_offs  The sample index offset within the selected accumulator to start reading from
+     * @param[in] num_samples  The number of complex samples to read (each sample is a 48-bit complex value)
+     *
+     * @return None
+     */
+    void dwt_readcir_48b(uint8_t *buffer, dwt_acc_idx_e acc_idx, uint16_t sample_offs, uint16_t num_samples);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the crystal offset (relating to the frequency offset of the far DW3000 device compared to this one)
@@ -2435,8 +2725,8 @@ extern "C"
      *
      * input parameters - NONE
      *
-     * return value - the (int12) signed offset value. (s[6:-4])
-     *                A positive value means the local RX clock is running faster than the remote TX device.
+     * return value - the (int12) signed offset value. (s[-15:-26])
+     *                A positive value means the local (RX) clock is running slower than that of the remote (TX) device.
      */
     int16_t dwt_readclockoffset(void);
 
@@ -2446,7 +2736,7 @@ extern "C"
      * input parameters - NONE
      *
      * return value - the (int32_t) signed carrier integrator value.
-     *                A positive value means the local RX clock is running faster than the remote TX device.
+     *                A positive value means the local (RX) clock is running slower than that of the remote (TX) device.
      */
     int32_t dwt_readcarrierintegrator(void);
 
@@ -2455,11 +2745,11 @@ extern "C"
      * IP_TOA_LO, IP_TOA_HI, STS_TOA_LO, STS_TOA_HI, STS1_TOA_LO, STS1_TOA_HI, CIA_TDOA_0, CIA_TDOA_1_PDOA, CIA_DIAG_0, CIA_DIAG_1
      *
      * input parameters
-     * @param enable_mask :     DW_CIA_DIAG_LOG_MAX (0x8)   //CIA to copy to swinging set a maximum set of diagnostic registers in Double Buffer mode
-     *                          DW_CIA_DIAG_LOG_MID (0x4)   //CIA to copy to swinging set a medium set of diagnostic registers in Double Buffer mode
-     *                          DW_CIA_DIAG_LOG_MIN (0x2)   //CIA to copy to swinging set a minimal set of diagnostic registers in Double Buffer mode
-     *                          DW_CIA_DIAG_LOG_ALL (0x1)   //CIA to log all diagnostic registers
-     *                          DW_CIA_DIAG_LOG_OFF (0x0)   //CIA to log reduced set of diagnostic registers
+     * @param enable_mask :     DW_CIA_DIAG_LOG_MAX (0x8)   - CIA to copy to swinging set a maximum set of diagnostic registers in Double Buffer mode
+     *                          DW_CIA_DIAG_LOG_MID (0x4)   - CIA to copy to swinging set a medium set of diagnostic registers in Double Buffer mode
+     *                          DW_CIA_DIAG_LOG_MIN (0x2)   - CIA to copy to swinging set a minimal set of diagnostic registers in Double Buffer mode
+     *                          DW_CIA_DIAG_LOG_ALL (0x1)   - CIA to log all diagnostic registers
+     *                          DW_CIA_DIAG_LOG_OFF (0x0)   - CIA to log reduced set of diagnostic registers
      *
      * output parameters
      *
@@ -2472,6 +2762,7 @@ extern "C"
      *
      * input parameters
      * @param rxStsQualityIndex - the (int16_t) signed STS quality index value.
+     * @param stsSegment        - not used
      *
      * output parameters
      * return value - >=0 for good and < 0 if bad STS quality.
@@ -2479,7 +2770,7 @@ extern "C"
      * Note: For the 64 MHz PRF if value is >= 90% of the STS length then we can assume good STS reception.
      *       Otherwise the STS timestamp may not be accurate.
      */
-    int dwt_readstsquality(int16_t *rxStsQualityIndex);
+    int32_t dwt_readstsquality(int16_t *rxStsQualityIndex, int32_t stsSegment);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief this function reads the STS status
@@ -2491,7 +2782,7 @@ extern "C"
      * output parameters
      * return value 0 for good/valid STS < 0 if bad STS quality.
      */
-    int dwt_readstsstatus(uint16_t *stsStatus, int sts_num);
+    int32_t dwt_readstsstatus(uint16_t *stsStatus, int32_t sts_num);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief this function reads the RX signal quality diagnostic data
@@ -2514,7 +2805,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_configeventcounters(int enable);
+    void dwt_configeventcounters(int32_t enable);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the event counters in the IC
@@ -2553,10 +2844,10 @@ extern "C"
      *
      * returns DWT_SUCCESS for success, or DWT_ERROR for error
      */
-    int dwt_otpwriteandverify(uint32_t value, uint16_t address);
+    int32_t dwt_otpwriteandverify(uint32_t value, uint16_t address);
 
     /*! ------------------------------------------------------------------------------------------------------------------
-     * @brief This is used to program 32-bit value into the DW3700 OTP memory, it will not validate the word was written correctly
+     * @brief This is used to program 32-bit value into the DW3720 OTP memory, it will not validate the word was written correctly
      *
      * input parameters
      * @param value - this is the 32-bit value to be programmed into OTP
@@ -2566,7 +2857,7 @@ extern "C"
      *
      * returns DWT_SUCCESS
      */
-    int dwt_otpwrite(uint32_t value, uint16_t address);
+    int32_t dwt_otpwrite(uint32_t value, uint16_t address);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to set up Tx/Rx GPIOs which could be used to control LEDs
@@ -2612,6 +2903,19 @@ extern "C"
     uint8_t dwt_getxtaltrim(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function enables preamble test mode which sends a preamble pattern for duration specified by delay parameter.
+     *        Once the delay expires, the device goes back to normal mode.
+     *
+     * input parameters
+     * @param delay         - this is the duration of the preamble transmission in us
+     * @param test_txpower  - this is the TX power to be applied while transmitting preamble
+     * output parameters
+     *
+     * no return value
+     */
+    void dwt_send_test_preamble(uint16_t delay, uint32_t test_txpower);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function disables repeated frames from being generated.
      *
      * input parameters:
@@ -2649,7 +2953,7 @@ extern "C"
      * output parameters:
      *
      */
-    void dwt_repeated_cw(int cw_enable, int cw_mode_config);
+    void dwt_repeated_cw(int32_t cw_enable, int32_t cw_mode_config);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief this function sets the DW3xxx to transmit continuous wave (CW) signal at specific channel frequency
@@ -2685,6 +2989,18 @@ extern "C"
      * no return value
      */
     void dwt_disablecontinuousframemode(void);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief this function stops the continuous wave mode of the DW3xxx.
+     *
+     * input parameters:
+     * @param dw - DW3xxx chip descriptor handler.
+     *
+     * output parameters
+     *
+     * no return value
+     */
+    void dwt_disablecontinuouswavemode(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief this function reads the raw battery voltage and temperature values of the DW IC.
@@ -2808,7 +3124,7 @@ extern "C"
      *
      * no return value
      */
-    void dwt_set_keyreg_128(const dwt_aes_key_t *key);
+    void dwt_set_keyreg_128(dwt_aes_key_t *key);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief   This function provides the API for the configuration of the AES block before its first usage.
@@ -2820,7 +3136,15 @@ extern "C"
      *
      * no return value
      */
-    void dwt_configure_aes(const dwt_aes_config_t *pCfg);
+    void dwt_configure_aes(dwt_aes_config_t *pCfg);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief   This gets mic size in bytes and convert it to value to write in AES_CFG
+    * @param   mic_size_in_bytes - mic size in bytes.
+    *
+    * @Return  dwt_mic_size_e - reg value number
+    */
+    dwt_mic_size_e dwt_mic_size_from_bytes(uint8_t mic_size_in_bytes);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief   This function provides the API for the job of encript/decript the data block
@@ -2871,7 +3195,7 @@ extern "C"
     //
     // ---------------------------------------------------------------------------
 
-    typedef int decaIrqStatus_t; // Type for remembering IRQ status
+    typedef int32_t decaIrqStatus_t; // Type for remembering IRQ status
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function should disable interrupts. This is called at the start of a critical section
@@ -2938,7 +3262,7 @@ extern "C"
      *
      * returns DWT_SUCCESS for success, or DWT_ERROR for error
      */
-    int dwt_check_dev_id(void);
+    int32_t dwt_check_dev_id(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      *
@@ -2951,7 +3275,7 @@ extern "C"
      * return result of PGF calibration (DWT_ERROR/-1 = error)
      *
      */
-    int dwt_run_pgfcal(void);
+    int32_t dwt_run_pgfcal(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function runs the PGF calibration. This is needed prior to reception.
@@ -2962,7 +3286,26 @@ extern "C"
      * return result of PGF calibration (0 = error)
      *
      */
-    int dwt_pgf_cal(int ldoen);
+    int32_t dwt_pgf_cal(int32_t ldoen);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief Read the current value of the PLL status register (32 bits)
+     *
+     * The status bits are defined as follows:
+     *
+     * - PLL_STATUS_LD_CODE_BIT_MASK          0x1f00U - Counter-based lock-detect status indicator
+     * - PLL_STATUS_XTAL_AMP_SETTLED_BIT_MASK 0x40U   - Status flag from the XTAL indicating that the amplitude has settled
+     * - PLL_STATUS_VCO_TUNE_UPDATE_BIT_MASK  0x20U   - Flag to indicate that the COARSE_TUNE codes have been updated by cal and are ready to read
+     * - PLL_STATUS_PLL_OVRFLOW_BIT_MASK      0x10U   - PLL calibration flag indicating all VCO_TUNE values have been cycled through
+     * - PLL_STATUS_PLL_HI_FLAG_BIT_MASK      0x8U    - VCO voltage too high indicator (active-high)
+     * - PLL_STATUS_PLL_LO_FLAG_N_BIT_MASK    0x4U    - VCO voltage too low indicator (active-low)
+     * - PLL_STATUS_PLL_LOCK_FLAG_BIT_MASK    0x2U    - PLL lock flag
+     * - PLL_STATUS_CPC_CAL_DONE_BIT_MASK     0x1U    - PLL cal done and PLL locked
+     *
+     *
+     * returns A uint32_t value containing the value of the PLL status register (only bits [14:0] are valid)
+     */
+    uint32_t dwt_readpllstatus(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief
@@ -2974,17 +3317,16 @@ extern "C"
      * output parameters:
      * returns DWT_SUCCESS for success or DWT_ERROR for error.
      */
-    int dwt_pll_cal(void);
+    int32_t dwt_pll_cal(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function is used to control what rf port to use for TX/RX.
      *
-     * @param rfPort - enum value for selecting desired port
-     * @param enable - enum value for enabling or disabling manual control of antenna selction
+     * @param port_control - enum value for enabling or disabling manual control and primary antenna.
      *
      * No return value
      */
-    void dwt_configure_rf_port(dwt_rf_port_selection_e rfPort, dwt_rf_port_ctrl_e enable);
+    void dwt_configure_rf_port(dwt_rf_port_ctrl_e  port_control);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      *
@@ -2997,7 +3339,7 @@ extern "C"
      * no return value
      *
      */
-    void dwt_configure_le_address(uint16_t addr, int leIndex);
+    void dwt_configure_le_address(uint16_t addr, int32_t leIndex);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function configures SFD type only: e.g. IEEE 4a - 8, DW-8, DW-16, or IEEE 4z -8 (binary)
@@ -3010,6 +3352,27 @@ extern "C"
      *
      */
     void dwt_configuresfdtype(uint8_t sfdType);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief  this function allows read from the DW3xxx device 32-bit register
+    *
+    * input parameters:
+    * @param address - ID of the DW3xxx register
+    *
+    * return - value of the 32-bit register
+    *
+    */
+    uint32_t dwt_read_reg(uint32_t address);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief  this function allows write to the DW3xxx device 32-bit register
+    *
+    * input parameters:
+    * @param address - ID of the DW3xxx register
+    *        data    - value to write
+    *
+    */
+    void dwt_write_reg(uint32_t address, uint32_t data);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function writes a value to the system status register (lower).
@@ -3029,7 +3392,6 @@ extern "C"
      * @param mask - mask value to send to the system status register (higher bits).
      *               NOTE: Be aware that the size of this register varies per device.
      *               DW3000 devices only require a 16-bit mask value typecast to 32-bit.
-     *               DW3700 devices only require a 16-bit mask value typecast to 32-bit.
      *               DW3720 devices require a 32-bit mask value.
      *
      * return none
@@ -3053,7 +3415,6 @@ extern "C"
      * return A uint32_t value containing the value of the system status register (higher bits)
      *        NOTE: Be aware that the size of this register varies per device.
      *        DW3000 devices will return a 16-bit value of the register that is typecast to a 32-bit value.
-     *        DW3700 devices will return a 16-bit value of the register that is typecast to a 32-bit value.
      *        DW3720 devices will return a 'true' 32-bit value of the register.
      */
     uint32_t dwt_readsysstatushi(void);
@@ -3086,7 +3447,7 @@ extern "C"
      *
      * return frame_len - A uint16_t with the number of octets in the received frame.
      */
-    uint16_t dwt_getframelength(void);
+    uint16_t dwt_getframelength(uint8_t *rng);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This is used to read the value stored in CIA_ADJUST_ID register
@@ -3121,7 +3482,7 @@ extern "C"
      * return event counts from both timers: TIMER0 events in bits [7:0], TIMER1 events in bits [15:8]
      *
      */
-    void dwt_wifi_coex_set(dwt_wifi_coex_e enable, int coex_io_swap);
+    void dwt_wifi_coex_set(dwt_wifi_coex_e enable, int32_t coex_io_swap);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function will reset the internal system time counter. The counter will be momentarily reset to 0,
@@ -3145,9 +3506,9 @@ extern "C"
      * input parameters
      * @param  enable       - Set to 1 to enable OSTR mode and 0 to disable
      * @param  wait_time    - When a counter running on the 38.4 MHz external clock and initiated on the rising edge
-     *                        of the SYNC signal equals the WAIT programmed value, the DW3700 timebase counter will be reset.
+     *                        of the SYNC signal equals the WAIT programmed value, the DW3720 timebase counter will be reset.
      *
-     * NOTE: At the time the SYNC signal is asserted, the clock PLL dividers generating the DW3700 125 MHz system clock are reset,
+     * NOTE: At the time the SYNC signal is asserted, the clock PLL dividers generating the DW3720 125 MHz system clock are reset,
      * to ensure that a deterministic phase relationship exists between the system clock and the asynchronous 38.4 MHz external clock.
      * For this reason, the WAIT value programmed will dictate the phase relationship and should be chosen to give the
      * desired phase relationship, as given by WAIT modulo 4. A WAIT value of 33 decimal is recommended,
@@ -3176,14 +3537,14 @@ extern "C"
     void dwt_configure_and_set_antenna_selection_gpio(uint8_t antenna_config);
 
     /*! ------------------------------------------------------------------------------------------------------------------
-     * @brief This function will read the Diagnostics Registers - IPATOV, STS1, STS2 from the device, which can help in 
+     * @brief This function will read the Diagnostics Registers - IPATOV, STS1, STS2 from the device, which can help in
      *        determining if packet has been received in LOS (line-of-sight) or NLOS (non-line-of-sight) condition.
      *        To help determine/estimate NLOS condition either Ipatov, STS1 or STS2 can be used, (or all three).
-     * 
+     *
      * NOTE:  CIA Diagnostics need to be enabled to "DW_CIA_DIAG_LOG_ALL" else the diagnostic registers read will be 0.
      * input parameters:
      * @param dw        - DW3xxx chip descriptor handler.
-     * 
+     *
      * @param all_diag  - this is the pointer to the Structure into which to read the data.
      *
      * @return a uint8_t value indicating if success or failure.
@@ -3192,12 +3553,12 @@ extern "C"
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function will read the IPATOV Diagnostic Registers to get the First Path and Peak Path Index value.
-     *        This function is used when signal power is low to determine the signal type (LOS or NLOS). Hence only 
+     *        This function is used when signal power is low to determine the signal type (LOS or NLOS). Hence only
      *        Ipatov diagnostic registers are used to determine the signal type.
      *
      * input parameters:
      * @param dw        - DW3xxx chip descriptor handler.
-     * 
+     *
      * @param index - this is the pointer to the Structure into which to read the data.
      *
      */
@@ -3213,7 +3574,7 @@ extern "C"
     * returns value stored in CTR_DBG_ID register
     */
     uint32_t dwt_readctrdbg(void);
-    
+
     /*! ------------------------------------------------------------------------------------------------------------------
     * @brief This is used to read the value stored in DGC_DBG_ID register.
     *
@@ -3260,7 +3621,7 @@ extern "C"
      *
      */
     register_name_add_t* dwt_get_reg_names(void);
-    
+
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function calculates the adjusted TxPower setting by applying a boost over a reference TxPower setting.
      * The reference TxPower setting should correspond to a 1ms frame (or 0dB) boost.
@@ -3284,9 +3645,137 @@ extern "C"
      *
      *
      */
-    int dwt_adjust_tx_power(uint16_t boost, uint32_t ref_tx_power, uint8_t channel, uint32_t* adj_tx_power, uint16_t* applied_boost);
+    int32_t dwt_adjust_tx_power(uint16_t boost, uint32_t ref_tx_power, uint8_t channel, uint32_t* adj_tx_power, uint16_t* applied_boost);
 
-    /* BEGIN: CHIP_SPECIFIC_SECTION DW37xx */
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This API is used to calculate a transmit power configuration in a linear manner (step of 0.25 dB)
+    *
+    * input parameters
+    * @param channel   The channel for which the linear tx power setting must be calculated
+    * @param p_indexes Pointer to an object containing two members:
+    *                   - in : The inputs indexes for which tx power configuration must be calculated.
+    *                          This is an array of size 4 allowing to set individual indexes for each section of a frame.
+    *
+    *                          DWT_DATA_INDEX = 0
+    *                          DWT_PHR_INDEX = 1
+    *                          DWT_SHR_INDEX = 2
+    *                          DWT_STS_INDEX = 3
+    *
+    *                          Index step is 0.25 dB. Power will decrease linearly by 0.25dB step with the index:
+    *                          0 corresponds to maximum output power
+    *                          Output power = Power(0) - 0.25dB * Index
+    *
+    *                          Effective maximum index value depens on DW3000 part and channel configuration. If the required index is higher than
+    *                          the maximum supported value, then the API will apply the maximum index.
+    *
+    *                  - out: output tx power indexes corresponding to the indexes that were actually applied.
+    *                         These may differ from the input indexes in the two cases below:
+    *                             1. The input indexes correspond to different PLLCFG for different section of frame. This is not
+    *                              supported by the IC. In such condition, all indexes will belong to the same tx configuration state. The state
+    *                              to be used is the one corresponding to the highest required power (lower index)
+    *
+    *                              2. The input index are greater than the maximum value supported for the (channel, SOC) current
+    *                              configuration. In which case, the maximum index supported is returned.
+    * output parameters
+    * @param p_res Pointer to an object containing the output configuration corresponding to input index.
+    *              The object contain two members:
+    *              - tx_frame_cfg: the power configuration to use during frame transmission
+    *
+    *              A configuration is a combination of two parameters:
+    *              - uint32_t tx_power_setting : Tx power setting to be written to register TX_POWER_ID
+    *              - uint32_t pll_cfg : PLL common configuration to be written to register PLL_COMMON_ID
+    *
+    * return
+    * DWT_SUCCESS: if an adjusted tx power setting could be calculated. In this case, the configuration to be applied is return through
+    * p_res parameter.
+    * DWT_ERROR: if the API could not calculate a valid configuration.
+    *
+    */
+    int32_t dwt_calculate_linear_tx_setting(int32_t channel, power_indexes_t *p_indexes, tx_adj_res_t *p_res);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This API is used to convert a transmit power value into its corresponding tx power index.
+    *
+    * input parameters
+    * @param channel - The channel for which the tx power index must be calculated
+    * @param tx_power - The Transmit power to convert
+    * @param tx_power_idx - Pointer to the returned TX power index
+    *
+    * return
+    * DWT_SUCCESS: if an the conversion successed.
+    * DWT_ERROR: if the API could not calculate a valid configuration.
+    *
+    */
+    int dwt_convert_tx_power_to_index(int channel, uint8_t tx_power, uint8_t *tx_power_idx);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This function will set the pll common config value. This allow to set the PLL setting
+    * returned by the linear tx power control API, allowingto reduce LO leakage.
+    *
+    * input parameters
+    * @param pll_common - the pll_configuration value to be written into the PLL_COMMON_ID register.
+    *
+    * return None.
+    */
+    void dwt_set_pll_config(uint32_t pll_common);
+
+    /*! ---------------------------------------------------------------------------------------------------
+    * @brief This API will return the RSSI  - UWB channel power
+    *        This API must be called only after initializing and configuring the driver
+    *        and receving some Rx data packets.
+    *
+    * input parameters
+    * @param CIR diagnostics for a particular accumulator
+    * @param acc_idx - Accumulator (see dwt_acc_idx_e)
+    *
+    * output parameters
+    * @param Signal strength in q8.8 format (int16_t).
+    *
+    * return: returns DWT_SUCCESS on success and DWT_ERROR on invalid parameters.
+    */
+    int dwt_calculate_rssi(const dwt_cirdiags_t *diag, dwt_acc_idx_e acc_idx, int16_t *signal_strength);
+
+    /*! ---------------------------------------------------------------------------------------------------
+    * @brief This API will return the First path signal power
+    *        This API must be called only after initializing and configuring the driver
+    *        and receving some Rx data packets.
+    *
+    * input parameters
+    * @param CIR diagnostics for a particular accumulator
+    * @param acc_idx - Accumulator (see dwt_acc_idx_e)
+    *
+    * output parameters
+    * @param Signal strength in q8.8 format (int16_t).
+    *
+    * return: returns DWT_SUCCESS on success and DWT_ERROR on input parameters.
+    */
+    int dwt_calculate_first_path_power(const dwt_cirdiags_t *diag, dwt_acc_idx_e acc_idx, int16_t *signal_strength);
+
+    /*! ---------------------------------------------------------------------------------------------------
+    * @brief This function reads the CIA diagnostics for an individual accumulator.
+    *
+    * input parameters
+    * @param  acc_idx   Accumulator index
+    *
+    * output parameters
+    * @param cirdiags  CIA diagnostics structure
+    *
+    * return DWT_SUCCESS or DWT_ERROR if the passed parameters were wrong.
+    */
+    int dwt_readdiagnostics_acc(dwt_cirdiags_t *cir_diag, dwt_acc_idx_e acc_idx);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This function sets the ISR configuration flags.
+    *
+    * input parameters
+    * @param flags  - ISR configuration flags (see dwt_isr_flags_e)
+    *
+    * output parameters
+    *
+    * no return value
+    */
+    void dwt_configureisr(dwt_isr_flags_e flags);
+    /* BEGIN: CHIP_SPECIFIC_SECTION DW3720 */
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function enables the specified double RX buffer to trigger an interrupt.
@@ -3304,30 +3793,6 @@ extern "C"
      * no return value
      */
     void dwt_setinterrupt_db(uint8_t bitmask, dwt_INT_options_e INT_options);
-
-    /*! ------------------------------------------------------------------------------------------------------------------
-     *
-     * @brief This resets the DW3700 device including the semaphore.
-     *
-     * input parameters None
-     *
-     * output parameters None
-     *
-     * return None
-     */
-    void dwt_softreset_fcmd(void);
-
-    /*! ------------------------------------------------------------------------------------------------------------------
-     *
-     * @brief This resets the DW3700 device without the semaphore.
-     *
-     * input parameters None
-     *
-     * output parameters None
-     *
-     * return None
-     */
-    void dwt_softreset_no_sema_fcmd(void);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      *
@@ -3378,7 +3843,7 @@ extern "C"
      * @return semaphore value
      */
     uint8_t dwt_ds_sema_status(void);
-    
+
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief Reports the semaphore status high byte.
      *
@@ -3414,7 +3879,7 @@ extern "C"
     *
     * return DWT_SUCCESS or DWT_ERROR (if input parameters not consistent)
     */
-    int dwt_ds_setinterrupt_SPIxavailable(dwt_spi_host_e spi_num, dwt_INT_options_e int_set);
+    int32_t dwt_ds_setinterrupt_SPIxavailable(dwt_spi_host_e spi_num, dwt_INT_options_e int_set);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function enables or disables the equaliser block within in the CIA. The equaliser should be used when
@@ -3426,7 +3891,7 @@ extern "C"
      * @param en - DWT_EQ_ENABLED or DWT_EQ_DISABLED, enables/disables the equaliser block
      */
     void dwt_enable_disable_eq(uint8_t en);
-    /* END: CHIP_SPECIFIC_SECTION DW37xx */
+    /* END: CHIP_SPECIFIC_SECTION DW3720 */
 
     /* BEGIN: CHIP_SPECIFIC_SECTION DW3720 */
     /*! ------------------------------------------------------------------------------------------------------------------
@@ -3487,7 +3952,7 @@ extern "C"
      * return none
      *
      */
-    void dwt_set_timer_expiration(dwt_timers_e timer_name, uint32_t exp);
+    void dwt_set_timer_expiration(dwt_timers_e timer_name, uint32_t expiration);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This function enables the timer. In order to enable, the timer enable bit [0] for TIMER0 or [1] for TIMER1
@@ -3502,9 +3967,9 @@ extern "C"
     void dwt_timer_enable(dwt_timers_e timer_name);
 
     /*! ------------------------------------------------------------------------------------------------------------------
-     * @brief This API enables "Fixed STS" function. The fixed STS function means that the same STS will be sent in each packet. 
+     * @brief This API enables "Fixed STS" function. The fixed STS function means that the same STS will be sent in each packet.
      * And also in the receiver, when the receiver is enabled the STS will be reset. Thus transmitter and the receiver will be in sync.
-     * 
+     *
      * input parameters
      * @param set - Set to 1 to set FIXED STS and 0 to disable
      *
@@ -3516,7 +3981,7 @@ extern "C"
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief This API sets the Alternative Pulse Shape according to ARIB.
-     * 
+     *
      * input parameters
      * @param set_alternate - Set to 1 to enable the alternate pulse shape and 0 to restore default shape.
      *
@@ -3526,10 +3991,187 @@ extern "C"
      */
     void dwt_set_alternative_pulse_shape(uint8_t set_alternate);
 
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will configure the channel number.
+     *
+     * input parameters
+     * @param ch - Channel number (5 or 9)
+     *
+     * returns DWT_SUCCESS if successful, otherwise returns < 0 if failed.
+     */
+    int32_t dwt_setchannel(dwt_pll_ch_type_e ch);
 
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will set the STS length. The STS length is specified in blocks. A block is 8 us duration,
+     *        0 value specifies 8 us duration, the max value is 255 == 2048 us.
+     *
+     *        NOTE: dwt_configure() must be called prior to this to configure the PRF
+     *        To set the PRF dwt_settxcode() is used.
+     *
+     *
+     * input parameters
+     * @param stsblocks  -  number of STS 8us blocks (0 == 8us, 1 == 16us, etc)
+     *
+     * return none
+     */
+    void dwt_setstslength(uint8_t stsblocks);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This is used to enable/disable the FCS generation in transmitter and checking in receiver
+     *
+     * input parameters
+     * @param - enable - dwt_fcs_mode_e - this is used to enable/disable FCS generation in TX and check in RX
+     * output parameters
+     *
+     * no return value
+     */
+    void dwt_configtxrxfcs(dwt_fcs_mode_e enable);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will configure the PHR mode and rate.
+     *
+     * input parameters
+     * @param phrMode - PHR mode {0x0 - standard DWT_PHRMODE_STD, 0x1 - extended frames DWT_PHRMODE_EXT}
+     * @param phrRate - PHR rate {0x0 - standard DWT_PHRRATE_STD, 0x1 - at datarate DWT_PHRRATE_DTA}
+     *
+     * NOTE: Does nothing as we set the PHR mode and PHR rate in config.
+     *
+     * returns DWT_SUCCESS if successful, otherwise returns < 0 if failed.
+     */
+    int32_t dwt_setphr(dwt_phr_mode_e phrMode, dwt_phr_rate_e phrRate);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will configure the data rate.
+     * NOTE: Does nothing as we set the data rate in config.
+     *
+     * input parameters
+     * @param bitRate - Data rate see dwt_uwb_bit_rate_e, depends on PRF
+     *
+     * returns DWT_SUCCESS if successful, otherwise returns < 0 if failed.
+     */
+    int32_t dwt_setdatarate(dwt_uwb_bit_rate_e bitRate);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will configure the Acquisition Chunk Size.
+     * NOTE: Does nothing as we set the PAC in config
+
+     * input parameters
+     * @param rxPac - Acquisition Chunk Size (Relates to RX preamble length)
+     *
+     * returns DWT_SUCCESS if successful, otherwise returns < 0 if failed.
+     */
+    int32_t dwt_setrxpac(dwt_pac_size_e rxPAC);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will configure the SFD timeout value.
+     * NOTE: Does nothing as we set the SFD in config
+     *
+     * input parameters
+     * @param sfdTO - SFD timeout value (in symbols)
+     *
+     * returns DWT_SUCCESS if successful, otherwise returns < 0 if failed.
+     */
+    int32_t dwt_setsfdtimeout(uint16_t sfdTO);
+
+    /* @brief Synopsys have released an errata against the OTP power macro, in relation to low power
+    *        SLEEP/RETENTION modes where the VDD and VCC are removed.
+    *
+    *        This function disables integrated power supply (IPS) and needs to be called prior to
+    *        the SoC going to sleep or when an OTP low power mode is required.
+    *
+    *        On exit from low-power mode this is called to restore/enable the OTP IPS for normal OTP use (RD/WR).
+    *
+    * @param mode: if set to 1 this will configure OTP for low-power
+    *
+    * @return  none
+    */
+    void disable_OTP_IPS(int32_t mode);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+    * @brief This function runs the PLL calibration.
+    *
+    * input parameters:
+    * @param int32_t  chan (5 = channel 5, 9 = channel 9)
+    * @param uint32_t coarse_code
+    * @param uint16_t sleep
+    * @param uint8_t  steps
+    *
+    * output parameters
+    *
+    * return number of steps taken to lock the PLL or DWT_ERROR
+    */
+    uint8_t dwt_pll_chx_auto_cal(int32_t chan, uint32_t coarse_code, uint16_t sleep, uint8_t steps, int8_t temperature);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function sets the crystal trim based on temperature, and crystal temperature
+     *        characteristics, if you pass in a temperature of TEMP_INIT (-127), the functions will also read
+     *        onchip temperature sensors to determine the temperature, the crystal temperature
+     *        could be different.
+     *        If a crystal temperature of TEMP_INIT (-127) is passed, the function will assume 25C. 
+     *        If a crystal trim of 0 is passed, the function will use the calibration value from OTP.
+     * 
+     *        This is to compensate for crystal temperature versus frequency curve e.g.
+     *
+     *  Freq Hi
+     *         *                               /
+     *         *       __-__                  /
+     *         *     /       \               /
+     *         *   /           \            /
+     *         *  /             \          /
+     *         * /               \       /
+     *         *                   -___-
+     *         *
+     *  Freq Lo  -40 -20   0  20  40  60  80 100 120
+     *
+     *
+     * input parameters:
+     * @param[in] params -- the based-on parameters to set the new crystal trim. 
+     * @param[in] xtaltrim -- newly programmed crystal trim value
+     *
+     * output parameters
+     *
+     * return DWT_SUCCESS on succes, and DWT_ERROR on invalid parameters.
+     */
+    int32_t dwt_xtal_temperature_compensation(dwt_xtal_trim_t *params, uint8_t *xtaltrim);
+
+    /* @brief This function captures the ADC samples on receiving a signal
+    *
+    * @param capture_adc - this is the pointer to the Structure into which to read the data.
+    *
+    * @return  none
+    */
+    void dwt_capture_adc_samples(dwt_capture_adc_t *capture_adc);
+
+    /* @brief This function reads the captured ADC samples, needs to be called after dwt_capture_adc_samples()
+    *        The test block will write to 255 (0xff) locations in the CIR memory (Ipatov).
+    *        Each clock cycle produces 36 ADC bits so 8 clocks will fill a memory word.
+    *        The ADC capture memory pointer increments twice each write, until the 255 limit is reached - the pointer will be at 0x1fe.
+    *        If wrapped mode is used the poiner will wrap around after reaching the 255 limit.
+    *        There are 36*8*255=73440 ADC bits logged (18-bit I and 18 bit Q ... but that is actually 16-bit I and 16-bit Q ... as the top two bits are 0).
+    *        16-bit I and 16-bit Q are saved into 2 24 bit words: [0] = 0x00NNPP, [1] = 0x00NNPP,
+    *        [0]: NN = I-, PP = I+, [1]: NN = Q-, PP = Q+,
+    *        (18360 I samples and 18360 Q samples).
+    *
+    * @param capture_adc - this is the pointer to the dwt_capture_adc_t structure into which to read the data.
+    *
+    * @return  none
+    */
+    void dwt_read_adc_samples(dwt_capture_adc_t *capture_adc);
+
+    /*! ------------------------------------------------------------------------------------------------------------------
+     * @brief This function will configure the PDOA mode.
+     *
+     * input parameters
+     * @param pdoaMode - PDOA mode
+     *
+     * NOTE: to modify preamble length or STS length call dwt_configure first or dwt_setstslength.
+     *
+     * returns DWT_SUCCESS if successful, otherwise returns < 0 if failed.
+     */
+    int dwt_setpdoamode(dwt_pdoa_mode_e pdoaMode);
     /* END: CHIP_SPECIFIC_SECTION DW3720 */
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _DECA_DEVICE_API_H_ */
+#endif /* DECA_DEVICE_API_H */

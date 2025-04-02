@@ -45,7 +45,6 @@ DEFINES += -DWSF_TRACE_ENABLED
 DEFINES += -DAM_DEBUG_PRINTF
 DEFINES += -Dgcc
 
-DW_LIBRARY := ../src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.14.a
 LINKER_FILE := ../AmbiqSDK/bsp/$(BSP)/linker/socitrack.ld
 STARTUP_FILE := ../AmbiqSDK/bsp/$(BSP)/linker/startup_gcc.c
 BLE_FW_FILE := ../AmbiqSDK/bsp/ble_firmware_update.bin
@@ -235,6 +234,10 @@ SRC += wsf_timer.c
 SRC += wsf_trace.c
 SRC += wstr.c
 
+SRC += deca_compat.c
+SRC += deca_interface.c
+SRC += dw3000_device.c
+
 SRC += battery.c
 SRC += bluetooth.c
 SRC += button.c
@@ -409,7 +412,6 @@ LFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 LFLAGS+= -nostartfiles -static
 LFLAGS+= -Wl,--gc-sections,--entry,Reset_Handler,-Map,$(CONFIG)/$(TARGET).map
 LFLAGS+= -Wl,--start-group -lm -lc -lgcc -lnosys $(LIBS) -Wl,--end-group
-LFLAGS+= -Wl,--whole-archive $(DW_LIBRARY) -Wl,--no-whole-archive
 LFLAGS+= -Wl,--print-memory-usage
 
 CPFLAGS = -Obinary

@@ -1,15 +1,16 @@
-/*
- * @file: deca_interface.h
- * @brief Interface to the Decawave driver
+/**
+ * @file:     deca_interface.h
  *
- * @author Decawave
+ * @brief     Interface to the Decawave driver
  *
- * @attention Copyright 2020 - 2021 (c) Decawave Ltd, Dublin, Ireland.
- *            All rights reserved.
+ * @author    Decawave Applications
+ *
+ * @copyright SPDX-FileCopyrightText: Copyright (c) 2024 Qorvo US, Inc.
+ *            SPDX-License-Identifier: LicenseRef-QORVO-2
+ *
  */
-
-#ifndef DECA_INTERFACE_H_
-#define DECA_INTERFACE_H_
+#ifndef DECA_INTERFACE_H
+#define DECA_INTERFACE_H
 
 #include "deca_device_api.h"
 #include <stdint.h>
@@ -64,6 +65,7 @@ typedef enum
     DWT_CLEARAONCONFIG,
     DWT_CALCBANDWIDTHADJ,
     DWT_READDIAGNOSTICS,
+    DWT_READDIAGNOSTICS_ACC,
     DWT_READTXTIMESTAMPHI32,
     DWT_READTXTIMESTAMPLO32,
     DWT_READTXTIMESTAMP,
@@ -88,7 +90,9 @@ typedef enum
     DWT_CONVERTRAWVBAT,
     DWT_CONFIGCONTINUOUSFRAMEMODE,
     DWT_DISABLECONTINUOUSFRAMEMODE,
+    DWT_DISABLECONTINUOUSWAVEMODE,
     DWT_STOPREPEATEDFRAMES,
+    DWT_REPEATEDPREAMBLE,
     DWT_REPEATEDFRAMES,
     DWT_DOAES,
     DWT_READSTSQUALITY,
@@ -128,8 +132,10 @@ typedef enum
     DWT_SETDBLRXBUFFMODE,
     DWT_SETREFERENCETRXTIME,
     DWT_MICSIZEFROMBYTES,
+    DWT_PLL_STATUS,
     DWT_PLL_CAL,
     DWT_CONFIGURE_RF_PORT,
+    DWT_SETPDOAMODE,
     DWT_SETPDOAOFFSET,
     DWT_READPDOAOFFSET,
 #ifdef WIN32
@@ -149,12 +155,20 @@ typedef enum
     DWT_CFGOSTRMODE,
     DWT_NLOS_IPDIAG,
     DWT_NLOS_ALLDIAG,
+    DWT_SET_TXPOWER,
     DWT_ADJ_TXPOWER,
-    /* BEGIN: CHIP_SPECIFIC_SECTION DW3700 */
+    DWT_LINEAR_TXPOWER,
+    DWT_CONVERT_TXPOWER_TO_IDX,
+    DWT_SET_PLL_CONFIG,
+    DWT_DIS_OTP_IPS,
+    DWT_CAPTURE_ADC,
+    DWT_READ_ADC_SAMPLES,
+    DWT_CALCULATE_RSSI,
+    DWT_CALCULATE_FIRST_PATH_POWER,
+    DWT_SET_ISR_FLAGS,
+    /* BEGIN: CHIP_SPECIFIC_SECTION DW3720 */
     DWT_SETINTERUPTDB,
     DWT_ENTERSLEEPFCMD,
-    DWT_SOFTRESETFCMD,
-    DWT_SOFTRESETNOSEMAFCMD,
     DWT_DSSEMAREQUEST,
     DWT_DSSEMARELEASE,
     DWT_DSSEMAFORCE,
@@ -162,8 +176,6 @@ typedef enum
     DWT_DSENSLEEP,
     DWT_DSSETINT_SPIAVAIL,
     DWT_ENABLEDISABLEEQ,
-    /* END: CHIP_SPECIFIC_SECTION DW3700 */
-    /* BEGIN: CHIP_SPECIFIC_SECTION DW3720 */
     DWT_TIMERSRST,
     DWT_TIMERSRSTCLR,
     DWT_CONFIGTIMER,
@@ -172,10 +184,19 @@ typedef enum
     DWT_CFGWIFICOEXGPIO,
     DWT_SETFIXEDSTS,
     DWT_SET_ALT_PULSE_SHAPE,
+    DWT_PLL_AUTO_CAL,
+    DWT_XTAL_AUTO_TRIM,
+    DWT_SETPLLCALTEMP,
+    DWT_GETPLLCALTEMP,
     /* END: CHIP_SPECIFIC_SECTION DW3720 */
     /* BEGIN: MCPS SPECIFIC IOCTL */
     DWT_SET_STS_LEN,
     DWT_CFG_STS,
+    DWT_SET_PHR,
+    DWT_SET_DATARATE,
+    DWT_SET_PAC,
+    DWT_SET_SFDTO,
+    DWT_SET_FCS_MODE, /* used for FTM/PCTT to disable  chip handling of CRC-16 */
     /* END: MCPS SPECIFIC IOCTL */
     /* BEGIN DEBUG */
     DWT_DBG_REGS,
@@ -215,7 +236,7 @@ struct dwt_set_gpio_mode_s
 struct dwt_set_gpio_value_s
 {
     uint16_t gpio; // GPIO to set, can be single or multiple:
-    int value;     // 0 or 1
+    int32_t value;     // 0 or 1
 };
 
 struct dwt_configure_ff_s
@@ -259,7 +280,7 @@ struct dwt_spi_cs_wakeup_s
 struct dwt_enable_auto_ack_s
 {
     uint8_t responseDelayTime;
-    int enable;
+    int32_t enable;
 };
 
 struct dwt_set_dbl_rx_buff_mode_s
@@ -270,15 +291,21 @@ struct dwt_set_dbl_rx_buff_mode_s
 
 struct dwt_set_sniff_mode_s
 {
-    int enable;
+    int32_t enable;
     uint8_t timeOn;
     uint8_t timeOff;
 };
 
+struct dwt_repeated_p_s
+{
+    uint16_t delay;
+    uint32_t test_txpower;
+};
+
 struct dwt_repeated_cw_s
 {
-    int cw_enable;
-    int cw_mode_config;
+    int32_t cw_enable;
+    int32_t cw_mode_config;
 };
 
 struct dwt_convert_raw_temp_s
@@ -321,7 +348,7 @@ struct dwt_do_aes_s
 struct dwt_configure_le_address_s
 {
     uint16_t addr;
-    int leIndex;
+    int32_t leIndex;
 };
 
 struct dwt_set_interrupt_db_s
@@ -337,12 +364,6 @@ struct dwt_tx_fctrl_s
     uint8_t ranging;
 };
 
-struct dwt_config_rf_port_s
-{
-    dwt_rf_port_selection_e port;
-    dwt_rf_port_ctrl_e enable;
-};
-
 struct dwt_ostr_mode_s
 {
     uint8_t enable;
@@ -352,7 +373,7 @@ struct dwt_ostr_mode_s
 struct dwt_cfg_wifi_coex_set_s
 {
     dwt_wifi_coex_e enable;
-    int coex_io_swap;
+    int32_t coex_io_swap;
 };
 
 struct dwt_cfg_wifi_coex_s
@@ -364,12 +385,12 @@ struct dwt_cfg_wifi_coex_s
 struct dwt_timer_exp_s
 {
     dwt_timers_e timer_name;
-    uint32_t exp;
+    uint32_t expiration;
 };
 
 struct dwt_adj_tx_power_s
 {
-    int result;
+    int32_t result;
     uint16_t boost;
     uint32_t ref_tx_power;
     uint8_t channel;
@@ -377,23 +398,65 @@ struct dwt_adj_tx_power_s
     uint16_t* applied_boost;
 };
 
+struct dwt_calculate_linear_tx_setting_s
+{
+    int32_t result;
+    int32_t channel;
+    power_indexes_t* txp_indexes;
+    tx_adj_res_t* txp_res;
+};
+
+ struct dwt_convert_tx_power_to_index_s
+{
+    int result;
+    int channel;
+    uint8_t tx_power;
+    uint8_t* tx_power_idx;
+};
+
+struct dwt_set_phr_s
+{
+    dwt_phr_mode_e phrMode;
+    dwt_phr_rate_e phrRate;
+};
+
+struct dwt_set_pll_cal_s
+{
+	uint32_t coarse_code;
+	uint16_t sleep;
+	uint8_t steps;
+	int8_t temp;
+};
+
+struct dwt_set_xtal_cal_s
+{
+    dwt_xtal_trim_t *params;
+    uint8_t *xtaltrim; 
+};
+
+struct dwt_calculate_rssi_s
+{
+    const dwt_cirdiags_t *cir_diagnostics;
+    dwt_acc_idx_e acc_idx;
+    int16_t *signal_strength;
+};
+
+struct dwt_calculate_first_path_power_s
+{
+    const dwt_cirdiags_t *cir_diagnostics;
+    dwt_acc_idx_e acc_idx;
+    int16_t *signal_strength;
+};
+
+struct dwt_readdiagnostics_acc_s
+{
+    dwt_cirdiags_t *cir_diag;
+    dwt_acc_idx_e acc_idx;
+};
+
+
 struct dwchip_s;
 struct dw_rx_s;
-
-struct dwt_callbacks_s
-{
-    dwt_spierrcb_t cbSPIRDErr; // Callback for SPI read error events
-    dwt_cb_t cbTxDone;         // Callback for TX confirmation event
-    dwt_cb_t cbRxOk;           // Callback for RX good frame event
-    dwt_cb_t cbRxTo;           // Callback for RX timeout events
-    dwt_cb_t cbRxErr;          // Callback for RX error events
-    dwt_cb_t cbSPIErr;         // Callback for SPI error events
-    dwt_cb_t cbSPIRdy;         // Callback for SPI ready events
-    dwt_cb_t cbDualSPIEv;      // Callback for dual SPI events
-
-    int (*rx_frame)(struct dwchip_s *, struct dw_rx_s *);
-    int (*rx_error)(struct dwchip_s *, int);
-};
 
 /*! ------------------------------------------------------------------------------------------------------------------
     * @brief The dwt_spi_s structure is a structure assembling all the SPI functions that must be defined externally
@@ -415,7 +478,7 @@ struct dwt_spi_s
     * output parameters:
     * returns DWT_SUCCESS for success, or DWT_ERROR for error
     */
-    int (*readfromspi)(uint16_t headerLength, /*const*/ uint8_t *headerBuffer, uint16_t readlength, uint8_t *readBuffer);
+    int32_t (*readfromspi)(uint16_t headerLength, /*const*/ uint8_t *headerBuffer, uint16_t readlength, uint8_t *readBuffer);
 
 /*! ------------------------------------------------------------------------------------------------------------------
     * @brief writetospi
@@ -430,7 +493,7 @@ struct dwt_spi_s
     * output parameters:
     * returns DWT_SUCCESS for success, or DWT_ERROR for error
     */
-    int (*writetospi)(uint16_t headerLength, const uint8_t *headerBuffer, uint16_t bodyLength, const uint8_t *bodyBuffer);
+    int32_t (*writetospi)(uint16_t headerLength, const uint8_t *headerBuffer, uint16_t bodyLength, const uint8_t *bodyBuffer);
 
 /*! ------------------------------------------------------------------------------------------------------------------
     * @brief writetospiwithcrc
@@ -446,7 +509,7 @@ struct dwt_spi_s
     * output parameters:
     * returns DWT_SUCCESS for success, or DWT_ERROR for error
     */
-    int (*writetospiwithcrc)(uint16_t headerLength, const uint8_t *headerBuffer, uint16_t bodyLength, const uint8_t *bodyBuffer, uint8_t crc8);
+    int32_t (*writetospiwithcrc)(uint16_t headerLength, const uint8_t *headerBuffer, uint16_t bodyLength, const uint8_t *bodyBuffer, uint8_t crc8);
 
     /*! ------------------------------------------------------------------------------------------------------------------
      * @brief setslowrate
@@ -487,13 +550,13 @@ typedef struct rxtx_configure_s rxtx_configure_t;
 
 struct dwt_mcps_config_s
 {
-    int mode;
-    int do_reset;
-    int led_mode;
-    int lnapamode;
-    int bitmask_lo;
-    int bitmask_hi;
-    int int_options;
+    int32_t mode;
+    int32_t do_reset;
+    int32_t led_mode;
+    int32_t lnapamode;
+    int32_t bitmask_lo;
+    int32_t bitmask_hi;
+    int32_t int_options;
     struct dwt_configure_sleep_s sleep_config;
     dwt_sts_cp_key_t *stsKey; /**< AES Key to be used to set the STS */
     dwt_sts_cp_iv_t *stsIv;   /**< AES IV to be used to set the initial IV */
@@ -507,14 +570,15 @@ typedef struct dwt_mcps_config_s dwt_mcps_config_t;
 
 /*The contract is that we have the SPI interface to the DW chip*/
 struct dwchip_s
-{   
+{
     /*HAL*/
     struct dwt_spi_s *SPI; // first
     void(*wakeup_device_with_io)(void);
 
     /*Driver*/
     struct dwt_driver_s *dwt_driver;
-    struct dwt_callbacks_s callbacks;
+    dwt_callbacks_s callbacks;
+    dwt_isr_flags_e isrFlags;
 
     /* driver configuration */
     struct dwt_mcps_config_s *config;
@@ -539,67 +603,73 @@ struct dw_rx_frame_info_s
 {
     uint32_t rx_date_dtu;
     uint32_t rx_timeout_pac;
-    int rx_delayed;
+    int32_t rx_delayed;
 };
 
 struct dw_tx_frame_info_s
 {
     uint32_t tx_date_dtu;    /* 4ns time units: */
-    int rx_delay_dly;        /* sy: 1.0256us */
+    int32_t rx_delay_dly;        /* sy: 1.0256us */
     uint32_t rx_timeout_pac; /* SFD Timeout ? */
-    int flag;                /* flag */
+    uint32_t flag;                /* flag */
 
 #ifndef MCPS_RANGING_BIT
-#define MCPS_RANGING_BIT 0x40
+#define MCPS_RANGING_BIT 0x40U
 #endif
 };
 struct dw_addr_filt_s;
 
 struct dwt_ops_s
 {
-    int (*configure)(struct dwchip_s *dw, dwt_config_t *config);
-    int (*write_tx_data)(struct dwchip_s *dw, uint16_t txDataLength, uint8_t *txDataBytes, uint16_t txBufferOffset);
+    int32_t (*configure)(struct dwchip_s *dw, dwt_config_t *config);
+    int32_t (*write_tx_data)(struct dwchip_s *dw, uint16_t txDataLength, uint8_t *txDataBytes, uint16_t txBufferOffset);
     void (*write_tx_fctrl)(struct dwchip_s *dw, uint16_t txFrameLength, uint16_t txBufferOffset, uint8_t ranging);
     void (*read_rx_data)(struct dwchip_s *dw, uint8_t *buffer, uint16_t length, uint16_t rxBufferOffset);
     void (*read_acc_data)(struct dwchip_s *dw, uint8_t *buffer, uint16_t length, uint16_t accOffset);
     void (*read_rx_timestamp)(struct dwchip_s *dw, uint8_t *timestamp);
+    void (*read_cir)(dwchip_t *dw, uint32_t *buffer, dwt_acc_idx_e cir_idx, uint16_t sample_offs, uint16_t num_samples, dwt_cir_read_mode_e mode);
     void (*configure_tx_rf)(struct dwchip_s *dw, dwt_txconfig_t *config);
     void (*set_interrupt)(struct dwchip_s *dw, uint32_t bitmask_lo, uint32_t bitmask_hi, dwt_INT_options_e INT_options);
-    int (*rx_enable)(struct dwchip_s *dw, int mode);
-    int (*initialize)(struct dwchip_s *dw, int mode);
+    int32_t (*rx_enable)(struct dwchip_s *dw, int32_t mode);
+    int32_t (*initialize)(struct dwchip_s *dw, int32_t mode);
     void (*xfer)(struct dwchip_s *dw, uint32_t regFileID, uint16_t index, uint16_t length, uint8_t *buffer, const spi_modes_e mode);
 
-    int (*ioctl)(struct dwchip_s *, dwt_ioctl_e, int parm, void *ptr);
+    int32_t (*ioctl)(struct dwchip_s *dw, dwt_ioctl_e fn, int32_t parm, void *ptr);
 
-    void (*isr)(struct dwchip_s *);
+    void (*isr)(struct dwchip_s *dw);
 
-    void* (*dbg_fn)(struct dwchip_s*, dwt_ioctl_e, int parm, void* ptr);
+    void* (*dbg_fn)(struct dwchip_s* dw, dwt_ioctl_e fn, int32_t parm, void* ptr);
 };
 
 struct dwt_mcps_ops_s
 {
-    int (*init)(struct dwchip_s *);
-    void (*deinit)(struct dwchip_s *);
-    int (*tx_frame)(struct dwchip_s *, uint8_t *data, size_t len, struct dw_tx_frame_info_s *info);
-    int (*rx_enable)(struct dwchip_s *, struct dw_rx_frame_info_s *info);
-    int (*rx_disable)(struct dwchip_s *);
-    uint64_t (*get_timestamp)(struct dwchip_s *);
-    void (*get_rx_frame)(struct dwchip_s *, uint8_t *ptr, size_t len);
-    int (*set_hrp_uwb_params)(struct dwchip_s *, int prf, int fsr, int sfd_selector, int phr_rate, int data_rate);
-    int (*set_channel)(struct dwchip_s *, int page, int channel, int preamble_code);
-    int (*set_hw_addr_filt)(struct dwchip_s *, struct dw_addr_filt_s *file, int changed);
+    int32_t (*init)(struct dwchip_s *dw);
+#ifdef AUTO_DW3300Q_DRIVER
+    int32_t (*init_no_chan)(struct dwchip_s *);
+#endif
+    void (*deinit)(struct dwchip_s *dw);
+    int32_t (*tx_frame)(struct dwchip_s *dw, uint8_t *data, size_t len, struct dw_tx_frame_info_s *info);
+    int32_t (*rx_enable)(struct dwchip_s *dw, struct dw_rx_frame_info_s *info);
+    int32_t (*rx_disable)(struct dwchip_s *dw);
+    uint64_t (*get_timestamp)(struct dwchip_s *dw);
+    void (*get_rx_frame)(struct dwchip_s *dw, uint8_t *ptr, size_t len);
+    int32_t (*set_hrp_uwb_params)(struct dwchip_s *dw, int32_t prf, int32_t fsr, int32_t sfd_selector, int32_t phr_rate, int32_t data_rate);
+    int32_t (*set_channel)(struct dwchip_s *dw, uint8_t channel);
+    int32_t (*set_hw_addr_filt)(struct dwchip_s *dw, struct dw_addr_filt_s *file, int32_t changed);
+    void (*write_to_device)(dwchip_t *dw, uint32_t regFileID, uint16_t index, uint16_t length, uint8_t *buffer);
+    void (*read_from_device)(dwchip_t *dw, uint32_t regFileID, uint16_t index, uint16_t length, uint8_t *buffer);
 
     // Compat direct-access fns - Used in dw3000_mcps_mcu.c . This is required for compatibility purpose with some MCPS functions
     struct mcps_compat_
     {
-        int (*sys_status_and_or)(struct dwchip_s *dw, uint32_t _and, uint32_t _or);
-        void (*ack_enable)(struct dwchip_s *dw, int enable);
+        int32_t (*sys_status_and_or)(struct dwchip_s *dw, uint32_t and_value, uint32_t or_value);
+        void (*ack_enable)(struct dwchip_s *dw, int32_t enable);
         void (*set_interrupt)(struct dwchip_s *dw, uint32_t bitmask_lo, uint32_t bitmask_hi, dwt_INT_options_e INT_options);
     } mcps_compat;
 
-    int (*ioctl)(struct dwchip_s *, dwt_ioctl_e, int parm, void *ptr);
+    int32_t (*ioctl)(struct dwchip_s *dw, dwt_ioctl_e fn, int32_t parm, void *ptr);
 
-    void (*isr)(struct dwchip_s *);
+    void (*isr)(struct dwchip_s *dw);
 };
 struct dwt_driver_s
 {
@@ -613,12 +683,10 @@ struct dwt_driver_s
 };
 
 /* STD interface fn() */
-int interface_init(struct dwchip_s *p);
-void interface_deinit(struct dwchip_s *p);
-int interface_tx_frame(struct dwchip_s *dw, uint8_t *data, size_t len, struct dw_tx_frame_info_s *info);
-int interface_rx_enable(struct dwchip_s *dw, struct dw_rx_frame_info_s *info);
-int interface_rx_disable(struct dwchip_s *dw);
+int32_t interface_tx_frame(struct dwchip_s *dw, uint8_t *data, size_t len, struct dw_tx_frame_info_s *info);
+int32_t interface_rx_enable(struct dwchip_s *dw, struct dw_rx_frame_info_s *info);
+int32_t interface_rx_disable(struct dwchip_s *dw);
 uint64_t interface_get_timestamp(struct dwchip_s *dw);
 void interface_read_rx_frame(struct dwchip_s *dw, uint8_t *ptr, size_t len);
 
-#endif /* DECA_INTERFACE_H_ */
+#endif /* DECA_INTERFACE_H */

@@ -1,17 +1,16 @@
-/*! ----------------------------------------------------------------------------
- * @file    deca_version.h
- * @brief   Defines the version info for the DW3XXX device driver including its API
+/**
+ * @file      deca_version.h
+ * 
+ * @brief     Defines the version info for the DW3XXX device driver including its API
  *
- * @attention
+ * @author    Decawave Applications
  *
- * Copyright 2017 - 2021 (c) Decawave Ltd, Dublin, Ireland.
- *
- * All rights reserved.
+ * @copyright SPDX-FileCopyrightText: Copyright (c) 2024 Qorvo US, Inc.
+ *            SPDX-License-Identifier: LicenseRef-QORVO-2
  *
  */
-
-#ifndef _DECA_VERSION_DW3XXX_H_
-#define _DECA_VERSION_DW3XXX_H_ 1
+#ifndef DECA_VERSION_DW3XXX_H
+#define DECA_VERSION_DW3XXX_H
 
 //
 // The DW3XXX device driver is separately version numbered to any version the application using it may have
@@ -28,7 +27,7 @@
 
 #define DRIVER_NAME        "DW3XXX"
 
-#define DRIVER_VERSION_HEX 0x060014
-#define DRIVER_VERSION_STR "DW3XXX Device Driver Version 06.00.14"
+#define DRIVER_VERSION_HEX 0x080202
+#define DRIVER_VERSION_STR "DW3XXX Device Driver Version 08.02.02"
 
-#endif
+#endif /* DECA_VERSION_DW3XXX_H */
