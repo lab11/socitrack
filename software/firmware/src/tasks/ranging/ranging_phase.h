@@ -11,7 +11,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
-   uint32_t tx_rx_times[2*(MAX_NUM_RANGING_DEVICES-1)];
+   uint32_t tx_rx_times[MAX_NUM_RANGING_DEVICES];
    ieee154_footer_t footer;
 } ranging_packet_t;
 
