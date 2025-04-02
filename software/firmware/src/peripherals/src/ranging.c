@@ -226,7 +226,7 @@ void ranging_radio_init(uint8_t *uid)
    // Set up the DW3000 wake-up pin as an output, initially set to low
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP);
-#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
+#if REVISION_ID == REVISION_M
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP2, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_WAKEUP2);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_WAKEUP3, am_hal_gpio_pincfg_output));
@@ -234,7 +234,7 @@ void ranging_radio_init(uint8_t *uid)
 #endif
 
    // Set up the DW3000 antenna selection pins
-#if (REVISION_ID < REVISION_L) || (REVISION_ID > REVISION_M)
+#if REVISION_ID > REVISION_M
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT1, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_ANTENNA_SELECT2, am_hal_gpio_pincfg_output));
@@ -256,7 +256,7 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
-#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
+#if REVISION_ID == REVISION_M
    radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_INTERRUPT2, interrupt_pin_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &radio_interrupt_pin));
@@ -293,28 +293,15 @@ void ranging_radio_init(uint8_t *uid)
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET2);
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_input));
-   const uint32_t radio2_present = am_hal_gpio_input_read(PIN_RADIO_RESET2);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_tristate));
-   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
    am_hal_gpio_output_clear(PIN_RADIO_RESET2);
    deca_usleep(2000);
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET3);
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_input));
-   const uint32_t radio3_present = am_hal_gpio_input_read(PIN_RADIO_RESET3);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_tristate));
-   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
    am_hal_gpio_output_clear(PIN_RADIO_RESET3);
    deca_usleep(2000);
-#endif
 
    // Reset the extra DWMs and put them into deep-sleep mode
-#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
-#if REVISION_ID == REVISION_M
-   if (radio2_present || radio3_present) {
-#endif
    cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS2_FUNCTION;
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, cs_config));
    ranging_radio_spi_slow();
@@ -332,9 +319,6 @@ void ranging_radio_init(uint8_t *uid)
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
    am_hal_gpio_output_set(PIN_RADIO_SPI_CS3);
    cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
-#if REVISION_ID == REVISION_M
-   }
-#endif
 #endif
 
    // Reset and initialize the DW3000 radio
@@ -358,7 +342,7 @@ void ranging_radio_deinit(void)
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT));
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT, NULL, NULL);
    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &radio_interrupt_pin);
-#if (REVISION_ID == REVISION_L) || (REVISION_ID == REVISION_M)
+#if REVISION_ID == REVISION_M
    radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_RADIO_INTERRUPT2));
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_RADIO_INTERRUPT2, NULL, NULL);
@@ -498,27 +482,18 @@ void ranging_radio_choose_channel(uint8_t channel)
 void ranging_radio_choose_antenna(uint8_t antenna_number)
 {
    // Enable the desired antenna
-#if (REVISION_ID < REVISION_L) || (REVISION_ID > REVISION_M)
+#if REVISION_ID > REVISION_M
    switch (antenna_number)
    {
       case 0:
-#if REVISION_ID == REVISION_N
-         dwt_setlnapamode(DWT_LNA_ENABLE);
-#endif
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);
          break;
       case 1:
-#if REVISION_ID == REVISION_N
-         dwt_setlnapamode(DWT_LNA_PA_DISABLE);
-#endif
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
          break;
       case 2:
-#if REVISION_ID == REVISION_N
-         dwt_setlnapamode(DWT_LNA_PA_DISABLE);
-#endif
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT1);
          am_hal_gpio_output_set(PIN_RADIO_ANTENNA_SELECT2);
          break;
@@ -537,7 +512,7 @@ void ranging_radio_disable(void)
 void ranging_radio_sleep(bool deep_sleep)
 {
    // Disable all antennas
-#if (REVISION_ID < REVISION_L) || (REVISION_ID > REVISION_M)
+#if REVISION_ID > REVISION_M
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT2);
 #endif

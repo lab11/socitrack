@@ -5,7 +5,7 @@
 #include "usb.h"
 
 
-#if REVISION_ID >= REVISION_O
+#if REVISION_ID > REVISION_N
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
@@ -69,4 +69,4 @@ bool usb_cable_connected(void)
 void usb_init(void) {}
 bool usb_cable_connected(void) { return false; }
 
-#endif  // #if REVISION_ID >= REVISION_O
+#endif  // #if REVISION_ID > REVISION_N
