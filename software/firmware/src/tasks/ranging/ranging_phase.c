@@ -66,8 +66,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
 void ranging_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Ranging Phase parameters
-   ranging_packet = (ranging_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = RANGING_PACKET,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
+   ranging_packet = (ranging_packet_t){ .header = { .msgType = RANGING_PACKET, .sourceAddr = { 0 } },
       .tx_rx_times = { 0 }, .footer = { { 0 } } };
    memcpy(ranging_packet.header.sourceAddr, uid, sizeof(ranging_packet.header.sourceAddr));
 }

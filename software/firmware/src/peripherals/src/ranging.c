@@ -365,8 +365,8 @@ void ranging_radio_reset(void)
    dwt_enableautoack(0, 0);
    dwt_setrxtimeout(0);
 
-   // Set this device so that it only receives regular and extended data packets
-   dwt_configureframefilter(DWT_FF_ENABLE_802_15_4, DWT_FF_DATA_EN);
+   // Disable 802.15.4 frame filtering
+   dwt_configureframefilter(DWT_FF_DISABLE, DWT_FF_DATA_EN | DWT_FF_IMPBRCAST_EN);
 
    // Clear the internal TX/RX antenna delays
    dwt_settxantennadelay(TX_ANTENNA_DELAY);

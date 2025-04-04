@@ -23,10 +23,7 @@
 
 typedef struct __attribute__ ((__packed__))
 {
-   uint8_t frameCtrl[2];
    uint8_t msgType;
-   uint8_t panID[2];
-   uint8_t destAddr[2];
    uint8_t sourceAddr[2];
 } ieee154_header_t;
 

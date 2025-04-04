@@ -50,8 +50,7 @@ static void deschedule_device(uint8_t device_index)
 void schedule_phase_initialize(const uint8_t *uid, bool is_master)
 {
    // Initialize all Schedule Phase parameters
-   schedule_packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = SCHEDULE_PACKET,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
+   schedule_packet = (schedule_packet_t){ .header = { .msgType = SCHEDULE_PACKET, .sourceAddr = { 0 } },
       .sequence_number = 0, .epoch_time_unix = 0, .num_devices = 1,
       .schedule = { 0 }, .footer = { { 0 } } };
    memset(device_timeouts, 0, sizeof(device_timeouts));

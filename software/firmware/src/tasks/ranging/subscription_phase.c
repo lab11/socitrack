@@ -19,8 +19,7 @@ static uint64_t reference_time;
 void subscription_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Subscription Phase parameters
-   subscription_packet = (subscription_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = SUBSCRIPTION_PACKET,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } }, .footer = { { 0 } } };
+   subscription_packet = (subscription_packet_t){ .header = { .msgType = SUBSCRIPTION_PACKET, .sourceAddr = { 0 } }, .footer = { { 0 } } };
    memcpy(subscription_packet.header.sourceAddr, uid, sizeof(subscription_packet.header.sourceAddr));
    srand(dwt_readsystimestamphi32());
 }

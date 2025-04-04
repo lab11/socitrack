@@ -45,8 +45,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
 void status_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Schedule Phase parameters
-   success_packet = (status_success_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = STATUS_SUCCESS_PACKET,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
+   success_packet = (status_success_packet_t){ .header = { .msgType = STATUS_SUCCESS_PACKET, .sourceAddr = { 0 } },
       .sequence_number = 0, .success = 0, .footer = { { 0 } } };
    memcpy(success_packet.header.sourceAddr, uid, sizeof(success_packet.header.sourceAddr));
 }
