@@ -8,11 +8,10 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint8_t device_timeouts[MAX_NUM_RANGING_DEVICES], valid_devices[MAX_NUM_RANGING_DEVICES];
+static uint32_t reference_time, next_action_timestamp;
 static uint8_t scheduled_slot, num_valid_devices;
 static schedule_packet_t schedule_packet;
 static scheduler_phase_t current_phase;
-static uint32_t next_action_timestamp;
-static uint64_t reference_time;
 static bool is_master_scheduler;
 
 
@@ -122,10 +121,11 @@ scheduler_phase_t schedule_phase_tx_complete(void)
       ranging_radio_choose_antenna(schedule_packet.sequence_number % NUM_XMIT_ANTENNAS);
       if (schedule_packet.sequence_number == 1)
       {
-         reference_time = ranging_radio_readtxtimestamp() & 0xFFFFFFFE00UL;
-         dwt_setreferencetrxtime((uint32_t)(reference_time >> 8));
+         uint64_t ref_time = (ranging_radio_readtxtimestamp() - TX_ANTENNA_DELAY) & 0xFFFFFFFE00;
+         dwt_setreferencetrxtime((uint32_t)(ref_time >> 8));
+         reference_time = (uint32_t)ref_time;
       }
-      dwt_setdelayedtrxtime((uint32_t)((US_TO_DWT(next_action_timestamp) - TX_ANTENNA_DELAY) >> 8) & 0xFFFFFFFE);
+      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp));
       if ((dwt_writetxdata(sizeof(schedule_packet.sequence_number), &schedule_packet.sequence_number, offsetof(schedule_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
       {
          next_action_timestamp += SCHEDULE_RESEND_INTERVAL_US;
@@ -138,7 +138,7 @@ scheduler_phase_t schedule_phase_tx_complete(void)
    // Move to the Subscription Phase of the ranging protocol
    current_phase = SUBSCRIPTION_PHASE;
    next_action_timestamp += ((uint32_t)(SCHEDULE_NUM_TOTAL_BROADCASTS - schedule_packet.sequence_number)) * SCHEDULE_RESEND_INTERVAL_US;
-   return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+   return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, reference_time, next_action_timestamp);
 }
 
 scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
@@ -171,8 +171,9 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
       schedule_packet.schedule[i] = 0;
 
    // Set up the reference timestamp for scheduling future messages
-   reference_time = (ranging_radio_readrxtimestamp() - US_TO_DWT((uint32_t)schedule->sequence_number * SCHEDULE_RESEND_INTERVAL_US)) & 0xFFFFFFFE00UL;
-   dwt_setreferencetrxtime((uint32_t)(reference_time >> 8));
+   uint64_t ref_time = (ranging_radio_readrxtimestamp() + RX_ANTENNA_DELAY - US_TO_DWT((uint32_t)schedule->sequence_number * SCHEDULE_RESEND_INTERVAL_US)) & 0xFFFFFFFE00;
+   dwt_setreferencetrxtime((uint32_t)(ref_time >> 8));
+   reference_time = (uint32_t)ref_time;
 
    // Retransmit the schedule at the specified time slot
    schedule_packet.sequence_number = scheduled_slot + SCHEDULE_NUM_MASTER_BROADCASTS - 1;
@@ -181,13 +182,13 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
       const uint16_t packet_size = sizeof(schedule_packet_t) - MAX_NUM_RANGING_DEVICES + schedule_packet.num_devices;
       next_action_timestamp += (uint32_t)(schedule_packet.sequence_number - schedule->sequence_number) * SCHEDULE_RESEND_INTERVAL_US;
       dwt_writetxfctrl(packet_size, 0, 0);
-      dwt_setdelayedtrxtime((uint32_t)((US_TO_DWT(next_action_timestamp) - TX_ANTENNA_DELAY) >> 8) & 0xFFFFFFFE);
+      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp));
       if ((dwt_writetxdata(packet_size - sizeof(ieee154_footer_t), (uint8_t*)&schedule_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
       {
          current_phase = SUBSCRIPTION_PHASE;
          print("ERROR: Failed to retransmit received schedule\n");
          next_action_timestamp += ((uint32_t)(SCHEDULE_NUM_TOTAL_BROADCASTS - schedule_packet.sequence_number)) * SCHEDULE_RESEND_INTERVAL_US;
-         return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+         return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, reference_time, next_action_timestamp);
       }
       return SCHEDULE_PHASE;
    }
@@ -195,7 +196,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    // Move to the Subscription Phase of the ranging protocol
    current_phase = SUBSCRIPTION_PHASE;
    next_action_timestamp += ((uint32_t)(SCHEDULE_NUM_TOTAL_BROADCASTS - schedule->sequence_number)) * SCHEDULE_RESEND_INTERVAL_US;
-   return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, (uint32_t)((reference_time + US_TO_DWT(next_action_timestamp - RECEIVE_EARLY_START_US)) >> 8) & 0xFFFFFFFE);
+   return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, reference_time, next_action_timestamp);
 }
 
 scheduler_phase_t schedule_phase_rx_error(void)
