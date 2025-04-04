@@ -86,7 +86,7 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
    schedule_length = schedule_size;
    next_action_timestamp = next_action_time;
    dwt_writetxdata(sizeof(ranging_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&ranging_packet, 0);
-   tx_payload_length = (uint16_t)(schedule_length * sizeof(ranging_packet.tx_rx_times[0]));
+   tx_payload_length = (uint16_t)((schedule_length - 1) * sizeof(ranging_packet.tx_rx_times[0]));
    current_antenna = NUM_XMIT_ANTENNAS - 1;
    reference_time = ref_time;
    time_slot = 0;

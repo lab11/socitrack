@@ -71,9 +71,8 @@ void compute_ranges(uint8_t *ranging_results)
       int16_t range_millimeters = INT16_MAX;
       if (num_valid_distances >= 1)
       {
-         // Take the median range as the final range estimate
-         uint8_t top = (num_valid_distances / 2), bot = (num_valid_distances % 2) ? (num_valid_distances / 2) : ((num_valid_distances / 2) - 1);
-         range_millimeters = (int16_t)((distances_millimeters[bot] + distances_millimeters[top]) / 2);
+         // Take the lowest range as the final range estimate
+         range_millimeters = (int16_t)distances_millimeters[0];
          if (range_millimeters < 0)
             range_millimeters = 0;
          if (range_millimeters < MAX_VALID_RANGE_MM)
