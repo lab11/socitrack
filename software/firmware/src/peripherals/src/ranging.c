@@ -236,32 +236,43 @@ void ranging_radio_init(uint8_t *uid)
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET2);
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_input));
+   const uint32_t radio2_present = am_hal_gpio_input_read(PIN_RADIO_RESET2);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET2, am_hal_gpio_pincfg_tristate));
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET2);
    am_hal_gpio_output_clear(PIN_RADIO_RESET2);
    deca_usleep(2000);
    am_hal_gpio_output_tristate_enable(PIN_RADIO_RESET3);
    deca_usleep(1);
    am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_input));
+   const uint32_t radio3_present = am_hal_gpio_input_read(PIN_RADIO_RESET3);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_RESET3, am_hal_gpio_pincfg_tristate));
+   am_hal_gpio_output_tristate_disable(PIN_RADIO_RESET3);
    am_hal_gpio_output_clear(PIN_RADIO_RESET3);
    deca_usleep(2000);
 
    // Reset the extra DWMs and put them into deep-sleep mode
-   cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS2_FUNCTION;
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, cs_config));
-   ranging_radio_spi_slow();
-   ranging_radio_reset();
-   ranging_radio_sleep(true);
-   while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_RADIO_SPI_CS2);
-   cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS3_FUNCTION;
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, cs_config));
-   ranging_radio_spi_slow();
-   ranging_radio_reset();
-   ranging_radio_sleep(true);
-   while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_RADIO_SPI_CS3);
-   cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
+   if (radio2_present || radio3_present)
+   {
+      cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS2_FUNCTION;
+      configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, cs_config));
+      ranging_radio_spi_slow();
+      ranging_radio_reset();
+      ranging_radio_sleep(true);
+      while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+      configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS2, am_hal_gpio_pincfg_output));
+      am_hal_gpio_output_set(PIN_RADIO_SPI_CS2);
+      cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS3_FUNCTION;
+      configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, cs_config));
+      ranging_radio_spi_slow();
+      ranging_radio_reset();
+      ranging_radio_sleep(true);
+      while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+      configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS3, am_hal_gpio_pincfg_output));
+      am_hal_gpio_output_set(PIN_RADIO_SPI_CS3);
+      cs_config.GP.cfg_b.uFuncSel = PIN_RADIO_SPI_CS_FUNCTION;
+   }
 #endif
 
    // Reset and initialize the DW3000 radio
