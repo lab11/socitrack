@@ -462,7 +462,7 @@ void ranging_radio_sleep(bool deep_sleep)
    dwt_writesysstatuslo(DWT_INT_ALL_LO);
 
    // Put the DW3000 into sleep mode
-   dwt_configuresleep(DWT_CONFIG | DWT_PGFCAL | DWT_LOADLDO | DWT_LOADDGC | DWT_LOADBIAS,
+   dwt_configuresleep(DWT_CONFIG | DWT_PGFCAL | DWT_LOADLDO | DWT_LOADDGC | DWT_LOADBIAS | DWT_GOTOIDLE,
                       (deep_sleep ? 0 : DWT_SLEEP) | DWT_WAKE_WUP | DWT_SLP_EN);
    dwt_entersleep(DWT_DW_IDLE);
    spi_ready = false;
