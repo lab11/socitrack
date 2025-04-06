@@ -24,7 +24,6 @@
 typedef struct __attribute__ ((__packed__))
 {
    uint8_t msgType;
-   uint8_t sourceAddr[2];
 } ieee154_header_t;
 
 typedef struct  __attribute__ ((__packed__))

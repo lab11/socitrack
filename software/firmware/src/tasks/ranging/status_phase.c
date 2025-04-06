@@ -45,9 +45,8 @@ static inline scheduler_phase_t start_rx(const char *error_message)
 void status_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Schedule Phase parameters
-   success_packet = (status_success_packet_t){ .header = { .msgType = STATUS_SUCCESS_PACKET, .sourceAddr = { 0 } },
-      .sequence_number = 0, .success = 0, .footer = { { 0 } } };
-   memcpy(success_packet.header.sourceAddr, uid, sizeof(success_packet.header.sourceAddr));
+   success_packet = (status_success_packet_t){ .header = { .msgType = STATUS_SUCCESS_PACKET },
+      .src_addr = uid[0], .sequence_number = 0, .success = 0, .footer = { { 0 } } };
 }
 
 scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uint32_t next_action_time)
@@ -95,7 +94,7 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
 
    // Record the presence of the transmitting device
    if (!scheduled_slot)
-      present_devices[num_present_devices++] = packet->header.sourceAddr[0];
+      present_devices[num_present_devices++] = packet->src_addr;
 
    // Retransmit the status packet upon reception
    register const uint32_t seqNum = packet->sequence_number;

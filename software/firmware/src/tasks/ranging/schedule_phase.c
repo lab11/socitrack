@@ -49,11 +49,10 @@ static void deschedule_device(uint8_t device_index)
 void schedule_phase_initialize(const uint8_t *uid, bool is_master)
 {
    // Initialize all Schedule Phase parameters
-   schedule_packet = (schedule_packet_t){ .header = { .msgType = SCHEDULE_PACKET, .sourceAddr = { 0 } },
-      .sequence_number = 0, .epoch_time_unix = 0, .num_devices = 1,
+   schedule_packet = (schedule_packet_t){ .header = { .msgType = SCHEDULE_PACKET },
+      .src_addr = uid[0], .sequence_number = 0, .epoch_time_unix = 0, .num_devices = 1,
       .schedule = { 0 }, .footer = { { 0 } } };
    memset(device_timeouts, 0, sizeof(device_timeouts));
-   memcpy(schedule_packet.header.sourceAddr, uid, sizeof(schedule_packet.header.sourceAddr));
    schedule_packet.schedule[0] = uid[0];
    is_master_scheduler = is_master;
    scheduled_slot = 0;
@@ -146,7 +145,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    // Forward this request to the next phase if not currently in the Schedule Phase
    if (current_phase != SCHEDULE_PHASE)
       return subscription_phase_rx_complete((subscription_packet_t*)schedule);
-   else if ((schedule->header.msgType != SCHEDULE_PACKET) || !is_valid_device(schedule->header.sourceAddr[0]))
+   else if ((schedule->header.msgType != SCHEDULE_PACKET) || !is_valid_device(schedule->src_addr))
    {
       // Immediately restart listening for schedule packets
       if (!ranging_radio_rxenable(DWT_START_RX_IMMEDIATE))
@@ -164,7 +163,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    for (uint8_t i = 0; i < schedule->num_devices; ++i)
    {
       schedule_packet.schedule[i] = schedule->schedule[i];
-      if (schedule->schedule[i] == schedule_packet.header.sourceAddr[0])
+      if (schedule->schedule[i] == schedule_packet.src_addr)
          scheduled_slot = i;
    }
    for (uint8_t i = schedule->num_devices; i < MAX_NUM_RANGING_DEVICES; ++i)
@@ -238,6 +237,11 @@ void schedule_phase_add_device(uint8_t eui)
          break;
       }
    }
+}
+
+uint8_t schedule_phase_get_addr_from_slot(uint8_t slot)
+{
+   return schedule_packet.schedule[slot];
 }
 
 void schedule_phase_update_device_presence(uint8_t eui)

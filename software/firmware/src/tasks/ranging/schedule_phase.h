@@ -11,7 +11,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
-   uint8_t sequence_number;
+   uint8_t src_addr, sequence_number;
    uint32_t epoch_time_unix;
    uint8_t num_devices;
    uint8_t schedule[MAX_NUM_RANGING_DEVICES];
@@ -30,6 +30,7 @@ scheduler_phase_t schedule_phase_rx_error(void);
 uint32_t schedule_phase_get_num_devices(void);
 uint32_t schedule_phase_get_timestamp(void);
 void schedule_phase_add_device(uint8_t eui);
+uint8_t schedule_phase_get_addr_from_slot(uint8_t slot);
 void schedule_phase_update_device_presence(uint8_t eui);
 void schedule_phase_handle_device_timeouts(void);
 

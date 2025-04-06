@@ -11,7 +11,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
-   uint8_t sequence_number, success;
+   uint8_t src_addr, sequence_number, success;
    ieee154_footer_t footer;
 } status_success_packet_t;
 

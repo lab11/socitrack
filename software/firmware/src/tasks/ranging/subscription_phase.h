@@ -11,6 +11,7 @@
 typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
+   uint8_t src_addr;
    ieee154_footer_t footer;
 } subscription_packet_t;
 

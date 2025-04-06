@@ -3,6 +3,7 @@
 #include "logging.h"
 #include "computation_phase.h"
 #include "ranging_phase.h"
+#include "schedule_phase.h"
 #include "status_phase.h"
 
 
@@ -64,9 +65,8 @@ static inline scheduler_phase_t start_rx(const char *error_message)
 void ranging_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Ranging Phase parameters
-   ranging_packet = (ranging_packet_t){ .header = { .msgType = RANGING_PACKET, .sourceAddr = { 0 } },
+   ranging_packet = (ranging_packet_t){ .header = { .msgType = RANGING_PACKET },
       .tx_rx_times = { 0 }, .footer = { { 0 } } };
-   memcpy(ranging_packet.header.sourceAddr, uid, sizeof(ranging_packet.header.sourceAddr));
 }
 
 scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time, uint32_t next_action_time)
@@ -164,7 +164,7 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    else
    {
       register const uint32_t tx_device_slot = slot - schedule_length;
-      measurements[tx_device_slot].device_eui = packet->header.sourceAddr[0];
+      measurements[tx_device_slot].device_eui = schedule_phase_get_addr_from_slot(tx_device_slot);
       if (my_slot > tx_device_slot)
       {
          register const uint32_t storage_index = schedule_length - my_slot + tx_device_slot - 1;

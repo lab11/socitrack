@@ -57,9 +57,8 @@ void deep_sleep_test(void)
 void delayed_write_test(void)
 {
    // Create a test packet for sending
-   schedule_packet_t packet = (schedule_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = SCHEDULE_PACKET,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .sequence_number = 0, .epoch_time_unix = 12345678, .num_devices = 0,
+   schedule_packet_t packet = (schedule_packet_t){ .header = { .msgType = SCHEDULE_PACKET, },
+      .src_addr = 0, .sequence_number = 0, .epoch_time_unix = 12345678, .num_devices = 0,
       .schedule = { 0 }, .footer = { { 0 } } };
    uint16_t packet_size = sizeof(packet);
 

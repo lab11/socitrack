@@ -19,8 +19,7 @@ static uint32_t reference_time, next_action_timestamp;
 void subscription_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Subscription Phase parameters
-   subscription_packet = (subscription_packet_t){ .header = { .msgType = SUBSCRIPTION_PACKET, .sourceAddr = { 0 } }, .footer = { { 0 } } };
-   memcpy(subscription_packet.header.sourceAddr, uid, sizeof(subscription_packet.header.sourceAddr));
+   subscription_packet = (subscription_packet_t){ .header = { .msgType = SUBSCRIPTION_PACKET }, .src_addr = uid[0], .footer = { { 0 } } };
    srand(dwt_readsystimestamphi32());
 }
 
@@ -79,7 +78,7 @@ scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet)
       print("ERROR: Received an unexpected message type during SUBSCRIPTION phase...possible network collision\n");
       return MESSAGE_COLLISION;
    }
-   schedule_phase_add_device(packet->header.sourceAddr[0]);
+   schedule_phase_add_device(packet->src_addr);
    return subscription_phase_rx_error();
 }
 
