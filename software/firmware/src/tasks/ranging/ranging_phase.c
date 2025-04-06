@@ -144,7 +144,7 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
       register const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
       measurements[slot].poll_tx_times[sequence_number] = (uint32_t)(US_TO_DWT(next_action_timestamp) + TX_ANTENNA_DELAY);
       measurements[slot].poll_rx_times[sequence_number] = rx_time;
-      register const int16_t to_send = (int16_t)(rx_time - measurements[slot].poll_tx_times[sequence_number]);
+      const int16_t to_send = (int16_t)(rx_time - measurements[slot].poll_tx_times[sequence_number]);
       dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot]));
    }
    else if (slot < schedule_length)
@@ -153,7 +153,7 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
       measurements[slot].resp_tx_times[sequence_number] = (uint32_t)(US_TO_DWT(next_action_timestamp) + TX_ANTENNA_DELAY);
       measurements[slot].poll_rx_times[sequence_number] = (uint32_t)(measurements[slot].poll_tx_times[sequence_number] + packet->tx_rx_times[my_slot]);
       measurements[slot].resp_rx_times[sequence_number] = rx_time;
-      register const int16_t to_send = (int16_t)(rx_time - measurements[slot].resp_tx_times[sequence_number]);
+      const int16_t to_send = (int16_t)(rx_time - measurements[slot].resp_tx_times[sequence_number]);
       dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot - my_slot - 1]));
    }
    else
@@ -166,7 +166,7 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
          measurements[tx_device_slot].final_tx_times[sequence_number] = (uint32_t)(US_TO_DWT(next_action_timestamp) + TX_ANTENNA_DELAY);
          measurements[tx_device_slot].final_rx_times[sequence_number] = rx_time;
          measurements[tx_device_slot].resp_rx_times[sequence_number] = (uint32_t)(measurements[tx_device_slot].resp_tx_times[sequence_number] + packet->tx_rx_times[my_slot - tx_device_slot - 1]);
-         register const int16_t to_send = (int16_t)(rx_time - measurements[tx_device_slot].final_tx_times[sequence_number]);
+         const int16_t to_send = (int16_t)(rx_time - measurements[tx_device_slot].final_tx_times[sequence_number]);
          dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[schedule_length - my_slot + tx_device_slot - 1]));
       }
       else
@@ -193,18 +193,17 @@ scheduler_phase_t ranging_phase_rx_error(void)
       return status_phase_rx_error();
 
    // Record an invalid packet reception time in all relevant storage structures
+   const int16_t to_send = 0x7FFF;
    const div_t slot_results = div(time_slot, slots_per_range);
    register const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
    if (slot < my_slot)
    {
-      register const int16_t to_send = 0x7FFF;
       measurements[slot].poll_tx_times[sequence_number] = 0;
       measurements[slot].poll_rx_times[sequence_number] = 0x00FFFFFF;
       dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot]));
    }
    else if (slot < schedule_length)
    {
-      register const int16_t to_send = 0x7FFF;
       measurements[slot].resp_tx_times[sequence_number] = 0;
       measurements[slot].poll_rx_times[sequence_number] = 0x00FFFFFF;
       measurements[slot].resp_rx_times[sequence_number] = 0x00FFFFFF;
@@ -212,7 +211,6 @@ scheduler_phase_t ranging_phase_rx_error(void)
    }
    else
    {
-      register const int16_t to_send = 0x7FFF;
       register const uint32_t tx_device_slot = slot - schedule_length;
       if (my_slot > tx_device_slot)
          dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[schedule_length - my_slot + tx_device_slot - 1]));
