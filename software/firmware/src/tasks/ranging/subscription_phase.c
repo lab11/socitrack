@@ -45,8 +45,8 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    }
    else if (!schedule_index)
    {
+      dwt_setpreambledetecttimeout(DW_PREAMBLE_TIMEOUT);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp - RECEIVE_EARLY_START_US));
-      dwt_setpreambledetecttimeout(0);
       dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US));
       if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
          print("ERROR: Unable to start listening for SUBSCRIPTION packets\n");
