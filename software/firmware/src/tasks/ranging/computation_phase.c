@@ -3,11 +3,13 @@
 #include "logging.h"
 #include "computation_phase.h"
 #include "ranging_phase.h"
+#include "kalman.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static int distances_millimeters[RANGING_NUM_RANGE_ATTEMPTS];
+static kalman_filter_t range_filters[MAX_NUM_RANGING_DEVICES];
 static uint8_t num_scheduled_devices;
 
 
@@ -32,6 +34,20 @@ void insert_sorted(int arr[], int new, unsigned end)
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
+
+void computation_phase_initialize(const uint8_t *uid)
+{
+   // Set all Kalman filters as uninitialized
+   for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+      kalman_filter_reset(&range_filters[i]);
+}
+
+void computation_phase_configure_filters(experiment_details_t *details)
+{
+   // Create a Kalman filter for each potential ranging device
+   for (uint8_t i = 0; i < details->num_devices; ++i)
+      range_filters[i].eui = details->uids[i][0];
+}
 
 void reset_computation_phase(uint8_t schedule_length)
 {
@@ -71,10 +87,21 @@ void compute_ranges(uint8_t *ranging_results)
       int16_t range_millimeters = INT16_MAX;
       if (num_valid_distances >= 1)
       {
-         // Take the lowest range as the final range estimate
-         range_millimeters = (int16_t)distances_millimeters[0];
+         // Take the median range as the range estimate
+         uint8_t top = (num_valid_distances / 2), bot = (num_valid_distances % 2) ? (num_valid_distances / 2) : ((num_valid_distances / 2) - 1);
+         range_millimeters = (int16_t)((distances_millimeters[bot] + distances_millimeters[top]) / 2);
          if (range_millimeters < 0)
             range_millimeters = 0;
+
+         // Filter the range estimate
+         for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+            if (range_filters[i].eui == state[dev_index].device_eui)
+            {
+               range_millimeters = kalman_filter_estimate(&range_filters[i], 0.5f, range_millimeters, 10);
+               break;
+            }
+
+         // Return the range if valid
          if (range_millimeters < MAX_VALID_RANGE_MM)
          {
             // Copy valid ranges into the ID/range output buffer

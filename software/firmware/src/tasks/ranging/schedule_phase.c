@@ -3,6 +3,7 @@
 #include "logging.h"
 #include "schedule_phase.h"
 #include "subscription_phase.h"
+#include "computation_phase.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -64,6 +65,7 @@ void schedule_phase_store_experiment_details(experiment_details_t *details)
    num_valid_devices = details->num_devices;
    for (uint8_t i = 0; i < details->num_devices; ++i)
       valid_devices[i] = details->uids[i][0];
+   computation_phase_configure_filters(details);
 }
 
 scheduler_phase_t schedule_phase_begin(void)
