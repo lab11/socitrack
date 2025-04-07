@@ -3,13 +3,21 @@
 #include "logging.h"
 #include "computation_phase.h"
 #include "ranging_phase.h"
-#include "kalman.h"
 
+
+// Private Helper Type Definitions -------------------------------------------------------------------------------------
+
+typedef struct
+{
+   bool initialized;
+   uint8_t eui;
+   int32_t range_mm;
+} filter_t;
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static int distances_millimeters[RANGING_NUM_RANGE_ATTEMPTS];
-static kalman_filter_t range_filters[MAX_NUM_RANGING_DEVICES];
+static filter_t range_filters[MAX_NUM_RANGING_DEVICES];
 static uint8_t num_scheduled_devices;
 
 
@@ -35,18 +43,23 @@ void insert_sorted(int arr[], int new, unsigned end)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void computation_phase_initialize(const uint8_t *uid)
-{
-   // Set all Kalman filters as uninitialized
-   for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
-      kalman_filter_reset(&range_filters[i]);
-}
-
 void computation_phase_configure_filters(experiment_details_t *details)
 {
-   // Create a Kalman filter for each potential ranging device
+   // Create a range filter for each potential ranging device
+   memset(range_filters, 0, sizeof(range_filters));
    for (uint8_t i = 0; i < details->num_devices; ++i)
       range_filters[i].eui = details->uids[i][0];
+}
+
+void computation_phase_reset_range_filter(uint8_t eui)
+{
+   // Set the range filter for the corresponding device to uninitialized
+   for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+      if (range_filters[i].eui == eui)
+      {
+         range_filters[i].initialized = false;
+         return;
+      }
 }
 
 void reset_computation_phase(uint8_t schedule_length)
@@ -97,7 +110,13 @@ void compute_ranges(uint8_t *ranging_results)
          for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
             if (range_filters[i].eui == state[dev_index].device_eui)
             {
-               range_millimeters = kalman_filter_estimate(&range_filters[i], 0.5f, range_millimeters, 10);
+               if (!range_filters[i].initialized)
+               {
+                  range_filters[i].initialized = true;
+                  range_filters[i].range_mm = range_millimeters;
+               }
+               range_filters[i].range_mm += ((range_millimeters - range_filters[i].range_mm) / 3);
+               range_millimeters = range_filters[i].range_mm;
                break;
             }
 

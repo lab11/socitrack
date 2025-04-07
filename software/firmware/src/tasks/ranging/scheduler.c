@@ -203,7 +203,6 @@ void scheduler_run(schedule_role_t role)
    ranging_phase_initialize(eui);
    status_phase_initialize(eui);
    subscription_phase_initialize(eui);
-   computation_phase_initialize(eui);
 
    // Initialize the wakeup timer based on the device role
    is_running = true;

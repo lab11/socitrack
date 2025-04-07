@@ -263,4 +263,6 @@ void schedule_phase_handle_device_timeouts(void)
    for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
       if (device_timeouts[i] > DEVICE_TIMEOUT_SECONDS)
          deschedule_device(i--);
+      else if (device_timeouts[i] > 3)
+         computation_phase_reset_range_filter(schedule_packet.schedule[i]);
 }
