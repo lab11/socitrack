@@ -40,6 +40,7 @@ DEFINES += -DCFG_TUSB_DEBUG=0
 DEFINES += -DCFG_TUSB_MCU=OPT_MCU_APOLLO4
 DEFINES += -D'CFG_TUD_MEM_SECTION=__attribute__((section(".usb")))'
 DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
+DEFINES += -DAM_HAL_DISABLE_API_VALIDATION
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
 DEFINES += -D__USE_FREERTOS__
@@ -260,6 +261,7 @@ SRC += live_stats_service.c
 SRC += maintenance_functionality.c
 SRC += maintenance_service.c
 SRC += computation_phase.c
+SRC += kalman.c
 SRC += ranging_phase.c
 SRC += ranging_task.c
 SRC += schedule_phase.c

@@ -266,6 +266,7 @@ SRC += live_stats_service.c
 SRC += maintenance_functionality.c
 SRC += maintenance_service.c
 SRC += computation_phase.c
+SRC += kalman.c
 SRC += ranging_phase.c
 SRC += ranging_task.c
 SRC += schedule_phase.c
