@@ -141,20 +141,18 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
    register const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
    if (slot < my_slot)
    {
-      register const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
+      const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
       measurements[slot].poll_tx_times[sequence_number] = (uint32_t)(US_TO_DWT(next_action_timestamp) + TX_ANTENNA_DELAY);
       measurements[slot].poll_rx_times[sequence_number] = rx_time;
-      const int16_t to_send = (int16_t)(rx_time - measurements[slot].poll_tx_times[sequence_number]);
-      dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot]));
+      dwt_writetxdata(sizeof(rx_time), (uint8_t*)&rx_time, offsetof(ranging_packet_t, tx_rx_times[slot]));
    }
    else if (slot < schedule_length)
    {
-      register const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
+      const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
       measurements[slot].resp_tx_times[sequence_number] = (uint32_t)(US_TO_DWT(next_action_timestamp) + TX_ANTENNA_DELAY);
-      measurements[slot].poll_rx_times[sequence_number] = (uint32_t)(measurements[slot].poll_tx_times[sequence_number] + packet->tx_rx_times[my_slot]);
+      measurements[slot].poll_rx_times[sequence_number] = packet->tx_rx_times[my_slot];
       measurements[slot].resp_rx_times[sequence_number] = rx_time;
-      const int16_t to_send = (int16_t)(rx_time - measurements[slot].resp_tx_times[sequence_number]);
-      dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot - my_slot - 1]));
+      dwt_writetxdata(sizeof(rx_time), (uint8_t*)&rx_time, offsetof(ranging_packet_t, tx_rx_times[slot - my_slot - 1]));
    }
    else
    {
@@ -162,15 +160,14 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
       measurements[tx_device_slot].device_eui = schedule_phase_get_addr_from_slot(tx_device_slot);
       if (my_slot > tx_device_slot)
       {
-         register const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
+         const uint32_t rx_time = ranging_radio_readrxtimestamp_lo() - reference_time;
          measurements[tx_device_slot].final_tx_times[sequence_number] = (uint32_t)(US_TO_DWT(next_action_timestamp) + TX_ANTENNA_DELAY);
          measurements[tx_device_slot].final_rx_times[sequence_number] = rx_time;
-         measurements[tx_device_slot].resp_rx_times[sequence_number] = (uint32_t)(measurements[tx_device_slot].resp_tx_times[sequence_number] + packet->tx_rx_times[my_slot - tx_device_slot - 1]);
-         const int16_t to_send = (int16_t)(rx_time - measurements[tx_device_slot].final_tx_times[sequence_number]);
-         dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[schedule_length - my_slot + tx_device_slot - 1]));
+         measurements[tx_device_slot].resp_rx_times[sequence_number] = packet->tx_rx_times[my_slot - tx_device_slot - 1];
+         dwt_writetxdata(sizeof(rx_time), (uint8_t*)&rx_time, offsetof(ranging_packet_t, tx_rx_times[schedule_length - my_slot + tx_device_slot - 1]));
       }
       else
-         measurements[tx_device_slot].final_rx_times[sequence_number] = (uint32_t)(measurements[tx_device_slot].final_tx_times[sequence_number] + packet->tx_rx_times[schedule_length - tx_device_slot + my_slot - 1]);
+         measurements[tx_device_slot].final_rx_times[sequence_number] = packet->tx_rx_times[schedule_length - tx_device_slot + my_slot - 1];
    }
 
    // Move to the next time slot operation
