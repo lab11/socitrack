@@ -8,6 +8,8 @@
 
 // Public API ----------------------------------------------------------------------------------------------------------
 
+void computation_phase_initialize(const uint8_t *uid);
+void computation_phase_configure_filters(experiment_details_t *details);
 void reset_computation_phase(uint8_t schedule_length);
 void compute_ranges(uint8_t *ranging_results);
 

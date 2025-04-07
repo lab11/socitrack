@@ -120,7 +120,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define SCHEDULING_INTERVAL_US                      500000
 #define RADIO_WAKEUP_SAFETY_DELAY_US                3000
-#define RECEIVE_EARLY_START_US                      (1 + (uint32_t)DW_PREAMBLE_LENGTH_US)
+#define RECEIVE_EARLY_START_US                      (2 + (uint32_t)DW_PREAMBLE_LENGTH_US)
 
 #define DEVICE_TIMEOUT_SECONDS                      60
 #define NETWORK_SEARCH_TIME_SECONDS                 3
@@ -134,7 +134,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define RANGING_NUM_PACKETS_PER_DEVICE              3
 #define RANGING_BROADCAST_INTERVAL_US               700
 #define RANGING_NUM_RANGE_ATTEMPTS                  NUM_XMIT_ANTENNAS
-#define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 100)  // + 250 if DW_DATA_RATE == DWT_BR_850K
+#define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 100)
 
 #define RANGE_STATUS_NUM_TOTAL_BROADCASTS           4
 #define RANGE_STATUS_RESEND_INTERVAL_US             1000

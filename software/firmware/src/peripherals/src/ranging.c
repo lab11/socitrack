@@ -78,11 +78,7 @@ static int32_t readfromspi(uint16_t headerLength, uint8_t *headerBuffer, uint16_
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t retries_remaining = 5;
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &read_transaction) != AM_HAL_STATUS_SUCCESS));
-   return 0;
+   return am_hal_iom_blocking_transfer(spi_handle, &read_transaction);
 }
 
 static int32_t writetospi(uint16_t headerLength, const uint8_t *headerBuffer, uint16_t bodyLength, const uint8_t *bodyBuffer)
@@ -105,11 +101,7 @@ static int32_t writetospi(uint16_t headerLength, const uint8_t *headerBuffer, ui
       .ui32PauseCondition           = 0,
       .ui32StatusSetClr             = 0
    };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   uint32_t retries_remaining = 5;
-   while (retries_remaining-- && (am_hal_iom_blocking_transfer(spi_handle, &write_transaction) != AM_HAL_STATUS_SUCCESS));
-   return 0;
+   return am_hal_iom_blocking_transfer(spi_handle, &write_transaction);
 }
 
 static void wakeup_device_with_io(void)
