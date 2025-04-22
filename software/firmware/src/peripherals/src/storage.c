@@ -802,7 +802,7 @@ void storage_store_experiment_details(const experiment_details_t *details)
 
       // Determine whether there is an active experiment taking place
       uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
-      bool valid_experiment = rtc_is_valid() && details->num_devices;
+      bool valid_experiment = rtc_is_valid() && details->num_devices && !details->is_terminated;
       bool active_experiment = valid_experiment &&
             (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
             (!details->use_daily_times ||

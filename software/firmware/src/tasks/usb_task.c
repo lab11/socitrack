@@ -194,8 +194,10 @@ void UsbCdcTask(void *params)
             }
             case USB_DELETE_EXPERIMENT_COMMAND:
             {
-               const experiment_details_t empty_details = { 0 };
-               storage_store_experiment_details(&empty_details);
+               experiment_details_t old_details = { 0 };
+               storage_retrieve_experiment_details(&old_details);
+               old_details.is_terminated = 1;
+               storage_store_experiment_details(&old_details);
                break;
             }
             case USB_NEW_EXPERIMENT_COMMAND:

@@ -39,7 +39,8 @@ int main(void)
    experiment_details_t details = {
       .experiment_start_time = 1, .experiment_end_time = 2,
       .daily_start_time = 3, .daily_end_time = 4,
-      .num_devices = 3, .uids = {}, .uid_name_mappings = {}
+      .num_devices = 3, .uids = {}, .uid_name_mappings = {},
+      .is_terminated = 0
    };
    for (uint8_t i = 0; i < details.num_devices; ++i)
    {

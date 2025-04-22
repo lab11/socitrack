@@ -123,13 +123,13 @@ def unpack_datetime(time_zone, start_timestamp, timestamp):
    return date_string, time_string, seconds_string
 
 def pack_experiment_details(data):
-   experiment_struct = struct.pack('<BIIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES),
+   experiment_struct = struct.pack('<BIIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES) + 'B',
                            MAINTENANCE_NEW_EXPERIMENT, data['start_time'], data['end_time'], data['daily_start_time'], data['daily_end_time'],
-                           data['use_daily_times'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'])
+                           data['use_daily_times'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'], 0)
    return experiment_struct
 
 def unpack_experiment_details(data):
-   experiment_struct = struct.unpack('<IIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES), data)
+   experiment_struct = struct.unpack('<IIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES) + 'B', data)
    return {
       'start_time': experiment_struct[0],
       'end_time': experiment_struct[1],
@@ -138,7 +138,8 @@ def unpack_experiment_details(data):
       'use_daily_times': experiment_struct[4],
       'num_devices': experiment_struct[5],
       'uids': [list(experiment_struct[6+i:6+i+6]) for i in range(0, MAX_NUM_DEVICES*6, 6)],
-      'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):],
+      'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):-1],
+      'terminated': experiment_struct[-1],
    }
 
 def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file):

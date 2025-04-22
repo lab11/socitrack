@@ -81,7 +81,8 @@ void run_tasks(void)
             .daily_end_time = 23,
             .num_devices = 2,
             .uids = {},
-            .uid_name_mappings = {}
+            .uid_name_mappings = {},
+            .is_terminated = 0
          };
          //new exp details can only be set in maintenance mode
          storage_enter_maintenance_mode();
@@ -95,7 +96,7 @@ void run_tasks(void)
       static experiment_details_t scheduled_experiment;
       storage_retrieve_experiment_details(&scheduled_experiment);
       uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
-      bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices;
+      bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices && !scheduled_experiment.is_terminated;
       bool active_experiment = valid_experiment &&
             (timestamp >= scheduled_experiment.experiment_start_time) && (timestamp < scheduled_experiment.experiment_end_time) &&
             (!scheduled_experiment.use_daily_times ||
