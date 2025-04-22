@@ -4,7 +4,7 @@
 # PYTHON INCLUSIONS ---------------------------------------------------------------------------------------------------
 
 import tottag
-from experimental_tottag import *
+from tottag import *
 import os, signal, sys, tempfile, time
 import subprocess, multiprocessing
 
@@ -32,7 +32,7 @@ def handle_incoming_data(fifo_file_name, storage_directory, pipe, is_running):
       with open(fifo_file_name, 'rb') as rtt_file:
 
          # Wait until all experiment details have been received
-         data = rtt_file.read(4 + 4 * 4 + 2 + 6 * MAX_NUM_DEVICES + MAX_NUM_DEVICES * MAX_LABEL_LENGTH)
+         data = rtt_file.read(4 + 4 * 4 + 2 + 6 * MAX_NUM_DEVICES + MAX_NUM_DEVICES * MAX_LABEL_LENGTH + 1)
          details = unpack_experiment_details(data[4:])
          pipe.send(details)
 
