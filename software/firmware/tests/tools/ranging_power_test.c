@@ -43,9 +43,7 @@ static void rx_error_callback(const dwt_cb_data_t *rxData)
 int main(void)
 {
    // Generate the static write packet contents
-   write_packet = (data_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = 0,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .data = { 0 }, .footer = { { 0 } } };
+   write_packet = (data_packet_t){ .header = { .msgType = 0 }, .data = { 0 }, .footer = { { 0 } } };
    for (uint8_t i = 0; i < sizeof(write_packet.data); ++i)
       write_packet.data[i] = i;
 

@@ -267,7 +267,19 @@ static void data_ready_handler(imu_data_type_t data_types_ready)
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
 {
    // Keep track of all newly discovered non-sleeping devices
-   if (ranging_role != ROLE_ASLEEP)
+   if (scheduler_get_current_role() == ROLE_MASTER)
+   {
+      if ((ranging_role == ROLE_MASTER) && (ble_address[0] > device_uid_short))
+      {
+         num_discovered_devices = 1;
+         for (uint8_t i = 0; i < EUI_LEN; ++i)
+            discovered_devices[0][i] = ble_address[i];
+         discovered_devices[0][EUI_LEN] = ranging_role;
+         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+         xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_NETWORK_FOUND, eSetBits, &xHigherPriorityTaskWoken);
+      }
+   }
+   else if (ranging_role != ROLE_ASLEEP)
    {
       if (!devices_found)
       {
@@ -290,7 +302,7 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
    }
 }
 
-void am_timer04_isr(void)
+void am_timer03_isr(void)
 {
    // Notify the main task to handle the interrupt
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -380,7 +392,7 @@ void AppTaskRanging(void *uid)
    // Initialize the BLE scanning window timer
    am_hal_timer_config_t scanning_timer_config;
    am_hal_timer_default_config_set(&scanning_timer_config);
-   scanning_timer_config.ui32Compare0 = (uint32_t)(BLE_SCANNING_TIMER_TICK_RATE_HZ / 4);
+   scanning_timer_config.ui32Compare0 = (uint32_t)(BLE_SCANNING_TIMER_TICK_RATE_HZ / 2);
    am_hal_timer_config(BLE_SCANNING_TIMER_NUMBER, &scanning_timer_config);
    am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
    NVIC_SetPriority(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY);

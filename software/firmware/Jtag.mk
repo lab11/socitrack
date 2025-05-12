@@ -33,7 +33,7 @@ ifdef ID
 endif
 
 # ID-Only Flash Rule
-.PHONY: UID flash
+.PHONY: UID flash flashb
 UID: $(CONFIG)
 	printf "r\n" > $(CONFIG)/flash.jlink
 ifdef ID
@@ -42,9 +42,15 @@ ifdef ID
 	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
 endif
 
-# Code Flash Rule
+# Code Flash Rules
 flash: all
 	printf "r\n" > $(CONFIG)/flash.jlink
+	printf "loadfile $(CONFIG)/$(TARGET).bin $(FLASH_START)\nr\ng\nexit\n" >> $(CONFIG)/flash.jlink
+	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
+
+flashb: all
+	printf "r\n" > $(CONFIG)/flash.jlink
+	printf "loadfile $(BLE_FW_FILE) $(FLASH_START)\nr\ng\nsleep 10000\nr\n" >> $(CONFIG)/flash.jlink
 	printf "loadfile $(CONFIG)/$(TARGET).bin $(FLASH_START)\nr\ng\nexit\n" >> $(CONFIG)/flash.jlink
 	$(JLINK) $(JLINK_FLAGS) $(CONFIG)/flash.jlink
 

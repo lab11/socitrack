@@ -40,14 +40,15 @@ DEFINES += -DCFG_TUSB_DEBUG=0
 DEFINES += -DCFG_TUSB_MCU=OPT_MCU_APOLLO4
 DEFINES += -D'CFG_TUD_MEM_SECTION=__attribute__((section(".usb")))'
 DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
+DEFINES += -DAM_HAL_DISABLE_API_VALIDATION
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
 DEFINES += -D__USE_FREERTOS__
 DEFINES += -Dgcc
 
-DW_LIBRARY := ./src/external/decadriver/libdwt_uwb_driver-m4-hfp-6.0.14.a
 LINKER_FILE := ./AmbiqSDK/bsp/$(BSP)/linker/socitrack.ld
 STARTUP_FILE := ./AmbiqSDK/bsp/$(BSP)/linker/startup_gcc.c
+BLE_FW_FILE := ./AmbiqSDK/bsp/ble_firmware_update.bin
 
 #### Required Executables ####
 CC = $(TOOLCHAIN)-gcc
@@ -227,6 +228,10 @@ SRC += wsf_timer.c
 SRC += wsf_trace.c
 SRC += wstr.c
 
+SRC += deca_compat.c
+SRC += deca_interface.c
+SRC += dw3000_device.c
+
 SRC += battery.c
 SRC += bluetooth.c
 SRC += button.c
@@ -242,6 +247,7 @@ SRC += ranging.c
 SRC += rtc.c
 SRC += storage.c
 SRC += system.c
+SRC += usb.c
 
 SRC += main.c
 SRC += app_tasks.c
@@ -287,7 +293,6 @@ LFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 LFLAGS+= -nostartfiles -static
 LFLAGS+= -Wl,--gc-sections,--entry,Reset_Handler,-Map,$(CONFIG)/$(TARGET).map
 LFLAGS+= -Wl,--start-group -lm -lc -lgcc -lnosys $(LIBS) -Wl,--end-group
-LFLAGS+= -Wl,--whole-archive $(DW_LIBRARY) -Wl,--no-whole-archive
 LFLAGS+= -Wl,--print-memory-usage
 
 CPFLAGS = -Obinary

@@ -27,6 +27,7 @@ typedef struct __attribute__ ((__packed__))
    uint32_t daily_start_time, daily_end_time;
    uint8_t use_daily_times, num_devices, uids[MAX_NUM_RANGING_DEVICES][EUI_LEN];
    char uid_name_mappings[MAX_NUM_RANGING_DEVICES][EUI_NAME_MAX_LEN];
+   uint8_t is_terminated;
 } experiment_details_t;
 
 

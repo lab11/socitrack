@@ -23,11 +23,7 @@
 
 typedef struct __attribute__ ((__packed__))
 {
-   uint8_t frameCtrl[2];
    uint8_t msgType;
-   uint8_t panID[2];
-   uint8_t destAddr[2];
-   uint8_t sourceAddr[2];
 } ieee154_header_t;
 
 typedef struct  __attribute__ ((__packed__))
@@ -50,6 +46,8 @@ void ranging_radio_sleep(bool deep_sleep);
 void ranging_radio_wakeup(void);
 bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
+uint32_t ranging_radio_readrxtimestamp_lo(void);
+uint32_t ranging_radio_readrxtimestamp_hi(void);
 uint64_t ranging_radio_readtxtimestamp(void);
 float ranging_radio_received_signal_level(bool first_signal_level);
 int ranging_radio_time_to_millimeters(double dwtime);

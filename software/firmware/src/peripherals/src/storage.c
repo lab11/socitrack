@@ -78,6 +78,90 @@ static volatile bool is_reading, in_maintenance_mode, disabled;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
+#if REVISION_ID < REVISION_N
+
+static void spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
+{
+   // Create the SPI transaction structure
+   uint32_t instruction = command, retries_remaining = 4;
+   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
+   am_hal_iom_transfer_t spi_transaction = {
+      .uPeerInfo.ui32SpiChipSelect  = 0,
+      .ui32InstrLen                 = 0,
+      .ui64Instr                    = 0,
+      .eDirection                   = AM_HAL_IOM_TX,
+      .ui32NumBytes                 = 1 + address_length,
+      .pui32TxBuffer                = &instruction,
+      .pui32RxBuffer                = NULL,
+      .bContinue                    = true,
+      .ui8RepeatCount               = 0,
+      .ui8Priority                  = 1,
+      .ui32PauseCondition           = 0,
+      .ui32StatusSetClr             = 0
+   };
+
+   // Repeat the transfer until it succeeds or requires a device reset
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(true);
+
+   // Update the SPI transaction structure
+   retries_remaining = 4;
+   spi_transaction.eDirection = AM_HAL_IOM_RX;
+   spi_transaction.ui32NumBytes = read_length;
+   spi_transaction.pui32TxBuffer = NULL,
+   spi_transaction.pui32RxBuffer = read_buffer;
+   spi_transaction.bContinue = false;
+
+   // Repeat the transfer until it succeeds or requires a device reset
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(true);
+}
+
+static void spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
+{
+   // Create the SPI transaction structure
+   uint32_t instruction = command, retries_remaining = 4;
+   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
+   am_hal_iom_transfer_t spi_transaction = {
+      .uPeerInfo.ui32SpiChipSelect  = 0,
+      .ui32InstrLen                 = 0,
+      .ui64Instr                    = 0,
+      .eDirection                   = AM_HAL_IOM_TX,
+      .ui32NumBytes                 = 1 + address_length,
+      .pui32TxBuffer                = &instruction,
+      .pui32RxBuffer                = NULL,
+      .bContinue                    = true,
+      .ui8RepeatCount               = 0,
+      .ui8Priority                  = 1,
+      .ui32PauseCondition           = 0,
+      .ui32StatusSetClr             = 0
+   };
+
+   // Repeat the transfer until it succeeds or requires a device reset
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(true);
+
+   // Update the SPI transaction structure
+   retries_remaining = 4;
+   spi_transaction.ui32NumBytes = write_length;
+   spi_transaction.pui32TxBuffer = (uint32_t*)write_buffer,
+   spi_transaction.bContinue = false;
+
+   // Repeat the transfer until it succeeds or requires a device reset
+   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
+      am_hal_delay_us(10);
+   if (!retries_remaining)
+      system_reset(true);
+}
+
+#else
+
 static void spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
 {
    // Create the SPI transaction structure
@@ -178,6 +262,8 @@ static void spi_write(uint8_t command, const void *address, uint32_t address_len
          system_reset(true);
    }
 }
+
+#endif  // #if REVISION_ID < REVISION_N
 
 static uint8_t read_register(uint8_t register_number)
 {
@@ -716,7 +802,7 @@ void storage_store_experiment_details(const experiment_details_t *details)
 
       // Determine whether there is an active experiment taking place
       uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
-      bool valid_experiment = rtc_is_valid() && details->num_devices;
+      bool valid_experiment = rtc_is_valid() && details->num_devices && !details->is_terminated;
       bool active_experiment = valid_experiment &&
             (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
             (!details->use_daily_times ||

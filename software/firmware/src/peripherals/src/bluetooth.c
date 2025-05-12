@@ -104,16 +104,6 @@ void AppUiBtnPressed(void) {}
 void appUiTimerExpired(wsfMsgHdr_t *pMsg) {}
 void appUiBtnPoll(void) {}
 
-void am_timer03_isr(void)
-{
-   // Force stop the BLE scanning cycle
-   am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(BLE_ERROR_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
-   if (is_initialized && (expected_advertising || expected_scanning))
-      am_hal_timer_clear(BLE_ERROR_TIMER_NUMBER);
-   appAdvStop(0, NULL);
-   DmScanStop();
-}
-
 static void deviceManagerCallback(dmEvt_t *pDmEvt)
 {
    // Handle the Device Manager message based on its type
@@ -267,16 +257,9 @@ void bluetooth_init(uint8_t* uid)
    pAppUpdateCfg = (appUpdateCfg_t*)&ble_update_cfg;
    pAttCfg = (attCfg_t*)&ble_att_cfg;
 
-   // Initialize the BLE error detection timer
-   am_hal_timer_config_t ble_error_timer_config;
-   am_hal_timer_default_config_set(&ble_error_timer_config);
-   ble_error_timer_config.ui32Compare0 = (uint32_t)(10 * BLE_ERROR_TIMER_TICK_RATE_HZ);
-   am_hal_timer_config(BLE_ERROR_TIMER_NUMBER, &ble_error_timer_config);
-   am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BLE_ERROR_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
-   NVIC_SetPriority(TIMER0_IRQn + BLE_ERROR_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY);
+   // Set the correct BLE interrupt priorities
    NVIC_SetPriority(COOPER_IOM_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
    NVIC_SetPriority(AM_COOPER_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
-   NVIC_EnableIRQ(TIMER0_IRQn + BLE_ERROR_TIMER_NUMBER);
 
    // Set the Bluetooth address and boot the BLE radio
    HciVscSetCustom_BDAddr(uid);
@@ -286,11 +269,6 @@ void bluetooth_init(uint8_t* uid)
 
 void bluetooth_deinit(void)
 {
-   // Stop all running timers
-   am_hal_timer_disable(BLE_ERROR_TIMER_NUMBER);
-   NVIC_DisableIRQ(TIMER0_IRQn + BLE_ERROR_TIMER_NUMBER);
-   am_hal_timer_interrupt_disable(AM_HAL_TIMER_MASK(BLE_ERROR_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
-
    // Shut down the BLE controller
    HciDrvRadioShutdown();
    NVIC_DisableIRQ(AM_COOPER_IRQn);
@@ -351,7 +329,6 @@ void bluetooth_set_uninitialized(void)
 {
    // Force all initialization and activity flags to false
    is_initialized = is_advertising = is_scanning = false;
-   am_hal_timer_disable(BLE_ERROR_TIMER_NUMBER);
 }
 
 void bluetooth_register_discovery_callback(ble_discovery_callback_t callback)
@@ -400,7 +377,6 @@ void bluetooth_start_advertising(void)
       uint8_t advHandle = DM_ADV_HANDLE_DEFAULT, maxEaEvents = 0;
       appSlaveCb.advState[DM_ADV_HANDLE_DEFAULT] = APP_ADV_STATE1;
       appSlaveAdvStart(1, &advHandle, &(pAppAdvCfg->advInterval[APP_ADV_STATE1]), &(pAppAdvCfg->advDuration[APP_ADV_STATE1]), &maxEaEvents, TRUE, APP_MODE_CONNECTABLE);
-      am_hal_timer_clear(BLE_ERROR_TIMER_NUMBER);
    }
 }
 
@@ -428,8 +404,7 @@ void bluetooth_start_scanning(void)
    if (is_initialized && !is_scanning)
    {
       print("TotTag BLE: Starting scanning...\n");
-      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, TRUE, ble_master_cfg.scanDuration, 0);
-      am_hal_timer_clear(BLE_ERROR_TIMER_NUMBER);
+      DmScanStart(HCI_SCAN_PHY_LE_1M_BIT, ble_master_cfg.discMode, &ble_master_cfg.scanType, FALSE, ble_master_cfg.scanDuration, 0);
    }
 }
 

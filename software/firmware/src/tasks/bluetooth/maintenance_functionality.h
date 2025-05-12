@@ -4,6 +4,8 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_tasks.h"
+#include "att_api.h"
+#include "dm_api.h"
 
 
 // BLE-Based TotTag Maintenance Definitions ----------------------------------------------------------------------------

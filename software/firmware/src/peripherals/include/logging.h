@@ -31,7 +31,7 @@ void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8
 #ifdef __USE_SEGGER__
 #define transmit_log_data(...) SEGGER_RTT_Write(1, __VA_ARGS__)
 #else
-#define transmit_log_data(...)
+#define transmit_log_data(data, num_bytes) do { for (uint32_t i = 0; i < num_bytes; ) { if (!tud_cdc_write_available()) taskYIELD() else i += usb_write(data + i, num_bytes - i); } } while(0)
 #endif  // #if defined(ENABLE_AUDIO_DL)
 
 #endif  // #ifndef __LOGGING_HEADER_H__

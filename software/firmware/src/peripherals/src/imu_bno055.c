@@ -668,8 +668,8 @@ void imu_register_data_ready_callback(data_ready_callback_t callback)
 
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   int16_t* accel_data = (int16_t*)(raw_data + BNO055_ACCEL_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+   static int16_t accel_data[3];
+   i2c_read(BNO055_ACCEL_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data), false);
    *x = accel_data[0];
    *y = accel_data[1];
    *z = accel_data[2];
@@ -728,11 +728,11 @@ void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 
 void imu_read_magnetometer_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   int16_t* mag_data = (int16_t*)(raw_data + BNO055_MAG_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
-   *x = mag_data[0];
-   *y = mag_data[1];
-   *z = mag_data[2];
+   static int16_t accel_data[3];
+   i2c_read(BNO055_MAG_DATA_X_LSB_ADDR, (uint8_t*)accel_data, sizeof(accel_data), false);
+   *x = accel_data[0];
+   *y = accel_data[1];
+   *z = accel_data[2];
    *accuracy = 0;
 }
 

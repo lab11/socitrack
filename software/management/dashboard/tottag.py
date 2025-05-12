@@ -10,12 +10,14 @@ from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog
 from collections import defaultdict
 import struct, queue, datetime, tzlocal
+import serial.tools.list_ports
 import os, pickle, pytz, time
 import tkinter as tk
 import traceback
 import threading
 import asyncio
 import argparse
+import serial
 
 
 # CONSTANTS AND DEFINITIONS -------------------------------------------------------------------------------------------
@@ -39,6 +41,13 @@ MAINTENANCE_SET_LOG_DOWNLOAD_DATES = 0x04
 MAINTENANCE_DOWNLOAD_LOG_CONTINUE = 0x05
 MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
+USB_VERSION_COMMAND = 0x20
+USB_VOLTAGE_COMMAND = 0x10
+USB_GET_TIMESTAMP_COMMAND = 0x11
+USB_FIND_MY_TOTTAG_COMMAND = 0x12
+USB_GET_EXPERIMENT_COMMAND = 0x13
+USB_SET_TIMESTAMP_COMMAND = 0x14
+
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
 MAX_RANGING_DISTANCE_MM = 16000
 MAX_IMU_DATA_LENGTH = 10
@@ -58,6 +67,9 @@ BATTERY_CODES[1] = 'Plugged'
 BATTERY_CODES[2] = 'Unplugged'
 BATTERY_CODES[3] = 'Charging'
 BATTERY_CODES[4] = 'Not Charging'
+
+TOTTAG_USB_VID = 0x1209
+TOTTAG_USB_PID = 0x2828
 
 
 # HELPER FUNCTIONS ----------------------------------------------------------------------------------------------------
@@ -111,13 +123,13 @@ def unpack_datetime(time_zone, start_timestamp, timestamp):
    return date_string, time_string, seconds_string
 
 def pack_experiment_details(data):
-   experiment_struct = struct.pack('<BIIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES),
+   experiment_struct = struct.pack('<BIIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES) + 'B',
                            MAINTENANCE_NEW_EXPERIMENT, data['start_time'], data['end_time'], data['daily_start_time'], data['daily_end_time'],
-                           data['use_daily_times'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'])
+                           data['use_daily_times'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'], 0)
    return experiment_struct
 
 def unpack_experiment_details(data):
-   experiment_struct = struct.unpack('<IIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES), data)
+   experiment_struct = struct.unpack('<IIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES) + 'B', data)
    return {
       'start_time': experiment_struct[0],
       'end_time': experiment_struct[1],
@@ -126,7 +138,8 @@ def unpack_experiment_details(data):
       'use_daily_times': experiment_struct[4],
       'num_devices': experiment_struct[5],
       'uids': [list(experiment_struct[6+i:6+i+6]) for i in range(0, MAX_NUM_DEVICES*6, 6)],
-      'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):],
+      'labels': experiment_struct[(6+6*MAX_NUM_DEVICES):-1],
+      'terminated': experiment_struct[-1],
    }
 
 def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file):
@@ -261,6 +274,14 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('DISCONNECTED', True))
       self.connected_device = None
 
+   def serial_disconnect_check(self):
+      while self.connected_device.is_open:
+         time.sleep(1)
+      self.connected_device.close()
+      self.downloading_log_file = False
+      self.result_queue.put_nowait(('DISCONNECTED', True))
+      self.connected_device = None
+
    def ranges_callback(self, _sender_uuid, data):
       self.result_queue.put_nowait(('RANGES', data))
 
@@ -281,6 +302,29 @@ class TotTagBLE(threading.Thread):
          self.data_index += len(data)
          self.result_queue.put_nowait(('LOGDATA', self.data_index))
 
+   def data_callback_serial(self):
+      try:
+         if self.connected_device.is_open:
+            self.data_index = 0
+            self.connected_device.write(bytes([MAINTENANCE_DOWNLOAD_LOG]))
+            self.connected_device.address = ':'.join([f'{c:02x}' for c in reversed(self.connected_device.readline()[:-1])])
+            details_len = struct.unpack('<H', self.connected_device.read(2))[0]
+            self.data_length = struct.unpack('<I', self.connected_device.read(4))[0]
+            if self.data_length == 0:
+               self.data_length = 1
+            self.data = bytearray(self.data_length)
+            self.data_details = unpack_experiment_details(self.connected_device.read(details_len))
+            self.result_queue.put_nowait(('LOGDATA', self.data_length))
+            for i in range(0, self.data_length, 512):
+               bytes_to_read = min(512, self.data_length - i)
+               self.data[self.data_index:self.data_index+bytes_to_read] = self.connected_device.read(bytes_to_read)
+               self.data_index += bytes_to_read
+               self.result_queue.put_nowait(('LOGDATA', self.data_index))
+            self.data_index = len(self.data)
+            self.command_queue.put_nowait('DOWNLOAD_DONE')
+      except serial.SerialException:
+         self.connected_device.close()
+
    async def scan_for_tottags(self):
       self.result_queue.put_nowait(('SCANNING', True))
       self.discovered_devices.clear()
@@ -288,6 +332,10 @@ class TotTagBLE(threading.Thread):
       await scanner.start()
       await asyncio.sleep(5)
       await scanner.stop()
+      for port in sorted(serial.tools.list_ports.comports()):
+         if port.vid == TOTTAG_USB_VID and port.pid == TOTTAG_USB_PID:
+            self.discovered_devices['USB-Connected Device'] = port.device
+            self.result_queue.put_nowait(('DEVICE', 'USB-Connected Device'))
       for device_address, device_info in scanner.discovered_devices_and_advertisement_data.items():
          if device_info[1].local_name == 'TotTag':
             self.discovered_devices[device_address] = device_info[0]
@@ -297,12 +345,23 @@ class TotTagBLE(threading.Thread):
    async def connect_to_tottag(self):
       self.result_queue.put_nowait(('CONNECTING', True))
       device_address = await self.command_queue.get()
-      device = BleakClient(self.discovered_devices[device_address], partial(self.disconnected_callback))
       try:
-         await device.connect(timeout=3.0)
-         if device.is_connected:
-            self.connected_device = device
-            self.result_queue.put_nowait(('CONNECTED', device_address))
+         if 'USB-Connected Device' in device_address:
+            device = serial.Serial(self.discovered_devices[device_address], timeout=3.0, write_timeout=3.0)
+            if device.is_open:
+               self.connected_device = device
+               self.connected_device.reset_input_buffer()
+               self.connected_device.reset_output_buffer()
+               disconnect_check_thread = threading.Thread(target=partial(self.serial_disconnect_check))
+               disconnect_check_thread.daemon = False
+               disconnect_check_thread.start()
+               self.result_queue.put_nowait(('CONNECTEDUSB', device_address))
+         else:
+            device = BleakClient(self.discovered_devices[device_address], partial(self.disconnected_callback))
+            await device.connect(timeout=3.0)
+            if device.is_connected:
+               self.connected_device = device
+               self.result_queue.put_nowait(('CONNECTED', device_address))
       except Exception as e:
          self.result_queue.put_nowait(('CONNECTING', False))
          self.result_queue.put_nowait(('ERROR', ('TotTag Connection Error', 'Timed out attempting to connect to the specified TotTag')))
@@ -322,7 +381,10 @@ class TotTagBLE(threading.Thread):
 
    async def disconnect_from_tottag(self):
       if self.connected_device:
-         await self.connected_device.disconnect()
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.close()
+         else:
+            await self.connected_device.disconnect()
 
    async def subscribe_to_ranges(self):
       try:
@@ -341,7 +403,10 @@ class TotTagBLE(threading.Thread):
    async def find_my_tottag(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
-         await self.connected_device.write_gatt_char(FIND_MY_TOTTAG_SERVICE_UUID, struct.pack('<I', FIND_MY_TOTTAG_ACTIVATION_SECONDS), True)
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.write(bytes([USB_FIND_MY_TOTTAG_COMMAND]))
+         else:
+            await self.connected_device.write_gatt_char(FIND_MY_TOTTAG_SERVICE_UUID, struct.pack('<I', FIND_MY_TOTTAG_ACTIVATION_SECONDS), True)
          self.result_queue.put_nowait(('RETRIEVING', False))
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to activate FindMyTotTag')))
@@ -358,7 +423,12 @@ class TotTagBLE(threading.Thread):
    async def retrieve_timestamp(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
-         timestamp = struct.unpack('<I', bytes(await self.connected_device.read_gatt_char(TIMESTAMP_SERVICE_UUID)))[0]
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.reset_input_buffer()
+            self.connected_device.write(bytes([USB_GET_TIMESTAMP_COMMAND]))
+            timestamp = struct.unpack('<I', self.connected_device.read(4))[0]
+         else:
+            timestamp = struct.unpack('<I', bytes(await self.connected_device.read_gatt_char(TIMESTAMP_SERVICE_UUID)))[0]
          self.result_queue.put_nowait(('TIMESTAMP', timestamp))
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve current time from TotTag')))
@@ -366,7 +436,12 @@ class TotTagBLE(threading.Thread):
    async def retrieve_voltage(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
-         voltage = struct.unpack('<H', bytes(await self.connected_device.read_gatt_char(VOLTAGE_SERVICE_UUID)))[0]
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.reset_input_buffer()
+            self.connected_device.write(bytes([USB_VOLTAGE_COMMAND]))
+            voltage = struct.unpack('<H', self.connected_device.read(2))[0]
+         else:
+            voltage = struct.unpack('<H', bytes(await self.connected_device.read_gatt_char(VOLTAGE_SERVICE_UUID)))[0]
          self.result_queue.put_nowait(('VOLTAGE', voltage))
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve current battery level from TotTag')))
@@ -374,8 +449,14 @@ class TotTagBLE(threading.Thread):
    async def retrieve_version_details(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
-         firmware_version = await self.connected_device.read_gatt_char(FIRMWARE_VERSION_UUID)
-         hardware_revision = await self.connected_device.read_gatt_char(HARDWARE_REVISION_UUID)
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.reset_input_buffer()
+            self.connected_device.write(bytes([USB_VERSION_COMMAND]))
+            firmware_version = self.connected_device.readline()[:-1]
+            hardware_revision = self.connected_device.readline()[:-1]
+         else:
+            firmware_version = await self.connected_device.read_gatt_char(FIRMWARE_VERSION_UUID)
+            hardware_revision = await self.connected_device.read_gatt_char(HARDWARE_REVISION_UUID)
          self.result_queue.put_nowait(('VERSIONS', (hardware_revision.decode().strip('\x00'), firmware_version.decode().strip('\x00'))))
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve device details from TotTag')))
@@ -403,23 +484,34 @@ class TotTagBLE(threading.Thread):
       self.result_queue.put_nowait(('SCHEDULING', True))
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
-      retry_count = 0
-      while retry_count < 3:
-         try:
-            await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
-            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
-            retry_count = 3
-         except Exception:
-            retry_count += 1
-            if retry_count == 3:
-               self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device.address))
+      if isinstance(self.connected_device, serial.Serial):
+         self.connected_device.write(bytes([USB_SET_TIMESTAMP_COMMAND]))
+         self.connected_device.write(struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())))
+         self.connected_device.write(bytes([MAINTENANCE_DELETE_EXPERIMENT]))
+      else:
+         retry_count = 0
+         while retry_count < 3:
+            try:
+               await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+               await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+               retry_count = 3
+            except Exception:
+               retry_count += 1
+               if retry_count == 3:
+                  self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device.address))
       self.result_queue.put_nowait(('SCHEDULED', details))
       self.command_queue.task_done()
 
    async def retrieve_experiment(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
-         details = unpack_experiment_details(bytes(await self.connected_device.read_gatt_char(EXPERIMENT_SERVICE_UUID)))
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.reset_input_buffer()
+            self.connected_device.write(bytes([USB_GET_EXPERIMENT_COMMAND]))
+            details_len = struct.unpack('<H', self.connected_device.read(2))[0]
+            details = unpack_experiment_details(self.connected_device.read(details_len))
+         else:
+            details = unpack_experiment_details(bytes(await self.connected_device.read_gatt_char(EXPERIMENT_SERVICE_UUID)))
          self.result_queue.put_nowait(('EXPERIMENT', details))
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve scheduled deployment details from TotTag')))
@@ -427,8 +519,13 @@ class TotTagBLE(threading.Thread):
    async def delete_experiment(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
       try:
-         await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
-         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DELETE_EXPERIMENT), True)
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.write(bytes([USB_SET_TIMESTAMP_COMMAND]))
+            self.connected_device.write(struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())))
+            self.connected_device.write(bytes([MAINTENANCE_DELETE_EXPERIMENT]))
+         else:
+            await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DELETE_EXPERIMENT), True)
          self.result_queue.put_nowait(('DELETED', True))
       except Exception:
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to delete scheduled deployment from TotTag')))
@@ -439,15 +536,23 @@ class TotTagBLE(threading.Thread):
       self.download_raw_logs = params['raw']
       if params['full']:
          params['start'] = params['end'] = 0
-      try:
-         self.data_length = 0
-         await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
-         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']), True)
-         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG), True)
+      self.data_length = 0
+      if isinstance(self.connected_device, serial.Serial):
+         self.connected_device.reset_input_buffer()
+         self.connected_device.write(struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']))
+         data_callback_thread = threading.Thread(target=partial(self.data_callback_serial))
+         data_callback_thread.start()
+         data_callback_thread.join()
          self.downloading_log_file = True
-      except Exception:
-         await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
-         self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve log files from the TotTag')))
+      else:
+         try:
+            await self.connected_device.start_notify(MAINTENANCE_DATA_SERVICE_UUID, partial(self.data_callback))
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']), True)
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG), True)
+            self.downloading_log_file = True
+         except Exception:
+            await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
+            self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve log files from the TotTag')))
       self.command_queue.task_done()
 
    async def download_log_continuation(self):
@@ -465,7 +570,8 @@ class TotTagBLE(threading.Thread):
          try:
             self.downloading_log_file = False
             self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
-            await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
+            if not isinstance(self.connected_device, serial.Serial):
+               await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
             process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data[:self.data_index], self.download_raw_logs)
          except Exception as e:
             print('Log file processing error:', e);
@@ -530,7 +636,8 @@ class TotTagGUI(tk.Frame):
       self.operations_bar.pack(side=tk.LEFT, fill=tk.Y, padx=5, expand=False)
       ttk.Label(self.operations_bar, text="TotTag Actions", padding=6).grid(row=0)
       ttk.Button(self.operations_bar, text="Get Device Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'VERSIONS'), state=['disabled']).grid(row=1, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Subscribe to Live Ranging Data", command=self._subscribe_to_live_ranges, state=['disabled']).grid(row=2, sticky=tk.W+tk.E)
+      self.subscribe_button = ttk.Button(self.operations_bar, text="Subscribe to Live Ranging Data", command=self._subscribe_to_live_ranges, state=['disabled'])
+      self.subscribe_button.grid(row=2, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Activate Find my TotTag", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'FIND_TOTTAG'), state=['disabled']).grid(row=3, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Retrieve Current Timestamp", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'TIMESTAMP'), state=['disabled']).grid(row=4, sticky=tk.W+tk.E)
       ttk.Button(self.operations_bar, text="Retrieve Battery Voltage", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'VOLTAGE'), state=['disabled']).grid(row=5, sticky=tk.W+tk.E)
@@ -539,7 +646,8 @@ class TotTagGUI(tk.Frame):
       ttk.Button(self.operations_bar, text="Get Scheduled Deployment Details", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'GET_EXPERIMENT'), state=['disabled']).grid(row=7, sticky=tk.W+tk.E)
       self.cancel_button = ttk.Button(self.operations_bar, text="Cancel Scheduled Pilot Deployment", command=self._delete_experiment, state=['disabled'])
       self.cancel_button.grid(row=8, sticky=tk.W+tk.E)
-      ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled']).grid(row=9, sticky=tk.W+tk.E)
+      self.download_button = ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled'])
+      self.download_button.grid(row=9, sticky=tk.W+tk.E)
       if mode_switch_visibility:
           self.switch_button = ttk.Button(self.operations_bar, text="Mode Switch", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'ENABLE_STORAGE_MAINTENANCE'), state=['disabled'])
           self.switch_button.grid(row=10)
@@ -901,6 +1009,18 @@ class TotTagGUI(tk.Frame):
                if isinstance(item, ttk.Button):
                   item.configure(state=['enabled'])
             self.schedule_button['text'] = 'Update Deployment On Current Device'
+            self.cancel_button['text'] = 'Cancel Deployment On Current Device'
+            self._clear_canvas_with_prompt()
+         elif key == 'CONNECTEDUSB':
+            self.tottag_selection.set('Connected to ' + data)
+            self.connect_button['command'] = partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'DISCONNECT')
+            self.connect_button['state'] = ['enabled']
+            self.connect_button['text'] = 'Disconnect'
+            for item in self.operations_bar.winfo_children():
+               if isinstance(item, ttk.Button):
+                  item.configure(state=['enabled'])
+            self.subscribe_button['state'] = ['disabled']
+            self.schedule_button['state'] = ['disabled']
             self.cancel_button['text'] = 'Cancel Deployment On Current Device'
             self._clear_canvas_with_prompt()
          elif key == 'DISCONNECTED':

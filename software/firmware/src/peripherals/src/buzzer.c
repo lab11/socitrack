@@ -12,28 +12,6 @@ static volatile uint32_t interrupt_counter_index, interrupt_counter_max;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-#if REVISION_ID == REVISION_I
-
-static uint32_t am_hal_timer_output_config(uint32_t ui32PadNum, uint32_t eOutputType)
-{
-    uint32_t ui32CfgShf = ui32PadNum % 4 * 8;
-    uint32_t ui32OutcfgMsk = 0x7F << ui32CfgShf;
-    uint32_t ui32OutcfgFnc = eOutputType << ui32CfgShf;
-
-    AM_CRITICAL_BEGIN
-
-    uint32_t volatile *outcfg = &(TIMER->OUTCFG0) + (ui32PadNum >> 2);
-    uint32_t ui32OutcfgValue = *outcfg;
-    ui32OutcfgValue &= ~ui32OutcfgMsk;
-    ui32OutcfgValue |=  ui32OutcfgFnc;
-    *outcfg = ui32OutcfgValue;
-
-    AM_CRITICAL_END
-    return AM_HAL_STATUS_SUCCESS;
-}
-
-#endif  // #if REVISION_ID == REVISION_I
-
 static void continue_current_sequence(void)
 {
    // Check whether the end of the sequence has been reached

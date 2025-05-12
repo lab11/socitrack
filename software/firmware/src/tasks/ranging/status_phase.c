@@ -19,7 +19,7 @@ static uint8_t present_devices[MAX_NUM_RANGING_DEVICES], num_present_devices;
 static inline scheduler_phase_t start_tx(const char *error_message, status_success_packet_t *packet)
 {
    transmitted_seq_num = packet->sequence_number;
-   dwt_setdelayedtrxtime((uint32_t)((US_TO_DWT(next_action_timestamp) - TX_ANTENNA_DELAY) >> 8) & 0xFFFFFFFE);
+   dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp));
    if ((dwt_writetxdata(2 * sizeof(success_packet.sequence_number), &packet->sequence_number, offsetof(status_success_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
    {
       print(error_message);
@@ -45,13 +45,11 @@ static inline scheduler_phase_t start_rx(const char *error_message)
 void status_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Schedule Phase parameters
-   success_packet = (status_success_packet_t){ .header = { .frameCtrl = { 0x41, 0x88 }, .msgType = STATUS_SUCCESS_PACKET,
-         .panID = { MODULE_PANID & 0xFF, MODULE_PANID >> 8 }, .destAddr = { 0xFF, 0xFF }, .sourceAddr = { 0 } },
-      .sequence_number = 0, .success = 0, .footer = { { 0 } } };
-   memcpy(success_packet.header.sourceAddr, uid, sizeof(success_packet.header.sourceAddr));
+   success_packet = (status_success_packet_t){ .header = { .msgType = STATUS_SUCCESS_PACKET },
+      .src_addr = uid[0], .sequence_number = 0, .success = 0, .footer = { { 0 } } };
 }
 
-scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uint32_t start_delay_dwt)
+scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uint32_t next_action_time)
 {
    // Reset the necessary Schedule Phase parameters
    current_slot = 1;
@@ -60,14 +58,13 @@ scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uin
    scheduled_slot = status_slot;
    success_packet.sequence_number = 0;
    success_packet.success = responses_received();
-   next_action_timestamp = RECEIVE_EARLY_START_US;
+   next_action_timestamp = next_action_time;
    memset(present_devices, 0, sizeof(present_devices));
    dwt_writetxfctrl(sizeof(status_success_packet_t), 0, 0);
    dwt_writetxdata(sizeof(status_success_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&success_packet, 0);
 
-   // Set up the correct initial start time, antenna, and RX timeout duration
+   // Set up the correct initial antenna and RX timeout duration
    ranging_radio_choose_antenna(0);
-   dwt_setreferencetrxtime(start_delay_dwt + DW_DELAY_FROM_US(1000 - RANGING_BROADCAST_INTERVAL_US));
    dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RANGE_STATUS_TIMEOUT_US));
 
    // Begin transmission or reception depending on the scheduled time slot
@@ -97,7 +94,7 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
 
    // Record the presence of the transmitting device
    if (!scheduled_slot)
-      present_devices[num_present_devices++] = packet->header.sourceAddr[0];
+      present_devices[num_present_devices++] = packet->src_addr;
 
    // Retransmit the status packet upon reception
    register const uint32_t seqNum = packet->sequence_number;

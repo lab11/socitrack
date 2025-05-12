@@ -5,9 +5,19 @@
 #include "ranging_phase.h"
 
 
+// Private Helper Type Definitions -------------------------------------------------------------------------------------
+
+typedef struct
+{
+   bool initialized;
+   uint8_t eui;
+   int32_t range_mm;
+} filter_t;
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static int distances_millimeters[RANGING_NUM_RANGE_ATTEMPTS];
+static filter_t range_filters[MAX_NUM_RANGING_DEVICES];
 static uint8_t num_scheduled_devices;
 
 
@@ -32,6 +42,25 @@ void insert_sorted(int arr[], int new, unsigned end)
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
+
+void computation_phase_configure_filters(experiment_details_t *details)
+{
+   // Create a range filter for each potential ranging device
+   memset(range_filters, 0, sizeof(range_filters));
+   for (uint8_t i = 0; i < details->num_devices; ++i)
+      range_filters[i].eui = details->uids[i][0];
+}
+
+void computation_phase_reset_range_filter(uint8_t eui)
+{
+   // Set the range filter for the corresponding device to uninitialized
+   for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+      if (range_filters[i].eui == eui)
+      {
+         range_filters[i].initialized = false;
+         return;
+      }
+}
 
 void reset_computation_phase(uint8_t schedule_length)
 {
@@ -71,11 +100,27 @@ void compute_ranges(uint8_t *ranging_results)
       int16_t range_millimeters = INT16_MAX;
       if (num_valid_distances >= 1)
       {
-         // Take the median range as the final range estimate
+         // Take the median range as the range estimate
          uint8_t top = (num_valid_distances / 2), bot = (num_valid_distances % 2) ? (num_valid_distances / 2) : ((num_valid_distances / 2) - 1);
          range_millimeters = (int16_t)((distances_millimeters[bot] + distances_millimeters[top]) / 2);
          if (range_millimeters < 0)
             range_millimeters = 0;
+
+         // Filter the range estimate
+         for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+            if (range_filters[i].eui == state[dev_index].device_eui)
+            {
+               if (!range_filters[i].initialized)
+               {
+                  range_filters[i].initialized = true;
+                  range_filters[i].range_mm = range_millimeters;
+               }
+               range_filters[i].range_mm += ((range_millimeters - range_filters[i].range_mm) / 3);
+               range_millimeters = range_filters[i].range_mm;
+               break;
+            }
+
+         // Return the range if valid
          if (range_millimeters < MAX_VALID_RANGE_MM)
          {
             // Copy valid ranges into the ID/range output buffer
