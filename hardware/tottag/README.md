@@ -11,7 +11,25 @@ group.
 Current TotTag hardware is maintained by @ppannuto and @corruptbear.
 
 
-## Rev N
+## "Gen 2" TotTags
+
+Revision I is a fairly complete hardware refresh and board redesign. Initially
+necessitated by the COVID-era chip shortage, it became an opportunity to take
+advantage of the next generation of low-power MCUs and radio hardware.
+Revisions K, L, and M split the board into two physical modules to isolate
+design challenges with some of the new chips; revision N re-integrates the
+design back to a single module. Revisions O and P center on smaller fixes for
+DFM and scale.
+
+### Rev O
+Highlights:
+ - Connect USB data lines to enable wired offload
+ - Remove long-unused hedges and debug (solder jumpers, zero-Ω, and DNP parts; SWTRACE)
+ - UWB: Integrate LNA on common signal path for all antennas
+
+[Complete list of Rev O updates](https://github.com/lab11/socitrack/issues/59)
+
+### Rev N
 [Rev N updates](https://github.com/lab11/socitrack/issues/58)
 __Note: The main board is derived from Rev K, and integrates AP4BP Rev-B back on-board.__
  - Re-integrate AP4BP
@@ -40,49 +58,57 @@ __Note: The main board is derived from Rev K, and integrates AP4BP Rev-B back on
     - Remove most microvias not on BGA pads
 
 
-## Rev M + AP4BP Rev-B
+### Rev M + AP4BP Rev-B
 [Rev L Issues / Rev M updates](https://github.com/lab11/socitrack/issues/49)
  - Fix silkscreen error on switch label
 
-## Rev L + AP4BP Rev-B
+### Rev L + AP4BP Rev-B
 [Prior rev's issues / updates](https://github.com/lab11/socitrack/issues/46)
  - Fixes first-rev issues from the AP4BP module.
  - Rips out our UWB in favor of DWM3000 pre-fab modules for Qorvo as a hedge
    to facilitate more certain-to-work UWB in the short term (but sacrificing
    diversity and robustness [and adding cost]).
 
-## Rev K + AP4BP Rev-A
+### Rev K + AP4BP Rev-A
 [Rev I Issues / Rev K Updates](https://github.com/lab11/socitrack/issues/44)
  - (n.b., there is no Rev J to avoid I/J confusion)
  - Move to Apollo4 Blue Plus (Blue has too many silicon bugs)
     - Split this to a castellated module for separation of hw design concerns
  - Move to TCXO for DW3000 (bad idea; will be removed next rev)
 
-## Rev I -- **Major Revision**
+### Rev I ***(Major Revision)***
  - Refresh part selection to replace 2015 parts with improved modern versions
  - Major change: Apollo4 Blue as sole MCU
  - Major change: DW3000 replaces DW1000 as UWB transceiver
  - Really, most stuff changed except the wireless charging
 
-## Rev H
+
+## "Gen 1" TotTags
+
+Revisions C–H mark the first generation of TotTag hardware, i.e., that designed
+primarily as hardare for social interaction tracking. Generation 1 TotTags
+carry a lot of design decisions from the original indoor localization system,
+and are generally built on "2010-2020" era technologies.
+
+### Rev H
 [Rev G Issues / Rev H Updates](https://github.com/lab11/socitrack/issues/9)
  - Isolates high-bandwidth accelerometer to dedicated SPI bus
  - Revises wireless charging design for robustness
  - Resolve RTC design issues
  - DFM cleanups
 
-## Rev G
+### Rev G
 [Rev F Issues / Rev G Updates](https://github.com/lab11/totternary/issues/7)
  - Add detachable battery connector
  - Add power switch
  - Adapt PCB shape for mass-production case
 
-## Rev F
+### Rev F
 
 [Rev E Issues / Rev F Updates.](https://github.com/lab11/totternary/issues/4)
  - Add RTC
 
-## Rev E
+### Rev E
 
 [Rev D Issues / Rev E Updates.](https://github.com/lab11/totternary/issues/3)
 
@@ -92,7 +118,7 @@ Rev E updates:
    - Capacitor layout around nRF to fix crystal stability issues
  - Add optional switching regulator bypass
 
-## Rev D
+### Rev D
 
 [Rev D Issue.](https://github.com/lab11/totternary/issues/2)
 
@@ -102,7 +128,7 @@ Rev D updates:
  - Fix reset signal for nRF52840
  - Several PCB improvements
 
-## Rev C
+### Rev C
 
 [Rev C](../../tritag/rev_c/)
 
