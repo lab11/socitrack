@@ -134,7 +134,7 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
    i = 0
    log_data = defaultdict(dict)
    if save_raw_file:
-      with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.ttg'), 'wb') as file:
+      with open(os.path.join(storage_directory, f"{uid_to_labels[from_uid]}_{experiment_start_time}.ttg"), 'wb') as file:
          file.write(data)
    try:
       most_recent_aligned_timestamp = 0
