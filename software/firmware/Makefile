@@ -6,18 +6,12 @@ SHELL := /bin/bash
 ifdef BOARD_REV
 REVISION := $(BOARD_REV)
 else
-REVISION := O
+REVISION := P
 endif
 
-ifeq ($(REVISION), I)
-BSP = apollo4_blue
-PART = apollo4b
-PART_DEF = AM_PART_APOLLO4B
-else
 BSP = apollo4_blue_pro
 PART = apollo4p
 PART_DEF = AM_PART_APOLLO4P
-endif
 
 $(info Building for Revision $(REVISION):)
 $(info BSP = $(BSP))
