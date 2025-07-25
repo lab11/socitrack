@@ -120,7 +120,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define SCHEDULING_INTERVAL_US                      500000
 #define RADIO_WAKEUP_SAFETY_DELAY_US                3000
-#define RECEIVE_EARLY_START_US                      (2 + (uint32_t)DW_PREAMBLE_LENGTH_US)
+#define RECEIVE_EARLY_START_US                      (5 + (uint32_t)DW_PREAMBLE_LENGTH_US)
 
 #define DEVICE_TIMEOUT_SECONDS                      60
 #define NETWORK_SEARCH_TIME_SECONDS                 3

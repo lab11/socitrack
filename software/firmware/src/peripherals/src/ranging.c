@@ -132,8 +132,8 @@ void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 void ranging_radio_init(uint8_t *uid)
 {
    // Initialize static variables
-   tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFFFFFFFF, 0x0 };  // Recommended: 0xFDFDFDFD
-   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFFFFFFFF, 0x0 };  // Recommended: 0xFEFEFEFE
+   tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
+   tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
    spi_functions = (struct dwt_spi_s){ .readfromspi = readfromspi, .writetospi = writetospi,
       .writetospiwithcrc = NULL, .setslowrate = ranging_radio_spi_slow, .setfastrate = ranging_radio_spi_fast };
    driver_interface = (struct dwt_probe_s){ .dw = NULL, .spi = (void*)&spi_functions,
