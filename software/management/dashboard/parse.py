@@ -6,6 +6,34 @@ from tottag import *
 
 
 def process_tottag_data(data, experiment_start_time):
+   """
+   Parses and processes raw binary data read from .ttg files.
+   The processed sensor log is saved to a file named 'converted.pkl'.
+   IMU data is currently skipped.
+
+   Parameters:
+        data (bytes): Raw binary byte stream read from .ttg files.
+        experiment_start_time (float): 10-digit Unix timestamp (in seconds).
+
+   Returns:
+        List[dict]: A list of timestamped dict of data. Each dictionary has:
+            - 't': Absolute timestamp (float)
+            - 'v' (Voltage):
+                Indicates the battery voltage of the device in millivolts.
+            - 'c' (Charging Event):
+                Encodes battery charging status as one of several predefined states, such as
+                charging, full, or discharging. The values are mapped via `BATTERY_CODES`.
+            - 'm' (Motion):
+                A boolean value indicating whether motion was detected at the time.
+                `True` means motion is detected; `False` indicates stillness.
+            - 'r' (Ranges):
+                A dictionary mapping device UIDs (unique IDs) to measured distances (in millimeters).
+                These distances represent proximity to neighboring devices. Only values.
+                below `MAX_RANGING_DISTANCE_MM` are included.
+            - 'b' (BLE Scan Results):
+                A list of device UIDs detected during a Bluetooth Low Energy scan. These IDs represent.
+                nearby TotTags.
+   """
    i = 0
    log_data = defaultdict(dict)
    while i + 5 < len(data):
@@ -63,7 +91,6 @@ def process_tottag_data(data, experiment_start_time):
    with open(os.path.join(get_download_directory(), 'converted.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
    return log_data
-
 
 if __name__ == "__main__":
 
