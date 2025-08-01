@@ -74,7 +74,7 @@ void delayed_write_test(void)
    assert(dwt_starttx(DWT_START_TX_DELAYED) == DWT_SUCCESS);
 
    // Sleep for 5 seconds
-   am_hal_delay_us(5000000);
+   am_hal_delay_us(1000000);
 }
 
 void read_test(void)
