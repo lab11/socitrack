@@ -19,22 +19,36 @@ typedef struct __attribute__ ((__packed__))
    ieee154_footer_t footer;
 } data_packet_t;
 
+static volatile uint8_t antenna = 0;
+
 static void tx_callback(const dwt_cb_data_t *txData) {}
 
 static void rx_error_callback(const dwt_cb_data_t *rxData)
 {
+   // Switch to the next antenna and re-enable reception
+   antenna = (antenna + 1) % 3;
+   ranging_radio_disable();
+   ranging_radio_choose_antenna(antenna);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
    am_hal_timer_clear(RX_ERROR_TIMER_NUMBER);
+
+   // Illuminate the error LED
    led_off(LED_ALL);
    led_on(LED_RED);
 }
 
 static void rx_done_callback(const dwt_cb_data_t *rxData)
 {
-   led_off(LED_ALL);
-   am_hal_timer_clear(RX_ERROR_TIMER_NUMBER);
+   // Switch to the next antenna and re-enable reception
+   antenna = (antenna + 1) % 3;
+   ranging_radio_disable();
+   ranging_radio_choose_antenna(antenna);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
+   am_hal_timer_clear(RX_ERROR_TIMER_NUMBER);
+
+   // Illuminate the LEDs based on the received signal level
    const float signal_level = ranging_radio_received_signal_level(false);
+   led_off(LED_ALL);
    led_on((signal_level < -85.0f) ? LED_RED : ((signal_level < -70.0f) ? LED_ALL : LED_GREEN));
 }
 
@@ -110,9 +124,9 @@ int main(void)
    NVIC_SetPriority(TIMER0_IRQn + RX_ERROR_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
    NVIC_EnableIRQ(TIMER0_IRQn + RX_ERROR_TIMER_NUMBER);
 
-   // Select the appropriate antenna and channel
+   // Select the starting antenna and channel
    ranging_radio_disable();
-   ranging_radio_choose_antenna(0);
+   ranging_radio_choose_antenna(antenna);
    ranging_radio_choose_channel(5);
 
    // Loop forever running ranging power tests
