@@ -74,14 +74,19 @@ void delayed_write_test(void)
    assert(dwt_starttx(DWT_START_TX_DELAYED) == DWT_SUCCESS);
 
    // Sleep for 5 seconds
-   am_hal_delay_us(5000000);
+   am_hal_delay_us(1000000);
 }
 
-void read_test(void)
+void read_test(int antenna, int channel)
 {
+   printf("read_test, antenna %d (%s), channel (%d)\n",
+         antenna,
+         antenna == 0 ? "left" : antenna == 1 ? "top" : "right",
+         channel);
+
    // Enable packet reception
-   ranging_radio_choose_antenna(0);
-   ranging_radio_choose_channel(5);
+   ranging_radio_choose_antenna(antenna);
+   ranging_radio_choose_channel(channel);
    ranging_radio_rxenable(DWT_START_RX_IMMEDIATE);
 
    // Sleep for 60 seconds
@@ -104,7 +109,9 @@ int main(void)
       //regular_sleep_test();
       //deep_sleep_test();
       //delayed_write_test();
-      read_test();
+      read_test(0, 5);
+      read_test(1, 5);
+      read_test(2, 5);
    }
 
    // Should never reach this point
