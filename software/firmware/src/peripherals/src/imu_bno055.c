@@ -520,10 +520,10 @@ void quaternion_to_euler(bno055_quaternion_t quaternion, bno055_euler_t *euler)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void imu_init(void)
+bool imu_init(void)
 {
    if (imu_is_initialized)
-      return;
+      return true;
    // Initialize static variables
    previously_in_motion = false;
    motion_change_callback = NULL;
@@ -586,6 +586,7 @@ void imu_init(void)
 
    print("INFO: IMU Initialized\n");
    imu_is_initialized = true;
+   return true;
 }
 
 void imu_deinit(void)

@@ -34,9 +34,9 @@ typedef struct  __attribute__ ((__packed__))
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void ranging_radio_init(uint8_t *uid);
+bool ranging_radio_init(uint8_t *uid);
 void ranging_radio_deinit(void);
-void ranging_radio_reset(void);
+bool ranging_radio_reset(void);
 void ranging_radio_enable_rx_diagnostics(void);
 void ranging_radio_register_callbacks(dwt_cb_t tx_done, dwt_cb_t rx_done, dwt_cb_t rx_timeout, dwt_cb_t rx_err);
 void ranging_radio_choose_channel(uint8_t channel);

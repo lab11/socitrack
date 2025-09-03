@@ -234,7 +234,7 @@ static void cccCallback(attsCccEvt_t *pEvt)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void bluetooth_init(uint8_t* uid)
+bool bluetooth_init(uint8_t* uid)
 {
    // Initialize static variables
    const uint8_t ranging_role[] = { BLUETOOTH_COMPANY_ID, 0x00 };
@@ -263,8 +263,13 @@ void bluetooth_init(uint8_t* uid)
 
    // Set the Bluetooth address and boot the BLE radio
    HciVscSetCustom_BDAddr(uid);
+#ifdef _MANUFACTURING_TEST_
+   return HciDrvRadioBoot(false) == AM_DEVICES_COOPER_STATUS_SUCCESS;
+#else
    configASSERT0(HciDrvRadioBoot(false));
    print("TotTag BLE: Initialized with address %02X:%02X:%02X:%02X:%02X:%02X\n", uid[5], uid[4], uid[3], uid[2], uid[1], uid[0]);
+   return true;
+#endif
 }
 
 void bluetooth_deinit(void)

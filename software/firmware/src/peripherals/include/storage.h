@@ -32,7 +32,7 @@ typedef enum {
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void storage_init(void);
+bool storage_init(void);
 void storage_deinit(void);
 void storage_disable(bool disable);
 void storage_store_experiment_details(const experiment_details_t *details);

@@ -129,7 +129,7 @@ void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void ranging_radio_init(uint8_t *uid)
+bool ranging_radio_init(uint8_t *uid)
 {
    // Initialize static variables
    tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
@@ -276,10 +276,19 @@ void ranging_radio_init(uint8_t *uid)
    };
    configASSERT0(am_hal_gpio_pinconfig(PIN_RADIO_SPI_CS, cs_config));
    ranging_radio_spi_slow();
-   ranging_radio_reset();
-   dwt_setcallbacks(&callbacks);
-   ranging_radio_spi_fast();
-   initialized = true;
+   if (ranging_radio_reset())
+   {
+      dwt_setcallbacks(&callbacks);
+      ranging_radio_spi_fast();
+      initialized = true;
+      return true;
+   }
+   else
+   {
+      while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+      am_hal_iom_uninitialize(spi_handle);
+      return false;
+   }
 }
 
 void ranging_radio_deinit(void)
@@ -307,7 +316,7 @@ void ranging_radio_deinit(void)
    initialized = false;
 }
 
-void ranging_radio_reset(void)
+bool ranging_radio_reset(void)
 {
    // Assert the DW3000 reset pin for 1us to manually reset the device
    if (initialized)
@@ -321,8 +330,12 @@ void ranging_radio_reset(void)
    // Initialize the DW3000 driver and transceiver
    if (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
    {
+#ifdef _MANUFACTURING_TEST_
+      return false;
+#else
       print("ERROR: Could not successfully probe DW3000 peripheral...resetting entire device\n");
       system_reset(false);
+#endif
    }
    configASSERT0(dwt_initialise(DWT_READ_OTP_PID | DWT_READ_OTP_LID | DWT_READ_OTP_BAT | DWT_READ_OTP_TMP));
 
@@ -363,6 +376,7 @@ void ranging_radio_reset(void)
    // Clear the internal TX/RX antenna delays
    dwt_settxantennadelay(TX_ANTENNA_DELAY);
    dwt_setrxantennadelay(RX_ANTENNA_DELAY);
+   return true;
 }
 
 void ranging_radio_enable_rx_diagnostics(void)

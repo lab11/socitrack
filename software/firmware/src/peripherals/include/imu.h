@@ -39,7 +39,7 @@ typedef void (*data_ready_callback_t)(imu_data_type_t data_types_ready);
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void imu_init(void);
+bool imu_init(void);
 void imu_deinit(void);
 bool imu_calibrate_sensors(imu_calibration_data_t calibration_type);
 bool imu_store_current_calibration(void);

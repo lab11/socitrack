@@ -344,6 +344,11 @@ logging: TARGET = TestLogging
 logging: SRC += test_logging.c
 logging: $(CONFIG) $(CONFIG)/test_logging.o $(CONFIG)/$$(TARGET).bin program
 
+manufacturing: TARGET = ManufacturingTest
+manufacturing: SRC += manufacturing_validation.c
+manufacturing: CFLAGS += -D_MANUFACTURING_TEST_
+manufacturing: $(CONFIG) $(CONFIG)/manufacturing_validation.o $(CONFIG)/$$(TARGET).bin
+
 power_off: TARGET = TestPowerOff
 power_off: SRC += test_power_off.c
 power_off: $(CONFIG) $(CONFIG)/test_power_off.o $(CONFIG)/$$(TARGET).bin program

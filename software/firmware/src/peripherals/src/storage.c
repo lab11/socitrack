@@ -585,7 +585,7 @@ static bool is_first_boot(void)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void storage_init(void)
+bool storage_init(void)
 {
    // Create an SPI configuration structure
    is_reading = in_maintenance_mode = disabled = false;
@@ -624,8 +624,15 @@ void storage_init(void)
    configASSERT0(am_hal_iom_enable(spi_handle));
 
    // Wait until the chip becomes accessible
-   while (!verify_device_id())
+   int retries;
+   for (retries = 0; (retries < 1000) && !verify_device_id(); ++retries)
       am_util_delay_ms(1);
+#ifdef _MANUFACTURING_TEST_
+   enter_low_power_mode();
+   configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
+   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   return retries < 1000;
+#endif
    am_util_delay_ms(3);
    wait_until_not_busy();
 
@@ -737,6 +744,7 @@ void storage_init(void)
    enter_low_power_mode();
    configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
    am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   return true;
 }
 
 void storage_deinit(void)

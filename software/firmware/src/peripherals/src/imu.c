@@ -1333,11 +1333,11 @@ void imu_iom_isr(void)
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-void imu_init(void)
+bool imu_init(void)
 {
    // Only initialize once
    if (imu_is_initialized)
-      return;
+      return true;
 
    // Initialize the static variables
    memset(shtp_header, 0, sizeof(shtp_header));
@@ -1411,16 +1411,22 @@ void imu_init(void)
    // Validate device communications
    memset(shtp_data, 0, TX_PACKET_SIZE);
    shtp_data[0] = SHTP_REPORT_PRODUCT_ID_REQUEST;
-   if (wait_for_command_response())
+   bool success = wait_for_command_response();
+   if (success)
       print("INFO: IMU Initialized\n");
    else
+   {
       print("ERROR: IMU initialization failed\n");
+      while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+      am_hal_iom_uninitialize(spi_handle);
+   }
 
    // Reset all interrupt statuses and set the initialized flag
    uint32_t status;
    am_hal_iom_interrupt_status_get(spi_handle, false, &status);
    am_hal_iom_interrupt_clear(spi_handle, status);
-   imu_is_initialized = true;
+   imu_is_initialized = success;
+   return success;
 }
 
 void imu_deinit(void)
