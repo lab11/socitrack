@@ -157,3 +157,19 @@ void buzzer_indicate_location(void)
       continue_current_sequence();
    }
 }
+
+void buzzer_indicate_antenna(uint32_t antenna_number)
+{
+   static const uint16_t antenna1_frequencies[] = { 1047,   0 };
+   static const uint16_t antenna1_durations[] =   {  500 };
+   static const uint16_t antenna2_frequencies[] = { 1047,   1, 1047, 0 };
+   static const uint16_t antenna2_durations[] =   {  150, 100,  500 };
+   static const uint16_t antenna3_frequencies[] = { 1047,   1, 1047,  1, 1047, 0 };
+   static const uint16_t antenna3_durations[] =   {  150,  50,  150, 50, 500 };
+   if (!current_frequency)
+   {
+      current_frequency = (antenna_number == 0) ? antenna1_frequencies : ((antenna_number == 1) ? antenna2_frequencies : antenna3_frequencies);
+      current_duration = (antenna_number == 0) ? antenna1_durations : ((antenna_number == 1) ? antenna2_durations : antenna3_durations);
+      continue_current_sequence();
+   }
+}

@@ -15,5 +15,6 @@ void buzzer_indicate_unplugged(void);
 void buzzer_indicate_invalid_rtc_time(void);
 void buzzer_indicate_error(void);
 void buzzer_indicate_location(void);
+void buzzer_indicate_antenna(uint32_t antenna_number);
 
 #endif  // ifndef __BUZZER_HEADER_H__
