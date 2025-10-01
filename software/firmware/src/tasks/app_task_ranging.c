@@ -107,7 +107,7 @@ static void handle_notification(app_notification_t notification)
       {
          motion_changed = false;
          const bool in_motion = imu_read_in_motion();
-         storage_write_motion_status(in_motion);
+         storage_write_motion_status(in_motion ? IN_MOTION : NOT_IN_MOTION);
          print("INFO: Motion change detected: %s\n", in_motion ? "MOVING" : "STATIONARY");
       }
       if (imu_data_ready)
@@ -415,7 +415,7 @@ void AppTaskRanging(void *uid)
    imu_enable_data_outputs(IMU_MOTION_DETECT, 100000);
 #endif
 #ifndef _TEST_NO_STORAGE
-   storage_write_motion_status(imu_read_in_motion());
+   storage_write_motion_status(imu_read_in_motion() ? IN_MOTION : NOT_IN_MOTION);
 #endif
 
    // Retrieve current experiment details from non-volatile storage

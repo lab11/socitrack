@@ -10,6 +10,8 @@
 
 typedef enum { ROLE_IDLE = 10, ROLE_MASTER, ROLE_PARTICIPANT, ROLE_ASLEEP } schedule_role_t;
 
+typedef enum { NOT_IN_MOTION = 0, IN_MOTION, NOT_ON_CHARGER, ON_CHARGER } motion_code_t;
+
 typedef enum {
    APP_NOTIFY_VERIFY_CONFIGURATION = 0b00000001,
    APP_NOTIFY_NETWORK_LOST = 0b00000010,
@@ -48,7 +50,7 @@ bool ranging_active(void);
 // Storage Task Public Functions
 void storage_flush_and_shutdown(void);
 void storage_write_battery_level(uint32_t battery_voltage_mV);
-void storage_write_motion_status(bool in_motion);
+void storage_write_motion_status(motion_code_t motion_code);
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset);
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices);
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len);

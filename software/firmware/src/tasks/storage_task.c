@@ -94,10 +94,10 @@ void storage_write_battery_level(uint32_t battery_voltage_mV)
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
-void storage_write_motion_status(bool in_motion)
+void storage_write_motion_status(motion_code_t motion_code)
 {
    const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
-   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = in_motion, .type = STORAGE_TYPE_MOTION };
+   const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = (uint32_t)motion_code, .type = STORAGE_TYPE_MOTION };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
@@ -147,7 +147,7 @@ void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
 
 void storage_flush_and_shutdown(void) {}
 void storage_write_battery_level(uint32_t battery_voltage_mV) {}
-void storage_write_motion_status(bool in_motion) {}
+void storage_write_motion_status(motion_code_t motion_code) {}
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices) {}
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
