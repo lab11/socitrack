@@ -190,8 +190,14 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
             else:
                i += 1
          elif data[i] == STORAGE_TYPE_IMU:
-            if data[i+5] <= MAX_IMU_DATA_LENGTH:
-               i += 6 + data[i+5]
+            imu_length = data[i+5]
+            if imu_length <= MAX_IMU_DATA_LENGTH:
+               log_data[timestamp]['i'] = [
+                  struct.unpack('<H', data[i+6:i+8])[0],
+                  struct.unpack('<H', data[i+8:i+10])[0],
+                  struct.unpack('<H', data[i+10:i+12])[0]
+               ]
+               i += 5 + imu_length
             else:
                i += 1
          elif data[i] == STORAGE_TYPE_BLE_SCAN:
