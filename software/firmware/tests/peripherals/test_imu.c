@@ -14,10 +14,10 @@ static void data_ready(imu_data_type_t data_types_ready)
    static uint8_t accuracy;
 
    // Read and print a summary of the IMU data
-   if ((data_types_ready & IMU_LINEAR_ACCELEROMETER))
+   if ((data_types_ready & IMU_ACCELEROMETER))
    {
-      imu_read_linear_accel_data(&q_x, &q_y, &q_z, &accuracy);
-      imu_convert_q_format_to_float(IMU_LINEAR_ACCELEROMETER, q_x, q_y, q_z, 0, 0, &x, &y, &z, NULL, NULL);
+      imu_read_accel_data(&q_x, &q_y, &q_z, &accuracy);
+      imu_convert_q_format_to_float(IMU_ACCELEROMETER, q_x, q_y, q_z, 0, 0, &x, &y, &z, NULL, NULL);
       print("Accelerometer Data: X = %0.4f, Y = %0.4f, Z = %0.4f (Accuracy = %u)\n", x, y, z, accuracy);
    }
    if ((data_types_ready & IMU_GYROSCOPE))
@@ -38,7 +38,7 @@ int main(void)
    // Register IMU data callbacks and sensors of interest
    imu_register_motion_change_callback(motion_changed);
    imu_register_data_ready_callback(data_ready);
-   imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
+   imu_enable_data_outputs(IMU_ACCELEROMETER | IMU_MOTION_DETECT, 500000);
 
    while (true)
    {

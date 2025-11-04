@@ -1314,7 +1314,7 @@ static void imu_isr(void *args)
       // Notify the appropriate data callback
       if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
          motion_change_callback(in_motion);
-      else if ((data_type != IMU_UNKNOWN) && data_ready_callback)
+      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
          data_ready_callback(data_type);
    }
 }

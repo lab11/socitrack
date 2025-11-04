@@ -256,10 +256,10 @@ static void motion_change_handler(bool in_motion)
 static void data_ready_handler(imu_data_type_t data_types_ready)
 {
    // Notify the app about a change in IMU data
-   if (data_types_ready == IMU_LINEAR_ACCELEROMETER)
+   if (data_types_ready & IMU_ACCELEROMETER)
    {
       imu_data_ready = true;
-      imu_read_linear_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
+      imu_read_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
    }
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
@@ -410,9 +410,9 @@ void AppTaskRanging(void *uid)
    imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(data_ready_handler);
 #ifdef _TEST_IMU_DATA
-   imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
+   imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
 #else
-   imu_enable_data_outputs(IMU_MOTION_DETECT, 100000);
+   imu_enable_data_outputs(IMU_ACCELEROMETER | IMU_MOTION_DETECT, 500000);
 #endif
 #ifndef _TEST_NO_STORAGE
    storage_write_motion_status(imu_read_in_motion() ? IN_MOTION : NOT_IN_MOTION);

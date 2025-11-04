@@ -23,7 +23,7 @@
 #define STAT_DATA_LEN       1
 
 // Burst data transfer definitions
-#define BURST_READ_BASE_ADDR    BNO055_GYRO_DATA_X_LSB_ADDR
+#define BURST_READ_BASE_ADDR    BNO055_ACCEL_DATA_X_LSB_ADDR
 #define BURST_READ_LAST_ADDR    BNO055_INTR_STAT_ADDR
 #define BURST_READ_LEN          (BURST_READ_LAST_ADDR - BURST_READ_BASE_ADDR + 1)
 
@@ -307,7 +307,7 @@ typedef struct
 
 static void *i2c_handle;
 static volatile bool previously_in_motion;
-static uint32_t imu_buffer[BURST_READ_LEN];
+static uint8_t imu_buffer[BURST_READ_LEN];
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
 static bool imu_is_initialized;
@@ -339,8 +339,7 @@ static void i2c_write8(uint8_t reg_number, uint8_t reg_value)
 static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
 {
    // Read the device motion status and trigger the registered callback
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   const uint8_t interrupt_status = *(raw_data + BNO055_INTR_STAT_ADDR - BURST_READ_BASE_ADDR);
+   const uint8_t interrupt_status = imu_buffer[BNO055_INTR_STAT_ADDR - BURST_READ_BASE_ADDR];
    const bool in_motion_fired = interrupt_status & ACC_AM, no_motion_fired = interrupt_status & ACC_NM;
    if ((in_motion_fired && !previously_in_motion) || (no_motion_fired && previously_in_motion))
    {
@@ -359,6 +358,8 @@ static void i2c_read_complete(void *pCallbackCtxt, uint32_t transactionStatus)
          data_types |= IMU_MAGNETOMETER;
       if (interrupt_status & GYR_DRDY)
          data_types |= IMU_GYROSCOPE;
+      if (in_motion_fired && (data_types == IMU_UNKNOWN))
+         data_types |= IMU_ACCELEROMETER;
       data_ready_callback(data_types);
    }
 }
@@ -418,7 +419,7 @@ static void i2c_read(uint8_t reg_number, uint8_t *read_buffer, uint32_t buffer_l
 static void imu_isr(void *args)
 {
    // Initiate an IMU burst read
-   i2c_read(BURST_READ_BASE_ADDR, (uint8_t*)imu_buffer, BURST_READ_LEN, true);
+   i2c_read(BURST_READ_BASE_ADDR, imu_buffer, BURST_READ_LEN, true);
 }
 
 void imu_iom_isr(void)
@@ -534,7 +535,7 @@ bool imu_init(void)
    const am_hal_iom_config_t i2c_config =
    {
       .eInterfaceMode = AM_HAL_IOM_I2C_MODE,
-      .ui32ClockFreq = AM_HAL_IOM_100KHZ,
+      .ui32ClockFreq = AM_HAL_IOM_400KHZ,
       .eSpiMode = 0,
       .pNBTxnBuf = command_queue_buffer,
       .ui32NBTxnBufLength = sizeof(command_queue_buffer) / sizeof(uint32_t)
@@ -679,8 +680,7 @@ void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 
 void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   int16_t* accel_data = (int16_t*)(raw_data + BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+   int16_t* accel_data = (int16_t*)&imu_buffer[BNO055_LINEAR_ACCEL_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR];
    *x = accel_data[0];
    *y = accel_data[1];
    *z = accel_data[2];
@@ -689,8 +689,7 @@ void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *acc
 
 void imu_read_gravity_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   int16_t* accel_data = (int16_t*)(raw_data + BNO055_GRAVITY_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+   int16_t* accel_data = (int16_t*)&imu_buffer[BNO055_GRAVITY_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR];
    *x = accel_data[0];
    *y = accel_data[1];
    *z = accel_data[2];
@@ -699,8 +698,7 @@ void imu_read_gravity_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy
 
 void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z, int16_t *radian_accuracy, uint8_t *accuracy)
 {
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   int16_t* quaternion_data = (int16_t*)(raw_data + BNO055_QUATERNION_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+   int16_t* quaternion_data = (int16_t*)&imu_buffer[BNO055_QUATERNION_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR];
    //temporary fix of MSB sign bit flipping problem
    for (uint8_t i = 0; i < 4; i++)
    {
@@ -719,8 +717,7 @@ void imu_read_quaternion_data(int16_t *w, int16_t *x, int16_t *y, int16_t *z, in
 
 void imu_read_gyro_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {
-   uint8_t *raw_data = (uint8_t*)imu_buffer;
-   int16_t* gyro_data = (int16_t*)(raw_data + BNO055_GYRO_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR);
+   int16_t* gyro_data = (int16_t*)&imu_buffer[BNO055_GYRO_DATA_X_LSB_ADDR - BURST_READ_BASE_ADDR];
    *x = gyro_data[0];
    *y = gyro_data[1];
    *z = gyro_data[2];
