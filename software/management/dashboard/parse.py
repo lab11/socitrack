@@ -74,11 +74,11 @@ def process_tottag_data(data, experiment_start_time):
                i += 1
          elif data[i] == STORAGE_TYPE_IMU:
             imu_length = data[i+5]
-            if imu_length <= MAX_IMU_DATA_LENGTH:
+            if imu_length == IMU_DATA_LENGTH:
                log_data[timestamp]['i'] = [
-                  struct.unpack('<H', data[i+6:i+8])[0],
-                  struct.unpack('<H', data[i+8:i+10])[0],
-                  struct.unpack('<H', data[i+10:i+12])[0]
+                  struct.unpack('<h', data[i+6:i+8])[0],
+                  struct.unpack('<h', data[i+8:i+10])[0],
+                  struct.unpack('<h', data[i+10:i+12])[0]
                ]
                i += 5 + imu_length
             else:

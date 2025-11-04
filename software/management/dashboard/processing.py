@@ -90,6 +90,25 @@ def get_motion_time_series(data, tottag_label):
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in motions.keys()])
     plot_data(f'Motion Status for {tottag_label}', 'Date and Time', 'Motion Status', timestamps, motions)
 
+def get_imu_time_series(data, tottag_label):
+    imu_data = data.loc['i'].dropna()
+    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in imu_data.keys()])
+    x_data = imu_data.str[0]
+    y_data = imu_data.str[1]
+    z_data = imu_data.str[2]
+    plt.close()
+    plt.title(f'IMU Data for {tottag_label}')
+    axis = plt.gca()
+    axis.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
+    axis.xaxis.set_label_text('Date and Time')
+    axis.yaxis.set_label_text('IMU Data')
+    axis.figure.autofmt_xdate(rotation=45, bottom=0.3)
+    plt.plot(timestamps, x_data, label='X-axis')
+    plt.plot(timestamps, y_data, label='Y-axis')
+    plt.plot(timestamps, z_data, label='Z-axis')
+    plt.legend()
+    plt.show()
+
 def get_ble_scan_time_series(data, tottag_label):
     ble_devices = data.loc['b'].apply(lambda val: 0 if not isinstance(val, list) or not len(val) else len(val))
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ble_devices.keys()])

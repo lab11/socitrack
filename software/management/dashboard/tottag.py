@@ -50,9 +50,9 @@ USB_SET_TIMESTAMP_COMMAND = 0x14
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
 MAX_RANGING_DISTANCE_MM = 16000
-MAX_IMU_DATA_LENGTH = 10
 MAX_LABEL_LENGTH = 16
 MAX_NUM_DEVICES = 10
+IMU_DATA_LENGTH = 7
 
 STORAGE_TYPE_VOLTAGE = 1
 STORAGE_TYPE_CHARGING_EVENT = 2
@@ -191,11 +191,11 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
                i += 1
          elif data[i] == STORAGE_TYPE_IMU:
             imu_length = data[i+5]
-            if imu_length <= MAX_IMU_DATA_LENGTH:
+            if imu_length == IMU_DATA_LENGTH:
                log_data[timestamp]['i'] = [
-                  struct.unpack('<H', data[i+6:i+8])[0],
-                  struct.unpack('<H', data[i+8:i+10])[0],
-                  struct.unpack('<H', data[i+10:i+12])[0]
+                  struct.unpack('<h', data[i+6:i+8])[0],
+                  struct.unpack('<h', data[i+8:i+10])[0],
+                  struct.unpack('<h', data[i+10:i+12])[0]
                ]
                i += 5 + imu_length
             else:
