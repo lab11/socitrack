@@ -1,3 +1,10 @@
+# Changes for Rev P.2
+
+ - Update DRC per MF request
+   - Min annular ring 2mil -> 3mil
+   - Min spacings (via-X) 4mil -> 3mil
+   - Nudge handful of components, vias, wires as-required for new DRC
+
 # Changes from Rev O
 
  - Update sch with explicit NC pins
