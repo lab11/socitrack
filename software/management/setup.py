@@ -1,14 +1,11 @@
 import setuptools
 
-with open('requirements.txt', encoding='utf8') as file:
-   install_deps = [line for line in file]
-
 with open('README.rst', 'r', encoding='utf8') as fh:
    long_description = fh.read()
 
 setuptools.setup(
    name='tottag',
-   version='1.0.6',
+   version='1.1.0',
    author='Will Hedgecock',
    author_email='ronald.w.hedgecock@vanderbilt.edu',
    description='TotTag Management Dashboard',
@@ -18,7 +15,18 @@ setuptools.setup(
    package_dir={'tottag': 'dashboard'},
    packages=['tottag'],
    include_package_data=True,
-   install_requires=install_deps,
+   install_requires=[
+      'bleak',
+      'matplotlib',
+      'numpy',
+      'pandas',
+      'pytz',
+      'scipy',
+      'pyserial',
+      'babel',
+      'tzlocal',
+      'tk',
+   ],
    classifiers=[
       'Programming Language :: Python :: 3',
       'Operating System :: OS Independent',

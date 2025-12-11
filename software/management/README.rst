@@ -10,9 +10,14 @@ This directory contains all source code for the TotTag Management Dashboard. All
 Installation
 ------------
 
-The easiest way to install this tool is by cloning the SociTrack repository to your hard drive, navigating to the ``software/management`` directory, and issuing the following command in a terminal:
+The easiest way to install this tool is through `pip` by entering:
 
-``sudo python3 -m pip install .``
+``python3 -m pip install tottag``
+
+If you wish to install the package manually or develop it further, you should first clone the `SociTrack repository <https://github.com/lab11/socitrack>`_ to
+your hard drive, `cd` into the ``software/management`` directory, then issue the following command in a terminal:
+
+``python3 -m pip install -e .``
 
 
 Usage

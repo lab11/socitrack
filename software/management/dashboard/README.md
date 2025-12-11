@@ -9,9 +9,14 @@
 
 The TotTag dashboard is a GUI for interacting with the tags.
 
-To bring up the dashboard:
+To bring up the dashboard without installing it first, enter:
 ```bash
 python3 tottag.py
+```
+
+If the dashboard has been installed, you can access it anywhere by entering:
+```bash
+tottag
 ```
 
 ### Disconnected state
