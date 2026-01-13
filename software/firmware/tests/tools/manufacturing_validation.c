@@ -95,7 +95,7 @@ static void rx_done_callback(const dwt_cb_data_t *rxData)
    // Illuminate the LEDs based on the received signal level
    const float signal_level = ranging_radio_received_signal_level(false);
    led_off(LED_ALL);
-   led_on((signal_level < -85.0f) ? LED_RED : ((signal_level < -70.0f) ? LED_YELLOW : LED_GREEN));
+   led_on((signal_level < -85.0f) ? LED_RED : ((signal_level < -75.0f) ? LED_YELLOW : LED_GREEN));
    buzzer_indicate_antenna(antenna);
 
    // Switch to the next antenna and re-enable reception
