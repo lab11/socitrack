@@ -12,7 +12,7 @@
 static void *spi_handle;
 static dwt_config_t dw_config;
 static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
-static volatile bool spi_ready, initialized;
+static volatile bool spi_ready, initialized = false;
 static uint8_t eui64_array[8];
 
 
@@ -293,6 +293,10 @@ bool ranging_radio_init(uint8_t *uid)
 
 void ranging_radio_deinit(void)
 {
+   // Do not continue if already de-initialized
+   if (!initialized)
+      return;
+
    // Ensure that the radio is in deep sleep mode and disable all SPI communications
    ranging_radio_sleep(true);
    while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);

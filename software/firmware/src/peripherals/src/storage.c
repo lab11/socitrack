@@ -73,7 +73,7 @@ static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE];
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
-static volatile bool is_reading, in_maintenance_mode, disabled;
+static volatile bool is_reading, in_maintenance_mode, disabled, is_initialized = false;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -587,6 +587,10 @@ static bool is_first_boot(void)
 
 bool storage_init(void)
 {
+   // Return if already initialized
+   if (is_initialized)
+      return true;
+
    // Create an SPI configuration structure
    is_reading = in_maintenance_mode = disabled = false;
    const am_hal_iom_config_t spi_config =
@@ -744,11 +748,16 @@ bool storage_init(void)
    enter_low_power_mode();
    configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
    am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   is_initialized = true;
    return true;
 }
 
 void storage_deinit(void)
 {
+   // Only continue if initialized
+   if (!is_initialized)
+      return;
+
    // Disable all SPI communications
    if (!in_maintenance_mode)
    {
