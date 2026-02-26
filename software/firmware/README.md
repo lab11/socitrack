@@ -40,21 +40,21 @@ Updating the Firmware
 ---------------------
 
 If you ever need to update the firmware on your TotTag, you can always obtain the latest firmware
-and flash it onto your device by doing the following:
+and flash it onto your device by doing the following (**REPLACE BOARD_REV=X WITH THE REVISION OF THE BOARD YOU ARE FLASHING**):
 
 ```
 cd socitrack
 git pull
 cd software/firmware
 make clean
-make flash
+make BOARD_REV=P flash
 ```
 
 It is important to watch the end of the output whenever flashing the firmware to your device.
 A lot of text will fly by, but near the end you should see:
 
 ```
-Downloading file [_build/node_sdk15_s140.hex]...
+Downloading file [bin/SociTrack.bin]...
 Comparing flash   [100%] Done.
 Erasing flash     [100%] Done.
 Programming flash [100%] Done.
@@ -64,7 +64,7 @@ Verifying flash   [100%] Done.
 Or possibly just:
 
 ```
-Downloading file [_build/node_sdk15_s140.hex]...
+Downloading file [bin/SociTrack.bin]...
 Comparing flash   [100%] Done.
 ```
 
