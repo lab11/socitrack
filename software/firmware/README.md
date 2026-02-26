@@ -40,7 +40,7 @@ Updating the Firmware
 ---------------------
 
 If you ever need to update the firmware on your TotTag, you can always obtain the latest firmware
-and flash it onto your device by doing the following (**REPLACE BOARD_REV=X WITH THE REVISION OF THE BOARD YOU ARE FLASHING**):
+and flash it onto your device by doing the following (**REPLACE `BOARD_REV=X` WITH THE REVISION OF THE BOARD YOU ARE FLASHING**):
 
 ```
 cd socitrack
