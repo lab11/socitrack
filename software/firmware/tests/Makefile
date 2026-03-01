@@ -334,6 +334,7 @@ full_exp: $(CONFIG) $(CONFIG)/main.o $(CONFIG)/SEGGER_RTT.o $(CONFIG)/$$(TARGET)
 
 imu: TARGET = TestIMU
 imu: SRC += test_imu.c
+imu: CFLAGS += -D_TEST_IMU_DATA -DIMU_SHTP_REPORT_TRANSFER_SIZE=64
 imu: $(CONFIG) $(CONFIG)/test_imu.o $(CONFIG)/$$(TARGET).bin program
 
 led: TARGET = TestLED

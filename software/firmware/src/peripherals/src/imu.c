@@ -85,6 +85,26 @@ enum Channels
 #define SENSOR_REPORTID_DEAD_RECKONING_POSE             0X2D
 #define SENSOR_REPORTID_WHEEL_ENCODER                   0X2E
 
+enum
+{
+   BASE_TIMESTAMP_LENGTH = 5,
+   TIMESTAMP_REBASE_LENGTH = 5,
+   TAP_INPUT_REPORT_LENGTH = 5,
+   TWO_BYTE_INPUT_REPORT_LENGTH = 6,
+   STABILITY_INPUT_REPORT_LENGTH = 6,
+   FOUR_BYTE_INPUT_REPORT_LENGTH = 8,
+   THREE_AXIS_INPUT_REPORT_LENGTH = 10,
+   QUATERNION_INPUT_REPORT_LENGTH = 12,
+   STEP_COUNTER_INPUT_REPORT_LENGTH = 12,
+   WHEEL_ENCODER_INPUT_REPORT_LENGTH = 12,
+   ROTATION_VECTOR_INPUT_REPORT_LENGTH = 14,
+   RAW_SENSOR_INPUT_REPORT_LENGTH = 16,
+   UNCALIBRATED_SENSOR_INPUT_REPORT_LENGTH = 16,
+   PERSONAL_ACTIVITY_INPUT_REPORT_LENGTH = 16,
+   OPTICAL_FLOW_INPUT_REPORT_LENGTH = 24,
+   DEAD_RECKONING_POSE_INPUT_REPORT_LENGTH = 60,
+};
+
 // Addressing
 #define BNO_W_ADDR                                      0x96
 #define BNO_R_ADDR                                      0x97
@@ -606,8 +626,8 @@ typedef struct __attribute__((packed)) {
    uint8_t sensorId;   // Which sensor produced this event.
    uint8_t sequence;   // The sequence number increments once for each report sent. Gaps in the sequence numbers indicate missing or dropped reports.
    uint8_t status;     // bits 7-5: reserved, 4-2: exponent delay, 1-0: Accuracy 0 - Unreliable 1 - Accuracy low 2 - Accuracy medium 3 - Accuracy high
-   uint64_t timestamp; // [us]
-   uint32_t delay;     // [us] value is delay * 2^exponent (see status)
+   int32_t timestampOffset_us; // Sample time relative to the packet's HINT assertion.
+   uint32_t delay;     // [us]
    union {
       BNO_RawAccelerometer_t RawAccelerometer;
       BNO_Accelerometer_t Accelerometer;
@@ -658,6 +678,21 @@ typedef struct __attribute__((packed)) {
 static void *spi_handle;
 static bool reset_occurred, save_dcd_status;
 static volatile uint8_t awaiting_interrupt_count;
+#ifdef _TEST_IMU_DATA
+#define RX_CARGO_SIZE                                   1024
+#ifndef IMU_SHTP_REPORT_TRANSFER_SIZE
+#define IMU_SHTP_REPORT_TRANSFER_SIZE                   RX_PACKET_SIZE
+#endif
+#if (IMU_SHTP_REPORT_TRANSFER_SIZE <= HEADER_SIZE) || (IMU_SHTP_REPORT_TRANSFER_SIZE > RX_PACKET_SIZE)
+#error "IMU_SHTP_REPORT_TRANSFER_SIZE must be greater than HEADER_SIZE and no larger than RX_PACKET_SIZE"
+#endif
+static uint32_t shtp_continuation_count;
+static bool shtp_fragment_completes_cargo, shtp_cargo_active, shtp_cargo_reassembly_failed;
+static uint8_t shtp_expected_sequence;
+static uint16_t shtp_fragment_length, shtp_cargo_length;
+static uint32_t batch_interval_us, isr_timestamp_ticks, shtp_cargo_timestamp_ticks;
+static uint8_t shtp_cargo[RX_CARGO_SIZE];
+#endif
 static volatile bool imu_is_initialized = false, in_motion;
 static uint8_t sequence_number[SEQUENCE_SIZE], command_sequence_number;
 static uint8_t shtp_header[HEADER_SIZE], shtp_data[RX_PACKET_SIZE];
@@ -793,166 +828,238 @@ static bool receive_packet()
    // Read the packet header to determine the total number of pending bytes
    spi_read(sizeof(shtp_header), shtp_header, true);
    const uint16_t data_length = *(uint16_t*)shtp_header & 0x7FFF;
-   if (!data_length || (data_length > RX_PACKET_SIZE))
+   if (data_length < HEADER_SIZE)
    {
       spi_read(0, NULL, false);
       return false;
    }
 
-   // Read the remainder of the packet
-   spi_read(data_length - 4, shtp_data, false);
+#ifdef _TEST_IMU_DATA
+   if ((shtp_header[2] != CHANNEL_REPORTS) && shtp_cargo_active)
+   {
+      // A channel change before completion means the previous cargo was lost.
+      shtp_cargo_active = false;
+      shtp_cargo_reassembly_failed = true;
+      shtp_cargo_length = 0;
+   }
+
+   // Read one complete transfer or as much of a report cargo as the configured transfer size permits.
+   const uint16_t remaining_length = data_length - HEADER_SIZE;
+   const uint16_t transfer_size = (shtp_header[2] == CHANNEL_REPORTS) ?
+      IMU_SHTP_REPORT_TRANSFER_SIZE : RX_PACKET_SIZE;
+   const uint16_t transfer_capacity = transfer_size - HEADER_SIZE;
+   if ((shtp_header[2] != CHANNEL_REPORTS) && (remaining_length > transfer_capacity))
+   {
+      spi_read(0, NULL, false);
+      return false;
+   }
+
+   shtp_fragment_length = (remaining_length < transfer_capacity) ? remaining_length : transfer_capacity;
+   shtp_fragment_completes_cargo = shtp_fragment_length == remaining_length;
+   spi_read(shtp_fragment_length, shtp_data, false);
+#else
+   if (data_length > RX_PACKET_SIZE)
+   {
+      spi_read(0, NULL, false);
+      return false;
+   }
+   spi_read(data_length - HEADER_SIZE, shtp_data, false);
+#endif
    return true;
 }
 
-static imu_data_type_t parse_input_report(void)
+#ifdef _TEST_IMU_DATA
+static bool assemble_report_cargo(uint32_t transfer_timestamp_ticks)
+{
+   const bool continuation = (shtp_header[1] & 0x80) != 0;
+   const uint8_t sequence = shtp_header[3];
+
+   if (!continuation)
+   {
+      shtp_continuation_count = 0;
+      shtp_cargo_active = true;
+      shtp_cargo_reassembly_failed =
+         ((*(uint16_t*)shtp_header & 0x7FFF) - HEADER_SIZE) > RX_CARGO_SIZE;
+      shtp_cargo_length = 0;
+      shtp_cargo_timestamp_ticks = transfer_timestamp_ticks;
+   }
+   else
+   {
+      ++shtp_continuation_count;
+      if (!shtp_cargo_active || (sequence != shtp_expected_sequence))
+      {
+         // The prefix was lost. Consume the remaining fragments without attempting to parse them.
+         shtp_cargo_active = true;
+         shtp_cargo_reassembly_failed = true;
+         shtp_cargo_length = 0;
+      }
+   }
+   shtp_expected_sequence = sequence + 1;
+
+   if (!shtp_cargo_reassembly_failed)
+   {
+      memcpy(&shtp_cargo[shtp_cargo_length], shtp_data, shtp_fragment_length);
+      shtp_cargo_length += shtp_fragment_length;
+   }
+
+   if (!shtp_fragment_completes_cargo)
+      return false;
+
+   const bool cargo_ready = shtp_cargo_active && !shtp_cargo_reassembly_failed;
+   shtp_cargo_active = false;
+   if (cargo_ready)
+      isr_timestamp_ticks = shtp_cargo_timestamp_ticks;
+   return cargo_ready;
+}
+#endif
+
+static imu_data_type_t parse_input_report(const uint8_t *report, int32_t timestamp_offset_us)
 {
    // Read the packet details
    static BNO_SensorValue_t data;
-   data.sensorId = shtp_data[5];
-   data.timestamp = *(uint32_t *)&shtp_data[1];
-   data.sequence = shtp_data[16];
-   data.status = shtp_data[7] & 0x03;
+   data.sensorId = report[0];
+   data.sequence = report[1];
+   data.status = report[2] & 0x03;
+   data.timestampOffset_us = timestamp_offset_us;
+   data.delay = 100 * ((((uint16_t)report[2] >> 2) << 8) | report[3]);
 
    // Read sensor-specific details
    imu_data_type_t data_type = IMU_UNKNOWN;
    switch(data.sensorId)
    {
       case SENSOR_REPORTID_RAW_ACCELEROMETER:
-         data.value.RawAccelerometer.X = *(int16_t*)&shtp_data[9];
-         data.value.RawAccelerometer.Y = *(int16_t*)&shtp_data[11];
-         data.value.RawAccelerometer.Z = *(int16_t*)&shtp_data[13];
-         data.value.RawAccelerometer.TimeStamp = *(uint32_t*)&shtp_data[17];
+         data.value.RawAccelerometer.X = *(int16_t*)&report[4];
+         data.value.RawAccelerometer.Y = *(int16_t*)&report[6];
+         data.value.RawAccelerometer.Z = *(int16_t*)&report[8];
+         data.value.RawAccelerometer.TimeStamp = *(uint32_t*)&report[12];
          data_type = IMU_ACCELEROMETER;
          break;
       case SENSOR_REPORTID_ACCELEROMETER:
-         data.value.Accelerometer.X = *(int16_t*)&shtp_data[9];
-         data.value.Accelerometer.Y = *(int16_t*)&shtp_data[11];
-         data.value.Accelerometer.Z = *(int16_t*)&shtp_data[13];
+         data.value.Accelerometer.X = *(int16_t*)&report[4];
+         data.value.Accelerometer.Y = *(int16_t*)&report[6];
+         data.value.Accelerometer.Z = *(int16_t*)&report[8];
          data_type = IMU_ACCELEROMETER;
          break;
       case SENSOR_REPORTID_LINEAR_ACCELERATION:
-         data.value.LinearAcceleration.X = *(int16_t*)&shtp_data[9];
-         data.value.LinearAcceleration.Y = *(int16_t*)&shtp_data[11];
-         data.value.LinearAcceleration.Z = *(int16_t*)&shtp_data[13];
+         data.value.LinearAcceleration.X = *(int16_t*)&report[4];
+         data.value.LinearAcceleration.Y = *(int16_t*)&report[6];
+         data.value.LinearAcceleration.Z = *(int16_t*)&report[8];
          data_type = IMU_LINEAR_ACCELEROMETER;
          break;
       case SENSOR_REPORTID_GRAVITY:
-         data.value.Gravity.X = *(int16_t*)&shtp_data[9];
-         data.value.Gravity.Y = *(int16_t*)&shtp_data[11];
-         data.value.Gravity.Z = *(int16_t*)&shtp_data[13];
+         data.value.Gravity.X = *(int16_t*)&report[4];
+         data.value.Gravity.Y = *(int16_t*)&report[6];
+         data.value.Gravity.Z = *(int16_t*)&report[8];
          data_type = IMU_GRAVITY;
          break;
       case SENSOR_REPORTID_RAW_GYROSCOPE:
-         data.value.RawGyroscope.X = *(int16_t*)&shtp_data[9];
-         data.value.RawGyroscope.Y = *(int16_t*)&shtp_data[11];
-         data.value.RawGyroscope.Z = *(int16_t*)&shtp_data[13];
-         data.value.RawGyroscope.Temperature = *(int16_t*)&shtp_data[15];
-         data.value.RawGyroscope.TimeStamp = *(uint32_t*)&shtp_data[17];
+         data.value.RawGyroscope.X = *(int16_t*)&report[4];
+         data.value.RawGyroscope.Y = *(int16_t*)&report[6];
+         data.value.RawGyroscope.Z = *(int16_t*)&report[8];
+         data.value.RawGyroscope.Temperature = *(int16_t*)&report[10];
+         data.value.RawGyroscope.TimeStamp = *(uint32_t*)&report[12];
          data_type = IMU_GYROSCOPE;
          break;
       case SENSOR_REPORTID_UNCALIBRATED_GYRO:
-         data.value.Gyroscope.X = *(int16_t*)&shtp_data[9];
-         data.value.Gyroscope.Y = *(int16_t*)&shtp_data[11];
-         data.value.Gyroscope.Z = *(int16_t*)&shtp_data[13];
+         data.value.Gyroscope.X = *(int16_t*)&report[4];
+         data.value.Gyroscope.Y = *(int16_t*)&report[6];
+         data.value.Gyroscope.Z = *(int16_t*)&report[8];
          data_type = IMU_GYROSCOPE;
          break;
       case SENSOR_REPORTID_GYROSCOPE:
-         data.value.GyroscopeUncal.X = *(int16_t*)&shtp_data[9];
-         data.value.GyroscopeUncal.Y = *(int16_t*)&shtp_data[11];
-         data.value.GyroscopeUncal.Z = *(int16_t*)&shtp_data[13];
-         data.value.GyroscopeUncal.BiasX = *(int16_t*)&shtp_data[15];
-         data.value.GyroscopeUncal.BiasY = *(int16_t*)&shtp_data[17];
-         data.value.GyroscopeUncal.BiasZ = *(int16_t*)&shtp_data[19];
+         data.value.Gyroscope.X = *(int16_t*)&report[4];
+         data.value.Gyroscope.Y = *(int16_t*)&report[6];
+         data.value.Gyroscope.Z = *(int16_t*)&report[8];
          data_type = IMU_GYROSCOPE;
          break;
       case SENSOR_REPORTID_RAW_MAGNETOMETER:
-         data.value.RawMagnetometer.X = *(int16_t*)&shtp_data[9];
-         data.value.RawMagnetometer.Y = *(int16_t*)&shtp_data[11];
-         data.value.RawMagnetometer.Z = *(int16_t*)&shtp_data[13];
-         data.value.RawMagnetometer.TimeStamp = *(uint32_t*)&shtp_data[17];
+         data.value.RawMagnetometer.X = *(int16_t*)&report[4];
+         data.value.RawMagnetometer.Y = *(int16_t*)&report[6];
+         data.value.RawMagnetometer.Z = *(int16_t*)&report[8];
+         data.value.RawMagnetometer.TimeStamp = *(uint32_t*)&report[12];
          data_type = IMU_MAGNETOMETER;
          break;
       case SENSOR_REPORTID_MAGNETIC_FIELD:
-         data.value.MagneticField.X = *(int16_t*)&shtp_data[9];
-         data.value.MagneticField.Y = *(int16_t*)&shtp_data[11];
-         data.value.MagneticField.Z = *(int16_t*)&shtp_data[13];
+         data.value.MagneticField.X = *(int16_t*)&report[4];
+         data.value.MagneticField.Y = *(int16_t*)&report[6];
+         data.value.MagneticField.Z = *(int16_t*)&report[8];
          data_type = IMU_MAGNETOMETER;
          break;
       case SENSOR_REPORTID_MAGNETIC_FIELD_UNCALIBRATED:
-         data.value.MagneticFieldUncal.X = *(int16_t*)&shtp_data[9];
-         data.value.MagneticFieldUncal.Y = *(int16_t*)&shtp_data[11];
-         data.value.MagneticFieldUncal.Z = *(int16_t*)&shtp_data[13];
-         data.value.MagneticFieldUncal.BiasX = *(int16_t*)&shtp_data[15];
-         data.value.MagneticFieldUncal.BiasY = *(int16_t*)&shtp_data[17];
-         data.value.MagneticFieldUncal.BiasZ = *(int16_t*)&shtp_data[19];
+         data.value.MagneticFieldUncal.X = *(int16_t*)&report[4];
+         data.value.MagneticFieldUncal.Y = *(int16_t*)&report[6];
+         data.value.MagneticFieldUncal.Z = *(int16_t*)&report[8];
+         data.value.MagneticFieldUncal.BiasX = *(int16_t*)&report[10];
+         data.value.MagneticFieldUncal.BiasY = *(int16_t*)&report[12];
+         data.value.MagneticFieldUncal.BiasZ = *(int16_t*)&report[14];
          data_type = IMU_MAGNETOMETER;
          break;
       case SENSOR_REPORTID_ROTATION_VECTOR:
-         data.value.RotationVector.I = *(int16_t*)&shtp_data[9];
-         data.value.RotationVector.J = *(int16_t*)&shtp_data[11];
-         data.value.RotationVector.K = *(int16_t*)&shtp_data[13];
-         data.value.RotationVector.Real = *(int16_t*)&shtp_data[15];
-         data.value.RotationVector.Accuracy = *(int16_t*)&shtp_data[17];
+         data.value.RotationVector.I = *(int16_t*)&report[4];
+         data.value.RotationVector.J = *(int16_t*)&report[6];
+         data.value.RotationVector.K = *(int16_t*)&report[8];
+         data.value.RotationVector.Real = *(int16_t*)&report[10];
+         data.value.RotationVector.Accuracy = *(int16_t*)&report[12];
          data_type = IMU_ROTATION_VECTOR;
          break;
       case SENSOR_REPORTID_GAME_ROTATION_VECTOR:
-         data.value.GameRotationVector.I = *(int16_t*)&shtp_data[9];
-         data.value.GameRotationVector.J = *(int16_t*)&shtp_data[11];
-         data.value.GameRotationVector.K = *(int16_t*)&shtp_data[13];
-         data.value.GameRotationVector.Real = *(int16_t*)&shtp_data[15];
+         data.value.GameRotationVector.I = *(int16_t*)&report[4];
+         data.value.GameRotationVector.J = *(int16_t*)&report[6];
+         data.value.GameRotationVector.K = *(int16_t*)&report[8];
+         data.value.GameRotationVector.Real = *(int16_t*)&report[10];
          data_type = IMU_GAME_ROTATION_VECTOR;
          break;
       case SENSOR_REPORTID_GEOMAGNETIC_ROTATION_VECTOR:
-         data.value.GeoMagRotationVector.I = *(int16_t*)&shtp_data[9];
-         data.value.GeoMagRotationVector.J = *(int16_t*)&shtp_data[11];
-         data.value.GeoMagRotationVector.K = *(int16_t*)&shtp_data[13];
-         data.value.GeoMagRotationVector.Real = *(int16_t*)&shtp_data[15];
-         data.value.GeoMagRotationVector.Accuracy = *(int16_t*)&shtp_data[17];
+         data.value.GeoMagRotationVector.I = *(int16_t*)&report[4];
+         data.value.GeoMagRotationVector.J = *(int16_t*)&report[6];
+         data.value.GeoMagRotationVector.K = *(int16_t*)&report[8];
+         data.value.GeoMagRotationVector.Real = *(int16_t*)&report[10];
+         data.value.GeoMagRotationVector.Accuracy = *(int16_t*)&report[12];
          data_type = IMU_ROTATION_VECTOR;
          break;
       case SENSOR_REPORTID_PRESSURE:
-         data.value.Pressure = (float)(*(int32_t*)&shtp_data[9]) * SCALE_Q20;
+         data.value.Pressure = (float)(*(int32_t*)&report[4]) * SCALE_Q20;
          break;
       case SENSOR_REPORTID_AMBIENT_LIGHT:
-         data.value.AmbientLight = (float)(*(int32_t*)&shtp_data[9]) * SCALE_Q8;
+         data.value.AmbientLight = (float)(*(int32_t*)&report[4]) * SCALE_Q8;
          break;
       case SENSOR_REPORTID_HUMIDITY:
-         data.value.Humidity = (float)(*(int16_t*)&shtp_data[9]) * SCALE_Q8;
+         data.value.Humidity = (float)(*(int16_t*)&report[4]) * SCALE_Q8;
          break;
       case SENSOR_REPORTID_PROXIMITY:
-         data.value.Proximity = (float)(*(int16_t*)&shtp_data[9]) * SCALE_Q4;
+         data.value.Proximity = (float)(*(int16_t*)&report[4]) * SCALE_Q4;
          break;
       case SENSOR_REPORTID_TEMPERATURE:
-         data.value.Temperature = (float)(*(int16_t*)&shtp_data[9]) * SCALE_Q7;
+         data.value.Temperature = (float)(*(int16_t*)&report[4]) * SCALE_Q7;
          break;
       case SENSOR_REPORTID_TAP_DETECTOR:
-         data.value.TapDetectorFlag = shtp_data[9];
+         data.value.TapDetectorFlag = report[4];
          break;
       case SENSOR_REPORTID_STEP_DETECTOR:
-         data.value.StepDetectorLatency = *(uint32_t*)&shtp_data[9];
+         data.value.StepDetectorLatency = *(uint32_t*)&report[4];
          break;
       case SENSOR_REPORTID_STEP_COUNTER:
-         data.value.StepCounter.Latency = *(uint32_t*)&shtp_data[9];
-         data.value.StepCounter.Steps = *(uint32_t*)&shtp_data[13];
+         data.value.StepCounter.Latency = *(uint32_t*)&report[4];
+         data.value.StepCounter.Steps = *(uint32_t*)&report[8];
          data_type = IMU_STEP_COUNTER;
          break;
       case SENSOR_REPORTID_SIGNIFICANT_MOTION:
-         data.value.SignificantMotion = *(uint16_t*)&shtp_data[9];
+         data.value.SignificantMotion = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_STABILITY_CLASSIFIER:
-         data.value.StabilityClassifier = shtp_data[9];
+         data.value.StabilityClassifier = report[4];
          break;
       case SENSOR_REPORTID_SHAKE_DETECTOR:
-         data.value.ShakeDetector = *(uint16_t*)&shtp_data[9];
+         data.value.ShakeDetector = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_FLIP_DETECTOR:
-         data.value.FlipDetector = *(uint16_t*)&shtp_data[9];
+         data.value.FlipDetector = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_PICKUP_DETECTOR:
-         data.value.PickupDetector = *(uint16_t*)&shtp_data[9];
+         data.value.PickupDetector = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_STABILITY_DETECTOR:
-         data.value.StabilityDetector = *(uint16_t*)&shtp_data[9];
+         data.value.StabilityDetector = *(uint16_t*)&report[4];
          if ((in_motion && (data.value.StabilityDetector & STABILITY_ENTERED)) ||
              (!in_motion && (data.value.StabilityDetector & STABILITY_EXITED)))
          {
@@ -961,89 +1068,89 @@ static imu_data_type_t parse_input_report(void)
          }
          break;
       case SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER:
-         data.value.PersonalActivityClassifier.Page = shtp_data[9] & 0x7F;
-         data.value.PersonalActivityClassifier.LastPage = ((shtp_data[9] & 0x80) != 0);
-         data.value.PersonalActivityClassifier.MostLikelyState = shtp_data[10];
+         data.value.PersonalActivityClassifier.Page = report[4] & 0x7F;
+         data.value.PersonalActivityClassifier.LastPage = ((report[4] & 0x80) != 0);
+         data.value.PersonalActivityClassifier.MostLikelyState = report[5];
          break;
       case SENSOR_REPORTID_SLEEP_DETECTOR:
-         data.value.SleepDetector = shtp_data[9];
+         data.value.SleepDetector = report[4];
          break;
       case SENSOR_REPORTID_TILT_DETECTOR:
-         data.value.TiltDetector = *(uint16_t*)&shtp_data[9];
+         data.value.TiltDetector = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_POCKET_DETECTOR:
-         data.value.PocketDetector = *(uint16_t*)&shtp_data[9];
+         data.value.PocketDetector = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_CIRCLE_DETECTOR:
-         data.value.CircleDetector = *(uint16_t*)&shtp_data[9];
+         data.value.CircleDetector = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_HEART_RATE_MONITOR:
-         data.value.HeartRateMonitor = *(uint16_t*)&shtp_data[9];
+         data.value.HeartRateMonitor = *(uint16_t*)&report[4];
          break;
       case SENSOR_REPORTID_ARVR_STABILIZED_RV:
-         data.value.ArVrStabilizedRV.I = (float)(*(int16_t*)&shtp_data[9]) * SCALE_Q14;
-         data.value.ArVrStabilizedRV.J = (float)(*(int16_t*)&shtp_data[11]) * SCALE_Q14;
-         data.value.ArVrStabilizedRV.K = (float)(*(int16_t*)&shtp_data[13]) * SCALE_Q14;
-         data.value.ArVrStabilizedRV.Real = (float)(*(int16_t*)&shtp_data[15]) * SCALE_Q14;
-         data.value.ArVrStabilizedRV.Accuracy = (float)(*(int16_t*)&shtp_data[17]) * SCALE_Q12;
+         data.value.ArVrStabilizedRV.I = (float)(*(int16_t*)&report[4]) * SCALE_Q14;
+         data.value.ArVrStabilizedRV.J = (float)(*(int16_t*)&report[6]) * SCALE_Q14;
+         data.value.ArVrStabilizedRV.K = (float)(*(int16_t*)&report[8]) * SCALE_Q14;
+         data.value.ArVrStabilizedRV.Real = (float)(*(int16_t*)&report[10]) * SCALE_Q14;
+         data.value.ArVrStabilizedRV.Accuracy = (float)(*(int16_t*)&report[12]) * SCALE_Q12;
          break;
       case SENSOR_REPORTID_ARVR_STABILIZED_GRV:
-         data.value.ArVrStabilizedGRV.I = (float)(*(int16_t*)&shtp_data[9]) * SCALE_Q14;
-         data.value.ArVrStabilizedGRV.J = (float)(*(int16_t*)&shtp_data[11]) * SCALE_Q14;
-         data.value.ArVrStabilizedGRV.K = (float)(*(int16_t*)&shtp_data[13]) * SCALE_Q14;
-         data.value.ArVrStabilizedGRV.Real = (float)(*(int16_t*)&shtp_data[15]) * SCALE_Q14;
+         data.value.ArVrStabilizedGRV.I = (float)(*(int16_t*)&report[4]) * SCALE_Q14;
+         data.value.ArVrStabilizedGRV.J = (float)(*(int16_t*)&report[6]) * SCALE_Q14;
+         data.value.ArVrStabilizedGRV.K = (float)(*(int16_t*)&report[8]) * SCALE_Q14;
+         data.value.ArVrStabilizedGRV.Real = (float)(*(int16_t*)&report[10]) * SCALE_Q14;
          break;
       case SENSOR_REPORTID_GYRO_INTEGRATED_RV:
-         data.value.GyroIntegratedRV.I = (float)(*(int16_t*)&shtp_data[9]) * SCALE_Q14;
-         data.value.GyroIntegratedRV.J = (float)(*(int16_t*)&shtp_data[11]) * SCALE_Q14;
-         data.value.GyroIntegratedRV.J = (float)(*(int16_t*)&shtp_data[13]) * SCALE_Q14;
-         data.value.GyroIntegratedRV.Real = (float)(*(int16_t*)&shtp_data[15]) * SCALE_Q14;
-         data.value.GyroIntegratedRV.AngleVelX = (float)(*(int16_t*)&shtp_data[17]) * SCALE_Q10;
-         data.value.GyroIntegratedRV.AngleVelY = (float)(*(int16_t*)&shtp_data[19]) * SCALE_Q10;
-         data.value.GyroIntegratedRV.AngleVelZ = (float)(*(int16_t*)&shtp_data[21]) * SCALE_Q10;
+         data.value.GyroIntegratedRV.I = (float)(*(int16_t*)&report[4]) * SCALE_Q14;
+         data.value.GyroIntegratedRV.J = (float)(*(int16_t*)&report[6]) * SCALE_Q14;
+         data.value.GyroIntegratedRV.J = (float)(*(int16_t*)&report[8]) * SCALE_Q14;
+         data.value.GyroIntegratedRV.Real = (float)(*(int16_t*)&report[10]) * SCALE_Q14;
+         data.value.GyroIntegratedRV.AngleVelX = (float)(*(int16_t*)&report[12]) * SCALE_Q10;
+         data.value.GyroIntegratedRV.AngleVelY = (float)(*(int16_t*)&report[14]) * SCALE_Q10;
+         data.value.GyroIntegratedRV.AngleVelZ = (float)(*(int16_t*)&report[16]) * SCALE_Q10;
          break;
       case SENSOR_REPORTID_IZRO_MOTION_REQUEST:
-         data.value.IzroRequest.Intent = (BNO_IZroMotionIntent_t)shtp_data[9];
-         data.value.IzroRequest.Request = (BNO_IZroMotionRequest_t)shtp_data[10];
+         data.value.IzroRequest.Intent = (BNO_IZroMotionIntent_t)report[4];
+         data.value.IzroRequest.Request = (BNO_IZroMotionRequest_t)report[5];
          break;
       case SENSOR_REPORTID_RAW_OPTICAL_FLOW:
-         data.value.RawOptFlow.Dx = *(int16_t*)&shtp_data[9];
-         data.value.RawOptFlow.Dy = *(int16_t*)&shtp_data[11];
-         data.value.RawOptFlow.Iq = *(int16_t*)&shtp_data[13];
-         data.value.RawOptFlow.ResX = shtp_data[15];
-         data.value.RawOptFlow.ResY = shtp_data[16];
-         data.value.RawOptFlow.Shutter = shtp_data[17];
-         data.value.RawOptFlow.FrameMax = shtp_data[18];
-         data.value.RawOptFlow.FrameAvg = shtp_data[19];
-         data.value.RawOptFlow.FrameMin = shtp_data[20];
-         data.value.RawOptFlow.LaserOn = shtp_data[21];
-         data.value.RawOptFlow.Dt = *(int16_t*)&shtp_data[23];
-         data.value.RawOptFlow.TimeStamp = *(int32_t *)&shtp_data[25];
+         data.value.RawOptFlow.Dx = *(int16_t*)&report[4];
+         data.value.RawOptFlow.Dy = *(int16_t*)&report[6];
+         data.value.RawOptFlow.Iq = *(int16_t*)&report[8];
+         data.value.RawOptFlow.ResX = report[10];
+         data.value.RawOptFlow.ResY = report[11];
+         data.value.RawOptFlow.Shutter = report[12];
+         data.value.RawOptFlow.FrameMax = report[13];
+         data.value.RawOptFlow.FrameAvg = report[14];
+         data.value.RawOptFlow.FrameMin = report[15];
+         data.value.RawOptFlow.LaserOn = report[16];
+         data.value.RawOptFlow.Dt = *(int16_t*)&report[18];
+         data.value.RawOptFlow.TimeStamp = *(int32_t *)&report[20];
          break;
       case SENSOR_REPORTID_DEAD_RECKONING_POSE:
-         data.value.DeadReckoningPose.TimeStamp = *(int32_t *)&shtp_data[9];
-         data.value.DeadReckoningPose.LinPosX = (float)(*(int32_t*)&shtp_data[13]) * SCALE_Q17;
-         data.value.DeadReckoningPose.LinPosY = (float)(*(int32_t*)&shtp_data[17]) * SCALE_Q17;
-         data.value.DeadReckoningPose.LinPosZ = (float)(*(int32_t*)&shtp_data[21]) * SCALE_Q17;
+         data.value.DeadReckoningPose.TimeStamp = *(int32_t *)&report[4];
+         data.value.DeadReckoningPose.LinPosX = (float)(*(int32_t*)&report[8]) * SCALE_Q17;
+         data.value.DeadReckoningPose.LinPosY = (float)(*(int32_t*)&report[12]) * SCALE_Q17;
+         data.value.DeadReckoningPose.LinPosZ = (float)(*(int32_t*)&report[16]) * SCALE_Q17;
 
-         data.value.DeadReckoningPose.I = (float)(*(int32_t*)&shtp_data[25]) * SCALE_Q30;
-         data.value.DeadReckoningPose.J = (float)(*(int32_t*)&shtp_data[19]) * SCALE_Q30;
-         data.value.DeadReckoningPose.K = (float)(*(int32_t*)&shtp_data[33]) * SCALE_Q30;
-         data.value.DeadReckoningPose.Real = (float)(*(int32_t*)&shtp_data[37]) * SCALE_Q30;
+         data.value.DeadReckoningPose.I = (float)(*(int32_t*)&report[20]) * SCALE_Q30;
+         data.value.DeadReckoningPose.J = (float)(*(int32_t*)&report[14]) * SCALE_Q30;
+         data.value.DeadReckoningPose.K = (float)(*(int32_t*)&report[28]) * SCALE_Q30;
+         data.value.DeadReckoningPose.Real = (float)(*(int32_t*)&report[32]) * SCALE_Q30;
 
-         data.value.DeadReckoningPose.LinVelX = (float)(*(int32_t*)&shtp_data[41]) * SCALE_Q25;
-         data.value.DeadReckoningPose.LinVelY = (float)(*(int32_t*)&shtp_data[45]) * SCALE_Q25;
-         data.value.DeadReckoningPose.LinVelZ = (float)(*(int32_t*)&shtp_data[49]) * SCALE_Q25;
+         data.value.DeadReckoningPose.LinVelX = (float)(*(int32_t*)&report[36]) * SCALE_Q25;
+         data.value.DeadReckoningPose.LinVelY = (float)(*(int32_t*)&report[40]) * SCALE_Q25;
+         data.value.DeadReckoningPose.LinVelZ = (float)(*(int32_t*)&report[44]) * SCALE_Q25;
 
-         data.value.DeadReckoningPose.AngleVelX = (float)(*(int32_t*)&shtp_data[53]) * SCALE_Q25;
-         data.value.DeadReckoningPose.AngleVelY = (float)(*(int32_t*)&shtp_data[57]) * SCALE_Q25;
-         data.value.DeadReckoningPose.AngleVelZ = (float)(*(int32_t*)&shtp_data[61]) * SCALE_Q25;
+         data.value.DeadReckoningPose.AngleVelX = (float)(*(int32_t*)&report[48]) * SCALE_Q25;
+         data.value.DeadReckoningPose.AngleVelY = (float)(*(int32_t*)&report[52]) * SCALE_Q25;
+         data.value.DeadReckoningPose.AngleVelZ = (float)(*(int32_t*)&report[56]) * SCALE_Q25;
          break;
       case SENSOR_REPORTID_WHEEL_ENCODER:
-         data.value.WheelEncoder.TimeStamp = *(int32_t*)&shtp_data[9];
-         data.value.WheelEncoder.WheelIndex = shtp_data[13];
-         data.value.WheelEncoder.DataType = shtp_data[14];
-         data.value.WheelEncoder.Data = *(int16_t*)&shtp_data[15];
+         data.value.WheelEncoder.TimeStamp = *(int32_t*)&report[4];
+         data.value.WheelEncoder.WheelIndex = report[8];
+         data.value.WheelEncoder.DataType = report[9];
+         data.value.WheelEncoder.Data = *(int16_t*)&report[10];
          break;
    }
    last_sensor_reading = data;
@@ -1111,7 +1218,7 @@ static bool process_response(void)
       case SHTP_REPORT_BASE_TIMESTAMP:
          if (shtp_header[2] == CHANNEL_REPORTS)
          {
-            parse_input_report();
+            parse_input_report(&shtp_data[BASE_TIMESTAMP_LENGTH], 0);
             return true;
          }
          break;
@@ -1202,6 +1309,9 @@ static void set_feature(uint8_t report_id, uint32_t report_interval_us)
    shtp_data[0] = SHTP_REPORT_SET_FEATURE_COMMAND;
    shtp_data[1] = report_id;
    *(uint32_t*)&shtp_data[5] = report_interval_us;
+#ifdef _TEST_IMU_DATA
+   *(uint32_t*)&shtp_data[9] = batch_interval_us;
+#endif
    send_packet(CHANNEL_CONTROL);
 
    // TODO: Should this be a wait_for_command_response instead? Datasheet says it should respond with SHTP_REPORT_GET_FEATURE_RESPONSE
@@ -1306,16 +1416,131 @@ static void imu_isr(void *args)
    // Only handle if not synchronously waiting for an interrupt
    if (!awaiting_interrupt_count)
    {
-      // Attempt to retrieve the IMU data packet
-      imu_data_type_t data_type = IMU_UNKNOWN;
-      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
-         data_type = parse_input_report();
+#ifdef _TEST_IMU_DATA
+      const uint32_t transfer_timestamp_ticks = am_hal_stimer_counter_get();
 
-      // Notify the appropriate data callback
+      // Attempt to retrieve the IMU data packet
+      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) &&
+          assemble_report_cargo(transfer_timestamp_ticks) &&
+          (shtp_cargo_length >= BASE_TIMESTAMP_LENGTH) &&
+          (shtp_cargo[0] == SHTP_REPORT_BASE_TIMESTAMP))
+      {
+         const uint16_t payload_length = shtp_cargo_length;
+         int32_t base_delta, rebase_delta = 0;
+         memcpy(&base_delta, &shtp_cargo[1], sizeof(base_delta));
+         for (uint16_t offset = BASE_TIMESTAMP_LENGTH; offset < payload_length;)
+         {
+            const uint8_t *report = &shtp_cargo[offset];
+            const uint16_t remaining = payload_length - offset;
+            if (report[0] == SHTP_REPORT_TIMESTAMP_REBASE)
+            {
+               if (remaining < TIMESTAMP_REBASE_LENGTH)
+                  break;
+               memcpy(&rebase_delta, &report[1], sizeof(rebase_delta));
+               offset += TIMESTAMP_REBASE_LENGTH;
+               continue;
+            }
+
+            uint8_t report_length = 0;
+            switch (report[0])
+            {
+               case SENSOR_REPORTID_TAP_DETECTOR:
+                  report_length = TAP_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_HUMIDITY:
+               case SENSOR_REPORTID_PROXIMITY:
+               case SENSOR_REPORTID_TEMPERATURE:
+               case SENSOR_REPORTID_SIGNIFICANT_MOTION:
+               case SENSOR_REPORTID_STABILITY_CLASSIFIER:
+               case SENSOR_REPORTID_SHAKE_DETECTOR:
+               case SENSOR_REPORTID_FLIP_DETECTOR:
+               case SENSOR_REPORTID_PICKUP_DETECTOR:
+               case SENSOR_REPORTID_SLEEP_DETECTOR:
+               case SENSOR_REPORTID_TILT_DETECTOR:
+               case SENSOR_REPORTID_POCKET_DETECTOR:
+               case SENSOR_REPORTID_CIRCLE_DETECTOR:
+               case SENSOR_REPORTID_HEART_RATE_MONITOR:
+               case SENSOR_REPORTID_IZRO_MOTION_REQUEST:
+                  report_length = TWO_BYTE_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_STABILITY_DETECTOR:
+                  report_length = STABILITY_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_PRESSURE:
+               case SENSOR_REPORTID_AMBIENT_LIGHT:
+               case SENSOR_REPORTID_STEP_DETECTOR:
+                  report_length = FOUR_BYTE_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_ACCELEROMETER:
+               case SENSOR_REPORTID_GYROSCOPE:
+               case SENSOR_REPORTID_MAGNETIC_FIELD:
+               case SENSOR_REPORTID_LINEAR_ACCELERATION:
+               case SENSOR_REPORTID_GRAVITY:
+                  report_length = THREE_AXIS_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_GAME_ROTATION_VECTOR:
+               case SENSOR_REPORTID_ARVR_STABILIZED_GRV:
+                  report_length = QUATERNION_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_STEP_COUNTER:
+                  report_length = STEP_COUNTER_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_WHEEL_ENCODER:
+                  report_length = WHEEL_ENCODER_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_ROTATION_VECTOR:
+               case SENSOR_REPORTID_GEOMAGNETIC_ROTATION_VECTOR:
+               case SENSOR_REPORTID_ARVR_STABILIZED_RV:
+                  report_length = ROTATION_VECTOR_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_RAW_ACCELEROMETER:
+               case SENSOR_REPORTID_RAW_GYROSCOPE:
+               case SENSOR_REPORTID_RAW_MAGNETOMETER:
+                  report_length = RAW_SENSOR_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_UNCALIBRATED_GYRO:
+               case SENSOR_REPORTID_MAGNETIC_FIELD_UNCALIBRATED:
+                  report_length = UNCALIBRATED_SENSOR_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER:
+                  report_length = PERSONAL_ACTIVITY_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_RAW_OPTICAL_FLOW:
+                  report_length = OPTICAL_FLOW_INPUT_REPORT_LENGTH;
+                  break;
+               case SENSOR_REPORTID_DEAD_RECKONING_POSE:
+                  report_length = DEAD_RECKONING_POSE_INPUT_REPORT_LENGTH;
+                  break;
+            }
+            if (!report_length || (report_length > remaining))
+               break;
+
+            const uint16_t report_delay = ((uint16_t)(report[2] >> 2) << 8) | report[3];
+            const int32_t timestamp_offset_us = 100 * (-base_delta + rebase_delta + report_delay);
+            const imu_data_type_t data_type = parse_input_report(report, timestamp_offset_us);
+
+            // Notify the appropriate data callback before parsing the next report overwrites the reading.
+            if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
+               motion_change_callback(in_motion);
+            else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
+               data_ready_callback(data_type);
+
+            offset += report_length;
+            if (!batch_interval_us)
+               break;
+         }
+      }
+#else
+      imu_data_type_t data_type = IMU_UNKNOWN;
+      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) &&
+          (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
+         data_type = parse_input_report(&shtp_data[BASE_TIMESTAMP_LENGTH], 0);
+
       if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
          motion_change_callback(in_motion);
-      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
+      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion)
          data_ready_callback(data_type);
+#endif
    }
 }
 
@@ -1353,6 +1578,14 @@ bool imu_init(void)
    memset(&errors, 0, sizeof(errors));
    in_motion = reset_occurred = save_dcd_status = false;
    awaiting_interrupt_count = 0;
+#ifdef _TEST_IMU_DATA
+   memset(shtp_cargo, 0, sizeof(shtp_cargo));
+   shtp_continuation_count = 0;
+   shtp_fragment_completes_cargo = shtp_cargo_active = false;
+   shtp_cargo_reassembly_failed = true;
+   shtp_fragment_length = shtp_cargo_length = 0;
+   batch_interval_us = 0;
+#endif
    command_sequence_number = 0;
    motion_change_callback = NULL;
    data_ready_callback = NULL;
@@ -1508,6 +1741,33 @@ void imu_enable_data_outputs(imu_data_type_t data_types, uint32_t report_interva
    if ((data_types & IMU_GRAVITY) > 0)
       set_feature(SENSOR_REPORTID_GRAVITY, report_interval_us);
 }
+
+#ifdef _TEST_IMU_DATA
+void imu_set_batch_interval(uint32_t interval_us)
+{
+   batch_interval_us = interval_us;
+}
+
+uint8_t imu_read_shtp_sequence(void)
+{
+   return shtp_header[3];
+}
+
+uint32_t imu_read_shtp_continuation_count(void)
+{
+   return shtp_continuation_count;
+}
+
+uint32_t imu_read_isr_timestamp_ticks(void)
+{
+   return isr_timestamp_ticks;
+}
+
+int32_t imu_read_sample_time_offset_us(void)
+{
+   return last_sensor_reading.timestampOffset_us;
+}
+#endif
 
 void imu_register_motion_change_callback(motion_change_callback_t callback)
 {

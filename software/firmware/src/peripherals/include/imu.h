@@ -44,6 +44,13 @@ void imu_deinit(void);
 bool imu_calibrate_sensors(imu_calibration_data_t calibration_type);
 bool imu_store_current_calibration(void);
 void imu_enable_data_outputs(imu_data_type_t data_types, uint32_t report_interval_us);
+#if defined(_TEST_IMU_DATA) && (REVISION_ID >= REVISION_N)
+void imu_set_batch_interval(uint32_t batch_interval_us);
+uint8_t imu_read_shtp_sequence(void);
+uint32_t imu_read_shtp_continuation_count(void);
+uint32_t imu_read_isr_timestamp_ticks(void);
+int32_t imu_read_sample_time_offset_us(void);
+#endif
 void imu_register_motion_change_callback(motion_change_callback_t callback);
 void imu_register_data_ready_callback(data_ready_callback_t callback);
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);
