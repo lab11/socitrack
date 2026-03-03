@@ -84,7 +84,7 @@ void storage_flush_and_shutdown(void)
 {
    const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
-   xQueueSendToBack(storage_queue, &storage_item, 0);
+   xQueueSendToBack(storage_queue, &storage_item, portMAX_DELAY);
 }
 
 void storage_write_battery_level(uint32_t battery_voltage_mV)

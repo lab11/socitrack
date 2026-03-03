@@ -1,7 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "logging.h"
-#include "system.h"
+#include "app_tasks.h"
 #include "usb.h"
 
 
@@ -9,7 +9,8 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static uint32_t cable_connected;
+static volatile uint32_t cable_connected;
+static TaskHandle_t volatile connection_task_handle;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -19,9 +20,16 @@ static void usb_cable_callback(void *pin_number)
    // Only care about a connection change when a USB cable is plugged in
    if (!cable_connected)
    {
-      am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &cable_connected);
-      if (cable_connected)
-         system_reset(true);
+      // Use a local because the HAL does not accept a volatile output pointer
+      uint32_t current_cable_state;
+      am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &current_cable_state);
+      cable_connected = current_cable_state;
+      if (cable_connected && connection_task_handle)
+      {
+         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+         xTaskNotifyFromISR(connection_task_handle, APP_NOTIFY_USB_CONNECTED, eSetBits, &xHigherPriorityTaskWoken);
+         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
    }
 }
 
@@ -40,8 +48,9 @@ void usb_init(void)
    am_hal_gpio_state_write(PIN_USB_ENABLE2, AM_HAL_GPIO_OUTPUT_CLEAR);
 
    // Set initial cable connection status and enable cable detection interrupts
-   uint32_t pin_number = PIN_USB_DETECT;
-   am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &cable_connected);
+   uint32_t pin_number = PIN_USB_DETECT, current_cable_state;
+   am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &current_cable_state);
+   cable_connected = current_cable_state;
    cable_detect_config.GP.cfg_b.eIntDir = cable_connected ? AM_HAL_GPIO_PIN_INTDIR_HI2LO : AM_HAL_GPIO_PIN_INTDIR_LO2HI;
    configASSERT0(am_hal_gpio_pinconfig(PIN_USB_DETECT, cable_detect_config));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_USB_DETECT, usb_cable_callback, (void*)pin_number));
@@ -64,9 +73,15 @@ bool usb_cable_connected(void)
    return cable_connected;
 }
 
+void usb_register_connection_task(TaskHandle_t task_handle)
+{
+   connection_task_handle = task_handle;
+}
+
 #else
 
 void usb_init(void) {}
+void usb_register_connection_task(TaskHandle_t task_handle) {}
 bool usb_cable_connected(void) { return false; }
 
 #endif  // #if REVISION_ID > REVISION_N

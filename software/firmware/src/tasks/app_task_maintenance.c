@@ -35,6 +35,8 @@ static void handle_notification(app_notification_t notification)
       }
    if ((notification & APP_NOTIFY_BATTERY_EVENT) != 0)
       storage_flush_and_shutdown();
+   if ((notification & APP_NOTIFY_USB_CONNECTED) != 0)
+      storage_flush_and_shutdown();
    if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
    {
       // Define log file transmission variables
@@ -104,7 +106,10 @@ void AppTaskMaintenance(void *uid)
    bool usb_maintenance = (((uint8_t*)uid)[0] == 0xEF) && (((uint8_t*)uid)[1] == 0xEF) && (((uint8_t*)uid)[2] == 0xEF) && (((uint8_t*)uid)[3] == 0xEF);
    if (!usb_maintenance)
    {
-      // Register handler for battery status changes and verify correct mode of operation
+      // Register handlers for power-source changes and verify correct mode of operation
+      usb_register_connection_task(app_task_handle);
+      if (usb_cable_connected())
+         storage_flush_and_shutdown();
       battery_register_event_callback(battery_event_handler);
       if (!battery_monitor_is_plugged_in())
          storage_flush_and_shutdown();

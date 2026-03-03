@@ -12,6 +12,7 @@
 #include "scheduler.h"
 #include "storage.h"
 #include "system.h"
+#include "usb.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -202,6 +203,8 @@ static void handle_notification(app_notification_t notification)
    }
    if ((notification & APP_NOTIFY_BATTERY_EVENT))
       storage_flush_and_shutdown();
+   if ((notification & APP_NOTIFY_USB_CONNECTED))
+      storage_flush_and_shutdown();
    if ((notification & APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED))
       for (uint32_t seconds = 0; seconds < seconds_to_activate_buzzer; ++seconds)
       {
@@ -388,6 +391,9 @@ void AppTaskRanging(void *uid)
    static uint32_t notification_bits = 0;
    device_uid_short = ((uint8_t*)uid)[0];
    app_task_handle = xTaskGetCurrentTaskHandle();
+   usb_register_connection_task(app_task_handle);
+   if (usb_cable_connected())
+      storage_flush_and_shutdown();
 
    // Initialize the BLE scanning window timer
    am_hal_timer_config_t scanning_timer_config;

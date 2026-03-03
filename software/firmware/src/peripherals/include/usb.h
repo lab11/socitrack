@@ -26,6 +26,7 @@ typedef enum {
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 void usb_init(void);
+void usb_register_connection_task(TaskHandle_t task_handle);
 bool usb_cable_connected(void);
 uint32_t usb_write(const void* data, uint32_t num_bytes);
 
