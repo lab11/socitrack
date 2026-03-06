@@ -26,6 +26,13 @@ static volatile uint8_t num_discovered_devices;
 static volatile bool devices_found, motion_changed, imu_data_ready;
 static uint32_t download_start_timestamp, download_end_timestamp;
 static int16_t imu_accel_data[3];
+#ifdef _TEST_IMU_DATA
+static int16_t imu_rotation_vector_data[4], imu_game_rotation_vector_data[4];
+static int16_t imu_linear_accel_data[3], imu_gyro_data[3];
+static int16_t imu_magnetometer_data[3], imu_gravity_data[3];
+static int16_t imu_rotation_vector_accuracy;
+static uint16_t imu_step_count;
+#endif
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -119,7 +126,7 @@ static void handle_notification(app_notification_t notification)
          bluetooth_write_imu_data((uint8_t*)imu_accel_data, sizeof(imu_accel_data));
 
          // Store relevant IMU data
-#ifndef _TEST_NO_STORAGE
+#if !defined(_TEST_NO_STORAGE) && (!defined(_TEST_IMU_DATA) || (REVISION_ID < REVISION_N))
          storage_write_imu_data((uint8_t*)imu_accel_data, sizeof(imu_accel_data));
 #endif
       }
@@ -253,7 +260,7 @@ static void motion_change_handler(bool in_motion)
 {
    // Notify the app about a change in motion
    motion_changed = true;
-   app_notify(APP_NOTIFY_IMU_EVENT, true);
+   app_notify(APP_NOTIFY_IMU_EVENT, IMU_CALLBACKS_FROM_ISR);
 }
 
 static void data_ready_handler(imu_data_type_t data_types_ready)
@@ -264,7 +271,59 @@ static void data_ready_handler(imu_data_type_t data_types_ready)
       imu_data_ready = true;
       imu_read_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
    }
-   app_notify(APP_NOTIFY_IMU_EVENT, true);
+#ifdef _TEST_IMU_DATA
+   else if (data_types_ready & IMU_LINEAR_ACCELEROMETER)
+   {
+      imu_read_linear_accel_data(&imu_linear_accel_data[0], &imu_linear_accel_data[1], &imu_linear_accel_data[2], &imu_accuracy);
+   }
+   else if (data_types_ready & IMU_GYROSCOPE)
+   {
+      imu_read_gyro_data(&imu_gyro_data[0], &imu_gyro_data[1], &imu_gyro_data[2], &imu_accuracy);
+   }
+   else if (data_types_ready & IMU_ROTATION_VECTOR)
+   {
+      imu_read_quaternion_data(&imu_rotation_vector_data[0], &imu_rotation_vector_data[1], &imu_rotation_vector_data[2],
+         &imu_rotation_vector_data[3], &imu_rotation_vector_accuracy, &imu_accuracy);
+   }
+   else if (data_types_ready & IMU_GAME_ROTATION_VECTOR)
+   {
+      int16_t unused_radian_accuracy;
+      imu_read_quaternion_data(&imu_game_rotation_vector_data[0], &imu_game_rotation_vector_data[1],
+         &imu_game_rotation_vector_data[2], &imu_game_rotation_vector_data[3], &unused_radian_accuracy, &imu_accuracy);
+   }
+   else if (data_types_ready & IMU_MAGNETOMETER)
+   {
+      imu_read_magnetometer_data(&imu_magnetometer_data[0], &imu_magnetometer_data[1], &imu_magnetometer_data[2], &imu_accuracy);
+   }
+   else if (data_types_ready & IMU_STEP_COUNTER)
+   {
+      imu_step_count = imu_read_step_count();
+   }
+   else if (data_types_ready & IMU_GRAVITY)
+   {
+      imu_read_gravity_data(&imu_gravity_data[0], &imu_gravity_data[1], &imu_gravity_data[2], &imu_accuracy);
+   }
+#endif
+
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+   if (data_types_ready & IMU_ACCELEROMETER)
+      append_imu_batch_sample(imu_accel_data, sizeof(imu_accel_data) / sizeof(imu_accel_data[0]), imu_accuracy);
+   else if (data_types_ready & IMU_LINEAR_ACCELEROMETER)
+      append_imu_batch_sample(imu_linear_accel_data,
+         sizeof(imu_linear_accel_data) / sizeof(imu_linear_accel_data[0]), imu_accuracy);
+   else if (data_types_ready & IMU_GYROSCOPE)
+      append_imu_batch_sample(imu_gyro_data, sizeof(imu_gyro_data) / sizeof(imu_gyro_data[0]), imu_accuracy);
+   else if (data_types_ready & IMU_ROTATION_VECTOR)
+   {
+      const int16_t values[] = {
+         imu_rotation_vector_data[1], imu_rotation_vector_data[2], imu_rotation_vector_data[3],
+         imu_rotation_vector_data[0], imu_rotation_vector_accuracy
+      };
+      append_imu_batch_sample(values, sizeof(values) / sizeof(values[0]), imu_accuracy);
+   }
+#endif
+
+   app_notify(APP_NOTIFY_IMU_EVENT, IMU_CALLBACKS_FROM_ISR);
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
@@ -416,7 +475,13 @@ void AppTaskRanging(void *uid)
    imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(data_ready_handler);
 #ifdef _TEST_IMU_DATA
+#if defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+   imu_set_batch_interval(IMU_BATCH_INTERVAL_US);
+   imu_enable_data_outputs(IMU_ACCELEROMETER | IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE |
+      IMU_ROTATION_VECTOR | IMU_MOTION_DETECT, IMU_REPORT_INTERVAL_US);
+#else
    imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
+#endif
 #else
    imu_enable_data_outputs(IMU_ACCELEROMETER | IMU_MOTION_DETECT, 500000);
 #endif

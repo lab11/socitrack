@@ -692,6 +692,8 @@ static uint8_t shtp_expected_sequence;
 static uint16_t shtp_fragment_length, shtp_cargo_length;
 static uint32_t batch_interval_us, isr_timestamp_ticks, shtp_cargo_timestamp_ticks;
 static uint8_t shtp_cargo[RX_CARGO_SIZE];
+static imu_data_pending_callback_t data_pending_callback;
+static volatile uint32_t pending_transfer_timestamp_ticks;
 #endif
 static volatile bool imu_is_initialized = false, in_motion;
 static uint8_t sequence_number[SEQUENCE_SIZE], command_sequence_number;
@@ -1408,6 +1410,129 @@ static void enter_sleep_mode(bool start_sleeping)
    send_packet(CHANNEL_EXECUTABLE);
 }
 
+#ifdef _TEST_IMU_DATA
+static bool process_report_packet(uint32_t transfer_timestamp_ticks)
+{
+   bool batch_processed = false;
+
+   // Attempt to retrieve the IMU data packet
+   if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) &&
+       assemble_report_cargo(transfer_timestamp_ticks) &&
+       (shtp_cargo_length >= BASE_TIMESTAMP_LENGTH) &&
+       (shtp_cargo[0] == SHTP_REPORT_BASE_TIMESTAMP))
+   {
+      const uint16_t payload_length = shtp_cargo_length;
+      int32_t base_delta, rebase_delta = 0;
+      memcpy(&base_delta, &shtp_cargo[1], sizeof(base_delta));
+      for (uint16_t offset = BASE_TIMESTAMP_LENGTH; offset < payload_length;)
+      {
+         const uint8_t *report = &shtp_cargo[offset];
+         const uint16_t remaining = payload_length - offset;
+         if (report[0] == SHTP_REPORT_TIMESTAMP_REBASE)
+         {
+            if (remaining < TIMESTAMP_REBASE_LENGTH)
+               break;
+            memcpy(&rebase_delta, &report[1], sizeof(rebase_delta));
+            offset += TIMESTAMP_REBASE_LENGTH;
+            continue;
+         }
+
+         uint8_t report_length = 0;
+         switch (report[0])
+         {
+            case SENSOR_REPORTID_TAP_DETECTOR:
+               report_length = TAP_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_HUMIDITY:
+            case SENSOR_REPORTID_PROXIMITY:
+            case SENSOR_REPORTID_TEMPERATURE:
+            case SENSOR_REPORTID_SIGNIFICANT_MOTION:
+            case SENSOR_REPORTID_STABILITY_CLASSIFIER:
+            case SENSOR_REPORTID_SHAKE_DETECTOR:
+            case SENSOR_REPORTID_FLIP_DETECTOR:
+            case SENSOR_REPORTID_PICKUP_DETECTOR:
+            case SENSOR_REPORTID_SLEEP_DETECTOR:
+            case SENSOR_REPORTID_TILT_DETECTOR:
+            case SENSOR_REPORTID_POCKET_DETECTOR:
+            case SENSOR_REPORTID_CIRCLE_DETECTOR:
+            case SENSOR_REPORTID_HEART_RATE_MONITOR:
+            case SENSOR_REPORTID_IZRO_MOTION_REQUEST:
+               report_length = TWO_BYTE_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_STABILITY_DETECTOR:
+               report_length = STABILITY_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_PRESSURE:
+            case SENSOR_REPORTID_AMBIENT_LIGHT:
+            case SENSOR_REPORTID_STEP_DETECTOR:
+               report_length = FOUR_BYTE_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_ACCELEROMETER:
+            case SENSOR_REPORTID_GYROSCOPE:
+            case SENSOR_REPORTID_MAGNETIC_FIELD:
+            case SENSOR_REPORTID_LINEAR_ACCELERATION:
+            case SENSOR_REPORTID_GRAVITY:
+               report_length = THREE_AXIS_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_GAME_ROTATION_VECTOR:
+            case SENSOR_REPORTID_ARVR_STABILIZED_GRV:
+               report_length = QUATERNION_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_STEP_COUNTER:
+               report_length = STEP_COUNTER_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_WHEEL_ENCODER:
+               report_length = WHEEL_ENCODER_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_ROTATION_VECTOR:
+            case SENSOR_REPORTID_GEOMAGNETIC_ROTATION_VECTOR:
+            case SENSOR_REPORTID_ARVR_STABILIZED_RV:
+               report_length = ROTATION_VECTOR_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_RAW_ACCELEROMETER:
+            case SENSOR_REPORTID_RAW_GYROSCOPE:
+            case SENSOR_REPORTID_RAW_MAGNETOMETER:
+               report_length = RAW_SENSOR_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_UNCALIBRATED_GYRO:
+            case SENSOR_REPORTID_MAGNETIC_FIELD_UNCALIBRATED:
+               report_length = UNCALIBRATED_SENSOR_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER:
+               report_length = PERSONAL_ACTIVITY_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_RAW_OPTICAL_FLOW:
+               report_length = OPTICAL_FLOW_INPUT_REPORT_LENGTH;
+               break;
+            case SENSOR_REPORTID_DEAD_RECKONING_POSE:
+               report_length = DEAD_RECKONING_POSE_INPUT_REPORT_LENGTH;
+               break;
+         }
+         if (!report_length || (report_length > remaining))
+            break;
+
+         const uint16_t report_delay = ((uint16_t)(report[2] >> 2) << 8) | report[3];
+         const int32_t timestamp_offset_us = 100 * (-base_delta + rebase_delta + report_delay);
+         const imu_data_type_t data_type = parse_input_report(report, timestamp_offset_us);
+
+         // Notify the appropriate data callback before parsing the next report overwrites the reading.
+         if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
+            motion_change_callback(in_motion);
+         else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
+            data_ready_callback(data_type);
+
+         offset += report_length;
+         if (!batch_interval_us)
+            break;
+      }
+      batch_processed = true;
+   }
+
+   return batch_processed;
+}
+
+#endif
+
 
 // Interrupt Service Routines ------------------------------------------------------------------------------------------
 
@@ -1418,118 +1543,11 @@ static void imu_isr(void *args)
    {
 #ifdef _TEST_IMU_DATA
       const uint32_t transfer_timestamp_ticks = am_hal_stimer_counter_get();
-
-      // Attempt to retrieve the IMU data packet
-      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) &&
-          assemble_report_cargo(transfer_timestamp_ticks) &&
-          (shtp_cargo_length >= BASE_TIMESTAMP_LENGTH) &&
-          (shtp_cargo[0] == SHTP_REPORT_BASE_TIMESTAMP))
-      {
-         const uint16_t payload_length = shtp_cargo_length;
-         int32_t base_delta, rebase_delta = 0;
-         memcpy(&base_delta, &shtp_cargo[1], sizeof(base_delta));
-         for (uint16_t offset = BASE_TIMESTAMP_LENGTH; offset < payload_length;)
-         {
-            const uint8_t *report = &shtp_cargo[offset];
-            const uint16_t remaining = payload_length - offset;
-            if (report[0] == SHTP_REPORT_TIMESTAMP_REBASE)
-            {
-               if (remaining < TIMESTAMP_REBASE_LENGTH)
-                  break;
-               memcpy(&rebase_delta, &report[1], sizeof(rebase_delta));
-               offset += TIMESTAMP_REBASE_LENGTH;
-               continue;
-            }
-
-            uint8_t report_length = 0;
-            switch (report[0])
-            {
-               case SENSOR_REPORTID_TAP_DETECTOR:
-                  report_length = TAP_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_HUMIDITY:
-               case SENSOR_REPORTID_PROXIMITY:
-               case SENSOR_REPORTID_TEMPERATURE:
-               case SENSOR_REPORTID_SIGNIFICANT_MOTION:
-               case SENSOR_REPORTID_STABILITY_CLASSIFIER:
-               case SENSOR_REPORTID_SHAKE_DETECTOR:
-               case SENSOR_REPORTID_FLIP_DETECTOR:
-               case SENSOR_REPORTID_PICKUP_DETECTOR:
-               case SENSOR_REPORTID_SLEEP_DETECTOR:
-               case SENSOR_REPORTID_TILT_DETECTOR:
-               case SENSOR_REPORTID_POCKET_DETECTOR:
-               case SENSOR_REPORTID_CIRCLE_DETECTOR:
-               case SENSOR_REPORTID_HEART_RATE_MONITOR:
-               case SENSOR_REPORTID_IZRO_MOTION_REQUEST:
-                  report_length = TWO_BYTE_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_STABILITY_DETECTOR:
-                  report_length = STABILITY_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_PRESSURE:
-               case SENSOR_REPORTID_AMBIENT_LIGHT:
-               case SENSOR_REPORTID_STEP_DETECTOR:
-                  report_length = FOUR_BYTE_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_ACCELEROMETER:
-               case SENSOR_REPORTID_GYROSCOPE:
-               case SENSOR_REPORTID_MAGNETIC_FIELD:
-               case SENSOR_REPORTID_LINEAR_ACCELERATION:
-               case SENSOR_REPORTID_GRAVITY:
-                  report_length = THREE_AXIS_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_GAME_ROTATION_VECTOR:
-               case SENSOR_REPORTID_ARVR_STABILIZED_GRV:
-                  report_length = QUATERNION_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_STEP_COUNTER:
-                  report_length = STEP_COUNTER_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_WHEEL_ENCODER:
-                  report_length = WHEEL_ENCODER_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_ROTATION_VECTOR:
-               case SENSOR_REPORTID_GEOMAGNETIC_ROTATION_VECTOR:
-               case SENSOR_REPORTID_ARVR_STABILIZED_RV:
-                  report_length = ROTATION_VECTOR_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_RAW_ACCELEROMETER:
-               case SENSOR_REPORTID_RAW_GYROSCOPE:
-               case SENSOR_REPORTID_RAW_MAGNETOMETER:
-                  report_length = RAW_SENSOR_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_UNCALIBRATED_GYRO:
-               case SENSOR_REPORTID_MAGNETIC_FIELD_UNCALIBRATED:
-                  report_length = UNCALIBRATED_SENSOR_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_PERSONAL_ACTIVITY_CLASSIFIER:
-                  report_length = PERSONAL_ACTIVITY_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_RAW_OPTICAL_FLOW:
-                  report_length = OPTICAL_FLOW_INPUT_REPORT_LENGTH;
-                  break;
-               case SENSOR_REPORTID_DEAD_RECKONING_POSE:
-                  report_length = DEAD_RECKONING_POSE_INPUT_REPORT_LENGTH;
-                  break;
-            }
-            if (!report_length || (report_length > remaining))
-               break;
-
-            const uint16_t report_delay = ((uint16_t)(report[2] >> 2) << 8) | report[3];
-            const int32_t timestamp_offset_us = 100 * (-base_delta + rebase_delta + report_delay);
-            const imu_data_type_t data_type = parse_input_report(report, timestamp_offset_us);
-
-            // Notify the appropriate data callback before parsing the next report overwrites the reading.
-            if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
-               motion_change_callback(in_motion);
-            else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
-               data_ready_callback(data_type);
-
-            offset += report_length;
-            if (!batch_interval_us)
-               break;
-         }
-      }
+      pending_transfer_timestamp_ticks = transfer_timestamp_ticks;
+      if (data_pending_callback)
+         data_pending_callback();
+      else
+         (void)process_report_packet(transfer_timestamp_ticks);
 #else
       imu_data_type_t data_type = IMU_UNKNOWN;
       if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) &&
@@ -1743,9 +1761,24 @@ void imu_enable_data_outputs(imu_data_type_t data_types, uint32_t report_interva
 }
 
 #ifdef _TEST_IMU_DATA
+void imu_register_data_pending_callback(imu_data_pending_callback_t callback)
+{
+   data_pending_callback = callback;
+}
+
+bool imu_process_pending_data(void)
+{
+   return process_report_packet(pending_transfer_timestamp_ticks);
+}
+
 void imu_set_batch_interval(uint32_t interval_us)
 {
    batch_interval_us = interval_us;
+}
+
+uint8_t imu_read_report_id(void)
+{
+   return last_sensor_reading.sensorId;
 }
 
 uint8_t imu_read_shtp_sequence(void)

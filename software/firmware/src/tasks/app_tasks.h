@@ -55,11 +55,22 @@ void storage_write_motion_status(motion_code_t motion_code);
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset);
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices);
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len);
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+void storage_write_imu_batch(const uint8_t *data, uint8_t data_len, int32_t timestamp_offset_ms);
+#endif
+
+// IMU Task Public Functions
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+void append_imu_batch_sample(const int16_t *values, uint8_t value_count, uint8_t status);
+#endif
 
 // Main Task Functions
 void AppTaskRanging(void *uid);
 void AppTaskMaintenance(void *uid);
 void BLETask(void *params);
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+void IMUTask(void *params);
+#endif
 void RangingTask(void *uid);
 void StorageTask(void *params);
 void TimeAlignedTask(void *params);

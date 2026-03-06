@@ -35,7 +35,11 @@
 #define MAX_NUM_RANGING_DEVICES                     10
 #define COMPRESSED_RANGE_DATUM_LENGTH               (1 + sizeof(int16_t))       // EUI + Range
 #define MAX_COMPRESSED_RANGE_DATA_LENGTH            (1 + (COMPRESSED_RANGE_DATUM_LENGTH * MAX_NUM_RANGING_DEVICES))
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+#define MAX_IMU_DATA_LENGTH                         (1 + UINT8_MAX)             // Payload length byte + payload
+#else
 #define MAX_IMU_DATA_LENGTH                         40
+#endif
 
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
 
@@ -43,6 +47,30 @@
 
 #define BLE_INIT_TIMEOUT_MS                         500
 #define BLE_ADV_TIMEOUT_MS                          50
+
+
+// Experimental IMU Configuration -------------------------------------------------------------------------------------
+
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+#define IMU_CALLBACKS_FROM_ISR                      false
+#else
+#define IMU_CALLBACKS_FROM_ISR                      true
+#endif
+
+#ifdef _TEST_IMU_DATA
+#define IMU_REPORT_INTERVAL_US                      10000
+#define IMU_BATCH_INTERVAL_US                       50000
+#define IMU_BATCH_MAX_VALUES_PER_SAMPLE             5
+#define IMU_SENSOR_BLOCK_HEADER_LENGTH              2
+#define IMU_BATCH_MIN_SAMPLE_LENGTH                 (sizeof(uint16_t) + (3 * sizeof(int16_t)))
+#define IMU_BATCH_MAX_SAMPLES                       ((UINT8_MAX - IMU_SENSOR_BLOCK_HEADER_LENGTH) / IMU_BATCH_MIN_SAMPLE_LENGTH)
+#define IMU_SAMPLE_TIMESTAMP_BITS                   14
+#define IMU_SAMPLE_STATUS_SHIFT                     IMU_SAMPLE_TIMESTAMP_BITS
+#define IMU_SAMPLE_STATUS_MASK                      0x03
+#define IMU_SAMPLE_TIMESTAMP_MASK                   ((1U << IMU_SAMPLE_TIMESTAMP_BITS) - 1)
+#define IMU_SAMPLE_MIN_TIMESTAMP_OFFSET_100US       (-(1 << (IMU_SAMPLE_TIMESTAMP_BITS - 1)))
+#define IMU_SAMPLE_MAX_TIMESTAMP_OFFSET_100US       ((1 << (IMU_SAMPLE_TIMESTAMP_BITS - 1)) - 1)
+#endif
 
 
 // Battery Configuration -----------------------------------------------------------------------------------------------

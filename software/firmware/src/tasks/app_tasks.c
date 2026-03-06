@@ -21,6 +21,10 @@ static StaticTask_t storage_task_tcb, time_aligned_task_tcb;
 static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
 static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], storage_task_stack[configMINIMAL_STACK_SIZE];
 static StackType_t time_aligned_task_stack[configMINIMAL_STACK_SIZE];
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+static StaticTask_t imu_task_tcb;
+static StackType_t imu_task_stack[configMINIMAL_STACK_SIZE];
+#endif
 static uint32_t experiment_start_time;
 
 
@@ -150,6 +154,9 @@ void run_tasks(void)
       xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? &scheduled_experiment : NULL, 4, ranging_task_stack, &ranging_task_tcb);
 #else 
       xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);
+#endif
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+      xTaskCreateStatic(IMUTask, "IMUTask", configMINIMAL_STACK_SIZE, NULL, 3, imu_task_stack, &imu_task_tcb);
 #endif
       xTaskCreateStatic(BLETask, "BLETask", 2 * configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
       xTaskCreateStatic(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);

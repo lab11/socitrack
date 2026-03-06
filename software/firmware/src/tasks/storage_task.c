@@ -18,7 +18,7 @@ typedef struct ble_data_t { uint8_t data[1 + MAX_NUM_RANGING_DEVICES]; uint32_t 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static uint32_t previous_imu_timestamp;
+static uint32_t previous_imu_timestamp, imu_data_index;
 static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
 static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
 static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
@@ -128,7 +128,6 @@ void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
 {
    // Ensure that IMU data is not stored more frequently than 2Hz
-   static uint32_t imu_data_index = 0;
    const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
    if (rounded_timestamp >= (previous_imu_timestamp + 500))
    {
@@ -143,6 +142,19 @@ void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
    }
 }
 
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+void storage_write_imu_batch(const uint8_t *data, uint8_t data_len, int32_t timestamp_offset_ms)
+{
+   const uint32_t anchor_time_ms = app_get_experiment_time(ranging_timestamp_offset + timestamp_offset_ms);
+   const storage_item_t storage_item = { .timestamp = anchor_time_ms, .value = imu_data_index, .type = STORAGE_TYPE_IMU };
+   imu_data[imu_data_index].data[0] = data_len;
+   memcpy(&imu_data[imu_data_index].data[1], data, data_len);
+   imu_data[imu_data_index].length = 1 + data_len;
+   imu_data_index = (imu_data_index + 1) % MAX_NUM_DATA_ITEMS;
+   xQueueSendToBack(storage_queue, &storage_item, 0);
+}
+#endif
+
 #else
 
 void storage_flush_and_shutdown(void) {}
@@ -151,6 +163,9 @@ void storage_write_motion_status(motion_code_t motion_code) {}
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices) {}
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+void storage_write_imu_batch(const uint8_t *data, uint8_t data_len, int32_t timestamp_offset_ms) {}
+#endif
 
 #endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
