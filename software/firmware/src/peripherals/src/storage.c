@@ -73,7 +73,7 @@ static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE];
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
-static volatile bool is_reading, in_maintenance_mode, disabled, is_initialized = false;
+static volatile bool is_reading, in_maintenance_mode, disabled, cache_overflowed, is_initialized = false;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -583,6 +583,25 @@ static bool is_first_boot(void)
 }
 
 
+static uint32_t validated_page_length(const uint8_t *page)
+{
+   // Treat a page as empty unless it carries the data magic and a length that fits within the page
+   if ((page[0] != 'D') || (page[1] != 'A'))
+      return 0;
+   const uint32_t data_length = *(const uint16_t*)(page + 2);
+   return (data_length > MEMORY_NUM_DATA_BYTES_PER_PAGE) ? 0 : data_length;
+}
+
+static uint32_t extract_page_payload(uint8_t *page)
+{
+   // Strip the page header in place, leaving only validated payload bytes
+   const uint32_t data_length = validated_page_length(page);
+   if (data_length)
+      memmove(page, page + 4, data_length);
+   return data_length;
+}
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 bool storage_init(void)
@@ -766,6 +785,7 @@ void storage_deinit(void)
    }
    am_hal_iom_uninitialize(spi_handle);
    is_reading = in_maintenance_mode = false;
+   is_initialized = false;
 }
 
 void storage_disable(bool disable)
@@ -780,7 +800,7 @@ void storage_store_experiment_details(const experiment_details_t *details)
    if (in_maintenance_mode)
    {
       // Erase all existing used pages and update storage metadata
-      erase_block(0, BBM_LUT_BASE_ADDRESS - MEMORY_PAGES_PER_BLOCK);
+      erase_block(starting_page, (current_page + (MEMORY_NUM_ERASE_MARGIN_BLOCKS * MEMORY_PAGES_PER_BLOCK)) % BBM_LUT_BASE_ADDRESS);
       starting_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       while (is_bad_block(starting_page))
          starting_page = ((starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
@@ -836,6 +856,12 @@ void storage_store(const void *data, uint32_t data_length)
    // Add new data to in-memory cache if not disabled
    if (!disabled)
    {
+      // Drop data rather than overrunning the cache
+      if (cache_overflowed || ((cache_index + data_length) > sizeof(cache)))
+      {
+         cache_overflowed = true;
+         return;
+      }
       memcpy(cache + cache_index, data, data_length);
       cache_index += data_length;
    }
@@ -856,6 +882,7 @@ void storage_flush(bool write_partial_pages)
       while (is_bad_block(current_page))
          current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       memmove(cache, cache + MEMORY_NUM_DATA_BYTES_PER_PAGE, cache_index);
+      cache_overflowed = false;
    }
 
    // Write a partial page of data if requested
@@ -903,7 +930,7 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
       else if (read_page(transfer_buffer, reading_page))
       {
          bool found_valid_timestamp = false;
-         uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
+         uint32_t num_bytes_retrieved = validated_page_length(transfer_buffer);
          for (uint32_t i = 0; !found_valid_timestamp && ((i + 14) < num_bytes_retrieved); ++i)
          {
             const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
@@ -987,7 +1014,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
          else if (read_page(transfer_buffer, last_reading_page))
          {
             bool found_valid_timestamp = false;
-            uint32_t num_bytes_retrieved = *(uint16_t*)(transfer_buffer+2);
+            uint32_t num_bytes_retrieved = validated_page_length(transfer_buffer);
             log_data_size += num_bytes_retrieved;
             for (uint32_t i = 0; !found_valid_timestamp && ((i + 14) < num_bytes_retrieved); ++i)
             {
@@ -1027,7 +1054,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
          else
          {
             if (read_page(transfer_buffer, page))
-               log_data_size += *(uint16_t*)(transfer_buffer+2);
+               log_data_size += validated_page_length(transfer_buffer);
             page = (page + 1) % BBM_LUT_BASE_ADDRESS;
          }
       }
@@ -1068,10 +1095,7 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
          num_bytes_retrieved = cache_index;
       }
       else if (read_page(buffer, reading_page))
-      {
-         num_bytes_retrieved = *(uint16_t*)(buffer+2);
-         memmove(buffer, buffer + 4, num_bytes_retrieved);
-      }
+         num_bytes_retrieved = extract_page_payload(buffer);
       is_reading = false;
    }
 #endif
@@ -1081,10 +1105,7 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
       while (is_bad_block(reading_page))
          reading_page = ((reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       if (read_page(buffer, reading_page))
-      {
-         num_bytes_retrieved = *(uint16_t*)(buffer+2);
-         memmove(buffer, buffer + 4, num_bytes_retrieved);
-      }
+         num_bytes_retrieved = extract_page_payload(buffer);
       reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
    }
    return num_bytes_retrieved;
