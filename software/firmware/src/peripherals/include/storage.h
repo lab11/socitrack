@@ -29,6 +29,7 @@ typedef enum {
 #define MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL      3
 #define MEMORY_NUM_DATA_BYTES_PER_PAGE              (MEMORY_PAGE_SIZE_BYTES - 4)
 #define MEMORY_NUM_ERASE_MARGIN_BLOCKS              16
+#define ERASE_AHEAD_BLOCKS                          2
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------

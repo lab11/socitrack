@@ -475,6 +475,39 @@ static void add_bad_block(uint32_t block_address)
 
 #endif
 
+static void erase_block(uint32_t starting_page, uint32_t ending_page)
+{
+   // Disable memory page write protection
+   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   write_register(STATUS_REGISTER_1, 0b00000010);
+
+   // Iterate through all blocks to be erased
+   ending_page &= 0xFFFFFFC0;
+   starting_page &= 0xFFFFFFC0;
+   const uint8_t num_iterations = (starting_page <= ending_page) ? 1 : 2;
+   uint32_t end = (starting_page <= ending_page) ? ending_page : (BBM_LUT_BASE_ADDRESS - 1);
+   for (uint8_t i = 0; i < num_iterations; ++i)
+   {
+      for (uint32_t page = starting_page; page <= end; page += MEMORY_PAGES_PER_BLOCK)
+      {
+         // Erase the current page and ensure that the command was successful
+         const uint8_t page_number_reordered[] = { (uint8_t)((page & 0x00FF0000) >> 16), (uint8_t)((page & 0x0000FF00) >> 8), (uint8_t)(page & 0x000000FF) };
+         wait_until_not_busy();
+         spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+         spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+         wait_until_not_busy();
+         if ((read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) == STATUS_ERASE_FAILURE)
+            add_bad_block(page);
+      }
+      starting_page = 0;
+      end = ending_page;
+   }
+
+   // Re-enable memory page write protection
+   write_register(STATUS_REGISTER_1, 0b01111110);
+   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+}
+
 static void write_page(uint16_t data_length)
 {
    // Disable memory page write protection
@@ -507,6 +540,12 @@ static void write_page(uint16_t data_length)
          uint32_t next_block = ((current_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
          while (is_bad_block(next_block))
             next_block = ((next_block + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
+
+         // Erase the relocation target before transferring into it
+         erase_block(next_block, next_block);
+         am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+         write_register(STATUS_REGISTER_1, 0b00000010);
+
          transfer_block(original_page & 0xFFFFFFC0, next_block, current_page & 0x003F);
          add_bad_block(current_page);
          current_page = next_block | (current_page & 0x003F);
@@ -523,37 +562,37 @@ static void write_page(uint16_t data_length)
    }
 }
 
-static void erase_block(uint32_t starting_page, uint32_t ending_page)
+static void erase_ahead_of(uint32_t page)
 {
-   // Disable memory page write protection
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
-   write_register(STATUS_REGISTER_1, 0b00000010);
-
-   // Iterate through all blocks to be erased
-   ending_page &= 0xFFFFFFC0;
-   starting_page &= 0xFFFFFFC0;
-   const uint8_t num_iterations = (starting_page <= ending_page) ? 1 : 2;
-   uint32_t end = (starting_page <= ending_page) ? ending_page : (BBM_LUT_BASE_ADDRESS - 1);
-   for (uint8_t i = 0; i < num_iterations; ++i)
+   // Maintain a rolling window of erased blocks ahead of the write head
+   uint32_t block = page & 0xFFFFFFC0;
+   for (uint32_t i = 0; i < ERASE_AHEAD_BLOCKS; ++i)
    {
-      for (uint32_t page = starting_page; page <= end; page += MEMORY_PAGES_PER_BLOCK)
-      {
-         // Erase the current page and ensure that the command was successful
-         const uint8_t page_number_reordered[] = { (uint8_t)((page & 0x00FF0000) >> 16), (uint8_t)((page & 0x0000FF00) >> 8), (uint8_t)(page & 0x000000FF) };
-         wait_until_not_busy();
-         spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-         spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
-         wait_until_not_busy();
-         if ((read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) == STATUS_ERASE_FAILURE)
-            add_bad_block(page);
-      }
-      starting_page = 0;
-      end = ending_page;
-   }
+      block = (block + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
+      while (is_bad_block(block))
+         block = (block + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
 
-   // Re-enable memory page write protection
-   write_register(STATUS_REGISTER_1, 0b01111110);
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+      // Reaching the metadata block means the log has wrapped the entire array and memory is full
+      if (block == (starting_page & 0xFFFFFFC0))
+         break;
+      erase_block(block, block);
+   }
+}
+
+static void erase_ahead_of_head(void)
+{
+   // Wake the storage peripheral around the erase, mirroring what write_page() does
+   if (!in_maintenance_mode)
+   {
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
+   erase_ahead_of(current_page);
+   if (!in_maintenance_mode)
+   {
+      enter_low_power_mode();
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   }
 }
 
 static bool is_first_boot(void)
@@ -754,14 +793,19 @@ bool storage_init(void)
    }
    else
    {
+      // No metadata page was found, so start a fresh log at page 0
       current_page = 1;
       starting_page = 0;
+      erase_block(starting_page, starting_page);
       memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
       memcpy(transfer_buffer, "META", 4);
       write_register(STATUS_REGISTER_1, 0b00000010);
       write_page_raw(transfer_buffer, starting_page);
       write_register(STATUS_REGISTER_1, 0b01111110);
    }
+
+   // Re-establish the erased window ahead of the recovered head, since the search above is heuristic
+   erase_ahead_of(current_page);
 
    // Put the storage SPI peripheral into Deep Sleep mode and disable writes
    enter_low_power_mode();
@@ -878,11 +922,16 @@ void storage_flush(bool write_partial_pages)
    {
       write_page(MEMORY_NUM_DATA_BYTES_PER_PAGE);
       cache_index -= MEMORY_NUM_DATA_BYTES_PER_PAGE;
+      const uint32_t previous_block = current_page & 0xFFFFFFC0;
       current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
       while (is_bad_block(current_page))
          current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       memmove(cache, cache + MEMORY_NUM_DATA_BYTES_PER_PAGE, cache_index);
       cache_overflowed = false;
+
+      // Keep the erased window ahead of the head topped up whenever the head enters a new block
+      if ((current_page & 0xFFFFFFC0) != previous_block)
+         erase_ahead_of_head();
    }
 
    // Write a partial page of data if requested
