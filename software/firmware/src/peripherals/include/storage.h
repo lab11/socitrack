@@ -115,5 +115,6 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp);
 uint32_t storage_retrieve_num_data_bytes(void);
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer);
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header);
+uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header);
 
 #endif  // #ifndef __STORAGE_HEADER_H__

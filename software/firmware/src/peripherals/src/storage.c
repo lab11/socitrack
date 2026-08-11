@@ -1406,6 +1406,48 @@ uint32_t storage_retrieve_num_data_bytes(void)
    return (last_reading_page == current_page) ? (log_data_size + cache_index) : log_data_size;
 }
 
+uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header)
+{
+   // Fetch one specific page so the host can ask for the ones it lost
+   memset(header, 0, sizeof(*header));
+   header->magic = STORAGE_PAGE_MAGIC;
+   header->epoch = log_epoch;
+   header->seq = seq;
+   header->first_timestamp = header->last_timestamp = STORAGE_NO_TIMESTAMP;
+   if (!is_reading)
+      return 0;
+
+   const uint32_t page_count = epoch_page_count();
+   uint32_t low = 0, high = page_count;
+   while (low < high)
+   {
+      const uint32_t mid = low + ((high - low) / 2);
+      storage_page_header_t probe;
+      uint32_t found = 0;
+      if (!probe_epoch_page(mid, page_count, &probe, &found))
+      {
+         high = mid;                      // nothing valid from here on
+         continue;
+      }
+      if (probe.seq == seq)
+      {
+         if (!read_page(buffer, log_wrap_page(starting_page + found)))
+            return 0;
+         const storage_page_header_t stored = *(const storage_page_header_t*)buffer;
+         const uint32_t length = extract_page_payload(buffer);
+         if (!length)
+            return 0;                     // failed validation again; still a gap
+         *header = stored;
+         return length;
+      }
+      if (probe.seq < seq)
+         low = found + 1;
+      else
+         high = mid;
+   }
+   return 0;
+}
+
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header)
 {
    // Retrieve the next page together with the metadata the offload stream needs to frame it
@@ -1528,5 +1570,6 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp) { return 0;
 uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header) { (void)header; return 0; }
+uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header) { (void)seq; (void)header; return 0; }
 
 #endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)

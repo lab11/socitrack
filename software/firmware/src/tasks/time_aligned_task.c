@@ -16,7 +16,7 @@ void TimeAlignedTask(void *scheduled_experiment)
    static bool experiment_ended;
 
    // Store whether the device is plugged in or not
-   storage_write_charging_status(scheduled_experiment ? BATTERY_UNPLUGGED : BATTERY_PLUGGED);
+   storage_write_charging_status(battery_monitor_is_plugged_in() ? BATTERY_PLUGGED : BATTERY_UNPLUGGED);
 
    // Loop forever
    while (true)
