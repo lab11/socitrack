@@ -922,15 +922,15 @@ void storage_flush(bool write_partial_pages)
    {
       write_page(MEMORY_NUM_DATA_BYTES_PER_PAGE);
       cache_index -= MEMORY_NUM_DATA_BYTES_PER_PAGE;
-      const uint32_t previous_block = current_page & 0xFFFFFFC0;
       current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
       while (is_bad_block(current_page))
          current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       memmove(cache, cache + MEMORY_NUM_DATA_BYTES_PER_PAGE, cache_index);
       cache_overflowed = false;
 
-      // Keep the erased window ahead of the head topped up whenever the head enters a new block
-      if ((current_page & 0xFFFFFFC0) != previous_block)
+      // Top up the erased window from the middle of each block to separate block
+      // erases from page writes
+      if ((current_page & (MEMORY_PAGES_PER_BLOCK - 1)) == ERASE_AHEAD_TRIGGER_PAGE)
          erase_ahead_of_head();
    }
 

@@ -379,6 +379,11 @@ storage: TARGET = TestStorage
 storage: SRC += test_storage.c
 storage: $(CONFIG) $(CONFIG)/test_storage.o $(CONFIG)/$$(TARGET).bin program
 
+storage_reboot: TARGET = TestStorageReboot
+storage_reboot: SRC += test_storage.c
+storage_reboot: CFLAGS += -D_TEST_STORAGE_REBOOT
+storage_reboot: $(CONFIG) $(CONFIG)/test_storage.o $(CONFIG)/$$(TARGET).bin program
+
 system: TARGET = TestSystem
 system: SRC += test_system.c
 system: $(CONFIG) $(CONFIG)/test_system.o $(CONFIG)/$$(TARGET).bin program
