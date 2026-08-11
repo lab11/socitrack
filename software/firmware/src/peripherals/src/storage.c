@@ -1240,53 +1240,87 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
    }
 }
 
+static uint32_t epoch_page_count(void)
+{
+   // Physical pages spanned by the current epoch. Bad blocks skipped at write time are counted, since the
+   // head jumped over them, so an index into this range can land on an unwritten page
+   return log_region_full ? LOG_REGION_PAGE_COUNT : log_page_distance(starting_page, current_page);
+}
+
+static bool probe_epoch_page(uint32_t index, uint32_t page_count, storage_page_header_t *header, uint32_t *found_index)
+{
+   // First valid current-epoch page at or after 'index'. A probe can land inside a block that was skipped
+   // as bad, so step forward rather than concluding the epoch has ended
+   for (uint32_t i = index; i < page_count; ++i)
+   {
+      const uint32_t page = log_wrap_page(starting_page + i);
+      if (!is_bad_block(page) && read_page(transfer_buffer, page))
+      {
+         const storage_page_header_t *candidate = (const storage_page_header_t*)transfer_buffer;
+         if (page_header_valid(candidate) && (candidate->epoch == log_epoch))
+         {
+            memcpy(header, candidate, sizeof(*header));
+            *found_index = i;
+            return true;
+         }
+      }
+   }
+   return false;
+}
+
+static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count, bool at_or_after)
+{
+   // Binary search the epoch for a time boundary using the per-page header bounds. Timestamps increase
+   // monotonically with sequence number, so "this page ends at or after T" is monotone over the range
+   uint32_t low = 0, high = page_count, result = at_or_after ? page_count : 0;
+   while (low < high)
+   {
+      const uint32_t mid = low + ((high - low) / 2);
+      storage_page_header_t header;
+      uint32_t found = 0;
+      if (!probe_epoch_page(mid, page_count, &header, &found))
+      {
+         high = mid;                    // nothing valid from here on
+         continue;
+      }
+      if (at_or_after ? (header.last_timestamp >= timestamp) : (header.first_timestamp > timestamp))
+      {
+         result = at_or_after ? found : (found ? (found - 1) : 0);
+         high = mid;
+      }
+      else
+      {
+         if (!at_or_after)
+            result = found;
+         low = found + 1;
+      }
+   }
+   return result;
+}
+
 void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp)
 {
    // Update the data reading details
    reading_page = starting_page;
+   last_reading_page = starting_page;
    is_reading = in_maintenance_mode;
 #ifndef _TEST_IMU_DATA
+   (void)ending_timestamp;
+   if (!starting_timestamp)
+      return;
+
+   // Convert the caller's absolute timestamp into the experiment-relative milliseconds the headers carry
    experiment_details_t details;
    storage_retrieve_experiment_details(&details);
-   starting_timestamp = (starting_timestamp >= details.experiment_start_time) ? (1000 * (starting_timestamp - details.experiment_start_time)) : 0;
-   ending_timestamp = (ending_timestamp >= details.experiment_start_time) ? (1000 * (ending_timestamp - details.experiment_start_time)) : (1000 * (details.experiment_end_time - details.experiment_start_time));
-   last_reading_page = reading_page;
+   const uint32_t relative_start = (starting_timestamp >= details.experiment_start_time)
+                                      ? (1000 * (starting_timestamp - details.experiment_start_time)) : 0;
+   if (!relative_start)
+      return;
 
-   // Search for the page that contains the starting timestamp
-   bool timestamp_found = !starting_timestamp;
-   while (!timestamp_found && (reading_page != current_page))
-   {
-      if (is_bad_block(reading_page))
-         reading_page = log_next_block(reading_page);
-      else if (read_page(transfer_buffer, reading_page))
-      {
-         bool found_valid_timestamp = false;
-         uint32_t num_bytes_retrieved = validated_payload_length(transfer_buffer);
-         for (uint32_t i = 0; !found_valid_timestamp && ((i + 14) < num_bytes_retrieved); ++i)
-         {
-            const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
-            const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
-            if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && (potential_timestamp1 < ending_timestamp) && ((potential_timestamp2 - potential_timestamp1) <= (BATTERY_CHECK_INTERVAL_S * 1000)))
-            {
-               found_valid_timestamp = true;
-               if (potential_timestamp1 >= starting_timestamp)
-               {
-                  reading_page = last_reading_page;
-                  timestamp_found = true;
-               }
-               else
-               {
-                  last_reading_page = reading_page;
-                  reading_page = log_next_page(reading_page);
-               }
-            }
-         }
-         if (!found_valid_timestamp)
-            reading_page = log_next_page(reading_page);
-      }
-      else
-         reading_page = log_next_page(reading_page);
-   }
+   const uint32_t page_count = epoch_page_count();
+   const uint32_t index = seek_page_for_timestamp(relative_start, page_count, true);
+   reading_page = (index < page_count) ? log_wrap_page(starting_page + index) : current_page;
+   last_reading_page = reading_page;
 #endif
 }
 
@@ -1329,67 +1363,32 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
    log_data_size = 0;
    if (ending_timestamp)
    {
-      // Convert the ending timestamp to the appropriate format
+      // Convert to experiment-relative milliseconds and binary-search the headers for the last page whose
+      // first record falls at or before the requested end
       experiment_details_t details;
       storage_retrieve_experiment_details(&details);
-      ending_timestamp = (ending_timestamp >= details.experiment_start_time) ? (1000 * (ending_timestamp - details.experiment_start_time)) : 0;
-
-      // Search for the page that contains the ending timestamp
-      bool timestamp_found = false;
-      last_reading_page = reading_page;
-      uint32_t previous_reading_page = last_reading_page;
-      while (!timestamp_found && (last_reading_page != current_page))
-      {
-         if (is_bad_block(last_reading_page))
-            last_reading_page = log_next_block(last_reading_page);
-         else if (read_page(transfer_buffer, last_reading_page))
-         {
-            bool found_valid_timestamp = false;
-            uint32_t num_bytes_retrieved = validated_payload_length(transfer_buffer);
-            log_data_size += num_bytes_retrieved;
-            for (uint32_t i = 0; !found_valid_timestamp && ((i + 14) < num_bytes_retrieved); ++i)
-            {
-               const uint32_t potential_timestamp1 = *(uint32_t*)(transfer_buffer + 5 + i);
-               const uint32_t potential_timestamp2 = *(uint32_t*)(transfer_buffer + 14 + i);
-               if ((transfer_buffer[4 + i] == STORAGE_TYPE_VOLTAGE) && ((potential_timestamp1 % 500) == 0) && transfer_buffer[13 + i] && (transfer_buffer[13 + i] < STORAGE_NUM_TYPES) && ((potential_timestamp2 % 500) == 0) && ((potential_timestamp2 - potential_timestamp1) <= (BATTERY_CHECK_INTERVAL_S * 1000)))
-               {
-                  found_valid_timestamp = true;
-                  if (potential_timestamp1 > ending_timestamp)
-                  {
-                     last_reading_page = previous_reading_page;
-                     log_data_size -= num_bytes_retrieved;
-                     timestamp_found = true;
-                  }
-                  else
-                  {
-                     previous_reading_page = last_reading_page;
-                     last_reading_page = log_next_page(last_reading_page);
-                  }
-               }
-            }
-            if (!found_valid_timestamp)
-               last_reading_page = log_next_page(last_reading_page);
-         }
-         else
-            last_reading_page = log_next_page(last_reading_page);
-      }
+      const uint32_t relative_end = (ending_timestamp >= details.experiment_start_time)
+                                       ? (1000 * (ending_timestamp - details.experiment_start_time)) : 0;
+      const uint32_t page_count = epoch_page_count();
+      const uint32_t end_index = seek_page_for_timestamp(relative_end, page_count, false);
+      last_reading_page = log_wrap_page(starting_page + end_index);
    }
    else
-   {
-      uint32_t page = reading_page;
       last_reading_page = current_page;
-      while (page != current_page)
+
+   // Sum the payload bytes across the selected span. The boundaries above are exact; this pass exists only to report a byte total
+   for (uint32_t page = reading_page; page != last_reading_page; )
+   {
+      if (is_bad_block(page))
+         page = log_next_block(page);
+      else
       {
-         if (is_bad_block(page))
-            page = log_next_block(page);
-         else
-         {
-            if (read_page(transfer_buffer, page))
-               log_data_size += validated_payload_length(transfer_buffer);
-            page = log_next_page(page);
-         }
+         if (read_page(transfer_buffer, page))
+            log_data_size += validated_payload_length(transfer_buffer);
+         page = log_next_page(page);
       }
    }
+
    return 1 + log_page_distance(reading_page, last_reading_page);
 #endif
 }

@@ -240,6 +240,66 @@ static void test_partial_page_flush(void)
    print("=== Partial-page flush test %s: %u errors ===\n\n", errors ? "FAILED" : "PASSED", errors);
 }
 
+
+// Time-Range Seek Test ------------------------------------------------------------------------------------------------
+//
+// Covers the Phase 4 replacement of the timestamp search. The old implementation scanned payload bytes
+// hunting for something that looked like a voltage record; it could not tell a real record from ordinary
+// payload that happened to match, so it could select the wrong page and silently drop or duplicate a span
+// of the log. It is now a binary search over the per-page header time bounds, which is exact.
+//
+// Every other test calls storage_begin_reading(0, 0), which skips the seek entirely, so without this the
+// new code path would ship unexercised.
+
+#define SEEK_TEST_NUM_PAGES     40
+#define SEEK_TEST_SEEK_SECONDS  13    // absolute; the experiment starts at 1, so this is 12000 ms relative
+
+static void test_time_range_seek(void)
+{
+   print("\n=== Time-range seek test ===\n");
+
+   storage_enter_maintenance_mode();
+   reset_log_to_known_state();
+   storage_exit_maintenance_mode();
+   storage_disable(false);
+
+   // Page N carries exactly one record stamped 500*N ms after the experiment start
+   for (uint32_t page = 0; page < SEEK_TEST_NUM_PAGES; ++page)
+      write_tagged_page(page);
+
+   // Derive the expected page FROM the seek time rather than the other way round. The API takes absolute
+   // whole seconds and converts with 1000 * (t - experiment_start_time), so a relative time is always a
+   // multiple of 1000 ms while pages are stamped every 500 ms -- only even page indices are addressable.
+   // Choosing the page first and computing the seek time from it silently truncates for odd indices, which
+   // is exactly the mistake this test caught on its first run.
+   const uint32_t seek_timestamp = SEEK_TEST_SEEK_SECONDS;
+   const uint32_t target_relative_ms = 1000 * (seek_timestamp - 1);
+   const uint32_t target_page = target_relative_ms / 500;
+
+   storage_enter_maintenance_mode();
+   storage_begin_reading(seek_timestamp, 0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
+
+   uint32_t first_index = 0xFFFFFFFF, first_timestamp = 0;
+   if (length >= 9)
+   {
+      memcpy(&first_timestamp, verify_buffer + 1, sizeof(first_timestamp));
+      memcpy(&first_index, verify_buffer + 5 + 4, sizeof(first_index));
+   }
+   storage_end_reading();
+   storage_exit_maintenance_mode();
+
+   // Seeking to time T must land on the page holding T, not before it and not past it
+   const uint32_t expected_chunks = SEEK_TEST_NUM_PAGES - target_page + 1;
+   const bool passed = (first_index == target_page) && (first_timestamp == target_relative_ms) &&
+                       (num_chunks == expected_chunks);
+   print("  Sought %u ms; first page returned index %u (ts %u ms), expected index %u (ts %u ms)\n",
+         target_relative_ms, first_index, first_timestamp, target_page, target_relative_ms);
+   print("  Remaining chunks from that point: %u (expected %u)\n", num_chunks, expected_chunks);
+   print("=== Time-range seek test %s ===\n\n", passed ? "PASSED" : "FAILED");
+}
+
 #endif  // #ifndef _TEST_STORAGE_REBOOT
 
 // Reboot-Survival Test ------------------------------------------------------------------------------------------------
@@ -363,6 +423,9 @@ int main(void)
 
    // Verify that a partial page advances the write head rather than re-programming it
    test_partial_page_flush();
+
+   // Verify that seeking to a timestamp lands on the exact page holding it
+   test_time_range_seek();
 
 #endif
 
