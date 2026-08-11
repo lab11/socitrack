@@ -379,6 +379,11 @@ storage: TARGET = TestStorage
 storage: SRC += test_storage.c
 storage: $(CONFIG) $(CONFIG)/test_storage.o $(CONFIG)/$$(TARGET).bin program
 
+storage_reset_bbm: TARGET = TestStorageResetBbm
+storage_reset_bbm: SRC += test_storage.c
+storage_reset_bbm: CFLAGS += -D_TEST_STORAGE_RESET_BBM
+storage_reset_bbm: $(CONFIG) $(CONFIG)/test_storage.o $(CONFIG)/$$(TARGET).bin program
+
 storage_reboot: TARGET = TestStorageReboot
 storage_reboot: SRC += test_storage.c
 storage_reboot: CFLAGS += -D_TEST_STORAGE_REBOOT

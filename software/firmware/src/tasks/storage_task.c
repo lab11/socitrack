@@ -33,37 +33,9 @@ static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 #endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
 
-// Private Helper Functions --------------------------------------------------------------------------------------------
+// Public API Functions ------------------------------------------------------------------------------------------------
 
 #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
-
-static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_mV)
-{
-   storage_store_record(STORAGE_TYPE_VOLTAGE, timestamp, &battery_voltage_mV, sizeof(battery_voltage_mV));
-}
-
-static void store_motion_change(uint32_t timestamp, bool in_motion)
-{
-   storage_store_record(STORAGE_TYPE_MOTION, timestamp, &in_motion, sizeof(in_motion));
-}
-
-static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t range_data_len)
-{
-   storage_store_record(STORAGE_TYPE_RANGES, timestamp, range_data, range_data_len);
-}
-
-static void store_ble_scan_data(uint32_t timestamp, const uint8_t *ble_data, uint32_t ble_data_len)
-{
-   storage_store_record(STORAGE_TYPE_BLE_SCAN, timestamp, ble_data, ble_data_len);
-}
-
-static void store_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_t imu_data_len)
-{
-   storage_store_record(STORAGE_TYPE_IMU, timestamp, imu_data, imu_data_len);
-}
-
-
-// Public API Functions ------------------------------------------------------------------------------------------------
 
 void storage_flush_and_shutdown(void)
 {
@@ -187,19 +159,19 @@ void StorageTask(void *params)
                system_reset(true);
                break;
             case STORAGE_TYPE_VOLTAGE:
-               store_battery_voltage(item.timestamp, item.value);
+               storage_store_record(STORAGE_TYPE_VOLTAGE, item.timestamp, &item.value, sizeof(item.value));
                break;
             case STORAGE_TYPE_MOTION:
-               store_motion_change(item.timestamp, item.value);
+               storage_store_record(STORAGE_TYPE_MOTION, item.timestamp, &item.value, sizeof(uint8_t));
                break;
             case STORAGE_TYPE_RANGES:
-               store_ranges(item.timestamp, range_data[item.value].data, range_data[item.value].length);
+               storage_store_record(STORAGE_TYPE_RANGES, item.timestamp, range_data[item.value].data, range_data[item.value].length);
                break;
             case STORAGE_TYPE_IMU:
-               store_imu_data(item.timestamp, imu_data[item.value].data, imu_data[item.value].length);
+               storage_store_record(STORAGE_TYPE_IMU, item.timestamp, imu_data[item.value].data, imu_data[item.value].length);
                break;
             case STORAGE_TYPE_BLE_SCAN:
-               store_ble_scan_data(item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
+               storage_store_record(STORAGE_TYPE_BLE_SCAN, item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
                break;
             default:
                break;

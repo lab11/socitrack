@@ -276,8 +276,10 @@ static void test_reboot_survival(void)
       const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
 
       // Anything that is not this test's data (a previous test, a real deployment) is discarded rather
-      // than reported as corruption
-      if (!chunk && ((length != MEMORY_NUM_DATA_BYTES_PER_PAGE) || memcmp(verify_buffer, "PAGE", 4)))
+      // than reported as corruption. The tag sits at offset 5 because a chunk is a framed record:
+      // [type:1][timestamp:4][data...] -- offset 0 holds the record type, never the tag.
+      if (!chunk && ((length != MEMORY_NUM_DATA_BYTES_PER_PAGE) ||
+                     (verify_buffer[0] != STORAGE_TYPE_IMU) || memcmp(verify_buffer + 5, "PAGE", 4)))
       {
          foreign = true;
          break;
@@ -293,8 +295,14 @@ static void test_reboot_survival(void)
    uint32_t base_index;
    if (foreign || !existing_pages)
    {
-      print(foreign ? "Existing log is not from this test; wiping and starting round 1\n"
-                    : "Log is empty; starting round 1\n");
+      // Shout when discarding data. A wipe-and-continue reports a clean round while verifying nothing,
+      // which is indistinguishable from success unless the running page total is watched -- exactly how a
+      // stale offset assumption in this test hid itself for three consecutive "passing" rounds.
+      if (foreign)
+         print("*** WARNING: existing log is NOT from this test -- WIPING. This round verifies NOTHING. ***\n"
+               "*** If this repeats every reboot, the test is self-healing and not actually testing.   ***\n");
+      else
+         print("Log is empty; starting round 1\n");
       reset_log_to_known_state();
       base_index = 0;
    }
@@ -326,6 +334,20 @@ int main(void)
    setup_hardware();
    storage_init();
    system_enable_interrupts(true);
+
+#ifdef _TEST_STORAGE_RESET_BBM
+
+   // One-shot recovery: clear a bad-block table polluted by a firmware fault that retired good blocks.
+   // Run this once, then reflash a normal test build.
+   print("\n=== Bad-block table reset ===\n");
+   storage_enter_maintenance_mode();
+   storage_reset_bad_block_table();
+   storage_exit_maintenance_mode();
+   print("=== Reset complete -- power-cycle, then flash a normal build ===\n");
+   while (true)
+      am_hal_delay_us(1000000);
+
+#endif
 
 #ifdef _TEST_STORAGE_REBOOT
 

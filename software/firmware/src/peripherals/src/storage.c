@@ -56,6 +56,13 @@
 #define BBM_LUT_BASE_ADDRESS                        ((MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS) * MEMORY_PAGES_PER_BLOCK)
 #define MEMORY_MAX_PAGE_ADDRESS                     (MEMORY_BLOCK_COUNT * MEMORY_PAGES_PER_BLOCK)
 
+#define METADATA_RING_BLOCKS                        8
+#define METADATA_RING_PAGES                         (METADATA_RING_BLOCKS * MEMORY_PAGES_PER_BLOCK)
+#define LOG_REGION_FIRST_PAGE                       METADATA_RING_PAGES
+#define LOG_REGION_END_PAGE                         BBM_LUT_BASE_ADDRESS
+#define LOG_REGION_PAGE_COUNT                       (LOG_REGION_END_PAGE - LOG_REGION_FIRST_PAGE)
+#define PAGE_BLOCK_MASK                             (~(uint32_t)(MEMORY_PAGES_PER_BLOCK - 1))
+
 
 // Helper Structures ---------------------------------------------------------------------------------------------------
 
@@ -73,12 +80,38 @@ static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE];
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
-static volatile bool is_reading, in_maintenance_mode, disabled, cache_overflowed, is_initialized = false;
-static volatile uint32_t log_epoch, next_page_seq, page_record_count;
+static volatile bool is_reading, in_maintenance_mode, disabled, cache_overflowed, is_initialized = false, log_region_full;
 static volatile uint32_t page_first_timestamp = STORAGE_NO_TIMESTAMP, page_last_timestamp = STORAGE_NO_TIMESTAMP;
+static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_ring_page;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static inline uint32_t log_wrap_page(uint32_t page)
+{
+   // Fold a page that has run past the end of the region back to its start
+   return (page >= LOG_REGION_END_PAGE)
+             ? (LOG_REGION_FIRST_PAGE + ((page - LOG_REGION_FIRST_PAGE) % LOG_REGION_PAGE_COUNT))
+             : page;
+}
+
+static inline uint32_t log_next_page(uint32_t page)
+{
+   return log_wrap_page(page + 1);
+}
+
+static inline uint32_t log_next_block(uint32_t page)
+{
+   // First page of the block following the one containing 'page'
+   return log_wrap_page((page + MEMORY_PAGES_PER_BLOCK) & PAGE_BLOCK_MASK);
+}
+
+static inline uint32_t log_page_distance(uint32_t from, uint32_t to)
+{
+   // Forward distance from one page to another, accounting for wrap
+   return (to >= from) ? (to - from) : (LOG_REGION_PAGE_COUNT - (from - to));
+}
+
 
 #if REVISION_ID < REVISION_N
 
@@ -602,9 +635,9 @@ static void write_page(uint16_t data_length)
       else
       {
          // Transfer any already-written pages in the current block to the next block
-         uint32_t next_block = ((current_page + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
+         uint32_t next_block = log_next_block(current_page);
          while (is_bad_block(next_block))
-            next_block = ((next_block + MEMORY_PAGES_PER_BLOCK) & 0xFFFFFFC0) % BBM_LUT_BASE_ADDRESS;
+            next_block = log_next_block(next_block);
 
          // Erase the relocation target before transferring into it
          erase_block(next_block, next_block);
@@ -633,9 +666,9 @@ static void erase_ahead_of(uint32_t page)
    uint32_t block = page & 0xFFFFFFC0;
    for (uint32_t i = 0; i < ERASE_AHEAD_BLOCKS; ++i)
    {
-      block = (block + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
+      block = log_next_block(block);
       while (is_bad_block(block))
-         block = (block + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
+         block = log_next_block(block);
 
       // Reaching the metadata block means the log has wrapped the entire array and memory is full
       if (block == (starting_page & 0xFFFFFFC0))
@@ -663,9 +696,13 @@ static void erase_ahead_of_head(void)
 static void advance_write_head(void)
 {
    // Step to the next good page
-   current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
+   current_page = log_next_page(current_page);
    while (is_bad_block(current_page))
-      current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+      current_page = log_next_block(current_page);
+
+   // Wrapping onto the first page of the epoch means every usable page has been consumed
+   if (current_page == starting_page)
+      log_region_full = true;
 
    // Top up the erased window from the middle of each block to separate block
    // erases from page writes
@@ -699,23 +736,78 @@ static bool is_first_boot(void)
    return first_boot;
 }
 
+static bool meta_header_valid(const storage_meta_header_t *header)
+{
+   return (header->magic == STORAGE_META_MAGIC) &&
+          (header->header_crc == crc32_compute(header, STORAGE_META_HEADER_CRC_BYTES)) &&
+          (header->details_length == sizeof(experiment_details_t)) &&
+          (header->log_start_page >= LOG_REGION_FIRST_PAGE) && (header->log_start_page < LOG_REGION_END_PAGE);
+}
+
+static bool find_newest_metadata(uint32_t *ring_page, storage_meta_header_t *newest)
+{
+   // Scan the metadata ring and select the highest valid epoch
+   bool found = false;
+   for (uint32_t page = 0; page < METADATA_RING_PAGES; ++page)
+   {
+      if (is_bad_block(page) || !read_page(transfer_buffer, page))
+         continue;
+      const storage_meta_header_t *header = (const storage_meta_header_t*)transfer_buffer;
+      if (!meta_header_valid(header))
+         continue;
+      if (header->details_crc != crc32_compute(transfer_buffer + sizeof(storage_meta_header_t), header->details_length))
+         continue;
+      if (!found || (header->epoch > newest->epoch))
+      {
+         memcpy(newest, header, sizeof(*newest));
+         *ring_page = page;
+         found = true;
+      }
+   }
+   return found;
+}
+
+static uint32_t recover_write_head(uint32_t epoch, uint32_t log_start_page, uint32_t *head_seq)
+{
+   // Binary search for the first page that does NOT belong to this epoch
+   uint32_t low = 0, high = LOG_REGION_PAGE_COUNT;
+   while (low < high)
+   {
+      const uint32_t mid = low + ((high - low) / 2);
+      const uint32_t page = log_wrap_page(log_start_page + mid);
+      bool belongs = false;
+      if (!is_bad_block(page) && read_page(transfer_buffer, page))
+      {
+         const storage_page_header_t *header = (const storage_page_header_t*)transfer_buffer;
+         belongs = page_header_valid(header) && (header->epoch == epoch);
+      }
+      if (belongs)
+         low = mid + 1;
+      else
+         high = mid;
+   }
+
+   // 'low' is now the number of pages this epoch occupies. Read the last one for its sequence number so the
+   // next page continues the series.
+   *head_seq = 0;
+   if (low)
+   {
+      const uint32_t last = log_wrap_page(log_start_page + low - 1);
+      if (read_page(transfer_buffer, last))
+      {
+         const storage_page_header_t *header = (const storage_page_header_t*)transfer_buffer;
+         if (page_header_valid(header) && (header->epoch == epoch))
+            *head_seq = header->seq + 1;
+      }
+   }
+   return log_wrap_page(log_start_page + low);
+}
 
 static uint32_t validated_payload_length(const uint8_t *page)
 {
    // Payload length is only meaningful once the header it lives in has been checksummed
    const storage_page_header_t *header = (const storage_page_header_t*)page;
    return page_header_valid(header) ? header->payload_length : 0;
-}
-
-static bool is_valid_data_page(uint32_t page)
-{
-   // Reads into transfer_buffer as a side effect, matching the surrounding scan code
-   return read_page(transfer_buffer, page) && page_header_valid((const storage_page_header_t*)transfer_buffer);
-}
-
-static bool is_metadata_page(uint32_t page)
-{
-   return read_page(transfer_buffer, page) && (memcmp(transfer_buffer, "META", 4) == 0);
 }
 
 static uint32_t extract_page_payload(uint8_t *page)
@@ -810,14 +902,28 @@ bool storage_init(void)
    }
 #else
    bbm_index = 0;
-   memset(bad_block_lookup_table, 0, sizeof(bad_block_lookup_table));
+   memset(bad_block_lookup_table, 0xFF, sizeof(bad_block_lookup_table));
    for (bbm_storage_page = MEMORY_MAX_PAGE_ADDRESS - MEMORY_PAGES_PER_BLOCK; bbm_storage_page >= BBM_LUT_BASE_ADDRESS; bbm_storage_page -= MEMORY_PAGES_PER_BLOCK)
       if (read_page(transfer_buffer, bbm_storage_page) && (memcmp(transfer_buffer, "BBM_", 4) == 0))
       {
          memcpy((uint32_t*)&bbm_index, transfer_buffer + 4, sizeof(bbm_index));
          memcpy(bad_block_lookup_table, transfer_buffer + 4 + sizeof(bbm_index), sizeof(bad_block_lookup_table));
+
+         // Refuse to trust an implausible count; treat as "table unusable" rather than acting on it
+         if (bbm_index > BBM_NUM_RESERVED_BLOCKS)
+         {
+            print("WARNING: Bad-block table reports %u entries, exceeding the %u-block reserve; ignoring it\n", (uint32_t)bbm_index, (uint32_t)BBM_NUM_RESERVED_BLOCKS);
+            bbm_index = 0;
+            memset(bad_block_lookup_table, 0xFF, sizeof(bad_block_lookup_table));
+         }
          break;
       }
+#endif
+
+   // The search loop above exits one block BELOW the reserve when it finds no marker
+#if REVISION_ID >= REVISION_N
+   if (bbm_storage_page < BBM_LUT_BASE_ADDRESS)
+      bbm_storage_page = BBM_LUT_BASE_ADDRESS;
 #endif
 
    // Check for bad storage blocks if this is the first boot
@@ -844,58 +950,36 @@ bool storage_init(void)
       write_register(STATUS_REGISTER_1, 0b01111110);
    }
 
-   // Search for the starting page
-   int32_t start_page = -1;
+   // Recover the current epoch from the metadata ring, then locate the write head within it
    cache_index = last_reading_page = log_data_size = 0;
+   page_record_count = 0;
+   page_first_timestamp = page_last_timestamp = STORAGE_NO_TIMESTAMP;
    memset(cache, 0, sizeof(cache));
-   for (uint32_t page = 0; page < BBM_LUT_BASE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
-      if (read_page(transfer_buffer, page) && (memcmp(transfer_buffer, "META", 4) == 0))
-      {
-         start_page = (int32_t)page;
-         current_page = (page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
-         break;
-      }
 
-   // Search for the current page if a starting page was found
-   if (start_page >= 0)
+   storage_meta_header_t metadata;
+   uint32_t metadata_page = 0;
+   if (find_newest_metadata(&metadata_page, &metadata))
    {
-      // Check if the data wraps around memory
-      starting_page = (uint32_t)start_page;
-      if (is_valid_data_page(0))
-         current_page = 0;
-
-      // Search for the last page containing valid data
-      for (uint32_t curr_page_found_count = 0; (current_page != starting_page) && (curr_page_found_count < 2); current_page = (current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS)
-         if (is_valid_data_page(current_page))
-            curr_page_found_count = 0;
-         else if (++curr_page_found_count == 2)
-         {
-            current_page = (current_page ? current_page : BBM_LUT_BASE_ADDRESS) - MEMORY_PAGES_PER_BLOCK;
-            current_page = (current_page ? current_page : BBM_LUT_BASE_ADDRESS) - MEMORY_PAGES_PER_BLOCK;
-            for (uint32_t i = 0; i < MEMORY_PAGES_PER_BLOCK; ++i)
-               if (is_valid_data_page(current_page + i) || is_metadata_page(current_page + i))
-                  continue;
-               else
-               {
-                  current_page = (current_page - MEMORY_PAGES_PER_BLOCK) + i;
-                  break;
-               }
-         }
+      log_epoch = metadata.epoch;
+      starting_page = metadata.log_start_page;
+      metadata_ring_page = metadata_page;
+      current_page = recover_write_head(log_epoch, starting_page, (uint32_t*)&next_page_seq);
+      log_region_full = next_page_seq && (current_page == starting_page);
    }
    else
    {
-      // No metadata page was found, so start a fresh log at page 0
-      current_page = 1;
-      starting_page = 0;
-      erase_block(starting_page, starting_page);
-      memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
-      memcpy(transfer_buffer, "META", 4);
-      write_register(STATUS_REGISTER_1, 0b00000010);
-      write_page_raw(transfer_buffer, starting_page);
-      write_register(STATUS_REGISTER_1, 0b01111110);
+      // Nothing valid in the ring: either a factory-fresh part or a device migrating from a previous on-flash format
+      log_epoch = 0;
+      next_page_seq = 0;
+      metadata_ring_page = METADATA_RING_PAGES;    // no metadata written yet
+      starting_page = LOG_REGION_FIRST_PAGE;
+      while (is_bad_block(starting_page))
+         starting_page = log_next_block(starting_page);
+      current_page = starting_page;
+      log_region_full = false;
    }
 
-   // Re-establish the erased window ahead of the recovered head, since the search above is heuristic
+   // Unconditionally re-establish the erased window ahead of the head
    erase_ahead_of(current_page);
 
    // Put the storage SPI peripheral into Deep Sleep mode and disable writes
@@ -923,67 +1007,141 @@ void storage_deinit(void)
    is_initialized = false;
 }
 
+void storage_reset_bad_block_table(void)
+{
+   // RECOVERY UTILITY. Erases a persisted bad-block table so it is rebuilt as empty on the next boot
+   if (!in_maintenance_mode)
+   {
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
+
+   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   write_register(STATUS_REGISTER_1, 0b00000010);
+   for (uint32_t page = BBM_LUT_BASE_ADDRESS; page < MEMORY_MAX_PAGE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
+   {
+      const uint8_t page_number_reordered[] = {
+         (uint8_t)((page & 0x00FF0000) >> 16), (uint8_t)((page & 0x0000FF00) >> 8), (uint8_t)(page & 0x000000FF) };
+      wait_until_not_busy();
+      spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+      wait_until_not_busy();
+      // Erase failures are deliberately ignored
+   }
+   write_register(STATUS_REGISTER_1, 0b01111110);
+   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+
+   // Verify rather than assume
+   uint32_t markers_remaining = 0;
+   for (uint32_t page = BBM_LUT_BASE_ADDRESS; page < MEMORY_MAX_PAGE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
+      if (read_page(transfer_buffer, page) && (memcmp(transfer_buffer, "BBM_", 4) == 0))
+         ++markers_remaining;
+
+#if REVISION_ID >= REVISION_N
+   bbm_index = 0;
+   bbm_storage_page = BBM_LUT_BASE_ADDRESS;
+#endif
+   memset(bad_block_lookup_table, 0xFF, sizeof(bad_block_lookup_table));
+
+   if (!in_maintenance_mode)
+   {
+      enter_low_power_mode();
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   }
+
+   if (markers_remaining)
+      print("ERROR: Bad-block table NOT cleared -- %u marker page(s) still present\n", markers_remaining);
+   else
+      print("INFO: Bad-block table erased and verified clear; rebuilt empty on next boot\n");
+}
+
 void storage_disable(bool disable)
 {
    // Set the storage disabled flag
    disabled = disable;
 }
 
-void storage_store_experiment_details(const experiment_details_t *details)
+bool storage_store_experiment_details(const experiment_details_t *details)
 {
-   // Only store new details in maintenance mode
-   if (in_maintenance_mode)
+   // Refuse loudly rather than silently discarding the write
+   if (!in_maintenance_mode)
    {
-      // Erase all existing used pages and update storage metadata
-      erase_block(starting_page, (current_page + (MEMORY_NUM_ERASE_MARGIN_BLOCKS * MEMORY_PAGES_PER_BLOCK)) % BBM_LUT_BASE_ADDRESS);
-      starting_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
-      while (is_bad_block(starting_page))
-         starting_page = ((starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
-      current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
-      cache_index = 0;
-
-      // Write experiment details to storage
-      bool success = false;
-      while (!success)
-      {
-         // Disable memory page write protection
-         am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
-         write_register(STATUS_REGISTER_1, 0b00000010);
-
-         // Perform the write
-         memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
-         memcpy(transfer_buffer, "META", 4);
-         memcpy(transfer_buffer + 4, details, sizeof(*details));
-         success = write_page_raw(transfer_buffer, starting_page) && read_page(transfer_buffer, starting_page);
-
-         // Re-enable memory page write protection
-         write_register(STATUS_REGISTER_1, 0b01111110);
-         am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
-
-         // Update bad block metadata if unable to write
-         if (!success)
-         {
-            erase_block(starting_page, starting_page);
-            add_bad_block(starting_page);
-            starting_page = (starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS;
-            while (is_bad_block(starting_page))
-               starting_page = ((starting_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
-            current_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
-         }
-      }
-
-      // Determine whether there is an active experiment taking place
-      uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
-      bool valid_experiment = rtc_is_valid() && details->num_devices && !details->is_terminated;
-      bool active_experiment = valid_experiment &&
-            (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
-            (!details->use_daily_times ||
-               ((details->daily_start_time < details->daily_end_time) &&
-                  (time_of_day >= details->daily_start_time) && (time_of_day < details->daily_end_time)) ||
-               ((details->daily_start_time > details->daily_end_time) &&
-                  ((time_of_day >= details->daily_start_time) || (time_of_day < details->daily_end_time))));
-      storage_disable(!active_experiment);
+      print("ERROR: Refusing to store experiment details outside of maintenance mode\n");
+      return false;
    }
+
+   // Begin a new epoch whose log continues the wear sweep from the current head
+   const uint32_t new_epoch = log_epoch + 1;
+   uint32_t new_log_start = log_next_block(current_page);
+   while (is_bad_block(new_log_start))
+      new_log_start = log_next_block(new_log_start);
+
+   // Establish the erased window before any data can land in it
+   erase_block(new_log_start, new_log_start);
+   erase_ahead_of(new_log_start);
+
+   // Commit with a single metadata page program
+   bool success = false;
+   for (uint32_t attempt = 0; !success && (attempt < METADATA_RING_PAGES); ++attempt)
+   {
+      const uint32_t slot = (metadata_ring_page >= METADATA_RING_PAGES)
+                               ? 0 : ((metadata_ring_page + 1) % METADATA_RING_PAGES);
+      metadata_ring_page = slot;
+      if (is_bad_block(slot))
+         continue;
+
+      // Erase on entry to each block of the ring, so a slot is always clean before it is programmed
+      if ((slot & (MEMORY_PAGES_PER_BLOCK - 1)) == 0)
+         erase_block(slot, slot);
+      am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+      write_register(STATUS_REGISTER_1, 0b00000010);
+
+      memset(transfer_buffer, 0xFF, MEMORY_PAGE_SIZE_BYTES);
+      storage_meta_header_t *header = (storage_meta_header_t*)transfer_buffer;
+      header->magic = STORAGE_META_MAGIC;
+      header->epoch = new_epoch;
+      header->log_start_page = new_log_start;
+      header->created_timestamp = rtc_get_timestamp();
+      header->details_length = (uint16_t)sizeof(*details);
+      header->format_version = STORAGE_FORMAT_VERSION;
+      header->reserved = 0xFFFFFFFF;
+      memcpy(transfer_buffer + sizeof(storage_meta_header_t), details, sizeof(*details));
+      header->details_crc = crc32_compute(transfer_buffer + sizeof(storage_meta_header_t), sizeof(*details));
+      header->header_crc = crc32_compute(header, STORAGE_META_HEADER_CRC_BYTES);
+
+      success = write_page_raw(transfer_buffer, slot) && read_page(transfer_buffer, slot) &&
+                meta_header_valid((const storage_meta_header_t*)transfer_buffer);
+
+      write_register(STATUS_REGISTER_1, 0b01111110);
+      am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+      // Deliberately do NOT call add_bad_block() here
+   }
+   if (!success)
+   {
+      print("ERROR: Unable to write experiment metadata to any slot in the ring\n");
+      return false;
+   }
+
+   // The new epoch is now live
+   log_epoch = new_epoch;
+   starting_page = new_log_start;
+   current_page = new_log_start;
+   log_region_full = false;
+   next_page_seq = cache_index = page_record_count = 0;
+   page_first_timestamp = page_last_timestamp = STORAGE_NO_TIMESTAMP;
+
+   // Determine whether there is an active experiment taking place
+   uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
+   bool valid_experiment = rtc_is_valid() && details->num_devices && !details->is_terminated;
+   bool active_experiment = valid_experiment &&
+         (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
+         (!details->use_daily_times ||
+            ((details->daily_start_time < details->daily_end_time) &&
+               (time_of_day >= details->daily_start_time) && (time_of_day < details->daily_end_time)) ||
+            ((details->daily_start_time > details->daily_end_time) &&
+               ((time_of_day >= details->daily_start_time) || (time_of_day < details->daily_end_time))));
+   storage_disable(!active_experiment);
+   return true;
 }
 
 static void commit_current_page(void)
@@ -1017,7 +1175,7 @@ void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *d
    if ((cache_index + record_length) > MEMORY_NUM_DATA_BYTES_PER_PAGE)
    {
       // Writing is impossible while a download is in progress or once the array is full
-      if (is_reading || (starting_page == current_page))
+      if (is_reading || log_region_full)
       {
          cache_overflowed = true;
          return;
@@ -1041,7 +1199,7 @@ void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *d
 void storage_flush(bool write_partial_pages)
 {
    // Do not flush if currently reading or if memory is full
-   if (disabled || is_reading || (starting_page == current_page))
+   if (disabled || is_reading || log_region_full)
       return;
 
    // A page is committed as soon as the next record will not fit, so the only reason to
@@ -1064,10 +1222,17 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
       exit_low_power_mode();
    }
-   if (read_page(transfer_buffer, starting_page))
-      memcpy(details, transfer_buffer + 4, sizeof(*details));
-   else
-      memset(details, 0, sizeof(*details));
+
+   // Details live in the metadata ring, validated by their own CRC, rather than in the log itself
+   memset(details, 0, sizeof(*details));
+   if ((metadata_ring_page < METADATA_RING_PAGES) && read_page(transfer_buffer, metadata_ring_page))
+   {
+      const storage_meta_header_t *header = (const storage_meta_header_t*)transfer_buffer;
+      const uint8_t *blob = transfer_buffer + sizeof(storage_meta_header_t);
+      if (meta_header_valid(header) && (header->details_crc == crc32_compute(blob, header->details_length)))
+         memcpy(details, blob, sizeof(*details));
+   }
+
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
@@ -1078,7 +1243,7 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
 void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp)
 {
    // Update the data reading details
-   reading_page = (starting_page + 1) % BBM_LUT_BASE_ADDRESS;
+   reading_page = starting_page;
    is_reading = in_maintenance_mode;
 #ifndef _TEST_IMU_DATA
    experiment_details_t details;
@@ -1092,7 +1257,7 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
    while (!timestamp_found && (reading_page != current_page))
    {
       if (is_bad_block(reading_page))
-         reading_page = ((reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+         reading_page = log_next_block(reading_page);
       else if (read_page(transfer_buffer, reading_page))
       {
          bool found_valid_timestamp = false;
@@ -1112,15 +1277,15 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
                else
                {
                   last_reading_page = reading_page;
-                  reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+                  reading_page = log_next_page(reading_page);
                }
             }
          }
          if (!found_valid_timestamp)
-            reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+            reading_page = log_next_page(reading_page);
       }
       else
-         reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+         reading_page = log_next_page(reading_page);
    }
 #endif
 }
@@ -1158,7 +1323,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
    if (!is_reading)
       return 0;
 #ifdef _TEST_IMU_DATA
-   return (starting_page < current_page) ? (current_page - starting_page) : (BBM_LUT_BASE_ADDRESS - starting_page + current_page);
+   return log_page_distance(starting_page, current_page);
 #else
 
    log_data_size = 0;
@@ -1176,7 +1341,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       while (!timestamp_found && (last_reading_page != current_page))
       {
          if (is_bad_block(last_reading_page))
-            last_reading_page = ((last_reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+            last_reading_page = log_next_block(last_reading_page);
          else if (read_page(transfer_buffer, last_reading_page))
          {
             bool found_valid_timestamp = false;
@@ -1198,15 +1363,15 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
                   else
                   {
                      previous_reading_page = last_reading_page;
-                     last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+                     last_reading_page = log_next_page(last_reading_page);
                   }
                }
             }
             if (!found_valid_timestamp)
-               last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+               last_reading_page = log_next_page(last_reading_page);
          }
          else
-            last_reading_page = (last_reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+            last_reading_page = log_next_page(last_reading_page);
       }
    }
    else
@@ -1216,16 +1381,16 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       while (page != current_page)
       {
          if (is_bad_block(page))
-            page = ((page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+            page = log_next_block(page);
          else
          {
             if (read_page(transfer_buffer, page))
                log_data_size += validated_payload_length(transfer_buffer);
-            page = (page + 1) % BBM_LUT_BASE_ADDRESS;
+            page = log_next_page(page);
          }
       }
    }
-   return (reading_page <= last_reading_page) ? (1 + last_reading_page - reading_page) : (BBM_LUT_BASE_ADDRESS - reading_page + last_reading_page + 1);
+   return 1 + log_page_distance(reading_page, last_reading_page);
 #endif
 }
 
@@ -1269,10 +1434,10 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
    {
       // Read the next page of memory and update the reading metadata
       while (is_bad_block(reading_page))
-         reading_page = ((reading_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+         reading_page = log_next_block(reading_page);
       if (read_page(buffer, reading_page))
          num_bytes_retrieved = extract_page_payload(buffer);
-      reading_page = (reading_page + 1) % BBM_LUT_BASE_ADDRESS;
+      reading_page = log_next_page(reading_page);
    }
    return num_bytes_retrieved;
 }
@@ -1282,7 +1447,8 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
 bool storage_init(void) { return true; }
 void storage_deinit(void) {}
 void storage_disable(bool disable) {}
-void storage_store_experiment_details(const experiment_details_t *details) {}
+void storage_reset_bad_block_table(void) {}
+bool storage_store_experiment_details(const experiment_details_t *details) { return true; }
 void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
 void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length) {}
 void storage_flush(bool write_partial_pages) {}

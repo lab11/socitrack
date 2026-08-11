@@ -54,6 +54,22 @@ typedef struct __attribute__ ((__packed__))
 
 #define STORAGE_PAGE_HEADER_CRC_BYTES               (sizeof(storage_page_header_t) - sizeof(uint32_t))
 #define STORAGE_MAX_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
+#define STORAGE_META_MAGIC                          0x314D5454   // 'TTM1', little-endian
+
+typedef struct __attribute__ ((__packed__))
+{
+   uint32_t magic;               // STORAGE_META_MAGIC
+   uint32_t epoch;               // the experiment generation this page describes
+   uint32_t log_start_page;      // physical page holding seq 0 for this epoch
+   uint32_t created_timestamp;   // RTC timestamp at creation
+   uint16_t details_length;      // sizeof(experiment_details_t)
+   uint16_t format_version;      // STORAGE_FORMAT_VERSION
+   uint32_t details_crc;         // CRC-32 over the experiment details blob that follows the header
+   uint32_t header_crc;          // CRC-32 over this header up to (not including) this field
+   uint32_t reserved;
+} storage_meta_header_t;
+
+#define STORAGE_META_HEADER_CRC_BYTES               (sizeof(storage_meta_header_t) - (2 * sizeof(uint32_t)))
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -61,7 +77,8 @@ typedef struct __attribute__ ((__packed__))
 bool storage_init(void);
 void storage_deinit(void);
 void storage_disable(bool disable);
-void storage_store_experiment_details(const experiment_details_t *details);
+void storage_reset_bad_block_table(void);   // recovery utility, see implementation
+bool storage_store_experiment_details(const experiment_details_t *details);
 void storage_retrieve_experiment_details(experiment_details_t *details);
 void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length);
 void storage_flush(bool write_partial_pages);
