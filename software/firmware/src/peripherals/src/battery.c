@@ -3,6 +3,47 @@
 #include "battery.h"
 
 
+// TODO: Zero-CPU Brownout Detection -----------------------------------------------------------------------------------
+
+// The Apollo4 voltage comparator (VCOMP) runs continuously in deep sleep with no CPU or ADC involvement,
+// making it the only way to get advance warning of battery collapse without paying standby current for a
+// free-running ADC. It compares a selectable input against an internal DAC reference and raises VCOMP_IRQn
+// when the input falls below it.
+//
+// GATED OFF ON ALL CURRENT BOARDS. VCOMP's external inputs are CMPIN0 (GPIO 10) and CMPIN1 (GPIO 11) only.
+// The battery divider is wired to GPIO 18, whose pinmux has no comparator function, so VCOMP cannot see the
+// battery on revM/N/O/P. GPIO 10 is already the ranging-radio MISO; GPIO 11 is unused on every revision.
+//
+// TO ENABLE ON A FUTURE BOARD REVISION:
+//   1. Route the existing PIN_BATTERY_VOLTAGE divider node to GPIO 11 in addition to GPIO 18.
+//   2. Add "#define PIN_BATTERY_VOLTAGE_COMPARATOR 11" to that revision's pinout.h.
+// Everything below then compiles in automatically. Optionally override BATTERY_COMPARATOR_LEVEL to move the
+// trip point; see the voltage table below.
+//
+// Trip point math: the comparator sees V_batt * LOWER / (UPPER + LOWER), so a DAC level L corresponds to a
+// battery voltage of L * (UPPER + LOWER) / LOWER. With the revP divider (510k / 187k, ratio 0.2683):
+//     LVLSEL_0P77V -> 2870 mV     LVLSEL_0P97V -> 3616 mV     LVLSEL_1P16V -> 4324 mV
+// 0.97 V is the only level that lands usefully between BATTERY_EMPTY (3500) and BATTERY_CRITICAL (3680).
+
+#ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
+
+#if PIN_BATTERY_VOLTAGE_COMPARATOR == 10
+#define BATTERY_COMPARATOR_FUNCTION                 AM_HAL_PIN_10_CMPIN0
+#define BATTERY_COMPARATOR_PSEL                     VCOMP_CFG_PSEL_VEXT1
+#elif PIN_BATTERY_VOLTAGE_COMPARATOR == 11
+#define BATTERY_COMPARATOR_FUNCTION                 AM_HAL_PIN_11_CMPIN1
+#define BATTERY_COMPARATOR_PSEL                     VCOMP_CFG_PSEL_VEXT2
+#else
+#error "PIN_BATTERY_VOLTAGE_COMPARATOR must be GPIO 10 (CMPIN0) or GPIO 11 (CMPIN1)"
+#endif
+
+#ifndef BATTERY_COMPARATOR_LEVEL
+#define BATTERY_COMPARATOR_LEVEL                    VCOMP_CFG_LVLSEL_0P97V
+#endif
+
+#endif  // #ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
+
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 #define BATTERY_ADC_SLOT 0
@@ -61,6 +102,53 @@ static void charging_status_changed(void *args)
    if (event_callback)
       event_callback(is_charging ? BATTERY_CHARGING : BATTERY_NOT_CHARGING);
 }
+
+#ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
+
+static void brownout_detection_init(void)
+{
+   // Route the battery divider tap to the comparator input
+   am_hal_gpio_pincfg_t comparator_pin_config = AM_HAL_GPIO_PINCFG_DEFAULT;
+   comparator_pin_config.GP.cfg_b.uFuncSel = BATTERY_COMPARATOR_FUNCTION;
+   comparator_pin_config.GP.cfg_b.eGPInput = AM_HAL_GPIO_PIN_INPUT_NONE;
+   comparator_pin_config.GP.cfg_b.ePullup = AM_HAL_GPIO_PIN_PULLUP_NONE;
+   configASSERT0(am_hal_gpio_pinconfig(PIN_BATTERY_VOLTAGE_COMPARATOR, comparator_pin_config));
+
+   // Power up the comparator and select the divider tap against the internal DAC reference
+   VCOMP->PWDKEY = VCOMP_PWDKEY_PWDKEY_Key;
+   VCOMP->CFG_b.PSEL = BATTERY_COMPARATOR_PSEL;
+   VCOMP->CFG_b.NSEL = VCOMP_CFG_NSEL_DAC;
+   VCOMP->CFG_b.LVLSEL = BATTERY_COMPARATOR_LEVEL;
+
+   // Discard any comparison made while the reference was still settling, then enable falling-edge interrupts
+   VCOMP->INTCLR = VCOMP_INTCLR_OUTLOW_Msk | VCOMP_INTCLR_OUTHI_Msk;
+   VCOMP->INTEN_b.OUTLOW = 1;
+   NVIC_SetPriority(VCOMP_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY);
+   NVIC_EnableIRQ(VCOMP_IRQn);
+}
+
+static void brownout_detection_deinit(void)
+{
+   // Disable the interrupt and power the comparator back down
+   NVIC_DisableIRQ(VCOMP_IRQn);
+   VCOMP->INTEN_b.OUTLOW = 0;
+   VCOMP->INTCLR = VCOMP_INTCLR_OUTLOW_Msk | VCOMP_INTCLR_OUTHI_Msk;
+   VCOMP->PWDKEY = 0;
+}
+
+void am_vcomp_isr(void)
+{
+   // Clear the interrupt and disable further ones
+   VCOMP->INTCLR = VCOMP_INTCLR_OUTLOW_Msk;
+   VCOMP->INTEN_b.OUTLOW = 0;
+   NVIC_DisableIRQ(VCOMP_IRQn);
+
+   // Hand off to the application, which flushes buffered log data and shuts down
+   if (event_callback)
+      event_callback(BATTERY_CRITICAL_VOLTAGE);
+}
+
+#endif  // #ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
 
 void am_adc_isr(void)
 {
@@ -163,10 +251,20 @@ void battery_monitor_init(void)
 
    // Put the ADC into Deep Sleep mode
    configASSERT0(am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
+
+   // Enable zero-CPU brownout detection
+#ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
+   brownout_detection_init();
+#endif
 }
 
 void battery_monitor_deinit(void)
 {
+   // Disable zero-CPU brownout detection
+#ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
+   brownout_detection_deinit();
+#endif
+
    // Deinitialize the ADC module
    am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true);
    am_hal_adc_deinitialize(adc_handle);
@@ -184,6 +282,16 @@ void battery_monitor_deinit(void)
 void battery_register_event_callback(battery_event_callback_t callback)
 {
    event_callback = callback;
+}
+
+bool battery_monitor_has_brownout_detection(void)
+{
+   // Reports whether this board can deliver BATTERY_CRITICAL_VOLTAGE ahead of a collapse
+#ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
+   return true;
+#else
+   return false;
+#endif
 }
 
 uint32_t battery_monitor_get_level_mV(void)

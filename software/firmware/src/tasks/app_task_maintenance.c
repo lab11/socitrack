@@ -66,8 +66,8 @@ static void handle_notification(app_notification_t notification)
 
 static void battery_event_handler(battery_event_t battery_event)
 {
-   // Notify the app of a change in the plugged-in status of the device
-   if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED))
+   // Notify the app of a change in the plugged-in status of the device or an imminent brownout
+   if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED) || (battery_event == BATTERY_CRITICAL_VOLTAGE))
    {
       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
       xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_BATTERY_EVENT, eSetBits, &xHigherPriorityTaskWoken);
