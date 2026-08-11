@@ -115,11 +115,11 @@ static void test_forced_block_crossings(void)
    storage_begin_reading(0, 0);
    const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
    print("Read-back: device reports %u chunks for %u written pages (expect %u)\n",
-         num_chunks, (uint32_t)BLOCK_CROSSING_NUM_PAGES, (uint32_t)BLOCK_CROSSING_NUM_PAGES + 1);
+         num_chunks, (uint32_t)BLOCK_CROSSING_NUM_PAGES, (uint32_t)BLOCK_CROSSING_NUM_PAGES);
 
-   // The final chunk is the in-RAM cache, which is empty here, so only the first num_chunks-1 are pages
+   // Every reported chunk is a stored page: an empty in-RAM buffer is no longer announced as one
    uint32_t errors = 0, verified = 0;
-   for (uint32_t chunk = 0; (chunk + 1) < num_chunks; ++chunk)
+   for (uint32_t chunk = 0; chunk < num_chunks; ++chunk)
    {
       const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
       if (verify_tagged_page(chunk, length))
@@ -198,7 +198,7 @@ static void test_partial_page_flush(void)
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
    const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
-   const uint32_t expected_chunks = (2 * PARTIAL_TEST_FULL_PAGES) + 2;
+   const uint32_t expected_chunks = (2 * PARTIAL_TEST_FULL_PAGES) + 1;
    if (num_chunks != expected_chunks)
    {
       print("  ERROR: %u chunks reported, expected %u (a missing page means the head did not advance)\n",
@@ -206,7 +206,7 @@ static void test_partial_page_flush(void)
       ++errors;
    }
 
-   for (uint32_t chunk = 0; (chunk + 1) < num_chunks; ++chunk)
+   for (uint32_t chunk = 0; chunk < num_chunks; ++chunk)
    {
       const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
       if (chunk == PARTIAL_TEST_FULL_PAGES)
@@ -291,13 +291,81 @@ static void test_time_range_seek(void)
    storage_exit_maintenance_mode();
 
    // Seeking to time T must land on the page holding T, not before it and not past it
-   const uint32_t expected_chunks = SEEK_TEST_NUM_PAGES - target_page + 1;
+   const uint32_t expected_chunks = SEEK_TEST_NUM_PAGES - target_page;
    const bool passed = (first_index == target_page) && (first_timestamp == target_relative_ms) &&
                        (num_chunks == expected_chunks);
    print("  Sought %u ms; first page returned index %u (ts %u ms), expected index %u (ts %u ms)\n",
          target_relative_ms, first_index, first_timestamp, target_page, target_relative_ms);
    print("  Remaining chunks from that point: %u (expected %u)\n", num_chunks, expected_chunks);
    print("=== Time-range seek test %s ===\n\n", passed ? "PASSED" : "FAILED");
+}
+
+
+// Page Retransmission Test --------------------------------------------------------------------------------------------
+//
+// Covers storage_retrieve_page_by_seq(), the primitive the host will use to ask for pages that arrived
+// corrupt or not at all. It binary-searches the epoch by sequence number, so it must return the right page
+// regardless of request order, and must return nothing for a sequence that was never written rather than
+// the nearest match -- handing back the wrong page would be worse than reporting the gap.
+
+#define RETRANSMIT_TEST_PAGES   40
+
+static void test_page_retransmission(void)
+{
+   print("\n=== Page retransmission test ===\n");
+
+   storage_enter_maintenance_mode();
+   reset_log_to_known_state();
+   storage_exit_maintenance_mode();
+   storage_disable(false);
+   for (uint32_t page = 0; page < RETRANSMIT_TEST_PAGES; ++page)
+      write_tagged_page(page);
+
+   storage_enter_maintenance_mode();
+   storage_begin_reading(0, 0);
+   storage_retrieve_num_data_chunks(0);        // establishes the readable range
+
+   // Deliberately out of order, including both ends, to prove the search does not depend on locality
+   const uint32_t wanted[] = { 37, 0, 19, 5, RETRANSMIT_TEST_PAGES - 1, 1, 20 };
+   uint32_t errors = 0;
+   for (uint32_t i = 0; i < (sizeof(wanted) / sizeof(wanted[0])); ++i)
+   {
+      storage_page_header_t header;
+      const uint32_t length = storage_retrieve_page_by_seq(wanted[i], verify_buffer, &header);
+      if (!length)
+      {
+         print("  ERROR: seq %u returned nothing\n", wanted[i]);
+         ++errors;
+      }
+      else if (header.seq != wanted[i])
+      {
+         print("  ERROR: asked for seq %u, got seq %u\n", wanted[i], header.seq);
+         ++errors;
+      }
+      else if (!verify_tagged_page(wanted[i], length))
+         ++errors;
+   }
+   print("  Requested %u pages out of order\n", (uint32_t)(sizeof(wanted) / sizeof(wanted[0])));
+
+   // A sequence number that was never written must yield nothing, not the closest page
+   storage_page_header_t header;
+   if (storage_retrieve_page_by_seq(RETRANSMIT_TEST_PAGES + 500, verify_buffer, &header))
+   {
+      print("  ERROR: a sequence number that was never written returned data\n");
+      ++errors;
+   }
+
+   // Requesting by sequence must not disturb the sequential read in progress
+   const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
+   if (!verify_tagged_page(0, length))
+   {
+      print("  ERROR: sequential read was disturbed by a retransmission request\n");
+      ++errors;
+   }
+
+   storage_end_reading();
+   storage_exit_maintenance_mode();
+   print("=== Page retransmission test %s: %u errors ===\n\n", errors ? "FAILED" : "PASSED", errors);
 }
 
 #endif  // #ifndef _TEST_STORAGE_REBOOT
@@ -327,7 +395,7 @@ static void test_reboot_survival(void)
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
    const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
-   const uint32_t existing_pages = num_chunks ? (num_chunks - 1) : 0;
+   const uint32_t existing_pages = num_chunks;   // no trailing cache chunk when the buffer is empty
 
    uint32_t verified = 0, errors = 0;
    bool foreign = false;
@@ -426,6 +494,9 @@ int main(void)
 
    // Verify that seeking to a timestamp lands on the exact page holding it
    test_time_range_seek();
+
+   // Verify that a specific page can be fetched by sequence number, for retransmission
+   test_page_retransmission();
 
 #endif
 
