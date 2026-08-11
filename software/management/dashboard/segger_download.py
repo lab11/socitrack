@@ -5,6 +5,7 @@
 
 import tottag
 from tottag import *
+import tottag_format
 import os, signal, sys, tempfile, time
 import subprocess, multiprocessing
 
@@ -31,9 +32,22 @@ def handle_incoming_data(fifo_file_name, storage_directory, pipe, is_running):
    with open(os.path.join(storage_directory, 'data.ttg'), 'wb') as ttg_file:
       with open(fifo_file_name, 'rb') as rtt_file:
 
-         # Wait until all experiment details have been received
-         data = rtt_file.read(4 + 4 * 4 + 2 + 6 * MAX_NUM_DEVICES + MAX_NUM_DEVICES * MAX_LABEL_LENGTH + 1)
-         details = unpack_experiment_details(data[4:])
+         # Wait until all experiment details have been received. The stream header differs between the two
+         # log formats, so read the four-byte discriminator first and then the remainder for whichever this
+         # is, rather than assuming a fixed size.
+         prefix = rtt_file.read(4)
+         if prefix == tottag_format.V2_STREAM_MAGIC:
+            remainder = rtt_file.read(tottag_format.V2_STREAM_HEADER.size - 4)
+            details_length = tottag_format.V2_STREAM_HEADER.unpack(prefix + remainder)[2]
+            details_blob = rtt_file.read(details_length)
+            # A page-framed .ttg keeps its header, so the file stays self-describing and can be re-parsed
+            # on its own without being told the experiment start time
+            ttg_file.write(prefix + remainder + details_blob)
+         else:
+            # Legacy header: a u32 total length followed by the details blob, neither of which belongs in
+            # the .ttg because parse_v1() expects a bare record stream
+            details_blob = rtt_file.read(4 * 4 + 2 + 6 * MAX_NUM_DEVICES + MAX_NUM_DEVICES * MAX_LABEL_LENGTH + 1)
+         details = unpack_experiment_details(details_blob)
          pipe.send(details)
 
          # Create a thread to monitor the data reading activity

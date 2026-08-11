@@ -13,6 +13,7 @@ import struct, queue, datetime, tzlocal
 import serial.tools.list_ports
 import os, pickle, pytz, time
 import tkinter as tk
+import tottag_format
 import traceback
 import threading
 import asyncio
@@ -148,73 +149,24 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
    for i in range(details['num_devices']):
       label = details['labels'][i].decode().rstrip('\x00')
       uid_to_labels[int(details['uids'][i][0])] = label if label else str(details['uids'][i][0])
-   i = 0
-   log_data = defaultdict(dict)
    if save_raw_file:
       with open(os.path.join(storage_directory, f"{uid_to_labels[from_uid]}_{experiment_start_time}.ttg"), 'wb') as file:
          file.write(data)
-   try:
-      while i + 5 < len(data):
-         timestamp_raw = struct.unpack('<I', data[i+1:i+5])[0]
-         timestamp = experiment_start_time + (timestamp_raw / 1000)
-         if timestamp > int(time.time()) or ((timestamp_raw % 500) != 0) or data[i] < 1 or data[i] >= STORAGE_NUM_TYPES:
-            i += 1
-         elif data[i] == STORAGE_TYPE_VOLTAGE:
-            datum = struct.unpack('<I', data[i+5:i+9])[0]
-            if datum > 0 and datum < 4500:
-               log_data[timestamp]['v'] = datum
-               i += 9
-            else:
-               i += 1
-         elif data[i] == STORAGE_TYPE_CHARGING_EVENT:
-            if data[i+5] > 0 and data[i+5] < 5:
-               log_data[timestamp]['c'] = BATTERY_CODES[data[i+5]]
-               i += 6
-            else:
-               i += 1
-         elif data[i] == STORAGE_TYPE_MOTION:
-            if data[i+5] == 0 or data[i+5] == 1:
-               log_data[timestamp]['m'] = data[i+5] > 0
-               i += 6
-            else:
-               i += 1
-         elif data[i] == STORAGE_TYPE_RANGES:
-            log_data[timestamp]['r'] = {}
-            if data[i+5] < MAX_NUM_DEVICES:
-               for j in range(data[i+5]):
-                  uid = data[i+6+(j*3)]
-                  datum = struct.unpack('<H', data[i+7+(j*3):i+9+(j*3)])[0]
-                  if uid in uid_to_labels and datum < MAX_RANGING_DISTANCE_MM:
-                     log_data[timestamp]['r'][uid_to_labels[uid]] = datum
-               i += 6 + data[i+5]*3
-            else:
-               i += 1
-         elif data[i] == STORAGE_TYPE_IMU:
-            imu_length = data[i+5]
-            if imu_length == IMU_DATA_LENGTH:
-               log_data[timestamp]['i'] = [
-                  struct.unpack('<h', data[i+6:i+8])[0],
-                  struct.unpack('<h', data[i+8:i+10])[0],
-                  struct.unpack('<h', data[i+10:i+12])[0]
-               ]
-               i += 5 + imu_length
-            else:
-               i += 1
-         elif data[i] == STORAGE_TYPE_BLE_SCAN:
-            if data[i+5] < MAX_NUM_DEVICES:
-               log_data[timestamp]['b'] = []
-               for j in range(data[i+5]):
-                  uid = data[i+6+j]
-                  if uid in uid_to_labels:
-                     log_data[timestamp]['b'].append(uid_to_labels[uid])
-               i += 6 + data[i+5]
-            else:
-               i += 1
-         else:
-            i += 1
-   except Exception:
-      pass
-   log_data = [dict({'t': ts}, **datum) for ts, datum in log_data.items()]
+
+   # Dispatches on the stream magic, so legacy and page-framed downloads both decode here
+   log_data, report = tottag_format.parse(data, experiment_start_time, uid_to_labels)
+
+   # Say what was lost. A v1 download cannot report this at all -- a dropped page is simply absent, and a
+   # short log is indistinguishable from a lossy one -- so staying quiet would hide real data loss.
+   if report['holes'] or report['crc_failures'] or report['truncated']:
+      print(f"WARNING: log from {uid_to_labels[from_uid]} is incomplete:")
+      if report['holes']:
+         print(f"   {len(report['holes'])} page(s) unreadable on the device: {report['holes']}")
+      if report['crc_failures']:
+         print(f"   {len(report['crc_failures'])} page(s) failed CRC: {report['crc_failures']}")
+      if report['truncated']:
+         print(f"   transfer ended early: {report['pages_read']} of {report['total_pages']} pages received")
+
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
 
