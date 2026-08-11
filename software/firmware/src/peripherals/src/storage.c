@@ -595,6 +595,19 @@ static void erase_ahead_of_head(void)
    }
 }
 
+static void advance_write_head(void)
+{
+   // Step to the next good page
+   current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
+   while (is_bad_block(current_page))
+      current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
+
+   // Top up the erased window from the middle of each block to separate block
+   // erases from page writes
+   if ((current_page & (MEMORY_PAGES_PER_BLOCK - 1)) == ERASE_AHEAD_TRIGGER_PAGE)
+      erase_ahead_of_head();
+}
+
 static bool is_first_boot(void)
 {
    bool first_boot = false;
@@ -922,21 +935,25 @@ void storage_flush(bool write_partial_pages)
    {
       write_page(MEMORY_NUM_DATA_BYTES_PER_PAGE);
       cache_index -= MEMORY_NUM_DATA_BYTES_PER_PAGE;
-      current_page = (current_page + 1) % BBM_LUT_BASE_ADDRESS;
-      while (is_bad_block(current_page))
-         current_page = ((current_page + MEMORY_PAGES_PER_BLOCK) % BBM_LUT_BASE_ADDRESS) & 0xFFFFFFC0;
       memmove(cache, cache + MEMORY_NUM_DATA_BYTES_PER_PAGE, cache_index);
       cache_overflowed = false;
-
-      // Top up the erased window from the middle of each block to separate block
-      // erases from page writes
-      if ((current_page & (MEMORY_PAGES_PER_BLOCK - 1)) == ERASE_AHEAD_TRIGGER_PAGE)
-         erase_ahead_of_head();
+      advance_write_head();
    }
 
-   // Write a partial page of data if requested
+   // Write a partial page of data if requested, forfeiting the remainder of the page
    if (write_partial_pages && cache_index)
+   {
       write_page((uint16_t)cache_index);
+      cache_index = 0;
+      cache_overflowed = false;
+      advance_write_head();
+   }
+}
+
+bool storage_has_buffered_data(void)
+{
+   // Reports whether any collected data is sitting unwritten in RAM
+   return (cache_index != 0);
 }
 
 void storage_retrieve_experiment_details(experiment_details_t *details)
@@ -1162,14 +1179,15 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
 
 #else
 
-void storage_init(void) {}
+bool storage_init(void) { return true; }
 void storage_deinit(void) {}
 void storage_disable(bool disable) {}
 void storage_store_experiment_details(const experiment_details_t *details) {}
 void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
 void storage_store(const void *data, uint32_t data_length) {}
 void storage_flush(bool write_partial_pages) {}
-void storage_begin_reading(uint32_t starting_timestamp) {}
+bool storage_has_buffered_data(void) { return false; }
+void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp) {}
 void storage_end_reading(void) {}
 void storage_enter_maintenance_mode(void){}
 void storage_exit_maintenance_mode(void) {}

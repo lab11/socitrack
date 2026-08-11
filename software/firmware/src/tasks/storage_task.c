@@ -19,13 +19,18 @@ typedef struct ble_data_t { uint8_t data[1 + MAX_NUM_RANGING_DEVICES]; uint32_t 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint32_t previous_imu_timestamp;
-static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
-static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
-static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
 static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
+
+#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+
+static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
+static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
+static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
+
+#endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -168,13 +173,33 @@ void StorageTask(void *params)
    else
       storage_enter_maintenance_mode();
 
+#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_NO_STORAGE)
+
    // Loop forever, waiting until storage events are received
    while (true)
       if (xQueueReceive(storage_queue, &item, portMAX_DELAY) == pdPASS)
-#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_NO_STORAGE)
          if (item.type == STORAGE_TYPE_SHUTDOWN)
             system_reset(true);
+
 #else
+
+   // Loop forever, waiting until storage events are received or buffered data has waited long enough
+   const TickType_t flush_timeout_ticks = pdMS_TO_TICKS(1000 * STORAGE_FLUSH_TIMEOUT_S);
+   TickType_t flush_armed_at = 0;
+   bool flush_pending = false;
+
+   while (true)
+   {
+      // Wait for the remaining lifetime of the oldest buffered data or indefinitely if there is none
+      TickType_t wait_ticks = portMAX_DELAY;
+      if (flush_pending)
+      {
+         const TickType_t elapsed = xTaskGetTickCount() - flush_armed_at;
+         wait_ticks = (elapsed < flush_timeout_ticks) ? (flush_timeout_ticks - elapsed) : 0;
+      }
+
+      if (xQueueReceive(storage_queue, &item, wait_ticks) == pdPASS)
+      {
          switch (item.type)
          {
             case STORAGE_TYPE_SHUTDOWN:
@@ -199,5 +224,24 @@ void StorageTask(void *params)
             default:
                break;
          }
+
+         // Arm the deadline the moment the cache becomes dirty, and disarm it once a write empties it
+         if (!storage_has_buffered_data())
+            flush_pending = false;
+         else if (!flush_pending)
+         {
+            flush_pending = true;
+            flush_armed_at = xTaskGetTickCount();
+         }
+      }
+      else
+      {
+         // Buffered data has aged out so commit it as a partial page
+         storage_flush(true);
+         flush_pending = storage_has_buffered_data();
+         flush_armed_at = xTaskGetTickCount();
+      }
+   }
+
 #endif
 }
