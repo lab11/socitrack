@@ -47,6 +47,9 @@ BATTERY_CODES[1] = 'Plugged'
 BATTERY_CODES[2] = 'Unplugged'
 BATTERY_CODES[3] = 'Charging'
 BATTERY_CODES[4] = 'Not Charging'
+BATTERY_CODES[5] = 'Critical Voltage'
+
+MAX_BATTERY_CODE = 5
 
 FORMAT_V1 = 1
 FORMAT_V2 = 2
@@ -69,6 +72,29 @@ def detect_format(data):
 
 # Record Grammar --------------------------------------------------------------------------------------------------
 
+def _record_length(data, i):
+   """Structural length of the record starting at ``i``, or None if it cannot be determined.
+
+   A page-framed payload is record-aligned, so a record whose CONTENT fails validation can still be
+   stepped over using its own declared length. That lets one implausible record be rejected without
+   discarding the remainder of the page, which is what aborting would do.
+   """
+   record_type = data[i]
+   if record_type == STORAGE_TYPE_VOLTAGE:
+      length = 9
+   elif record_type in (STORAGE_TYPE_CHARGING_EVENT, STORAGE_TYPE_MOTION):
+      length = 6
+   elif record_type == STORAGE_TYPE_RANGES:
+      length = 6 + data[i + 5] * 3 if i + 6 <= len(data) else None
+   elif record_type == STORAGE_TYPE_IMU:
+      length = 5 + data[i + 5] if i + 6 <= len(data) else None       # the IMU length byte counts itself
+   elif record_type == STORAGE_TYPE_BLE_SCAN:
+      length = 6 + data[i + 5] if i + 6 <= len(data) else None
+   else:
+      return None
+   return length if (length is not None and i + length <= len(data)) else None
+
+
 def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynchronize):
    """Decode records from ``data`` into ``log_data``.
 
@@ -77,10 +103,12 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
    record-aligned by construction, so a byte that does not begin a valid record means the payload is
    damaged; the page is abandoned rather than slid through, which avoids inventing records from garbage.
 
-   Returns the number of records successfully decoded.
+   Returns ``(decoded, rejected)`` -- records successfully decoded, and structurally valid records whose
+   contents failed validation and were stepped over.
    """
    i = 0
    decoded = 0
+   rejected = 0
    now = int(time.time())
    while i + 5 < len(data):
       record_type = data[i]
@@ -96,7 +124,7 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                consumed = 9
 
          elif record_type == STORAGE_TYPE_CHARGING_EVENT and i + 6 <= len(data):
-            if 0 < data[i + 5] < 5:
+            if 0 < data[i + 5] <= MAX_BATTERY_CODE:
                log_data[timestamp]['c'] = BATTERY_CODES[data[i + 5]]
                consumed = 6
 
@@ -150,9 +178,15 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
       elif resynchronize:
          i += 1
       else:
-         break      # record-aligned payload that does not decode is damaged; stop rather than invent data
+         # Record-aligned payload: step over this record using its own length rather than abandoning the
+         # page. Only an unrecognisable type byte, or a record running past the end, is unrecoverable.
+         step = _record_length(data, i)
+         if step is None:
+            break
+         i += step
+         rejected += 1
 
-   return decoded
+   return decoded, rejected
 
 
 def _finalize(log_data):
@@ -186,8 +220,15 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
 
        {'total_pages': int,          # pages the device said it would send
         'pages_read': int,           # pages actually present in the stream
-        'holes': [seq, ...],         # pages the device could not read (payload length 0)
-        'crc_failures': [seq, ...],  # pages whose payload CRC did not match
+        'holes': [(position, seq), ...],          # pages the device could not read (payload length 0)
+        'crc_failures': [(position, seq), ...],   # pages whose payload CRC did not match
+        'short_pages': [(position, seq, decoded, expected), ...],  # pages that stopped decoding early
+        'rejected_records': [(position, seq, count), ...],  # records skipped as implausible
+
+    Each is identified by its POSITION in the stream first, and by the sequence number the device claimed
+    second.  Position is authoritative: it is derived from the stream itself, whereas a sequence number is
+    only as trustworthy as the firmware that wrote it.  Logs written before the sequence counter was fixed
+    contain duplicates, which would make a seq-keyed report ambiguous.
         'details': bytes | None,     # raw experiment_details blob from the stream header
         'truncated': bool}           # stream ended before total_pages were received
 
@@ -211,16 +252,18 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
 
    log_data = defaultdict(dict)
    report = {'total_pages': total_pages, 'pages_read': 0, 'holes': [], 'crc_failures': [],
-             'details': details, 'truncated': False}
+             'short_pages': [], 'rejected_records': [], 'details': details, 'truncated': False}
 
+   position = 0
    while offset + V2_PAGE_HEADER.size <= len(data):
-      seq, _first_ts, _last_ts, payload_length, _record_count, payload_crc = \
+      seq, _first_ts, _last_ts, payload_length, record_count, payload_crc = \
          V2_PAGE_HEADER.unpack_from(data, offset)
       offset += V2_PAGE_HEADER.size
+      position += 1
 
-      # A zero-length page is the device telling us it could not read that page; record the gap explicitly
+      # A zero-length page means the device could not read that page
       if payload_length == 0:
-         report['holes'].append(seq)
+         report['holes'].append((position - 1, seq))
          report['pages_read'] += 1
          continue
 
@@ -234,10 +277,15 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
 
       # Verify independently of the device, which also catches corruption introduced in transit
       if zlib.crc32(payload) != payload_crc:
-         report['crc_failures'].append(seq)
+         report['crc_failures'].append((position - 1, seq))
          continue
 
-      _parse_records(payload, experiment_start_time, log_data, uid_to_labels, resynchronize=False)
+      decoded, rejected = _parse_records(payload, experiment_start_time, log_data, uid_to_labels,
+                                        resynchronize=False)
+      if rejected:
+         report['rejected_records'].append((position - 1, seq, rejected))
+      if record_count and decoded < record_count:
+         report['short_pages'].append((position - 1, seq, decoded, record_count))
 
    if report['pages_read'] < total_pages:
       report['truncated'] = True
@@ -254,4 +302,4 @@ def parse(data, experiment_start_time=None, uid_to_labels=None):
       return parse_v2(data, experiment_start_time, uid_to_labels)
    records = parse_v1(data, experiment_start_time, uid_to_labels)
    return records, {'total_pages': None, 'pages_read': None, 'holes': [], 'crc_failures': [],
-                    'details': None, 'truncated': False}
+                    'short_pages': [], 'rejected_records': [], 'details': None, 'truncated': False}

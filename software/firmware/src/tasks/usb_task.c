@@ -197,14 +197,16 @@ void UsbCdcTask(void *params)
                experiment_details_t old_details = { 0 };
                storage_retrieve_experiment_details(&old_details);
                old_details.is_terminated = 1;
-               storage_store_experiment_details(&old_details);
+               if (storage_store_experiment_details(&old_details))
+                  app_set_experiment_start_time(old_details.experiment_start_time);
                break;
             }
             case USB_NEW_EXPERIMENT_COMMAND:
             {
                experiment_details_t new_details = { 0 };
                if (tud_cdc_read(&new_details, sizeof(new_details)) == sizeof(new_details))
-                  storage_store_experiment_details(&new_details);
+                  if (storage_store_experiment_details(&new_details))
+                     app_set_experiment_start_time(new_details.experiment_start_time);
                break;
             }
             case USB_SET_LOG_DL_DATES_COMMAND:

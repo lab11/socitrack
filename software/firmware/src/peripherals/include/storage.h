@@ -72,6 +72,30 @@ typedef struct __attribute__ ((__packed__))
 #define STORAGE_META_HEADER_CRC_BYTES               (sizeof(storage_meta_header_t) - (2 * sizeof(uint32_t)))
 
 
+// Offload Wire Format -------------------------------------------------------------------------------------------------
+
+#define STORAGE_STREAM_MAGIC                        0x31535454   // 'TTS1', little-endian
+
+typedef struct __attribute__ ((__packed__))
+{
+   uint32_t magic;                  // STORAGE_STREAM_MAGIC
+   uint16_t format_version;         // STORAGE_FORMAT_VERSION
+   uint16_t details_length;         // sizeof(experiment_details_t), which follows this header
+   uint32_t total_pages;            // pages that will be sent, including any zero-length gaps
+   uint32_t total_payload_bytes;    // sum of all payload lengths
+} storage_stream_header_t;
+
+typedef struct __attribute__ ((__packed__))
+{
+   uint32_t seq;                    // page sequence within the epoch; identifies a gap for retransmission
+   uint32_t first_timestamp;        // experiment-relative ms, or STORAGE_NO_TIMESTAMP
+   uint32_t last_timestamp;         // experiment-relative ms, or STORAGE_NO_TIMESTAMP
+   uint16_t payload_length;         // 0 means the device could not read this page
+   uint16_t record_count;
+   uint32_t payload_crc;            // CRC-32 over the payload bytes that follow
+} storage_wire_page_t;
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 bool storage_init(void);
@@ -90,5 +114,6 @@ void storage_exit_maintenance_mode(void);
 uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp);
 uint32_t storage_retrieve_num_data_bytes(void);
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer);
+uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header);
 
 #endif  // #ifndef __STORAGE_HEADER_H__

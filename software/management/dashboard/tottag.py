@@ -68,6 +68,7 @@ BATTERY_CODES[1] = 'Plugged'
 BATTERY_CODES[2] = 'Unplugged'
 BATTERY_CODES[3] = 'Charging'
 BATTERY_CODES[4] = 'Not Charging'
+BATTERY_CODES[5] = 'Critical Voltage'
 
 TOTTAG_USB_VID = 0x1209
 TOTTAG_USB_PID = 0x2828
@@ -161,9 +162,11 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
    if report['holes'] or report['crc_failures'] or report['truncated']:
       print(f"WARNING: log from {uid_to_labels[from_uid]} is incomplete:")
       if report['holes']:
-         print(f"   {len(report['holes'])} page(s) unreadable on the device: {report['holes']}")
+         print(f"   {len(report['holes'])} page(s) unreadable on the device (position, seq): {report['holes']}")
       if report['crc_failures']:
-         print(f"   {len(report['crc_failures'])} page(s) failed CRC: {report['crc_failures']}")
+         print(f"   {len(report['crc_failures'])} page(s) failed CRC (position, seq): {report['crc_failures']}")
+      if report['short_pages']:
+         print(f"   {len(report['short_pages'])} page(s) stopped decoding early (position, seq, decoded, expected): {report['short_pages'][:5]}")
       if report['truncated']:
          print(f"   transfer ended early: {report['pages_read']} of {report['total_pages']} pages received")
 
@@ -245,7 +248,18 @@ class TotTagBLE(threading.Thread):
 
    def data_callback(self, _sender_uuid, data):
       if self.data_length == 0:
-         if len(data) >= 4:
+         if data[:4] == tottag_format.V2_STREAM_MAGIC:
+            _magic, _ver, details_len, total_pages, total_payload = \
+               tottag_format.V2_STREAM_HEADER.unpack(data[:tottag_format.V2_STREAM_HEADER.size])
+            self.data_length = (tottag_format.V2_STREAM_HEADER.size + details_len +
+                                total_pages * tottag_format.V2_PAGE_HEADER.size + total_payload)
+            self.data = bytearray(self.data_length)
+            self.data[0:len(data)] = data
+            self.data_index = len(data)
+            self.data_details = None      # supplied by the next indication
+            self.result_queue.put_nowait(('LOGDATA', self.data_length))
+         elif len(data) >= 4:
+            # Legacy stream: a u32 total length followed by the experiment details, then bare payloads
             self.data_index = 0
             self.data_length = struct.unpack('<I', data[0:4])[0]
             if self.data_length == 0:
@@ -253,6 +267,11 @@ class TotTagBLE(threading.Thread):
             self.data = bytearray(self.data_length)
             self.data_details = unpack_experiment_details(data[4:])
             self.result_queue.put_nowait(('LOGDATA', self.data_length))
+      elif self.data_details is None:
+         # Second half of a page-framed header: the experiment details, kept in the stream as well
+         self.data_details = unpack_experiment_details(data)
+         self.data[self.data_index:self.data_index+len(data)] = data
+         self.data_index += len(data)
       elif len(data) == 1 and data[0] == MAINTENANCE_DOWNLOAD_COMPLETE:
          self.command_queue.put_nowait('DOWNLOAD_DONE')
       else:
@@ -267,18 +286,38 @@ class TotTagBLE(threading.Thread):
             self.connected_device.write(bytes([MAINTENANCE_DOWNLOAD_LOG]))
             self.connected_device.address = ':'.join([f'{c:02x}' for c in reversed(self.connected_device.readline()[:-1])])
             details_len = struct.unpack('<H', self.connected_device.read(2))[0]
-            self.data_length = struct.unpack('<I', self.connected_device.read(4))[0]
-            if self.data_length == 0:
-               self.data_length = 1
-            self.data = bytearray(self.data_length)
-            self.data_details = unpack_experiment_details(self.connected_device.read(details_len))
+            prefix = self.connected_device.read(4)
+            if prefix == tottag_format.V2_STREAM_MAGIC:
+               # Page-framed stream; accumulate it verbatim so the parser sees the header too
+               rest = self.connected_device.read(tottag_format.V2_STREAM_HEADER.size - 4)
+               _m, _v, hdr_details_len, total_pages, total_payload = \
+                  tottag_format.V2_STREAM_HEADER.unpack(prefix + rest)
+               details_blob = self.connected_device.read(hdr_details_len)
+               self.data_length = (tottag_format.V2_STREAM_HEADER.size + hdr_details_len +
+                                   total_pages * tottag_format.V2_PAGE_HEADER.size + total_payload)
+               self.data = bytearray(self.data_length)
+               header = prefix + rest + details_blob
+               self.data[0:len(header)] = header
+               self.data_index = len(header)
+               self.data_details = unpack_experiment_details(details_blob)
+            else:
+               # Legacy stream: the four bytes just read are the total length
+               self.data_length = struct.unpack('<I', prefix)[0]
+               if self.data_length == 0:
+                  self.data_length = 1
+               self.data = bytearray(self.data_length)
+               self.data_index = 0
+               self.data_details = unpack_experiment_details(self.connected_device.read(details_len))
             self.result_queue.put_nowait(('LOGDATA', self.data_length))
-            for i in range(0, self.data_length, 512):
-               bytes_to_read = min(512, self.data_length - i)
-               self.data[self.data_index:self.data_index+bytes_to_read] = self.connected_device.read(bytes_to_read)
-               self.data_index += bytes_to_read
+            while self.data_index < self.data_length:
+               chunk = self.connected_device.read(min(512, self.data_length - self.data_index))
+               if not chunk:
+                  break                     # device stopped sending before the declared length
+               end = self.data_index + len(chunk)
+               self.data[self.data_index:end] = chunk
+               self.data_index = end
                self.result_queue.put_nowait(('LOGDATA', self.data_index))
-            self.data_index = len(self.data)
+            del self.data[self.data_index:]  # keep only what genuinely arrived
             self.command_queue.put_nowait('DOWNLOAD_DONE')
       except serial.SerialException:
          self.connected_device.close()

@@ -19,6 +19,7 @@
 
 static TaskHandle_t app_task_handle;
 static volatile uint32_t seconds_to_activate_buzzer;
+static volatile battery_event_t pending_battery_event;
 static uint32_t download_start_timestamp, download_end_timestamp;
 
 
@@ -34,14 +35,21 @@ static void handle_notification(app_notification_t notification)
          vTaskDelay(pdMS_TO_TICKS(1000));
       }
    if ((notification & APP_NOTIFY_BATTERY_EVENT) != 0)
-      storage_flush_and_shutdown();
+   {
+      // Record the battery event, including a critical-voltage trip
+      const battery_event_t battery_event = pending_battery_event;
+      if ((battery_event >= BATTERY_PLUGGED) && (battery_event <= BATTERY_CRITICAL_VOLTAGE))
+         storage_write_charging_status(battery_event);
+      if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED) || (battery_event == BATTERY_CRITICAL_VOLTAGE))
+         storage_flush_and_shutdown();
+   }
    if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
    {
       // Define log file transmission variables
       static uint8_t transmit_buffer[MEMORY_PAGE_SIZE_BYTES];
       experiment_details_t details;
 
-      // Transmit estimated total data length
+      // Transmit the stream header, then every page with its own framing
       storage_begin_reading(download_start_timestamp, download_end_timestamp);
       storage_retrieve_experiment_details(&details);
       uint32_t total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
@@ -50,29 +58,47 @@ static void handle_notification(app_notification_t notification)
    #else
       uint32_t total_data_length = storage_retrieve_num_data_bytes();
    #endif
-      transmit_log_data(&total_data_length, sizeof(total_data_length));
+      const storage_stream_header_t stream_header = {
+         .magic = STORAGE_STREAM_MAGIC,
+         .format_version = STORAGE_FORMAT_VERSION,
+         .details_length = (uint16_t)sizeof(details),
+         .total_pages = total_data_chunks,
+         .total_payload_bytes = total_data_length
+      };
+      transmit_log_data(&stream_header, sizeof(stream_header));
       transmit_log_data(&details, sizeof(details));
 
-      // Transmit log file data in chunks
+      // Every page is framed with its sequence number, time bounds and payload CRC
       for (uint32_t chunk = 0; chunk < total_data_chunks; ++chunk)
       {
-         const uint32_t data_length = storage_retrieve_next_data_chunk(transmit_buffer);
+         storage_page_header_t page;
+         const uint32_t data_length = storage_retrieve_next_page(transmit_buffer, &page);
+         const storage_wire_page_t wire = {
+            .seq = page.seq,
+            .first_timestamp = page.first_timestamp,
+            .last_timestamp = page.last_timestamp,
+            .payload_length = page.payload_length,
+            .record_count = page.record_count,
+            .payload_crc = page.payload_crc
+         };
+         transmit_log_data(&wire, sizeof(wire));
          if (data_length)
             transmit_log_data(transmit_buffer, data_length);
       }
       storage_end_reading();
+
+      // Push the final partial buffer; without this the tail of the transfer never leaves the device
+      transmit_log_flush();
    }
 }
 
 static void battery_event_handler(battery_event_t battery_event)
 {
-   // Notify the app of a change in the plugged-in status of the device or an imminent brownout
-   if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED) || (battery_event == BATTERY_CRITICAL_VOLTAGE))
-   {
-      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_BATTERY_EVENT, eSetBits, &xHigherPriorityTaskWoken);
-      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-   }
+   // Hand every battery event to the app task
+   pending_battery_event = battery_event;
+   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+   xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_BATTERY_EVENT, eSetBits, &xHigherPriorityTaskWoken);
+   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 

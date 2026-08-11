@@ -10,7 +10,7 @@
 
 typedef enum { ROLE_IDLE = 10, ROLE_MASTER, ROLE_PARTICIPANT, ROLE_ASLEEP } schedule_role_t;
 
-typedef enum { NOT_IN_MOTION = 0, IN_MOTION, NOT_ON_CHARGER, ON_CHARGER } motion_code_t;
+typedef enum { NOT_IN_MOTION = 0, IN_MOTION } motion_code_t;
 
 typedef enum {
    APP_NOTIFY_VERIFY_CONFIGURATION = 0b00000001,
@@ -42,6 +42,7 @@ void app_download_log_file(uint32_t start_time, uint32_t end_time);
 void app_allow_downloads(bool allow);
 uint32_t app_get_experiment_time(int32_t offset);
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time);
+void app_set_experiment_start_time(uint32_t start_time);
 
 // Ranging Task Public Functions
 void ranging_begin(schedule_role_t role);
@@ -51,6 +52,7 @@ bool ranging_active(void);
 void storage_flush_and_shutdown(void);
 void storage_write_battery_level(uint32_t battery_voltage_mV);
 void storage_write_motion_status(motion_code_t motion_code);
+void storage_write_charging_status(battery_event_t battery_event);
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset);
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices);
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len);

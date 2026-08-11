@@ -26,8 +26,19 @@ static uint32_t experiment_start_time;
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-uint32_t app_get_experiment_time(int32_t offset) { return (uint32_t)(rtc_get_timestamp_diff_ms(experiment_start_time) + offset); }
+uint32_t app_get_experiment_time(int32_t offset)
+{
+   // Clamp instead of wrapping
+   const int64_t elapsed_ms = (int64_t)rtc_get_timestamp_diff_ms(experiment_start_time) + offset;
+   return (elapsed_ms > 0) ? (uint32_t)elapsed_ms : 0;
+}
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time) { return (experiment_time / 1000) + experiment_start_time; }
+
+void app_set_experiment_start_time(uint32_t start_time)
+{
+   // Every record timestamp is relative to this value
+   experiment_start_time = start_time;
+}
 
 void run_tasks(void)
 {
@@ -86,7 +97,8 @@ void run_tasks(void)
          };
          //new exp details can only be set in maintenance mode
          storage_enter_maintenance_mode();
-         storage_store_experiment_details(&details);
+         if (storage_store_experiment_details(&details))
+            app_set_experiment_start_time(details.experiment_start_time);
          if (!battery_monitor_is_plugged_in())
             storage_exit_maintenance_mode();
       }

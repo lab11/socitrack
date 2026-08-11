@@ -38,9 +38,11 @@ def process_tottag_data(data, experiment_start_time=None):
    if report['holes'] or report['crc_failures'] or report['truncated']:
       print('WARNING: this log is incomplete:')
       if report['holes']:
-         print(f"   {len(report['holes'])} page(s) unreadable on the device: {report['holes']}")
+         print(f"   {len(report['holes'])} page(s) unreadable on the device (position, seq): {report['holes']}")
       if report['crc_failures']:
-         print(f"   {len(report['crc_failures'])} page(s) failed CRC: {report['crc_failures']}")
+         print(f"   {len(report['crc_failures'])} page(s) failed CRC (position, seq): {report['crc_failures']}")
+      if report['short_pages']:
+         print(f"   {len(report['short_pages'])} page(s) stopped decoding early (position, seq, decoded, expected): {report['short_pages'][:5]}")
       if report['truncated']:
          print(f"   file ends early: {report['pages_read']} of {report['total_pages']} pages present")
 

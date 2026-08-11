@@ -1150,6 +1150,7 @@ static void commit_current_page(void)
    if (!cache_index)
       return;
    write_page((uint16_t)cache_index);
+   ++next_page_seq;
    cache_index = page_record_count = 0;
    page_first_timestamp = page_last_timestamp = STORAGE_NO_TIMESTAMP;
    cache_overflowed = false;
@@ -1389,6 +1390,12 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       }
    }
 
+   // The trailing chunk is whatever is still buffered in RAM, which is NOT a stored page. Counting it
+   // when it is empty makes the device announce a page it then sends with a zero length, which the host
+   // can only read as a lost page. In the time-bounded case last_reading_page is a real page and the +1
+   // makes that range inclusive instead.
+   if (last_reading_page == current_page)
+      return log_page_distance(reading_page, last_reading_page) + (cache_index ? 1 : 0);
    return 1 + log_page_distance(reading_page, last_reading_page);
 #endif
 }
@@ -1397,6 +1404,67 @@ uint32_t storage_retrieve_num_data_bytes(void)
 {
    // Return the total number of log data bytes available (must be called after "storage_retrieve_num_data_chunks()")
    return (last_reading_page == current_page) ? (log_data_size + cache_index) : log_data_size;
+}
+
+uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header)
+{
+   // Retrieve the next page together with the metadata the offload stream needs to frame it
+   memset(header, 0, sizeof(*header));
+   header->magic = STORAGE_PAGE_MAGIC;
+   header->epoch = log_epoch;
+   header->first_timestamp = header->last_timestamp = STORAGE_NO_TIMESTAMP;
+   if (!is_reading)
+      return 0;
+
+   uint32_t length = 0;
+   bool is_last = false;
+   if (reading_page == last_reading_page)
+   {
+      is_last = true;
+      if (reading_page == current_page)
+      {
+         // Whatever is still buffered in RAM, described by the header fields being accumulated for it
+         memcpy(buffer, cache, cache_index);
+         length = cache_index;
+         header->seq = next_page_seq;
+         header->first_timestamp = page_first_timestamp;
+         header->last_timestamp = page_last_timestamp;
+         header->record_count = (uint16_t)page_record_count;
+      }
+   }
+   else
+      while (is_bad_block(reading_page))
+         reading_page = log_next_block(reading_page);
+
+   if (!length && !(is_last && (reading_page == current_page)))
+   {
+      // Capture the header before extract_page_payload() strips it out of the buffer
+      const uint32_t position = log_page_distance(starting_page, reading_page);
+      if (read_page(buffer, reading_page))
+      {
+         const storage_page_header_t stored = *(const storage_page_header_t*)buffer;
+         length = extract_page_payload(buffer);
+         if (length || page_header_valid(&stored))
+         {
+            header->seq = stored.seq;
+            header->first_timestamp = stored.first_timestamp;
+            header->last_timestamp = stored.last_timestamp;
+            header->record_count = stored.record_count;
+         }
+         else
+            header->seq = position;   // header unreadable, so identify the gap by position instead
+      }
+      else
+         header->seq = position;
+   }
+
+   header->payload_length = (uint16_t)length;
+   header->payload_crc = length ? crc32_compute(buffer, length) : 0;
+   if (is_last)
+      is_reading = false;
+   else
+      reading_page = log_next_page(reading_page);
+   return length;
 }
 
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
@@ -1459,5 +1527,6 @@ void storage_exit_maintenance_mode(void) {}
 uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp) { return 0; }
 uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
+uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header) { (void)header; return 0; }
 
 #endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)

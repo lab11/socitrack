@@ -130,7 +130,12 @@ uint32_t rtc_get_timestamp_diff_ms(uint32_t starting_timestamp)
 {
    rtc_stat = RTC->RTCSTAT;  // Read RTCSTAT to mitigate RTC hanging as per errata
    static am_hal_rtc_time_t rtc_time;
-   return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) ? ((1000 * (to_unix_timestamp(&rtc_time) - starting_timestamp)) + (10 * rtc_time.ui32Hundredths)) : 0;
+   if (am_hal_rtc_time_get(&rtc_time) != AM_HAL_STATUS_SUCCESS)
+      return 0;
+
+   // Clamp rather than underflow
+   const uint32_t now = to_unix_timestamp(&rtc_time);
+   return (now > starting_timestamp) ? ((1000 * (now - starting_timestamp)) + (10 * rtc_time.ui32Hundredths)) : 0;
 }
 
 uint32_t rtc_get_time_of_day(void)

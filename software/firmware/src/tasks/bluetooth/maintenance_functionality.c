@@ -39,7 +39,8 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
          case BLE_MAINTENANCE_NEW_EXPERIMENT:
          {
             const experiment_details_t* new_details = (const experiment_details_t*)(pValue + 1);
-            storage_store_experiment_details(new_details);
+            if (storage_store_experiment_details(new_details))
+               app_set_experiment_start_time(new_details->experiment_start_time);
             break;
          }
          case BLE_MAINTENANCE_DELETE_EXPERIMENT:
@@ -47,7 +48,8 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             experiment_details_t old_details = { 0 };
             storage_retrieve_experiment_details(&old_details);
             old_details.is_terminated = 1;
-            storage_store_experiment_details(&old_details);
+            if (storage_store_experiment_details(&old_details))
+               app_set_experiment_start_time(old_details.experiment_start_time);
             break;
          }
          case BLE_MAINTENANCE_SET_LOG_DOWNLOAD_DATES:
@@ -72,13 +74,32 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
    return ATT_SUCCESS;
 }
 
+static uint16_t append_framed_page(uint8_t *buffer)
+{
+   // Append the next page to the transmit buffer, framed with its own header
+   storage_page_header_t page;
+   const uint32_t length = storage_retrieve_next_page(buffer + sizeof(storage_wire_page_t), &page);
+   const storage_wire_page_t wire = {
+      .seq = page.seq,
+      .first_timestamp = page.first_timestamp,
+      .last_timestamp = page.last_timestamp,
+      .payload_length = page.payload_length,
+      .record_count = page.record_count,
+      .payload_crc = page.payload_crc
+   };
+   memcpy(buffer, &wire, sizeof(wire));
+   return (uint16_t)(sizeof(wire) + length);
+}
+
 void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
 {
    // Define static transmission variables
    static bool started_reading = false, is_reading = false, done_reading = false;
-   static uint8_t transmit_buffer[2 * MEMORY_PAGE_SIZE_BYTES], previous_buffer[MEMORY_PAGE_SIZE_BYTES];
+   static uint8_t transmit_buffer[(2 * MEMORY_PAGE_SIZE_BYTES) + sizeof(storage_wire_page_t)], previous_buffer[MEMORY_PAGE_SIZE_BYTES];
    static uint32_t data_chunk_index, total_data_chunks, total_data_length;
-   static uint16_t buffer_index, buffer_length, previous_length;
+   static uint16_t buffer_index, buffer_length, previous_length, header_length;
+   static experiment_details_t pending_details;
+   static bool sent_details = false;
 
    // Determine whether this is a new transmission or a continuation
    previous_max_length = max_length;
@@ -102,17 +123,39 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
 #else
       total_data_length = storage_retrieve_num_data_bytes();
 #endif
-      memcpy(transmit_buffer, &total_data_length, sizeof(total_data_length));
-      memcpy(transmit_buffer + sizeof(total_data_length), &details, sizeof(details));
-      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length) + sizeof(experiment_details_t), transmit_buffer);
+      const storage_stream_header_t stream_header = {
+         .magic = STORAGE_STREAM_MAGIC,
+         .format_version = STORAGE_FORMAT_VERSION,
+         .details_length = (uint16_t)sizeof(details),
+         .total_pages = total_data_chunks,
+         .total_payload_bytes = total_data_length
+      };
+      // The stream header and the experiment details are sent as SEPARATE indications - together they are
+      // 255 bytes, which exceeds the 244-byte ATT payload limit at the negotiated 247-byte MTU
+      pending_details = details;
+      sent_details = false;
+      memcpy(transmit_buffer, &stream_header, sizeof(stream_header));
+      header_length = (uint16_t)sizeof(stream_header);
+      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
+   }
+   else if (!sent_details)
+   {
+      // Second half of the header: the experiment details, in their own indication
+      if (!repeat)
+      {
+         sent_details = true;
+         memcpy(transmit_buffer, &pending_details, sizeof(pending_details));
+         header_length = (uint16_t)sizeof(experiment_details_t);
+      }
+      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
    }
    else if (!is_reading && started_reading && !done_reading)
    {
       if (repeat)
-         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(total_data_length) + sizeof(experiment_details_t), transmit_buffer);
+         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
       else
       {
-         buffer_length = (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer);
+         buffer_length = append_framed_page(transmit_buffer);
          data_chunk_index = 1;
          is_reading = true;
       }
@@ -141,7 +184,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          {
             memmove(transmit_buffer, transmit_buffer + buffer_index, buffer_length - buffer_index);
             buffer_length -= buffer_index;
-            buffer_length += (uint16_t)storage_retrieve_next_data_chunk(transmit_buffer + buffer_length);
+            buffer_length += append_framed_page(transmit_buffer + buffer_length);
             ++data_chunk_index;
             buffer_index = 0;
          }
