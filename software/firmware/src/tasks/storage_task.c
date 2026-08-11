@@ -39,47 +39,27 @@ static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 
 static void store_battery_voltage(uint32_t timestamp, uint32_t battery_voltage_mV)
 {
-   const uint8_t storage_type = STORAGE_TYPE_VOLTAGE;
-   storage_store(&storage_type, sizeof(storage_type));
-   storage_store(&timestamp, sizeof(timestamp));
-   storage_store(&battery_voltage_mV, sizeof(battery_voltage_mV));
-   storage_flush(false);
+   storage_store_record(STORAGE_TYPE_VOLTAGE, timestamp, &battery_voltage_mV, sizeof(battery_voltage_mV));
 }
 
 static void store_motion_change(uint32_t timestamp, bool in_motion)
 {
-   const uint8_t storage_type = STORAGE_TYPE_MOTION;
-   storage_store(&storage_type, sizeof(storage_type));
-   storage_store(&timestamp, sizeof(timestamp));
-   storage_store(&in_motion, sizeof(in_motion));
-   storage_flush(false);
+   storage_store_record(STORAGE_TYPE_MOTION, timestamp, &in_motion, sizeof(in_motion));
 }
 
 static void store_ranges(uint32_t timestamp, const uint8_t *range_data, uint32_t range_data_len)
 {
-   const uint8_t storage_type = STORAGE_TYPE_RANGES;
-   storage_store(&storage_type, sizeof(storage_type));
-   storage_store(&timestamp, sizeof(timestamp));
-   storage_store(range_data, range_data_len);
-   storage_flush(false);
+   storage_store_record(STORAGE_TYPE_RANGES, timestamp, range_data, range_data_len);
 }
 
 static void store_ble_scan_data(uint32_t timestamp, const uint8_t *ble_data, uint32_t ble_data_len)
 {
-   const uint8_t storage_type = STORAGE_TYPE_BLE_SCAN;
-   storage_store(&storage_type, sizeof(storage_type));
-   storage_store(&timestamp, sizeof(timestamp));
-   storage_store(ble_data, ble_data_len);
-   storage_flush(false);
+   storage_store_record(STORAGE_TYPE_BLE_SCAN, timestamp, ble_data, ble_data_len);
 }
 
 static void store_imu_data(uint32_t timestamp, const uint8_t *imu_data, uint32_t imu_data_len)
 {
-   const uint8_t storage_type = STORAGE_TYPE_IMU;
-   storage_store(&storage_type, sizeof(storage_type));
-   storage_store(&timestamp, sizeof(timestamp));
-   storage_store(imu_data, imu_data_len);
-   storage_flush(false);
+   storage_store_record(STORAGE_TYPE_IMU, timestamp, imu_data, imu_data_len);
 }
 
 

@@ -27,10 +27,33 @@ typedef enum {
 #define MEMORY_PAGE_COUNT                           (MEMORY_PAGES_PER_BLOCK * MEMORY_BLOCK_COUNT)
 #define MEMORY_PAGE_WITH_ECC_SIZE_BYTES             (MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE)
 #define MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL      3
-#define MEMORY_NUM_DATA_BYTES_PER_PAGE              (MEMORY_PAGE_SIZE_BYTES - 4)
+#define MEMORY_NUM_DATA_BYTES_PER_PAGE              (MEMORY_PAGE_SIZE_BYTES - sizeof(storage_page_header_t))
 #define MEMORY_NUM_ERASE_MARGIN_BLOCKS              16
 #define ERASE_AHEAD_BLOCKS                          2
 #define ERASE_AHEAD_TRIGGER_PAGE                    (MEMORY_PAGES_PER_BLOCK / 2)
+
+
+// On-Flash Page Format Defintions -------------------------------------------------------------------------------------
+
+#define STORAGE_FORMAT_VERSION                      1
+#define STORAGE_PAGE_MAGIC                          0x31505454   // 'TTP1', little-endian
+#define STORAGE_NO_TIMESTAMP                        0xFFFFFFFF
+
+typedef struct __attribute__ ((__packed__))
+{
+   uint32_t magic;               // STORAGE_PAGE_MAGIC
+   uint32_t epoch;               // experiment generation; makes stale data from a prior run unmistakable
+   uint32_t seq;                 // page index within the epoch, starting at 0
+   uint32_t first_timestamp;     // experiment-relative ms of the first record, or STORAGE_NO_TIMESTAMP
+   uint32_t last_timestamp;      // experiment-relative ms of the last record, or STORAGE_NO_TIMESTAMP
+   uint16_t payload_length;      // valid payload bytes
+   uint16_t record_count;        // complete records in the payload
+   uint32_t payload_crc;         // CRC-32 over payload[0 .. payload_length)
+   uint32_t header_crc;          // CRC-32 over this header up to (not including) this field
+} storage_page_header_t;
+
+#define STORAGE_PAGE_HEADER_CRC_BYTES               (sizeof(storage_page_header_t) - sizeof(uint32_t))
+#define STORAGE_MAX_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -40,7 +63,7 @@ void storage_deinit(void);
 void storage_disable(bool disable);
 void storage_store_experiment_details(const experiment_details_t *details);
 void storage_retrieve_experiment_details(experiment_details_t *details);
-void storage_store(const void *data, uint32_t data_length);
+void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length);
 void storage_flush(bool write_partial_pages);
 bool storage_has_buffered_data(void);
 void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp);

@@ -17,22 +17,26 @@
 static uint8_t page_buffer[MEMORY_NUM_DATA_BYTES_PER_PAGE];
 static uint8_t verify_buffer[MEMORY_PAGE_SIZE_BYTES];
 
-// Writes one full page tagged with its own index, so the log is self-describing on read-back
+// One record sized to exactly fill a page, flushed immediately, so page index == record index and the
+// existing per-page assertions still hold under the record-framed format
+#define TEST_RECORD_DATA_BYTES   (MEMORY_NUM_DATA_BYTES_PER_PAGE - 5)
+
 static void write_tagged_page(uint32_t index)
 {
-   memset(page_buffer, (uint8_t)index, sizeof(page_buffer));
+   memset(page_buffer, (uint8_t)index, TEST_RECORD_DATA_BYTES);
    memcpy(page_buffer, "PAGE", 4);
    memcpy(page_buffer + 4, &index, sizeof(index));
-   storage_store(page_buffer, sizeof(page_buffer));
-   storage_flush(false);
+   storage_store_record(STORAGE_TYPE_IMU, 500 * index, page_buffer, TEST_RECORD_DATA_BYTES);
+   storage_flush(true);
 }
 
-// Checks a chunk already read into verify_buffer against its expected index
+// Checks a chunk already read into verify_buffer. A chunk is now a framed record:
+// [type:1][timestamp:4][data:TEST_RECORD_DATA_BYTES]
 static bool verify_tagged_page(uint32_t expected_index, uint32_t length)
 {
    if (!length)
    {
-      print("  ERROR: page %u returned 0 bytes (lost)\n", expected_index);
+      print("  ERROR: page %u returned 0 bytes (lost, or failed CRC)\n", expected_index);
       return false;
    }
    if (length != MEMORY_NUM_DATA_BYTES_PER_PAGE)
@@ -40,15 +44,28 @@ static bool verify_tagged_page(uint32_t expected_index, uint32_t length)
       print("  ERROR: page %u length %u, expected %u\n", expected_index, length, (uint32_t)MEMORY_NUM_DATA_BYTES_PER_PAGE);
       return false;
    }
+   if (verify_buffer[0] != STORAGE_TYPE_IMU)
+   {
+      print("  ERROR: page %u record type %u, expected %u\n", expected_index, verify_buffer[0], (uint32_t)STORAGE_TYPE_IMU);
+      return false;
+   }
+   uint32_t timestamp = 0;
+   memcpy(&timestamp, verify_buffer + 1, sizeof(timestamp));
+   if (timestamp != (500 * expected_index))
+   {
+      print("  ERROR: page %u timestamp %u, expected %u\n", expected_index, timestamp, 500 * expected_index);
+      return false;
+   }
+   const uint8_t *record = verify_buffer + 5;
    uint32_t page_index = 0;
-   memcpy(&page_index, verify_buffer + 4, sizeof(page_index));
-   if (memcmp(verify_buffer, "PAGE", 4) || (page_index != expected_index))
+   memcpy(&page_index, record + 4, sizeof(page_index));
+   if (memcmp(record, "PAGE", 4) || (page_index != expected_index))
    {
       print("  ERROR: page %u carries index %u (corrupt or out of order)\n", expected_index, page_index);
       return false;
    }
-   for (uint32_t i = 8; i < MEMORY_NUM_DATA_BYTES_PER_PAGE; ++i)
-      if (verify_buffer[i] != (uint8_t)expected_index)
+   for (uint32_t i = 8; i < TEST_RECORD_DATA_BYTES; ++i)
+      if (record[i] != (uint8_t)expected_index)
       {
          print("  ERROR: page %u body mismatch at offset %u\n", expected_index, i);
          return false;
@@ -116,6 +133,111 @@ static void test_forced_block_crossings(void)
    const bool passed = !errors && (verified == BLOCK_CROSSING_NUM_PAGES);
    print("=== Block-crossing test %s: %u/%u pages verified, %u errors ===\n\n",
          passed ? "PASSED" : "FAILED", verified, (uint32_t)BLOCK_CROSSING_NUM_PAGES, errors);
+}
+
+
+// Partial-Page Flush Test ---------------------------------------------------------------------------------------------
+//
+// Covers the Phase 2 change to storage_flush(true). Before Phase 2 a partial page was written WITHOUT
+// advancing the write head or clearing the cache, which was safe only because the single caller
+// (STORAGE_TYPE_SHUTDOWN) immediately reset the device. Now that a timer can fire the same path
+// mid-deployment, failing to advance would re-program a NAND page that has already been programmed --
+// exactly the corruption class this work exists to eliminate.
+//
+// The test therefore writes full pages, forces a partial page, then writes more full pages, and verifies
+// that everything reads back intact and in order. A head that failed to advance shows up as a short page
+// count, a corrupt page, or both.
+
+#define PARTIAL_TEST_FULL_PAGES        3
+#define PARTIAL_TEST_PARTIAL_BYTES     100
+
+static void test_partial_page_flush(void)
+{
+   print("\n=== Partial-page flush test ===\n");
+
+   storage_enter_maintenance_mode();
+   reset_log_to_known_state();
+   storage_exit_maintenance_mode();
+   storage_disable(false);
+
+   uint32_t errors = 0;
+
+   // Full pages before the partial
+   for (uint32_t page = 0; page < PARTIAL_TEST_FULL_PAGES; ++page)
+      write_tagged_page(page);
+   if (storage_has_buffered_data())
+   {
+      print("  ERROR: cache should be empty after writing whole pages\n");
+      ++errors;
+   }
+
+   // Force a partial page
+   memset(page_buffer, 0xA5, PARTIAL_TEST_PARTIAL_BYTES);
+   memcpy(page_buffer, "PART", 4);
+   storage_store_record(STORAGE_TYPE_MOTION, 12345, page_buffer, PARTIAL_TEST_PARTIAL_BYTES);
+   if (!storage_has_buffered_data())
+   {
+      print("  ERROR: cache should report buffered data after a store\n");
+      ++errors;
+   }
+   storage_flush(true);
+   if (storage_has_buffered_data())
+   {
+      print("  ERROR: cache should be empty after a partial flush\n");
+      ++errors;
+   }
+   print("  Wrote %u full pages, then a %u-byte partial page\n",
+         (uint32_t)PARTIAL_TEST_FULL_PAGES, (uint32_t)PARTIAL_TEST_PARTIAL_BYTES);
+
+   // Full pages after the partial. If the head did not advance, these re-program an already-programmed
+   // page rather than landing on a fresh one.
+   for (uint32_t page = 0; page < PARTIAL_TEST_FULL_PAGES; ++page)
+      write_tagged_page(PARTIAL_TEST_FULL_PAGES + page);
+
+   // Read back: N full pages, one partial, N full pages, then the empty in-RAM cache
+   storage_enter_maintenance_mode();
+   storage_begin_reading(0, 0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   const uint32_t expected_chunks = (2 * PARTIAL_TEST_FULL_PAGES) + 2;
+   if (num_chunks != expected_chunks)
+   {
+      print("  ERROR: %u chunks reported, expected %u (a missing page means the head did not advance)\n",
+            num_chunks, expected_chunks);
+      ++errors;
+   }
+
+   for (uint32_t chunk = 0; (chunk + 1) < num_chunks; ++chunk)
+   {
+      const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
+      if (chunk == PARTIAL_TEST_FULL_PAGES)
+      {
+         // The partial page: verify it kept exactly the bytes that were buffered, no more and no less
+         if ((length != (PARTIAL_TEST_PARTIAL_BYTES + 5)) || memcmp(verify_buffer + 5, "PART", 4))
+         {
+            print("  ERROR: partial page came back as %u bytes, expected %u\n", length, (uint32_t)PARTIAL_TEST_PARTIAL_BYTES + 5);
+            ++errors;
+         }
+         else
+            for (uint32_t i = 4; i < PARTIAL_TEST_PARTIAL_BYTES; ++i)
+               if (verify_buffer[5 + i] != 0xA5)
+               {
+                  print("  ERROR: partial page body mismatch at offset %u\n", i);
+                  ++errors;
+                  break;
+               }
+      }
+      else
+      {
+         // Full pages keep their original tag index, which skips over the partial page's slot
+         const uint32_t expected_index = (chunk < PARTIAL_TEST_FULL_PAGES) ? chunk : (chunk - 1);
+         if (!verify_tagged_page(expected_index, length))
+            ++errors;
+      }
+   }
+   storage_end_reading();
+   storage_exit_maintenance_mode();
+
+   print("=== Partial-page flush test %s: %u errors ===\n\n", errors ? "FAILED" : "PASSED", errors);
 }
 
 #endif  // #ifndef _TEST_STORAGE_REBOOT
@@ -217,35 +339,15 @@ int main(void)
    // Drive the write head across several block boundaries to exercise erase-ahead
    test_forced_block_crossings();
 
+   // Verify that a partial page advances the write head rather than re-programming it
+   test_partial_page_flush();
+
 #endif
 
-   // Write some random stuff to storage
-   storage_exit_maintenance_mode();
-   uint8_t random_data[MEMORY_PAGE_SIZE_BYTES*2];
-   for (uint32_t i = 0; i < 2; ++i)
-   {
-      memcpy(&random_data[i*MEMORY_PAGE_SIZE_BYTES], "START TEXT", 10);
-      for (uint32_t j = 10; j < MEMORY_PAGE_SIZE_BYTES; ++j)
-         random_data[(i*MEMORY_PAGE_SIZE_BYTES)+j] = (uint8_t)j;
-   }
-   storage_store(random_data, MEMORY_PAGE_SIZE_BYTES * 3 / 2);
-   storage_flush(false);
-   storage_store(random_data + (MEMORY_PAGE_SIZE_BYTES / 2), MEMORY_PAGE_SIZE_BYTES / 2);
-   storage_flush(false);
-
-   // Read the stuff back from storage
-   uint8_t read_data[MEMORY_PAGE_SIZE_BYTES*2];
+   // Test storing and retrieving a set of experiment details
+   print("\n=== Experiment details round-trip test ===\n");
    storage_enter_maintenance_mode();
-   storage_begin_reading(0, 0);
-   uint32_t bytes_read = storage_retrieve_next_data_chunk(read_data);
-   while (bytes_read)
-   {
-      print("Read %u bytes\n", bytes_read);
-      bytes_read = storage_retrieve_next_data_chunk(read_data);
-   }
-   print("Reading complete\n");
 
-   // Test storing a new set of experiment details
    experiment_details_t details = {
       .experiment_start_time = 1, .experiment_end_time = 2,
       .daily_start_time = 3, .daily_end_time = 4,
@@ -260,17 +362,22 @@ int main(void)
       strcpy(details.uid_name_mappings[i], "Test Name ");
       strcat(details.uid_name_mappings[i], name_index);
    }
+   const experiment_details_t written = details;
    storage_store_experiment_details(&details);
 
-   // Test retrieving the set of experiment details
+   // Retrieve and compare against what was written
    memset(&details, 0, sizeof(details));
    storage_retrieve_experiment_details(&details);
-   print("Experiment Details:\n");
+   storage_exit_maintenance_mode();
+
    print("Start/End Times: %u, %u\n", details.experiment_start_time, details.experiment_end_time);
    print("Daily Start/End Times: %u, %u\n", details.daily_start_time, details.daily_end_time);
    print("Num Devices: %u\n", (uint32_t)details.num_devices);
    for (uint8_t i = 0; i < details.num_devices; ++i)
       print("UID and Mapping: %02X:%02X:%02X:%02X:%02X:%02X = %s\n", details.uids[i][0], details.uids[i][1], details.uids[i][2], details.uids[i][3], details.uids[i][4], details.uids[i][5], details.uid_name_mappings[i]);
+
+   const bool details_match = (memcmp(&written, &details, sizeof(details)) == 0);
+   print("=== Experiment details round-trip %s ===\n\n", details_match ? "PASSED" : "FAILED");
 
    // Done with test, loop forever
    while (true)
