@@ -3,6 +3,7 @@
 #include "app_config.h"
 #include "wsf_types.h"
 #include "att_main.h"
+#include "bluetooth.h"
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
@@ -61,6 +62,7 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             break;
          }
          case BLE_MAINTENANCE_DOWNLOAD_LOG:
+            bluetooth_request_fast_connection((uint8_t)connId, true);
 #ifdef __USE_SEGGER__
             app_download_log_file(download_start_timestamp, download_end_timestamp);
 #else
@@ -227,6 +229,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          storage_end_reading();
          storage_retransmit_clear();
          retransmitting = false;
+         bluetooth_request_fast_connection((uint8_t)connId, false);
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
          AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
          download_start_timestamp = download_end_timestamp = 0;

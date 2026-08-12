@@ -17,6 +17,25 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static volatile uint16_t connection_mtu;
+static volatile bool conn_update_in_flight, conn_update_target_fast, conn_update_sent_fast, conn_update_applied_fast;
+static volatile uint8_t conn_update_conn_id;
+
+static void issue_connection_update(void)
+{
+   const bool fast = conn_update_target_fast;
+   hciConnSpec_t spec = {
+      .connIntervalMin = fast ? BLE_FAST_CONNECTION_INTERVAL_1_25_MS : BLE_MIN_CONNECTION_INTERVAL_1_25_MS,
+      .connIntervalMax = fast ? BLE_FAST_CONNECTION_INTERVAL_1_25_MS : BLE_MAX_CONNECTION_INTERVAL_1_25_MS,
+      .connLatency = fast ? 0 : BLE_CONNECTION_SLAVE_LATENCY,
+      .supTimeout = BLE_SUPERVISION_TIMEOUT_10_MS,
+      .minCeLen = 0,
+      .maxCeLen = 0
+   };
+   conn_update_in_flight = true;
+   conn_update_sent_fast = fast;
+   print("TotTag BLE: Requesting %s connection interval\n", fast ? "the faster offload" : "the normal idle");
+   DmConnUpdate((dmConnId_t)conn_update_conn_id, &spec);
+}
 static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, data_requested, imu_data_requested;
 static volatile bool expected_scanning, expected_advertising, is_initialized, first_initialization;
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
@@ -126,9 +145,30 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_OPEN_IND\n");
          is_connected = true;
          is_advertising = false;
+         conn_update_in_flight = conn_update_target_fast = conn_update_sent_fast = conn_update_applied_fast = false;
          bluetooth_start_advertising();
          connection_mtu = AttGetMtu(pDmEvt->hdr.param);
+         print("TotTag BLE: Connection parameters: interval = %u.%02u ms, latency = %u, timeout = %u ms\n",
+               (uint32_t)((pDmEvt->connOpen.connInterval * 125) / 100),
+               (uint32_t)((pDmEvt->connOpen.connInterval * 125) % 100),
+               (uint32_t)pDmEvt->connOpen.connLatency,
+               (uint32_t)(pDmEvt->connOpen.supTimeout * 10));
          AttsCccInitTable(pDmEvt->hdr.param, NULL);
+         break;
+      case DM_CONN_UPDATE_IND:
+         conn_update_in_flight = false;
+         if (pDmEvt->hdr.status == HCI_SUCCESS)
+         {
+            conn_update_applied_fast = conn_update_sent_fast;
+            print("TotTag BLE: Connection parameters updated: interval = %u.%02u ms, latency = %u\n",
+                  (uint32_t)((pDmEvt->connUpdate.connInterval * 125) / 100),
+                  (uint32_t)((pDmEvt->connUpdate.connInterval * 125) % 100),
+                  (uint32_t)pDmEvt->connUpdate.connLatency);
+         }
+         else
+            print("TotTag BLE: Connection parameter update REJECTED (status %u)\n", (uint32_t)pDmEvt->hdr.status);
+         if (is_connected && (conn_update_target_fast != conn_update_applied_fast))
+            issue_connection_update();
          break;
       case DM_CONN_CLOSE_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_CONN_CLOSE_IND\n");
@@ -345,6 +385,17 @@ void bluetooth_register_discovery_callback(ble_discovery_callback_t callback)
 uint8_t bluetooth_get_current_ranging_role(void)
 {
    return current_ranging_role[2];
+}
+
+void bluetooth_request_fast_connection(uint8_t conn_id, bool fast)
+{
+   // Ask for a shorter connection interval while a log is being offloaded, and hand it back afterwards
+   if (!is_connected)
+      return;
+   conn_update_conn_id = conn_id;
+   conn_update_target_fast = fast;
+   if (!conn_update_in_flight && (fast != conn_update_applied_fast))
+      issue_connection_update();
 }
 
 void bluetooth_set_current_ranging_role(uint8_t ranging_role)

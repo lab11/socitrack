@@ -90,6 +90,8 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define BLE_MIN_CONNECTION_INTERVAL_1_25_MS         12          // 15 ms
 #define BLE_MAX_CONNECTION_INTERVAL_1_25_MS         24          // 30 ms
 #define BLE_CONNECTION_SLAVE_LATENCY                9
+
+#define BLE_FAST_CONNECTION_INTERVAL_1_25_MS        12          // 15 ms
 #define BLE_SUPERVISION_TIMEOUT_10_MS               100         // 1000 ms
 #define BLE_MAX_CONNECTION_UPDATE_ATTEMPTS          5
 
