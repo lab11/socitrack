@@ -22,6 +22,7 @@ static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*co
 static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], storage_task_stack[configMINIMAL_STACK_SIZE];
 static StackType_t time_aligned_task_stack[configMINIMAL_STACK_SIZE];
 static uint32_t experiment_start_time;
+static int32_t network_time_offset;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -33,6 +34,9 @@ uint32_t app_get_experiment_time(int32_t offset)
    return (elapsed_ms > 0) ? (uint32_t)elapsed_ms : 0;
 }
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time) { return (experiment_time / 1000) + experiment_start_time; }
+
+int32_t app_get_time_offset(void) { return network_time_offset; }
+void app_set_time_offset(int32_t offset) { network_time_offset = offset; }
 
 void app_set_experiment_start_time(uint32_t start_time)
 {

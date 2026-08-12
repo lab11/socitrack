@@ -82,7 +82,7 @@ scheduler_phase_t schedule_phase_begin(void)
    if (is_master_scheduler)
    {
       // Increment the epoch timestamp and increment all device timeouts
-      schedule_packet.epoch_time_unix = app_get_experiment_time(0);
+      schedule_packet.epoch_time_unix = app_get_experiment_time(app_get_time_offset());
       for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
          ++device_timeouts[i];
 

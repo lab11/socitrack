@@ -40,7 +40,12 @@ MAINTENANCE_DELETE_EXPERIMENT = 0x02
 MAINTENANCE_DOWNLOAD_LOG = 0x03
 MAINTENANCE_SET_LOG_DOWNLOAD_DATES = 0x04
 MAINTENANCE_DOWNLOAD_LOG_CONTINUE = 0x05
+MAINTENANCE_RETRANSMIT_PAGES = 0x06
 MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
+
+MAX_SEQS_PER_BLE_WRITE = 60
+MAX_SEQS_PER_USB_WRITE = 255
+MAX_REPAIR_ROUNDS = 3
 
 USB_VERSION_COMMAND = 0x20
 USB_VOLTAGE_COMMAND = 0x10
@@ -48,6 +53,7 @@ USB_GET_TIMESTAMP_COMMAND = 0x11
 USB_FIND_MY_TOTTAG_COMMAND = 0x12
 USB_GET_EXPERIMENT_COMMAND = 0x13
 USB_SET_TIMESTAMP_COMMAND = 0x14
+USB_RETRANSMIT_PAGES_COMMAND = MAINTENANCE_RETRANSMIT_PAGES
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
 MAX_RANGING_DISTANCE_MM = 16000
@@ -144,7 +150,7 @@ def unpack_experiment_details(data):
       'terminated': experiment_struct[-1],
    }
 
-def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file):
+def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file, repairs=None):
    experiment_start_time = details['start_time']
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
@@ -155,7 +161,9 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          file.write(data)
 
    # Dispatches on the stream magic, so legacy and page-framed downloads both decode here
-   log_data, report = tottag_format.parse(data, experiment_start_time, uid_to_labels)
+   log_data, report = tottag_format.parse(data, experiment_start_time, uid_to_labels, repairs)
+   if report['repaired']:
+      print(f"Recovered {len(report['repaired'])} page(s) from {uid_to_labels[from_uid]} by retransmission")
 
    # Say what was lost. A v1 download cannot report this at all -- a dropped page is simply absent, and a
    # short log is indistinguishable from a lossy one -- so staying quiet would hide real data loss.
@@ -169,6 +177,15 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          print(f"   {len(report['short_pages'])} page(s) stopped decoding early (position, seq, decoded, expected): {report['short_pages'][:5]}")
       if report['truncated']:
          print(f"   transfer ended early: {report['pages_read']} of {report['total_pages']} pages received")
+
+   # Not a transfer fault, but it makes a TIME-BOUNDED download untrustworthy
+   if report['time_discontinuities']:
+      print(f"WARNING: log from {uid_to_labels[from_uid]} contains {len(report['time_discontinuities'])} "
+            f"time discontinuit{'y' if len(report['time_discontinuities']) == 1 else 'ies'}:")
+      for position, seq, previous_last, this_first in report['time_discontinuities'][:5]:
+         print(f"   page {position} (seq {seq}) starts at {this_first} ms, after the previous page ended "
+               f"at {previous_last} ms (back {(previous_last - this_first) / 1000:.1f} s)")
+      print("   a full download is unaffected, but a date-limited one may be missing data it asked for")
 
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
@@ -210,6 +227,9 @@ class TotTagBLE(threading.Thread):
       self.data_length = 0
       self.data_index = 0
       self.data = None
+      self.original_stream = None
+      self.repairs = {}
+      self.repair_round = 0
 
    def run(self):
       self.event_loop.run_until_complete(self.await_command())
@@ -256,7 +276,9 @@ class TotTagBLE(threading.Thread):
             self.data = bytearray(self.data_length)
             self.data[0:len(data)] = data
             self.data_index = len(data)
-            self.data_details = None      # supplied by the next indication
+            if details_len:
+               self.data_details = None   # supplied by the next indication
+            # ...otherwise this is a repair round, and the details already held still apply
             self.result_queue.put_nowait(('LOGDATA', self.data_length))
          elif len(data) >= 4:
             # Legacy stream: a u32 total length followed by the experiment details, then bare payloads
@@ -299,7 +321,8 @@ class TotTagBLE(threading.Thread):
                header = prefix + rest + details_blob
                self.data[0:len(header)] = header
                self.data_index = len(header)
-               self.data_details = unpack_experiment_details(details_blob)
+               if hdr_details_len:
+                  self.data_details = unpack_experiment_details(details_blob)
             else:
                # Legacy stream: the four bytes just read are the total length
                self.data_length = struct.unpack('<I', prefix)[0]
@@ -534,6 +557,9 @@ class TotTagBLE(threading.Thread):
       if params['full']:
          params['start'] = params['end'] = 0
       self.data_length = 0
+      self.original_stream = None
+      self.repairs = {}
+      self.repair_round = 0
       if isinstance(self.connected_device, serial.Serial):
          self.connected_device.reset_input_buffer()
          self.connected_device.write(struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']))
@@ -562,15 +588,76 @@ class TotTagBLE(threading.Thread):
          self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to retrieve log files from the TotTag')))
       self.command_queue.task_done()
 
+   async def request_retransmission(self, seqs):
+      """Ask the device to resend the named pages and start receiving the repair stream.
+
+      The response uses the same page framing as a normal download, so it arrives through the same
+      receive path; only the experiment details are omitted, since they are already held here.
+      """
+      self.data_length = self.data_index = 0
+      self.data = None
+      if not seqs:
+         # An empty list clears any stale request on the device, so the next command is a full download
+         if isinstance(self.connected_device, serial.Serial):
+            self.connected_device.write(bytes([USB_RETRANSMIT_PAGES_COMMAND, 0]))
+         else:
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, bytes([MAINTENANCE_RETRANSMIT_PAGES, 0]), True)
+      if isinstance(self.connected_device, serial.Serial):
+         for i in range(0, len(seqs), MAX_SEQS_PER_USB_WRITE):
+            batch = seqs[i:i+MAX_SEQS_PER_USB_WRITE]
+            self.connected_device.write(bytes([USB_RETRANSMIT_PAGES_COMMAND, len(batch)]) + struct.pack(f'<{len(batch)}I', *batch))
+         data_callback_thread = threading.Thread(target=partial(self.data_callback_serial))
+         data_callback_thread.start()
+         data_callback_thread.join()
+      else:
+         for i in range(0, len(seqs), MAX_SEQS_PER_BLE_WRITE):
+            batch = seqs[i:i+MAX_SEQS_PER_BLE_WRITE]
+            await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, bytes([MAINTENANCE_RETRANSMIT_PAGES, len(batch)]) + struct.pack(f'<{len(batch)}I', *batch), True)
+         await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG), True)
+
    async def download_logs_done(self):
       if self.downloading_log_file:
          try:
+            received = bytes(self.data[:self.data_index]) if self.data else b''
+            if self.repair_round == 0:
+               self.original_stream = received
+            else:
+               self.repairs.update(tottag_format.extract_pages(received))
+
+            # Ask for whatever is still missing, up to a fixed number of rounds. Each round re-parses the
+            # ORIGINAL stream with every repair collected so far, so the decision to stop is made against
+            # the log as it now stands rather than against the round that just finished.
+            wanted, nothing_arrived = [], False
+            if tottag_format.detect_format(self.original_stream) == tottag_format.FORMAT_V2:
+               start_time = self.data_details['start_time'] if self.data_details else None
+               _log_data, report = tottag_format.parse(self.original_stream, start_time, None, self.repairs)
+               wanted = tottag_format.missing_seqs(report)
+               # No page at all means there is no sequence number to count from, so the whole transfer has
+               # to be repeated rather than repaired. Naming pages is only possible for a PARTIAL loss.
+               nothing_arrived = bool(report['total_pages']) and not report['pages_read']
+            if (wanted or nothing_arrived) and self.repair_round < MAX_REPAIR_ROUNDS:
+               self.repair_round += 1
+               if nothing_arrived:
+                  print(f'No pages received; repeating the download, attempt {self.repair_round} of {MAX_REPAIR_ROUNDS}...')
+               else:
+                  print(f'Requesting {len(wanted)} missing page(s), round {self.repair_round} of {MAX_REPAIR_ROUNDS}...')
+               await self.request_retransmission(wanted)
+               if nothing_arrived:
+                  self.repair_round = 0   # a repeated transfer replaces the original rather than patching it
+                  self.original_stream = None
+               return                     # the repair stream brings us back here when it completes
+            if wanted:
+               print(f'Giving up on {len(wanted)} page(s) after {MAX_REPAIR_ROUNDS} rounds: {wanted[:10]}')
+            elif nothing_arrived:
+               print(f'No pages received after {MAX_REPAIR_ROUNDS} attempts')
+
             self.downloading_log_file = False
-            self.result_queue.put_nowait(('DOWNLOADED', self.data_length > 1))
+            self.result_queue.put_nowait(('DOWNLOADED', len(self.original_stream) > 1))
             if not isinstance(self.connected_device, serial.Serial):
                await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
-            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.data[:self.data_index], self.download_raw_logs)
+            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, self.download_raw_logs, self.repairs)
          except Exception as e:
+            self.downloading_log_file = False
             print('Log file processing error:', e);
             self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
 

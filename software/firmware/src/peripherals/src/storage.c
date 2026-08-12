@@ -56,6 +56,9 @@
 #define BBM_LUT_BASE_ADDRESS                        ((MEMORY_BLOCK_COUNT - BBM_NUM_RESERVED_BLOCKS) * MEMORY_PAGES_PER_BLOCK)
 #define MEMORY_MAX_PAGE_ADDRESS                     (MEMORY_BLOCK_COUNT * MEMORY_PAGES_PER_BLOCK)
 
+#define SEED_SEARCH_MAX_PAGES                       8
+#define SEEK_BACKTRACK_LIMIT_PAGES                  MEMORY_PAGES_PER_BLOCK
+
 #define METADATA_RING_BLOCKS                        8
 #define METADATA_RING_PAGES                         (METADATA_RING_BLOCKS * MEMORY_PAGES_PER_BLOCK)
 #define LOG_REGION_FIRST_PAGE                       METADATA_RING_PAGES
@@ -79,6 +82,7 @@ static volatile uint32_t bbm_index, bbm_storage_page;
 static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE];
+static uint32_t retransmit_seqs[STORAGE_MAX_RETRANSMIT_PAGES], retransmit_num_pages = 0;
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
 static volatile bool is_reading, in_maintenance_mode, disabled, cache_overflowed, is_initialized = false, log_region_full;
 static volatile uint32_t page_first_timestamp = STORAGE_NO_TIMESTAMP, page_last_timestamp = STORAGE_NO_TIMESTAMP;
@@ -98,6 +102,11 @@ static inline uint32_t log_wrap_page(uint32_t page)
 static inline uint32_t log_next_page(uint32_t page)
 {
    return log_wrap_page(page + 1);
+}
+
+static inline uint32_t log_prev_page(uint32_t page)
+{
+   return (page == LOG_REGION_FIRST_PAGE) ? (LOG_REGION_END_PAGE - 1) : (page - 1);
 }
 
 static inline uint32_t log_next_block(uint32_t page)
@@ -1171,9 +1180,14 @@ void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *d
       return;
    }
 
+   // A timestamp that precedes the page's current end means the time base moved backwards.
+   // Commit the page first, so no page ever advertises a last_timestamp earlier than its first
+   const bool time_moved_backwards = (page_last_timestamp != STORAGE_NO_TIMESTAMP) &&
+                                     (timestamp < page_last_timestamp);
+
    // Records are never split across pages, so a record that does not fit in what remains of the current
    // page commits that page and starts the next one
-   if ((cache_index + record_length) > MEMORY_NUM_DATA_BYTES_PER_PAGE)
+   if (((cache_index + record_length) > MEMORY_NUM_DATA_BYTES_PER_PAGE) || time_moved_backwards)
    {
       // Writing is impossible while a download is in progress or once the array is full
       if (is_reading || log_region_full)
@@ -1296,6 +1310,28 @@ static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count,
          low = found + 1;
       }
    }
+
+   // Monotonicity is an assumption, not a guarantee, so verify the answer rather than trust it
+   if (at_or_after && result)
+   {
+      uint32_t steps = 0;
+      while (result && (steps < SEEK_BACKTRACK_LIMIT_PAGES))
+      {
+         storage_page_header_t header;
+         uint32_t found = 0;
+         if (!probe_epoch_page(result - 1, page_count, &header, &found) || (found >= result) ||
+             (header.last_timestamp < timestamp))
+            break;
+         result = found;
+         ++steps;
+      }
+      if (steps >= SEEK_BACKTRACK_LIMIT_PAGES)
+      {
+         // Still finding qualifying pages at the limit means the log is badly out of order; fall back to the whole range
+         print("WARNING: log timestamps are badly non-monotonic; ignoring the requested start time\n");
+         result = 0;
+      }
+   }
    return result;
 }
 
@@ -1406,6 +1442,85 @@ uint32_t storage_retrieve_num_data_bytes(void)
    return (last_reading_page == current_page) ? (log_data_size + cache_index) : log_data_size;
 }
 
+static uint32_t stored_record_length(const uint8_t *payload, uint32_t offset, uint32_t length)
+{
+   // Structural length of the record at 'offset'. Every record is [type:1][timestamp:4][data], so the
+   // length is fixed by the type except where the data itself begins with a count.
+   switch (payload[offset])
+   {
+      case STORAGE_TYPE_VOLTAGE:
+         return 9;
+      case STORAGE_TYPE_CHARGING_EVENT:
+      case STORAGE_TYPE_MOTION:
+         return 6;
+      case STORAGE_TYPE_RANGES:
+         return ((offset + 6) <= length) ? (6 + (payload[offset + 5] * COMPRESSED_RANGE_DATUM_LENGTH)) : 0;
+      case STORAGE_TYPE_IMU:
+         return ((offset + 6) <= length) ? (5 + payload[offset + 5]) : 0;   // the length byte counts itself
+      case STORAGE_TYPE_BLE_SCAN:
+         return ((offset + 6) <= length) ? (6 + payload[offset + 5]) : 0;
+      default:
+         return 0;
+   }
+}
+
+static uint32_t last_ranging_timestamp_in_page(const uint8_t *payload, uint32_t length)
+{
+   // Payloads are record-aligned by construction, so walk forward and keep the newest ranging stamp
+   uint32_t result = STORAGE_NO_TIMESTAMP, offset = 0;
+   while ((offset + 5) < length)
+   {
+      const uint32_t record_length = stored_record_length(payload, offset, length);
+      if (!record_length || ((offset + record_length) > length))
+         break;
+      if (payload[offset] == STORAGE_TYPE_RANGES)
+         memcpy(&result, payload + offset + 1, sizeof(result));
+      offset += record_length;
+   }
+   return result;
+}
+
+uint32_t storage_recover_last_ranging_timestamp(void)
+{
+   // Newest ranging timestamp still in the log, so a reboot does not have to wait for the next ranging
+   // round to re-derive the local-to-network time offset
+   if (current_page == starting_page)
+      return STORAGE_NO_TIMESTAMP;         // nothing written in this epoch yet
+
+   if (!in_maintenance_mode)
+   {
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      exit_low_power_mode();
+   }
+
+   uint32_t result = STORAGE_NO_TIMESTAMP, page = current_page;
+   for (uint32_t back = 0; back < SEED_SEARCH_MAX_PAGES; ++back)
+   {
+      page = log_prev_page(page);
+      if (is_bad_block(page) || !read_page(transfer_buffer, page))
+         continue;
+      const storage_page_header_t *header = (const storage_page_header_t*)transfer_buffer;
+      if (!page_header_valid(header) || (header->epoch != log_epoch))
+         break;                            // walked off the start of this epoch
+      const uint32_t length = extract_page_payload(transfer_buffer);
+      if (length)
+      {
+         result = last_ranging_timestamp_in_page(transfer_buffer, length);
+         if (result != STORAGE_NO_TIMESTAMP)
+            break;
+      }
+      if (page == starting_page)
+         break;
+   }
+
+   if (!in_maintenance_mode)
+   {
+      enter_low_power_mode();
+      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   }
+   return result;
+}
+
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header)
 {
    // Fetch one specific page so the host can ask for the ones it lost
@@ -1446,6 +1561,51 @@ uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_pag
          high = mid;
    }
    return 0;
+}
+
+void storage_retransmit_clear(void)
+{
+   retransmit_num_pages = 0;
+}
+
+uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count)
+{
+   // Accumulate across commands: one BLE write cannot name every page a long transfer might have lost
+   for (uint32_t i = 0; (i < count) && (retransmit_num_pages < STORAGE_MAX_RETRANSMIT_PAGES); ++i)
+      retransmit_seqs[retransmit_num_pages++] = seqs[i];
+   return retransmit_num_pages;
+}
+
+uint32_t storage_retransmit_count(void)
+{
+   return retransmit_num_pages;
+}
+
+uint32_t storage_retransmit_total_bytes(void)
+{
+   // The host sizes its receive buffer from the stream header, so this total has to be exact rather than an upper bound
+   uint32_t total = 0;
+   for (uint32_t i = 0; i < retransmit_num_pages; ++i)
+   {
+      storage_page_header_t header;
+      total += storage_retrieve_page_by_seq(retransmit_seqs[i], transfer_buffer, &header);
+   }
+   return total;
+}
+
+uint32_t storage_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, storage_page_header_t *header)
+{
+   // Answer the index-th requested page. A page that is still unreadable comes back as a zero-length frame
+   // carrying the requested sequence number, so the host can tell "still missing" from "never answered"
+   if (index >= retransmit_num_pages)
+   {
+      memset(header, 0, sizeof(*header));
+      header->magic = STORAGE_PAGE_MAGIC;
+      header->epoch = log_epoch;
+      header->first_timestamp = header->last_timestamp = STORAGE_NO_TIMESTAMP;
+      return 0;
+   }
+   return storage_retrieve_page_by_seq(retransmit_seqs[index], buffer, header);
 }
 
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header)
@@ -1571,5 +1731,11 @@ uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header) { (void)header; return 0; }
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header) { (void)seq; (void)header; return 0; }
+uint32_t storage_recover_last_ranging_timestamp(void) { return STORAGE_NO_TIMESTAMP; }
+void storage_retransmit_clear(void) {}
+uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)seqs; (void)count; return 0; }
+uint32_t storage_retransmit_count(void) { return 0; }
+uint32_t storage_retransmit_total_bytes(void) { return 0; }
+uint32_t storage_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, storage_page_header_t *header) { (void)index; (void)header; return 0; }
 
 #endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)

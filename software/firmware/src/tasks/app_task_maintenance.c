@@ -52,27 +52,42 @@ static void handle_notification(app_notification_t notification)
       // Transmit the stream header, then every page with its own framing
       storage_begin_reading(download_start_timestamp, download_end_timestamp);
       storage_retrieve_experiment_details(&details);
-      uint32_t total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
-   #ifdef _TEST_IMU_DATA
-      uint32_t total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
-   #else
-      uint32_t total_data_length = storage_retrieve_num_data_bytes();
-   #endif
+
+      // A pending request list turns this into a repair round: only the named pages are sent, and the
+      // experiment details are omitted because the host already holds them from the original transfer
+      const bool retransmitting = (storage_retransmit_count() > 0);
+      uint32_t total_data_chunks, total_data_length;
+      if (retransmitting)
+      {
+         total_data_chunks = storage_retransmit_count();
+         total_data_length = storage_retransmit_total_bytes();
+      }
+      else
+      {
+         total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+      #ifdef _TEST_IMU_DATA
+         total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+      #else
+         total_data_length = storage_retrieve_num_data_bytes();
+      #endif
+      }
       const storage_stream_header_t stream_header = {
          .magic = STORAGE_STREAM_MAGIC,
          .format_version = STORAGE_FORMAT_VERSION,
-         .details_length = (uint16_t)sizeof(details),
+         .details_length = retransmitting ? 0 : (uint16_t)sizeof(details),
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length
       };
       transmit_log_data(&stream_header, sizeof(stream_header));
-      transmit_log_data(&details, sizeof(details));
+      if (!retransmitting)
+         transmit_log_data(&details, sizeof(details));
 
       // Every page is framed with its sequence number, time bounds and payload CRC
       for (uint32_t chunk = 0; chunk < total_data_chunks; ++chunk)
       {
          storage_page_header_t page;
-         const uint32_t data_length = storage_retrieve_next_page(transmit_buffer, &page);
+         const uint32_t data_length = retransmitting ? storage_retrieve_retransmit_page(chunk, transmit_buffer, &page)
+                                                     : storage_retrieve_next_page(transmit_buffer, &page);
          const storage_wire_page_t wire = {
             .seq = page.seq,
             .first_timestamp = page.first_timestamp,
@@ -86,6 +101,7 @@ static void handle_notification(app_notification_t notification)
             transmit_log_data(transmit_buffer, data_length);
       }
       storage_end_reading();
+      storage_retransmit_clear();
 
       // Push the final partial buffer; without this the tail of the transfer never leaves the device
       transmit_log_flush();

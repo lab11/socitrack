@@ -2,6 +2,7 @@
 
 #include "app_tasks.h"
 #include "imu.h"
+#include "logging.h"
 #include "storage.h"
 #include "system.h"
 
@@ -20,7 +21,6 @@ typedef struct ble_data_t { uint8_t data[1 + MAX_NUM_RANGING_DEVICES]; uint32_t 
 
 static uint32_t previous_imu_timestamp;
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
-static int32_t ranging_timestamp_offset;
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
 
@@ -39,28 +39,28 @@ static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 
 void storage_flush_and_shutdown(void)
 {
-   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(app_get_time_offset()) / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = 0, .type = STORAGE_TYPE_SHUTDOWN };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_battery_level(uint32_t battery_voltage_mV)
 {
-   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(app_get_time_offset()) / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = battery_voltage_mV, .type = STORAGE_TYPE_VOLTAGE };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_motion_status(motion_code_t motion_code)
 {
-   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(app_get_time_offset()) / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = (uint32_t)motion_code, .type = STORAGE_TYPE_MOTION };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
 void storage_write_charging_status(battery_event_t battery_event)
 {
-   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(app_get_time_offset()) / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = (uint32_t)battery_event, .type = STORAGE_TYPE_CHARGING_EVENT };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
@@ -68,7 +68,7 @@ void storage_write_charging_status(battery_event_t battery_event)
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset)
 {
    static uint32_t range_data_index = 0;
-   ranging_timestamp_offset = timestamp_offset;
+   app_set_time_offset(timestamp_offset);
    const uint32_t rounded_timestamp = 500 * (timestamp / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = range_data_index, .type = STORAGE_TYPE_RANGES };
    memcpy(range_data[range_data_index].data, ranging_data, ranging_data_len);
@@ -80,7 +80,7 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices)
 {
    static uint32_t ble_data_index = 0;
-   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(app_get_time_offset()) / 500);
    const storage_item_t storage_item = { .timestamp = rounded_timestamp, .value = ble_data_index, .type = STORAGE_TYPE_BLE_SCAN };
    ble_data[ble_data_index].data[0] = (uint8_t)num_devices;
    memcpy(ble_data[ble_data_index].data + 1, found_devices, num_devices);
@@ -93,7 +93,7 @@ void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
 {
    // Ensure that IMU data is not stored more frequently than 2Hz
    static uint32_t imu_data_index = 0;
-   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(ranging_timestamp_offset) / 500);
+   const uint32_t rounded_timestamp = 500 * (app_get_experiment_time(app_get_time_offset()) / 500);
    if (rounded_timestamp >= (previous_imu_timestamp + 500))
    {
       previous_imu_timestamp = rounded_timestamp;
@@ -124,7 +124,17 @@ void StorageTask(void *params)
    // Create a queue to hold pending storage items
    static storage_item_t item;
    previous_imu_timestamp = 0;
-   ranging_timestamp_offset = 0;
+
+   // Recover the local-to-network time offset from the log instead of waiting for the next ranging round to re-derive it
+   app_set_time_offset(0);
+#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+   const uint32_t last_network_time = storage_recover_last_ranging_timestamp();
+   if (last_network_time != STORAGE_NO_TIMESTAMP)
+   {
+      app_set_time_offset((int32_t)last_network_time - (int32_t)app_get_experiment_time(0));
+      print("INFO: Seeded ranging time offset from the log: %d ms\n", app_get_time_offset());
+   }
+#endif
    storage_queue = xQueueCreateStatic(STORAGE_QUEUE_MAX_NUM_ITEMS, sizeof(storage_item_t), ucQueueStorage, &xQueueBuffer);
 
    // Set whether the storage peripheral should be in maintenance mode

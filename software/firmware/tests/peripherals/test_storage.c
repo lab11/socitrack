@@ -310,6 +310,151 @@ static void test_time_range_seek(void)
 
 #define RETRANSMIT_TEST_PAGES   40
 
+#define JUMP_TEST_RECORD_BYTES  16
+#define RECOVERY_TEST_RECORDS   120
+
+static void test_timestamp_jump(void)
+{
+   // The ranging offset that converts local time to network time resets on reboot and is only restored by
+   // the next ranging round, so records written in between can step BACKWARDS relative to the ones already
+   // in the page. A page whose last_timestamp precedes its first cannot be interpreted by the time-range
+   // seek at all, so such a record has to start a new page.
+   print("\n=== Timestamp jump test ===\n");
+
+   storage_enter_maintenance_mode();
+   reset_log_to_known_state();
+   storage_exit_maintenance_mode();
+   storage_disable(false);
+
+   // Four small records in what would otherwise be a single page, with a backwards step in the middle
+   uint8_t record[JUMP_TEST_RECORD_BYTES];
+   memset(record, 0xA5, sizeof(record));
+   storage_store_record(STORAGE_TYPE_IMU, 10000, record, sizeof(record));
+   storage_store_record(STORAGE_TYPE_IMU, 11000, record, sizeof(record));
+   storage_store_record(STORAGE_TYPE_IMU,  3000, record, sizeof(record));   // <-- the jump
+   storage_store_record(STORAGE_TYPE_IMU,  4000, record, sizeof(record));
+   storage_flush(true);
+
+   storage_enter_maintenance_mode();
+   storage_begin_reading(0, 0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+
+   uint32_t errors = 0;
+   const uint32_t expected_first[] = { 10000, 3000 }, expected_last[] = { 11000, 4000 };
+   if (num_chunks != 2)
+   {
+      print("  ERROR: %u pages, expected 2 (the jump did not split the page)\n", num_chunks);
+      ++errors;
+   }
+   for (uint32_t i = 0; i < num_chunks; ++i)
+   {
+      storage_page_header_t header;
+      const uint32_t length = storage_retrieve_next_page(verify_buffer, &header);
+      print("  page %u: first=%u last=%u records=%u bytes=%u\n",
+            i, header.first_timestamp, header.last_timestamp, header.record_count, length);
+      if (header.first_timestamp > header.last_timestamp)
+      {
+         print("  ERROR: page %u is inverted (first > last)\n", i);
+         ++errors;
+      }
+      if ((i < 2) && ((header.first_timestamp != expected_first[i]) || (header.last_timestamp != expected_last[i])))
+      {
+         print("  ERROR: page %u should span %u..%u\n", i, expected_first[i], expected_last[i]);
+         ++errors;
+      }
+      if ((i < 2) && (header.record_count != 2))
+      {
+         print("  ERROR: page %u holds %u records, expected 2\n", i, header.record_count);
+         ++errors;
+      }
+   }
+   storage_end_reading();
+   storage_exit_maintenance_mode();
+
+   if (errors)
+      print("=== Timestamp jump test FAILED: %u errors ===\n", errors);
+   else
+      print("=== Timestamp jump test PASSED: every page spans a forward time range ===\n");
+}
+
+static void store_range_record(uint32_t timestamp, uint8_t range_mm_div)
+{
+   // [count:1][uid:1][range:2] -- one peer, which is what a two-device deployment produces
+   uint8_t data[1 + COMPRESSED_RANGE_DATUM_LENGTH] = { 1, 0x42, range_mm_div, 0 };
+   storage_store_record(STORAGE_TYPE_RANGES, timestamp, data, sizeof(data));
+}
+
+static void test_ranging_timestamp_recovery(void)
+{
+   // On a warm reset the local-to-network time offset is gone, and it is only re-derived by the next
+   // ranging round. Recovering the newest ranging timestamp from the log lets the offset be restored
+   // immediately, so records written before that round are not stamped on the wrong time base.
+   print("\n=== Ranging timestamp recovery test ===\n");
+
+   storage_enter_maintenance_mode();
+   reset_log_to_known_state();
+   storage_exit_maintenance_mode();
+   storage_disable(false);
+
+   uint32_t errors = 0;
+
+   // Nothing written yet: there is no network base to recover, and inventing one would be worse than
+   // leaving the offset at zero
+   if (storage_recover_last_ranging_timestamp() != STORAGE_NO_TIMESTAMP)
+   {
+      print("  ERROR: reported a ranging timestamp for an empty log\n");
+      ++errors;
+   }
+
+   // A log with only non-ranging records must also report nothing: those carry whatever offset was in
+   // force when they were written, so seeding from one would propagate a stale offset
+   uint8_t voltage[4] = { 0x70, 0x10, 0, 0 };
+   storage_store_record(STORAGE_TYPE_VOLTAGE, 1000, voltage, sizeof(voltage));
+   storage_flush(true);
+   if (storage_recover_last_ranging_timestamp() != STORAGE_NO_TIMESTAMP)
+   {
+      print("  ERROR: recovered a timestamp from a log holding no ranging records\n");
+      ++errors;
+   }
+
+   // Now a spread of ranging records across several pages, newest last
+   uint32_t expected = 0;
+   for (uint32_t i = 0; i < RECOVERY_TEST_RECORDS; ++i)
+   {
+      expected = 2000 + (500 * i);
+      store_range_record(expected, (uint8_t)(i & 0xFF));
+      if ((i % 20) == 19)
+         storage_flush(true);
+   }
+   storage_flush(true);
+
+   uint32_t recovered = storage_recover_last_ranging_timestamp();
+   print("  recovered %u, newest ranging record was %u\n", recovered, expected);
+   if (recovered != expected)
+   {
+      print("  ERROR: expected %u\n", expected);
+      ++errors;
+   }
+
+   // A later non-ranging record must not displace the answer, and must not hide it either
+   storage_store_record(STORAGE_TYPE_VOLTAGE, expected + 500, voltage, sizeof(voltage));
+   storage_flush(true);
+   recovered = storage_recover_last_ranging_timestamp();
+   if (recovered != expected)
+   {
+      print("  ERROR: a trailing voltage record changed the answer to %u\n", recovered);
+      ++errors;
+   }
+   else
+      print("  a trailing non-ranging record correctly left the answer at %u\n", recovered);
+
+   storage_disable(true);
+   if (errors)
+      print("=== Ranging timestamp recovery FAILED: %u errors ===\n", errors);
+   else
+      print("=== Ranging timestamp recovery PASSED ===\n");
+}
+
 static void test_page_retransmission(void)
 {
    print("\n=== Page retransmission test ===\n");
@@ -496,6 +641,8 @@ int main(void)
    test_time_range_seek();
 
    // Verify that a specific page can be fetched by sequence number, for retransmission
+   test_timestamp_jump();
+   test_ranging_timestamp_recovery();
    test_page_retransmission();
 
 #endif

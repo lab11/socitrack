@@ -85,6 +85,8 @@ typedef struct __attribute__ ((__packed__))
    uint32_t total_payload_bytes;    // sum of all payload lengths
 } storage_stream_header_t;
 
+#define STORAGE_MAX_RETRANSMIT_PAGES                256
+
 typedef struct __attribute__ ((__packed__))
 {
    uint32_t seq;                    // page sequence within the epoch; identifies a gap for retransmission
@@ -116,5 +118,11 @@ uint32_t storage_retrieve_num_data_bytes(void);
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer);
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header);
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header);
+uint32_t storage_recover_last_ranging_timestamp(void);
+void storage_retransmit_clear(void);
+uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count);
+uint32_t storage_retransmit_count(void);
+uint32_t storage_retransmit_total_bytes(void);
+uint32_t storage_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, storage_page_header_t *header);
 
 #endif  // #ifndef __STORAGE_HEADER_H__

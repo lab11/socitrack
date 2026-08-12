@@ -64,7 +64,7 @@ static void handle_range_computation_phase(void)
 #ifndef _TEST_RANGING_TASK
 #ifndef _TEST_NO_STORAGE
          if (ranging_results[0])
-            storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), 0);
+            storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), app_get_time_offset());
 #endif
 #endif
          print_ranges(app_experiment_time_to_rtc_time(500 * (data_timestamp / 500)), (500 * (data_timestamp / 500)) % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));

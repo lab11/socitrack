@@ -17,7 +17,10 @@
 #define BLE_MAINTENANCE_DOWNLOAD_LOG                    0x03
 #define BLE_MAINTENANCE_SET_LOG_DOWNLOAD_DATES          0x04
 #define BLE_MAINTENANCE_DOWNLOAD_LOG_CONTINUE           0x05
+#define BLE_MAINTENANCE_RETRANSMIT_PAGES                0x06
 #define BLE_MAINTENANCE_PACKET_COMPLETE                 0xFF
+
+#define BLE_MAINTENANCE_MAX_SEQS_PER_WRITE              60
 
 
 // Public API ----------------------------------------------------------------------------------------------------------

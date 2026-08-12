@@ -60,6 +60,7 @@ V2_STREAM_HEADER = struct.Struct('<4sHHII')
 
 # v2 per-page header: seq, first timestamp, last timestamp, payload length, record count, payload CRC
 V2_PAGE_HEADER = struct.Struct('<IIIHHI')
+NO_TIMESTAMP = 0xFFFFFFFF
 
 
 def detect_format(data):
@@ -213,7 +214,7 @@ def parse_v1(data, experiment_start_time, uid_to_labels=None):
    return _finalize(log_data)
 
 
-def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
+def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
    """Parse a page-framed stream.
 
    Returns ``(records, report)`` where ``report`` describes what was lost:
@@ -224,6 +225,9 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
         'crc_failures': [(position, seq), ...],   # pages whose payload CRC did not match
         'short_pages': [(position, seq, decoded, expected), ...],  # pages that stopped decoding early
         'rejected_records': [(position, seq, count), ...],  # records skipped as implausible
+        'repaired': [(position, seq), ...],       # pages recovered from a retransmission round
+        'time_discontinuities': [(position, seq, previous_last, this_first), ...],
+        'last_seq': int | None,                   # sequence number of the last page received
 
     Each is identified by its POSITION in the stream first, and by the sequence number the device claimed
     second.  Position is authoritative: it is derived from the stream itself, whereas a sequence number is
@@ -233,7 +237,12 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
         'truncated': bool}           # stream ended before total_pages were received
 
     ``experiment_start_time`` may be omitted, in which case it is taken from the embedded details blob.
+
+    ``repairs`` is an optional ``{seq: payload}`` mapping from earlier retransmission rounds; a page that
+    arrived unreadable or corrupt is replaced by its repaired copy, so the returned report describes what
+    is *still* missing after the repairs rather than what the original transfer lost.
     """
+   repairs = repairs or {}
    header = V2_STREAM_HEADER.unpack_from(data, 0)
    magic, version, details_length, total_pages, _total_payload = header
    if magic != V2_STREAM_MAGIC:
@@ -252,32 +261,58 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
 
    log_data = defaultdict(dict)
    report = {'total_pages': total_pages, 'pages_read': 0, 'holes': [], 'crc_failures': [],
-             'short_pages': [], 'rejected_records': [], 'details': details, 'truncated': False}
+             'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None,
+             'time_discontinuities': [], 'details': details, 'truncated': False}
+   previous_last = None
 
+   # Stop after the declared number of pages rather than when the bytes run out. A device that keeps
+   # logging during a transfer can send a few bytes past its own declared total -- total_payload_bytes is
+   # sampled before the last page is read -- and interpreting that tail as another page frame would invent
+   # a corrupt page and request a retransmission for it.
    position = 0
-   while offset + V2_PAGE_HEADER.size <= len(data):
-      seq, _first_ts, _last_ts, payload_length, record_count, payload_crc = \
+   seen_seqs = set()
+   while (position < total_pages) and (offset + V2_PAGE_HEADER.size <= len(data)):
+      seq, first_ts, last_ts, payload_length, record_count, payload_crc = \
          V2_PAGE_HEADER.unpack_from(data, offset)
       offset += V2_PAGE_HEADER.size
       position += 1
 
       # A zero-length page means the device could not read that page
-      if payload_length == 0:
-         report['holes'].append((position - 1, seq))
-         report['pages_read'] += 1
-         continue
-
-      if offset + payload_length > len(data):
-         report['truncated'] = True
-         break
-
-      payload = data[offset:offset + payload_length]
-      offset += payload_length
+      payload = None
+      if payload_length:
+         if offset + payload_length > len(data):
+            report['truncated'] = True
+            break
+         payload = data[offset:offset + payload_length]
+         offset += payload_length
       report['pages_read'] += 1
+      report['last_seq'] = seq
+      seen_seqs.add(seq)
+
+      # Page bounds that run backwards mean the device's clock base moved mid-log. The device seeks a time
+      # range by binary-searching these same bounds, so where they are not ordered its selection cannot be
+      # trusted -- and a short selection is invisible otherwise, because the stream it sends is internally
+      # consistent and reports no gaps.
+      if (first_ts != NO_TIMESTAMP) and (previous_last is not None) and (first_ts < previous_last):
+         report['time_discontinuities'].append((position - 1, seq, previous_last, first_ts))
+      if last_ts != NO_TIMESTAMP:
+         previous_last = last_ts
 
       # Verify independently of the device, which also catches corruption introduced in transit
-      if zlib.crc32(payload) != payload_crc:
-         report['crc_failures'].append((position - 1, seq))
+      if payload is None:
+         failure = 'holes'
+      elif zlib.crc32(payload) != payload_crc:
+         failure = 'crc_failures'
+      else:
+         failure = None
+
+      # A page recovered by a later retransmission round stands in for the copy that did not survive
+      if failure and seq in repairs:
+         payload, failure = repairs[seq], None
+         record_count = 0            # the repaired frame's own count was checked when it was collected
+         report['repaired'].append((position - 1, seq))
+      if failure:
+         report[failure].append((position - 1, seq))
          continue
 
       decoded, rejected = _parse_records(payload, experiment_start_time, log_data, uid_to_labels,
@@ -287,19 +322,85 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None):
       if record_count and decoded < record_count:
          report['short_pages'].append((position - 1, seq, decoded, record_count))
 
-   if report['pages_read'] < total_pages:
-      report['truncated'] = True
+   # A page lost to a truncated transfer has no frame to substitute into, so repaired copies of pages the
+   # stream never carried are decoded here instead. Output is sorted by timestamp, so append order is
+   # immaterial; what matters is that these pages count towards the total, or the caller would keep asking
+   # for pages it already holds.
+   for seq in sorted(s for s in repairs if s not in seen_seqs):
+      decoded, rejected = _parse_records(repairs[seq], experiment_start_time, log_data, uid_to_labels,
+                                         resynchronize=False)
+      report['pages_read'] += 1
+      report['repaired'].append((None, seq))
+      if report['last_seq'] is None or seq > report['last_seq']:
+         report['last_seq'] = seq
+      if rejected:
+         report['rejected_records'].append((None, seq, rejected))
+
+   report['truncated'] = report['pages_read'] < total_pages
    return _finalize(log_data), report
 
 
-def parse(data, experiment_start_time=None, uid_to_labels=None):
+def extract_pages(data):
+   """Return ``{seq: payload}`` for every CRC-valid page in a stream.
+
+   A retransmission response carries the same page framing as a normal download, but with no experiment
+   details, since the host already holds them.  Pages that are still unreadable on the device come back
+   as zero-length frames and are simply absent from the result.
+   """
+   pages = {}
+   if len(data) < V2_STREAM_HEADER.size or data[:4] != V2_STREAM_MAGIC:
+      return pages
+   _magic, version, details_length, _total_pages, _total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
+   if version != 1:
+      return pages
+   offset = V2_STREAM_HEADER.size + details_length
+   while offset + V2_PAGE_HEADER.size <= len(data):
+      seq, _first_ts, _last_ts, payload_length, _record_count, payload_crc = \
+         V2_PAGE_HEADER.unpack_from(data, offset)
+      offset += V2_PAGE_HEADER.size
+      if payload_length == 0:
+         continue                                 # still unreadable on the device
+      if offset + payload_length > len(data):
+         break                                    # the repair stream was itself truncated
+      payload = data[offset:offset + payload_length]
+      offset += payload_length
+      if zlib.crc32(payload) == payload_crc:
+         pages[seq] = payload
+   return pages
+
+
+def missing_seqs(report):
+   """Sequence numbers worth asking the device to resend.
+
+   Holes and CRC failures only.  A page whose CRC passed arrived intact, so a page that merely stopped
+   decoding early has a record-level problem that a second copy of the same bytes would not fix.
+
+   Pages lost to a truncated transfer are inferred rather than observed: sequence numbers are contiguous
+   within an epoch, so the tail the device never sent runs on from the last one that did arrive.
+
+   A transfer in which NO page arrived yields an empty list, because there is no anchor to count from --
+   a stream does not necessarily begin at sequence zero, since a wrapped log or a time-bounded download
+   starts partway through the epoch.  That case is a failed transfer rather than a partial one, and the
+   caller should repeat the whole download instead of naming pages.
+   """
+   seqs = {seq for _position, seq in report['holes']}
+   seqs |= {seq for _position, seq in report['crc_failures']}
+   if report['truncated'] and report['last_seq'] is not None:
+      shortfall = report['total_pages'] - report['pages_read']
+      seqs |= set(range(report['last_seq'] + 1, report['last_seq'] + 1 + max(0, shortfall)))
+   return sorted(seqs)
+
+
+def parse(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
    """Parse either format, dispatching on the stream magic.
 
    Always returns ``(records, report)``.  For v1 the report is a minimal stand-in, since an unframed
-   stream carries no information about what might be missing from it.
+   stream carries no information about what might be missing from it -- and so ``repairs`` is meaningless
+   there and ignored.
    """
    if detect_format(data) == FORMAT_V2:
-      return parse_v2(data, experiment_start_time, uid_to_labels)
+      return parse_v2(data, experiment_start_time, uid_to_labels, repairs)
    records = parse_v1(data, experiment_start_time, uid_to_labels)
    return records, {'total_pages': None, 'pages_read': None, 'holes': [], 'crc_failures': [],
-                    'short_pages': [], 'rejected_records': [], 'details': None, 'truncated': False}
+                    'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None,
+                    'time_discontinuities': [], 'details': None, 'truncated': False}

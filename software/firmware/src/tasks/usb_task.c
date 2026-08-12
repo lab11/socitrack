@@ -12,6 +12,8 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+#define USB_RETRANSMIT_READ_ATTEMPTS   1000   // ~1 s at the 1 ms tick
+
 #define CONFIG_TOTAL_LEN        (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
 
 #define EPNUM_CDC_NOTIF         0x81
@@ -213,6 +215,29 @@ void UsbCdcTask(void *params)
             {
                tud_cdc_read(&download_start_timestamp, sizeof(download_start_timestamp));
                tud_cdc_read(&download_end_timestamp, sizeof(download_end_timestamp));
+               storage_retransmit_clear();
+               break;
+            }
+            case USB_RETRANSMIT_PAGES_COMMAND:
+            {
+               // [count][seq0..seqN-1]; a count of zero clears a list left over from an abandoned round
+               static uint32_t seqs[STORAGE_MAX_RETRANSMIT_PAGES];
+               uint8_t count = 0;
+               storage_retransmit_clear();
+               if ((tud_cdc_read(&count, sizeof(count)) != sizeof(count)) || !count)
+                  break;
+               const uint32_t wanted = count * sizeof(uint32_t);
+               uint32_t have = 0;
+               for (uint32_t attempt = 0; (have < wanted) && (attempt < USB_RETRANSMIT_READ_ATTEMPTS); ++attempt)
+               {
+                  have += tud_cdc_read(((uint8_t*)seqs) + have, wanted - have);
+                  if (have < wanted)
+                     vTaskDelay(1);
+               }
+               if (have == wanted)
+                  storage_retransmit_add(seqs, count);
+               else
+                  print("ERROR: USB retransmission request truncated (%u of %u bytes)\n", have, wanted);
                break;
             }
             case USB_DOWNLOAD_LOG_COMMAND:

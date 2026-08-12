@@ -13,6 +13,7 @@
 
 static uint32_t download_start_timestamp = 0, download_end_timestamp = 0;
 static uint16_t previous_max_length = 0;
+static bool retransmitting = false;
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
@@ -56,6 +57,7 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
          {
             download_start_timestamp = *(uint32_t*)(pValue + 1);
             download_end_timestamp = *(uint32_t*)(pValue + 1 + sizeof(download_start_timestamp));
+            storage_retransmit_clear();
             break;
          }
          case BLE_MAINTENANCE_DOWNLOAD_LOG:
@@ -68,17 +70,33 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
          case BLE_MAINTENANCE_DOWNLOAD_LOG_CONTINUE:
             continueSendingLogData(connId, previous_max_length, true);
             break;
+         case BLE_MAINTENANCE_RETRANSMIT_PAGES:
+         {
+            // [cmd][count][seq0..seqN-1]; a count of zero clears a list left over from an abandoned round
+            const uint8_t count = (len > 1) ? MIN(pValue[1], BLE_MAINTENANCE_MAX_SEQS_PER_WRITE) : 0;
+            if (!count)
+               storage_retransmit_clear();
+            else if (len >= (2 + (count * sizeof(uint32_t))))
+            {
+               // Copied out rather than cast in place, since the ATT payload is not word-aligned
+               uint32_t seqs[BLE_MAINTENANCE_MAX_SEQS_PER_WRITE];
+               memcpy(seqs, pValue + 2, count * sizeof(uint32_t));
+               storage_retransmit_add(seqs, count);
+            }
+            break;
+         }
          default:
             break;
    }
    return ATT_SUCCESS;
 }
 
-static uint16_t append_framed_page(uint8_t *buffer)
+static uint16_t append_framed_page(uint8_t *buffer, uint32_t index)
 {
    // Append the next page to the transmit buffer, framed with its own header
    storage_page_header_t page;
-   const uint32_t length = storage_retrieve_next_page(buffer + sizeof(storage_wire_page_t), &page);
+   const uint32_t length = retransmitting ? storage_retrieve_retransmit_page(index, buffer + sizeof(storage_wire_page_t), &page)
+                                          : storage_retrieve_next_page(buffer + sizeof(storage_wire_page_t), &page);
    const storage_wire_page_t wire = {
       .seq = page.seq,
       .first_timestamp = page.first_timestamp,
@@ -117,23 +135,35 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       experiment_details_t details;
       storage_retrieve_experiment_details(&details);
       storage_begin_reading(download_start_timestamp, download_end_timestamp);
-      total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+
+      // A pending request list turns this into a repair round: only the named pages are sent, and the
+      // experiment details are omitted because the host already holds them from the original transfer
+      retransmitting = (storage_retransmit_count() > 0);
+      if (retransmitting)
+      {
+         total_data_chunks = storage_retransmit_count();
+         total_data_length = storage_retransmit_total_bytes();
+      }
+      else
+      {
+         total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
 #ifdef _TEST_IMU_DATA
-      total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+         total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
 #else
-      total_data_length = storage_retrieve_num_data_bytes();
+         total_data_length = storage_retrieve_num_data_bytes();
 #endif
+      }
       const storage_stream_header_t stream_header = {
          .magic = STORAGE_STREAM_MAGIC,
          .format_version = STORAGE_FORMAT_VERSION,
-         .details_length = (uint16_t)sizeof(details),
+         .details_length = retransmitting ? 0 : (uint16_t)sizeof(details),
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length
       };
       // The stream header and the experiment details are sent as SEPARATE indications - together they are
       // 255 bytes, which exceeds the 244-byte ATT payload limit at the negotiated 247-byte MTU
       pending_details = details;
-      sent_details = false;
+      sent_details = retransmitting;
       memcpy(transmit_buffer, &stream_header, sizeof(stream_header));
       header_length = (uint16_t)sizeof(stream_header);
       AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
@@ -155,7 +185,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
       else
       {
-         buffer_length = append_framed_page(transmit_buffer);
+         buffer_length = append_framed_page(transmit_buffer, 0);
          data_chunk_index = 1;
          is_reading = true;
       }
@@ -184,7 +214,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          {
             memmove(transmit_buffer, transmit_buffer + buffer_index, buffer_length - buffer_index);
             buffer_length -= buffer_index;
-            buffer_length += append_framed_page(transmit_buffer + buffer_length);
+            buffer_length += append_framed_page(transmit_buffer + buffer_length, data_chunk_index);
             ++data_chunk_index;
             buffer_index = 0;
          }
@@ -195,6 +225,8 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          is_reading = false;
          done_reading = true;
          storage_end_reading();
+         storage_retransmit_clear();
+         retransmitting = false;
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
          AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
          download_start_timestamp = download_end_timestamp = 0;
