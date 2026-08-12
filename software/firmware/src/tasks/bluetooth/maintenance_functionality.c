@@ -125,7 +125,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
    {
       // Send meaningless packet just to kick off reading
       is_reading = started_reading = done_reading = false;
-      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, 1, transmit_buffer);
+      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, 1, transmit_buffer);
    }
    else if (!started_reading)
    {
@@ -166,7 +166,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       sent_details = retransmitting;
       memcpy(transmit_buffer, &stream_header, sizeof(stream_header));
       header_length = (uint16_t)sizeof(stream_header);
-      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
+      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
    }
    else if (!sent_details)
    {
@@ -177,12 +177,12 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          memcpy(transmit_buffer, &pending_details, sizeof(pending_details));
          header_length = (uint16_t)sizeof(experiment_details_t);
       }
-      AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
+      AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
    }
    else if (!is_reading && started_reading && !done_reading)
    {
       if (repeat)
-         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
+         AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, header_length, transmit_buffer);
       else
       {
          buffer_length = append_framed_page(transmit_buffer, 0);
@@ -199,12 +199,12 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       if (repeat)
       {
          // Re-transmit the previous chunk of data
-         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, previous_length, previous_buffer);
+         AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, previous_length, previous_buffer);
       }
       else if (transmit_length)
       {
          // Transmit the next chunk of data
-         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
+         AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
          memcpy(previous_buffer, transmit_buffer + buffer_index, transmit_length);
          previous_length = transmit_length;
          buffer_index += transmit_length;
@@ -228,7 +228,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          storage_retransmit_clear();
          retransmitting = false;
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
-         AttsHandleValueInd(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
+         AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
          download_start_timestamp = download_end_timestamp = 0;
       }
    }
