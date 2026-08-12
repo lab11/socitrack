@@ -1480,10 +1480,12 @@ static uint32_t last_ranging_timestamp_in_page(const uint8_t *payload, uint32_t 
    return result;
 }
 
-uint32_t storage_recover_last_ranging_timestamp(void)
+uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged)
 {
    // Newest ranging timestamp still in the log, so a reboot does not have to wait for the next ranging
    // round to re-derive the local-to-network time offset
+   if (newest_logged)
+      *newest_logged = STORAGE_NO_TIMESTAMP;
    if (current_page == starting_page)
       return STORAGE_NO_TIMESTAMP;         // nothing written in this epoch yet
 
@@ -1502,6 +1504,11 @@ uint32_t storage_recover_last_ranging_timestamp(void)
       const storage_page_header_t *header = (const storage_page_header_t*)transfer_buffer;
       if (!page_header_valid(header) || (header->epoch != log_epoch))
          break;                            // walked off the start of this epoch
+      // The newest page's own bound is when this device last wrote anything, which is a floor on how far
+      // the clock has already advanced -- ranging can stop well before a reboot does
+      if (newest_logged && (*newest_logged == STORAGE_NO_TIMESTAMP) &&
+          (header->last_timestamp != STORAGE_NO_TIMESTAMP))
+         *newest_logged = header->last_timestamp;
       const uint32_t length = extract_page_payload(transfer_buffer);
       if (length)
       {
@@ -1731,7 +1738,7 @@ uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header) { (void)header; return 0; }
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header) { (void)seq; (void)header; return 0; }
-uint32_t storage_recover_last_ranging_timestamp(void) { return STORAGE_NO_TIMESTAMP; }
+uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged) { if (newest_logged) *newest_logged = STORAGE_NO_TIMESTAMP; return STORAGE_NO_TIMESTAMP; }
 void storage_retransmit_clear(void) {}
 uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)seqs; (void)count; return 0; }
 uint32_t storage_retransmit_count(void) { return 0; }

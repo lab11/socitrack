@@ -400,7 +400,7 @@ static void test_ranging_timestamp_recovery(void)
 
    // Nothing written yet: there is no network base to recover, and inventing one would be worse than
    // leaving the offset at zero
-   if (storage_recover_last_ranging_timestamp() != STORAGE_NO_TIMESTAMP)
+   if (storage_recover_last_ranging_timestamp(NULL) != STORAGE_NO_TIMESTAMP)
    {
       print("  ERROR: reported a ranging timestamp for an empty log\n");
       ++errors;
@@ -411,7 +411,7 @@ static void test_ranging_timestamp_recovery(void)
    uint8_t voltage[4] = { 0x70, 0x10, 0, 0 };
    storage_store_record(STORAGE_TYPE_VOLTAGE, 1000, voltage, sizeof(voltage));
    storage_flush(true);
-   if (storage_recover_last_ranging_timestamp() != STORAGE_NO_TIMESTAMP)
+   if (storage_recover_last_ranging_timestamp(NULL) != STORAGE_NO_TIMESTAMP)
    {
       print("  ERROR: recovered a timestamp from a log holding no ranging records\n");
       ++errors;
@@ -428,7 +428,7 @@ static void test_ranging_timestamp_recovery(void)
    }
    storage_flush(true);
 
-   uint32_t recovered = storage_recover_last_ranging_timestamp();
+   uint32_t recovered = storage_recover_last_ranging_timestamp(NULL);
    print("  recovered %u, newest ranging record was %u\n", recovered, expected);
    if (recovered != expected)
    {
@@ -436,10 +436,21 @@ static void test_ranging_timestamp_recovery(void)
       ++errors;
    }
 
-   // A later non-ranging record must not displace the answer, and must not hide it either
+   // A later non-ranging record must not displace the answer, and must not hide it either. It MUST be
+   // reported separately though: ranging can stop long before a reboot does, and seeding from a stale
+   // ranging record would set the clock back by the whole gap.
    storage_store_record(STORAGE_TYPE_VOLTAGE, expected + 500, voltage, sizeof(voltage));
    storage_flush(true);
-   recovered = storage_recover_last_ranging_timestamp();
+   uint32_t newest_logged = 0;
+   recovered = storage_recover_last_ranging_timestamp(&newest_logged);
+   if (newest_logged != (expected + 500))
+   {
+      print("  ERROR: newest logged timestamp reported as %u, expected %u\n", newest_logged, expected + 500);
+      ++errors;
+   }
+   else
+      print("  newest logged timestamp correctly reported as %u, %u ms past the last range\n",
+            newest_logged, newest_logged - expected);
    if (recovered != expected)
    {
       print("  ERROR: a trailing voltage record changed the answer to %u\n", recovered);

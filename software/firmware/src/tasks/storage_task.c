@@ -128,10 +128,17 @@ void StorageTask(void *params)
    // Recover the local-to-network time offset from the log instead of waiting for the next ranging round to re-derive it
    app_set_time_offset(0);
 #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
-   const uint32_t last_network_time = storage_recover_last_ranging_timestamp();
-   if (last_network_time != STORAGE_NO_TIMESTAMP)
+   uint32_t newest_logged = STORAGE_NO_TIMESTAMP;
+   const uint32_t last_network_time = storage_recover_last_ranging_timestamp(&newest_logged);
+
+   // Seed from whichever is newer
+   uint32_t seed = last_network_time;
+   if ((newest_logged != STORAGE_NO_TIMESTAMP) &&
+       ((seed == STORAGE_NO_TIMESTAMP) || (newest_logged > seed)))
+      seed = newest_logged;
+   if (seed != STORAGE_NO_TIMESTAMP)
    {
-      app_set_time_offset((int32_t)last_network_time - (int32_t)app_get_experiment_time(0));
+      app_set_time_offset((int32_t)seed - (int32_t)app_get_experiment_time(0));
       print("INFO: Seeded ranging time offset from the log: %d ms\n", app_get_time_offset());
    }
 #endif
