@@ -10,6 +10,10 @@
 
 void setup_hardware(void);
 void system_reset(bool immediate);
+uint16_t system_get_reset_reason(void);
+void system_watchdog_enable(void);
+void system_watchdog_disable(void);
+void system_watchdog_pet(const char *checked_in_from);
 void system_enable_interrupts(bool enabled);
 void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timestamp);
 void system_read_UID(uint8_t *uid, uint32_t uid_length);

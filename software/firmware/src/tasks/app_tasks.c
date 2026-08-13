@@ -92,8 +92,9 @@ void run_tasks(void)
          experiment_details_t details = {
             .experiment_start_time = current_timestamp,
             .experiment_end_time = current_timestamp + 604800,
-            .daily_start_time = 1,
-            .daily_end_time = 23,
+            .daily_start_time = 0,
+            .daily_end_time = 86400,
+            .use_daily_times = 0,
             .num_devices = 2,
             .uids = {},
             .uid_name_mappings = {},
@@ -158,6 +159,9 @@ void run_tasks(void)
          system_enter_power_off_mode(PIN_BATTERY_INPUT_POWER_GOOD, wake_on_timestamp);
          system_reset(true);
       }
+
+      // Arm the watchdog only here past the last point at which this boot could still decide to sleep instead of run
+      system_watchdog_enable();
 
       // Create tasks with the following priority order:
       //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask

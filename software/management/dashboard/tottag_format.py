@@ -40,7 +40,8 @@ STORAGE_TYPE_MOTION = 3
 STORAGE_TYPE_RANGES = 4
 STORAGE_TYPE_IMU = 5
 STORAGE_TYPE_BLE_SCAN = 6
-STORAGE_NUM_TYPES = 7
+STORAGE_TYPE_RESET_REASON = 7
+STORAGE_NUM_TYPES = 8
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'
@@ -50,6 +51,31 @@ BATTERY_CODES[4] = 'Not Charging'
 BATTERY_CODES[5] = 'Critical Voltage'
 
 MAX_BATTERY_CODE = 5
+
+# Raw am_hal_reset_status_e bits, written once per boot as STORAGE_TYPE_RESET_REASON. Several can be set at
+# once, so this is decoded as a flag list rather than a single code. WATCHDOG is the one that matters: on a
+# production build it is the ONLY evidence a watchdog reset happened, since the console is compiled out.
+RESET_FLAGS = [
+   (0x001, 'External'),
+   (0x002, 'Power-On'),
+   (0x004, 'Brown-Out'),
+   (0x008, 'SW Power-On'),
+   (0x010, 'SW Power-On Init'),
+   (0x020, 'Debugger'),
+   (0x040, 'Watchdog'),
+   (0x080, 'Unregulated Supply Brownout'),
+   (0x100, 'Core Regulator Brownout'),
+   (0x200, 'Memory Regulator Brownout'),
+   (0x400, 'High-Power Memory Regulator Brownout'),
+   (0x800, 'Low-Power Core Regulator Brownout'),
+]
+RESET_WATCHDOG_BIT = 0x040
+MAX_RESET_STATUS = 0xFFF
+
+
+def decode_reset_reason(status):
+   """Decode a raw reset-status word into a list of human-readable causes."""
+   return [name for bit, name in RESET_FLAGS if status & bit] or ['Unknown (0x%03X)' % status]
 
 FORMAT_V1 = 1
 FORMAT_V2 = 2
@@ -91,6 +117,8 @@ def _record_length(data, i):
       length = 5 + data[i + 5] if i + 6 <= len(data) else None       # the IMU length byte counts itself
    elif record_type == STORAGE_TYPE_BLE_SCAN:
       length = 6 + data[i + 5] if i + 6 <= len(data) else None
+   elif record_type == STORAGE_TYPE_RESET_REASON:
+      length = 7                                                     # uint16 status word
    else:
       return None
    return length if (length is not None and i + length <= len(data)) else None
@@ -172,6 +200,12 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                      seen.append(uid_to_labels[uid])
                log_data[timestamp]['b'] = seen
                consumed = 6 + count
+
+         elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):
+            status = struct.unpack('<H', data[i + 5:i + 7])[0]
+            if status <= MAX_RESET_STATUS:
+               log_data[timestamp]['rst'] = decode_reset_reason(status)
+               consumed = 7
 
       if consumed:
          i += consumed

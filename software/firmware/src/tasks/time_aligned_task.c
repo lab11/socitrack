@@ -4,6 +4,7 @@
 #include "battery.h"
 #include "logging.h"
 #include "rtc.h"
+#include "system.h"
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -21,6 +22,9 @@ void TimeAlignedTask(void *scheduled_experiment)
    // Loop forever
    while (true)
    {
+      // Pet the watchdog from this lowest-priority task
+      system_watchdog_pet("TimeAlignedTask");
+
       // Send a configuration verification notification to the Application Task
       app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
 

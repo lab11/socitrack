@@ -337,8 +337,16 @@ static bool verify_device_id(void)
 
 static void wait_until_not_busy(void)
 {
-   while ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) == STATUS_BUSY)
-      am_hal_delay_us(10);
+   for (uint32_t polls_remaining = STORAGE_BUSY_TIMEOUT_POLLS; polls_remaining; --polls_remaining)
+   {
+      if ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) != STATUS_BUSY)
+         return;
+      am_hal_delay_us(STORAGE_BUSY_POLL_INTERVAL_US);
+   }
+
+   // Reset immediately rather than flushing first
+   print("ERROR: Storage flash never cleared BUSY after %u polls (>= %u ms); resetting\n", (uint32_t)STORAGE_BUSY_TIMEOUT_POLLS, (uint32_t)STORAGE_BUSY_TIMEOUT_MS);
+   system_reset(true);
 }
 
 static void enter_low_power_mode(void)

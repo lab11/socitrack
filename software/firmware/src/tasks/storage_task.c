@@ -160,6 +160,10 @@ void StorageTask(void *params)
 
 #else
 
+   // Record why the device last restarted once per boot
+   const uint16_t reset_reason = system_get_reset_reason();
+   storage_store_record(STORAGE_TYPE_RESET_REASON, 500 * (app_get_experiment_time(app_get_time_offset()) / 500), &reset_reason, sizeof(reset_reason));
+
    // Loop forever, waiting until storage events are received or buffered data has waited long enough
    const TickType_t flush_timeout_ticks = pdMS_TO_TICKS(1000 * STORAGE_FLUSH_TIMEOUT_S);
    TickType_t flush_armed_at = 0;

@@ -17,6 +17,10 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 extern uint8_t _uid_base_address;
+static const char * volatile watchdog_last_checkin_from = "nobody";
+static volatile uint32_t watchdog_last_checkin_ticks;
+static volatile bool watchdog_enabled = false;
+static uint16_t boot_reset_status = 0;
 
 
 // Ambiq Interrupt Service Routines and MCU Functions ------------------------------------------------------------------
@@ -77,6 +81,23 @@ void am_rtc_isr(void)
    am_hal_rtc_alarm_get(NULL, &repeat_interval);
    am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
    AM_CRITICAL_END
+}
+
+void am_watchdog_isr(void)
+{
+   AM_CRITICAL_BEGIN
+   am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
+   AM_CRITICAL_END
+
+#ifdef __USE_FREERTOS__
+   print("ERROR: Watchdog expiring! Last check-in was from %s, %u ms ago; reset in ~%u s nominal\n",
+         watchdog_last_checkin_from,
+         (uint32_t)((uint32_t)(xTaskGetTickCountFromISR() - watchdog_last_checkin_ticks) * portTICK_PERIOD_MS),
+         (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
+#else
+   print("ERROR: Watchdog expiring! Last check-in was from %s; reset in ~%u s nominal\n",
+         watchdog_last_checkin_from, (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
+#endif
 }
 
 uint32_t am_freertos_sleep(uint32_t idleTime)
@@ -171,6 +192,7 @@ void setup_hardware(void)
    // Read the hardware reset reason
    am_hal_reset_status_t reset_reason;
    am_hal_reset_status_get(&reset_reason);
+   boot_reset_status = (uint16_t)reset_reason.eStatus;
 
    // Enable the floating point module
    am_hal_sysctrl_fpu_enable();
@@ -237,6 +259,69 @@ void system_reset(bool immediate)
    }
 }
 
+uint16_t system_get_reset_reason(void)
+{
+   // Raw am_hal_reset_status_e bits latched at boot
+   return boot_reset_status;
+}
+
+void system_watchdog_enable(void)
+{
+   // Only ever called from a context that has a petting task
+   am_hal_wdt_config_t watchdog_config = {
+      .eClockSource      = AM_HAL_WDT_1_16HZ,
+      .bInterruptEnable  = true,
+      .ui32InterruptValue = WATCHDOG_INTERRUPT_TICKS,
+      .bResetEnable      = true,
+      .ui32ResetValue    = WATCHDOG_RESET_TICKS,
+      .bAlertOnDSPReset  = false
+   };
+   am_hal_wdt_config(AM_HAL_WDT_MCU, &watchdog_config);
+   am_hal_reset_configure(AM_HAL_RESET_WDT_RESET_ENABLE);
+
+   // Route the pre-reset interrupt
+   am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
+   am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
+   NVIC_SetPriority(WDT_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY);
+   NVIC_EnableIRQ(WDT_IRQn);
+
+   // Never lock the watchdog
+   watchdog_last_checkin_from = "startup";
+#ifdef __USE_FREERTOS__
+   watchdog_last_checkin_ticks = (uint32_t)xTaskGetTickCount();
+#endif
+   watchdog_enabled = true;
+   am_hal_wdt_start(AM_HAL_WDT_MCU, false);
+   print("INFO: Watchdog armed -- WDT->CFG = 0x%08X (clksel %u, intval %u, resval %u); nominal interrupt at %u s, reset at %u s\n",
+         (uint32_t)WDT->CFG, (uint32_t)WDT->CFG_b.CLKSEL, (uint32_t)WDT->CFG_b.INTVAL, (uint32_t)WDT->CFG_b.RESVAL,
+         (uint32_t)(WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_S), (uint32_t)(WATCHDOG_RESET_TICKS * WATCHDOG_TICK_S));
+}
+
+void system_watchdog_disable(void)
+{
+   // Idempotent, because the paths that need the watchdog off are also reachable before it was ever armed
+   if (!watchdog_enabled)
+      return;
+   watchdog_enabled = false;
+   am_hal_wdt_stop(AM_HAL_WDT_MCU);
+   NVIC_DisableIRQ(WDT_IRQn);
+   am_hal_wdt_interrupt_disable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
+   am_hal_reset_configure(AM_HAL_RESET_WDT_RESET_DISABLE);
+   print("WARNING: Watchdog disabled\n");
+}
+
+void system_watchdog_pet(const char *checked_in_from)
+{
+   // The caller passes a string literal so the expiry ISR can name it without touching any FreeRTOS bookkeeping
+   if (!watchdog_enabled)
+      return;
+   watchdog_last_checkin_from = checked_in_from;
+#ifdef __USE_FREERTOS__
+   watchdog_last_checkin_ticks = (uint32_t)xTaskGetTickCount();
+#endif
+   am_hal_wdt_restart(AM_HAL_WDT_MCU);
+}
+
 void system_enable_interrupts(bool enabled)
 {
    // Enable or disable all system interrupts
@@ -248,6 +333,9 @@ void system_enable_interrupts(bool enabled)
 
 void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timestamp)
 {
+   // Stop the watchdog before sleeping
+   system_watchdog_disable();
+
    // Turn off all peripherals
    print("WARNING: Powering off...\n");
    battery_monitor_deinit();

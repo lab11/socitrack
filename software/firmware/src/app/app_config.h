@@ -40,11 +40,29 @@
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
 
 #define STORAGE_FLUSH_TIMEOUT_S                     120
+#define STORAGE_BUSY_POLL_INTERVAL_US               10
+#define STORAGE_BUSY_TIMEOUT_MS                     500
+#define STORAGE_BUSY_TIMEOUT_POLLS                  ((1000 * STORAGE_BUSY_TIMEOUT_MS) / STORAGE_BUSY_POLL_INTERVAL_US)
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 
-#define BLE_INIT_TIMEOUT_MS                         500
-#define BLE_ADV_TIMEOUT_MS                          50
+
+// Watchdog Configuration ----------------------------------------------------------------------------------------------
+
+#define WATCHDOG_TICK_S                             16    // AM_HAL_WDT_1_16HZ nominal; 1 Hz caps out at 255 s, too short for a 300 s pet
+#define WATCHDOG_TICK_MIN_S                         12    // nominal less 25%, i.e. an LFRC as fast as the measured part is slow
+#define WATCHDOG_INTERRUPT_TICKS                    40    // 640 s nominal, ~840 s measured; stays ahead of the reset in either case
+#define WATCHDOG_RESET_TICKS                        56    // 896 s nominal, ~1176 s measured, and still 672 s if the LFRC runs fast
+
+#if (WATCHDOG_INTERRUPT_TICKS > 255) || (WATCHDOG_RESET_TICKS > 255)
+#error "WATCHDOG_INTERRUPT_TICKS and WATCHDOG_RESET_TICKS must fit in 8 bits or am_hal_wdt_config() will truncate them"
+#endif
+#if (WATCHDOG_INTERRUPT_TICKS < 1) || (WATCHDOG_INTERRUPT_TICKS >= WATCHDOG_RESET_TICKS)
+#error "The watchdog interrupt must fire after the counter starts and before the watchdog reset"
+#endif
+#if ((WATCHDOG_RESET_TICKS * WATCHDOG_TICK_MIN_S) <= (2 * BATTERY_CHECK_INTERVAL_S))
+#error "The watchdog reset window must tolerate two missed pets even with the LFRC at its fastest plausible rate"
+#endif
 
 
 // Battery Configuration -----------------------------------------------------------------------------------------------
@@ -78,6 +96,9 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define SERIAL_NUMBER                               HW_MODEL"Rev"STRINGIZE_VAL(_HW_REVISION)
 
 #define MAX_NUM_CONNECTIONS                         2
+
+#define BLE_INIT_TIMEOUT_MS                         500
+#define BLE_ADV_TIMEOUT_MS                          50
 
 #define BLE_ADVERTISING_DURATION_MS                 0
 #define BLE_ADVERTISING_INTERVAL_0_625_MS           120         // 75 ms
