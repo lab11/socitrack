@@ -1,5 +1,0 @@
-# Required Python packages
-
-matplotlib
-pyserial
-bleak
