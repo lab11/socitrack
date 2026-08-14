@@ -17,6 +17,7 @@ typedef enum {
    STORAGE_TYPE_IMU,
    STORAGE_TYPE_BLE_SCAN,
    STORAGE_TYPE_RESET_REASON,
+   STORAGE_TYPE_TIME_ANCHOR,
    STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
@@ -119,7 +120,7 @@ uint32_t storage_retrieve_num_data_bytes(void);
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer);
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header);
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header);
-uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged);
+bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc);
 void storage_retransmit_clear(void);
 uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count);
 uint32_t storage_retransmit_count(void);

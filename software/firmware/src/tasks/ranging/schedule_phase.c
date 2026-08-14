@@ -51,7 +51,7 @@ void schedule_phase_initialize(const uint8_t *uid, bool is_master)
 {
    // Initialize all Schedule Phase parameters
    schedule_packet = (schedule_packet_t){ .header = { .msgType = SCHEDULE_PACKET },
-      .src_addr = uid[0], .sequence_number = 0, .epoch_time_unix = 0, .num_devices = 1,
+      .src_addr = uid[0], .sequence_number = 0, .experiment_time_ms = 0, .num_devices = 1,
       .schedule = { 0 }, .footer = { { 0 } } };
    memset(device_timeouts, 0, sizeof(device_timeouts));
    schedule_packet.schedule[0] = uid[0];
@@ -82,7 +82,7 @@ scheduler_phase_t schedule_phase_begin(void)
    if (is_master_scheduler)
    {
       // Increment the epoch timestamp and increment all device timeouts
-      schedule_packet.epoch_time_unix = app_get_experiment_time(app_get_time_offset());
+      schedule_packet.experiment_time_ms = app_get_experiment_time(app_get_time_offset());
       for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
          ++device_timeouts[i];
 
@@ -160,7 +160,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
 
    // Unpack the received schedule
    scheduled_slot = UNSCHEDULED_SLOT;
-   schedule_packet.epoch_time_unix = schedule->epoch_time_unix;
+   schedule_packet.experiment_time_ms = schedule->experiment_time_ms;
    schedule_packet.num_devices = schedule->num_devices;
    for (uint8_t i = 0; i < schedule->num_devices; ++i)
    {
@@ -217,7 +217,7 @@ uint32_t schedule_phase_get_num_devices(void)
 uint32_t schedule_phase_get_timestamp(void)
 {
    // Return the current epoch timestamp from the schedule
-   return schedule_packet.epoch_time_unix;
+   return schedule_packet.experiment_time_ms;
 }
 
 void schedule_phase_add_device(uint8_t eui)

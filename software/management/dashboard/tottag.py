@@ -162,7 +162,7 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
 
    # Dispatches on the stream magic, so legacy and page-framed downloads both decode here
    log_data, report = tottag_format.parse(data, experiment_start_time, uid_to_labels, repairs)
-   if report['repaired']:
+   if report['repaired'] and tottag_format.is_verbose():
       print(f"Recovered {len(report['repaired'])} page(s) from {uid_to_labels[from_uid]} by retransmission")
 
    # Say what was lost. A v1 download cannot report this at all -- a dropped page is simply absent, and a
@@ -178,14 +178,20 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
       if report['truncated']:
          print(f"   transfer ended early: {report['pages_read']} of {report['total_pages']} pages received")
 
-   # Not a transfer fault, but it makes a TIME-BOUNDED download untrustworthy
-   if report['time_discontinuities']:
-      print(f"WARNING: log from {uid_to_labels[from_uid]} contains {len(report['time_discontinuities'])} "
-            f"time discontinuit{'y' if len(report['time_discontinuities']) == 1 else 'ies'}:")
-      for position, seq, previous_last, this_first in report['time_discontinuities'][:5]:
+   # Not a transfer fault, but a LARGE one makes a time-bounded download untrustworthy
+   benign = [d for d in report['time_discontinuities'] if (d[2] - d[3]) < tottag_format.BENIGN_TIME_STEP_MS]
+   notable = [d for d in report['time_discontinuities'] if (d[2] - d[3]) >= tottag_format.BENIGN_TIME_STEP_MS]
+   for label, group in (('expected clock adjustment', benign), ('time discontinuity', notable)):
+      if not group or (group is benign and not tottag_format.is_verbose()):
+         continue
+      prefix = 'INFO' if group is benign else 'WARNING'
+      print(f"{prefix}: log from {uid_to_labels[from_uid]} contains {len(group)} {label}"
+            f"{'' if len(group) == 1 else 's'}:")
+      for position, seq, previous_last, this_first in group[:5]:
          print(f"   page {position} (seq {seq}) starts at {this_first} ms, after the previous page ended "
                f"at {previous_last} ms (back {(previous_last - this_first) / 1000:.1f} s)")
-      print("   a full download is unaffected, but a date-limited one may be missing data it asked for")
+      if group is notable:
+         print("   a full download is unaffected, but a date-limited one may be missing data it asked for")
 
    with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
@@ -1212,5 +1218,7 @@ def main(mode_switch_visibility=False):
 if __name__ == "__main__":
    parser = argparse.ArgumentParser(description="Parser for command line options")
    parser.add_argument('-s', action='store_true', help='With the -s flag, the mode switch will be visible')
+   parser.add_argument('--debug', action='store_true', help='Report expected, benign download diagnostics that are hidden by default')
    args = parser.parse_args()
+   tottag_format.set_verbose(args.debug)
    main(mode_switch_visibility = args.s)

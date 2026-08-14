@@ -25,6 +25,9 @@ void TimeAlignedTask(void *scheduled_experiment)
       // Pet the watchdog from this lowest-priority task
       system_watchdog_pet("TimeAlignedTask");
 
+      // Anchor the real time once per loop so the log carries an RTC reference every BATTERY_CHECK_INTERVAL_S
+      storage_write_time_anchor();
+
       // Send a configuration verification notification to the Application Task
       app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
 

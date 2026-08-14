@@ -384,86 +384,106 @@ static void store_range_record(uint32_t timestamp, uint8_t range_mm_div)
    storage_store_record(STORAGE_TYPE_RANGES, timestamp, data, sizeof(data));
 }
 
-static void test_ranging_timestamp_recovery(void)
+static void store_time_anchor(uint32_t experiment_ms, uint32_t rtc)
 {
-   // On a warm reset the local-to-network time offset is gone, and it is only re-derived by the next
-   // ranging round. Recovering the newest ranging timestamp from the log lets the offset be restored
-   // immediately, so records written before that round are not stamped on the wrong time base.
-   print("\n=== Ranging timestamp recovery test ===\n");
+   storage_store_record(STORAGE_TYPE_TIME_ANCHOR, experiment_ms, &rtc, sizeof(rtc));
+}
+
+static void test_time_anchor_recovery(void)
+{
+   print("\n=== Time anchor recovery test ===\n");
 
    storage_enter_maintenance_mode();
    reset_log_to_known_state();
    storage_exit_maintenance_mode();
    storage_disable(false);
 
-   uint32_t errors = 0;
+   uint32_t errors = 0, experiment_ms = 0, rtc = 0;
 
    // Nothing written yet: there is no network base to recover, and inventing one would be worse than
    // leaving the offset at zero
-   if (storage_recover_last_ranging_timestamp(NULL) != STORAGE_NO_TIMESTAMP)
+   if (storage_recover_time_anchor(&experiment_ms, &rtc))
    {
-      print("  ERROR: reported a ranging timestamp for an empty log\n");
+      print("  ERROR: reported an anchor for an empty log\n");
       ++errors;
    }
 
-   // A log with only non-ranging records must also report nothing: those carry whatever offset was in
-   // force when they were written, so seeding from one would propagate a stale offset
+   // A log holding no anchors must report nothing rather than fall back to some other record. Seeding from
+   // an ordinary timestamp is exactly the bug the anchor replaced: it assumes the log ends at the present
+   // moment, and up to STORAGE_FLUSH_TIMEOUT_S of records are still in the page cache at any reboot
    uint8_t voltage[4] = { 0x70, 0x10, 0, 0 };
    storage_store_record(STORAGE_TYPE_VOLTAGE, 1000, voltage, sizeof(voltage));
+   for (uint32_t i = 0; i < RECOVERY_TEST_RECORDS; ++i)
+      store_range_record(2000 + (500 * i), (uint8_t)(i & 0xFF));
    storage_flush(true);
-   if (storage_recover_last_ranging_timestamp(NULL) != STORAGE_NO_TIMESTAMP)
+   if (storage_recover_time_anchor(&experiment_ms, &rtc))
    {
-      print("  ERROR: recovered a timestamp from a log holding no ranging records\n");
+      print("  ERROR: recovered an anchor from a log holding none\n");
       ++errors;
    }
 
-   // Now a spread of ranging records across several pages, newest last
-   uint32_t expected = 0;
+   // Now a spread of anchors across several pages, newest last
+   uint32_t expected_ms = 0, expected_rtc = 0;
    for (uint32_t i = 0; i < RECOVERY_TEST_RECORDS; ++i)
    {
-      expected = 2000 + (500 * i);
-      store_range_record(expected, (uint8_t)(i & 0xFF));
+      expected_ms = 100000 + (500 * i);
+      expected_rtc = 1700000000u + i;
+      store_time_anchor(expected_ms, expected_rtc);
+      store_range_record(expected_ms, (uint8_t)(i & 0xFF));
       if ((i % 20) == 19)
          storage_flush(true);
    }
    storage_flush(true);
 
-   uint32_t recovered = storage_recover_last_ranging_timestamp(NULL);
-   print("  recovered %u, newest ranging record was %u\n", recovered, expected);
-   if (recovered != expected)
+   if (!storage_recover_time_anchor(&experiment_ms, &rtc))
    {
-      print("  ERROR: expected %u\n", expected);
+      print("  ERROR: found no anchor in a log full of them\n");
       ++errors;
    }
+   else if ((experiment_ms != expected_ms) || (rtc != expected_rtc))
+   {
+      print("  ERROR: recovered (%u ms, rtc %u), expected (%u ms, rtc %u)\n",
+            experiment_ms, rtc, expected_ms, expected_rtc);
+      ++errors;
+   }
+   else
+      print("  recovered the newest anchor: %u ms paired with rtc %u\n", experiment_ms, rtc);
 
-   // A later non-ranging record must not displace the answer, and must not hide it either. It MUST be
-   // reported separately though: ranging can stop long before a reboot does, and seeding from a stale
-   // ranging record would set the clock back by the whole gap.
-   storage_store_record(STORAGE_TYPE_VOLTAGE, expected + 500, voltage, sizeof(voltage));
+   // Later non-anchor records must not displace the answer. The whole point is that an anchor stays valid
+   // however stale it gets, so records written after it change nothing
+   storage_store_record(STORAGE_TYPE_VOLTAGE, expected_ms + 5000, voltage, sizeof(voltage));
+   store_range_record(expected_ms + 5500, 0);
    storage_flush(true);
-   uint32_t newest_logged = 0;
-   recovered = storage_recover_last_ranging_timestamp(&newest_logged);
-   if (newest_logged != (expected + 500))
+   if (!storage_recover_time_anchor(&experiment_ms, &rtc) ||
+       (experiment_ms != expected_ms) || (rtc != expected_rtc))
    {
-      print("  ERROR: newest logged timestamp reported as %u, expected %u\n", newest_logged, expected + 500);
+      print("  ERROR: trailing records changed the answer to (%u, %u)\n", experiment_ms, rtc);
       ++errors;
    }
    else
-      print("  newest logged timestamp correctly reported as %u, %u ms past the last range\n",
-            newest_logged, newest_logged - expected);
-   if (recovered != expected)
+      print("  trailing records correctly left the anchor at %u ms / rtc %u\n", experiment_ms, rtc);
+
+   // The recovered offset must not depend on WHEN it is read back -- that is the entire property being
+   // bought. Two reads separated by more records must agree exactly.
+   uint32_t second_ms = 0, second_rtc = 0;
+   for (uint32_t i = 0; i < 40; ++i)
+      store_range_record(expected_ms + 6000 + (500 * i), (uint8_t)i);
+   storage_flush(true);
+   if (!storage_recover_time_anchor(&second_ms, &second_rtc) ||
+       (second_ms != experiment_ms) || (second_rtc != rtc))
    {
-      print("  ERROR: a trailing voltage record changed the answer to %u\n", recovered);
+      print("  ERROR: a later read returned (%u, %u) instead of (%u, %u)\n",
+            second_ms, second_rtc, experiment_ms, rtc);
       ++errors;
    }
    else
-      print("  a trailing non-ranging record correctly left the answer at %u\n", recovered);
+      print("  a later read returned the same anchor, so staleness does not shift the offset\n");
 
    storage_disable(true);
    if (errors)
-      print("=== Ranging timestamp recovery FAILED: %u errors ===\n", errors);
+      print("=== Time anchor recovery FAILED: %u errors ===\n", errors);
    else
-      print("=== Ranging timestamp recovery PASSED ===\n");
+      print("=== Time anchor recovery PASSED ===\n");
 }
 
 static void test_page_retransmission(void)
@@ -653,7 +673,7 @@ int main(void)
 
    // Verify that a specific page can be fetched by sequence number, for retransmission
    test_timestamp_jump();
-   test_ranging_timestamp_recovery();
+   test_time_anchor_recovery();
    test_page_retransmission();
 
 #endif

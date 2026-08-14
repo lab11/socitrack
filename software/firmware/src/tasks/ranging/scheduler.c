@@ -67,7 +67,7 @@ static void handle_range_computation_phase(void)
             storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), app_get_time_offset());
 #endif
 #endif
-         print_ranges(app_experiment_time_to_rtc_time(500 * (data_timestamp / 500)), (500 * (data_timestamp / 500)) % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         print_ranges(app_experiment_time_to_rtc_time(data_timestamp), data_timestamp % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
       }
       case ROLE_PARTICIPANT:
@@ -88,7 +88,7 @@ static void handle_range_computation_phase(void)
             storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), (int32_t)data_timestamp - (int32_t)app_get_experiment_time(0));
 #endif
 #endif
-         print_ranges(app_experiment_time_to_rtc_time(500 * (data_timestamp / 500)), (500 * (data_timestamp / 500)) % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+         print_ranges(app_experiment_time_to_rtc_time(data_timestamp), data_timestamp % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
          break;
       }
       default:

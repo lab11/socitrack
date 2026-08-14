@@ -1467,35 +1467,42 @@ static uint32_t stored_record_length(const uint8_t *payload, uint32_t offset, ui
          return ((offset + 6) <= length) ? (5 + payload[offset + 5]) : 0;   // the length byte counts itself
       case STORAGE_TYPE_BLE_SCAN:
          return ((offset + 6) <= length) ? (6 + payload[offset + 5]) : 0;
+      case STORAGE_TYPE_RESET_REASON:
+         return 7;
+      case STORAGE_TYPE_TIME_ANCHOR:
+         return 9;
       default:
          return 0;
    }
 }
 
-static uint32_t last_ranging_timestamp_in_page(const uint8_t *payload, uint32_t length)
+static bool last_time_anchor_in_page(const uint8_t *payload, uint32_t length, uint32_t *experiment_ms, uint32_t *rtc)
 {
-   // Payloads are record-aligned by construction, so walk forward and keep the newest ranging stamp
-   uint32_t result = STORAGE_NO_TIMESTAMP, offset = 0;
+   // Keep the newest anchor in this page; payloads are record-aligned so a forward walk is exact
+   bool found = false;
+   uint32_t offset = 0;
    while ((offset + 5) < length)
    {
       const uint32_t record_length = stored_record_length(payload, offset, length);
       if (!record_length || ((offset + record_length) > length))
          break;
-      if (payload[offset] == STORAGE_TYPE_RANGES)
-         memcpy(&result, payload + offset + 1, sizeof(result));
+      if (payload[offset] == STORAGE_TYPE_TIME_ANCHOR)
+      {
+         memcpy(experiment_ms, payload + offset + 1, sizeof(*experiment_ms));
+         memcpy(rtc, payload + offset + 5, sizeof(*rtc));
+         found = true;
+      }
       offset += record_length;
    }
-   return result;
+   return found;
 }
 
-uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged)
+bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
 {
-   // Newest ranging timestamp still in the log, so a reboot does not have to wait for the next ranging
-   // round to re-derive the local-to-network time offset
-   if (newest_logged)
-      *newest_logged = STORAGE_NO_TIMESTAMP;
+   // The newest anchor pairs an experiment timestamp with the raw RTC value at the instant it was written.
+   // That pair fixes the network offset independently of WHEN it is read back
    if (current_page == starting_page)
-      return STORAGE_NO_TIMESTAMP;         // nothing written in this epoch yet
+      return false;
 
    if (!in_maintenance_mode)
    {
@@ -1503,7 +1510,8 @@ uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged)
       exit_low_power_mode();
    }
 
-   uint32_t result = STORAGE_NO_TIMESTAMP, page = current_page;
+   bool found = false;
+   uint32_t page = current_page;
    for (uint32_t back = 0; back < SEED_SEARCH_MAX_PAGES; ++back)
    {
       page = log_prev_page(page);
@@ -1511,18 +1519,12 @@ uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged)
          continue;
       const storage_page_header_t *header = (const storage_page_header_t*)transfer_buffer;
       if (!page_header_valid(header) || (header->epoch != log_epoch))
-         break;                            // walked off the start of this epoch
-      // The newest page's own bound is when this device last wrote anything, which is a floor on how far
-      // the clock has already advanced -- ranging can stop well before a reboot does
-      if (newest_logged && (*newest_logged == STORAGE_NO_TIMESTAMP) &&
-          (header->last_timestamp != STORAGE_NO_TIMESTAMP))
-         *newest_logged = header->last_timestamp;
+         break;                              // walked off the start of this epoch
       const uint32_t length = extract_page_payload(transfer_buffer);
-      if (length)
+      if (length && last_time_anchor_in_page(transfer_buffer, length, experiment_ms, rtc))
       {
-         result = last_ranging_timestamp_in_page(transfer_buffer, length);
-         if (result != STORAGE_NO_TIMESTAMP)
-            break;
+         found = true;
+         break;
       }
       if (page == starting_page)
          break;
@@ -1533,7 +1535,7 @@ uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged)
       enter_low_power_mode();
       am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
    }
-   return result;
+   return found;
 }
 
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header)
@@ -1746,7 +1748,7 @@ uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header) { (void)header; return 0; }
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header) { (void)seq; (void)header; return 0; }
-uint32_t storage_recover_last_ranging_timestamp(uint32_t *newest_logged) { if (newest_logged) *newest_logged = STORAGE_NO_TIMESTAMP; return STORAGE_NO_TIMESTAMP; }
+bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc) { (void)experiment_ms; (void)rtc; return false; }
 void storage_retransmit_clear(void) {}
 uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)seqs; (void)count; return 0; }
 uint32_t storage_retransmit_count(void) { return 0; }

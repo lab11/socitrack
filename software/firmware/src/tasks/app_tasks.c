@@ -34,6 +34,7 @@ uint32_t app_get_experiment_time(int32_t offset)
    return (elapsed_ms > 0) ? (uint32_t)elapsed_ms : 0;
 }
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time) { return (experiment_time / 1000) + experiment_start_time; }
+uint32_t app_get_experiment_start_time(void) { return experiment_start_time; }
 
 int32_t app_get_time_offset(void) { return network_time_offset; }
 void app_set_time_offset(int32_t offset) { network_time_offset = offset; }

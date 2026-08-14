@@ -42,6 +42,7 @@ void app_download_log_file(uint32_t start_time, uint32_t end_time);
 void app_allow_downloads(bool allow);
 uint32_t app_get_experiment_time(int32_t offset);
 uint32_t app_experiment_time_to_rtc_time(uint32_t experiment_time);
+uint32_t app_get_experiment_start_time(void);
 int32_t app_get_time_offset(void);
 void app_set_time_offset(int32_t offset);
 void app_set_experiment_start_time(uint32_t start_time);
@@ -52,6 +53,7 @@ bool ranging_active(void);
 
 // Storage Task Public Functions
 void storage_flush_and_shutdown(void);
+void storage_write_time_anchor(void);
 void storage_write_battery_level(uint32_t battery_voltage_mV);
 void storage_write_motion_status(motion_code_t motion_code);
 void storage_write_charging_status(battery_event_t battery_event);

@@ -33,6 +33,7 @@ from collections import defaultdict
 MAX_RANGING_DISTANCE_MM = 16000
 MAX_NUM_DEVICES = 10
 IMU_DATA_LENGTH = 7
+BENIGN_TIME_STEP_MS = 2000
 
 STORAGE_TYPE_VOLTAGE = 1
 STORAGE_TYPE_CHARGING_EVENT = 2
@@ -41,7 +42,8 @@ STORAGE_TYPE_RANGES = 4
 STORAGE_TYPE_IMU = 5
 STORAGE_TYPE_BLE_SCAN = 6
 STORAGE_TYPE_RESET_REASON = 7
-STORAGE_NUM_TYPES = 8
+STORAGE_TYPE_TIME_ANCHOR = 8
+STORAGE_NUM_TYPES = 9
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'
@@ -51,6 +53,18 @@ BATTERY_CODES[4] = 'Not Charging'
 BATTERY_CODES[5] = 'Critical Voltage'
 
 MAX_BATTERY_CODE = 5
+
+_VERBOSE = False
+
+
+def set_verbose(enabled):
+   """Show diagnostics that are expected during normal operation (the --debug flag)."""
+   global _VERBOSE
+   _VERBOSE = bool(enabled)
+
+
+def is_verbose():
+   return _VERBOSE
 
 # Raw am_hal_reset_status_e bits, written once per boot as STORAGE_TYPE_RESET_REASON. Several can be set at
 # once, so this is decoded as a flag list rather than a single code. WATCHDOG is the one that matters: on a
@@ -119,6 +133,8 @@ def _record_length(data, i):
       length = 6 + data[i + 5] if i + 6 <= len(data) else None
    elif record_type == STORAGE_TYPE_RESET_REASON:
       length = 7                                                     # uint16 status word
+   elif record_type == STORAGE_TYPE_TIME_ANCHOR:
+      length = 9                                                     # uint32 raw RTC timestamp
    else:
       return None
    return length if (length is not None and i + length <= len(data)) else None
@@ -145,7 +161,9 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
       timestamp = experiment_start_time + (timestamp_raw / 1000)
       consumed = 0
 
-      if timestamp <= now and (timestamp_raw % 500) == 0 and 1 <= record_type < STORAGE_NUM_TYPES:
+      # The 500 ms grid is a v1 resynchronisation heuristic
+      on_grid = (timestamp_raw % 500) == 0 if resynchronize else True
+      if timestamp <= now and on_grid and 1 <= record_type < STORAGE_NUM_TYPES:
          if record_type == STORAGE_TYPE_VOLTAGE and i + 9 <= len(data):
             datum = struct.unpack('<I', data[i + 5:i + 9])[0]
             if 0 < datum < 4500:
@@ -200,6 +218,15 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                      seen.append(uid_to_labels[uid])
                log_data[timestamp]['b'] = seen
                consumed = 6 + count
+
+         elif record_type == STORAGE_TYPE_TIME_ANCHOR and i + 9 <= len(data):
+            rtc = struct.unpack('<I', data[i + 5:i + 9])[0]
+            # The offset is not stored but is recoverable from every other record's timestamp (RTC + offset)
+            # Positive means the log's clock runs behind real time.
+            if experiment_start_time <= rtc <= now:
+               log_data[timestamp]['rtc'] = rtc
+               log_data[timestamp]['lag'] = round((rtc - experiment_start_time) - (timestamp_raw / 1000), 1)
+               consumed = 9
 
          elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):
             status = struct.unpack('<H', data[i + 5:i + 7])[0]

@@ -46,6 +46,8 @@
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 
+#define TIME_BASE_CHANGE_THRESHOLD_MS               2000
+
 
 // Watchdog Configuration ----------------------------------------------------------------------------------------------
 

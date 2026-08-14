@@ -12,7 +12,7 @@ typedef struct __attribute__ ((__packed__))
 {
    ieee154_header_t header;
    uint8_t src_addr, sequence_number;
-   uint32_t epoch_time_unix;
+   uint32_t experiment_time_ms;
    uint8_t num_devices;
    uint8_t schedule[MAX_NUM_RANGING_DEVICES];
    ieee154_footer_t footer;
