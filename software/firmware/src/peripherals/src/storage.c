@@ -3,6 +3,7 @@
 #include "buzzer.h"
 #include "logging.h"
 #include "rtc.h"
+#include "nandlog_port.h"
 #include "storage.h"
 #include "system.h"
 
@@ -79,7 +80,6 @@ static volatile uint32_t bbm_index, bbm_storage_page;
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static void *spi_handle;
 static bbm_lut_t bad_block_lookup_table[BBM_TABLE_SIZE];
 static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE];
 static uint32_t retransmit_seqs[STORAGE_MAX_RETRANSMIT_PAGES], retransmit_num_pages = 0;
@@ -122,215 +122,28 @@ static inline uint32_t log_page_distance(uint32_t from, uint32_t to)
 }
 
 
-#if REVISION_ID < REVISION_N
-
-static void spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
-{
-   // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 4;
-   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
-   am_hal_iom_transfer_t spi_transaction = {
-      .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = 0,
-      .ui64Instr                    = 0,
-      .eDirection                   = AM_HAL_IOM_TX,
-      .ui32NumBytes                 = 1 + address_length,
-      .pui32TxBuffer                = &instruction,
-      .pui32RxBuffer                = NULL,
-      .bContinue                    = true,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-
-   // Update the SPI transaction structure
-   retries_remaining = 4;
-   spi_transaction.eDirection = AM_HAL_IOM_RX;
-   spi_transaction.ui32NumBytes = read_length;
-   spi_transaction.pui32TxBuffer = NULL,
-   spi_transaction.pui32RxBuffer = read_buffer;
-   spi_transaction.bContinue = false;
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-}
-
-static void spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
-{
-   // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 4;
-   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
-   am_hal_iom_transfer_t spi_transaction = {
-      .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = 0,
-      .ui64Instr                    = 0,
-      .eDirection                   = AM_HAL_IOM_TX,
-      .ui32NumBytes                 = 1 + address_length,
-      .pui32TxBuffer                = &instruction,
-      .pui32RxBuffer                = NULL,
-      .bContinue                    = true,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-
-   // Update the SPI transaction structure
-   retries_remaining = 4;
-   spi_transaction.ui32NumBytes = write_length;
-   spi_transaction.pui32TxBuffer = (uint32_t*)write_buffer,
-   spi_transaction.bContinue = false;
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-}
-
-#else
-
-static void spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
-{
-   // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 4;
-   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
-   am_hal_iom_transfer_t spi_transaction = {
-      .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = 0,
-      .ui64Instr                    = 0,
-      .eDirection                   = AM_HAL_IOM_TX,
-      .ui32NumBytes                 = 1 + address_length,
-      .pui32TxBuffer                = &instruction,
-      .pui32RxBuffer                = NULL,
-      .bContinue                    = true,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-
-   // Split SPI reads if necessary
-   uint32_t read_offset = 0;
-   while (read_length)
-   {
-      // Determine the actual read size for this transaction
-      uint32_t read_bytes = (read_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : read_length;
-      read_length -= read_bytes;
-
-      // Update the SPI transaction structure
-      retries_remaining = 4;
-      spi_transaction.eDirection = AM_HAL_IOM_RX;
-      spi_transaction.ui32NumBytes = read_bytes;
-      spi_transaction.pui32TxBuffer = NULL,
-      spi_transaction.pui32RxBuffer = (uint32_t*)((uint8_t*)read_buffer + read_offset);
-      spi_transaction.bContinue = read_length > 0;
-      read_offset += read_bytes;
-
-      // Repeat the transfer until it succeeds or requires a device reset
-      while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-         am_hal_delay_us(10);
-      if (!retries_remaining)
-         system_reset(true);
-   }
-}
-
-static void spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
-{
-   // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 4;
-   uint32_t num_writes = 1 + (write_length / (1 + AM_HAL_IOM_MAX_TXNSIZE_SPI));
-   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
-   am_hal_iom_transfer_t spi_transaction = {
-      .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = 0,
-      .ui64Instr                    = 0,
-      .eDirection                   = AM_HAL_IOM_TX,
-      .ui32NumBytes                 = 1 + address_length,
-      .pui32TxBuffer                = &instruction,
-      .pui32RxBuffer                = NULL,
-      .bContinue                    = true,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-
-   // Split SPI writes if necessary
-   uint32_t write_offset = 0;
-   while (num_writes--)
-   {
-      // Determine the actual read size for this transaction
-      uint32_t write_bytes = (write_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : write_length;
-      write_length -= write_bytes;
-
-      // Update the SPI transaction structure
-      retries_remaining = 4;
-      spi_transaction.ui32NumBytes = write_bytes;
-      spi_transaction.pui32TxBuffer = (uint32_t*)((uint8_t*)write_buffer + write_offset);
-      spi_transaction.bContinue = write_length > 0;
-      write_offset += write_bytes;
-
-      // Repeat the transfer until it succeeds or requires a device reset
-      while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-         am_hal_delay_us(10);
-      if (!retries_remaining)
-         system_reset(true);
-   }
-}
-
-#endif  // #if REVISION_ID < REVISION_N
-
 static uint8_t read_register(uint8_t register_number)
 {
    static uint8_t register_value;
-   spi_read(COMMAND_READ_STATUS_REGISTER, &register_number, 1, &register_value, 1);
+   nandlog_port_spi_read(COMMAND_READ_STATUS_REGISTER, &register_number, 1, &register_value, 1);
    return register_value;
 }
 
 static void write_register(uint8_t register_number, uint8_t value)
 {
-   spi_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
+   nandlog_port_spi_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
 }
 
 static bool verify_device_id(void)
 {
 #if REVISION_ID < REVISION_N
    uint8_t device_id_read[4], device_id_known[3] = STORAGE_DEVICE_ID;
-   spi_read(COMMAND_READ_DEVICE_ID, NULL, 0, device_id_read, sizeof(device_id_read));
+   nandlog_port_spi_read(COMMAND_READ_DEVICE_ID, NULL, 0, device_id_read, sizeof(device_id_read));
    return (memcmp(device_id_read + 1, device_id_known, sizeof(device_id_known)) == 0);
 #else
    static const uint8_t address = 0x01;
    uint8_t device_id_read[1], device_id_known[1] = STORAGE_DEVICE_ID;
-   spi_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), device_id_read, sizeof(device_id_read));
+   nandlog_port_spi_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), device_id_read, sizeof(device_id_read));
    return (memcmp(device_id_read, device_id_known, sizeof(device_id_known)) == 0);
 #endif
 }
@@ -341,7 +154,7 @@ static void wait_until_not_busy(void)
    {
       if ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) != STATUS_BUSY)
          return;
-      am_hal_delay_us(STORAGE_BUSY_POLL_INTERVAL_US);
+      nandlog_port_delay_us(STORAGE_BUSY_POLL_INTERVAL_US);
    }
 
    // Reset immediately rather than flushing first
@@ -366,10 +179,10 @@ static bool write_page_raw(const uint8_t *data, uint32_t page_number)
    for (uint8_t retry_index = 0; retry_index < MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL; ++retry_index)
    {
       wait_until_not_busy();
-      spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-      spi_write(COMMAND_PROGRAM_DATA_LOAD, &byte_offset, 2, data, MEMORY_PAGE_SIZE_BYTES);
+      nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      nandlog_port_spi_write(COMMAND_PROGRAM_DATA_LOAD, &byte_offset, 2, data, MEMORY_PAGE_SIZE_BYTES);
       wait_until_not_busy();
-      spi_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+      nandlog_port_spi_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
       wait_until_not_busy();
       if ((read_register(STATUS_REGISTER_3) & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
          return true;
@@ -382,9 +195,9 @@ static bool read_page(uint8_t *buffer, uint32_t page_number)
    const uint32_t byte_offset = 0;
    const uint8_t page_number_reordered[] = { (uint8_t)((page_number & 0x00FF0000) >> 16), (uint8_t)((page_number & 0x0000FF00) >> 8), (uint8_t)(page_number & 0x000000FF) };
    wait_until_not_busy();
-   spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+   nandlog_port_spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
    wait_until_not_busy();
-   spi_read(COMMAND_READ, &byte_offset, 3, buffer, MEMORY_PAGE_SIZE_BYTES);
+   nandlog_port_spi_read(COMMAND_READ, &byte_offset, 3, buffer, MEMORY_PAGE_SIZE_BYTES);
    wait_until_not_busy();
    return (read_register(STATUS_REGISTER_3) & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
 }
@@ -395,9 +208,9 @@ static bool read_page_with_spare_data(uint8_t *buffer, uint32_t page_number)
    const uint32_t byte_offset = 0;
    const uint8_t page_number_reordered[] = { (uint8_t)((page_number & 0x00FF0000) >> 16), (uint8_t)((page_number & 0x0000FF00) >> 8), (uint8_t)(page_number & 0x000000FF) };
    wait_until_not_busy();
-   spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+   nandlog_port_spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
    wait_until_not_busy();
-   spi_read(COMMAND_READ, &byte_offset, 3, buffer, MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE);
+   nandlog_port_spi_read(COMMAND_READ, &byte_offset, 3, buffer, MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE);
    wait_until_not_busy();
    return (read_register(STATUS_REGISTER_3) & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
 }
@@ -452,8 +265,8 @@ static void add_bad_block(uint32_t block_address)
          .lba = (uint16_t)(((block_address << 8) & 0xFF00) | ((block_address >> 8) & 0x00FF)),
          .pba = ((workaround_block << 8) & 0xFF00) | ((workaround_block >> 8) & 0x00FF)
       };
-      spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-      spi_write(COMMAND_WRITE_BBM_LUT, NULL, 0, &destination_address, sizeof(destination_address));
+      nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      nandlog_port_spi_write(COMMAND_WRITE_BBM_LUT, NULL, 0, &destination_address, sizeof(destination_address));
       wait_until_not_busy();
 
       // Update the bad block lookup table
@@ -482,7 +295,7 @@ static bool is_bad_block(uint32_t block_address)
 static void add_bad_block(uint32_t block_address)
 {
    // Disable memory page write protection
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(true);
    write_register(STATUS_REGISTER_1, 0b00000010);
 
    // Erase the BBM LUT page and ensure that the command was successful
@@ -495,8 +308,8 @@ static void add_bad_block(uint32_t block_address)
          (uint8_t)(bbm_storage_page & 0x000000FF)
       };
       wait_until_not_busy();
-      spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-      spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+      nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      nandlog_port_spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
       wait_until_not_busy();
       if ((read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) == STATUS_ERASE_FAILURE)
       {
@@ -522,7 +335,7 @@ static void add_bad_block(uint32_t block_address)
 
    // Re-enable memory page write protection
    write_register(STATUS_REGISTER_1, 0b01111110);
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(false);
 }
 
 #endif
@@ -530,7 +343,7 @@ static void add_bad_block(uint32_t block_address)
 static void erase_block(uint32_t starting_page, uint32_t ending_page)
 {
    // Disable memory page write protection
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(true);
    write_register(STATUS_REGISTER_1, 0b00000010);
 
    // Iterate through all blocks to be erased
@@ -545,8 +358,8 @@ static void erase_block(uint32_t starting_page, uint32_t ending_page)
          // Erase the current page and ensure that the command was successful
          const uint8_t page_number_reordered[] = { (uint8_t)((page & 0x00FF0000) >> 16), (uint8_t)((page & 0x0000FF00) >> 8), (uint8_t)(page & 0x000000FF) };
          wait_until_not_busy();
-         spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-         spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+         nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+         nandlog_port_spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
          wait_until_not_busy();
          if ((read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) == STATUS_ERASE_FAILURE)
             add_bad_block(page);
@@ -557,7 +370,7 @@ static void erase_block(uint32_t starting_page, uint32_t ending_page)
 
    // Re-enable memory page write protection
    write_register(STATUS_REGISTER_1, 0b01111110);
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(false);
 }
 
 static uint32_t crc32_compute(const void *data, uint32_t length)
@@ -618,10 +431,10 @@ static void write_page(uint16_t data_length)
    // Disable memory page write protection
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(true);
    write_register(STATUS_REGISTER_1, 0b00000010);
    const uint32_t original_page = current_page;
 
@@ -658,7 +471,7 @@ static void write_page(uint16_t data_length)
 
          // Erase the relocation target before transferring into it
          erase_block(next_block, next_block);
-         am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+         nandlog_port_write_enable(true);
          write_register(STATUS_REGISTER_1, 0b00000010);
 
          transfer_block(original_page & 0xFFFFFFC0, next_block, current_page & 0x003F);
@@ -669,11 +482,11 @@ static void write_page(uint16_t data_length)
 
    // Re-enable memory page write protection
    write_register(STATUS_REGISTER_1, 0b01111110);
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(false);
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+      nandlog_port_power(false);
    }
 }
 
@@ -699,14 +512,14 @@ static void erase_ahead_of_head(void)
    // Wake the storage peripheral around the erase, mirroring what write_page() does
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
    erase_ahead_of(current_page);
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+      nandlog_port_power(false);
    }
 }
 
@@ -742,7 +555,7 @@ static bool is_first_boot(void)
       memset(transfer_buffer, 0, MEMORY_PAGE_SIZE_BYTES);
       memcpy(transfer_buffer, device_id, sizeof(device_id));
       write_page_raw(transfer_buffer, FIRST_BOOT_ADDRESS);
-      spi_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
+      nandlog_port_spi_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
       first_boot = true;
    }
 #if REVISION_ID < REVISION_N
@@ -849,53 +662,22 @@ bool storage_init(void)
    if (is_initialized)
       return true;
 
-   // Create an SPI configuration structure
+   // Everything platform-specific about reaching the chip lives behind this call
    is_reading = in_maintenance_mode = disabled = false;
-   const am_hal_iom_config_t spi_config =
-   {
-      .eInterfaceMode = AM_HAL_IOM_SPI_MODE,
-      .ui32ClockFreq = AM_HAL_IOM_48MHZ,
-      .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
-      .pNBTxnBuf = NULL,
-      .ui32NBTxnBufLength = 0
-   };
-
-   // Configure and assert the Write-Protect and Hold pins to disable them
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_WRITE_PROTECT, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_HOLD, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_STORAGE_HOLD);
-
-   // Initialize the SPI module and enable all relevant SPI pins
-   am_hal_gpio_pincfg_t sck_config = g_AM_BSP_GPIO_IOM0_SCK;
-   am_hal_gpio_pincfg_t miso_config = g_AM_BSP_GPIO_IOM0_MISO;
-   am_hal_gpio_pincfg_t mosi_config = g_AM_BSP_GPIO_IOM0_MOSI;
-   am_hal_gpio_pincfg_t cs_config = g_AM_BSP_GPIO_IOM0_CS;
-   sck_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_SCK_FUNCTION;
-   miso_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_MISO_FUNCTION;
-   mosi_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_MOSI_FUNCTION;
-   cs_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_CS_FUNCTION;
-   cs_config.GP.cfg_b.uNCE = 4 * STORAGE_SPI_NUMBER;
-   configASSERT0(am_hal_iom_initialize(STORAGE_SPI_NUMBER, &spi_handle));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_SCK, sck_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_MISO, miso_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_MOSI, mosi_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_CS, cs_config));
-   configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false));
-   configASSERT0(am_hal_iom_configure(spi_handle, &spi_config));
-   configASSERT0(am_hal_iom_enable(spi_handle));
+   if (!nandlog_port_init())
+      return false;
 
    // Wait until the chip becomes accessible
    int retries;
    for (retries = 0; (retries < 1000) && !verify_device_id(); ++retries)
-      am_util_delay_ms(1);
+      nandlog_port_delay_ms(1);
 #ifdef _MANUFACTURING_TEST_
    enter_low_power_mode();
-   configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_power(false);
+   nandlog_port_write_enable(false);
    return retries < 1000;
 #endif
-   am_util_delay_ms(3);
+   nandlog_port_delay_ms(3);
    wait_until_not_busy();
 
    // Configure the memory chip
@@ -911,7 +693,7 @@ bool storage_init(void)
    // Retrieve the list of existing bad storage blocks
 #if REVISION_ID < REVISION_N
    uint8_t dummy_value = 0;
-   spi_read(COMMAND_READ_BBM_LUT, &dummy_value, 1, &bad_block_lookup_table, sizeof(bad_block_lookup_table));
+   nandlog_port_spi_read(COMMAND_READ_BBM_LUT, &dummy_value, 1, &bad_block_lookup_table, sizeof(bad_block_lookup_table));
    for (uint32_t i = 0; i < BBM_LUT_NUM_ENTRIES; ++i)
    {
       bad_block_lookup_table[i].lba = (((bad_block_lookup_table[i].lba << 8) & 0xFF00) | ((bad_block_lookup_table[i].lba >> 8) & 0x00FF)) & 0x3FF;
@@ -1001,8 +783,8 @@ bool storage_init(void)
 
    // Put the storage SPI peripheral into Deep Sleep mode and disable writes
    enter_low_power_mode();
-   configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_power(false);
+   nandlog_port_write_enable(false);
    is_initialized = true;
    return true;
 }
@@ -1016,10 +798,10 @@ void storage_deinit(void)
    // Disable all SPI communications
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
-   am_hal_iom_uninitialize(spi_handle);
+   nandlog_port_deinit();
    is_reading = in_maintenance_mode = false;
    is_initialized = false;
 }
@@ -1029,24 +811,24 @@ void storage_reset_bad_block_table(void)
    // RECOVERY UTILITY. Erases a persisted bad-block table so it is rebuilt as empty on the next boot
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
 
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(true);
    write_register(STATUS_REGISTER_1, 0b00000010);
    for (uint32_t page = BBM_LUT_BASE_ADDRESS; page < MEMORY_MAX_PAGE_ADDRESS; page += MEMORY_PAGES_PER_BLOCK)
    {
       const uint8_t page_number_reordered[] = {
          (uint8_t)((page & 0x00FF0000) >> 16), (uint8_t)((page & 0x0000FF00) >> 8), (uint8_t)(page & 0x000000FF) };
       wait_until_not_busy();
-      spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-      spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+      nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      nandlog_port_spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
       wait_until_not_busy();
       // Erase failures are deliberately ignored
    }
    write_register(STATUS_REGISTER_1, 0b01111110);
-   am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+   nandlog_port_write_enable(false);
 
    // Verify rather than assume
    uint32_t markers_remaining = 0;
@@ -1063,7 +845,7 @@ void storage_reset_bad_block_table(void)
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+      nandlog_port_power(false);
    }
 
    if (markers_remaining)
@@ -1110,7 +892,7 @@ bool storage_store_experiment_details(const experiment_details_t *details)
       // Erase on entry to each block of the ring, so a slot is always clean before it is programmed
       if ((slot & (MEMORY_PAGES_PER_BLOCK - 1)) == 0)
          erase_block(slot, slot);
-      am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+      nandlog_port_write_enable(true);
       write_register(STATUS_REGISTER_1, 0b00000010);
 
       memset(transfer_buffer, 0xFF, MEMORY_PAGE_SIZE_BYTES);
@@ -1130,7 +912,7 @@ bool storage_store_experiment_details(const experiment_details_t *details)
                 meta_header_valid((const storage_meta_header_t*)transfer_buffer);
 
       write_register(STATUS_REGISTER_1, 0b01111110);
-      am_hal_gpio_output_clear(PIN_STORAGE_WRITE_PROTECT);
+      nandlog_port_write_enable(false);
       // Deliberately do NOT call add_bad_block() here
    }
    if (!success)
@@ -1242,7 +1024,7 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
    // Retrieve experiment details
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
 
@@ -1259,7 +1041,7 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+      nandlog_port_power(false);
    }
 }
 
@@ -1379,7 +1161,7 @@ void storage_enter_maintenance_mode(void)
 {
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
    in_maintenance_mode = true;
@@ -1391,7 +1173,7 @@ void storage_exit_maintenance_mode(void)
    if (in_maintenance_mode)
    {
       enter_low_power_mode();
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+      nandlog_port_power(false);
    }
    in_maintenance_mode = false;
 }
@@ -1506,7 +1288,7 @@ bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
 
    if (!in_maintenance_mode)
    {
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, true);
+      nandlog_port_power(true);
       exit_low_power_mode();
    }
 
@@ -1533,7 +1315,7 @@ bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
-      am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+      nandlog_port_power(false);
    }
    return found;
 }
