@@ -10,6 +10,7 @@
 #include "ranging.h"
 #include "rtc.h"
 #include "storage.h"
+#include "storage_records.h"
 #include "system.h"
 #include "usb.h"
 

@@ -8,6 +8,7 @@
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
 #include "storage.h"
+#include "storage_records.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -136,7 +137,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       started_reading = true;
       experiment_details_t details;
       storage_retrieve_experiment_details(&details);
-      storage_begin_reading(download_start_timestamp, download_end_timestamp);
+      storage_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
 
       // A pending request list turns this into a repair round: only the named pages are sent, and the
       // experiment details are omitted because the host already holds them from the original transfer
@@ -148,7 +149,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       }
       else
       {
-         total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+         total_data_chunks = storage_retrieve_num_data_chunks();
 #ifdef _TEST_IMU_DATA
          total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
 #else

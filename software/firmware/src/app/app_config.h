@@ -17,6 +17,7 @@
 #include <string.h>
 #include "am_bsp.h"
 #include "am_util.h"
+#include "nandlog_conf.h"
 #include "pinout.h"
 #include "FreeRTOS.h"
 #include "event_groups.h"
@@ -38,11 +39,7 @@
 #define MAX_IMU_DATA_LENGTH                         40
 
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
-
 #define STORAGE_FLUSH_TIMEOUT_S                     120
-#define STORAGE_BUSY_POLL_INTERVAL_US               10
-#define STORAGE_BUSY_TIMEOUT_MS                     500
-#define STORAGE_BUSY_TIMEOUT_POLLS                  ((1000 * STORAGE_BUSY_TIMEOUT_MS) / STORAGE_BUSY_POLL_INTERVAL_US)
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 

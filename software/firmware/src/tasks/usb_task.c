@@ -5,6 +5,7 @@
 #include "logging.h"
 #include "rtc.h"
 #include "storage.h"
+#include "storage_records.h"
 #include "system.h"
 #include "tusb.h"
 #include "usb.h"

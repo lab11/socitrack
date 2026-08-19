@@ -1,13 +1,56 @@
-// Ambiq Apollo4 implementation of the nandlog porting interface. The transfer routines below were moved
-// here verbatim from storage.c: this file is the only place in the tree that knows the log lives behind an
-// Apollo4 IOM, on these pins, at this clock rate.
+// Ambiq Apollo4 implementation of the nandlog porting interface
 
-#include "app_config.h"
+#include <stdio.h>
 #include "logging.h"
 #include "nandlog_port.h"
 #include "system.h"
 
 static void *spi_handle;
+
+bool nandlog_port_init(void)
+{
+   const am_hal_iom_config_t spi_config =
+   {
+      .eInterfaceMode = AM_HAL_IOM_SPI_MODE,
+      .ui32ClockFreq = AM_HAL_IOM_48MHZ,
+      .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
+      .pNBTxnBuf = NULL,
+      .ui32NBTxnBufLength = 0
+   };
+
+   // Configure and assert the Write-Protect and Hold pins to disable them
+   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_WRITE_PROTECT, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
+   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_HOLD, am_hal_gpio_pincfg_output));
+   am_hal_gpio_output_set(PIN_STORAGE_HOLD);
+
+   // Initialize the SPI module and enable all relevant SPI pins
+   am_hal_gpio_pincfg_t sck_config = g_AM_BSP_GPIO_IOM0_SCK;
+   am_hal_gpio_pincfg_t miso_config = g_AM_BSP_GPIO_IOM0_MISO;
+   am_hal_gpio_pincfg_t mosi_config = g_AM_BSP_GPIO_IOM0_MOSI;
+   am_hal_gpio_pincfg_t cs_config = g_AM_BSP_GPIO_IOM0_CS;
+   sck_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_SCK_FUNCTION;
+   miso_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_MISO_FUNCTION;
+   mosi_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_MOSI_FUNCTION;
+   cs_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_CS_FUNCTION;
+   cs_config.GP.cfg_b.uNCE = 4 * STORAGE_SPI_NUMBER;
+   configASSERT0(am_hal_iom_initialize(STORAGE_SPI_NUMBER, &spi_handle));
+   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_SCK, sck_config));
+   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_MISO, miso_config));
+   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_MOSI, mosi_config));
+   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_CS, cs_config));
+   configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false));
+   configASSERT0(am_hal_iom_configure(spi_handle, &spi_config));
+   configASSERT0(am_hal_iom_enable(spi_handle));
+   return true;
+}
+
+void nandlog_port_deinit(void)
+{
+   am_hal_iom_disable(spi_handle);
+   am_hal_iom_uninitialize(spi_handle);
+   spi_handle = NULL;
+}
 
 #if REVISION_ID < REVISION_N
 
@@ -196,52 +239,6 @@ void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t addre
 
 #endif  // #if REVISION_ID < REVISION_N
 
-
-bool nandlog_port_init(void)
-{
-   const am_hal_iom_config_t spi_config =
-   {
-      .eInterfaceMode = AM_HAL_IOM_SPI_MODE,
-      .ui32ClockFreq = AM_HAL_IOM_48MHZ,
-      .eSpiMode = AM_HAL_IOM_SPI_MODE_0,
-      .pNBTxnBuf = NULL,
-      .ui32NBTxnBufLength = 0
-   };
-
-   // Configure and assert the Write-Protect and Hold pins to disable them
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_WRITE_PROTECT, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_HOLD, am_hal_gpio_pincfg_output));
-   am_hal_gpio_output_set(PIN_STORAGE_HOLD);
-
-   // Initialize the SPI module and enable all relevant SPI pins
-   am_hal_gpio_pincfg_t sck_config = g_AM_BSP_GPIO_IOM0_SCK;
-   am_hal_gpio_pincfg_t miso_config = g_AM_BSP_GPIO_IOM0_MISO;
-   am_hal_gpio_pincfg_t mosi_config = g_AM_BSP_GPIO_IOM0_MOSI;
-   am_hal_gpio_pincfg_t cs_config = g_AM_BSP_GPIO_IOM0_CS;
-   sck_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_SCK_FUNCTION;
-   miso_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_MISO_FUNCTION;
-   mosi_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_MOSI_FUNCTION;
-   cs_config.GP.cfg_b.uFuncSel = PIN_STORAGE_SPI_CS_FUNCTION;
-   cs_config.GP.cfg_b.uNCE = 4 * STORAGE_SPI_NUMBER;
-   configASSERT0(am_hal_iom_initialize(STORAGE_SPI_NUMBER, &spi_handle));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_SCK, sck_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_MISO, miso_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_MOSI, mosi_config));
-   configASSERT0(am_hal_gpio_pinconfig(PIN_STORAGE_SPI_CS, cs_config));
-   configASSERT0(am_hal_iom_power_ctrl(spi_handle, AM_HAL_SYSCTRL_WAKE, false));
-   configASSERT0(am_hal_iom_configure(spi_handle, &spi_config));
-   configASSERT0(am_hal_iom_enable(spi_handle));
-   return true;
-}
-
-void nandlog_port_deinit(void)
-{
-   am_hal_iom_disable(spi_handle);
-   am_hal_iom_uninitialize(spi_handle);
-   spi_handle = NULL;
-}
-
 void nandlog_port_write_enable(bool enable)
 {
    // The write-protect pin is asserted high to PERMIT programming, matching the original storage.c usage
@@ -254,6 +251,16 @@ void nandlog_port_write_enable(bool enable)
 void nandlog_port_power(bool awake)
 {
    am_hal_iom_power_ctrl(spi_handle, awake ? AM_HAL_SYSCTRL_WAKE : AM_HAL_SYSCTRL_DEEPSLEEP, true);
+}
+
+void nandlog_port_log(const char *format, ...)
+{
+   char message[160];
+   va_list args;
+   va_start(args, format);
+   vsnprintf(message, sizeof(message), format, args);
+   va_end(args);
+   print("%s", message);
 }
 
 void nandlog_port_delay_us(uint32_t microseconds) { am_hal_delay_us(microseconds); }

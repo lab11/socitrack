@@ -1,16 +1,14 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
-#include "buzzer.h"
-#include "logging.h"
-#include "rtc.h"
+#include "nandlog_conf.h"
 #include "nandlog_port.h"
 #include "storage.h"
-#include "system.h"
+#include "storage_records.h"
 
 
 // Chip-Specific Definitions -------------------------------------------------------------------------------------------
 
-#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#if !defined(_TEST_NO_STORAGE)
 
 #define COMMAND_READ_DEVICE_ID                      0x9F
 #define COMMAND_DEVICE_RESET                        0xFF
@@ -158,8 +156,8 @@ static void wait_until_not_busy(void)
    }
 
    // Reset immediately rather than flushing first
-   print("ERROR: Storage flash never cleared BUSY after %u polls (>= %u ms); resetting\n", (uint32_t)STORAGE_BUSY_TIMEOUT_POLLS, (uint32_t)STORAGE_BUSY_TIMEOUT_MS);
-   system_reset(true);
+   nandlog_port_log("ERROR: Storage flash never cleared BUSY after %u polls (>= %u ms); resetting\n", (uint32_t)STORAGE_BUSY_TIMEOUT_POLLS, (uint32_t)STORAGE_BUSY_TIMEOUT_MS);
+   nandlog_port_fatal("SPI transfer failed after all retries");
 }
 
 static void enter_low_power_mode(void)
@@ -570,7 +568,7 @@ static bool meta_header_valid(const storage_meta_header_t *header)
 {
    return (header->magic == STORAGE_META_MAGIC) &&
           (header->header_crc == crc32_compute(header, STORAGE_META_HEADER_CRC_BYTES)) &&
-          (header->details_length == sizeof(experiment_details_t)) &&
+          (header->details_length <= STORAGE_MAX_METADATA_BYTES) &&
           (header->log_start_page >= LOG_REGION_FIRST_PAGE) && (header->log_start_page < LOG_REGION_END_PAGE);
 }
 
@@ -711,7 +709,7 @@ bool storage_init(void)
          // Refuse to trust an implausible count; treat as "table unusable" rather than acting on it
          if (bbm_index > BBM_NUM_RESERVED_BLOCKS)
          {
-            print("WARNING: Bad-block table reports %u entries, exceeding the %u-block reserve; ignoring it\n", (uint32_t)bbm_index, (uint32_t)BBM_NUM_RESERVED_BLOCKS);
+            nandlog_port_log("WARNING: Bad-block table reports %u entries, exceeding the %u-block reserve; ignoring it\n", (uint32_t)bbm_index, (uint32_t)BBM_NUM_RESERVED_BLOCKS);
             bbm_index = 0;
             memset(bad_block_lookup_table, 0xFF, sizeof(bad_block_lookup_table));
          }
@@ -849,9 +847,9 @@ void storage_reset_bad_block_table(void)
    }
 
    if (markers_remaining)
-      print("ERROR: Bad-block table NOT cleared -- %u marker page(s) still present\n", markers_remaining);
+      nandlog_port_log("ERROR: Bad-block table NOT cleared -- %u marker page(s) still present\n", markers_remaining);
    else
-      print("INFO: Bad-block table erased and verified clear; rebuilt empty on next boot\n");
+      nandlog_port_log("INFO: Bad-block table erased and verified clear; rebuilt empty on next boot\n");
 }
 
 void storage_disable(bool disable)
@@ -860,12 +858,16 @@ void storage_disable(bool disable)
    disabled = disable;
 }
 
-bool storage_store_experiment_details(const experiment_details_t *details)
+bool storage_store_metadata(const void *blob, uint16_t length)
 {
+   // Ensure that the metadata length is within the expected bounds
+   if (length > STORAGE_MAX_METADATA_BYTES)
+      return false;
+
    // Refuse loudly rather than silently discarding the write
    if (!in_maintenance_mode)
    {
-      print("ERROR: Refusing to store experiment details outside of maintenance mode\n");
+      nandlog_port_log("ERROR: Refusing to store experiment details outside of maintenance mode\n");
       return false;
    }
 
@@ -900,12 +902,12 @@ bool storage_store_experiment_details(const experiment_details_t *details)
       header->magic = STORAGE_META_MAGIC;
       header->epoch = new_epoch;
       header->log_start_page = new_log_start;
-      header->created_timestamp = rtc_get_timestamp();
-      header->details_length = (uint16_t)sizeof(*details);
+      header->created_timestamp = 0;   // caller stamps its own metadata; the log does not read a clock
+      header->details_length = (uint16_t)length;
       header->format_version = STORAGE_FORMAT_VERSION;
       header->reserved = 0xFFFFFFFF;
-      memcpy(transfer_buffer + sizeof(storage_meta_header_t), details, sizeof(*details));
-      header->details_crc = crc32_compute(transfer_buffer + sizeof(storage_meta_header_t), sizeof(*details));
+      memcpy(transfer_buffer + sizeof(storage_meta_header_t), blob, length);
+      header->details_crc = crc32_compute(transfer_buffer + sizeof(storage_meta_header_t), length);
       header->header_crc = crc32_compute(header, STORAGE_META_HEADER_CRC_BYTES);
 
       success = write_page_raw(transfer_buffer, slot) && read_page(transfer_buffer, slot) &&
@@ -917,7 +919,7 @@ bool storage_store_experiment_details(const experiment_details_t *details)
    }
    if (!success)
    {
-      print("ERROR: Unable to write experiment metadata to any slot in the ring\n");
+      nandlog_port_log("ERROR: Unable to write experiment metadata to any slot in the ring\n");
       return false;
    }
 
@@ -929,17 +931,6 @@ bool storage_store_experiment_details(const experiment_details_t *details)
    next_page_seq = cache_index = page_record_count = 0;
    page_first_timestamp = page_last_timestamp = STORAGE_NO_TIMESTAMP;
 
-   // Determine whether there is an active experiment taking place
-   uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
-   bool valid_experiment = rtc_is_valid() && details->num_devices && !details->is_terminated;
-   bool active_experiment = valid_experiment &&
-         (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
-         (!details->use_daily_times ||
-            ((details->daily_start_time < details->daily_end_time) &&
-               (time_of_day >= details->daily_start_time) && (time_of_day < details->daily_end_time)) ||
-            ((details->daily_start_time > details->daily_end_time) &&
-               ((time_of_day >= details->daily_start_time) || (time_of_day < details->daily_end_time))));
-   storage_disable(!active_experiment);
    return true;
 }
 
@@ -1019,7 +1010,7 @@ bool storage_has_buffered_data(void)
    return (cache_index != 0);
 }
 
-void storage_retrieve_experiment_details(experiment_details_t *details)
+void storage_retrieve_metadata(void *blob, uint16_t length)
 {
    // Retrieve experiment details
    if (!in_maintenance_mode)
@@ -1028,14 +1019,14 @@ void storage_retrieve_experiment_details(experiment_details_t *details)
       exit_low_power_mode();
    }
 
-   // Details live in the metadata ring, validated by their own CRC, rather than in the log itself
-   memset(details, 0, sizeof(*details));
+   // Metadata lives in the ring, validated by its own CRC, rather than in the log itself
+   memset(blob, 0, length);
    if ((metadata_ring_page < METADATA_RING_PAGES) && read_page(transfer_buffer, metadata_ring_page))
    {
       const storage_meta_header_t *header = (const storage_meta_header_t*)transfer_buffer;
-      const uint8_t *blob = transfer_buffer + sizeof(storage_meta_header_t);
-      if (meta_header_valid(header) && (header->details_crc == crc32_compute(blob, header->details_length)))
-         memcpy(details, blob, sizeof(*details));
+      const uint8_t *stored = transfer_buffer + sizeof(storage_meta_header_t);
+      if (meta_header_valid(header) && (header->details_crc == crc32_compute(stored, header->details_length)))
+         memcpy(blob, stored, (header->details_length < length) ? header->details_length : length);
    }
 
    if (!in_maintenance_mode)
@@ -1118,7 +1109,7 @@ static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count,
       if (steps >= SEEK_BACKTRACK_LIMIT_PAGES)
       {
          // Still finding qualifying pages at the limit means the log is badly out of order; fall back to the whole range
-         print("WARNING: log timestamps are badly non-monotonic; ignoring the requested start time\n");
+         nandlog_port_log("WARNING: log timestamps are badly non-monotonic; ignoring the requested start time\n");
          result = 0;
       }
    }
@@ -1127,27 +1118,19 @@ static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count,
 
 void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp)
 {
-   // Update the data reading details
+   // Establish the span to be read
    reading_page = starting_page;
-   last_reading_page = starting_page;
+   last_reading_page = current_page;
    is_reading = in_maintenance_mode;
 #ifndef _TEST_IMU_DATA
-   (void)ending_timestamp;
-   if (!starting_timestamp)
-      return;
-
-   // Convert the caller's absolute timestamp into the experiment-relative milliseconds the headers carry
-   experiment_details_t details;
-   storage_retrieve_experiment_details(&details);
-   const uint32_t relative_start = (starting_timestamp >= details.experiment_start_time)
-                                      ? (1000 * (starting_timestamp - details.experiment_start_time)) : 0;
-   if (!relative_start)
-      return;
-
    const uint32_t page_count = epoch_page_count();
-   const uint32_t index = seek_page_for_timestamp(relative_start, page_count, true);
-   reading_page = (index < page_count) ? log_wrap_page(starting_page + index) : current_page;
-   last_reading_page = reading_page;
+   if (starting_timestamp)
+   {
+      const uint32_t index = seek_page_for_timestamp(starting_timestamp, page_count, true);
+      reading_page = (index < page_count) ? log_wrap_page(starting_page + index) : current_page;
+   }
+   if (ending_timestamp)
+      last_reading_page = log_wrap_page(starting_page + seek_page_for_timestamp(ending_timestamp, page_count, false));
 #endif
 }
 
@@ -1178,7 +1161,7 @@ void storage_exit_maintenance_mode(void)
    in_maintenance_mode = false;
 }
 
-uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
+uint32_t storage_retrieve_num_data_chunks(void)
 {
    // Ensure that we are in reading mode
    if (!is_reading)
@@ -1188,20 +1171,6 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
 #else
 
    log_data_size = 0;
-   if (ending_timestamp)
-   {
-      // Convert to experiment-relative milliseconds and binary-search the headers for the last page whose
-      // first record falls at or before the requested end
-      experiment_details_t details;
-      storage_retrieve_experiment_details(&details);
-      const uint32_t relative_end = (ending_timestamp >= details.experiment_start_time)
-                                       ? (1000 * (ending_timestamp - details.experiment_start_time)) : 0;
-      const uint32_t page_count = epoch_page_count();
-      const uint32_t end_index = seek_page_for_timestamp(relative_end, page_count, false);
-      last_reading_page = log_wrap_page(starting_page + end_index);
-   }
-   else
-      last_reading_page = current_page;
 
    // Sum the payload bytes across the selected span. The boundaries above are exact; this pass exists only to report a byte total
    for (uint32_t page = reading_page; page != last_reading_page; )
@@ -1216,10 +1185,7 @@ uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp)
       }
    }
 
-   // The trailing chunk is whatever is still buffered in RAM, which is NOT a stored page. Counting it
-   // when it is empty makes the device announce a page it then sends with a zero length, which the host
-   // can only read as a lost page. In the time-bounded case last_reading_page is a real page and the +1
-   // makes that range inclusive instead.
+   // The trailing chunk is whatever is still buffered in RAM
    if (last_reading_page == current_page)
       return log_page_distance(reading_page, last_reading_page) + (cache_index ? 1 : 0);
    return 1 + log_page_distance(reading_page, last_reading_page);
@@ -1232,59 +1198,18 @@ uint32_t storage_retrieve_num_data_bytes(void)
    return (last_reading_page == current_page) ? (log_data_size + cache_index) : log_data_size;
 }
 
-static uint32_t stored_record_length(const uint8_t *payload, uint32_t offset, uint32_t length)
+uint32_t storage_read_recent_page(uint32_t pages_back, uint8_t *buffer, storage_page_header_t *header, bool *end_of_epoch)
 {
-   // Structural length of the record at 'offset'. Every record is [type:1][timestamp:4][data], so the
-   // length is fixed by the type except where the data itself begins with a count.
-   switch (payload[offset])
-   {
-      case STORAGE_TYPE_VOLTAGE:
-         return 9;
-      case STORAGE_TYPE_CHARGING_EVENT:
-      case STORAGE_TYPE_MOTION:
-         return 6;
-      case STORAGE_TYPE_RANGES:
-         return ((offset + 6) <= length) ? (6 + (payload[offset + 5] * COMPRESSED_RANGE_DATUM_LENGTH)) : 0;
-      case STORAGE_TYPE_IMU:
-         return ((offset + 6) <= length) ? (5 + payload[offset + 5]) : 0;   // the length byte counts itself
-      case STORAGE_TYPE_BLE_SCAN:
-         return ((offset + 6) <= length) ? (6 + payload[offset + 5]) : 0;
-      case STORAGE_TYPE_RESET_REASON:
-         return 7;
-      case STORAGE_TYPE_TIME_ANCHOR:
-         return 9;
-      default:
-         return 0;
-   }
-}
-
-static bool last_time_anchor_in_page(const uint8_t *payload, uint32_t length, uint32_t *experiment_ms, uint32_t *rtc)
-{
-   // Keep the newest anchor in this page; payloads are record-aligned so a forward walk is exact
-   bool found = false;
-   uint32_t offset = 0;
-   while ((offset + 5) < length)
-   {
-      const uint32_t record_length = stored_record_length(payload, offset, length);
-      if (!record_length || ((offset + record_length) > length))
-         break;
-      if (payload[offset] == STORAGE_TYPE_TIME_ANCHOR)
-      {
-         memcpy(experiment_ms, payload + offset + 1, sizeof(*experiment_ms));
-         memcpy(rtc, payload + offset + 5, sizeof(*rtc));
-         found = true;
-      }
-      offset += record_length;
-   }
-   return found;
-}
-
-bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
-{
-   // The newest anchor pairs an experiment timestamp with the raw RTC value at the instant it was written.
-   // That pair fixes the network offset independently of WHEN it is read back
+   // Walk backwards from the write head, newest page first, deliberately record-agnostic
+   // Returns the payload length or zero if that page could not be read
+   if (end_of_epoch)
+      *end_of_epoch = true;
    if (current_page == starting_page)
-      return false;
+      return 0;
+
+   uint32_t page = current_page;
+   for (uint32_t step = 0; step <= pages_back; ++step)
+      page = log_prev_page(page);
 
    if (!in_maintenance_mode)
    {
@@ -1292,32 +1217,30 @@ bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
       exit_low_power_mode();
    }
 
-   bool found = false;
-   uint32_t page = current_page;
-   for (uint32_t back = 0; back < SEED_SEARCH_MAX_PAGES; ++back)
+   uint32_t length = 0;
+   if (!is_bad_block(page) && read_page(transfer_buffer, page))
    {
-      page = log_prev_page(page);
-      if (is_bad_block(page) || !read_page(transfer_buffer, page))
-         continue;
-      const storage_page_header_t *header = (const storage_page_header_t*)transfer_buffer;
-      if (!page_header_valid(header) || (header->epoch != log_epoch))
-         break;                              // walked off the start of this epoch
-      const uint32_t length = extract_page_payload(transfer_buffer);
-      if (length && last_time_anchor_in_page(transfer_buffer, length, experiment_ms, rtc))
+      const storage_page_header_t *stored = (const storage_page_header_t*)transfer_buffer;
+      if (page_header_valid(stored) && (stored->epoch == log_epoch))
       {
-         found = true;
-         break;
+         if (header)
+            memcpy(header, stored, sizeof(*header));
+         length = extract_page_payload(transfer_buffer);
+         if (length && buffer)
+            memcpy(buffer, transfer_buffer, length);
+         if (end_of_epoch)
+            *end_of_epoch = (page == starting_page);
       }
-      if (page == starting_page)
-         break;
    }
+   else if (end_of_epoch)
+      *end_of_epoch = false;
 
    if (!in_maintenance_mode)
    {
       enter_low_power_mode();
       nandlog_port_power(false);
    }
-   return found;
+   return length;
 }
 
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header)
@@ -1516,8 +1439,8 @@ bool storage_init(void) { return true; }
 void storage_deinit(void) {}
 void storage_disable(bool disable) {}
 void storage_reset_bad_block_table(void) {}
-bool storage_store_experiment_details(const experiment_details_t *details) { return true; }
-void storage_retrieve_experiment_details(experiment_details_t *details) { memset(details, 0, sizeof(*details)); };
+bool storage_store_metadata(const void *blob, uint16_t length) { (void)blob; (void)length; return true; }
+void storage_retrieve_metadata(void *blob, uint16_t length) { memset(blob, 0, length); };
 void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length) {}
 void storage_flush(bool write_partial_pages) {}
 bool storage_has_buffered_data(void) { return false; }
@@ -1525,16 +1448,16 @@ void storage_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
 void storage_end_reading(void) {}
 void storage_enter_maintenance_mode(void){}
 void storage_exit_maintenance_mode(void) {}
-uint32_t storage_retrieve_num_data_chunks(uint32_t ending_timestamp) { return 0; }
+uint32_t storage_retrieve_num_data_chunks(void) { return 0; }
 uint32_t storage_retrieve_num_data_bytes(void) { return 0; }
 uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
 uint32_t storage_retrieve_next_page(uint8_t *buffer, storage_page_header_t *header) { (void)header; return 0; }
 uint32_t storage_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, storage_page_header_t *header) { (void)seq; (void)header; return 0; }
-bool storage_recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc) { (void)experiment_ms; (void)rtc; return false; }
+uint32_t storage_read_recent_page(uint32_t pages_back, uint8_t *buffer, storage_page_header_t *header, bool *end_of_epoch) { (void)pages_back; (void)buffer; (void)header; if (end_of_epoch) *end_of_epoch = true; return 0; }
 void storage_retransmit_clear(void) {}
 uint32_t storage_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)seqs; (void)count; return 0; }
 uint32_t storage_retransmit_count(void) { return 0; }
 uint32_t storage_retransmit_total_bytes(void) { return 0; }
 uint32_t storage_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, storage_page_header_t *header) { (void)index; (void)header; return 0; }
 
-#endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#endif  // #if !defined(_TEST_NO_STORAGE)

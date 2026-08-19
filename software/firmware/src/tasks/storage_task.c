@@ -5,6 +5,7 @@
 #include "logging.h"
 #include "rtc.h"
 #include "storage.h"
+#include "storage_records.h"
 #include "system.h"
 
 
@@ -25,18 +26,18 @@ static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_
 static StaticQueue_t xQueueBuffer;
 static QueueHandle_t storage_queue;
 
-#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#if !defined(_TEST_NO_STORAGE)
 
 static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
 static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
 static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 
-#endif  // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#endif  // #if !defined(_TEST_NO_STORAGE)
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#if !defined(_TEST_NO_STORAGE)
 
 void storage_flush_and_shutdown(void)
 {
@@ -132,7 +133,7 @@ void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
 void storage_write_time_anchor(void) {}
 
-#endif    // #if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#endif    // #if !defined(_TEST_NO_STORAGE)
 
 void StorageTask(void *params)
 {
@@ -142,9 +143,9 @@ void StorageTask(void *params)
 
    // Recover the local-to-network time offset from the log instead of waiting for the next ranging round to re-derive it
    app_set_time_offset(0);
-#if REVISION_ID != REVISION_APOLLO4_EVB && !defined(_TEST_NO_STORAGE)
+#if !defined(_TEST_NO_STORAGE)
    uint32_t anchor_experiment_ms = 0, anchor_rtc = 0;
-   if (storage_recover_time_anchor(&anchor_experiment_ms, &anchor_rtc))
+   if (recover_time_anchor(&anchor_experiment_ms, &anchor_rtc))
    {
       // Recover the local clock offset from network time
       const uint32_t experiment_start = app_get_experiment_start_time();
@@ -161,7 +162,7 @@ void StorageTask(void *params)
    else
       storage_enter_maintenance_mode();
 
-#if REVISION_ID == REVISION_APOLLO4_EVB || defined(_TEST_NO_STORAGE)
+#if defined(_TEST_NO_STORAGE)
 
    // Loop forever, waiting until storage events are received
    while (true)

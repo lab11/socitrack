@@ -10,6 +10,7 @@
 #include "ranging.h"
 #include "rtc.h"
 #include "storage.h"
+#include "storage_records.h"
 #include "system.h"
 #include "tusb.h"
 #include "usb.h"
@@ -50,7 +51,7 @@ static void handle_notification(app_notification_t notification)
       experiment_details_t details;
 
       // Transmit the stream header, then every page with its own framing
-      storage_begin_reading(download_start_timestamp, download_end_timestamp);
+      storage_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
       storage_retrieve_experiment_details(&details);
 
       // A pending request list turns this into a repair round: only the named pages are sent, and the
@@ -64,7 +65,7 @@ static void handle_notification(app_notification_t notification)
       }
       else
       {
-         total_data_chunks = storage_retrieve_num_data_chunks(download_end_timestamp);
+         total_data_chunks = storage_retrieve_num_data_chunks();
       #ifdef _TEST_IMU_DATA
          total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
       #else

@@ -1,4 +1,5 @@
 #include "storage.h"
+#include "storage_records.h"
 #include "system.h"
 #include "logging.h"
 
@@ -113,7 +114,7 @@ static void test_forced_block_crossings(void)
    // Read every page back and verify content, ordering, and completeness
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
-   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks();
    print("Read-back: device reports %u chunks for %u written pages (expect %u)\n",
          num_chunks, (uint32_t)BLOCK_CROSSING_NUM_PAGES, (uint32_t)BLOCK_CROSSING_NUM_PAGES);
 
@@ -197,7 +198,7 @@ static void test_partial_page_flush(void)
    // Read back: N full pages, one partial, N full pages, then the empty in-RAM cache
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
-   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks();
    const uint32_t expected_chunks = (2 * PARTIAL_TEST_FULL_PAGES) + 1;
    if (num_chunks != expected_chunks)
    {
@@ -267,18 +268,17 @@ static void test_time_range_seek(void)
    for (uint32_t page = 0; page < SEEK_TEST_NUM_PAGES; ++page)
       write_tagged_page(page);
 
-   // Derive the expected page FROM the seek time rather than the other way round. The API takes absolute
-   // whole seconds and converts with 1000 * (t - experiment_start_time), so a relative time is always a
-   // multiple of 1000 ms while pages are stamped every 500 ms -- only even page indices are addressable.
-   // Choosing the page first and computing the seek time from it silently truncates for odd indices, which
-   // is exactly the mistake this test caught on its first run.
+   // storage_begin_reading() takes the same experiment-relative milliseconds the page headers carry; the
+   // conversion from a wall clock now happens in the caller, since only the caller knows the epoch. The
+   // seek time is still derived from whole seconds so this test keeps exercising the boundary an
+   // application would actually ask for, rather than one that happens to land on a page edge.
    const uint32_t seek_timestamp = SEEK_TEST_SEEK_SECONDS;
    const uint32_t target_relative_ms = 1000 * (seek_timestamp - 1);
    const uint32_t target_page = target_relative_ms / 500;
 
    storage_enter_maintenance_mode();
-   storage_begin_reading(seek_timestamp, 0);
-   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   storage_begin_reading(target_relative_ms, 0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks();
    const uint32_t length = storage_retrieve_next_data_chunk(verify_buffer);
 
    uint32_t first_index = 0xFFFFFFFF, first_timestamp = 0;
@@ -337,7 +337,7 @@ static void test_timestamp_jump(void)
 
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
-   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks();
 
    uint32_t errors = 0;
    const uint32_t expected_first[] = { 10000, 3000 }, expected_last[] = { 11000, 4000 };
@@ -402,7 +402,7 @@ static void test_time_anchor_recovery(void)
 
    // Nothing written yet: there is no network base to recover, and inventing one would be worse than
    // leaving the offset at zero
-   if (storage_recover_time_anchor(&experiment_ms, &rtc))
+   if (recover_time_anchor(&experiment_ms, &rtc))
    {
       print("  ERROR: reported an anchor for an empty log\n");
       ++errors;
@@ -416,7 +416,7 @@ static void test_time_anchor_recovery(void)
    for (uint32_t i = 0; i < RECOVERY_TEST_RECORDS; ++i)
       store_range_record(2000 + (500 * i), (uint8_t)(i & 0xFF));
    storage_flush(true);
-   if (storage_recover_time_anchor(&experiment_ms, &rtc))
+   if (recover_time_anchor(&experiment_ms, &rtc))
    {
       print("  ERROR: recovered an anchor from a log holding none\n");
       ++errors;
@@ -435,7 +435,7 @@ static void test_time_anchor_recovery(void)
    }
    storage_flush(true);
 
-   if (!storage_recover_time_anchor(&experiment_ms, &rtc))
+   if (!recover_time_anchor(&experiment_ms, &rtc))
    {
       print("  ERROR: found no anchor in a log full of them\n");
       ++errors;
@@ -454,7 +454,7 @@ static void test_time_anchor_recovery(void)
    storage_store_record(STORAGE_TYPE_VOLTAGE, expected_ms + 5000, voltage, sizeof(voltage));
    store_range_record(expected_ms + 5500, 0);
    storage_flush(true);
-   if (!storage_recover_time_anchor(&experiment_ms, &rtc) ||
+   if (!recover_time_anchor(&experiment_ms, &rtc) ||
        (experiment_ms != expected_ms) || (rtc != expected_rtc))
    {
       print("  ERROR: trailing records changed the answer to (%u, %u)\n", experiment_ms, rtc);
@@ -469,7 +469,7 @@ static void test_time_anchor_recovery(void)
    for (uint32_t i = 0; i < 40; ++i)
       store_range_record(expected_ms + 6000 + (500 * i), (uint8_t)i);
    storage_flush(true);
-   if (!storage_recover_time_anchor(&second_ms, &second_rtc) ||
+   if (!recover_time_anchor(&second_ms, &second_rtc) ||
        (second_ms != experiment_ms) || (second_rtc != rtc))
    {
       print("  ERROR: a later read returned (%u, %u) instead of (%u, %u)\n",
@@ -499,7 +499,7 @@ static void test_page_retransmission(void)
 
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
-   storage_retrieve_num_data_chunks(0);        // establishes the readable range
+   storage_retrieve_num_data_chunks();        // establishes the readable range
 
    // Deliberately out of order, including both ends, to prove the search does not depend on locality
    const uint32_t wanted[] = { 37, 0, 19, 5, RETRANSMIT_TEST_PAGES - 1, 1, 20 };
@@ -570,7 +570,7 @@ static void test_reboot_survival(void)
    // Count and verify whatever survived previous rounds
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
-   const uint32_t num_chunks = storage_retrieve_num_data_chunks(0);
+   const uint32_t num_chunks = storage_retrieve_num_data_chunks();
    const uint32_t existing_pages = num_chunks;   // no trailing cache chunk when the buffer is empty
 
    uint32_t verified = 0, errors = 0;
