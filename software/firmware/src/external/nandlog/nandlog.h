@@ -75,36 +75,98 @@ typedef struct __attribute__ ((__packed__))
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
-// Confirm the part is present without bringing the log up, for builds that only test for its presence
+// Confirm a part is present and answering, without bringing the log up or writing anything to it. Intended
+// for builds that only test for its presence; nandlog_init() performs the same check for itself
 bool nandlog_probe(void);
 
-// Bring the log up: open the port, identify the part, and recover the write head from the metadata ring
+// Bring the log up: open the port, identify the part, load its bad-block table, then recover the current
+// epoch from the metadata ring and locate the write head within it. Safe to call more than once. False means
+// the port could not be opened, and no other call should be made
 bool nandlog_init(void);
+
+// Release the port. The log can be brought back up with nandlog_init()
 void nandlog_deinit(void);
 
-// Payload bytes in a page on the fitted part, and physical pages the current epoch spans
+// Payload bytes a page can carry on the fitted part: the page size less the header the log writes into it.
+// Only known once nandlog_init() has asked the chip its geometry
 uint32_t nandlog_data_bytes_per_page(void);
+
+// Physical pages the current epoch spans, counting any skipped over as bad
 uint32_t nandlog_epoch_page_count(void);
 
-// Whether a read session is currently open
-bool nandlog_is_reading(void);
+// Stop or resume accepting records. A disabled log discards what it is given rather than buffering it, and
+// still serves reads. Nothing is disabled by nandlog_init()
 void nandlog_disable(bool disable);
+
+// RECOVERY UTILITY. Discard the persisted bad-block table so it is rebuilt from the factory markers on the
+// next boot. What this can achieve depends on the part: one that remaps in hardware cannot forget
 void nandlog_reset_bad_block_table(void);
+
+// Begin a new epoch, described by an opaque caller-defined blob of at most NANDLOG_MAX_METADATA_BYTES. The
+// log neither reads nor interprets the blob. Everything logged previously stays on the part but stops being
+// reachable, since reads only ever cover the current epoch. Must be called inside a maintenance session, and
+// returns false if it was not, if the blob is too large, or if no slot in the metadata ring would take it
 bool nandlog_store_metadata(const void *blob, uint16_t length);
+
+// Copy back the blob most recently stored, truncated to 'length'. Zero-fills if the log has no valid
+// metadata, so a caller that never stored any reads zeros rather than stale bytes
 void nandlog_retrieve_metadata(void *blob, uint16_t length);
+
+// Append one record to the page being assembled in RAM. 'record_type' and 'data' are opaque to the log; the
+// timestamp is only ever compared, never interpreted, so its epoch and units are the caller's business.
+// Committing a full page happens here, so this call occasionally writes to flash. Records are never split
+// across pages, and one larger than a page is dropped
 void nandlog_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length);
+
+// Commit what is buffered. A page is written automatically as soon as the next record will not fit, so this
+// is only needed to force out a partial page -- a timed flush, or shutdown. Pass false to write only if a
+// whole page has accumulated
 void nandlog_flush(bool write_partial_pages);
+
+// Whether any records are sitting unwritten in RAM
 bool nandlog_has_buffered_data(void);
-void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp);
-void nandlog_end_reading(void);
+
+// Hold the part powered across a run of operations, instead of waking and sleeping it around each one.
+// Reading and storing metadata both require a session; ordinary logging does not. Sessions do not nest
 void nandlog_enter_maintenance_mode(void);
 void nandlog_exit_maintenance_mode(void);
+
+// Open a read over the current epoch, bounded by timestamp. Zero for either bound means "from the beginning"
+// and "to the end"; both bounds are resolved here, so nothing downstream has to seek again. Has no effect
+// outside a maintenance session. While a read is open, writing is refused
+void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp);
+
+// Close a read, whether or not it ran to completion. Implied by nandlog_exit_maintenance_mode()
+void nandlog_end_reading(void);
+
+// Whether a read is currently open
+bool nandlog_is_reading(void);
+
+// Pages the open read will yield, including any that turn out to be unreadable, and the payload bytes they
+// hold. The byte total is computed by the page count, so call them in that order
 uint32_t nandlog_retrieve_num_data_chunks(void);
 uint32_t nandlog_retrieve_num_data_bytes(void);
+
+// Take the next page of the open read as payload bytes only, returning the length. Zero means that page was
+// unreadable, which is not the end of the read
 uint32_t nandlog_retrieve_next_data_chunk(uint8_t *buffer);
+
+// The same step, but also filling in the header the offload stream needs to frame it. A page whose header
+// could not be read comes back with 'seq' set to its position, so the gap is still identifiable
 uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *header);
+
+// Fetch one page of the current epoch by its sequence number, so a host can re-request what it lost.
+// Returns zero, with the header describing the gap, if that page cannot be produced
 uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_page_header_t *header);
+
+// Walk backwards from the write head, newest page first, independently of any open read. Zero means that
+// page could not be read, which is not the end of the log; 'end_of_epoch' is the signal to stop
 uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_page_header_t *header, bool *end_of_epoch);
+
+// Accumulate the sequence numbers a host reports missing, across as many calls as it takes, then serve them
+// back. nandlog_retransmit_add() returns the number held; anything beyond NANDLOG_MAX_RETRANSMIT_PAGES is
+// dropped. An index past the end yields a zero-length page rather than nothing, so the host can tell
+// "still missing" from "never answered"
 void nandlog_retransmit_clear(void);
 uint32_t nandlog_retransmit_add(const uint32_t *seqs, uint32_t count);
 uint32_t nandlog_retransmit_count(void);

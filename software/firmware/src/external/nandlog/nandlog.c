@@ -22,7 +22,7 @@ static uint32_t metadata_ring_pages, log_region_first_page, log_region_end_page,
 static uint32_t seek_backtrack_limit_pages, erase_ahead_trigger_page;
 static uint32_t retransmit_seqs[NANDLOG_MAX_RETRANSMIT_PAGES], retransmit_num_pages = 0;
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
-static volatile bool is_reading, in_maintenance_mode, disabled, cache_overflowed, is_initialized = false, log_region_full;
+static volatile bool is_reading, in_maintenance_mode, disabled, is_initialized = false, log_region_full;
 static volatile uint32_t page_first_timestamp = NANDLOG_NO_TIMESTAMP, page_last_timestamp = NANDLOG_NO_TIMESTAMP;
 static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_ring_page;
 
@@ -255,7 +255,6 @@ static void commit_current_page(void)
       ++next_page_seq;
       cache_index = page_record_count = 0;
       page_first_timestamp = page_last_timestamp = NANDLOG_NO_TIMESTAMP;
-      cache_overflowed = false;
       advance_write_head();
    }
 }
@@ -673,12 +672,9 @@ void nandlog_store_record(uint8_t record_type, uint32_t timestamp, const void *d
       return;
 
    const uint32_t record_length = 1 + sizeof(timestamp) + data_length;
+   // A single record larger than a page cannot be represented; drop it rather than corrupt the stream
    if (record_length > data_bytes_per_page)
-   {
-      // A single record larger than a page cannot be represented; drop it rather than corrupt the stream
-      cache_overflowed = true;
       return;
-   }
 
    // A timestamp that precedes the page's current end means the time base moved backwards: either commit the
    // page here or nudge this record forward
@@ -697,10 +693,7 @@ void nandlog_store_record(uint8_t record_type, uint32_t timestamp, const void *d
    {
       // Writing is impossible while a download is in progress or once the array is full
       if (is_reading || log_region_full)
-      {
-         cache_overflowed = true;
          return;
-      }
       commit_current_page();
    }
 
