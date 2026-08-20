@@ -11,7 +11,6 @@
 
 #if !defined(_TEST_NO_STORAGE)
 
-#define SEED_SEARCH_MAX_PAGES                       8
 #define METADATA_RING_BLOCKS                        8
 
 

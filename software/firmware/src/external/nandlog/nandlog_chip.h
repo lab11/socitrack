@@ -6,6 +6,31 @@
 #include "nandlog_conf.h"
 
 
+// Integrator Configuration Check ---------------------------------------------------------------------------------------
+
+#if !defined(NANDLOG_MAX_PAGE_SIZE_BYTES)
+#error "nandlog_conf.h must define NANDLOG_MAX_PAGE_SIZE_BYTES"
+#endif
+#if !defined(NANDLOG_MAX_SPARE_SIZE_BYTES)
+#error "nandlog_conf.h must define NANDLOG_MAX_SPARE_SIZE_BYTES"
+#endif
+#if !defined(MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL)
+#error "nandlog_conf.h must define MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL"
+#endif
+#if !defined(ERASE_AHEAD_BLOCKS)
+#error "nandlog_conf.h must define ERASE_AHEAD_BLOCKS"
+#endif
+#if !defined(STORAGE_MAX_METADATA_BYTES)
+#error "nandlog_conf.h must define STORAGE_MAX_METADATA_BYTES"
+#endif
+#if !defined(STORAGE_BUSY_POLL_INTERVAL_US)
+#error "nandlog_conf.h must define STORAGE_BUSY_POLL_INTERVAL_US"
+#endif
+#if !defined(STORAGE_BUSY_TIMEOUT_MS)
+#error "nandlog_conf.h must define STORAGE_BUSY_TIMEOUT_MS"
+#endif
+
+
 // What the part is, as reported by the driver that knows. Valid at any time, including before
 // nandlog_chip_init(), because these are properties of the silicon rather than of its state
 typedef struct
