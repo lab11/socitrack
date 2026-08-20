@@ -10,13 +10,31 @@
 
 // On-Flash Page Format Defintions -------------------------------------------------------------------------------------
 
-#define NANDLOG_FORMAT_VERSION                      1
-#define NANDLOG_PAGE_MAGIC                          0x31505454   // 'TTP1', little-endian
 #define NANDLOG_NO_TIMESTAMP                        0xFFFFFFFF
+
+// A page states its own record format in the four bytes a reader looks at first
+#define NANDLOG_PAGE_MAGIC                          0x31505454   // 'TTP1': records are opaque to the log
+#define NANDLOG_PAGE_MAGIC_FRAMED                   0x32505454   // 'TTP2': each record carries its own length
+
+#define NANDLOG_FRAMING_LENGTH_BYTES                2
+
+#if NANDLOG_RECORD_FRAMING
+#define NANDLOG_PAGE_MAGIC_THIS_BUILD               NANDLOG_PAGE_MAGIC_FRAMED
+#define NANDLOG_FORMAT_VERSION                      2
+#else
+#define NANDLOG_PAGE_MAGIC_THIS_BUILD               NANDLOG_PAGE_MAGIC
+#define NANDLOG_FORMAT_VERSION                      1
+#endif
+
+// With framing on, a payload is a sequence of records laid out as
+//
+//     [data length: 2][record type: 1][timestamp: 4][data: data length]
+//
+// with the length little-endian, so a reader can walk a page without knowing the application's record types
 
 typedef struct __attribute__ ((__packed__))
 {
-   uint32_t magic;               // NANDLOG_PAGE_MAGIC
+   uint32_t magic;               // NANDLOG_PAGE_MAGIC, or NANDLOG_PAGE_MAGIC_FRAMED
    uint32_t epoch;               // experiment generation; makes stale data from a prior run unmistakable
    uint32_t seq;                 // page index within the epoch, starting at 0
    uint32_t first_timestamp;     // experiment-relative ms of the first record, or NANDLOG_NO_TIMESTAMP
@@ -109,7 +127,8 @@ bool nandlog_store_metadata(const void *blob, uint16_t length);
 // metadata, so a caller that never stored any reads zeros rather than stale bytes
 void nandlog_retrieve_metadata(void *blob, uint16_t length);
 
-// Append one record to the page being assembled in RAM. 'record_type' and 'data' are opaque to the log; the
+// Append one record to the page being assembled in RAM. With NANDLOG_RECORD_FRAMING on, the record is
+// prefixed with its own data length, costing a byte. 'record_type' and 'data' are opaque to the log; the
 // timestamp is only ever compared, never interpreted, so its epoch and units are the caller's business.
 // Committing a full page happens here, so this call occasionally writes to flash. Records are never split
 // across pages, and one larger than a page is dropped

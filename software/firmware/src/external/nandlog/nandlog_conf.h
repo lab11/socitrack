@@ -38,6 +38,10 @@
 // pulled forward, rather than as the time base having moved and the page having to be committed
 #define NANDLOG_TIMESTAMP_TOLERANCE_MS              250
 
+// Whether each record carries its own length so that a reader can walk a page without knowing the
+// application's record types
+#define NANDLOG_RECORD_FRAMING                      0
+
 // How long to wait for the chip to clear BUSY after a program or erase before declaring it dead
 #define NANDLOG_BUSY_POLL_INTERVAL_US               10
 #define NANDLOG_BUSY_TIMEOUT_MS                     500

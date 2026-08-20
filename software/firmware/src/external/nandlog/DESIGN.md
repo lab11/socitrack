@@ -86,6 +86,25 @@ the epoch and the page its sequence 0 lives at; the previous generation's pages 
 being reachable, because reads only ever cover the current epoch. A page carrying a stale epoch is therefore
 unmistakable rather than merely unexpected, which is what makes recovery after a reboot decidable.
 
+**Record framing.** Off by default. With `NANDLOG_RECORD_FRAMING` set, each record is prefixed with its own
+data length as a little-endian `uint16`, so a reader can walk a page without knowing the application's record
+types:
+
+    [data length: 2][record type: 1][timestamp: 4][data]
+
+Two bytes rather than a variable-width length because these records are usually larger than 255 bytes, which
+is where a one-byte-plus-escape encoding starts costing more than it saves.
+
+A page states which format it is in through its magic (`TTP1` opaque, `TTP2` framed), which costs nothing:
+the four bytes a reader looks at first to find a page at all are the same four that tell it how to read one.
+That also means a log spanning a firmware change parses correctly page by page, rather than depending on what
+some other structure claims. On the wire, where a page frame carries no magic, the stream header's
+`format_version` says it instead: 1 opaque, 2 framed.
+
+The prefixes are authoritative for stepping, in both directions. A record that decodes is still advanced past
+by its declared length rather than by whatever the decoder consumed, so the two cannot drift apart; and a
+record the reader does not recognise is stepped over exactly, instead of costing it the rest of the page.
+
 **Pages.** Each is self-describing and self-validating: a header with the magic, epoch, sequence number, the
 timestamps of its first and last records, its payload length and record count, then a CRC over the payload and
 a CRC over the header. The two checksums are separate on purpose — the header CRC lets the log trust the
@@ -149,10 +168,6 @@ or the board. What they cover is everything above the SPI wire, in milliseconds,
 impractical to stage on hardware.
 
 ## Deliberate omissions
-
-**Record framing.** The log stores pages, not records. Adding an explicit length field would let a generic
-reader walk records without knowing the application's types, at a cost of about one byte per record — 11–17%
-on the payloads this was built for. Worth revisiting; not free.
 
 **Wear levelling.** The head sweeps forward and wraps. For a log that fills over weeks that is enough, and
 anything cleverer would need a mapping table, which is the FTL this exists to avoid.

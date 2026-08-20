@@ -20,7 +20,7 @@ static uint32_t tests_run, tests_failed;
 
 static const uint8_t DEVICE_ID[3] = { 0x8D, 0x00, 0x00 };
 
-static uint8_t payload[512], readback[8192];
+static uint8_t payload[1024], readback[8192];
 
 static void fresh_log(void)
 {
@@ -86,7 +86,15 @@ static void test_image_dump_for_the_parser(void)
 {
    printf("Dumping an image for the reference parser\n");
    fresh_log();
-   write_records(96, 1000);
+
+   // Mixed sizes, so the dumped image exercises both the one-byte length and the escape to a wide one
+   static const uint32_t sizes[] = { 3, 60, 254, 255, 700 };
+   for (uint32_t i = 0; i < 120; ++i)
+   {
+      const uint32_t length = sizes[i % (sizeof(sizes) / sizeof(sizes[0]))];
+      memset(payload, (uint8_t)(i | 0x80), length);
+      nandlog_store_record((uint8_t)(1 + (i % 5)), 1000 + (10 * i), payload, length);
+   }
    nandlog_flush(true);
    const uint32_t pages = read_all_pages();
    CHECK(pages > 0, "nothing to dump");
@@ -96,17 +104,76 @@ static void test_image_dump_for_the_parser(void)
    {
       uint32_t magic;
       memcpy(&magic, nandlog_sim_raw_page(page), sizeof(magic));
-      if (magic == NANDLOG_PAGE_MAGIC)
+      if (magic == NANDLOG_PAGE_MAGIC_THIS_BUILD)
       {
          nandlog_sim_corrupt(page + 1, 300, 0xFF);
          break;
       }
    }
    // The metadata ring plus the first blocks of the log region is all this test touched
-   CHECK(nandlog_sim_dump("nandlog_image.bin", 0, 1024), "could not write nandlog_image.bin");
-   printf("  wrote nandlog_image.bin\n");
+   CHECK(nandlog_sim_dump(NANDLOG_RECORD_FRAMING ? "nandlog_image_framed.bin" : "nandlog_image.bin", 0, 1024),
+         "could not write the image");
+   printf("  wrote %s\n", NANDLOG_RECORD_FRAMING ? "nandlog_image_framed.bin" : "nandlog_image.bin");
    nandlog_deinit();
 }
+
+#if NANDLOG_RECORD_FRAMING
+
+static void test_framed_records_walk_back(void)
+{
+   printf("Framed records can be walked without knowing their types\n");
+   fresh_log();
+
+   // Deliberately mixed sizes, including the empty record and sizes either side of a byte boundary
+   static const uint32_t sizes[] = { 0, 1, 7, 200, 255, 256, 900, 1000 };
+   uint32_t written = 0;
+   for (uint32_t round = 0; round < 4; ++round)
+      for (uint32_t i = 0; i < (sizeof(sizes) / sizeof(sizes[0])); ++i)
+      {
+         for (uint32_t b = 0; b < sizes[i]; ++b)
+            payload[b] = (uint8_t)(b + i);
+         nandlog_store_record((uint8_t)(i + 1), 1000 + (10 * written), payload, sizes[i]);
+         ++written;
+      }
+   nandlog_flush(true);
+
+   // Walk every page the way a reader with no knowledge of the application would
+   uint32_t pages = 0, walked = 0;
+   nandlog_enter_maintenance_mode();
+   nandlog_begin_reading(0, 0);
+   nandlog_read_span(&pages, NULL);
+   for (uint32_t i = 0; i < pages; ++i)
+   {
+      nandlog_page_header_t header;
+      const uint32_t length = nandlog_retrieve_next_page(readback, &header);
+      if (!length)
+         continue;
+      CHECK(header.magic == NANDLOG_PAGE_MAGIC_FRAMED, "page %u did not announce framing", i);
+
+      uint32_t offset = 0, in_page = 0;
+      while (offset < length)
+      {
+         uint16_t data_length = 0;
+         memcpy(&data_length, readback + offset, sizeof(data_length));
+         offset += sizeof(data_length);
+         CHECK(offset + 5 + data_length <= length, "record %u ran past the end of page %u", in_page, i);
+         if (offset + 5 + data_length > length)
+            break;
+         offset += 5 + data_length;
+         ++in_page;
+         ++walked;
+      }
+      CHECK(offset == length, "page %u had %u bytes left over after walking", i, length - offset);
+      CHECK(in_page == header.record_count, "page %u walked %u records, header said %u",
+            i, in_page, header.record_count);
+   }
+   nandlog_end_reading();
+   nandlog_exit_maintenance_mode();
+   CHECK(walked == written, "wrote %u records, walked %u back", written, walked);
+   nandlog_deinit();
+}
+
+#endif
 
 static void test_metadata_survives(void)
 {
@@ -197,7 +264,7 @@ static void test_corrupt_page_is_rejected(void)
       const uint8_t *raw = nandlog_sim_raw_page(page);
       uint32_t magic;
       memcpy(&magic, raw, sizeof(magic));
-      if (magic == NANDLOG_PAGE_MAGIC) { victim = page; break; }
+      if (magic == NANDLOG_PAGE_MAGIC_THIS_BUILD) { victim = page; break; }
    }
    CHECK(victim != 0, "could not find a committed page to corrupt");
    nandlog_sim_corrupt(victim, 200, 0xFF);
@@ -261,10 +328,14 @@ static void test_busy_timeout_is_fatal(void)
 
 int main(void)
 {
-   printf("nandlog host tests\n==================\n");
+   printf("nandlog host tests (record framing %s)\n==================================%s\n",
+          NANDLOG_RECORD_FRAMING ? "on" : "off", NANDLOG_RECORD_FRAMING ? "=" : "");
    test_roundtrip();
    test_metadata_survives();
    test_image_dump_for_the_parser();
+#if NANDLOG_RECORD_FRAMING
+   test_framed_records_walk_back();
+#endif
    test_reboot_recovery();
    test_bad_block_is_skipped();
    test_torn_page_is_rejected();

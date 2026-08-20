@@ -1,3 +1,5 @@
 nandlog_sim_test
-nandlog_sim_test.dSYM/
-nandlog_image.bin
+nandlog_sim_test_framed
+*.dSYM/
+nandlog_image*.bin
+report.json
