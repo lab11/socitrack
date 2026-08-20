@@ -42,6 +42,8 @@ typedef struct __attribute__ ((__packed__))
    uint32_t reserved;
 } storage_meta_header_t;
 
+#define STORAGE_MAX_DATA_BYTES_PER_PAGE             (NANDLOG_MAX_PAGE_SIZE_BYTES - sizeof(storage_page_header_t))
+
 #define STORAGE_META_HEADER_CRC_BYTES               (sizeof(storage_meta_header_t) - (2 * sizeof(uint32_t)))
 
 
@@ -74,6 +76,7 @@ typedef struct __attribute__ ((__packed__))
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 bool storage_init(void);
+uint32_t storage_data_bytes_per_page(void);
 void storage_deinit(void);
 void storage_disable(bool disable);
 void storage_reset_bad_block_table(void);

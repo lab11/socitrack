@@ -138,6 +138,7 @@ VPATH += src/boards
 VPATH += src/boards/rev$(REVISION)
 VPATH += src/external/decadriver
 VPATH += src/external/nandlog
+VPATH += src/external/nandlog/chips
 VPATH += src/external/segger
 VPATH += src/external/tinyusb
 VPATH += src/external/tinyusb/src
@@ -242,6 +243,11 @@ SRC += logging.c
 SRC += ranging.c
 SRC += rtc.c
 SRC += nandlog_port.c
+ifeq ($(REVISION), M)
+SRC += nandlog_chip_W25N01GWZEIG.c
+else
+SRC += nandlog_chip_AS5F18G04SND.c
+endif
 SRC += storage.c
 SRC += system.c
 SRC += usb.c

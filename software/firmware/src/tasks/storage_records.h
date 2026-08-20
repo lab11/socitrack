@@ -19,7 +19,6 @@ typedef enum {
    STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
-#define MEMORY_NUM_DATA_BYTES_PER_PAGE              (MEMORY_PAGE_SIZE_BYTES - sizeof(storage_page_header_t))
 #define STORAGE_MAX_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
 
 
@@ -106,7 +105,7 @@ static inline bool last_time_anchor_in_page(const uint8_t *payload, uint32_t len
 static inline bool recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
 {
    // The newest anchor pairs an experiment timestamp with the raw RTC value at the instant it was written
-   static uint8_t page_buffer[MEMORY_NUM_DATA_BYTES_PER_PAGE];
+   static uint8_t page_buffer[STORAGE_MAX_DATA_BYTES_PER_PAGE];
    for (uint32_t back = 0; back < ANCHOR_SEARCH_MAX_PAGES; ++back)
    {
       bool end_of_epoch = false;

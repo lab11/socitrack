@@ -8,7 +8,7 @@
 #ifdef __USE_SEGGER__
 
 #include "storage.h"
-#define RTT_BUFFER_LENGTH (2*MEMORY_PAGE_SIZE_BYTES)
+#define RTT_BUFFER_LENGTH (2*NANDLOG_MAX_PAGE_SIZE_BYTES)
 static uint8_t rttTransferBuffer[RTT_BUFFER_LENGTH];
 
 #endif

@@ -12,19 +12,15 @@
 #if !defined(_TEST_NO_STORAGE)
 
 #define SEED_SEARCH_MAX_PAGES                       8
-#define SEEK_BACKTRACK_LIMIT_PAGES                  MEMORY_PAGES_PER_BLOCK
-
 #define METADATA_RING_BLOCKS                        8
-#define METADATA_RING_PAGES                         (METADATA_RING_BLOCKS * MEMORY_PAGES_PER_BLOCK)
-#define LOG_REGION_FIRST_PAGE                       METADATA_RING_PAGES
-#define LOG_REGION_END_PAGE                         MEMORY_RESERVED_BASE_PAGE
-#define LOG_REGION_PAGE_COUNT                       (LOG_REGION_END_PAGE - LOG_REGION_FIRST_PAGE)
-#define PAGE_BLOCK_MASK                             (~(uint32_t)(MEMORY_PAGES_PER_BLOCK - 1))
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static uint8_t cache[2 * MEMORY_PAGE_SIZE_BYTES], transfer_buffer[MEMORY_PAGE_SIZE_BYTES];
+static uint8_t cache[2 * NANDLOG_MAX_PAGE_SIZE_BYTES], transfer_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
+static uint32_t page_size_bytes, pages_per_block, page_block_mask, data_bytes_per_page;
+static uint32_t metadata_ring_pages, log_region_first_page, log_region_end_page, log_region_page_count;
+static uint32_t seek_backtrack_limit_pages, erase_ahead_trigger_page;
 static uint32_t retransmit_seqs[STORAGE_MAX_RETRANSMIT_PAGES], retransmit_num_pages = 0;
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
 static volatile bool is_reading, in_maintenance_mode, disabled, cache_overflowed, is_initialized = false, log_region_full;
@@ -37,8 +33,8 @@ static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_r
 static inline uint32_t log_wrap_page(uint32_t page)
 {
    // Fold a page that has run past the end of the region back to its start
-   return (page >= LOG_REGION_END_PAGE)
-             ? (LOG_REGION_FIRST_PAGE + ((page - LOG_REGION_FIRST_PAGE) % LOG_REGION_PAGE_COUNT))
+   return (page >= log_region_end_page)
+             ? (log_region_first_page + ((page - log_region_first_page) % log_region_page_count))
              : page;
 }
 
@@ -49,19 +45,19 @@ static inline uint32_t log_next_page(uint32_t page)
 
 static inline uint32_t log_prev_page(uint32_t page)
 {
-   return (page == LOG_REGION_FIRST_PAGE) ? (LOG_REGION_END_PAGE - 1) : (page - 1);
+   return (page == log_region_first_page) ? (log_region_end_page - 1) : (page - 1);
 }
 
 static inline uint32_t log_next_block(uint32_t page)
 {
    // First page of the block following the one containing 'page'
-   return log_wrap_page((page + MEMORY_PAGES_PER_BLOCK) & PAGE_BLOCK_MASK);
+   return log_wrap_page((page + pages_per_block) & page_block_mask);
 }
 
 static inline uint32_t log_page_distance(uint32_t from, uint32_t to)
 {
    // Forward distance from one page to another, accounting for wrap
-   return (to >= from) ? (to - from) : (LOG_REGION_PAGE_COUNT - (from - to));
+   return (to >= from) ? (to - from) : (log_region_page_count - (from - to));
 }
 
 
@@ -70,7 +66,7 @@ static bool transfer_block(uint32_t source, uint32_t destination, uint32_t num_p
    for (uint32_t i = 0, page = source; i < num_pages; ++i, ++page, ++destination)
    {
       if (!nandlog_chip_read_page(transfer_buffer, page))
-         memset(transfer_buffer, 0xFF, MEMORY_PAGE_SIZE_BYTES);
+         memset(transfer_buffer, 0xFF, page_size_bytes);
       if (!nandlog_chip_write_page(transfer_buffer, destination))
          return false;
    }
@@ -80,13 +76,13 @@ static bool transfer_block(uint32_t source, uint32_t destination, uint32_t num_p
 static void erase_page_range(uint32_t starting_page, uint32_t ending_page)
 {
    // Iterate through all blocks to be erased, retiring any that will not take an erase
-   ending_page &= PAGE_BLOCK_MASK;
-   starting_page &= PAGE_BLOCK_MASK;
+   ending_page &= page_block_mask;
+   starting_page &= page_block_mask;
    const uint8_t num_iterations = (starting_page <= ending_page) ? 1 : 2;
-   uint32_t end = (starting_page <= ending_page) ? ending_page : (LOG_REGION_END_PAGE - 1);
+   uint32_t end = (starting_page <= ending_page) ? ending_page : (log_region_end_page - 1);
    for (uint8_t i = 0; i < num_iterations; ++i)
    {
-      for (uint32_t page = starting_page; page <= end; page += MEMORY_PAGES_PER_BLOCK)
+      for (uint32_t page = starting_page; page <= end; page += pages_per_block)
          if (!nandlog_chip_erase_block(page))
             nandlog_chip_mark_bad_block(page);
       starting_page = 0;
@@ -144,7 +140,7 @@ static bool page_header_valid(const storage_page_header_t *header)
    // A page is trustworthy only if it carries the magic and its header checksums correctly
    return (header->magic == STORAGE_PAGE_MAGIC) &&
           (header->header_crc == crc32_compute(header, STORAGE_PAGE_HEADER_CRC_BYTES)) &&
-          (header->payload_length <= MEMORY_NUM_DATA_BYTES_PER_PAGE);
+          (header->payload_length <= data_bytes_per_page);
 }
 
 static void write_page(uint16_t data_length)
@@ -163,7 +159,7 @@ static void write_page(uint16_t data_length)
    {
       // Build a self-describing, self-validating page: ordering metadata and time bounds in the header,
       // separate checksums over the header and the payload
-      memset(transfer_buffer, 0xFF, MEMORY_PAGE_SIZE_BYTES);
+      memset(transfer_buffer, 0xFF, page_size_bytes);
       storage_page_header_t *header = (storage_page_header_t*)transfer_buffer;
       header->magic = STORAGE_PAGE_MAGIC;
       header->epoch = log_epoch;
@@ -190,9 +186,9 @@ static void write_page(uint16_t data_length)
 
          // Erase the relocation target before transferring into it
          erase_page_range(next_block, next_block);
-         transfer_block(original_page & PAGE_BLOCK_MASK, next_block, current_page & (MEMORY_PAGES_PER_BLOCK - 1));
+         transfer_block(original_page & page_block_mask, next_block, current_page & (pages_per_block - 1));
          nandlog_chip_mark_bad_block(current_page);
-         current_page = next_block | (current_page & (MEMORY_PAGES_PER_BLOCK - 1));
+         current_page = next_block | (current_page & (pages_per_block - 1));
       }
    }
 
@@ -206,7 +202,7 @@ static void write_page(uint16_t data_length)
 static void erase_ahead_of(uint32_t page)
 {
    // Maintain a rolling window of erased blocks ahead of the write head
-   uint32_t block = page & PAGE_BLOCK_MASK;
+   uint32_t block = page & page_block_mask;
    for (uint32_t i = 0; i < ERASE_AHEAD_BLOCKS; ++i)
    {
       block = log_next_block(block);
@@ -214,7 +210,7 @@ static void erase_ahead_of(uint32_t page)
          block = log_next_block(block);
 
       // Reaching the metadata block means the log has wrapped the entire array and memory is full
-      if (block == (starting_page & PAGE_BLOCK_MASK))
+      if (block == (starting_page & page_block_mask))
          break;
       erase_page_range(block, block);
    }
@@ -249,7 +245,7 @@ static void advance_write_head(void)
 
    // Top up the erased window from the middle of each block to separate block
    // erases from page writes
-   if ((current_page & (MEMORY_PAGES_PER_BLOCK - 1)) == ERASE_AHEAD_TRIGGER_PAGE)
+   if ((current_page & (pages_per_block - 1)) == erase_ahead_trigger_page)
       erase_ahead_of_head();
 }
 
@@ -258,14 +254,14 @@ static bool meta_header_valid(const storage_meta_header_t *header)
    return (header->magic == STORAGE_META_MAGIC) &&
           (header->header_crc == crc32_compute(header, STORAGE_META_HEADER_CRC_BYTES)) &&
           (header->details_length <= STORAGE_MAX_METADATA_BYTES) &&
-          (header->log_start_page >= LOG_REGION_FIRST_PAGE) && (header->log_start_page < LOG_REGION_END_PAGE);
+          (header->log_start_page >= log_region_first_page) && (header->log_start_page < log_region_end_page);
 }
 
 static bool find_newest_metadata(uint32_t *ring_page, storage_meta_header_t *newest)
 {
    // Scan the metadata ring and select the highest valid epoch
    bool found = false;
-   for (uint32_t page = 0; page < METADATA_RING_PAGES; ++page)
+   for (uint32_t page = 0; page < metadata_ring_pages; ++page)
    {
       if (nandlog_chip_is_bad_block(page) || !nandlog_chip_read_page(transfer_buffer, page))
          continue;
@@ -287,7 +283,7 @@ static bool find_newest_metadata(uint32_t *ring_page, storage_meta_header_t *new
 static uint32_t recover_write_head(uint32_t epoch, uint32_t log_start_page, uint32_t *head_seq)
 {
    // Binary search for the first page that does NOT belong to this epoch
-   uint32_t low = 0, high = LOG_REGION_PAGE_COUNT;
+   uint32_t low = 0, high = log_region_page_count;
    while (low < high)
    {
       const uint32_t mid = low + ((high - low) / 2);
@@ -341,6 +337,23 @@ static uint32_t extract_page_payload(uint8_t *page)
 }
 
 
+static void resolve_geometry(void)
+{
+   // The chip is the only thing that knows its own shape, so the log asks rather than assumes
+   const nandlog_geometry_t *geometry = nandlog_chip_geometry();
+   page_size_bytes = geometry->page_size_bytes;
+   pages_per_block = geometry->pages_per_block;
+   page_block_mask = ~(pages_per_block - 1);
+   data_bytes_per_page = page_size_bytes - sizeof(storage_page_header_t);
+   metadata_ring_pages = METADATA_RING_BLOCKS * pages_per_block;
+   log_region_first_page = metadata_ring_pages;
+   log_region_end_page = (geometry->block_count - geometry->reserved_blocks) * pages_per_block;
+   log_region_page_count = log_region_end_page - log_region_first_page;
+   seek_backtrack_limit_pages = pages_per_block;
+   erase_ahead_trigger_page = pages_per_block / 2;
+}
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 bool storage_init(void)
@@ -353,6 +366,9 @@ bool storage_init(void)
    is_reading = in_maintenance_mode = disabled = false;
    if (!nandlog_port_init())
       return false;
+
+   // Resolve the log region from the geometry the chip reports, before anything can consult it
+   resolve_geometry();
 
    // Confirm the part is there and answering before anything is asked of it
    const bool chip_present = nandlog_chip_probe();
@@ -390,8 +406,8 @@ bool storage_init(void)
       // Nothing valid in the ring: either a factory-fresh part or a device migrating from a previous on-flash format
       log_epoch = 0;
       next_page_seq = 0;
-      metadata_ring_page = METADATA_RING_PAGES;    // no metadata written yet
-      starting_page = LOG_REGION_FIRST_PAGE;
+      metadata_ring_page = metadata_ring_pages;    // no metadata written yet
+      starting_page = log_region_first_page;
       while (nandlog_chip_is_bad_block(starting_page))
          starting_page = log_next_block(starting_page);
       current_page = starting_page;
@@ -450,6 +466,12 @@ void storage_reset_bad_block_table(void)
       nandlog_port_log("ERROR: Bad-block table NOT cleared\n");
 }
 
+uint32_t storage_data_bytes_per_page(void)
+{
+   // Answered from the chip rather than the cached copy, so it is correct before storage_init() has run
+   return nandlog_chip_geometry()->page_size_bytes - sizeof(storage_page_header_t);
+}
+
 void storage_disable(bool disable)
 {
    // Set the storage disabled flag
@@ -481,18 +503,18 @@ bool storage_store_metadata(const void *blob, uint16_t length)
 
    // Commit with a single metadata page program
    bool success = false;
-   for (uint32_t attempt = 0; !success && (attempt < METADATA_RING_PAGES); ++attempt)
+   for (uint32_t attempt = 0; !success && (attempt < metadata_ring_pages); ++attempt)
    {
-      const uint32_t slot = (metadata_ring_page >= METADATA_RING_PAGES)
-                               ? 0 : ((metadata_ring_page + 1) % METADATA_RING_PAGES);
+      const uint32_t slot = (metadata_ring_page >= metadata_ring_pages)
+                               ? 0 : ((metadata_ring_page + 1) % metadata_ring_pages);
       metadata_ring_page = slot;
       if (nandlog_chip_is_bad_block(slot))
          continue;
 
       // Erase on entry to each block of the ring, so a slot is always clean before it is programmed
-      if ((slot & (MEMORY_PAGES_PER_BLOCK - 1)) == 0)
+      if ((slot & (pages_per_block - 1)) == 0)
          erase_page_range(slot, slot);
-      memset(transfer_buffer, 0xFF, MEMORY_PAGE_SIZE_BYTES);
+      memset(transfer_buffer, 0xFF, page_size_bytes);
       storage_meta_header_t *header = (storage_meta_header_t*)transfer_buffer;
       header->magic = STORAGE_META_MAGIC;
       header->epoch = new_epoch;
@@ -546,19 +568,15 @@ void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *d
       return;
 
    const uint32_t record_length = 1 + sizeof(timestamp) + data_length;
-   if (record_length > MEMORY_NUM_DATA_BYTES_PER_PAGE)
+   if (record_length > data_bytes_per_page)
    {
       // A single record larger than a page cannot be represented; drop it rather than corrupt the stream
       cache_overflowed = true;
       return;
    }
 
-   // A timestamp that precedes the page's current end means the time base moved backwards. A page may never
-   // advertise last < first, so something has to give: either commit the page here, or nudge this record
-   // forward. Small steps are not a moved time base at all -- they are the few tens of ms between one writer
-   // reading its own clock and another carrying the ranging master's broadcast time -- so clamping those to
-   // the page's current end costs at most STORAGE_TIMESTAMP_TOLERANCE_MS of accuracy on one record and saves
-   // a partial page. Only a step big enough to be a genuine re-basing still commits
+   // A timestamp that precedes the page's current end means the time base moved backwards: either commit the
+   // page here, or nudge this record forward
    bool time_moved_backwards = false;
    if ((page_last_timestamp != STORAGE_NO_TIMESTAMP) && (timestamp < page_last_timestamp))
    {
@@ -570,7 +588,7 @@ void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *d
 
    // Records are never split across pages, so a record that does not fit in what remains of the current
    // page commits that page and starts the next one
-   if (((cache_index + record_length) > MEMORY_NUM_DATA_BYTES_PER_PAGE) || time_moved_backwards)
+   if (((cache_index + record_length) > data_bytes_per_page) || time_moved_backwards)
    {
       // Writing is impossible while a download is in progress or once the array is full
       if (is_reading || log_region_full)
@@ -602,7 +620,7 @@ void storage_flush(bool write_partial_pages)
 
    // A page is committed as soon as the next record will not fit, so the only reason to
    // write here is an explicit request to commit a partial page: a timed flush or shutdown
-   if (write_partial_pages || (cache_index >= MEMORY_NUM_DATA_BYTES_PER_PAGE))
+   if (write_partial_pages || (cache_index >= data_bytes_per_page))
       commit_current_page();
 }
 
@@ -623,7 +641,7 @@ void storage_retrieve_metadata(void *blob, uint16_t length)
 
    // Metadata lives in the ring, validated by its own CRC, rather than in the log itself
    memset(blob, 0, length);
-   if ((metadata_ring_page < METADATA_RING_PAGES) && nandlog_chip_read_page(transfer_buffer, metadata_ring_page))
+   if ((metadata_ring_page < metadata_ring_pages) && nandlog_chip_read_page(transfer_buffer, metadata_ring_page))
    {
       const storage_meta_header_t *header = (const storage_meta_header_t*)transfer_buffer;
       const uint8_t *stored = transfer_buffer + sizeof(storage_meta_header_t);
@@ -642,7 +660,7 @@ static uint32_t epoch_page_count(void)
 {
    // Physical pages spanned by the current epoch. Bad blocks skipped at write time are counted, since the
    // head jumped over them, so an index into this range can land on an unwritten page
-   return log_region_full ? LOG_REGION_PAGE_COUNT : log_page_distance(starting_page, current_page);
+   return log_region_full ? log_region_page_count : log_page_distance(starting_page, current_page);
 }
 
 static bool probe_epoch_page(uint32_t index, uint32_t page_count, storage_page_header_t *header, uint32_t *found_index)
@@ -698,7 +716,7 @@ static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count,
    if (at_or_after && result)
    {
       uint32_t steps = 0;
-      while (result && (steps < SEEK_BACKTRACK_LIMIT_PAGES))
+      while (result && (steps < seek_backtrack_limit_pages))
       {
          storage_page_header_t header;
          uint32_t found = 0;
@@ -708,7 +726,7 @@ static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count,
          result = found;
          ++steps;
       }
-      if (steps >= SEEK_BACKTRACK_LIMIT_PAGES)
+      if (steps >= seek_backtrack_limit_pages)
       {
          // Still finding qualifying pages at the limit means the log is badly out of order; fall back to the whole range
          nandlog_port_log("WARNING: log timestamps are badly non-monotonic; ignoring the requested start time\n");
@@ -1038,6 +1056,7 @@ uint32_t storage_retrieve_next_data_chunk(uint8_t *buffer)
 #else
 
 bool storage_init(void) { return true; }
+uint32_t storage_data_bytes_per_page(void) { return STORAGE_MAX_DATA_BYTES_PER_PAGE; }
 void storage_deinit(void) {}
 void storage_disable(bool disable) {}
 void storage_reset_bad_block_table(void) {}

@@ -5,6 +5,20 @@
 #include <stdint.h>
 #include "nandlog_conf.h"
 
+
+// What the part is, as reported by the driver that knows. Valid at any time, including before
+// nandlog_chip_init(), because these are properties of the silicon rather than of its state
+typedef struct
+{
+   uint32_t page_size_bytes;     // bytes in a page's main array, excluding the spare area
+   uint32_t spare_size_bytes;    // spare/ECC bytes that follow it
+   uint32_t pages_per_block;     // erase granularity, in pages; always a power of two
+   uint32_t block_count;         // blocks in the whole array
+   uint32_t reserved_blocks;     // blocks at the top of the array the driver keeps for bad-block management
+} nandlog_geometry_t;
+
+const nandlog_geometry_t *nandlog_chip_geometry(void);
+
 // Confirm the part is present and answering. Safe to call before nandlog_chip_init()
 bool nandlog_chip_probe(void);
 

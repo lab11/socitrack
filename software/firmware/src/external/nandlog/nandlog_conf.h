@@ -1,19 +1,18 @@
 #ifndef __NANDLOG_CONF_HEADER_H__
 #define __NANDLOG_CONF_HEADER_H__
 
-// Board-specific pinout declarations
-#include "pinout.h"
+// Static Sizing Budget ------------------------------------------------------------------------------------------------
 
-// Chip geometry
-#define MEMORY_PAGES_PER_BLOCK                      64
-#define MEMORY_BLOCK_SIZE_BYTES                     (MEMORY_PAGE_SIZE_BYTES * MEMORY_PAGES_PER_BLOCK)
-#define MEMORY_PAGE_COUNT                           (MEMORY_PAGES_PER_BLOCK * MEMORY_BLOCK_COUNT)
-#define MEMORY_PAGE_WITH_ECC_SIZE_BYTES             (MEMORY_PAGE_SIZE_BYTES + MEMORY_ECC_BYTES_PER_PAGE)
-#define MEMORY_RESERVED_BASE_PAGE                   ((MEMORY_BLOCK_COUNT - MEMORY_NUM_RESERVED_BLOCKS) * MEMORY_PAGES_PER_BLOCK)
+#define NANDLOG_MAX_PAGE_SIZE_BYTES                 4096
+#define NANDLOG_MAX_SPARE_SIZE_BYTES                256
+#define NANDLOG_MAX_PAGE_WITH_SPARE_SIZE_BYTES      (NANDLOG_MAX_PAGE_SIZE_BYTES + NANDLOG_MAX_SPARE_SIZE_BYTES)
+
+
+// Log Policy ----------------------------------------------------------------------------------------------------------
+
 #define MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL      3
 #define MEMORY_NUM_ERASE_MARGIN_BLOCKS              16
 #define ERASE_AHEAD_BLOCKS                          2
-#define ERASE_AHEAD_TRIGGER_PAGE                    (MEMORY_PAGES_PER_BLOCK / 2)
 
 // Largest caller-defined metadata blob stored alongside the log
 #define STORAGE_MAX_METADATA_BYTES                  512

@@ -72,11 +72,6 @@
 #define PIN_STORAGE_SPI_CS_FUNCTION                 AM_HAL_PIN_69_NCE69
 #define PIN_STORAGE_WRITE_PROTECT                   30
 #define PIN_STORAGE_HOLD                            6
-#define MEMORY_PAGE_SIZE_BYTES                      2048
-#define MEMORY_BLOCK_COUNT                          1024
-#define MEMORY_ECC_BYTES_PER_PAGE                   64
-#define MEMORY_NUM_RESERVED_BLOCKS                  40
-#define STORAGE_DEVICE_ID                           { 0xEF, 0xBA, 0x21 }
 
 // Timers
 #define BUZZER_TIMER_NUMBER                         0

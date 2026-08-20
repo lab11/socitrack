@@ -1,3 +1,4 @@
+#include "nandlog_chip.h"
 #include "storage.h"
 #include "storage_records.h"
 #include "system.h"
@@ -13,14 +14,16 @@
 // Every page is tagged with its own index and filled with an index-derived byte pattern, so a lost,
 // truncated, reordered, or partially-erased page is detected on read-back rather than passing silently.
 
-#define BLOCK_CROSSING_NUM_PAGES    ((3 * MEMORY_PAGES_PER_BLOCK) + 8)
+// Geometry belongs to the fitted part, so these are resolved at runtime rather than compiled in
+#define PAGES_PER_BLOCK             (nandlog_chip_geometry()->pages_per_block)
+#define BLOCK_CROSSING_NUM_PAGES    ((3 * PAGES_PER_BLOCK) + 8)
 
-static uint8_t page_buffer[MEMORY_NUM_DATA_BYTES_PER_PAGE];
-static uint8_t verify_buffer[MEMORY_PAGE_SIZE_BYTES];
+static uint8_t page_buffer[STORAGE_MAX_DATA_BYTES_PER_PAGE];
+static uint8_t verify_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
 
 // One record sized to exactly fill a page, flushed immediately, so page index == record index and the
 // existing per-page assertions still hold under the record-framed format
-#define TEST_RECORD_DATA_BYTES   (MEMORY_NUM_DATA_BYTES_PER_PAGE - 5)
+#define TEST_RECORD_DATA_BYTES   (storage_data_bytes_per_page() - 5)
 
 static void write_tagged_page(uint32_t index)
 {
@@ -40,9 +43,9 @@ static bool verify_tagged_page(uint32_t expected_index, uint32_t length)
       print("  ERROR: page %u returned 0 bytes (lost, or failed CRC)\n", expected_index);
       return false;
    }
-   if (length != MEMORY_NUM_DATA_BYTES_PER_PAGE)
+   if (length != storage_data_bytes_per_page())
    {
-      print("  ERROR: page %u length %u, expected %u\n", expected_index, length, (uint32_t)MEMORY_NUM_DATA_BYTES_PER_PAGE);
+      print("  ERROR: page %u length %u, expected %u\n", expected_index, length, (uint32_t)storage_data_bytes_per_page());
       return false;
    }
    if (verify_buffer[0] != STORAGE_TYPE_IMU)
@@ -93,8 +96,8 @@ static void test_forced_block_crossings(void)
 {
    print("\n=== Forced block-crossing test ===\n");
    print("Writing %u pages of %u bytes (%u pages/block, %u boundaries crossed)\n",
-         (uint32_t)BLOCK_CROSSING_NUM_PAGES, (uint32_t)MEMORY_NUM_DATA_BYTES_PER_PAGE,
-         (uint32_t)MEMORY_PAGES_PER_BLOCK, (uint32_t)(BLOCK_CROSSING_NUM_PAGES / MEMORY_PAGES_PER_BLOCK));
+         (uint32_t)BLOCK_CROSSING_NUM_PAGES, (uint32_t)storage_data_bytes_per_page(),
+         (uint32_t)PAGES_PER_BLOCK, (uint32_t)(BLOCK_CROSSING_NUM_PAGES / PAGES_PER_BLOCK));
 
    // Reset the log so page indices start from zero
    storage_enter_maintenance_mode();
@@ -106,7 +109,7 @@ static void test_forced_block_crossings(void)
    for (uint32_t page = 0; page < BLOCK_CROSSING_NUM_PAGES; ++page)
    {
       write_tagged_page(page);
-      if (((page + 1) % MEMORY_PAGES_PER_BLOCK) == 0)
+      if (((page + 1) % PAGES_PER_BLOCK) == 0)
          print("  %u pages written (crossed a block boundary)\n", page + 1);
    }
    print("Write phase complete\n");
@@ -574,7 +577,7 @@ static void test_page_retransmission(void)
 
 #ifdef _TEST_STORAGE_REBOOT
 
-#define REBOOT_TEST_PAGES_PER_ROUND    (MEMORY_PAGES_PER_BLOCK + 8)
+#define REBOOT_TEST_PAGES_PER_ROUND    (PAGES_PER_BLOCK + 8)
 
 static void test_reboot_survival(void)
 {
@@ -595,7 +598,7 @@ static void test_reboot_survival(void)
       // Anything that is not this test's data (a previous test, a real deployment) is discarded rather
       // than reported as corruption. The tag sits at offset 5 because a chunk is a framed record:
       // [type:1][timestamp:4][data...] -- offset 0 holds the record type, never the tag.
-      if (!chunk && ((length != MEMORY_NUM_DATA_BYTES_PER_PAGE) ||
+      if (!chunk && ((length != storage_data_bytes_per_page()) ||
                      (verify_buffer[0] != STORAGE_TYPE_IMU) || memcmp(verify_buffer + 5, "PAGE", 4)))
       {
          foreign = true;

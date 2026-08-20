@@ -116,7 +116,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
 {
    // Define static transmission variables
    static bool started_reading = false, is_reading = false, done_reading = false;
-   static uint8_t transmit_buffer[(2 * MEMORY_PAGE_SIZE_BYTES) + sizeof(storage_wire_page_t)], previous_buffer[MEMORY_PAGE_SIZE_BYTES];
+   static uint8_t transmit_buffer[(2 * NANDLOG_MAX_PAGE_SIZE_BYTES) + sizeof(storage_wire_page_t)], previous_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
    static uint32_t data_chunk_index, total_data_chunks, total_data_length;
    static uint16_t buffer_index, buffer_length, previous_length, header_length;
    static experiment_details_t pending_details;
@@ -151,7 +151,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       {
          total_data_chunks = storage_retrieve_num_data_chunks();
 #ifdef _TEST_IMU_DATA
-         total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+         total_data_length = total_data_chunks * storage_data_bytes_per_page();
 #else
          total_data_length = storage_retrieve_num_data_bytes();
 #endif

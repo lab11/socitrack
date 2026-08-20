@@ -221,7 +221,7 @@ static void handle_notification(app_notification_t notification)
    if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
    {
       // Define log file transmission variables
-      static uint8_t transmit_buffer[MEMORY_PAGE_SIZE_BYTES];
+      static uint8_t transmit_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
       experiment_details_t details;
 
       // Transmit the stream header, then every page with its own framing
@@ -229,7 +229,7 @@ static void handle_notification(app_notification_t notification)
       storage_retrieve_experiment_details(&details);
       uint32_t total_data_chunks = storage_retrieve_num_data_chunks();
    #ifdef _TEST_IMU_DATA
-      uint32_t total_data_length = total_data_chunks * MEMORY_NUM_DATA_BYTES_PER_PAGE;
+      uint32_t total_data_length = total_data_chunks * storage_data_bytes_per_page();
    #else
       uint32_t total_data_length = storage_retrieve_num_data_bytes();
    #endif
