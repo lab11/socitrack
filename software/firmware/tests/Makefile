@@ -235,6 +235,14 @@ SRC += deca_compat.c
 SRC += deca_interface.c
 SRC += dw3000_device.c
 
+SRC += nandlog.c
+SRC += nandlog_port.c
+ifeq ($(REVISION), M)
+SRC += nandlog_chip_W25N01GWZEIG.c
+else
+SRC += nandlog_chip_AS5F18G04SND.c
+endif
+
 SRC += battery.c
 SRC += bluetooth.c
 SRC += button.c
@@ -248,12 +256,6 @@ SRC += led.c
 SRC += logging.c
 SRC += ranging.c
 SRC += rtc.c
-SRC += nandlog_port.c
-ifeq ($(REVISION), M)
-SRC += nandlog_chip_W25N01GWZEIG.c
-else
-SRC += nandlog_chip_AS5F18G04SND.c
-endif
 SRC += storage.c
 SRC += system.c
 SRC += usb.c

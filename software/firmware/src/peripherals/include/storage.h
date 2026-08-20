@@ -3,83 +3,36 @@
 
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
-#include "app_tasks.h"
-#include "nandlog_conf.h"
+#include "nandlog.h"
 
 
-// On-Flash Page Format Defintions -------------------------------------------------------------------------------------
+// On-Flash and Wire Formats -------------------------------------------------------------------------------------------
 
-#define STORAGE_FORMAT_VERSION                      1
-#define STORAGE_PAGE_MAGIC                          0x31505454   // 'TTP1', little-endian
-#define STORAGE_NO_TIMESTAMP                        0xFFFFFFFF
+typedef nandlog_page_header_t                       storage_page_header_t;
+typedef nandlog_meta_header_t                       storage_meta_header_t;
+typedef nandlog_stream_header_t                     storage_stream_header_t;
+typedef nandlog_wire_page_t                         storage_wire_page_t;
 
-typedef struct __attribute__ ((__packed__))
-{
-   uint32_t magic;               // STORAGE_PAGE_MAGIC
-   uint32_t epoch;               // experiment generation; makes stale data from a prior run unmistakable
-   uint32_t seq;                 // page index within the epoch, starting at 0
-   uint32_t first_timestamp;     // experiment-relative ms of the first record, or STORAGE_NO_TIMESTAMP
-   uint32_t last_timestamp;      // experiment-relative ms of the last record, or STORAGE_NO_TIMESTAMP
-   uint16_t payload_length;      // valid payload bytes
-   uint16_t record_count;        // complete records in the payload
-   uint32_t payload_crc;         // CRC-32 over payload[0 .. payload_length)
-   uint32_t header_crc;          // CRC-32 over this header up to (not including) this field
-} storage_page_header_t;
-
-#define STORAGE_PAGE_HEADER_CRC_BYTES               (sizeof(storage_page_header_t) - sizeof(uint32_t))
-#define STORAGE_META_MAGIC                          0x314D5454   // 'TTM1', little-endian
-
-typedef struct __attribute__ ((__packed__))
-{
-   uint32_t magic;               // STORAGE_META_MAGIC
-   uint32_t epoch;               // the experiment generation this page describes
-   uint32_t log_start_page;      // physical page holding seq 0 for this epoch
-   uint32_t created_timestamp;   // RTC timestamp at creation
-   uint16_t details_length;      // bytes of caller-defined metadata following this header
-   uint16_t format_version;      // STORAGE_FORMAT_VERSION
-   uint32_t details_crc;         // CRC-32 over the experiment details blob that follows the header
-   uint32_t header_crc;          // CRC-32 over this header up to (not including) this field
-   uint32_t reserved;
-} storage_meta_header_t;
-
-#define STORAGE_MAX_DATA_BYTES_PER_PAGE             (NANDLOG_MAX_PAGE_SIZE_BYTES - sizeof(storage_page_header_t))
-
-#define STORAGE_META_HEADER_CRC_BYTES               (sizeof(storage_meta_header_t) - (2 * sizeof(uint32_t)))
-
-
-// Offload Wire Format -------------------------------------------------------------------------------------------------
-
-#define STORAGE_STREAM_MAGIC                        0x31535454   // 'TTS1', little-endian
-
-typedef struct __attribute__ ((__packed__))
-{
-   uint32_t magic;                  // STORAGE_STREAM_MAGIC
-   uint16_t format_version;         // STORAGE_FORMAT_VERSION
-   uint16_t details_length;         // bytes of caller-defined metadata following this header
-   uint32_t total_pages;            // pages that will be sent, including any zero-length gaps
-   uint32_t total_payload_bytes;    // sum of all payload lengths
-} storage_stream_header_t;
-
-#define STORAGE_MAX_RETRANSMIT_PAGES                256
-
-typedef struct __attribute__ ((__packed__))
-{
-   uint32_t seq;                    // page sequence within the epoch; identifies a gap for retransmission
-   uint32_t first_timestamp;        // experiment-relative ms, or STORAGE_NO_TIMESTAMP
-   uint32_t last_timestamp;         // experiment-relative ms, or STORAGE_NO_TIMESTAMP
-   uint16_t payload_length;         // 0 means the device could not read this page
-   uint16_t record_count;
-   uint32_t payload_crc;            // CRC-32 over the payload bytes that follow
-} storage_wire_page_t;
+#define STORAGE_FORMAT_VERSION                      NANDLOG_FORMAT_VERSION
+#define STORAGE_PAGE_MAGIC                          NANDLOG_PAGE_MAGIC
+#define STORAGE_META_MAGIC                          NANDLOG_META_MAGIC
+#define STORAGE_STREAM_MAGIC                        NANDLOG_STREAM_MAGIC
+#define STORAGE_NO_TIMESTAMP                        NANDLOG_NO_TIMESTAMP
+#define STORAGE_PAGE_HEADER_CRC_BYTES               NANDLOG_PAGE_HEADER_CRC_BYTES
+#define STORAGE_META_HEADER_CRC_BYTES               NANDLOG_META_HEADER_CRC_BYTES
+#define STORAGE_MAX_RETRANSMIT_PAGES                NANDLOG_MAX_RETRANSMIT_PAGES
+#define STORAGE_MAX_DATA_BYTES_PER_PAGE             NANDLOG_MAX_DATA_BYTES_PER_PAGE
+#define STORAGE_MAX_METADATA_BYTES                  NANDLOG_MAX_METADATA_BYTES
+#define STORAGE_TIMESTAMP_TOLERANCE_MS              NANDLOG_TIMESTAMP_TOLERANCE_MS
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 bool storage_init(void);
-uint32_t storage_data_bytes_per_page(void);
 void storage_deinit(void);
 void storage_disable(bool disable);
 void storage_reset_bad_block_table(void);
+uint32_t storage_data_bytes_per_page(void);
 bool storage_store_metadata(const void *blob, uint16_t length);
 void storage_retrieve_metadata(void *blob, uint16_t length);
 void storage_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length);

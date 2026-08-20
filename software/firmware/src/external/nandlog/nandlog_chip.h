@@ -14,20 +14,26 @@
 #if !defined(NANDLOG_MAX_SPARE_SIZE_BYTES)
 #error "nandlog_conf.h must define NANDLOG_MAX_SPARE_SIZE_BYTES"
 #endif
-#if !defined(MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL)
-#error "nandlog_conf.h must define MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL"
+#if !defined(NANDLOG_HAS_HARDWARE)
+#error "nandlog_conf.h must define NANDLOG_HAS_HARDWARE"
 #endif
-#if !defined(ERASE_AHEAD_BLOCKS)
-#error "nandlog_conf.h must define ERASE_AHEAD_BLOCKS"
+#if !defined(NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL)
+#error "nandlog_conf.h must define NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL"
 #endif
-#if !defined(STORAGE_MAX_METADATA_BYTES)
-#error "nandlog_conf.h must define STORAGE_MAX_METADATA_BYTES"
+#if !defined(NANDLOG_ERASE_AHEAD_BLOCKS)
+#error "nandlog_conf.h must define NANDLOG_ERASE_AHEAD_BLOCKS"
 #endif
-#if !defined(STORAGE_BUSY_POLL_INTERVAL_US)
-#error "nandlog_conf.h must define STORAGE_BUSY_POLL_INTERVAL_US"
+#if !defined(NANDLOG_MAX_METADATA_BYTES)
+#error "nandlog_conf.h must define NANDLOG_MAX_METADATA_BYTES"
 #endif
-#if !defined(STORAGE_BUSY_TIMEOUT_MS)
-#error "nandlog_conf.h must define STORAGE_BUSY_TIMEOUT_MS"
+#if !defined(NANDLOG_TIMESTAMP_TOLERANCE_MS)
+#error "nandlog_conf.h must define NANDLOG_TIMESTAMP_TOLERANCE_MS"
+#endif
+#if !defined(NANDLOG_BUSY_POLL_INTERVAL_US)
+#error "nandlog_conf.h must define NANDLOG_BUSY_POLL_INTERVAL_US"
+#endif
+#if !defined(NANDLOG_BUSY_TIMEOUT_MS)
+#error "nandlog_conf.h must define NANDLOG_BUSY_TIMEOUT_MS"
 #endif
 
 
@@ -57,7 +63,7 @@ void nandlog_chip_low_power(bool sleep);
 // Read a whole page. False means the read reported an uncorrectable ECC error and the buffer is untrustworthy
 bool nandlog_chip_read_page(uint8_t *buffer, uint32_t page);
 
-// Program a whole page, retrying up to MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL times. False means the chip
+// Program a whole page, retrying up to NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL times. False means the chip
 // reported a program failure every time. Whether that block is then retired is the caller's decision
 bool nandlog_chip_write_page(const uint8_t *data, uint32_t page);
 

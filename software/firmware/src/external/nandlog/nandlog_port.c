@@ -52,12 +52,11 @@ void nandlog_port_deinit(void)
    spi_handle = NULL;
 }
 
-#if REVISION_ID < REVISION_N
-
 void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
 {
    // Create the SPI transaction structure
    uint32_t instruction = command, retries_remaining = 4;
+   uint32_t num_reads = 1 + (read_length / (1 + AM_HAL_IOM_MAX_TXNSIZE_SPI));
    memcpy(((uint8_t*)&instruction) + 1, address, address_length);
    am_hal_iom_transfer_t spi_transaction = {
       .uPeerInfo.ui32SpiChipSelect  = 0,
@@ -80,91 +79,11 @@ void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t addres
    if (!retries_remaining)
       system_reset(true);
 
-   // Update the SPI transaction structure
-   retries_remaining = 4;
-   spi_transaction.eDirection = AM_HAL_IOM_RX;
-   spi_transaction.ui32NumBytes = read_length;
-   spi_transaction.pui32TxBuffer = NULL,
-   spi_transaction.pui32RxBuffer = read_buffer;
-   spi_transaction.bContinue = false;
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-}
-
-void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
-{
-   // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 4;
-   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
-   am_hal_iom_transfer_t spi_transaction = {
-      .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = 0,
-      .ui64Instr                    = 0,
-      .eDirection                   = AM_HAL_IOM_TX,
-      .ui32NumBytes                 = 1 + address_length,
-      .pui32TxBuffer                = &instruction,
-      .pui32RxBuffer                = NULL,
-      .bContinue                    = true,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-
-   // Update the SPI transaction structure
-   retries_remaining = 4;
-   spi_transaction.ui32NumBytes = write_length;
-   spi_transaction.pui32TxBuffer = (uint32_t*)write_buffer,
-   spi_transaction.bContinue = false;
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-}
-
-#else
-
-void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
-{
-   // Create the SPI transaction structure
-   uint32_t instruction = command, retries_remaining = 4;
-   memcpy(((uint8_t*)&instruction) + 1, address, address_length);
-   am_hal_iom_transfer_t spi_transaction = {
-      .uPeerInfo.ui32SpiChipSelect  = 0,
-      .ui32InstrLen                 = 0,
-      .ui64Instr                    = 0,
-      .eDirection                   = AM_HAL_IOM_TX,
-      .ui32NumBytes                 = 1 + address_length,
-      .pui32TxBuffer                = &instruction,
-      .pui32RxBuffer                = NULL,
-      .bContinue                    = true,
-      .ui8RepeatCount               = 0,
-      .ui8Priority                  = 1,
-      .ui32PauseCondition           = 0,
-      .ui32StatusSetClr             = 0
-   };
-
-   // Repeat the transfer until it succeeds or requires a device reset
-   while (--retries_remaining && (am_hal_iom_blocking_transfer(spi_handle, &spi_transaction) != AM_HAL_STATUS_SUCCESS))
-      am_hal_delay_us(10);
-   if (!retries_remaining)
-      system_reset(true);
-
-   // Split SPI reads if necessary
+   // Split the read across as many transactions as the peripheral's maximum requires. The count is fixed
+   // before the loop rather than tested against the remaining length, so a zero-length read still issues
+   // the single empty transaction that the smaller-page parts have always relied on
    uint32_t read_offset = 0;
-   while (read_length)
+   while (num_reads--)
    {
       // Determine the actual read size for this transaction
       uint32_t read_bytes = (read_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : read_length;
@@ -214,11 +133,11 @@ void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t addre
    if (!retries_remaining)
       system_reset(true);
 
-   // Split SPI writes if necessary
+   // Split the write the same way, for the same reason
    uint32_t write_offset = 0;
    while (num_writes--)
    {
-      // Determine the actual read size for this transaction
+      // Determine the actual write size for this transaction
       uint32_t write_bytes = (write_length > AM_HAL_IOM_MAX_TXNSIZE_SPI) ? AM_HAL_IOM_MAX_TXNSIZE_SPI : write_length;
       write_length -= write_bytes;
 
@@ -236,8 +155,6 @@ void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t addre
          system_reset(true);
    }
 }
-
-#endif  // #if REVISION_ID < REVISION_N
 
 void nandlog_port_write_enable(bool enable)
 {

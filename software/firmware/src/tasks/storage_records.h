@@ -1,6 +1,7 @@
 #ifndef __STORAGE_RECORDS_HEADER_H__
 #define __STORAGE_RECORDS_HEADER_H__
 
+#include "app_tasks.h"
 #include "rtc.h"
 
 

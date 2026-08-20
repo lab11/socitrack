@@ -163,6 +163,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length
       };
+
       // The stream header and the experiment details are sent as SEPARATE indications - together they are
       // 255 bytes, which exceeds the 244-byte ATT payload limit at the negotiated 247-byte MTU
       pending_details = details;

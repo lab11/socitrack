@@ -92,15 +92,15 @@ static void write_register(uint8_t register_number, uint8_t value)
 
 static void wait_until_not_busy(void)
 {
-   for (uint32_t polls_remaining = STORAGE_BUSY_TIMEOUT_POLLS; polls_remaining; --polls_remaining)
+   for (uint32_t polls_remaining = NANDLOG_BUSY_TIMEOUT_POLLS; polls_remaining; --polls_remaining)
    {
       if ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) != STATUS_BUSY)
          return;
-      nandlog_port_delay_us(STORAGE_BUSY_POLL_INTERVAL_US);
+      nandlog_port_delay_us(NANDLOG_BUSY_POLL_INTERVAL_US);
    }
 
    // Reset immediately rather than flushing first
-   nandlog_port_log("ERROR: Storage flash never cleared BUSY after %u polls (>= %u ms); resetting\n", (uint32_t)STORAGE_BUSY_TIMEOUT_POLLS, (uint32_t)STORAGE_BUSY_TIMEOUT_MS);
+   nandlog_port_log("ERROR: Storage flash never cleared BUSY after %u polls (>= %u ms); resetting\n", (uint32_t)NANDLOG_BUSY_TIMEOUT_POLLS, (uint32_t)NANDLOG_BUSY_TIMEOUT_MS);
    nandlog_port_fatal("SPI transfer failed after all retries");
 }
 
@@ -138,7 +138,7 @@ static bool write_page_raw(const uint8_t *data, uint32_t page)
    const uint16_t byte_offset = 0;
    uint8_t page_number_reordered[3];
    split_page_address(page, page_number_reordered);
-   for (uint8_t retry_index = 0; retry_index < MEMORY_NUM_BLOCK_ERRORS_BEFORE_REMOVAL; ++retry_index)
+   for (uint8_t retry_index = 0; retry_index < NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL; ++retry_index)
    {
       wait_until_not_busy();
       nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
