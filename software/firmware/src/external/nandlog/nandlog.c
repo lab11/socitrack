@@ -328,9 +328,14 @@ static uint32_t recover_write_head(uint32_t epoch, uint32_t log_start_page, uint
 
 static uint32_t validated_payload_length(const uint8_t *page)
 {
-   // Payload length is only meaningful once the header it lives in has been checksummed
+   // Check what this page will actually contribute to a read
    const nandlog_page_header_t *header = (const nandlog_page_header_t*)page;
-   return page_header_valid(header) ? header->payload_length : 0;
+   if (!page_header_valid(header))
+      return 0;
+   const uint32_t data_length = header->payload_length;
+   if (data_length && (header->payload_crc != crc32_compute(page + sizeof(nandlog_page_header_t), data_length)))
+      return 0;
+   return data_length;
 }
 
 static uint32_t extract_page_payload(uint8_t *page)
@@ -768,22 +773,23 @@ void nandlog_exit_maintenance_mode(void)
 
 void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes)
 {
-   // Both totals come from one pass, so neither can be read without the other having been established
+   // The page count is arithmetic, but an exact byte total is not: it costs a read of every page in the span,
+   // which doubles the flash traffic of a download. That pass is skipped entirely when the caller passes NULL
    uint32_t pages = 0, bytes = 0;
    if (is_reading)
    {
-      // Sum the payload bytes across the selected span
-      for (uint32_t page = reading_page; page != last_reading_page; )
-      {
-         if (nandlog_chip_is_bad_block(page))
-            page = log_next_block(page);
-         else
+      if (num_bytes)
+         for (uint32_t page = reading_page; page != last_reading_page; )
          {
-            if (nandlog_chip_read_page(transfer_buffer, page))
-               bytes += validated_payload_length(transfer_buffer);
-            page = log_next_page(page);
+            if (nandlog_chip_is_bad_block(page))
+               page = log_next_block(page);
+            else
+            {
+               if (nandlog_chip_read_page(transfer_buffer, page))
+                  bytes += validated_payload_length(transfer_buffer);
+               page = log_next_page(page);
+            }
          }
-      }
 
       // The trailing chunk is whatever is still buffered in RAM
       if (last_reading_page == current_page)

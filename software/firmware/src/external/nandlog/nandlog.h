@@ -137,8 +137,9 @@ void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
 void nandlog_end_reading(void);
 
 // Measure the open read: how many pages it will yield, including any that turn out to be unreadable, and how
-// many payload bytes they hold. Both come from one pass, so neither can be taken without the other; either
-// pointer may be NULL. Reports zero for both if no read is open
+// many payload bytes they hold. Either pointer may be NULL. The page count is arithmetic, but an exact byte
+// total costs a read of every page in the span -- doubling the flash traffic of a download -- so pass NULL
+// for 'num_bytes' unless the figure is needed exactly. Reports zero for both if no read is open
 void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes);
 
 // Take the next page of the open read, returning its payload length. Pass NULL for 'header' to ignore the
