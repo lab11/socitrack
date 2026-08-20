@@ -7,9 +7,9 @@
 #include "imu.h"
 #include "led.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging.h"
 #include "rtc.h"
-#include "storage.h"
 #include "storage_records.h"
 #include "system.h"
 #include "tusb.h"
@@ -51,30 +51,25 @@ static void handle_notification(app_notification_t notification)
       experiment_details_t details;
 
       // Transmit the stream header, then every page with its own framing
-      storage_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
+      nandlog_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
       storage_retrieve_experiment_details(&details);
 
       // A pending request list turns this into a repair round: only the named pages are sent, and the
       // experiment details are omitted because the host already holds them from the original transfer
-      const bool retransmitting = (storage_retransmit_count() > 0);
+      const bool retransmitting = (nandlog_retransmit_count() > 0);
       uint32_t total_data_chunks, total_data_length;
       if (retransmitting)
       {
-         total_data_chunks = storage_retransmit_count();
-         total_data_length = storage_retransmit_total_bytes();
+         total_data_chunks = nandlog_retransmit_count();
+         total_data_length = nandlog_retransmit_total_bytes();
       }
       else
       {
-         total_data_chunks = storage_retrieve_num_data_chunks();
-      #ifdef _TEST_IMU_DATA
-         total_data_length = total_data_chunks * storage_data_bytes_per_page();
-      #else
-         total_data_length = storage_retrieve_num_data_bytes();
-      #endif
+         nandlog_read_span(&total_data_chunks, &total_data_length);
       }
-      const storage_stream_header_t stream_header = {
-         .magic = STORAGE_STREAM_MAGIC,
-         .format_version = STORAGE_FORMAT_VERSION,
+      const nandlog_stream_header_t stream_header = {
+         .magic = NANDLOG_STREAM_MAGIC,
+         .format_version = NANDLOG_FORMAT_VERSION,
          .details_length = retransmitting ? 0 : (uint16_t)sizeof(details),
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length
@@ -86,10 +81,10 @@ static void handle_notification(app_notification_t notification)
       // Every page is framed with its sequence number, time bounds and payload CRC
       for (uint32_t chunk = 0; chunk < total_data_chunks; ++chunk)
       {
-         storage_page_header_t page;
-         const uint32_t data_length = retransmitting ? storage_retrieve_retransmit_page(chunk, transmit_buffer, &page)
-                                                     : storage_retrieve_next_page(transmit_buffer, &page);
-         const storage_wire_page_t wire = {
+         nandlog_page_header_t page;
+         const uint32_t data_length = retransmitting ? nandlog_retrieve_retransmit_page(chunk, transmit_buffer, &page)
+                                                     : nandlog_retrieve_next_page(transmit_buffer, &page);
+         const nandlog_wire_page_t wire = {
             .seq = page.seq,
             .first_timestamp = page.first_timestamp,
             .last_timestamp = page.last_timestamp,
@@ -101,8 +96,8 @@ static void handle_notification(app_notification_t notification)
          if (data_length)
             transmit_log_data(transmit_buffer, data_length);
       }
-      storage_end_reading();
-      storage_retransmit_clear();
+      nandlog_end_reading();
+      nandlog_retransmit_clear();
 
       // Push the final partial buffer; without this the tail of the transfer never leaves the device
       transmit_log_flush();

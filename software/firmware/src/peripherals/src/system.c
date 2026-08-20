@@ -7,10 +7,10 @@
 #include "imu.h"
 #include "led.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging.h"
 #include "rtc.h"
 #include "scheduler.h"
-#include "storage.h"
 #include "system.h"
 
 
@@ -345,7 +345,7 @@ void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timesta
    imu_deinit();
    leds_deinit();
    ranging_radio_deinit();
-   storage_deinit();
+   nandlog_deinit();
    logging_disable();
 
    // Power down the crypto module followed by all peripherals

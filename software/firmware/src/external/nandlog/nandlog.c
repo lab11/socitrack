@@ -21,7 +21,7 @@ static uint32_t page_size_bytes, pages_per_block, page_block_mask, data_bytes_pe
 static uint32_t metadata_ring_pages, log_region_first_page, log_region_end_page, log_region_page_count;
 static uint32_t seek_backtrack_limit_pages, erase_ahead_trigger_page;
 static uint32_t retransmit_seqs[NANDLOG_MAX_RETRANSMIT_PAGES], retransmit_num_pages = 0;
-static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index, log_data_size;
+static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index;
 static volatile bool is_reading, in_maintenance_mode, disabled, is_initialized = false, log_region_full;
 static volatile uint32_t page_first_timestamp = NANDLOG_NO_TIMESTAMP, page_last_timestamp = NANDLOG_NO_TIMESTAMP;
 static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_ring_page;
@@ -363,6 +363,12 @@ static void resolve_geometry(void)
    erase_ahead_trigger_page = pages_per_block / 2;
 }
 
+static uint32_t epoch_page_count(void)
+{
+   // Physical pages spanned by the current epoch
+   return log_region_full ? log_region_page_count : log_page_distance(starting_page, current_page);
+}
+
 static bool probe_epoch_page(uint32_t index, uint32_t page_count, nandlog_page_header_t *header, uint32_t *found_index)
 {
    // First valid current-epoch page at or after 'index'. A probe can land inside a block that was skipped
@@ -475,7 +481,7 @@ bool nandlog_init(void)
       uint32_t metadata_page = 0;
       nandlog_meta_header_t metadata;
       memset(cache, 0, sizeof(cache));
-      cache_index = last_reading_page = log_data_size = page_record_count = 0;
+      cache_index = last_reading_page = page_record_count = 0;
       page_first_timestamp = page_last_timestamp = NANDLOG_NO_TIMESTAMP;
       if (find_newest_metadata(&metadata_page, &metadata))
       {
@@ -531,17 +537,6 @@ uint32_t nandlog_data_bytes_per_page(void)
 {
    // Answered from the chip rather than the cached copy so it is correct before nandlog_init() has run
    return nandlog_chip_geometry()->page_size_bytes - sizeof(nandlog_page_header_t);
-}
-
-uint32_t nandlog_epoch_page_count(void)
-{
-   // Physical pages spanned by the current epoch
-   return log_region_full ? log_region_page_count : log_page_distance(starting_page, current_page);
-}
-
-bool nandlog_is_reading(void)
-{
-   return is_reading;
 }
 
 void nandlog_disable(bool disable)
@@ -734,7 +729,7 @@ void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
    reading_page = starting_page;
    last_reading_page = current_page;
    is_reading = in_maintenance_mode;
-   const uint32_t page_count = nandlog_epoch_page_count();
+   const uint32_t page_count = epoch_page_count();
    if (starting_timestamp)
    {
       const uint32_t index = seek_page_for_timestamp(starting_timestamp, page_count, true);
@@ -771,73 +766,46 @@ void nandlog_exit_maintenance_mode(void)
    in_maintenance_mode = false;
 }
 
-uint32_t nandlog_retrieve_num_data_chunks(void)
+void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes)
 {
-   // Ensure that we are in reading mode
-   if (!is_reading)
-      return 0;
-
-   // Sum the payload bytes across the selected span
-   log_data_size = 0;
-   for (uint32_t page = reading_page; page != last_reading_page; )
+   // Both totals come from one pass, so neither can be read without the other having been established
+   uint32_t pages = 0, bytes = 0;
+   if (is_reading)
    {
-      if (nandlog_chip_is_bad_block(page))
-         page = log_next_block(page);
+      // Sum the payload bytes across the selected span
+      for (uint32_t page = reading_page; page != last_reading_page; )
+      {
+         if (nandlog_chip_is_bad_block(page))
+            page = log_next_block(page);
+         else
+         {
+            if (nandlog_chip_read_page(transfer_buffer, page))
+               bytes += validated_payload_length(transfer_buffer);
+            page = log_next_page(page);
+         }
+      }
+
+      // The trailing chunk is whatever is still buffered in RAM
+      if (last_reading_page == current_page)
+      {
+         pages = log_page_distance(reading_page, last_reading_page) + (cache_index ? 1 : 0);
+         bytes += cache_index;
+      }
       else
-      {
-         if (nandlog_chip_read_page(transfer_buffer, page))
-            log_data_size += validated_payload_length(transfer_buffer);
-         page = log_next_page(page);
-      }
+         pages = 1 + log_page_distance(reading_page, last_reading_page);
    }
-
-   // The trailing chunk is whatever is still buffered in RAM
-   if (last_reading_page == current_page)
-      return log_page_distance(reading_page, last_reading_page) + (cache_index ? 1 : 0);
-   return 1 + log_page_distance(reading_page, last_reading_page);
-}
-
-uint32_t nandlog_retrieve_num_data_bytes(void)
-{
-   // Return the total number of log data bytes available (must be called after "nandlog_retrieve_num_data_chunks()")
-   return (last_reading_page == current_page) ? (log_data_size + cache_index) : log_data_size;
-}
-
-uint32_t nandlog_retrieve_next_data_chunk(uint8_t *buffer)
-{
-   // Ensure that we are in reading mode
-   if (!is_reading)
-      return 0;
-
-   // Determine if a full page of memory is available to read
-   uint32_t num_bytes_retrieved = 0;
-   if (reading_page == last_reading_page)
-   {
-      if (reading_page == current_page)
-      {
-         // Return the valid available bytes
-         memcpy(buffer, cache, cache_index);
-         num_bytes_retrieved = cache_index;
-      }
-      else if (nandlog_chip_read_page(buffer, reading_page))
-         num_bytes_retrieved = extract_page_payload(buffer);
-      is_reading = false;
-   }
-   else
-   {
-      // Read the next page of memory and update the reading metadata
-      while (nandlog_chip_is_bad_block(reading_page))
-         reading_page = log_next_block(reading_page);
-      if (nandlog_chip_read_page(buffer, reading_page))
-         num_bytes_retrieved = extract_page_payload(buffer);
-      reading_page = log_next_page(reading_page);
-   }
-   return num_bytes_retrieved;
+   if (num_pages)
+      *num_pages = pages;
+   if (num_bytes)
+      *num_bytes = bytes;
 }
 
 uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *header)
 {
-   // Retrieve the next page together with the metadata the offload stream needs to frame it
+   // Retrieve the next page, optionally with the metadata an offload stream needs to frame it
+   nandlog_page_header_t discarded;
+   if (!header)
+      header = &discarded;
    memset(header, 0, sizeof(*header));
    header->magic = NANDLOG_PAGE_MAGIC;
    header->epoch = log_epoch;
@@ -906,7 +874,7 @@ uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_pag
    if (!is_reading)
       return 0;
 
-   const uint32_t page_count = nandlog_epoch_page_count();
+   const uint32_t page_count = epoch_page_count();
    uint32_t low = 0, high = page_count;
    while (low < high)
    {
@@ -1031,8 +999,6 @@ uint32_t nandlog_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, nandl
 #else
 
 bool nandlog_probe(void) { return true; }
-uint32_t nandlog_epoch_page_count(void) { return 0; }
-bool nandlog_is_reading(void) { return false; }
 bool nandlog_init(void) { return true; }
 uint32_t nandlog_data_bytes_per_page(void) { return NANDLOG_MAX_DATA_BYTES_PER_PAGE; }
 void nandlog_deinit(void) {}
@@ -1047,9 +1013,7 @@ void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
 void nandlog_end_reading(void) {}
 void nandlog_enter_maintenance_mode(void){}
 void nandlog_exit_maintenance_mode(void) {}
-uint32_t nandlog_retrieve_num_data_chunks(void) { return 0; }
-uint32_t nandlog_retrieve_num_data_bytes(void) { return 0; }
-uint32_t nandlog_retrieve_next_data_chunk(uint8_t *buffer) { return 0; }
+void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes) { if (num_pages) *num_pages = 0; if (num_bytes) *num_bytes = 0; }
 uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *header) { (void)header; return 0; }
 uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_page_header_t *header) { (void)seq; (void)header; return 0; }
 uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_page_header_t *header, bool *end_of_epoch) { (void)pages_back; (void)buffer; (void)header; if (end_of_epoch) *end_of_epoch = true; return 0; }

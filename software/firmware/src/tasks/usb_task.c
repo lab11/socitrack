@@ -3,8 +3,8 @@
 #include "app_tasks.h"
 #include "battery.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "rtc.h"
-#include "storage.h"
 #include "storage_records.h"
 #include "system.h"
 #include "tusb.h"
@@ -143,7 +143,7 @@ void UsbCdcTask(void *params)
    uid[EUI_LEN] = '\n';
 
    // Put the storage peripheral into maintenance mode
-   storage_enter_maintenance_mode();
+   nandlog_enter_maintenance_mode();
 
    // Loop forever listening for incoming data
    while (true)
@@ -216,15 +216,15 @@ void UsbCdcTask(void *params)
             {
                tud_cdc_read(&download_start_timestamp, sizeof(download_start_timestamp));
                tud_cdc_read(&download_end_timestamp, sizeof(download_end_timestamp));
-               storage_retransmit_clear();
+               nandlog_retransmit_clear();
                break;
             }
             case USB_RETRANSMIT_PAGES_COMMAND:
             {
                // [count][seq0..seqN-1]; a count of zero clears a list left over from an abandoned round
-               static uint32_t seqs[STORAGE_MAX_RETRANSMIT_PAGES];
+               static uint32_t seqs[NANDLOG_MAX_RETRANSMIT_PAGES];
                uint8_t count = 0;
-               storage_retransmit_clear();
+               nandlog_retransmit_clear();
                if ((tud_cdc_read(&count, sizeof(count)) != sizeof(count)) || !count)
                   break;
                const uint32_t wanted = count * sizeof(uint32_t);
@@ -236,7 +236,7 @@ void UsbCdcTask(void *params)
                      vTaskDelay(1);
                }
                if (have == wanted)
-                  storage_retransmit_add(seqs, count);
+                  nandlog_retransmit_add(seqs, count);
                else
                   print("ERROR: USB retransmission request truncated (%u of %u bytes)\n", have, wanted);
                break;

@@ -7,10 +7,10 @@
 #include "imu.h"
 #include "led.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging.h"
 #include "rtc.h"
 #include "scheduler.h"
-#include "storage.h"
 #include "storage_records.h"
 #include "system.h"
 
@@ -124,10 +124,8 @@ static void handle_notification(app_notification_t notification)
          storage_write_imu_data((uint8_t*)imu_accel_data, sizeof(imu_accel_data));
 #endif
       }
-#ifndef _TEST_IMU_DATA
 #if REVISION_ID < REVISION_N
       imu_clear_interrupts();
-#endif
 #endif
    }
    if (((notification & APP_NOTIFY_NETWORK_LOST)) || ((notification & APP_NOTIFY_NETWORK_CONNECTED)) ||
@@ -225,17 +223,13 @@ static void handle_notification(app_notification_t notification)
       experiment_details_t details;
 
       // Transmit the stream header, then every page with its own framing
-      storage_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
+      nandlog_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
       storage_retrieve_experiment_details(&details);
-      uint32_t total_data_chunks = storage_retrieve_num_data_chunks();
-   #ifdef _TEST_IMU_DATA
-      uint32_t total_data_length = total_data_chunks * storage_data_bytes_per_page();
-   #else
-      uint32_t total_data_length = storage_retrieve_num_data_bytes();
-   #endif
-      const storage_stream_header_t stream_header = {
-         .magic = STORAGE_STREAM_MAGIC,
-         .format_version = STORAGE_FORMAT_VERSION,
+      uint32_t total_data_chunks = 0, total_data_length = 0;
+      nandlog_read_span(&total_data_chunks, &total_data_length);
+      const nandlog_stream_header_t stream_header = {
+         .magic = NANDLOG_STREAM_MAGIC,
+         .format_version = NANDLOG_FORMAT_VERSION,
          .details_length = (uint16_t)sizeof(details),
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length
@@ -246,9 +240,9 @@ static void handle_notification(app_notification_t notification)
       // Every page is framed with its sequence number, time bounds and payload CRC
       for (uint32_t chunk = 0; chunk < total_data_chunks; ++chunk)
       {
-         storage_page_header_t page;
-         const uint32_t data_length = storage_retrieve_next_page(transmit_buffer, &page);
-         const storage_wire_page_t wire = {
+         nandlog_page_header_t page;
+         const uint32_t data_length = nandlog_retrieve_next_page(transmit_buffer, &page);
+         const nandlog_wire_page_t wire = {
             .seq = page.seq,
             .first_timestamp = page.first_timestamp,
             .last_timestamp = page.last_timestamp,
@@ -260,7 +254,7 @@ static void handle_notification(app_notification_t notification)
          if (data_length)
             transmit_log_data(transmit_buffer, data_length);
       }
-      storage_end_reading();
+      nandlog_end_reading();
 
       // Push the final partial buffer; without this the tail of the transfer never leaves the device
       transmit_log_flush();
@@ -394,8 +388,8 @@ void app_allow_downloads(bool allow)
    {
       print("INFO: Allowing downloads...\n");
       // Disable writing to storage
-      storage_disable(true);
-      storage_enter_maintenance_mode();
+      nandlog_disable(true);
+      nandlog_enter_maintenance_mode();
 
       // Stop IMU
       imu_deinit();
@@ -406,8 +400,8 @@ void app_allow_downloads(bool allow)
       imu_init();
 
       // Enable writing to storage
-      storage_exit_maintenance_mode();
-      storage_disable(false);
+      nandlog_exit_maintenance_mode();
+      nandlog_disable(false);
    }
 }
 
@@ -438,11 +432,7 @@ void AppTaskRanging(void *uid)
 #endif
    imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(data_ready_handler);
-#ifdef _TEST_IMU_DATA
-   imu_enable_data_outputs(IMU_LINEAR_ACCELEROMETER | IMU_GYROSCOPE | IMU_MOTION_DETECT, 100000);
-#else
    imu_enable_data_outputs(IMU_ACCELEROMETER | IMU_MOTION_DETECT, 500000);
-#endif
 #ifndef _TEST_NO_STORAGE
    storage_write_motion_status(imu_read_in_motion() ? IN_MOTION : NOT_IN_MOTION);
 #endif

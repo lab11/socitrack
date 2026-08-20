@@ -250,7 +250,6 @@ SRC += led.c
 SRC += logging.c
 SRC += ranging.c
 SRC += rtc.c
-SRC += storage.c
 SRC += system.c
 SRC += usb.c
 

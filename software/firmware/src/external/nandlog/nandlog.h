@@ -91,9 +91,6 @@ void nandlog_deinit(void);
 // Only known once nandlog_init() has asked the chip its geometry
 uint32_t nandlog_data_bytes_per_page(void);
 
-// Physical pages the current epoch spans, counting any skipped over as bad
-uint32_t nandlog_epoch_page_count(void);
-
 // Stop or resume accepting records. A disabled log discards what it is given rather than buffering it, and
 // still serves reads. Nothing is disabled by nandlog_init()
 void nandlog_disable(bool disable);
@@ -139,20 +136,14 @@ void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestam
 // Close a read, whether or not it ran to completion. Implied by nandlog_exit_maintenance_mode()
 void nandlog_end_reading(void);
 
-// Whether a read is currently open
-bool nandlog_is_reading(void);
+// Measure the open read: how many pages it will yield, including any that turn out to be unreadable, and how
+// many payload bytes they hold. Both come from one pass, so neither can be taken without the other; either
+// pointer may be NULL. Reports zero for both if no read is open
+void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes);
 
-// Pages the open read will yield, including any that turn out to be unreadable, and the payload bytes they
-// hold. The byte total is computed by the page count, so call them in that order
-uint32_t nandlog_retrieve_num_data_chunks(void);
-uint32_t nandlog_retrieve_num_data_bytes(void);
-
-// Take the next page of the open read as payload bytes only, returning the length. Zero means that page was
-// unreadable, which is not the end of the read
-uint32_t nandlog_retrieve_next_data_chunk(uint8_t *buffer);
-
-// The same step, but also filling in the header the offload stream needs to frame it. A page whose header
-// could not be read comes back with 'seq' set to its position, so the gap is still identifiable
+// Take the next page of the open read, returning its payload length. Pass NULL for 'header' to ignore the
+// framing metadata. Zero means that page was unreadable, which is not the end of the read; a page whose
+// header could not be read comes back with 'seq' set to its position, so the gap is still identifiable
 uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *header);
 
 // Fetch one page of the current epoch by its sequence number, so a host can re-request what it lost.

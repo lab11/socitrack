@@ -3,8 +3,8 @@
 #include "app_tasks.h"
 #include "imu.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "rtc.h"
-#include "storage.h"
 #include "storage_records.h"
 #include "system.h"
 
@@ -161,9 +161,9 @@ void StorageTask(void *params)
 
    // Set whether the storage peripheral should be in maintenance mode
    if (params)
-      storage_exit_maintenance_mode();
+      nandlog_exit_maintenance_mode();
    else
-      storage_enter_maintenance_mode();
+      nandlog_enter_maintenance_mode();
 
 #if defined(_TEST_NO_STORAGE)
 
@@ -177,12 +177,12 @@ void StorageTask(void *params)
 
    // Record why the device last restarted once per boot
    const uint16_t reset_reason = system_get_reset_reason();
-   storage_store_record(STORAGE_TYPE_RESET_REASON, app_get_experiment_time(app_get_time_offset()), &reset_reason, sizeof(reset_reason));
+   nandlog_store_record(STORAGE_TYPE_RESET_REASON, app_get_experiment_time(app_get_time_offset()), &reset_reason, sizeof(reset_reason));
 
    // Anchor the boot itself, so the log records how stale the recovered offset was and how much real time the reboot consumed
    const uint32_t boot_local_clock = app_get_experiment_time(0);
    const int64_t boot_network_clock = (int64_t)boot_local_clock + app_get_time_offset();
-   storage_store_record(STORAGE_TYPE_TIME_ANCHOR, (boot_network_clock > 0) ? (uint32_t)boot_network_clock : 0,
+   nandlog_store_record(STORAGE_TYPE_TIME_ANCHOR, (boot_network_clock > 0) ? (uint32_t)boot_network_clock : 0,
                         &boot_local_clock, sizeof(boot_local_clock));
 
    // Loop forever, waiting until storage events are received or buffered data has waited long enough
@@ -205,42 +205,42 @@ void StorageTask(void *params)
          switch (item.type)
          {
             case STORAGE_TYPE_SHUTDOWN:
-               storage_flush(true);
+               nandlog_flush(true);
                system_reset(true);
                break;
             case STORAGE_TYPE_VOLTAGE:
-               storage_store_record(STORAGE_TYPE_VOLTAGE, item.timestamp, &item.value, sizeof(item.value));
+               nandlog_store_record(STORAGE_TYPE_VOLTAGE, item.timestamp, &item.value, sizeof(item.value));
                break;
             case STORAGE_TYPE_MOTION:
             {
                const uint8_t in_motion = (item.value != NOT_IN_MOTION) ? 1 : 0;
-               storage_store_record(STORAGE_TYPE_MOTION, item.timestamp, &in_motion, sizeof(in_motion));
+               nandlog_store_record(STORAGE_TYPE_MOTION, item.timestamp, &in_motion, sizeof(in_motion));
                break;
             }
             case STORAGE_TYPE_CHARGING_EVENT:
             {
                const uint8_t charging_event = (uint8_t)item.value;
-               storage_store_record(STORAGE_TYPE_CHARGING_EVENT, item.timestamp, &charging_event, sizeof(charging_event));
+               nandlog_store_record(STORAGE_TYPE_CHARGING_EVENT, item.timestamp, &charging_event, sizeof(charging_event));
                break;
             }
             case STORAGE_TYPE_RANGES:
-               storage_store_record(STORAGE_TYPE_RANGES, item.timestamp, range_data[item.value].data, range_data[item.value].length);
+               nandlog_store_record(STORAGE_TYPE_RANGES, item.timestamp, range_data[item.value].data, range_data[item.value].length);
                break;
             case STORAGE_TYPE_IMU:
-               storage_store_record(STORAGE_TYPE_IMU, item.timestamp, imu_data[item.value].data, imu_data[item.value].length);
+               nandlog_store_record(STORAGE_TYPE_IMU, item.timestamp, imu_data[item.value].data, imu_data[item.value].length);
                break;
             case STORAGE_TYPE_TIME_ANCHOR:
-               storage_store_record(STORAGE_TYPE_TIME_ANCHOR, item.timestamp, &item.value, sizeof(item.value));
+               nandlog_store_record(STORAGE_TYPE_TIME_ANCHOR, item.timestamp, &item.value, sizeof(item.value));
                break;
             case STORAGE_TYPE_BLE_SCAN:
-               storage_store_record(STORAGE_TYPE_BLE_SCAN, item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
+               nandlog_store_record(STORAGE_TYPE_BLE_SCAN, item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
                break;
             default:
                break;
          }
 
          // Arm the deadline the moment the cache becomes dirty, and disarm it once a write empties it
-         if (!storage_has_buffered_data())
+         if (!nandlog_has_buffered_data())
             flush_pending = false;
          else if (!flush_pending)
          {
@@ -251,8 +251,8 @@ void StorageTask(void *params)
       else
       {
          // Buffered data has aged out so commit it as a partial page
-         storage_flush(true);
-         flush_pending = storage_has_buffered_data();
+         nandlog_flush(true);
+         flush_pending = nandlog_has_buffered_data();
          flush_armed_at = xTaskGetTickCount();
       }
    }

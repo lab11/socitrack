@@ -7,7 +7,7 @@
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
-#include "storage.h"
+#include "nandlog.h"
 #include "storage_records.h"
 
 
@@ -59,7 +59,7 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
          {
             download_start_timestamp = *(uint32_t*)(pValue + 1);
             download_end_timestamp = *(uint32_t*)(pValue + 1 + sizeof(download_start_timestamp));
-            storage_retransmit_clear();
+            nandlog_retransmit_clear();
             break;
          }
          case BLE_MAINTENANCE_DOWNLOAD_LOG:
@@ -78,13 +78,13 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             // [cmd][count][seq0..seqN-1]; a count of zero clears a list left over from an abandoned round
             const uint8_t count = (len > 1) ? MIN(pValue[1], BLE_MAINTENANCE_MAX_SEQS_PER_WRITE) : 0;
             if (!count)
-               storage_retransmit_clear();
+               nandlog_retransmit_clear();
             else if (len >= (2 + (count * sizeof(uint32_t))))
             {
                // Copied out rather than cast in place, since the ATT payload is not word-aligned
                uint32_t seqs[BLE_MAINTENANCE_MAX_SEQS_PER_WRITE];
                memcpy(seqs, pValue + 2, count * sizeof(uint32_t));
-               storage_retransmit_add(seqs, count);
+               nandlog_retransmit_add(seqs, count);
             }
             break;
          }
@@ -97,10 +97,10 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
 static uint16_t append_framed_page(uint8_t *buffer, uint32_t index)
 {
    // Append the next page to the transmit buffer, framed with its own header
-   storage_page_header_t page;
-   const uint32_t length = retransmitting ? storage_retrieve_retransmit_page(index, buffer + sizeof(storage_wire_page_t), &page)
-                                          : storage_retrieve_next_page(buffer + sizeof(storage_wire_page_t), &page);
-   const storage_wire_page_t wire = {
+   nandlog_page_header_t page;
+   const uint32_t length = retransmitting ? nandlog_retrieve_retransmit_page(index, buffer + sizeof(nandlog_wire_page_t), &page)
+                                          : nandlog_retrieve_next_page(buffer + sizeof(nandlog_wire_page_t), &page);
+   const nandlog_wire_page_t wire = {
       .seq = page.seq,
       .first_timestamp = page.first_timestamp,
       .last_timestamp = page.last_timestamp,
@@ -116,7 +116,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
 {
    // Define static transmission variables
    static bool started_reading = false, is_reading = false, done_reading = false;
-   static uint8_t transmit_buffer[(2 * NANDLOG_MAX_PAGE_SIZE_BYTES) + sizeof(storage_wire_page_t)], previous_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
+   static uint8_t transmit_buffer[(2 * NANDLOG_MAX_PAGE_SIZE_BYTES) + sizeof(nandlog_wire_page_t)], previous_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
    static uint32_t data_chunk_index, total_data_chunks, total_data_length;
    static uint16_t buffer_index, buffer_length, previous_length, header_length;
    static experiment_details_t pending_details;
@@ -137,28 +137,23 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       started_reading = true;
       experiment_details_t details;
       storage_retrieve_experiment_details(&details);
-      storage_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
+      nandlog_begin_reading(storage_experiment_ms_from_rtc(download_start_timestamp), storage_experiment_ms_from_rtc(download_end_timestamp));
 
       // A pending request list turns this into a repair round: only the named pages are sent, and the
       // experiment details are omitted because the host already holds them from the original transfer
-      retransmitting = (storage_retransmit_count() > 0);
+      retransmitting = (nandlog_retransmit_count() > 0);
       if (retransmitting)
       {
-         total_data_chunks = storage_retransmit_count();
-         total_data_length = storage_retransmit_total_bytes();
+         total_data_chunks = nandlog_retransmit_count();
+         total_data_length = nandlog_retransmit_total_bytes();
       }
       else
       {
-         total_data_chunks = storage_retrieve_num_data_chunks();
-#ifdef _TEST_IMU_DATA
-         total_data_length = total_data_chunks * storage_data_bytes_per_page();
-#else
-         total_data_length = storage_retrieve_num_data_bytes();
-#endif
+         nandlog_read_span(&total_data_chunks, &total_data_length);
       }
-      const storage_stream_header_t stream_header = {
-         .magic = STORAGE_STREAM_MAGIC,
-         .format_version = STORAGE_FORMAT_VERSION,
+      const nandlog_stream_header_t stream_header = {
+         .magic = NANDLOG_STREAM_MAGIC,
+         .format_version = NANDLOG_FORMAT_VERSION,
          .details_length = retransmitting ? 0 : (uint16_t)sizeof(details),
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length
@@ -228,8 +223,8 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          // Transit a completion packet
          is_reading = false;
          done_reading = true;
-         storage_end_reading();
-         storage_retransmit_clear();
+         nandlog_end_reading();
+         nandlog_retransmit_clear();
          retransmitting = false;
          bluetooth_request_fast_connection((uint8_t)connId, false);
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;

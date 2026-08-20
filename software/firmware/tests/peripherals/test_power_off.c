@@ -6,9 +6,9 @@
 #include "imu.h"
 #include "led.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging.h"
 #include "rtc.h"
-#include "storage.h"
 #include "system.h"
 
 typedef enum { WAKE_WITH_RTC = 1, WAKE_WITH_BATTERY_STATUS } wake_criteria_t;
@@ -29,7 +29,7 @@ int main(void)
    imu_init();
    leds_init();
    rtc_init();
-   storage_init();
+   nandlog_init();
    rtc_set_time_to_compile_time();
    system_enable_interrupts(true);
 

@@ -7,9 +7,9 @@
 #include "imu.h"
 #include "led.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging.h"
 #include "rtc.h"
-#include "storage.h"
 #include "storage_records.h"
 #include "system.h"
 #include "usb.h"
@@ -60,7 +60,7 @@ void run_tasks(void)
       battery_monitor_init();
       buzzer_init();
       rtc_init();
-      storage_init();
+      nandlog_init();
 
       // Create the USB processing tasks
       uid[0] = uid[1] = uid[2] = uid[3] = 0xEF;
@@ -77,7 +77,7 @@ void run_tasks(void)
       imu_init();
       leds_init();
       rtc_init();
-      storage_init();
+      nandlog_init();
       system_enable_interrupts(true);
 
       // Initialize the ranging radio and put it into deep sleep
@@ -103,11 +103,11 @@ void run_tasks(void)
             .is_terminated = 0
          };
          //new exp details can only be set in maintenance mode
-         storage_enter_maintenance_mode();
+         nandlog_enter_maintenance_mode();
          if (storage_store_experiment_details(&details))
             app_set_experiment_start_time(details.experiment_start_time);
          if (!battery_monitor_is_plugged_in())
-            storage_exit_maintenance_mode();
+            nandlog_exit_maintenance_mode();
       }
 #endif
 
@@ -124,7 +124,7 @@ void run_tasks(void)
                ((scheduled_experiment.daily_start_time > scheduled_experiment.daily_end_time) &&
                   ((time_of_day >= scheduled_experiment.daily_start_time) || (time_of_day < scheduled_experiment.daily_end_time))));
       experiment_start_time = scheduled_experiment.experiment_start_time;
-      storage_disable(!active_experiment);
+      nandlog_disable(!active_experiment);
 
       // Determine whether to power off for some time based on the device state
       uint32_t wake_on_timestamp = 0;

@@ -27,12 +27,12 @@ typedef enum {
 
 static inline void storage_retrieve_experiment_details(experiment_details_t *details)
 {
-   storage_retrieve_metadata(details, sizeof(*details));
+   nandlog_retrieve_metadata(details, sizeof(*details));
 }
 
 static inline bool storage_store_experiment_details(const experiment_details_t *details)
 {
-   if (!storage_store_metadata(details, sizeof(*details)))
+   if (!nandlog_store_metadata(details, sizeof(*details)))
       return false;
 
    const uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
@@ -44,7 +44,7 @@ static inline bool storage_store_experiment_details(const experiment_details_t *
                (time_of_day >= details->daily_start_time) && (time_of_day < details->daily_end_time)) ||
             ((details->daily_start_time > details->daily_end_time) &&
                ((time_of_day >= details->daily_start_time) || (time_of_day < details->daily_end_time))));
-   storage_disable(!active_experiment);
+   nandlog_disable(!active_experiment);
    return true;
 }
 
@@ -106,11 +106,11 @@ static inline bool last_time_anchor_in_page(const uint8_t *payload, uint32_t len
 static inline bool recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
 {
    // The newest anchor pairs an experiment timestamp with the raw RTC value at the instant it was written
-   static uint8_t page_buffer[STORAGE_MAX_DATA_BYTES_PER_PAGE];
+   static uint8_t page_buffer[NANDLOG_MAX_DATA_BYTES_PER_PAGE];
    for (uint32_t back = 0; back < ANCHOR_SEARCH_MAX_PAGES; ++back)
    {
       bool end_of_epoch = false;
-      const uint32_t length = storage_read_recent_page(back, page_buffer, NULL, &end_of_epoch);
+      const uint32_t length = nandlog_read_recent_page(back, page_buffer, NULL, &end_of_epoch);
       if (length && last_time_anchor_in_page(page_buffer, length, experiment_ms, rtc))
          return true;
       if (end_of_epoch)
