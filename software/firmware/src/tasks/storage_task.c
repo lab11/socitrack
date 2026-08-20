@@ -48,8 +48,13 @@ void storage_flush_and_shutdown(void)
 
 void storage_write_time_anchor(void)
 {
-   const uint32_t record_timestamp = app_get_experiment_time(app_get_time_offset());
-   const storage_item_t storage_item = { .timestamp = record_timestamp, .value = rtc_get_timestamp(), .type = STORAGE_TYPE_TIME_ANCHOR };
+   // The anchor's payload is this device's OWN clock, the experiment time with no network offset applied
+   // So the pair (timestamp, value) is (network time, local time) at one instant and the offset is exactly their difference.
+   // Absolute wall time is recoverable as experiment_start_time + value/1000
+   const uint32_t local_clock = app_get_experiment_time(0);
+   const int64_t network_clock = (int64_t)local_clock + app_get_time_offset();
+   const storage_item_t storage_item = { .timestamp = (network_clock > 0) ? (uint32_t)network_clock : 0,
+                                         .value = local_clock, .type = STORAGE_TYPE_TIME_ANCHOR };
    xQueueSendToBack(storage_queue, &storage_item, 0);
 }
 
@@ -144,13 +149,11 @@ void StorageTask(void *params)
    // Recover the local-to-network time offset from the log instead of waiting for the next ranging round to re-derive it
    app_set_time_offset(0);
 #if !defined(_TEST_NO_STORAGE)
-   uint32_t anchor_experiment_ms = 0, anchor_rtc = 0;
-   if (recover_time_anchor(&anchor_experiment_ms, &anchor_rtc))
+   uint32_t anchor_network_ms = 0, anchor_local_ms = 0;
+   if (recover_time_anchor(&anchor_network_ms, &anchor_local_ms))
    {
-      // Recover the local clock offset from network time
-      const uint32_t experiment_start = app_get_experiment_start_time();
-      const int64_t rtc_elapsed_ms = (anchor_rtc > experiment_start) ? ((int64_t)(anchor_rtc - experiment_start) * 1000) : 0;
-      app_set_time_offset((int32_t)((int64_t)anchor_experiment_ms - rtc_elapsed_ms));
+      // The anchor holds network time and local time at the same instant, so the offset is their difference
+      app_set_time_offset((int32_t)((int64_t)anchor_network_ms - (int64_t)anchor_local_ms));
       print("INFO: Recovered ranging time offset from a log anchor: %d ms\n", app_get_time_offset());
    }
 #endif
@@ -176,9 +179,11 @@ void StorageTask(void *params)
    const uint16_t reset_reason = system_get_reset_reason();
    storage_store_record(STORAGE_TYPE_RESET_REASON, app_get_experiment_time(app_get_time_offset()), &reset_reason, sizeof(reset_reason));
 
-   // Anchor the boot time itself
-   const uint32_t boot_rtc = rtc_get_timestamp();
-   storage_store_record(STORAGE_TYPE_TIME_ANCHOR, app_get_experiment_time(app_get_time_offset()), &boot_rtc, sizeof(boot_rtc));
+   // Anchor the boot itself, so the log records how stale the recovered offset was and how much real time the reboot consumed
+   const uint32_t boot_local_clock = app_get_experiment_time(0);
+   const int64_t boot_network_clock = (int64_t)boot_local_clock + app_get_time_offset();
+   storage_store_record(STORAGE_TYPE_TIME_ANCHOR, (boot_network_clock > 0) ? (uint32_t)boot_network_clock : 0,
+                        &boot_local_clock, sizeof(boot_local_clock));
 
    // Loop forever, waiting until storage events are received or buffered data has waited long enough
    const TickType_t flush_timeout_ticks = pdMS_TO_TICKS(1000 * STORAGE_FLUSH_TIMEOUT_S);

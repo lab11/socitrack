@@ -220,12 +220,14 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                consumed = 6 + count
 
          elif record_type == STORAGE_TYPE_TIME_ANCHOR and i + 9 <= len(data):
-            rtc = struct.unpack('<I', data[i + 5:i + 9])[0]
-            # The offset is not stored but is recoverable from every other record's timestamp (RTC + offset)
-            # Positive means the log's clock runs behind real time.
-            if experiment_start_time <= rtc <= now:
-               log_data[timestamp]['rtc'] = rtc
-               log_data[timestamp]['lag'] = round((rtc - experiment_start_time) - (timestamp_raw / 1000), 1)
+            # Payload is the device's OWN clock in ms since experiment start, no network offset applied; the
+            # record's own timestamp is the same instant on the NETWORK clock. The offset is therefore exactly
+            # their difference, at the RTC's 10 ms resolution. 'rtc' is republished as absolute Unix time
+            local_ms = struct.unpack('<I', data[i + 5:i + 9])[0]
+            if local_ms <= (now - experiment_start_time + 86400) * 1000:
+               log_data[timestamp]['rtc'] = round(experiment_start_time + local_ms / 1000, 2)
+               log_data[timestamp]['offset'] = timestamp_raw - local_ms
+               log_data[timestamp]['lag'] = round((local_ms - timestamp_raw) / 1000, 2)
                consumed = 9
 
          elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):

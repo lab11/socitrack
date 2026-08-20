@@ -335,15 +335,26 @@ static void test_timestamp_jump(void)
    storage_store_record(STORAGE_TYPE_IMU,  4000, record, sizeof(record));
    storage_flush(true);
 
+   // A step smaller than STORAGE_TIMESTAMP_TOLERANCE_MS is writer disagreement, not a moved time base, so it
+   // must be clamped forward rather than allowed to commit a page. These three become ONE page if the
+   // tolerance is applied and TWO if it is not, so the total page count is the assertion
+   storage_store_record(STORAGE_TYPE_IMU, 20000, record, sizeof(record));
+   storage_store_record(STORAGE_TYPE_IMU, 20000 - (STORAGE_TIMESTAMP_TOLERANCE_MS / 2), record, sizeof(record));
+   storage_store_record(STORAGE_TYPE_IMU, 20100, record, sizeof(record));
+   storage_flush(true);
+
    storage_enter_maintenance_mode();
    storage_begin_reading(0, 0);
    const uint32_t num_chunks = storage_retrieve_num_data_chunks();
 
    uint32_t errors = 0;
-   const uint32_t expected_first[] = { 10000, 3000 }, expected_last[] = { 11000, 4000 };
-   if (num_chunks != 2)
+   // Pages 0-1 are the deliberate jump. Page 2 is the tolerance check: a THIRD page means the small step
+   // was clamped, a fourth would mean it split the page as a real re-basing would
+   const uint32_t expected_first[] = { 10000, 3000, 20000 }, expected_last[] = { 11000, 4000, 20100 };
+   if (num_chunks != 3)
    {
-      print("  ERROR: %u pages, expected 2 (the jump did not split the page)\n", num_chunks);
+      print("  ERROR: %u pages, expected 3 (%s)\n", num_chunks,
+            (num_chunks == 4) ? "a sub-tolerance step split a page" : "the jump did not split the page");
       ++errors;
    }
    for (uint32_t i = 0; i < num_chunks; ++i)
@@ -384,9 +395,11 @@ static void store_range_record(uint32_t timestamp, uint8_t range_mm_div)
    storage_store_record(STORAGE_TYPE_RANGES, timestamp, data, sizeof(data));
 }
 
-static void store_time_anchor(uint32_t experiment_ms, uint32_t rtc)
+static void store_time_anchor(uint32_t network_ms, uint32_t local_ms)
 {
-   storage_store_record(STORAGE_TYPE_TIME_ANCHOR, experiment_ms, &rtc, sizeof(rtc));
+   // The payload is the device's own un-offset clock; the record timestamp is the same instant on the
+   // network clock. Their difference is the offset, which is what recovery reads back
+   storage_store_record(STORAGE_TYPE_TIME_ANCHOR, network_ms, &local_ms, sizeof(local_ms));
 }
 
 static void test_time_anchor_recovery(void)

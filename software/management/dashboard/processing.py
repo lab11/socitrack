@@ -20,6 +20,9 @@ import tzlocal
 # suppress the pandas scientific notation
 pd.options.display.float_format = '{:.3f}'.format
 
+# Spacing of the uniform time grid that every series is resampled onto
+GRID_STEP_S = 0.5
+
 # HELPER FUNCTIONS ----------------------------------------------------------------------------------------------------
 
 def seconds_to_human_readable(seconds):
@@ -61,10 +64,14 @@ def extract_simple_event_log(logpath):
     return event_dict
 
 def load_data(filename):
+    # Records are snapped to the grid before reindexing
     with open(filename, 'rb') as file:
-        data = pd.json_normalize(data=pickle.load(file)).groupby('t').first()
-    return data.reindex(pd.Series(np.arange(data.head(1).index[0], 1+data.tail(1).index[0], 0.5))).T \
-           if data is not None and len(data.index) > 0 else None
+        data = pd.json_normalize(data=pickle.load(file))
+    if data is None or not len(data.index):
+        return None
+    data['t'] = np.round(data['t'] / GRID_STEP_S) * GRID_STEP_S
+    data = data.groupby('t').first()
+    return data.reindex(pd.Series(np.arange(data.index[0], 1 + data.index[-1], GRID_STEP_S))).T
 
 def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
     plt.close()
@@ -126,10 +133,11 @@ def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=
     elif unit == 'm':
         conversion_factor_from_mm = 1000.0
     ranges = data.loc['r.' + destination_tottag_label] / conversion_factor_from_mm
+    start = start_timestamp if start_timestamp is not None else data.T.index[0]
+    end = end_timestamp if end_timestamp is not None else 1 + data.T.index[-1]
+    start = np.round(start / GRID_STEP_S) * GRID_STEP_S
     ranges = ranges.mask(ranges > cutoff_distance)\
-                   .reindex(pd.Series(np.arange(start_timestamp if start_timestamp is not None else data.T.head(1).index[0],
-                                                end_timestamp if end_timestamp is not None else 1+data.T.tail(1).index[0],
-                                                0.5)))
+                   .reindex(pd.Series(np.arange(start, end, GRID_STEP_S)))
     timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ranges.keys()])
     return timestamps, ranges
 

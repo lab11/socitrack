@@ -178,6 +178,18 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
       if report['truncated']:
          print(f"   transfer ended early: {report['pages_read']} of {report['total_pages']} pages received")
 
+   # Say why the device restarted for anything that is not the ordinary graceful path
+   if tottag_format.is_verbose():
+      notable = [d for d in log_data if 'rst' in d and any(c != 'SW Power-On' for c in d['rst'])]
+      if notable:
+         print(f"INFO: log from {uid_to_labels[from_uid]} records {len(notable)} "
+               f"non-routine reset{'' if len(notable) == 1 else 's'}:")
+         for d in notable[:10]:
+            stamp = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(d['t']))
+            print(f"   {stamp}  {', '.join(d['rst'])}")
+         if len(notable) > 10:
+            print(f"   ... and {len(notable) - 10} more")
+
    # Not a transfer fault, but a LARGE one makes a time-bounded download untrustworthy
    benign = [d for d in report['time_discontinuities'] if (d[2] - d[3]) < tottag_format.BENIGN_TIME_STEP_MS]
    notable = [d for d in report['time_discontinuities'] if (d[2] - d[3]) >= tottag_format.BENIGN_TIME_STEP_MS]

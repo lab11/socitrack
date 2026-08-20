@@ -84,6 +84,7 @@
 #define MEMORY_PAGE_SIZE_BYTES                      4096
 #define MEMORY_BLOCK_COUNT                          4096
 #define MEMORY_ECC_BYTES_PER_PAGE                   256
+#define MEMORY_NUM_RESERVED_BLOCKS                  80
 #define STORAGE_DEVICE_ID                           { 0x8D }
 
 // Timers
