@@ -31,6 +31,12 @@
 // Blocks kept erased ahead of the write head, so a page write never waits on an erase
 #define NANDLOG_ERASE_AHEAD_BLOCKS                  2
 
+// Blocks a single page write may relocate through before the log concludes the part will not hold it. Each
+// attempt costs an erase plus a block's worth of page copies, so this is a bound on real time as much as on
+// blocks: it has to be large enough to ride out a genuine cluster of worn blocks and small enough that a part
+// which has stopped programming altogether is diagnosed in seconds rather than starving the system
+#define NANDLOG_PAGE_PLACEMENT_ATTEMPTS             3
+
 // Largest caller-defined metadata blob stored alongside the log
 #define NANDLOG_MAX_METADATA_BYTES                  512
 

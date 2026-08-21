@@ -342,21 +342,17 @@ void nandlog_chip_mark_bad_block(uint32_t page)
    write_protect(false);
 
    // Erase the table's storage page, stepping to another block of the reserve if it will not take an erase
-   bool success = false;
-   while (!success)
+   for (uint32_t attempt = 0; attempt < NANDLOG_CHIP_RESERVED_BLOCKS; ++attempt)
    {
-      if (!erase_block_raw(bbm_storage_page))
-      {
-         uint32_t next_bbm_storage_page = (bbm_storage_page + NANDLOG_CHIP_PAGES_PER_BLOCK) & NANDLOG_CHIP_BLOCK_MASK;
-         while (nandlog_chip_is_bad_block(next_bbm_storage_page))
-            next_bbm_storage_page = (next_bbm_storage_page + NANDLOG_CHIP_PAGES_PER_BLOCK) & NANDLOG_CHIP_BLOCK_MASK;
-         if (next_bbm_storage_page < NANDLOG_CHIP_PAGE_COUNT)
-            bbm_storage_page = next_bbm_storage_page;
-         else
-            success = true;
-      }
-      else
-         success = true;
+      if (erase_block_raw(bbm_storage_page))
+         break;
+
+      uint32_t next_bbm_storage_page = (bbm_storage_page + NANDLOG_CHIP_PAGES_PER_BLOCK) & NANDLOG_CHIP_BLOCK_MASK;
+      while ((next_bbm_storage_page < NANDLOG_CHIP_PAGE_COUNT) && nandlog_chip_is_bad_block(next_bbm_storage_page))
+         next_bbm_storage_page = (next_bbm_storage_page + NANDLOG_CHIP_PAGES_PER_BLOCK) & NANDLOG_CHIP_BLOCK_MASK;
+      if (next_bbm_storage_page >= NANDLOG_CHIP_PAGE_COUNT)
+         break;
+      bbm_storage_page = next_bbm_storage_page;
    }
 
    // Update the table with the bad block and write it back out

@@ -52,7 +52,8 @@ void ranging_begin(schedule_role_t role);
 bool ranging_active(void);
 
 // Storage Task Public Functions
-void storage_flush_and_shutdown(void);
+void storage_queue_init(void);
+bool storage_flush_and_shutdown(void);
 void storage_write_time_anchor(void);
 void storage_write_battery_level(uint32_t battery_voltage_mV);
 void storage_write_motion_status(motion_code_t motion_code);

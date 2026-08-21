@@ -8,6 +8,10 @@
 bool nandlog_port_init(void);
 void nandlog_port_deinit(void);
 
+// Serialize the library against itself; a port with no threads can leave these empty
+void nandlog_port_lock(void);
+void nandlog_port_unlock(void);
+
 // Assumes a transfer either completes or does not return, so a failure that cannot be retried must end in nandlog_port_fatal()
 void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length);
 void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length);
@@ -27,5 +31,8 @@ void nandlog_port_delay_ms(uint32_t milliseconds);
 
 // Unrecoverable hardware fault
 void nandlog_port_fatal(const char *reason);
+
+// The part still answers but no block can retain a page
+void nandlog_port_unwritable(void);
 
 #endif  // #ifndef __NANDLOG_PORT_HEADER_H__

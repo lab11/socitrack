@@ -160,7 +160,7 @@ static void handle_notification(app_notification_t notification)
                break;
             }
       }
-      else
+      else if (!ranging_active())
       {
          // Determine if an actively ranging device was located
          bool ranging_device_located = false, idle_device_located = false;
@@ -415,11 +415,13 @@ void AppTaskRanging(void *uid)
    // Initialize the BLE scanning window timer
    am_hal_timer_config_t scanning_timer_config;
    am_hal_timer_default_config_set(&scanning_timer_config);
+   scanning_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
    scanning_timer_config.ui32Compare0 = (uint32_t)(BLE_SCANNING_TIMER_TICK_RATE_HZ / 2);
    am_hal_timer_config(BLE_SCANNING_TIMER_NUMBER, &scanning_timer_config);
    am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
    NVIC_SetPriority(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER);
+   am_hal_timer_enable(BLE_SCANNING_TIMER_NUMBER);
 
    // Register handlers for motion detection, battery status changes, and BLE events
    motion_changed = imu_data_ready = false;
@@ -461,7 +463,12 @@ void AppTaskRanging(void *uid)
    bluetooth_set_current_ranging_role(ROLE_IDLE);
 
    // Loop forever, sleeping until an application notification is received
+   system_watchdog_register(WATCHDOG_TASK_APP);
+   const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (true)
-      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &notification_bits, portMAX_DELAY) == pdTRUE)
+   {
+      system_watchdog_pet(WATCHDOG_TASK_APP);
+      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &notification_bits, checkin_ticks) == pdTRUE)
          handle_notification(notification_bits);
+   }
 }

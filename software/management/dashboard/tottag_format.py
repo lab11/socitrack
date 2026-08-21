@@ -86,10 +86,35 @@ RESET_FLAGS = [
 RESET_WATCHDOG_BIT = 0x040
 MAX_RESET_STATUS = 0xFFF
 
+# The hardware status says only THAT the device stopped, never what stopped it, which is why a run of watchdog
+# resets used to be uninterpretable. The firmware therefore packs its own verdict into the four bits above the
+# status, written to a scratch register that survives the reset and folded into this record on the next boot.
+# Keep in step with reset_diagnostic_t in src/peripherals/include/system.h.
+RESET_DIAGNOSTIC_SHIFT = 12
+RESET_DIAGNOSTIC_MASK = 0xF
+RESET_DIAGNOSTICS = {
+   0:  None,
+   1:  'stalled: TimeAlignedTask',
+   2:  'stalled: StorageTask',
+   3:  'stalled: AppTask',
+   4:  'stalled: several tasks (scheduler or tick stopped)',
+   5:  'hard fault',
+   6:  'stack overflow',
+   7:  'assertion failed',
+   8:  'allocation failed',
+   9:  'storage fault',
+   10: 'storage unwritable',
+   11: '32 kHz clock stopped',
+}
+
 
 def decode_reset_reason(status):
    """Decode a raw reset-status word into a list of human-readable causes."""
-   return [name for bit, name in RESET_FLAGS if status & bit] or ['Unknown (0x%03X)' % status]
+   causes = [name for bit, name in RESET_FLAGS if status & MAX_RESET_STATUS & bit]
+   diagnostic = RESET_DIAGNOSTICS.get((status >> RESET_DIAGNOSTIC_SHIFT) & RESET_DIAGNOSTIC_MASK)
+   if diagnostic:
+      causes.append(diagnostic)
+   return causes or ['Unknown (0x%04X)' % status]
 
 FORMAT_V1 = 1
 FORMAT_V2 = 2
@@ -102,6 +127,11 @@ V2_STREAM_HEADER = struct.Struct('<4sHHII')
 V2_PAGE_HEADER = struct.Struct('<IIIHHI')
 NO_TIMESTAMP = 0xFFFFFFFF
 
+# Format version 2 additionally prefixes every record with its own data length, so a payload can be walked
+# without knowing the record types. Version 1 payloads are the same records with no prefixes.
+FRAMED_VERSION = 2
+FRAMED_LENGTH = struct.Struct('<H')
+
 
 def detect_format(data):
    """Return FORMAT_V2 if the stream carries the v2 magic, otherwise FORMAT_V1.
@@ -112,6 +142,29 @@ def detect_format(data):
 
 
 # Record Grammar --------------------------------------------------------------------------------------------------
+
+def _strip_framing(payload):
+   """Remove the per-record length prefixes from a version 2 payload.
+
+   Returns ``(data, boundaries)``, where ``data`` is the payload in the same layout a version 1 page uses --
+   ``[type][timestamp][data]`` back to back -- and ``boundaries`` maps the offset of each record in it to the
+   offset of the next.  Those boundaries are what the prefixes are for: they are the device's own account of
+   where each record ends, so a record this parser does not recognise can be stepped over exactly rather than
+   guessed at.  Returns ``(None, None)`` if the prefixes do not describe the payload it was given, which
+   means it is damaged rather than merely unfamiliar.
+   """
+   data, boundaries, offset = bytearray(), {}, 0
+   while offset + FRAMED_LENGTH.size <= len(payload):
+      data_length = FRAMED_LENGTH.unpack_from(payload, offset)[0]
+      offset += FRAMED_LENGTH.size
+      if offset + 5 + data_length > len(payload):
+         return None, None
+      start = len(data)
+      data += payload[offset:offset + 5 + data_length]
+      boundaries[start] = len(data)
+      offset += 5 + data_length
+   return (bytes(data), boundaries) if offset == len(payload) else (None, None)
+
 
 def _record_length(data, i):
    """Structural length of the record starting at ``i``, or None if it cannot be determined.
@@ -140,7 +193,7 @@ def _record_length(data, i):
    return length if (length is not None and i + length <= len(data)) else None
 
 
-def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynchronize):
+def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynchronize, framed=False):
    """Decode records from ``data`` into ``log_data``.
 
    ``resynchronize`` selects between the two framing assumptions.  v1 has no framing, so a byte that does
@@ -148,9 +201,19 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
    record-aligned by construction, so a byte that does not begin a valid record means the payload is
    damaged; the page is abandoned rather than slid through, which avoids inventing records from garbage.
 
+   ``framed`` marks a payload whose records carry their own lengths.  Those lengths are then authoritative
+   for stepping, in both directions: a record that decodes is still advanced past by its declared length
+   rather than by what the decoder consumed, so the two can never drift apart, and a record that does not
+   decode -- including one of a type this parser has never heard of -- is stepped over exactly.
+
    Returns ``(decoded, rejected)`` -- records successfully decoded, and structurally valid records whose
    contents failed validation and were stepped over.
    """
+   boundaries = None
+   if framed:
+      data, boundaries = _strip_framing(data)
+      if data is None:
+         return 0, 0
    i = 0
    decoded = 0
    rejected = 0
@@ -236,7 +299,17 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                log_data[timestamp]['rst'] = decode_reset_reason(status)
                consumed = 7
 
-      if consumed:
+      if boundaries is not None:
+         # The device said where this record ends; take its word over anything inferred here
+         nxt = boundaries.get(i)
+         if nxt is None:
+            break
+         if consumed:
+            decoded += 1
+         else:
+            rejected += 1
+         i = nxt
+      elif consumed:
          i += consumed
          decoded += 1
       elif resynchronize:
@@ -310,8 +383,9 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
    magic, version, details_length, total_pages, _total_payload = header
    if magic != V2_STREAM_MAGIC:
       raise ValueError('not a v2 stream')
-   if version != 1:
+   if version not in (1, FRAMED_VERSION):
       raise ValueError(f'unsupported v2 format version {version}')
+   framed = (version == FRAMED_VERSION)
 
    offset = V2_STREAM_HEADER.size
    details = data[offset:offset + details_length]
@@ -379,7 +453,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
          continue
 
       decoded, rejected = _parse_records(payload, experiment_start_time, log_data, uid_to_labels,
-                                        resynchronize=False)
+                                        resynchronize=False, framed=framed)
       if rejected:
          report['rejected_records'].append((position - 1, seq, rejected))
       if record_count and decoded < record_count:
@@ -391,7 +465,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
    # for pages it already holds.
    for seq in sorted(s for s in repairs if s not in seen_seqs):
       decoded, rejected = _parse_records(repairs[seq], experiment_start_time, log_data, uid_to_labels,
-                                         resynchronize=False)
+                                         resynchronize=False, framed=framed)
       report['pages_read'] += 1
       report['repaired'].append((None, seq))
       if report['last_seq'] is None or seq > report['last_seq']:
@@ -414,7 +488,7 @@ def extract_pages(data):
    if len(data) < V2_STREAM_HEADER.size or data[:4] != V2_STREAM_MAGIC:
       return pages
    _magic, version, details_length, _total_pages, _total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
-   if version != 1:
+   if version not in (1, FRAMED_VERSION):
       return pages
    offset = V2_STREAM_HEADER.size + details_length
    while offset + V2_PAGE_HEADER.size <= len(data):

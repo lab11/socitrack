@@ -5,11 +5,6 @@
 #include "system.h"
 #include "logging.h"
 
-#define imu_iom_isr       am_iom_isr1(IMU_SPI_NUMBER)
-#define am_iom_isr1(n)    am_iom_isr(n)
-#define am_iom_isr(n)     am_iomaster ## n ## _isr
-
-
 // IMU Chip-Specific Definitions ---------------------------------------------------------------------------------------
 
 // Channel numbers
@@ -269,6 +264,10 @@ enum Channels
 // Required delay times
 #define RESET_DELAY_MS                                  200
 #define PORT_TIMEOUT_MS                                 500
+
+// Blocking bounds
+#define IOM_DISABLE_ATTEMPTS                            50
+#define IMU_MAX_DRAINED_PACKETS                         64
 
 typedef enum {
    NA = 0,
@@ -1319,17 +1318,6 @@ static void imu_isr(void *args)
    }
 }
 
-void imu_iom_isr(void)
-{
-   // Handle an IMU read interrupt
-   static uint32_t status;
-   AM_CRITICAL_BEGIN
-   am_hal_iom_interrupt_status_get(spi_handle, false, &status);
-   am_hal_iom_interrupt_clear(spi_handle, status);
-   AM_CRITICAL_END
-   am_hal_iom_interrupt_service(spi_handle, status);
-}
-
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
@@ -1400,13 +1388,11 @@ bool imu_init(void)
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_IMU_INTERRUPT, imu_isr, NULL));
    NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
-   NVIC_SetPriority(IOMSTR0_IRQn + IMU_SPI_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
-   NVIC_EnableIRQ(IOMSTR0_IRQn + IMU_SPI_NUMBER);
 
    // Reset the device and read until it stops sending messages
    reset_imu();
-   while (receive_packet());
+   for (uint32_t drained = 0; (drained < IMU_MAX_DRAINED_PACKETS) && receive_packet(); ++drained);
 
    // Validate device communications
    memset(shtp_data, 0, TX_PACKET_SIZE);
@@ -1417,7 +1403,8 @@ bool imu_init(void)
    else
    {
       print("ERROR: IMU initialization failed\n");
-      while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+      for (uint32_t attempt = 0; (attempt < IOM_DISABLE_ATTEMPTS) && (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS); ++attempt)
+         am_util_delay_ms(1);
       am_hal_iom_uninitialize(spi_handle);
    }
 
@@ -1439,20 +1426,20 @@ void imu_deinit(void)
 
    // Reset the device to stop all data processing and read until it stops sending messages
    reset_imu();
-   while (receive_packet());
+   for (uint32_t drained = 0; (drained < IMU_MAX_DRAINED_PACKETS) && receive_packet(); ++drained);
 
    // Put the device into sleep mode
    enter_sleep_mode(true);
 
    // Disable all IMU-based interrupts
    uint32_t imu_interrupt_pin = PIN_IMU_INTERRUPT;
-   NVIC_DisableIRQ(IOMSTR0_IRQn + IMU_SPI_NUMBER);
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, imu_interrupt_pin, NULL, NULL);
    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &imu_interrupt_pin);
 
    // Disable all SPI communications
-   while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+   for (uint32_t attempt = 0; (attempt < IOM_DISABLE_ATTEMPTS) && (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS); ++attempt)
+         am_util_delay_ms(1);
    am_hal_iom_uninitialize(spi_handle);
    imu_is_initialized = false;
 }

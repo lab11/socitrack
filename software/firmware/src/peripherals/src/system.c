@@ -16,11 +16,51 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+#define DIAGNOSTIC_SCRATCH_MAGIC                    0x5D1A0000
+#define DIAGNOSTIC_SCRATCH_MAGIC_MASK               0xFFFF0000
+
+#define WATCHDOG_STIMER_HZ                          32768u
+#define WATCHDOG_MS_TO_STIMER(ms)                   ((((uint32_t)(ms) / 1000u) * WATCHDOG_STIMER_HZ) + ((((uint32_t)(ms) % 1000u) * WATCHDOG_STIMER_HZ) / 1000u))
+
+#define WATCHDOG_INTERRUPT_PERIOD_MS                (WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_S * 1000)
+#define WATCHDOG_GRACE_INTERRUPTS                   (1 + (WATCHDOG_STARTUP_GRACE_MS / WATCHDOG_INTERRUPT_PERIOD_MS))
+#define WATCHDOG_MIN_CLOCK_ADVANCE                  WATCHDOG_MS_TO_STIMER(WATCHDOG_INTERRUPT_PERIOD_MS / 2)
+
 extern uint8_t _uid_base_address;
-static const char * volatile watchdog_last_checkin_from = "nobody";
-static volatile uint32_t watchdog_last_checkin_ticks;
+static volatile uint32_t watchdog_last_checkin[WATCHDOG_NUM_TASKS];
+static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS];
 static volatile bool watchdog_enabled = false;
+static volatile uint32_t watchdog_grace_interrupts;
+static volatile uint32_t watchdog_clock_at_last_interrupt;
 static uint16_t boot_reset_status = 0;
+
+__attribute__((unused))
+static const char *const watchdog_task_names[WATCHDOG_NUM_TASKS] = { "TimeAlignedTask", "StorageTask", "AppTask" };
+
+
+// Private Helper Functions --------------------------------------------------------------------------------------------
+
+static inline uint32_t watchdog_now(void)
+{
+   // A tick-independent clock that wraps every ~36 hours
+   return am_hal_stimer_counter_get();
+}
+
+static reset_diagnostic_t watchdog_find_stalled_tasks(void)
+{
+   // Report which registered tasks have gone quiet for longer than they are allowed to
+   uint32_t num_stalled = 0;
+   reset_diagnostic_t first_stalled = RESET_DIAGNOSTIC_NONE;
+   const uint32_t now = watchdog_now(), deadline = WATCHDOG_MS_TO_STIMER(WATCHDOG_CHECKIN_DEADLINE_MS);
+   for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
+      if (watchdog_registered[task] && ((now - watchdog_last_checkin[task]) > deadline))
+      {
+         if (!num_stalled)
+            first_stalled = (reset_diagnostic_t)(RESET_DIAGNOSTIC_STALL_TIME_ALIGNED + task);
+         ++num_stalled;
+      }
+   return (num_stalled > 1) ? RESET_DIAGNOSTIC_STALL_MULTIPLE : first_stalled;
+}
 
 
 // Ambiq Interrupt Service Routines and MCU Functions ------------------------------------------------------------------
@@ -36,7 +76,7 @@ void _kill(void) {}
 
 void am_gpio0_001f_isr(void)
 {
-   static uint32_t status;
+   uint32_t status = 0;
    AM_CRITICAL_BEGIN
    am_hal_gpio_interrupt_irq_status_get(GPIO0_001F_IRQn, false, &status);
    am_hal_gpio_interrupt_irq_clear(GPIO0_001F_IRQn, status);
@@ -46,7 +86,7 @@ void am_gpio0_001f_isr(void)
 
 void am_gpio0_203f_isr(void)
 {
-   static uint32_t status;
+   uint32_t status = 0;
    AM_CRITICAL_BEGIN
    am_hal_gpio_interrupt_irq_status_get(GPIO0_203F_IRQn, false, &status);
    am_hal_gpio_interrupt_irq_clear(GPIO0_203F_IRQn, status);
@@ -56,7 +96,7 @@ void am_gpio0_203f_isr(void)
 
 void am_gpio0_405f_isr(void)
 {
-   static uint32_t status;
+   uint32_t status = 0;
    AM_CRITICAL_BEGIN
    am_hal_gpio_interrupt_irq_status_get(GPIO0_405F_IRQn, false, &status);
    am_hal_gpio_interrupt_irq_clear(GPIO0_405F_IRQn, status);
@@ -66,7 +106,7 @@ void am_gpio0_405f_isr(void)
 
 void am_gpio0_607f_isr(void)
 {
-   static uint32_t status;
+   uint32_t status = 0;
    AM_CRITICAL_BEGIN
    am_hal_gpio_interrupt_irq_status_get(GPIO0_607F_IRQn, false, &status);
    am_hal_gpio_interrupt_irq_clear(GPIO0_607F_IRQn, status);
@@ -76,7 +116,7 @@ void am_gpio0_607f_isr(void)
 
 void am_rtc_isr(void)
 {
-   static am_hal_rtc_alarm_repeat_e repeat_interval;
+   am_hal_rtc_alarm_repeat_e repeat_interval;
    AM_CRITICAL_BEGIN
    am_hal_rtc_alarm_get(NULL, &repeat_interval);
    am_hal_rtc_interrupt_clear(AM_HAL_RTC_INT_ALM);
@@ -88,16 +128,35 @@ void am_watchdog_isr(void)
    AM_CRITICAL_BEGIN
    am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
    AM_CRITICAL_END
+   if (!watchdog_enabled)
+      return;
 
-#ifdef __USE_FREERTOS__
-   print("ERROR: Watchdog expiring! Last check-in was from %s, %u ms ago; reset in ~%u s nominal\n",
-         watchdog_last_checkin_from,
-         (uint32_t)((uint32_t)(xTaskGetTickCountFromISR() - watchdog_last_checkin_ticks) * portTICK_PERIOD_MS),
-         (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
-#else
-   print("ERROR: Watchdog expiring! Last check-in was from %s; reset in ~%u s nominal\n",
-         watchdog_last_checkin_from, (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
-#endif
+   // Tasks are given time to finish their own initialization before anything is expected of them
+   const uint32_t now = watchdog_now();
+   const uint32_t clock_advance = now - watchdog_clock_at_last_interrupt;
+   const uint32_t previous_advance = watchdog_clock_at_last_interrupt;
+   watchdog_clock_at_last_interrupt = now;
+
+   // The watchdog interrupt fires every WATCHDOG_INTERRUPT_PERIOD_MS
+   reset_diagnostic_t stalled = RESET_DIAGNOSTIC_NONE;
+   if (watchdog_grace_interrupts)
+      --watchdog_grace_interrupts;
+   else if (previous_advance && (clock_advance < WATCHDOG_MIN_CLOCK_ADVANCE))
+      stalled = RESET_DIAGNOSTIC_CLOCK_STOPPED;
+   else
+      stalled = watchdog_find_stalled_tasks();
+
+   // Pet the watchdog if everything is healthy, otherwise record the first stalled task
+   if (stalled == RESET_DIAGNOSTIC_NONE)
+      am_hal_wdt_restart(AM_HAL_WDT_MCU);
+   else
+   {
+      system_record_diagnostic(stalled);
+      print("ERROR: Watchdog declining to pet -- %s; reset in ~%u s\n",
+            (stalled == RESET_DIAGNOSTIC_CLOCK_STOPPED) ? "the 32 kHz check-in clock has stopped"
+               : (stalled == RESET_DIAGNOSTIC_STALL_MULTIPLE) ? "more than one monitored task has stopped checking in"
+               : watchdog_task_names[stalled - RESET_DIAGNOSTIC_STALL_TIME_ALIGNED], (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
+   }
 }
 
 uint32_t am_freertos_sleep(uint32_t idleTime)
@@ -122,18 +181,21 @@ typedef struct __attribute__((packed)) ContextStateFrame
       "mrsne r0, psp \n"                         \
       "b system_hard_fault_handler \n"           )
 
+static void system_fault_reset(reset_diagnostic_t diagnostic)
+{
+   system_record_diagnostic(diagnostic);
+#ifdef AM_DEBUG_PRINTF
+   if (CoreDebug->DHCSR & (1 << 0))
+      __asm("bkpt 1");
+#endif
+   NVIC_SystemReset();
+   while (true) {}
+}
+
 __attribute__((optimize("O0")))
 void system_hard_fault_handler(sContextStateFrame *frame)
 {
-#ifdef AM_DEBUG_PRINTF
-   do {
-      if (CoreDebug->DHCSR & (1 << 0))
-         __asm("bkpt 1");
-   } while (0);
-#else
-   NVIC_SystemReset();
-   while (true) {}
-#endif
+   system_fault_reset(RESET_DIAGNOSTIC_HARD_FAULT);
 }
 
 void HardFault_Handler(void) { HARDFAULT_HANDLING_ASM(); }
@@ -143,27 +205,19 @@ void HardFault_Handler(void) { HARDFAULT_HANDLING_ASM(); }
 
 void vApplicationMallocFailedHook(void)
 {
-   while (1)
-      __asm("BKPT #0\n");
+   system_fault_reset(RESET_DIAGNOSTIC_MALLOC_FAILED);
 }
 
 void vApplicationStackOverflowHook(TaskHandle_t pxTask, char *pcTaskName)
 {
-   while (1)
-      __asm("BKPT #0\n");
+   print("ERROR: Stack overflow in task %s\n", pcTaskName ? pcTaskName : "<unknown>");
+   system_fault_reset(RESET_DIAGNOSTIC_STACK_OVERFLOW);
 }
 
 void vAssertCalled(const char * const pcFileName, unsigned long ulLine)
 {
-   volatile uint32_t ulSetToNonZeroInDebuggerToContinue = 0;
-   taskENTER_CRITICAL();
-   {
-      // You can step out of this function to debug the assertion by using
-      // the debugger to set ulSetToNonZeroInDebuggerToContinue to a non-zero value.
-      while (ulSetToNonZeroInDebuggerToContinue == 0)
-         portNOP();
-   }
-   taskEXIT_CRITICAL();
+   print("ERROR: Assertion failed at %s:%lu\n", pcFileName ? pcFileName : "<unknown>", ulLine);
+   system_fault_reset(RESET_DIAGNOSTIC_ASSERT);
 }
 
 void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize)
@@ -189,10 +243,14 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackT
 
 void setup_hardware(void)
 {
-   // Read the hardware reset reason
+   // Read the hardware reset reason and add whatever the previous boot managed to record about why it rebooted
    am_hal_reset_status_t reset_reason;
    am_hal_reset_status_get(&reset_reason);
-   boot_reset_status = (uint16_t)reset_reason.eStatus;
+   boot_reset_status = (uint16_t)(reset_reason.eStatus & ((1u << RESET_DIAGNOSTIC_SHIFT) - 1u));
+   const uint32_t scratch = MCUCTRL->SCRATCH0;
+   if ((scratch & DIAGNOSTIC_SCRATCH_MAGIC_MASK) == DIAGNOSTIC_SCRATCH_MAGIC)
+      boot_reset_status |= (uint16_t)((scratch & RESET_DIAGNOSTIC_MASK) << RESET_DIAGNOSTIC_SHIFT);
+   MCUCTRL->SCRATCH0 = 0;
 
    // Enable the floating point module
    am_hal_sysctrl_fpu_enable();
@@ -246,28 +304,42 @@ void setup_hardware(void)
 void system_reset(bool immediate)
 {
 #ifdef __USE_FREERTOS__
-   if (!immediate)
+   // A graceful reset hands the job to the storage task so buffered records reach flash first
+   if (!immediate && storage_flush_and_shutdown())
    {
-      storage_flush_and_shutdown();
       vTaskDelay(portMAX_DELAY);
+      return;
    }
-   else
 #endif
-   {
-      am_util_delay_ms(1000);
-      am_hal_reset_control(AM_HAL_RESET_CONTROL_SWPOR, NULL);
-   }
+   am_util_delay_ms(1000);
+   am_hal_reset_control(AM_HAL_RESET_CONTROL_SWPOR, NULL);
 }
 
 uint16_t system_get_reset_reason(void)
 {
-   // Raw am_hal_reset_status_e bits latched at boot
+   // Raw am_hal_reset_status_e bits latched at boot, plus the firmware's own diagnostic in the top 4
    return boot_reset_status;
+}
+
+void system_record_diagnostic(reset_diagnostic_t diagnostic)
+{
+   if ((MCUCTRL->SCRATCH0 & DIAGNOSTIC_SCRATCH_MAGIC_MASK) != DIAGNOSTIC_SCRATCH_MAGIC)
+      MCUCTRL->SCRATCH0 = DIAGNOSTIC_SCRATCH_MAGIC | ((uint32_t)diagnostic & RESET_DIAGNOSTIC_MASK);
+}
+
+void system_watchdog_register(watchdog_task_t task)
+{
+   // A task is not monitored until it says it is ready to be
+   if (task < WATCHDOG_NUM_TASKS)
+   {
+      watchdog_last_checkin[task] = watchdog_now();
+      watchdog_registered[task] = true;
+   }
 }
 
 void system_watchdog_enable(void)
 {
-   // Only ever called from a context that has a petting task
+   // Nothing needs to be registered yet; the startup grace period covers the gap
    am_hal_wdt_config_t watchdog_config = {
       .eClockSource      = AM_HAL_WDT_1_16HZ,
       .bInterruptEnable  = true,
@@ -286,15 +358,15 @@ void system_watchdog_enable(void)
    NVIC_EnableIRQ(WDT_IRQn);
 
    // Never lock the watchdog
-   watchdog_last_checkin_from = "startup";
-#ifdef __USE_FREERTOS__
-   watchdog_last_checkin_ticks = (uint32_t)xTaskGetTickCount();
-#endif
+   watchdog_clock_at_last_interrupt = 0;
+   watchdog_grace_interrupts = WATCHDOG_GRACE_INTERRUPTS;
+   for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
+      watchdog_last_checkin[task] = watchdog_now();
    watchdog_enabled = true;
    am_hal_wdt_start(AM_HAL_WDT_MCU, false);
-   print("INFO: Watchdog armed -- WDT->CFG = 0x%08X (clksel %u, intval %u, resval %u); nominal interrupt at %u s, reset at %u s\n",
+   print("INFO: Watchdog armed -- WDT->CFG = 0x%08X (clksel %u, intval %u, resval %u); health checked every %u s, reset %u s after a declined pet\n",
          (uint32_t)WDT->CFG, (uint32_t)WDT->CFG_b.CLKSEL, (uint32_t)WDT->CFG_b.INTVAL, (uint32_t)WDT->CFG_b.RESVAL,
-         (uint32_t)(WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_S), (uint32_t)(WATCHDOG_RESET_TICKS * WATCHDOG_TICK_S));
+         (uint32_t)(WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_S), (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
 }
 
 void system_watchdog_disable(void)
@@ -303,6 +375,8 @@ void system_watchdog_disable(void)
    if (!watchdog_enabled)
       return;
    watchdog_enabled = false;
+   for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
+      watchdog_registered[task] = false;
    am_hal_wdt_stop(AM_HAL_WDT_MCU);
    NVIC_DisableIRQ(WDT_IRQn);
    am_hal_wdt_interrupt_disable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
@@ -310,16 +384,11 @@ void system_watchdog_disable(void)
    print("WARNING: Watchdog disabled\n");
 }
 
-void system_watchdog_pet(const char *checked_in_from)
+void system_watchdog_pet(watchdog_task_t task)
 {
-   // The caller passes a string literal so the expiry ISR can name it without touching any FreeRTOS bookkeeping
-   if (!watchdog_enabled)
-      return;
-   watchdog_last_checkin_from = checked_in_from;
-#ifdef __USE_FREERTOS__
-   watchdog_last_checkin_ticks = (uint32_t)xTaskGetTickCount();
-#endif
-   am_hal_wdt_restart(AM_HAL_WDT_MCU);
+   // A check-in, not a pet: this records that the task is alive and nothing more
+   if (task < WATCHDOG_NUM_TASKS)
+      watchdog_last_checkin[task] = watchdog_now();
 }
 
 void system_enable_interrupts(bool enabled)

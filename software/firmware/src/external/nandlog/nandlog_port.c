@@ -6,6 +6,15 @@
 #include "system.h"
 
 static void *spi_handle;
+static SemaphoreHandle_t log_mutex;
+static StaticSemaphore_t log_mutex_buffer;
+
+static inline bool locking_applies(void)
+{
+   // Whether locking applies at all
+   // Before the scheduler runs there is exactly one context, so there is nothing to serialize against
+   return (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && !xPortIsInsideInterrupt();
+}
 
 bool nandlog_port_init(void)
 {
@@ -106,6 +115,31 @@ void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t addres
    }
 }
 
+void nandlog_port_lock(void)
+{
+   // Only continue if locking applies here
+   if (locking_applies())
+   {
+      // Created on first use, which is guaranteed to be after the scheduler has started. The double check
+      // under a critical section makes the creation itself safe against two tasks arriving together
+      if (!log_mutex)
+      {
+         taskENTER_CRITICAL();
+         if (!log_mutex)
+            log_mutex = xSemaphoreCreateMutexStatic(&log_mutex_buffer);
+         taskEXIT_CRITICAL();
+      }
+      if (log_mutex)
+         xSemaphoreTake(log_mutex, portMAX_DELAY);
+   }
+}
+
+void nandlog_port_unlock(void)
+{
+   if (log_mutex && locking_applies())
+      xSemaphoreGive(log_mutex);
+}
+
 void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
 {
    // Create the SPI transaction structure
@@ -186,5 +220,13 @@ void nandlog_port_delay_ms(uint32_t milliseconds) { am_util_delay_ms(millisecond
 void nandlog_port_fatal(const char *reason)
 {
    print("ERROR: Storage hardware fault: %s; resetting\n", reason);
+   system_record_diagnostic(RESET_DIAGNOSTIC_STORAGE_FATAL);
    system_reset(true);
+}
+
+void nandlog_port_unwritable(void)
+{
+   // Not a reason to reset: the device can still range and still serve BLE.
+   // Leave a breadcrumb so that the next boot's log says the flash has already given up
+   system_record_diagnostic(RESET_DIAGNOSTIC_STORAGE_UNWRITABLE);
 }

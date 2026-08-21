@@ -271,6 +271,15 @@ void nandlog_port_log(const char *format, ...)
    va_end(args);
 }
 
+void nandlog_port_lock(void) {}
+
+void nandlog_port_unlock(void) {}
+
+void nandlog_port_unwritable(void)
+{
+   fprintf(stderr, "SIM: log reported the part as unwritable\n");
+}
+
 void nandlog_port_fatal(const char *reason)
 {
    fatal_seen = true;

@@ -2,6 +2,7 @@
 
 #include "bluetooth.h"
 #include "app_main.h"
+#include "app_tasks.h"
 #include "device_info_service.h"
 #include "gatt_api.h"
 #include "gap_gatt_service.h"
@@ -16,9 +17,27 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+#define TOTTAG_EVT_RANGES                           (1 << 0)
+#define TOTTAG_EVT_IMU_DATA                         (1 << 1)
+
+#define BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS          3
+
 static volatile uint16_t connection_mtu;
 static volatile bool conn_update_in_flight, conn_update_target_fast, conn_update_sent_fast, conn_update_applied_fast;
-static volatile uint8_t conn_update_conn_id;
+static volatile uint8_t conn_update_conn_id, adv_restart_attempts, scan_restart_attempts;
+static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, data_requested, imu_data_requested;
+static volatile bool expected_scanning, expected_advertising, is_initialized, first_initialization;
+static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
+static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
+static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
+static ble_discovery_callback_t discovery_callback;
+static uint8_t ble_sys_id[8];
+
+static wsfHandlerId_t notification_handler_id;
+static volatile bool notification_handler_registered;
+static uint8_t pending_range_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
+static uint8_t pending_imu_data[MAX_IMU_DATA_LENGTH];
+static volatile uint16_t pending_range_length, pending_imu_length;
 
 static void issue_connection_update(void)
 {
@@ -36,13 +55,55 @@ static void issue_connection_update(void)
    print("TotTag BLE: Requesting %s connection interval\n", fast ? "the faster offload" : "the normal idle");
    DmConnUpdate((dmConnId_t)conn_update_conn_id, &spec);
 }
-static volatile bool is_scanning, is_advertising, is_connected, ranges_requested, data_requested, imu_data_requested;
-static volatile bool expected_scanning, expected_advertising, is_initialized, first_initialization;
-static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
-static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
-static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
-static ble_discovery_callback_t discovery_callback;
-static uint8_t ble_sys_id[8];
+
+static void escalate_to_app_task(const char *what)
+{
+   print("TotTag BLE: %s will not start after %u immediate attempts; escalating for a radio reset or reboot\n",
+         what, (uint32_t)BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS);
+   app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
+}
+
+static uint16_t take_pending(uint8_t *destination, uint8_t *source, volatile uint16_t *length, uint16_t capacity)
+{
+   // Claim whatever the producer left behind in one atomic step
+   uint16_t taken = 0;
+   AM_CRITICAL_BEGIN
+   taken = (*length > capacity) ? capacity : *length;
+   memcpy(destination, source, taken);
+   *length = 0;
+   AM_CRITICAL_END
+   return taken;
+}
+
+static void hand_off_notification(uint8_t *destination, volatile uint16_t *length, const uint8_t *source, uint16_t source_length, uint16_t capacity, wsfEventMask_t event)
+{
+   if (!notification_handler_registered || !source_length || (source_length > capacity))
+      return;
+   AM_CRITICAL_BEGIN
+   memcpy(destination, source, source_length);
+   *length = source_length;
+   AM_CRITICAL_END
+   WsfSetEvent(notification_handler_id, event);
+}
+
+static void notificationHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
+{
+   // Runs on the BLE task, which is the only context allowed to touch ATT
+   if (event & TOTTAG_EVT_RANGES)
+   {
+      uint8_t results[sizeof(pending_range_results)];
+      const uint16_t length = take_pending(results, pending_range_results, &pending_range_length, sizeof(results));
+      if (length && ranges_requested)
+         updateRangeResults(AppConnIsOpen(), results, length);
+   }
+   if (event & TOTTAG_EVT_IMU_DATA)
+   {
+      uint8_t data[sizeof(pending_imu_data)];
+      const uint16_t length = take_pending(data, pending_imu_data, &pending_imu_length, sizeof(data));
+      if (length && imu_data_requested)
+         updateImuData(AppConnIsOpen(), data, length);
+   }
+}
 
 
 // Bluetooth LE Advertising and Connection Parameters ------------------------------------------------------------------
@@ -135,6 +196,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
             AttsCalculateDbHash();
          advertising_setup();
          is_advertising = is_scanning = first_initialization = false;
+         adv_restart_attempts = scan_restart_attempts = 0;
          is_initialized = true;
          if (expected_advertising)
             bluetooth_start_advertising();
@@ -179,26 +241,44 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       case DM_ADV_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_START_IND\n");
          is_advertising = (pDmEvt->hdr.status == HCI_SUCCESS);
-         if (!is_advertising)
+         if (is_advertising)
+            adv_restart_attempts = 0;
+         else if (++adv_restart_attempts <= BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS)
             bluetooth_start_advertising();
+         else
+            escalate_to_app_task("Advertising");
          break;
       case DM_ADV_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_ADV_STOP_IND\n");
          is_advertising = false;
          if (is_initialized && expected_advertising)
-            bluetooth_start_advertising();
+         {
+            if (++adv_restart_attempts <= BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS)
+               bluetooth_start_advertising();
+            else
+               escalate_to_app_task("Advertising");
+         }
          break;
       case DM_SCAN_START_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_START_IND\n");
          is_scanning = (pDmEvt->hdr.status == HCI_SUCCESS);
-         if (!is_scanning)
+         if (is_scanning)
+            scan_restart_attempts = 0;
+         else if (++scan_restart_attempts <= BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS)
             bluetooth_start_scanning();
+         else
+            escalate_to_app_task("Scanning");
          break;
       case DM_SCAN_STOP_IND:
          print("TotTag BLE: deviceManagerCallback: Received DM_SCAN_STOP_IND\n");
          is_scanning = false;
          if (is_initialized && expected_scanning)
-            bluetooth_start_scanning();
+         {
+            if (++scan_restart_attempts <= BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS)
+               bluetooth_start_scanning();
+            else
+               escalate_to_app_task("Scanning");
+         }
          break;
       case DM_SCAN_REPORT_IND:
       {
@@ -281,6 +361,7 @@ bool bluetooth_init(uint8_t* uid)
    memcpy((uint8_t*)current_ranging_role, ranging_role, sizeof(ranging_role));
    data_requested = expected_scanning = expected_advertising = is_initialized = false;
    is_scanning = is_advertising = is_connected = ranges_requested = imu_data_requested = false;
+   adv_restart_attempts = scan_restart_attempts = 0;
    first_initialization = true;
    discovery_callback = NULL;
 
@@ -338,6 +419,10 @@ void bluetooth_reset(void)
 
 void bluetooth_start(void)
 {
+   // Runs on the BLE task, which is where a WSF handler must be registered from
+   notification_handler_id = WsfOsSetNextHandler(notificationHandler);
+   notification_handler_registered = true;
+
    // Register all BLE protocol stack callback functions
    AppSlaveInit();
    DmRegister(deviceManagerCallback);
@@ -411,16 +496,16 @@ void bluetooth_set_current_ranging_role(uint8_t ranging_role)
 
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length)
 {
-   // Update the current set of ranging data
+   // Called from the ranging task: hand the data over rather than touching ATT from here
    if (ranges_requested)
-      updateRangeResults(AppConnIsOpen(), results, results_length);
+      hand_off_notification(pending_range_results, &pending_range_length, results, results_length, sizeof(pending_range_results), TOTTAG_EVT_RANGES);
 }
 
 void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length)
 {
-   // Update the current raw IMU data
+   // Called from the app task: hand the data over rather than touching ATT from here
    if (imu_data_requested)
-      updateImuData(AppConnIsOpen(), results, results_length);
+      hand_off_notification(pending_imu_data, &pending_imu_length, results, results_length, sizeof(pending_imu_data), TOTTAG_EVT_IMU_DATA);
 }
 
 void bluetooth_start_advertising(void)

@@ -17,11 +17,17 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+#define APP_TASK_STACK_WORDS            (4 * configMINIMAL_STACK_SIZE)
+#define BLE_TASK_STACK_WORDS            (4 * configMINIMAL_STACK_SIZE)
+#define RANGING_TASK_STACK_WORDS        (2 * configMINIMAL_STACK_SIZE)
+#define STORAGE_TASK_STACK_WORDS        (2 * configMINIMAL_STACK_SIZE)
+#define TIME_ALIGNED_TASK_STACK_WORDS   (2 * configMINIMAL_STACK_SIZE)
+
 static StaticTask_t app_task_tcb, ble_task_tcb, ranging_task_tcb;
 static StaticTask_t storage_task_tcb, time_aligned_task_tcb;
-static StackType_t app_task_stack[configMINIMAL_STACK_SIZE], ble_task_stack[2*configMINIMAL_STACK_SIZE];
-static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], storage_task_stack[configMINIMAL_STACK_SIZE];
-static StackType_t time_aligned_task_stack[configMINIMAL_STACK_SIZE];
+static StackType_t app_task_stack[APP_TASK_STACK_WORDS], ble_task_stack[BLE_TASK_STACK_WORDS];
+static StackType_t ranging_task_stack[RANGING_TASK_STACK_WORDS], storage_task_stack[STORAGE_TASK_STACK_WORDS];
+static StackType_t time_aligned_task_stack[TIME_ALIGNED_TASK_STACK_WORDS];
 static uint32_t experiment_start_time;
 static int32_t network_time_offset;
 
@@ -64,9 +70,9 @@ void run_tasks(void)
 
       // Create the USB processing tasks
       uid[0] = uid[1] = uid[2] = uid[3] = 0xEF;
-      xTaskCreateStatic(UsbTask, "UsbTask", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES-1, app_task_stack, &app_task_tcb);
-      xTaskCreateStatic(UsbCdcTask, "UsbCdcTask", 2 * configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES-2, ble_task_stack, &ble_task_tcb);
-      xTaskCreateStatic(AppTaskMaintenance, "AppTask", configMINIMAL_STACK_SIZE, uid, configMAX_PRIORITIES-2, storage_task_stack, &storage_task_tcb);
+      xTaskCreateStatic(UsbTask, "UsbTask", APP_TASK_STACK_WORDS, NULL, configMAX_PRIORITIES-1, app_task_stack, &app_task_tcb);
+      xTaskCreateStatic(UsbCdcTask, "UsbCdcTask", BLE_TASK_STACK_WORDS, NULL, configMAX_PRIORITIES-2, ble_task_stack, &ble_task_tcb);
+      xTaskCreateStatic(AppTaskMaintenance, "AppTask", STORAGE_TASK_STACK_WORDS, uid, configMAX_PRIORITIES-2, storage_task_stack, &storage_task_tcb);
    }
    else
    {
@@ -167,15 +173,15 @@ void run_tasks(void)
 
       // Create tasks with the following priority order:
       //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask
-      xTaskCreateStatic(StorageTask, "StorageTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 5, storage_task_stack, &storage_task_tcb);
+      xTaskCreateStatic(StorageTask, "StorageTask", STORAGE_TASK_STACK_WORDS, allow_ranging ? uid : NULL, 5, storage_task_stack, &storage_task_tcb);
 #if !defined(_TEST_NO_EXP_DETAILS)
-      xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? &scheduled_experiment : NULL, 4, ranging_task_stack, &ranging_task_tcb);
-#else 
-      xTaskCreateStatic(RangingTask, "RangingTask", configMINIMAL_STACK_SIZE, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);
+      xTaskCreateStatic(RangingTask, "RangingTask", RANGING_TASK_STACK_WORDS, allow_ranging ? &scheduled_experiment : NULL, 4, ranging_task_stack, &ranging_task_tcb);
+#else
+      xTaskCreateStatic(RangingTask, "RangingTask", RANGING_TASK_STACK_WORDS, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);
 #endif
-      xTaskCreateStatic(BLETask, "BLETask", 2 * configMINIMAL_STACK_SIZE, NULL, 3, ble_task_stack, &ble_task_tcb);
-      xTaskCreateStatic(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", configMINIMAL_STACK_SIZE, uid, 2, app_task_stack, &app_task_tcb);
-      xTaskCreateStatic(TimeAlignedTask, "TimeAlignedTask", configMINIMAL_STACK_SIZE, allow_ranging ? &scheduled_experiment : NULL, 1, time_aligned_task_stack, &time_aligned_task_tcb);
+      xTaskCreateStatic(BLETask, "BLETask", BLE_TASK_STACK_WORDS, NULL, 3, ble_task_stack, &ble_task_tcb);
+      xTaskCreateStatic(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", APP_TASK_STACK_WORDS, uid, 2, app_task_stack, &app_task_tcb);
+      xTaskCreateStatic(TimeAlignedTask, "TimeAlignedTask", TIME_ALIGNED_TASK_STACK_WORDS, allow_ranging ? &scheduled_experiment : NULL, 1, time_aligned_task_stack, &time_aligned_task_tcb);
    }
 
    // Start the task scheduler

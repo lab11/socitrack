@@ -48,13 +48,58 @@
 
 #define BATTERY_ADC_SLOT 0
 
+static void *adc_handle;
+static SemaphoreHandle_t adc_mutex;
+static StaticSemaphore_t adc_mutex_buffer;
+static uint32_t last_valid_voltage_mV;
 static battery_event_callback_t event_callback;
 static volatile uint32_t battery_voltage_code;
 static volatile bool conversion_complete;
-static void *adc_handle;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static inline bool locking_applies(void)
+{
+   // Returns whether the current context is one in which the ADC mutex should be used
+   return (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && !xPortIsInsideInterrupt();
+}
+
+static bool acquire_adc(void)
+{
+   // Check whether locking applies here
+   if (!locking_applies())
+      return true;
+
+   // Create the ADC mutex if it doesn't exist yet
+   if (!adc_mutex)
+   {
+      taskENTER_CRITICAL();
+      if (!adc_mutex)
+         adc_mutex = xSemaphoreCreateMutexStatic(&adc_mutex_buffer);
+      taskEXIT_CRITICAL();
+   }
+
+   // Acquire the ADC mutex if it exists, returning false on timeout
+   if (!adc_mutex)
+      return false;
+   return xSemaphoreTake(adc_mutex, pdMS_TO_TICKS(BATTERY_ADC_TIMEOUT_MS)) == pdPASS;
+}
+
+static void release_adc(void)
+{
+   // Release the ADC mutex if it exists and locking applies here
+   if (adc_mutex && locking_applies())
+      xSemaphoreGive(adc_mutex);
+}
+
+static void shut_down_adc(void)
+{
+   // Disable the ADC and put it into Deep Sleep mode
+   am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
+   am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
+   NVIC_DisableIRQ(ADC_IRQn);
+}
 
 static void signal_charge_complete(bool charge_complete)
 {
@@ -296,11 +341,18 @@ bool battery_monitor_has_brownout_detection(void)
 
 uint32_t battery_monitor_get_level_mV(void)
 {
+   // A failed read reports the last good reading rather than zero
+   if (!acquire_adc())
+      return last_valid_voltage_mV;
+
    // Wake up the ADC
    battery_voltage_code = 0;
    conversion_complete = false;
    if (am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true) != AM_HAL_STATUS_SUCCESS)
-      return 0;
+   {
+      release_adc();
+      return last_valid_voltage_mV;
+   }
 
    // Enable interrupts upon completion of an ADC conversion
    am_hal_adc_interrupt_enable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
@@ -310,36 +362,46 @@ uint32_t battery_monitor_get_level_mV(void)
    // Enable the ADC
    if ((am_hal_adc_enable(adc_handle) != AM_HAL_STATUS_SUCCESS) || am_hal_adc_sw_trigger(adc_handle))
    {
-      am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
-      am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
-      NVIC_DisableIRQ(ADC_IRQn);
-      return 0;
+      shut_down_adc();
+      release_adc();
+      return last_valid_voltage_mV;
    }
 
    // Wait until the conversion has completed
-   uint32_t retries_remaining = 25;
-   while (!conversion_complete && retries_remaining--)
-      am_hal_delay_us(10000);
+   const uint32_t poll_interval_us = 200;
+   const uint32_t polls = (1000 * BATTERY_ADC_TIMEOUT_MS) / poll_interval_us;
+   const bool can_yield = (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && !xPortIsInsideInterrupt();
+   for (uint32_t poll = 0; !conversion_complete && (poll < polls); ++poll)
+   {
+      if (can_yield && ((poll % 50) == 49))
+         vTaskDelay(1);
+      else
+         am_hal_delay_us(poll_interval_us);
+   }
 
    // Disable the ADC
-   am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
-   am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
-   NVIC_DisableIRQ(ADC_IRQn);
+   const bool converted = conversion_complete;
+   const uint32_t code = battery_voltage_code;
+   shut_down_adc();
+   release_adc();
+   if (!converted)
+      return last_valid_voltage_mV;
 
    // Calculate and return the battery voltage
-   return (battery_voltage_code * AM_HAL_ADC_VREFMV / 4096) * (VOLTAGE_DIVIDER_UPPER + VOLTAGE_DIVIDER_LOWER) / VOLTAGE_DIVIDER_LOWER;
+   last_valid_voltage_mV = (code * AM_HAL_ADC_VREFMV / 4096) * (VOLTAGE_DIVIDER_UPPER + VOLTAGE_DIVIDER_LOWER) / VOLTAGE_DIVIDER_LOWER;
+   return last_valid_voltage_mV;
 }
 
 bool battery_monitor_is_plugged_in(void)
 {
    // Return the current plugged-in status of the battery
-   static uint32_t status;
+   uint32_t status = 0;
    return (am_hal_gpio_state_read(PIN_BATTERY_INPUT_POWER_GOOD, AM_HAL_GPIO_INPUT_READ, &status) == AM_HAL_STATUS_SUCCESS) && !status;
 }
 
 bool battery_monitor_is_charging(void)
 {
    // Return the current charging status of the battery
-   static uint32_t status;
+   uint32_t status = 0;
    return (am_hal_gpio_state_read(PIN_BATTERY_CHARGING_STATUS, AM_HAL_GPIO_INPUT_READ, &status) == AM_HAL_STATUS_SUCCESS) && !status;
 }

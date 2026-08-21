@@ -48,10 +48,17 @@
 
 // Watchdog Configuration ----------------------------------------------------------------------------------------------
 
-#define WATCHDOG_TICK_S                             16    // AM_HAL_WDT_1_16HZ nominal; 1 Hz caps out at 255 s, too short for a 300 s pet
-#define WATCHDOG_TICK_MIN_S                         12    // nominal less 25%, i.e. an LFRC as fast as the measured part is slow
-#define WATCHDOG_INTERRUPT_TICKS                    40    // 640 s nominal, ~840 s measured; stays ahead of the reset in either case
-#define WATCHDOG_RESET_TICKS                        56    // 896 s nominal, ~1176 s measured, and still 672 s if the LFRC runs fast
+#define WATCHDOG_TICK_S                             16    // AM_HAL_WDT_1_16HZ nominal; 1 Hz caps out at 255 s
+#define WATCHDOG_TICK_MIN_S                         12    // nominal less 25%, i.e. the LFRC at its fastest plausible rate
+#define WATCHDOG_INTERRUPT_TICKS                    4     // health is evaluated (and the dog petted) every ~64 s
+#define WATCHDOG_RESET_TICKS                        8     // reset lands ~64 s after the first declined pet
+
+// How often a monitored task is expected to check in, and how long it may go quiet before it is declared stalled
+#define WATCHDOG_CHECKIN_INTERVAL_MS                10000
+#define WATCHDOG_CHECKIN_DEADLINE_MS                60000
+
+// Startup grace period, since a task's first check-in only happens once it has finished its own initialization
+#define WATCHDOG_STARTUP_GRACE_MS                   120000
 
 #if (WATCHDOG_INTERRUPT_TICKS > 255) || (WATCHDOG_RESET_TICKS > 255)
 #error "WATCHDOG_INTERRUPT_TICKS and WATCHDOG_RESET_TICKS must fit in 8 bits or am_hal_wdt_config() will truncate them"
@@ -59,14 +66,19 @@
 #if (WATCHDOG_INTERRUPT_TICKS < 1) || (WATCHDOG_INTERRUPT_TICKS >= WATCHDOG_RESET_TICKS)
 #error "The watchdog interrupt must fire after the counter starts and before the watchdog reset"
 #endif
-#if ((WATCHDOG_RESET_TICKS * WATCHDOG_TICK_MIN_S) <= (2 * BATTERY_CHECK_INTERVAL_S))
-#error "The watchdog reset window must tolerate two missed pets even with the LFRC at its fastest plausible rate"
+#if ((WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_MIN_S * 1000) <= (2 * WATCHDOG_CHECKIN_INTERVAL_MS))
+#error "Health must be evaluated no more often than a healthy task can be expected to have checked in"
+#endif
+#if (WATCHDOG_CHECKIN_DEADLINE_MS <= (2 * WATCHDOG_CHECKIN_INTERVAL_MS))
+#error "The check-in deadline must tolerate a missed check-in, or ordinary scheduling jitter will reset the device"
 #endif
 
 
 // Battery Configuration -----------------------------------------------------------------------------------------------
 
 typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 3750, BATTERY_FULL = 4200 } battery_status_t;
+
+#define BATTERY_ADC_TIMEOUT_MS                      250
 
 
 // DW3000 Ranging Radio Configuration ----------------------------------------------------------------------------------

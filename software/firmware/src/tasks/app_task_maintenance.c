@@ -168,7 +168,12 @@ void AppTaskMaintenance(void *uid)
    }
 
    // Loop forever, sleeping until an application notification is received
+   system_watchdog_register(WATCHDOG_TASK_APP);
+   const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (true)
-      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &notification_bits, portMAX_DELAY) == pdTRUE)
+   {
+      system_watchdog_pet(WATCHDOG_TASK_APP);
+      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &notification_bits, checkin_ticks) == pdTRUE)
          handle_notification(notification_bits);
+   }
 }

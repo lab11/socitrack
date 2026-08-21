@@ -65,7 +65,7 @@ extern void vAssertCalled(const char * const pcFileName, unsigned long ulLine);
 #define INCLUDE_xResumeFromISR                  0
 #define INCLUDE_vTaskDelayUntil                 0
 #define INCLUDE_vTaskDelay                      1
-#define INCLUDE_xTaskGetSchedulerState          0
+#define INCLUDE_xTaskGetSchedulerState          1
 #define INCLUDE_xTaskGetCurrentTaskHandle       1
 #define INCLUDE_uxTaskGetStackHighWaterMark     0
 #define INCLUDE_xTaskGetIdleTaskHandle          0
@@ -97,4 +97,3 @@ extern void am_freertos_wakeup(uint32_t);
 #define configSTIMER_CLOCK                        AM_HAL_STIMER_XTAL_32KHZ
 
 #endif // FREERTOS_CONFIG_H
-
