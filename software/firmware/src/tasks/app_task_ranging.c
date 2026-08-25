@@ -266,19 +266,19 @@ static void battery_event_handler(battery_event_t battery_event)
 {
    // Hand every battery event to the app task
    pending_battery_event = battery_event;
-   app_notify(APP_NOTIFY_BATTERY_EVENT, true);
+   app_notify(APP_NOTIFY_BATTERY_EVENT);
 }
 
 static void motion_change_handler(bool in_motion)
 {
    // Notify the app about a change in motion
    motion_changed = true;
-   app_notify(APP_NOTIFY_IMU_EVENT, true);
+   app_notify(APP_NOTIFY_IMU_EVENT);
 }
 
 static void imu_service_request_handler(void)
 {
-   app_notify(APP_NOTIFY_IMU_EVENT, true);
+   app_notify(APP_NOTIFY_IMU_EVENT);
 }
 
 static void data_ready_handler(imu_data_type_t data_types_ready)
@@ -289,7 +289,7 @@ static void data_ready_handler(imu_data_type_t data_types_ready)
       imu_data_ready = true;
       imu_read_accel_data(&imu_accel_data[0], &imu_accel_data[1], &imu_accel_data[2], &imu_accuracy);
    }
-   app_notify(APP_NOTIFY_IMU_EVENT, true);
+   app_notify(APP_NOTIFY_IMU_EVENT);
 }
 
 static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ranging_role)
@@ -345,7 +345,7 @@ void am_timer03_isr(void)
 extern void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate);
 extern void app_maintenance_download_log_file(uint32_t start_time, uint32_t end_time);
 
-void app_notify(app_notification_t notification, bool from_isr)
+void app_notify(app_notification_t notification)
 {
    if (app_task_handle)
    {
@@ -366,7 +366,7 @@ void app_activate_find_my_tottag(uint32_t seconds_to_activate)
    if (app_task_handle)
    {
       seconds_to_activate_buzzer = seconds_to_activate;
-      app_notify(APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED, false);
+      app_notify(APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED);
    }
    else
       app_maintenance_activate_find_my_tottag(seconds_to_activate);

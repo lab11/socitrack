@@ -36,7 +36,7 @@ typedef struct __attribute__ ((__packed__))
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 // Application Task Public Functions
-void app_notify(app_notification_t notification, bool from_isr);
+void app_notify(app_notification_t notification);
 void app_activate_find_my_tottag(uint32_t seconds_to_activate);
 void app_download_log_file(uint32_t start_time, uint32_t end_time);
 void app_allow_downloads(bool allow);

@@ -63,7 +63,7 @@ static void escalate_to_app_task(const char *what)
 {
    print("TotTag BLE: %s will not start after %u immediate attempts; escalating for a radio reset or reboot\n",
          what, (uint32_t)BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS);
-   app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
+   app_notify(APP_NOTIFY_VERIFY_CONFIGURATION);
 }
 
 static uint16_t take_pending(uint8_t *destination, uint8_t *source, volatile uint16_t *length, uint16_t capacity)

@@ -43,7 +43,7 @@ void TimeAlignedTask(void *scheduled_experiment)
       storage_write_time_anchor();
 
       // Send a configuration verification notification to the Application Task
-      app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
+      app_notify(APP_NOTIFY_VERIFY_CONFIGURATION);
 
       // Read and store the current battery voltage
       battery_voltage = battery_monitor_get_level_mV();

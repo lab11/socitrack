@@ -232,7 +232,7 @@ void scheduler_run(schedule_role_t role)
    }
 
    // Notify the application that network connectivity has been established
-   app_notify(APP_NOTIFY_NETWORK_CONNECTED, false);
+   app_notify(APP_NOTIFY_NETWORK_CONNECTED);
 
    // Loop forever waiting for actions to wake us up
    uint32_t pending_actions = 0;
@@ -261,7 +261,7 @@ void scheduler_run(schedule_role_t role)
                {
                   // Notify the application that our network role has changed
                   current_role = ROLE_PARTICIPANT;
-                  app_notify(APP_NOTIFY_VERIFY_CONFIGURATION, false);
+                  app_notify(APP_NOTIFY_VERIFY_CONFIGURATION);
                }
                handle_range_computation_phase();
                break;
@@ -318,7 +318,7 @@ void scheduler_run(schedule_role_t role)
 
    // Notify the application that network connectivity has been lost
    current_role = ROLE_IDLE;
-   app_notify(APP_NOTIFY_NETWORK_LOST, false);
+   app_notify(APP_NOTIFY_NETWORK_LOST);
 }
 
 void scheduler_stop(void)
