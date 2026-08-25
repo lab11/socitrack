@@ -236,8 +236,11 @@ void scheduler_run(schedule_role_t role)
 
    // Loop forever waiting for actions to wake us up
    uint32_t pending_actions = 0;
+   const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (is_running)
-      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &pending_actions, portMAX_DELAY) == pdTRUE)
+   {
+      system_watchdog_pet(WATCHDOG_TASK_RANGING);
+      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &pending_actions, checkin_ticks) == pdTRUE)
       {
          // Handle any pending actions
          if ((pending_actions & RANGING_NEW_ROUND_START))
@@ -298,6 +301,7 @@ void scheduler_run(schedule_role_t role)
                break;
          }
       }
+   }
 
    // Disable all ranging timers and interrupts
    const am_hal_rtc_time_t scheduler_interval = {

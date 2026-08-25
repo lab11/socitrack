@@ -13,7 +13,7 @@ void TimeAlignedTask(void *scheduled_experiment)
 {
    // Set up local variables
    experiment_details_t *experiment_details = scheduled_experiment ? (experiment_details_t*)scheduled_experiment : NULL;
-   uint32_t battery_voltage = 0, time_of_day = 0, consecutive_critical_readings = 0;
+   uint32_t battery_voltage = 0, time_of_day = 0;
    bool experiment_ended = false;
 
    // Store whether the device is plugged in or not

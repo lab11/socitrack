@@ -4,12 +4,13 @@
 // Hardware Presence ---------------------------------------------------------------------------------------------------
 
 // Whether a NAND part is fitted in this build. When it is not, the library compiles to stand-ins that accept
-// everything and return nothing, so the application above it needs no conditionals of its own. This is the
-// one place the host's own build flags are translated into the library's vocabulary
+// everything and return nothing, so the application above it needs no conditionals of its own
+#if !defined(NANDLOG_HAS_HARDWARE)
 #if defined(_TEST_NO_STORAGE)
 #define NANDLOG_HAS_HARDWARE                        0
 #else
 #define NANDLOG_HAS_HARDWARE                        1
+#endif
 #endif
 
 

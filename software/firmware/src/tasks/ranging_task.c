@@ -38,10 +38,13 @@ void RangingTask(void *scheduled_experiment)
    is_ranging = false;
 
    // Loop forever
+   system_watchdog_register(WATCHDOG_TASK_RANGING);
+   const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (true)
    {
       // Sleep until time to start ranging with the indicated role
-      if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && (desired_role_bits & RANGING_BEGIN) && scheduled_experiment)
+      system_watchdog_pet(WATCHDOG_TASK_RANGING);
+      if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, checkin_ticks) == pdTRUE) && (desired_role_bits & RANGING_BEGIN) && scheduled_experiment)
       {
          const schedule_role_t role = requested_role;
          print("TotTag Ranging: Starting ranging task as %s\n", (role == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");

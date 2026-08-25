@@ -326,6 +326,64 @@ static void test_busy_timeout_is_fatal(void)
 }
 
 
+static void test_date_limited_read_spans_a_time_discontinuity(void)
+{
+   // A device that adopts a new network time base steps its clock BACKWARDS, and the log commits a page at
+   // that point, so pages either side of the step are not ordered in time. Field offloads showed steps of
+   // 2-17 s. A START bound is the case that loses data: a binary search over page headers can settle past the
+   // step, and nandlog_begin_reading() then starts at the write head and ships almost nothing.
+   //
+   // Layout: a first run climbing to HIGH, then the clock steps back and a second run climbs but STOPS below
+   // the requested bound. Only the first run's tail qualifies, and it sits BEFORE hundreds of pages that do
+   // not -- so nothing that stops at the first non-qualifying page can find it.
+   printf("A date-limited read spans a backward time step\n");
+   const uint32_t regression_ms = 17210;          // the largest step seen in the field, to the millisecond
+   const uint32_t records_per_run = 600;
+   fresh_log();
+   nandlog_exit_maintenance_mode();
+
+   for (uint32_t i = 0; i < records_per_run; ++i)
+   {
+      memset(payload, (uint8_t)i, sizeof(payload));
+      nandlog_store_record(7, 100000 + (10 * i), payload, sizeof(payload));
+   }
+   const uint32_t high_water = 100000 + (10 * (records_per_run - 1));
+   nandlog_flush(true);
+
+   // Second run: stepped back, and deliberately never climbing back up to high_water
+   for (uint32_t i = 0; i < records_per_run; ++i)
+   {
+      memset(payload, (uint8_t)(i ^ 0x5A), sizeof(payload));
+      nandlog_store_record(7, (high_water - regression_ms) + (10 * i), payload, sizeof(payload));
+   }
+   nandlog_flush(true);
+
+   // A bound only the FIRST run ever reached
+   const uint32_t target = high_water - (regression_ms / 4);
+   nandlog_enter_maintenance_mode();
+   nandlog_begin_reading(target, 0);
+   uint32_t pages = 0, bytes = 0;
+   nandlog_read_span(&pages, &bytes);
+   uint32_t delivered = 0, reached = 0;
+   for (uint32_t i = 0; i < pages; ++i)
+   {
+      nandlog_page_header_t header;
+      if (nandlog_retrieve_next_page(readback, &header))
+      {
+         ++delivered;
+         if ((header.last_timestamp != NANDLOG_NO_TIMESTAMP) && (header.last_timestamp >= target))
+            ++reached;
+      }
+   }
+   nandlog_end_reading();
+   nandlog_exit_maintenance_mode();
+
+   CHECK(delivered > 0, "a date-limited read starting across a backward time step returned no pages at all");
+   CHECK(reached > 0, "no delivered page reached the requested start bound of %u -- the qualifying data sits "
+         "before the discontinuity and the seek skipped past it", target);
+}
+
+
 int main(void)
 {
    printf("nandlog host tests (record framing %s)\n==================================%s\n",
@@ -343,6 +401,7 @@ int main(void)
    test_disabled_log_drops_records();
    test_reads_refuse_outside_a_session();
    test_busy_timeout_is_fatal();
+   test_date_limited_read_spans_a_time_discontinuity();
 
    const nandlog_sim_counters_t counters = nandlog_sim_counters();
    printf("\n%u checks, %u failed\n", tests_run, tests_failed);

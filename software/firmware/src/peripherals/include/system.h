@@ -12,6 +12,8 @@ typedef enum {
    WATCHDOG_TASK_TIME_ALIGNED = 0,
    WATCHDOG_TASK_STORAGE,
    WATCHDOG_TASK_APP,
+   WATCHDOG_TASK_BLE,
+   WATCHDOG_TASK_RANGING,
    WATCHDOG_NUM_TASKS
 } watchdog_task_t;
 
@@ -28,6 +30,8 @@ typedef enum {
    RESET_DIAGNOSTIC_STALL_TIME_ALIGNED,
    RESET_DIAGNOSTIC_STALL_STORAGE,
    RESET_DIAGNOSTIC_STALL_APP,
+   RESET_DIAGNOSTIC_STALL_BLE,
+   RESET_DIAGNOSTIC_STALL_RANGING,
    RESET_DIAGNOSTIC_STALL_MULTIPLE,
    RESET_DIAGNOSTIC_HARD_FAULT,
    RESET_DIAGNOSTIC_STACK_OVERFLOW,
@@ -36,9 +40,11 @@ typedef enum {
    RESET_DIAGNOSTIC_STORAGE_FATAL,           // the flash stopped answering and the log gave up on it
    RESET_DIAGNOSTIC_STORAGE_UNWRITABLE,      // the flash answers but will not retain a page anywhere
    RESET_DIAGNOSTIC_CLOCK_STOPPED,           // the 32 kHz crystal behind the tick and the check-in clock died
+   RESET_DIAGNOSTIC_NOTHING_RECORDED,
 } reset_diagnostic_t;
 
-_Static_assert(RESET_DIAGNOSTIC_CLOCK_STOPPED <= RESET_DIAGNOSTIC_MASK, "reset diagnostics no longer fit in the spare bits of a stored reset-reason record");
+_Static_assert(RESET_DIAGNOSTIC_NOTHING_RECORDED <= RESET_DIAGNOSTIC_MASK, "reset diagnostics no longer fit in the spare bits of a stored reset-reason record");
+_Static_assert((RESET_DIAGNOSTIC_STALL_TIME_ALIGNED + WATCHDOG_NUM_TASKS) == RESET_DIAGNOSTIC_STALL_MULTIPLE, "the per-task stall codes must stay contiguous with, and in the same order as, watchdog_task_t");
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------

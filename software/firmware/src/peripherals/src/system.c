@@ -35,7 +35,7 @@ static volatile uint32_t watchdog_clock_at_last_interrupt;
 static uint16_t boot_reset_status = 0;
 
 __attribute__((unused))
-static const char *const watchdog_task_names[WATCHDOG_NUM_TASKS] = { "TimeAlignedTask", "StorageTask", "AppTask" };
+static const char *const watchdog_task_names[WATCHDOG_NUM_TASKS] = { "TimeAlignedTask", "StorageTask", "AppTask", "BLETask", "RangingTask" };
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -250,7 +250,9 @@ void setup_hardware(void)
    const uint32_t scratch = MCUCTRL->SCRATCH0;
    if ((scratch & DIAGNOSTIC_SCRATCH_MAGIC_MASK) == DIAGNOSTIC_SCRATCH_MAGIC)
       boot_reset_status |= (uint16_t)((scratch & RESET_DIAGNOSTIC_MASK) << RESET_DIAGNOSTIC_SHIFT);
-   MCUCTRL->SCRATCH0 = 0;
+
+   // Re-arm the diagnostic breadcrumb rather than clearing it
+   MCUCTRL->SCRATCH0 = DIAGNOSTIC_SCRATCH_MAGIC | RESET_DIAGNOSTIC_NOTHING_RECORDED;
 
    // Enable the floating point module
    am_hal_sysctrl_fpu_enable();
@@ -323,7 +325,10 @@ uint16_t system_get_reset_reason(void)
 
 void system_record_diagnostic(reset_diagnostic_t diagnostic)
 {
-   if ((MCUCTRL->SCRATCH0 & DIAGNOSTIC_SCRATCH_MAGIC_MASK) != DIAGNOSTIC_SCRATCH_MAGIC)
+   // A real diagnostic replaces the boot marker but never an earlier real diagnostic
+   const uint32_t held = MCUCTRL->SCRATCH0;
+   const bool tagged = (held & DIAGNOSTIC_SCRATCH_MAGIC_MASK) == DIAGNOSTIC_SCRATCH_MAGIC;
+   if (!tagged || ((held & RESET_DIAGNOSTIC_MASK) == RESET_DIAGNOSTIC_NOTHING_RECORDED))
       MCUCTRL->SCRATCH0 = DIAGNOSTIC_SCRATCH_MAGIC | ((uint32_t)diagnostic & RESET_DIAGNOSTIC_MASK);
 }
 
@@ -352,9 +357,7 @@ void system_watchdog_enable(void)
    am_hal_reset_configure(AM_HAL_RESET_WDT_RESET_ENABLE);
 
    // Route the pre-reset interrupt
-   am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
-   am_hal_wdt_interrupt_enable(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
-   NVIC_SetPriority(WDT_IRQn, NVIC_configKERNEL_INTERRUPT_PRIORITY);
+   NVIC_SetPriority(WDT_IRQn, WATCHDOG_ISR_PRIORITY);
    NVIC_EnableIRQ(WDT_IRQn);
 
    // Never lock the watchdog

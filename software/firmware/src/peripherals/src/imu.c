@@ -679,9 +679,10 @@ static BNO_Error_t errors;
 
 static bool wait_for_spi(void)
 {
-   // Wait until the SPI interrupt line has been pulled low
+   // Wait until the SPI interrupt line has been pulled low.
    bool spi_ready = (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) == 0);
-   for (int i = 0; !spi_ready && (i < 250); ++i)
+   const int max_wait_ms = xPortIsInsideInterrupt() ? 0 : 250;
+   for (int i = 0; !spi_ready && (i < max_wait_ms); ++i)
    {
       am_util_delay_ms(1);
       spi_ready = (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) == 0);

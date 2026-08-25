@@ -48,6 +48,8 @@
 
 // Watchdog Configuration ----------------------------------------------------------------------------------------------
 
+#define WATCHDOG_ISR_PRIORITY                       1
+
 #define WATCHDOG_TICK_S                             16    // AM_HAL_WDT_1_16HZ nominal; 1 Hz caps out at 255 s
 #define WATCHDOG_TICK_MIN_S                         12    // nominal less 25%, i.e. the LFRC at its fastest plausible rate
 #define WATCHDOG_INTERRUPT_TICKS                    4     // health is evaluated (and the dog petted) every ~64 s
@@ -60,6 +62,9 @@
 // Startup grace period, since a task's first check-in only happens once it has finished its own initialization
 #define WATCHDOG_STARTUP_GRACE_MS                   120000
 
+#if (WATCHDOG_ISR_PRIORITY >= NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY)
+#error "The watchdog handler must outrank the FreeRTOS syscall ceiling"
+#endif
 #if (WATCHDOG_INTERRUPT_TICKS > 255) || (WATCHDOG_RESET_TICKS > 255)
 #error "WATCHDOG_INTERRUPT_TICKS and WATCHDOG_RESET_TICKS must fit in 8 bits or am_hal_wdt_config() will truncate them"
 #endif

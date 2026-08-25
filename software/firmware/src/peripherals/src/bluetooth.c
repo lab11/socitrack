@@ -13,12 +13,14 @@
 #include "logging.h"
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
+#include "system.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 #define TOTTAG_EVT_RANGES                           (1 << 0)
 #define TOTTAG_EVT_IMU_DATA                         (1 << 1)
+#define TOTTAG_MSG_WATCHDOG                         0x01
 
 #define BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS          3
 
@@ -33,6 +35,7 @@ static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
 static ble_discovery_callback_t discovery_callback;
 static uint8_t ble_sys_id[8];
 
+static wsfTimer_t watchdog_checkin_timer;
 static wsfHandlerId_t notification_handler_id;
 static volatile bool notification_handler_registered;
 static uint8_t pending_range_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
@@ -88,6 +91,14 @@ static void hand_off_notification(uint8_t *destination, volatile uint16_t *lengt
 
 static void notificationHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
 {
+   // A WSF timer expiry arrives as a message with no event bits, so reaching here proves the dispatcher ran
+   if (pMsg && (pMsg->event == TOTTAG_MSG_WATCHDOG))
+   {
+      system_watchdog_pet(WATCHDOG_TASK_BLE);
+      WsfTimerStartMs(&watchdog_checkin_timer, WATCHDOG_CHECKIN_INTERVAL_MS);
+      return;
+   }
+
    // Runs on the BLE task, which is the only context allowed to touch ATT
    if (event & TOTTAG_EVT_RANGES)
    {
@@ -422,6 +433,12 @@ void bluetooth_start(void)
    // Runs on the BLE task, which is where a WSF handler must be registered from
    notification_handler_id = WsfOsSetNextHandler(notificationHandler);
    notification_handler_registered = true;
+
+   // Start the periodic check-in and ask to be watched
+   watchdog_checkin_timer.handlerId = notification_handler_id;
+   watchdog_checkin_timer.msg.event = TOTTAG_MSG_WATCHDOG;
+   WsfTimerStartMs(&watchdog_checkin_timer, WATCHDOG_CHECKIN_INTERVAL_MS);
+   system_watchdog_register(WATCHDOG_TASK_BLE);
 
    // Register all BLE protocol stack callback functions
    AppSlaveInit();
