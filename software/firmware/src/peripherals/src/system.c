@@ -23,15 +23,12 @@
 #define WATCHDOG_MS_TO_STIMER(ms)                   ((((uint32_t)(ms) / 1000u) * WATCHDOG_STIMER_HZ) + ((((uint32_t)(ms) % 1000u) * WATCHDOG_STIMER_HZ) / 1000u))
 
 #define WATCHDOG_INTERRUPT_PERIOD_MS                (WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_S * 1000)
-#define WATCHDOG_GRACE_INTERRUPTS                   (1 + (WATCHDOG_STARTUP_GRACE_MS / WATCHDOG_INTERRUPT_PERIOD_MS))
-#define WATCHDOG_MIN_CLOCK_ADVANCE                  WATCHDOG_MS_TO_STIMER(WATCHDOG_INTERRUPT_PERIOD_MS / 2)
 
 extern uint8_t _uid_base_address;
 static volatile uint32_t watchdog_last_checkin[WATCHDOG_NUM_TASKS];
 static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS];
 static volatile bool watchdog_enabled = false;
-static volatile uint32_t watchdog_grace_interrupts;
-static volatile uint32_t watchdog_clock_at_last_interrupt;
+static volatile uint32_t watchdog_armed_at;
 static uint16_t boot_reset_status = 0;
 
 __attribute__((unused))
@@ -60,6 +57,23 @@ static reset_diagnostic_t watchdog_find_stalled_tasks(void)
          ++num_stalled;
       }
    return (num_stalled > 1) ? RESET_DIAGNOSTIC_STALL_MULTIPLE : first_stalled;
+}
+
+static void watchdog_evaluate_and_pet(void)
+{
+   // Pet the watchdog from whichever task last checked in
+   if ((watchdog_now() - watchdog_armed_at) < WATCHDOG_MS_TO_STIMER(WATCHDOG_STARTUP_GRACE_MS))
+   {
+      am_hal_wdt_restart(AM_HAL_WDT_MCU);        // still starting up; nothing is expected of anyone yet
+      return;
+   }
+
+   // Only pet if all registered tasks have checked in within their allowed time
+   const reset_diagnostic_t stalled = watchdog_find_stalled_tasks();
+   if (stalled == RESET_DIAGNOSTIC_NONE)
+      am_hal_wdt_restart(AM_HAL_WDT_MCU);
+   else
+      system_record_diagnostic(stalled);         // decline to pet, and name the cause while we still can
 }
 
 
@@ -125,38 +139,12 @@ void am_rtc_isr(void)
 
 void am_watchdog_isr(void)
 {
+   // Retained deliberately even though field data says it never runs
    AM_CRITICAL_BEGIN
    am_hal_wdt_interrupt_clear(AM_HAL_WDT_MCU, AM_HAL_WDT_INTERRUPT_MCU);
    AM_CRITICAL_END
-   if (!watchdog_enabled)
-      return;
-
-   // Tasks are given time to finish their own initialization before anything is expected of them
-   const uint32_t now = watchdog_now();
-   const uint32_t clock_advance = now - watchdog_clock_at_last_interrupt;
-   const uint32_t previous_advance = watchdog_clock_at_last_interrupt;
-   watchdog_clock_at_last_interrupt = now;
-
-   // The watchdog interrupt fires every WATCHDOG_INTERRUPT_PERIOD_MS
-   reset_diagnostic_t stalled = RESET_DIAGNOSTIC_NONE;
-   if (watchdog_grace_interrupts)
-      --watchdog_grace_interrupts;
-   else if (previous_advance && (clock_advance < WATCHDOG_MIN_CLOCK_ADVANCE))
-      stalled = RESET_DIAGNOSTIC_CLOCK_STOPPED;
-   else
-      stalled = watchdog_find_stalled_tasks();
-
-   // Pet the watchdog if everything is healthy, otherwise record the first stalled task
-   if (stalled == RESET_DIAGNOSTIC_NONE)
-      am_hal_wdt_restart(AM_HAL_WDT_MCU);
-   else
-   {
-      system_record_diagnostic(stalled);
-      print("ERROR: Watchdog declining to pet -- %s; reset in ~%u s\n",
-            (stalled == RESET_DIAGNOSTIC_CLOCK_STOPPED) ? "the 32 kHz check-in clock has stopped"
-               : (stalled == RESET_DIAGNOSTIC_STALL_MULTIPLE) ? "more than one monitored task has stopped checking in"
-               : watchdog_task_names[stalled - RESET_DIAGNOSTIC_STALL_TIME_ALIGNED], (uint32_t)((WATCHDOG_RESET_TICKS - WATCHDOG_INTERRUPT_TICKS) * WATCHDOG_TICK_S));
-   }
+   if (watchdog_enabled)
+      watchdog_evaluate_and_pet();
 }
 
 uint32_t am_freertos_sleep(uint32_t idleTime)
@@ -361,10 +349,9 @@ void system_watchdog_enable(void)
    NVIC_EnableIRQ(WDT_IRQn);
 
    // Never lock the watchdog
-   watchdog_clock_at_last_interrupt = 0;
-   watchdog_grace_interrupts = WATCHDOG_GRACE_INTERRUPTS;
+   watchdog_armed_at = watchdog_now();
    for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
-      watchdog_last_checkin[task] = watchdog_now();
+      watchdog_last_checkin[task] = watchdog_armed_at;
    watchdog_enabled = true;
    am_hal_wdt_start(AM_HAL_WDT_MCU, false);
    print("INFO: Watchdog armed -- WDT->CFG = 0x%08X (clksel %u, intval %u, resval %u); health checked every %u s, reset %u s after a declined pet\n",
@@ -389,9 +376,11 @@ void system_watchdog_disable(void)
 
 void system_watchdog_pet(watchdog_task_t task)
 {
-   // A check-in, not a pet: this records that the task is alive and nothing more
-   if (task < WATCHDOG_NUM_TASKS)
-      watchdog_last_checkin[task] = watchdog_now();
+   // Record this task's check-in, then decide on behalf of all of them whether the dog gets pet
+   if (!watchdog_enabled || (task >= WATCHDOG_NUM_TASKS))
+      return;
+   watchdog_last_checkin[task] = watchdog_now();
+   watchdog_evaluate_and_pet();
 }
 
 void system_enable_interrupts(bool enabled)

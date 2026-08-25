@@ -52,8 +52,8 @@
 
 #define WATCHDOG_TICK_S                             16    // AM_HAL_WDT_1_16HZ nominal; 1 Hz caps out at 255 s
 #define WATCHDOG_TICK_MIN_S                         12    // nominal less 25%, i.e. the LFRC at its fastest plausible rate
-#define WATCHDOG_INTERRUPT_TICKS                    4     // health is evaluated (and the dog petted) every ~64 s
-#define WATCHDOG_RESET_TICKS                        8     // reset lands ~64 s after the first declined pet
+#define WATCHDOG_INTERRUPT_TICKS                    4     // pre-reset interrupt; nothing depends on it arriving
+#define WATCHDOG_RESET_TICKS                        8     // ~128 s nominal, ~197 s measured, from the last pet
 
 // How often a monitored task is expected to check in, and how long it may go quiet before it is declared stalled
 #define WATCHDOG_CHECKIN_INTERVAL_MS                10000

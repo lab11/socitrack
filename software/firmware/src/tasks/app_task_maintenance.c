@@ -104,13 +104,26 @@ static void handle_notification(app_notification_t notification)
    }
 }
 
+static void notify_app_task(app_notification_t notification)
+{
+   if (app_task_handle)
+   {
+      if (xPortIsInsideInterrupt())
+      {
+         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+         xTaskNotifyFromISR(app_task_handle, notification, eSetBits, &xHigherPriorityTaskWoken);
+         portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+      else
+         xTaskNotify(app_task_handle, notification, eSetBits);
+   }
+}
+
 static void battery_event_handler(battery_event_t battery_event)
 {
    // Hand every battery event to the app task
    pending_battery_event = battery_event;
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-   xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_BATTERY_EVENT, eSetBits, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+   notify_app_task(APP_NOTIFY_BATTERY_EVENT);
 }
 
 
@@ -119,10 +132,8 @@ static void battery_event_handler(battery_event_t battery_event)
 void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate)
 {
    // Notify application of the request to active FindMyTottag
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    seconds_to_activate_buzzer = seconds_to_activate;
-   xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED, eSetBits, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+   notify_app_task(APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED);
 }
 
 void app_maintenance_download_log_file(uint32_t start_time, uint32_t end_time)
@@ -172,7 +183,13 @@ void AppTaskMaintenance(void *uid)
    const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (true)
    {
+      // Pet the watchdog to indicate that the application task is still alive
       system_watchdog_pet(WATCHDOG_TASK_APP);
+
+      // Drain any unrequested IMU data
+      imu_service_pending();
+
+      // Wait for a notification from another task or an interrupt
       if (xTaskNotifyWait(pdFALSE, 0xffffffff, &notification_bits, checkin_ticks) == pdTRUE)
          handle_notification(notification_bits);
    }

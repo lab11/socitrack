@@ -276,6 +276,11 @@ static void motion_change_handler(bool in_motion)
    app_notify(APP_NOTIFY_IMU_EVENT, true);
 }
 
+static void imu_service_request_handler(void)
+{
+   app_notify(APP_NOTIFY_IMU_EVENT, true);
+}
+
 static void data_ready_handler(imu_data_type_t data_types_ready)
 {
    // Notify the app about a change in IMU data
@@ -342,10 +347,9 @@ extern void app_maintenance_download_log_file(uint32_t start_time, uint32_t end_
 
 void app_notify(app_notification_t notification, bool from_isr)
 {
-   // Call the correct notification function based on the current ISR context
    if (app_task_handle)
    {
-      if (from_isr)
+      if (xPortIsInsideInterrupt())
       {
          BaseType_t xHigherPriorityTaskWoken = pdFALSE;
          xTaskNotifyFromISR(app_task_handle, notification, eSetBits, &xHigherPriorityTaskWoken);
@@ -432,6 +436,7 @@ void AppTaskRanging(void *uid)
    else
       battery_register_event_callback(battery_event_handler);
 #endif
+   imu_register_service_request_callback(imu_service_request_handler);
    imu_register_motion_change_callback(motion_change_handler);
    imu_register_data_ready_callback(data_ready_handler);
    imu_enable_data_outputs(IMU_ACCELEROMETER | IMU_MOTION_DETECT, 500000);
@@ -467,7 +472,13 @@ void AppTaskRanging(void *uid)
    const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (true)
    {
+      // Pet the watchdog to indicate that the application task is still alive
       system_watchdog_pet(WATCHDOG_TASK_APP);
+
+      // Collect anything the IMU has queued
+      imu_service_pending();
+
+      // Wait for a notification from another task or interrupt, then handle it
       if (xTaskNotifyWait(pdFALSE, 0xffffffff, &notification_bits, checkin_ticks) == pdTRUE)
          handle_notification(notification_bits);
    }

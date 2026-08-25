@@ -268,6 +268,7 @@ enum Channels
 // Blocking bounds
 #define IOM_DISABLE_ATTEMPTS                            50
 #define IMU_MAX_DRAINED_PACKETS                         64
+#define IMU_MAX_SERVICED_PACKETS                        16
 
 typedef enum {
    NA = 0,
@@ -662,6 +663,7 @@ static uint8_t sequence_number[SEQUENCE_SIZE], command_sequence_number;
 static uint8_t shtp_header[HEADER_SIZE], shtp_data[RX_PACKET_SIZE];
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
+static imu_service_request_callback_t service_request_callback;
 static BNO_Feature_t sensor_features;
 static BNO_SensorValue_t last_sensor_reading;
 static BNO_calibrationStat_t calibration_status;
@@ -1303,20 +1305,9 @@ static void enter_sleep_mode(bool start_sleeping)
 
 static void imu_isr(void *args)
 {
-   // Only handle if not synchronously waiting for an interrupt
-   if (!awaiting_interrupt_count)
-   {
-      // Attempt to retrieve the IMU data packet
-      imu_data_type_t data_type = IMU_UNKNOWN;
-      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
-         data_type = parse_input_report();
-
-      // Notify the appropriate data callback
-      if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
-         motion_change_callback(in_motion);
-      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
-         data_ready_callback(data_type);
-   }
+   // Ask for the packet to be collected, but do not collect it here
+   if (!awaiting_interrupt_count && service_request_callback)
+      service_request_callback();
 }
 
 
@@ -1345,6 +1336,7 @@ bool imu_init(void)
    command_sequence_number = 0;
    motion_change_callback = NULL;
    data_ready_callback = NULL;
+   service_request_callback = NULL;
 
    // Create an SPI configuration structure
    const am_hal_iom_config_t spi_config =
@@ -1508,6 +1500,37 @@ void imu_register_data_ready_callback(data_ready_callback_t callback)
 {
    // Store the data-ready callback
    data_ready_callback = callback;
+}
+
+void imu_register_service_request_callback(imu_service_request_callback_t callback)
+{
+   service_request_callback = callback;
+}
+
+bool imu_service_pending(void)
+{
+   // Drain everything the part has queued
+   if (!imu_is_initialized || awaiting_interrupt_count)
+      return false;
+
+   bool serviced = false;
+   for (uint32_t packet = 0; packet < IMU_MAX_SERVICED_PACKETS; ++packet)
+   {
+      if (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) != 0)
+         break;                        // line released: nothing left to collect
+
+      imu_data_type_t data_type = IMU_UNKNOWN;
+      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
+         data_type = parse_input_report();
+      serviced = true;
+
+      // Notify the appropriate data callback
+      if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
+         motion_change_callback(in_motion);
+      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
+         data_ready_callback(data_type);
+   }
+   return serviced;
 }
 
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)

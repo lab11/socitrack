@@ -35,6 +35,7 @@ typedef enum {
 
 typedef void (*motion_change_callback_t)(bool in_motion);
 typedef void (*data_ready_callback_t)(imu_data_type_t data_types_ready);
+typedef void (*imu_service_request_callback_t)(void);
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -46,6 +47,8 @@ bool imu_store_current_calibration(void);
 void imu_enable_data_outputs(imu_data_type_t data_types, uint32_t report_interval_us);
 void imu_register_motion_change_callback(motion_change_callback_t callback);
 void imu_register_data_ready_callback(data_ready_callback_t callback);
+void imu_register_service_request_callback(imu_service_request_callback_t callback);
+bool imu_service_pending(void);
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);
 void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);
 void imu_read_gravity_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);

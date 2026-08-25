@@ -18,13 +18,8 @@
 
 #define NANDLOG_FRAMING_LENGTH_BYTES                2
 
-#if NANDLOG_RECORD_FRAMING
-#define NANDLOG_PAGE_MAGIC_THIS_BUILD               NANDLOG_PAGE_MAGIC_FRAMED
-#define NANDLOG_FORMAT_VERSION                      2
-#else
-#define NANDLOG_PAGE_MAGIC_THIS_BUILD               NANDLOG_PAGE_MAGIC
-#define NANDLOG_FORMAT_VERSION                      1
-#endif
+#define NANDLOG_PAGE_MAGIC_THIS_BUILD               (NANDLOG_RECORD_FRAMING ? NANDLOG_PAGE_MAGIC_FRAMED : NANDLOG_PAGE_MAGIC)
+#define NANDLOG_FORMAT_VERSION                      (NANDLOG_RECORD_FRAMING ? 2 : 1)
 
 // With framing on, a payload is a sequence of records laid out as
 //
