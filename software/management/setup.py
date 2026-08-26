@@ -5,7 +5,7 @@ with open('README.rst', 'r', encoding='utf8') as fh:
 
 setuptools.setup(
    name='tottag',
-   version='1.1.0',
+   version='1.2.0',
    author='Will Hedgecock',
    author_email='ronald.w.hedgecock@vanderbilt.edu',
    description='TotTag Management Dashboard',
