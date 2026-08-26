@@ -5,6 +5,8 @@
 
 try: from .tkcal import DateEntry
 except: from tkcal import DateEntry
+try: from . import tottag_format
+except ImportError: import tottag_format
 from functools import partial
 from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog
@@ -13,7 +15,6 @@ import struct, queue, datetime, tzlocal
 import serial.tools.list_ports
 import os, pickle, pytz, time
 import tkinter as tk
-import tottag_format
 import traceback
 import threading
 import asyncio

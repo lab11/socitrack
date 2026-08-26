@@ -5,7 +5,7 @@ with open('README.rst', 'r', encoding='utf8') as fh:
 
 setuptools.setup(
    name='tottag',
-   version='1.2.0',
+   version='1.2.1',
    author='Will Hedgecock',
    author_email='ronald.w.hedgecock@vanderbilt.edu',
    description='TotTag Management Dashboard',
@@ -15,6 +15,7 @@ setuptools.setup(
    package_dir={'tottag': 'dashboard'},
    packages=['tottag'],
    include_package_data=True,
+   package_data={'tottag': ['*.ico', '*.png']},
    install_requires=[
       'bleak',
       'matplotlib',
