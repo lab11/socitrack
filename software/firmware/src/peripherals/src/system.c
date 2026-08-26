@@ -59,6 +59,17 @@ static reset_diagnostic_t watchdog_find_stalled_tasks(void)
    return (num_stalled > 1) ? RESET_DIAGNOSTIC_STALL_MULTIPLE : first_stalled;
 }
 
+static void watchdog_withdraw_stall_diagnostic(void)
+{
+   // A stall code describes an UNRESOLVED condition so it is withdrawn the moment health returns
+   const uint32_t held = MCUCTRL->SCRATCH0;
+   if ((held & DIAGNOSTIC_SCRATCH_MAGIC_MASK) != DIAGNOSTIC_SCRATCH_MAGIC)
+      return;
+   const uint32_t code = held & RESET_DIAGNOSTIC_MASK;
+   if ((code >= RESET_DIAGNOSTIC_STALL_TIME_ALIGNED) && (code <= RESET_DIAGNOSTIC_STALL_MULTIPLE))
+      MCUCTRL->SCRATCH0 = DIAGNOSTIC_SCRATCH_MAGIC | RESET_DIAGNOSTIC_NOTHING_RECORDED;
+}
+
 static void watchdog_evaluate_and_pet(void)
 {
    // Pet the watchdog from whichever task last checked in
@@ -71,7 +82,10 @@ static void watchdog_evaluate_and_pet(void)
    // Only pet if all registered tasks have checked in within their allowed time
    const reset_diagnostic_t stalled = watchdog_find_stalled_tasks();
    if (stalled == RESET_DIAGNOSTIC_NONE)
+   {
+      watchdog_withdraw_stall_diagnostic();
       am_hal_wdt_restart(AM_HAL_WDT_MCU);
+   }
    else
       system_record_diagnostic(stalled);         // decline to pet, and name the cause while we still can
 }

@@ -289,7 +289,11 @@ LIBS+= AmbiqSDK/mcu/$(PART)/hal/mcu/gcc/bin/libam_hal.a
 
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 CFLAGS+= -ffunction-sections -fdata-sections -fno-omit-frame-pointer
-CFLAGS+= -MMD -MP -std=c99 -Wall -O0
+CFLAGS+= -MMD -MP -std=c99 -Wall -O2 -fno-strict-aliasing
+
+# The frame pointer is kept deliberately, even though -O2 would drop it. It costs a register and a couple of
+# instructions per call; it buys a walkable stack while a hang is still being chased down, which is worth more
+# right now. Worth revisiting once the watchdog stalls are closed out.
 CFLAGS+= $(DEFINES)
 CFLAGS+= $(INCLUDES)
 
@@ -310,9 +314,11 @@ directories: $(CONFIG)
 $(CONFIG):
 	@mkdir -p $@
 
+$(CONFIG)/dm_sec.o: EXTRA_CFLAGS = -Wno-array-bounds
+
 $(CONFIG)/%.o: %.c $(CONFIG)/%.d
 	@echo " Compiling $<" ;\
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $< -o $@
 
 $(CONFIG)/%.o: %.s $(CONFIG)/%.d
 	@echo " Assembling $<" ;\
