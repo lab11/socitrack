@@ -668,6 +668,10 @@ void imu_register_data_ready_callback(data_ready_callback_t callback)
    enable_data_ready_interrupts();
 }
 
+void imu_register_service_request_callback(imu_service_request_callback_t callback) { }
+
+bool imu_service_pending(void) { return false; }
+
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {
    static int16_t accel_data[3];
