@@ -20,6 +20,9 @@
 #if !defined(NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL)
 #error "nandlog_conf.h must define NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL"
 #endif
+#if !defined(NANDLOG_PAGE_PLACEMENT_ATTEMPTS)
+#error "nandlog_conf.h must define NANDLOG_PAGE_PLACEMENT_ATTEMPTS"
+#endif
 #if !defined(NANDLOG_ERASE_AHEAD_BLOCKS)
 #error "nandlog_conf.h must define NANDLOG_ERASE_AHEAD_BLOCKS"
 #endif
