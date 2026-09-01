@@ -21,5 +21,7 @@ uint32_t battery_monitor_get_level_mV(void);
 bool battery_monitor_is_plugged_in(void);
 bool battery_monitor_is_charging(void);
 bool battery_monitor_has_brownout_detection(void);
+void battery_monitor_poll_charger_state(void);
+uint32_t battery_monitor_get_suppressed_edge_count(void);
 
 #endif  // #ifndef __BATTERY_HEADER_H__

@@ -1,5 +1,6 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
+#include <string.h>
 #include "bluetooth.h"
 #include "app_main.h"
 #include "app_tasks.h"
@@ -14,6 +15,7 @@
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
 #include "system.h"
+#include "wsf_buf.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
@@ -40,7 +42,8 @@ static wsfHandlerId_t notification_handler_id;
 static volatile bool notification_handler_registered;
 static uint8_t pending_range_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint8_t pending_imu_data[MAX_IMU_DATA_LENGTH];
-static volatile uint16_t pending_range_length, pending_imu_length;
+static volatile uint16_t pending_range_length, pending_imu_length, buffer_alloc_largest_failed;
+static volatile uint32_t buffer_alloc_failures;
 
 static void issue_connection_update(void)
 {
@@ -77,6 +80,23 @@ static uint16_t take_pending(uint8_t *destination, uint8_t *source, volatile uin
    AM_CRITICAL_END
    return taken;
 }
+
+#if WSF_OS_DIAG == TRUE
+
+wsfHandlerId_t WsfActiveHandler = WSF_INVALID_TASK_ID;
+
+static void buffer_diagnostic_callback(WsfBufDiag_t *pInfo)
+{
+   // Called from inside WsfBufAlloc() at the point of failure
+   if (!pInfo || (pInfo->type != WSF_BUF_ALLOC_FAILED))
+      return;
+   ++buffer_alloc_failures;
+   if (pInfo->param.alloc.len > buffer_alloc_largest_failed)
+      buffer_alloc_largest_failed = pInfo->param.alloc.len;
+   system_record_diagnostic(RESET_DIAGNOSTIC_MALLOC_FAILED);
+}
+
+#endif
 
 static void hand_off_notification(uint8_t *destination, volatile uint16_t *length, const uint8_t *source, uint16_t source_length, uint16_t capacity, wsfEventMask_t event)
 {
@@ -594,6 +614,51 @@ bool bluetooth_is_connected(void)
 {
    // Return whether we are actively connected to another device
    return is_connected;
+}
+
+void bluetooth_register_buffer_diagnostics(void)
+{
+   // Learn about buffer exhaustion atthe moment it happens
+#if WSF_OS_DIAG == TRUE
+   WsfBufDiagRegister(buffer_diagnostic_callback);
+#endif
+}
+
+void bluetooth_get_buffer_stats(bluetooth_buffer_stats_t *stats)
+{
+   if (stats)
+   {
+      // Clear the stats structure before populating it
+      memset(stats, 0, sizeof(*stats));
+      stats->failures = buffer_alloc_failures;
+      stats->largest_failed_length = buffer_alloc_largest_failed;
+
+      // High-water marks are only maintained when the stack is built with WSF_BUF_STATS
+      const uint8_t num_pools = WsfBufGetNumPool();
+      stats->num_pools = (num_pools > (uint8_t)(sizeof(stats->high_water))) ? (uint8_t)sizeof(stats->high_water) : num_pools;
+      if (stats->num_pools)
+      {
+         WsfBufPoolStat_t pool_stats[sizeof(stats->high_water)];
+         WsfBufGetPoolStats(pool_stats, stats->num_pools);
+         for (uint8_t i = 0; i < stats->num_pools; ++i)
+         {
+            stats->high_water[i] = pool_stats[i].maxAlloc;
+            stats->capacity[i] = pool_stats[i].numBuf;
+         }
+      }
+   }
+}
+
+void bluetooth_print_buffer_stats(const char *context)
+{
+   bluetooth_buffer_stats_t stats;
+   bluetooth_get_buffer_stats(&stats);
+   if (stats.failures)
+      print("ERROR: WSF buffer allocation failed %u time(s) [%s]; largest failed request %u bytes. The BLE stack silently dropped a packet or an event each time\n", stats.failures, context ? context : "", (uint32_t)stats.largest_failed_length);
+   else
+      print("INFO: WSF buffer allocations all succeeded [%s]\n", context ? context : "");
+   for (uint8_t i = 0; i < stats.num_pools; ++i)
+      print("INFO:   pool %u: peak %u of %u buffers used\n", (uint32_t)i, (uint32_t)stats.high_water[i], (uint32_t)stats.capacity[i]);
 }
 
 void bluetooth_clear_whitelist(void)

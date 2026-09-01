@@ -230,6 +230,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
          AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
          download_start_timestamp = download_end_timestamp = 0;
+         bluetooth_print_buffer_stats("after log download");
       }
    }
 }

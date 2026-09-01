@@ -84,6 +84,7 @@
 typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 3750, BATTERY_FULL = 4200 } battery_status_t;
 
 #define BATTERY_ADC_TIMEOUT_MS                      250
+#define BATTERY_EVENT_DEBOUNCE_MS                   250
 
 
 // DW3000 Ranging Radio Configuration ----------------------------------------------------------------------------------
@@ -121,6 +122,9 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define BLE_SCANNING_WINDOW_0_625_MS                160         // 100 ms
 #define BLE_SCANNING_INTERVAL_0_625_MS              1600        // 1000 ms
 #define BLE_SCANNING_DURATION_MS                    0
+
+#define BLE_DISCOVERY_WINDOW_MS                     500
+#define BLE_CONFIG_VERIFY_WINDOWS                   120         // 120 x 500 ms = 60 s
 
 #define BLE_DESIRED_MTU                             247
 #define BLE_TRANSACTION_TIMEOUT_S                   1

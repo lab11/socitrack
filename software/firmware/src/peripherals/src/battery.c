@@ -46,18 +46,54 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-#define BATTERY_ADC_SLOT 0
+#define BATTERY_ADC_SLOT                            0
+
+#define BATTERY_STIMER_HZ                           32768u
+#define BATTERY_MS_TO_STIMER(ms)                    (((uint32_t)(ms) * BATTERY_STIMER_HZ) / 1000u)
+
+typedef struct
+{
+   int8_t reported;              // last state handed to the callback; -1 until the first observation
+   bool accepted_valid;          // whether accepted_at holds a meaningful value yet
+   uint32_t accepted_at;         // free-running STIMER count at the last accepted change
+} charger_signal_t;
 
 static void *adc_handle;
 static SemaphoreHandle_t adc_mutex;
 static StaticSemaphore_t adc_mutex_buffer;
 static uint32_t last_valid_voltage_mV;
 static battery_event_callback_t event_callback;
-static volatile uint32_t battery_voltage_code;
+static volatile uint32_t battery_voltage_code, suppressed_edge_count;
+static volatile charger_signal_t plugged_signal, charging_signal;
 static volatile bool conversion_complete;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static bool signal_change_accepted(volatile charger_signal_t *signal, bool state)
+{
+   // Report only a genuine change and only once per de-bounce window
+   const uint32_t now = am_hal_stimer_counter_get();
+   bool accepted = false;
+   AM_CRITICAL_BEGIN
+   if (signal->reported != (int8_t)state)
+   {
+      if (signal->accepted_valid && ((now - signal->accepted_at) < BATTERY_MS_TO_STIMER(BATTERY_EVENT_DEBOUNCE_MS)))
+      {
+         // Deferred, not dropped: the latch is left alone so this change is still outstanding
+         ++suppressed_edge_count;
+      }
+      else
+      {
+         signal->reported = (int8_t)state;
+         signal->accepted_at = now;
+         signal->accepted_valid = true;
+         accepted = true;
+      }
+   }
+   AM_CRITICAL_END
+   return accepted;
+}
 
 static inline bool locking_applies(void)
 {
@@ -124,8 +160,8 @@ static void plugged_in_status_changed(void *args)
    // Update the "charge complete signal" for the wireless charger
    signal_charge_complete(is_plugged_in && !battery_monitor_is_charging());
 
-   // Call a registered battery event callback if applicable
-   if (event_callback)
+   // Report only a genuine, de-bounced change
+   if (signal_change_accepted(&plugged_signal, is_plugged_in) && event_callback)
       event_callback(is_plugged_in ? BATTERY_PLUGGED : BATTERY_UNPLUGGED);
 }
 
@@ -143,8 +179,8 @@ static void charging_status_changed(void *args)
    // Update the "charge complete signal" for the wireless charger
    signal_charge_complete(battery_monitor_is_plugged_in() && !is_charging);
 
-   // Call a registered battery event callback if applicable
-   if (event_callback)
+   // Report only a genuine, de-bounced change
+   if (signal_change_accepted(&charging_signal, is_charging) && event_callback)
       event_callback(is_charging ? BATTERY_CHARGING : BATTERY_NOT_CHARGING);
 }
 
@@ -222,6 +258,11 @@ void am_adc_isr(void)
 
 void battery_monitor_init(void)
 {
+   // Start both charger latches undefined so the first observation of each is always reported
+   plugged_signal = (charger_signal_t){ .reported = -1, .accepted_valid = false, .accepted_at = 0 };
+   charging_signal = (charger_signal_t){ .reported = -1, .accepted_valid = false, .accepted_at = 0 };
+   suppressed_edge_count = 0;
+
    // Define the ADC configuration structures
    am_hal_adc_config_t adc_config =
    {
@@ -327,6 +368,23 @@ void battery_monitor_deinit(void)
 void battery_register_event_callback(battery_event_callback_t callback)
 {
    event_callback = callback;
+}
+
+void battery_monitor_poll_charger_state(void)
+{
+   // Flush any deferred change from the de-bounce window
+   const bool is_plugged_in = battery_monitor_is_plugged_in();
+   if (signal_change_accepted(&plugged_signal, is_plugged_in) && event_callback)
+      event_callback(is_plugged_in ? BATTERY_PLUGGED : BATTERY_UNPLUGGED);
+
+   const bool is_charging = battery_monitor_is_charging();
+   if (signal_change_accepted(&charging_signal, is_charging) && event_callback)
+      event_callback(is_charging ? BATTERY_CHARGING : BATTERY_NOT_CHARGING);
+}
+
+uint32_t battery_monitor_get_suppressed_edge_count(void)
+{
+   return suppressed_edge_count;
 }
 
 bool battery_monitor_has_brownout_detection(void)

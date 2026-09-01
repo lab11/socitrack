@@ -10,6 +10,15 @@
 
 typedef void (*ble_discovery_callback_t)(const uint8_t ble_address[6], uint8_t ranging_role);
 
+typedef struct
+{
+   uint32_t failures;               // allocations that returned NULL
+   uint16_t largest_failed_length;  // size of the largest request that failed
+   uint8_t num_pools;               // pools actually reported below
+   uint8_t high_water[8];           // per-pool maximum simultaneous allocations
+   uint8_t capacity[8];             // per-pool buffer count
+} bluetooth_buffer_stats_t;
+
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
@@ -33,6 +42,9 @@ void bluetooth_stop_scanning(void);
 void bluetooth_reset_scanning(void);
 bool bluetooth_is_scanning(void);
 bool bluetooth_is_connected(void);
+void bluetooth_register_buffer_diagnostics(void);
+void bluetooth_get_buffer_stats(bluetooth_buffer_stats_t *stats);
+void bluetooth_print_buffer_stats(const char *context);
 void bluetooth_clear_whitelist(void);
 void bluetooth_add_device_to_whitelist(uint8_t* uid);
 

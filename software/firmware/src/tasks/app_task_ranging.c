@@ -20,12 +20,14 @@
 static TaskHandle_t app_task_handle;
 static uint8_t device_uid_short, imu_accuracy;
 static uint8_t ble_scan_results[MAX_NUM_RANGING_DEVICES];
+static uint32_t download_start_timestamp, download_end_timestamp;
 static volatile uint8_t discovered_devices[MAX_NUM_RANGING_DEVICES][1+EUI_LEN];
 static volatile uint32_t seconds_to_activate_buzzer;
-static volatile battery_event_t pending_battery_event;
-static volatile uint8_t num_discovered_devices;
+static volatile battery_event_t pending_plugged_event, pending_charging_event;
+static volatile bool pending_plugged_valid, pending_charging_valid, pending_critical_voltage;
 static volatile bool devices_found, motion_changed, imu_data_ready;
-static uint32_t download_start_timestamp, download_end_timestamp;
+static volatile uint16_t windows_since_config_verify;
+static volatile uint8_t num_discovered_devices;
 static int16_t imu_accel_data[3];
 
 
@@ -133,6 +135,18 @@ static void handle_notification(app_notification_t notification)
       verify_app_configuration();
    if ((notification & APP_NOTIFY_NETWORK_FOUND))
    {
+      // Claim the discovery set in one step and work from the copy for the rest of this handler
+      uint8_t discovered[MAX_NUM_RANGING_DEVICES][1 + EUI_LEN], num_discovered;
+      AM_CRITICAL_BEGIN
+      num_discovered = num_discovered_devices;
+      memcpy(discovered, (const uint8_t*)discovered_devices, sizeof(discovered));
+      devices_found = false;
+      AM_CRITICAL_END
+
+      // The producer already bounds this, but it indexes a fixed array from a value two contexts maintain
+      if (num_discovered > MAX_NUM_RANGING_DEVICES)
+         num_discovered = MAX_NUM_RANGING_DEVICES;
+
       // Stop scanning for additional devices
       bluetooth_stop_scanning();
       for (uint32_t i = 0; bluetooth_is_scanning() && (i < BLE_ADV_TIMEOUT_MS); i += 10)
@@ -150,8 +164,8 @@ static void handle_notification(app_notification_t notification)
       if (scheduler_get_current_role() == ROLE_MASTER)
       {
          // Restart as a Participant if another Master device with a higher ID was located
-         for (uint8_t i = 0; i < num_discovered_devices; ++i)
-            if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) && (discovered_devices[i][0] > device_uid_short))
+         for (uint8_t i = 0; i < num_discovered; ++i)
+            if ((discovered[i][EUI_LEN] == ROLE_MASTER) && (discovered[i][0] > device_uid_short))
             {
                scheduler_stop();
                while (ranging_active())
@@ -164,10 +178,10 @@ static void handle_notification(app_notification_t notification)
       {
          // Determine if an actively ranging device was located
          bool ranging_device_located = false, idle_device_located = false;
-         for (uint8_t i = 0; !ranging_device_located && (i < num_discovered_devices); ++i)
-            if ((discovered_devices[i][EUI_LEN] == ROLE_MASTER) || (discovered_devices[i][EUI_LEN] == ROLE_PARTICIPANT))
+         for (uint8_t i = 0; !ranging_device_located && (i < num_discovered); ++i)
+            if ((discovered[i][EUI_LEN] == ROLE_MASTER) || (discovered[i][EUI_LEN] == ROLE_PARTICIPANT))
                ranging_device_located = true;
-            else if (discovered_devices[i][EUI_LEN] == ROLE_IDLE)
+            else if (discovered[i][EUI_LEN] == ROLE_IDLE)
                idle_device_located = true;
 
          // Start the ranging task based on the state of the detected devices
@@ -178,11 +192,11 @@ static void handle_notification(app_notification_t notification)
             // Search for the non-sleeping device with the highest ID that is higher than our own
             int32_t best_device_idx = -1;
             uint8_t highest_device_id = device_uid_short;
-            for (uint8_t i = 0; i < num_discovered_devices; ++i)
-               if (discovered_devices[i][0] > highest_device_id)
+            for (uint8_t i = 0; i < num_discovered; ++i)
+               if (discovered[i][0] > highest_device_id)
                {
                   best_device_idx = i;
-                  highest_device_id = discovered_devices[i][0];
+                  highest_device_id = discovered[i][0];
                }
 
             // If a potential master candidate device was found, attempt to connect to it
@@ -193,20 +207,42 @@ static void handle_notification(app_notification_t notification)
          }
       }
 
-      // Reset the devices-found flag, store the scan results, and verify the app configuration
-      devices_found = false;
-      for (uint8_t i = 0; i < num_discovered_devices; ++i)
-         ble_scan_results[i] = discovered_devices[i][0];
-      storage_write_ble_scan_results(ble_scan_results, num_discovered_devices);
+      // Store the scan results and verify the app configuration
+      for (uint8_t i = 0; i < num_discovered; ++i)
+         ble_scan_results[i] = discovered[i][0];
+      storage_write_ble_scan_results(ble_scan_results, num_discovered);
       verify_app_configuration();
    }
    if ((notification & APP_NOTIFY_BATTERY_EVENT))
    {
-      // Record the battery event, including a critical-voltage trip
-      const battery_event_t battery_event = pending_battery_event;
-      if ((battery_event >= BATTERY_PLUGGED) && (battery_event <= BATTERY_CRITICAL_VOLTAGE))
-         storage_write_charging_status(battery_event);
-      if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED) || (battery_event == BATTERY_CRITICAL_VOLTAGE))
+      // Make note of every latched event
+      battery_event_t plugged_event = 0, charging_event = 0;
+      bool critical_voltage = false;
+      AM_CRITICAL_BEGIN
+      if (pending_plugged_valid)
+      {
+         plugged_event = pending_plugged_event;
+         pending_plugged_valid = false;
+      }
+      if (pending_charging_valid)
+      {
+         charging_event = pending_charging_event;
+         pending_charging_valid = false;
+      }
+      critical_voltage = pending_critical_voltage;
+      pending_critical_voltage = false;
+      AM_CRITICAL_END
+
+      // Record charging state first so that a plug transition and the charge state it caused appear in that order
+      if (charging_event)
+         storage_write_charging_status(charging_event);
+      if (plugged_event)
+         storage_write_charging_status(plugged_event);
+      if (critical_voltage)
+         storage_write_charging_status(BATTERY_CRITICAL_VOLTAGE);
+
+      // A charger transition or a critical battery both end the current run
+      if (plugged_event || critical_voltage)
          storage_flush_and_shutdown();
    }
    if ((notification & APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED))
@@ -264,8 +300,25 @@ static void handle_notification(app_notification_t notification)
 
 static void battery_event_handler(battery_event_t battery_event)
 {
-   // Hand every battery event to the app task
-   pending_battery_event = battery_event;
+   // Latch the event by signal so that a plug transition and a charge transition arriving together are both delivered
+   switch (battery_event)
+   {
+      case BATTERY_PLUGGED:
+      case BATTERY_UNPLUGGED:
+         pending_plugged_event = battery_event;
+         pending_plugged_valid = true;
+         break;
+      case BATTERY_CHARGING:
+      case BATTERY_NOT_CHARGING:
+         pending_charging_event = battery_event;
+         pending_charging_valid = true;
+         break;
+      case BATTERY_CRITICAL_VOLTAGE:
+         pending_critical_voltage = true;
+         break;
+      default:
+         return;
+   }
    app_notify(APP_NOTIFY_BATTERY_EVENT);
 }
 
@@ -332,10 +385,17 @@ static void ble_discovery_handler(const uint8_t ble_address[EUI_LEN], uint8_t ra
 
 void am_timer03_isr(void)
 {
-   // Notify the main task to handle the interrupt
+   // Close the discovery window that ble_discovery_handler() opened, if one exists
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
-   xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_NETWORK_FOUND, eSetBits, &xHigherPriorityTaskWoken);
+   if (devices_found)
+      xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_NETWORK_FOUND, eSetBits, &xHigherPriorityTaskWoken);
+   else if (++windows_since_config_verify >= BLE_CONFIG_VERIFY_WINDOWS)
+   {
+      // Keep a slow self-check
+      windows_since_config_verify = 0;
+      xTaskNotifyFromISR(app_task_handle, APP_NOTIFY_VERIFY_CONFIGURATION, eSetBits, &xHigherPriorityTaskWoken);
+   }
    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -420,7 +480,7 @@ void AppTaskRanging(void *uid)
    am_hal_timer_config_t scanning_timer_config;
    am_hal_timer_default_config_set(&scanning_timer_config);
    scanning_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
-   scanning_timer_config.ui32Compare0 = (uint32_t)(BLE_SCANNING_TIMER_TICK_RATE_HZ / 2);
+   scanning_timer_config.ui32Compare0 = (uint32_t)((BLE_SCANNING_TIMER_TICK_RATE_HZ / 1000) * BLE_DISCOVERY_WINDOW_MS);
    am_hal_timer_config(BLE_SCANNING_TIMER_NUMBER, &scanning_timer_config);
    am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
    NVIC_SetPriority(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY);

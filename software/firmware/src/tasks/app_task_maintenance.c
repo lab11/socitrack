@@ -20,7 +20,8 @@
 
 static TaskHandle_t app_task_handle;
 static volatile uint32_t seconds_to_activate_buzzer;
-static volatile battery_event_t pending_battery_event;
+static volatile battery_event_t pending_plugged_event, pending_charging_event;
+static volatile bool pending_plugged_valid, pending_charging_valid, pending_critical_voltage;
 static uint32_t download_start_timestamp, download_end_timestamp;
 
 
@@ -37,11 +38,32 @@ static void handle_notification(app_notification_t notification)
       }
    if ((notification & APP_NOTIFY_BATTERY_EVENT) != 0)
    {
-      // Record the battery event, including a critical-voltage trip
-      const battery_event_t battery_event = pending_battery_event;
-      if ((battery_event >= BATTERY_PLUGGED) && (battery_event <= BATTERY_CRITICAL_VOLTAGE))
-         storage_write_charging_status(battery_event);
-      if ((battery_event == BATTERY_PLUGGED) || (battery_event == BATTERY_UNPLUGGED) || (battery_event == BATTERY_CRITICAL_VOLTAGE))
+      // Make note of every latched event
+      battery_event_t plugged_event = 0, charging_event = 0;
+      bool critical_voltage = false;
+      AM_CRITICAL_BEGIN
+      if (pending_plugged_valid)
+      {
+         plugged_event = pending_plugged_event;
+         pending_plugged_valid = false;
+      }
+      if (pending_charging_valid)
+      {
+         charging_event = pending_charging_event;
+         pending_charging_valid = false;
+      }
+      critical_voltage = pending_critical_voltage;
+      pending_critical_voltage = false;
+      AM_CRITICAL_END
+
+      // Record all events
+      if (charging_event)
+         storage_write_charging_status(charging_event);
+      if (plugged_event)
+         storage_write_charging_status(plugged_event);
+      if (critical_voltage)
+         storage_write_charging_status(BATTERY_CRITICAL_VOLTAGE);
+      if (plugged_event || critical_voltage)
          storage_flush_and_shutdown();
    }
    if ((notification & APP_NOTIFY_DOWNLOAD_SEGGER_LOG))
@@ -121,8 +143,25 @@ static void notify_app_task(app_notification_t notification)
 
 static void battery_event_handler(battery_event_t battery_event)
 {
-   // Hand every battery event to the app task
-   pending_battery_event = battery_event;
+   // Latch the event by signal so two transitions arriving together are both delivered
+   switch (battery_event)
+   {
+      case BATTERY_PLUGGED:
+      case BATTERY_UNPLUGGED:
+         pending_plugged_event = battery_event;
+         pending_plugged_valid = true;
+         break;
+      case BATTERY_CHARGING:
+      case BATTERY_NOT_CHARGING:
+         pending_charging_event = battery_event;
+         pending_charging_valid = true;
+         break;
+      case BATTERY_CRITICAL_VOLTAGE:
+         pending_critical_voltage = true;
+         break;
+      default:
+         return;
+   }
    notify_app_task(APP_NOTIFY_BATTERY_EVENT);
 }
 
