@@ -191,6 +191,28 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          if len(notable) > 10:
             print(f"   ... and {len(notable) - 10} more")
 
+   # Report near-misses recorded by the log when something is actually non-zero
+   if tottag_format.is_verbose():
+      diags = [d['diag'] for d in log_data if 'diag' in d]
+      if diags:
+         last = diags[-1]
+         notable = []
+         if last['watchdog_declines']:
+            notable.append(f"{last['watchdog_declines']} watchdog pet(s) refused, late tasks: {last['watchdog_late'] or 'none still late'}")
+         if last['charger_suppressed_edges']:
+            notable.append(f"{last['charger_suppressed_edges']} charger interrupt(s) discarded as chatter")
+         if last['wsf_alloc_failures']:
+            notable.append(f"{last['wsf_alloc_failures']} BLE buffer allocation(s) failed, largest request "
+                           f"{last['wsf_largest_failed_length']} bytes")
+         peak, size = last['wsf_pool_peak'], last['wsf_pool_size']
+         tight = [f"pool {j}: {peak[j]}/{size[j]}" for j in range(len(size)) if size[j] and peak[j] >= size[j] - 1]
+         if tight:
+            notable.append('BLE buffer pools ran near empty: ' + ', '.join(tight))
+         if notable:
+            print(f"INFO: log from {uid_to_labels[from_uid]} reports near-misses (cumulative since last boot):")
+            for line in notable:
+               print(f"   {line}")
+
    # Not a transfer fault, but a LARGE one makes a time-bounded download untrustworthy
    benign = [d for d in report['time_discontinuities'] if (d[2] - d[3]) < tottag_format.BENIGN_TIME_STEP_MS]
    notable = [d for d in report['time_discontinuities'] if (d[2] - d[3]) >= tottag_format.BENIGN_TIME_STEP_MS]

@@ -3,6 +3,7 @@
 
 #include "app_tasks.h"
 #include "rtc.h"
+#include "system.h"
 
 
 // Storage Record Types and Definitions --------------------------------------------------------------------------------
@@ -17,10 +18,24 @@ typedef enum {
    STORAGE_TYPE_BLE_SCAN,
    STORAGE_TYPE_RESET_REASON,
    STORAGE_TYPE_TIME_ANCHOR,
+   STORAGE_TYPE_DIAGNOSTICS,
    STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
-#define STORAGE_MAX_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
+typedef struct __attribute__ ((__packed__))
+{
+   uint16_t watchdog_declines;                             // pets refused because some task was late
+   uint8_t watchdog_late_episodes[WATCHDOG_NUM_TASKS];     // distinct episodes of lateness, per task
+   uint16_t charger_suppressed_edges;                      // charger interrupts discarded as chatter
+   uint16_t wsf_alloc_failures;                            // BLE buffer allocations that returned NULL
+   uint16_t wsf_largest_failed_length;                      // size of the largest request that failed
+   uint8_t wsf_pool_high_water[STORAGE_DIAGNOSTIC_NUM_POOLS];   // peak simultaneous allocations per pool
+   uint8_t wsf_pool_capacity[STORAGE_DIAGNOSTIC_NUM_POOLS];     // buffers in each pool, so headroom is readable
+} storage_diagnostics_t;
+
+#define STORAGE_IMU_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
+#define STORAGE_DIAGNOSTICS_RECORD_BYTES            (1 + 4 + sizeof(storage_diagnostics_t))
+#define STORAGE_MAX_RECORD_BYTES                    ((STORAGE_IMU_RECORD_BYTES > STORAGE_DIAGNOSTICS_RECORD_BYTES) ? STORAGE_IMU_RECORD_BYTES : STORAGE_DIAGNOSTICS_RECORD_BYTES)
 
 
 // Storage Record Manipulation API -------------------------------------------------------------------------------------
@@ -77,6 +92,8 @@ static inline uint32_t stored_record_length(const uint8_t *payload, uint32_t off
          return 7;
       case STORAGE_TYPE_TIME_ANCHOR:
          return 9;
+      case STORAGE_TYPE_DIAGNOSTICS:
+         return 5 + sizeof(storage_diagnostics_t);
       default:
          return 0;
    }

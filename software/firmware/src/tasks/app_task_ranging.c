@@ -27,11 +27,14 @@ static volatile battery_event_t pending_plugged_event, pending_charging_event;
 static volatile bool pending_plugged_valid, pending_charging_valid, pending_critical_voltage;
 static volatile bool devices_found, motion_changed, imu_data_ready;
 static volatile uint16_t windows_since_config_verify;
+static volatile int8_t pending_allow_downloads = -1;
 static volatile uint8_t num_discovered_devices;
 static int16_t imu_accel_data[3];
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static void apply_allow_downloads(bool allow);
 
 static void verify_app_configuration(void)
 {
@@ -212,6 +215,16 @@ static void handle_notification(app_notification_t notification)
          ble_scan_results[i] = discovered[i][0];
       storage_write_ble_scan_results(ble_scan_results, num_discovered);
       verify_app_configuration();
+   }
+   if ((notification & APP_NOTIFY_ALLOW_DOWNLOADS))
+   {
+      int8_t allow = -1;
+      AM_CRITICAL_BEGIN
+      allow = pending_allow_downloads;
+      pending_allow_downloads = -1;
+      AM_CRITICAL_END
+      if (allow >= 0)
+         apply_allow_downloads(allow > 0);
    }
    if ((notification & APP_NOTIFY_BATTERY_EVENT))
    {
@@ -445,7 +458,7 @@ void app_download_log_file(uint32_t start_time, uint32_t end_time)
    }
 }
 
-void app_allow_downloads(bool allow)
+static void apply_allow_downloads(bool allow)
 {
    // Enable data downloading from ranging mode
    if (allow)
@@ -467,6 +480,13 @@ void app_allow_downloads(bool allow)
       nandlog_exit_maintenance_mode();
       nandlog_disable(false);
    }
+}
+
+void app_allow_downloads(bool allow)
+{
+   // Hand the work to the app task rather than doing it here
+   pending_allow_downloads = allow ? 1 : 0;
+   app_notify(APP_NOTIFY_ALLOW_DOWNLOADS);
 }
 
 void AppTaskRanging(void *uid)

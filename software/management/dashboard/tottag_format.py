@@ -43,7 +43,8 @@ STORAGE_TYPE_IMU = 5
 STORAGE_TYPE_BLE_SCAN = 6
 STORAGE_TYPE_RESET_REASON = 7
 STORAGE_TYPE_TIME_ANCHOR = 8
-STORAGE_NUM_TYPES = 9
+STORAGE_TYPE_DIAGNOSTICS = 9
+STORAGE_NUM_TYPES = 10
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'
@@ -85,6 +86,14 @@ RESET_FLAGS = [
 ]
 RESET_WATCHDOG_BIT = 0x040
 MAX_RESET_STATUS = 0xFFF
+
+# Tasks the watchdog monitors in the order watchdog_task_t declares them
+WATCHDOG_TASK_NAMES = ['TimeAlignedTask', 'StorageTask', 'AppTask', 'BLETask', 'RangingTask']
+
+# STORAGE_TYPE_DIAGNOSTICS payload: counters describing how close the firmware came to a fault without
+# reaching one. All are cumulative since boot and saturate rather than wrap, so a reboot partitions them.
+DIAGNOSTICS_NUM_POOLS = 5
+DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5s')
 
 # The hardware status says only THAT the device stopped, never what stopped it, which is why a run of watchdog
 # resets used to be uninterpretable. The firmware therefore packs its own verdict into the four bits above the
@@ -191,6 +200,8 @@ def _record_length(data, i):
       length = 7                                                     # uint16 status word
    elif record_type == STORAGE_TYPE_TIME_ANCHOR:
       length = 9                                                     # uint32 raw RTC timestamp
+   elif record_type == STORAGE_TYPE_DIAGNOSTICS:
+      length = 5 + DIAGNOSTICS_STRUCT.size                           # fixed-size counter block
    else:
       return None
    return length if (length is not None and i + length <= len(data)) else None
@@ -295,6 +306,22 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                log_data[timestamp]['offset'] = timestamp_raw - local_ms
                log_data[timestamp]['lag'] = round((local_ms - timestamp_raw) / 1000, 2)
                consumed = 9
+
+         elif record_type == STORAGE_TYPE_DIAGNOSTICS and i + 5 + DIAGNOSTICS_STRUCT.size <= len(data):
+            # Near-misses, not faults. A non-zero value in any of these is the firmware reporting that it
+            # came close to something without the log otherwise showing it: watchdog pets refused, charger
+            # interrupts discarded as chatter, or BLE buffer allocations that returned NULL
+            declines, late, suppressed, failures, largest, high_water, capacity = DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
+            log_data[timestamp]['diag'] = {
+               'watchdog_declines': declines,
+               'watchdog_late': {name: late[j] for j, name in enumerate(WATCHDOG_TASK_NAMES) if late[j]},
+               'charger_suppressed_edges': suppressed,
+               'wsf_alloc_failures': failures,
+               'wsf_largest_failed_length': largest,
+               'wsf_pool_peak': list(high_water),
+               'wsf_pool_size': list(capacity),
+            }
+            consumed = 5 + DIAGNOSTICS_STRUCT.size
 
          elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):
             status = struct.unpack('<H', data[i + 5:i + 7])[0]

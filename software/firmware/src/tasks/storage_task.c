@@ -1,6 +1,8 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "app_tasks.h"
+#include "battery.h"
+#include "bluetooth.h"
 #include "imu.h"
 #include "logging.h"
 #include "nandlog.h"
@@ -77,6 +79,14 @@ void storage_write_time_anchor(void)
    const int64_t network_clock = (int64_t)local_clock + app_get_time_offset();
    const storage_item_t storage_item = { .timestamp = (network_clock > 0) ? (uint32_t)network_clock : 0,
                                          .value = local_clock, .type = STORAGE_TYPE_TIME_ANCHOR };
+   enqueue_storage_item(&storage_item);
+}
+
+void storage_write_diagnostics(void)
+{
+   // The payload is gathered in the storage task at dispatch rather than here
+   const uint32_t record_timestamp = app_get_experiment_time(app_get_time_offset());
+   const storage_item_t storage_item = { .timestamp = record_timestamp, .value = 0, .type = STORAGE_TYPE_DIAGNOSTICS };
    enqueue_storage_item(&storage_item);
 }
 
@@ -161,6 +171,7 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices) {}
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
 void storage_write_time_anchor(void) {}
+void storage_write_diagnostics(void) {}
 
 #endif    // #if !defined(_TEST_NO_STORAGE)
 
@@ -272,6 +283,30 @@ void StorageTask(void *params)
             case STORAGE_TYPE_BLE_SCAN:
                nandlog_store_record(STORAGE_TYPE_BLE_SCAN, item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
                break;
+            case STORAGE_TYPE_DIAGNOSTICS:
+            {
+               // Gathered here rather than at the call site so the counters are read as late as possible
+               storage_diagnostics_t diagnostics = { 0 };
+               watchdog_stats_t watchdog = { 0 };
+               system_watchdog_get_stats(&watchdog);
+               diagnostics.watchdog_declines = watchdog.declines;
+               for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
+                  diagnostics.watchdog_late_episodes[task] = watchdog.late_episodes[task];
+               const uint32_t suppressed = battery_monitor_get_suppressed_edge_count();
+               diagnostics.charger_suppressed_edges = (suppressed > UINT16_MAX) ? UINT16_MAX : (uint16_t)suppressed;
+               bluetooth_buffer_stats_t buffers;
+               bluetooth_get_buffer_stats(&buffers);
+               diagnostics.wsf_alloc_failures = (buffers.failures > UINT16_MAX) ? UINT16_MAX : (uint16_t)buffers.failures;
+               diagnostics.wsf_largest_failed_length = buffers.largest_failed_length;
+               const uint8_t reported = (buffers.num_pools > STORAGE_DIAGNOSTIC_NUM_POOLS) ? STORAGE_DIAGNOSTIC_NUM_POOLS : buffers.num_pools;
+               for (uint8_t pool = 0; pool < reported; ++pool)
+               {
+                  diagnostics.wsf_pool_high_water[pool] = buffers.high_water[pool];
+                  diagnostics.wsf_pool_capacity[pool] = buffers.capacity[pool];
+               }
+               nandlog_store_record(STORAGE_TYPE_DIAGNOSTICS, item.timestamp, &diagnostics, sizeof(diagnostics));
+               break;
+            }
             default:
                break;
          }

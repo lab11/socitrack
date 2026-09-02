@@ -17,6 +17,12 @@ typedef enum {
    WATCHDOG_NUM_TASKS
 } watchdog_task_t;
 
+typedef struct
+{
+   uint16_t declines;
+   uint8_t late_episodes[WATCHDOG_NUM_TASKS];
+} watchdog_stats_t;
+
 
 // Reset Diagnostics ---------------------------------------------------------------------------------------------------
 
@@ -52,6 +58,7 @@ _Static_assert((RESET_DIAGNOSTIC_STALL_TIME_ALIGNED + WATCHDOG_NUM_TASKS) == RES
 void setup_hardware(void);
 void system_reset(bool immediate);
 uint16_t system_get_reset_reason(void);
+void system_watchdog_get_stats(watchdog_stats_t *stats);
 void system_record_diagnostic(reset_diagnostic_t diagnostic);
 void system_watchdog_enable(void);
 void system_watchdog_disable(void);

@@ -48,6 +48,9 @@ void TimeAlignedTask(void *scheduled_experiment)
       // Reconcile the charger state against the pins
       battery_monitor_poll_charger_state();
 
+      // Record how close the firmware came to a fault without reaching one
+      storage_write_diagnostics();
+
       // Read and store the current battery voltage
       battery_voltage = battery_monitor_get_level_mV();
       print("INFO: Battery voltage = %u mV\n", battery_voltage);

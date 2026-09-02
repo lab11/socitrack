@@ -25,11 +25,11 @@
 #define WATCHDOG_INTERRUPT_PERIOD_MS                (WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_S * 1000)
 
 extern uint8_t _uid_base_address;
-static volatile uint32_t watchdog_last_checkin[WATCHDOG_NUM_TASKS];
-static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS];
-static volatile bool watchdog_enabled = false;
-static volatile uint32_t watchdog_armed_at;
 static uint16_t boot_reset_status = 0;
+static volatile uint16_t watchdog_declines;
+static volatile uint32_t watchdog_last_checkin[WATCHDOG_NUM_TASKS], watchdog_armed_at;
+static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS], watchdog_enabled = false, watchdog_was_late[WATCHDOG_NUM_TASKS];
+static volatile uint8_t watchdog_late_episodes[WATCHDOG_NUM_TASKS];
 
 __attribute__((unused))
 static const char *const watchdog_task_names[WATCHDOG_NUM_TASKS] = { "TimeAlignedTask", "StorageTask", "AppTask", "BLETask", "RangingTask" };
@@ -49,14 +49,41 @@ static reset_diagnostic_t watchdog_find_stalled_tasks(void)
    uint32_t num_stalled = 0;
    reset_diagnostic_t first_stalled = RESET_DIAGNOSTIC_NONE;
    const uint32_t now = watchdog_now(), deadline = WATCHDOG_MS_TO_STIMER(WATCHDOG_CHECKIN_DEADLINE_MS);
+   AM_CRITICAL_BEGIN
    for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
-      if (watchdog_registered[task] && ((now - watchdog_last_checkin[task]) > deadline))
+   {
+      const bool late = watchdog_registered[task] && ((now - watchdog_last_checkin[task]) > deadline);
+      if (late)
       {
+         if (!watchdog_was_late[task])
+         {
+            watchdog_was_late[task] = true;
+            if (watchdog_late_episodes[task] < UINT8_MAX)
+               ++watchdog_late_episodes[task];
+         }
          if (!num_stalled)
             first_stalled = (reset_diagnostic_t)(RESET_DIAGNOSTIC_STALL_TIME_ALIGNED + task);
          ++num_stalled;
       }
+      else
+         watchdog_was_late[task] = false;
+   }
+   if (num_stalled && (watchdog_declines < UINT16_MAX))
+      ++watchdog_declines;
+   AM_CRITICAL_END
    return (num_stalled > 1) ? RESET_DIAGNOSTIC_STALL_MULTIPLE : first_stalled;
+}
+
+void system_watchdog_get_stats(watchdog_stats_t *stats)
+{
+   if (stats)
+   {
+      AM_CRITICAL_BEGIN
+      stats->declines = watchdog_declines;
+      for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
+         stats->late_episodes[task] = watchdog_late_episodes[task];
+      AM_CRITICAL_END
+   }
 }
 
 static void watchdog_withdraw_stall_diagnostic(void)

@@ -48,7 +48,7 @@
 // Whether each record carries its own length so that a reader can walk a page without knowing the
 // application's record types
 #if !defined(NANDLOG_RECORD_FRAMING)
-#define NANDLOG_RECORD_FRAMING                      0
+#define NANDLOG_RECORD_FRAMING                      1
 #endif
 
 // How long to wait for the chip to clear BUSY after a program or erase before declaring it dead

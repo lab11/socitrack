@@ -20,7 +20,8 @@ typedef enum {
    APP_NOTIFY_IMU_EVENT = 0b00010000,
    APP_NOTIFY_BATTERY_EVENT = 0b00100000,
    APP_NOTIFY_DOWNLOAD_SEGGER_LOG = 0b01000000,
-   APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED = 0b10000000
+   APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED = 0b10000000,
+   APP_NOTIFY_ALLOW_DOWNLOADS = 0b100000000
 } app_notification_t;
 
 typedef struct __attribute__ ((__packed__))
@@ -55,6 +56,7 @@ bool ranging_active(void);
 void storage_queue_init(void);
 bool storage_flush_and_shutdown(void);
 void storage_write_time_anchor(void);
+void storage_write_diagnostics(void);
 void storage_write_battery_level(uint32_t battery_voltage_mV);
 void storage_write_motion_status(motion_code_t motion_code);
 void storage_write_charging_status(battery_event_t battery_event);
