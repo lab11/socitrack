@@ -193,23 +193,49 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
 
    # Report near-misses recorded by the log when something is actually non-zero
    if tottag_format.is_verbose():
-      diags = [d['diag'] for d in log_data if 'diag' in d]
-      if diags:
-         last = diags[-1]
+      per_boot, pending = [], None
+      for datum in log_data:
+         if 'rst' in datum and pending is not None:
+            per_boot.append(pending)
+            pending = None
+         if 'diag' in datum:
+            current = datum['diag']
+            if pending is not None and (current['watchdog_declines'] < pending['watchdog_declines'] or
+                                        current['charger_suppressed_edges'] < pending['charger_suppressed_edges'] or
+                                        current['wsf_alloc_failures'] < pending['wsf_alloc_failures']):
+               per_boot.append(pending)
+            pending = current
+      if pending is not None:
+         per_boot.append(pending)
+      if per_boot:
+         declines = sum(d['watchdog_declines'] for d in per_boot)
+         suppressed = sum(d['charger_suppressed_edges'] for d in per_boot)
+         failures = sum(d['wsf_alloc_failures'] for d in per_boot)
+         late = defaultdict(int)
+         for d in per_boot:
+            for task, count in d['watchdog_late'].items():
+               late[task] += count
          notable = []
-         if last['watchdog_declines']:
-            notable.append(f"{last['watchdog_declines']} watchdog pet(s) refused, late tasks: {last['watchdog_late'] or 'none still late'}")
-         if last['charger_suppressed_edges']:
-            notable.append(f"{last['charger_suppressed_edges']} charger interrupt(s) discarded as chatter")
-         if last['wsf_alloc_failures']:
-            notable.append(f"{last['wsf_alloc_failures']} BLE buffer allocation(s) failed, largest request "
-                           f"{last['wsf_largest_failed_length']} bytes")
-         peak, size = last['wsf_pool_peak'], last['wsf_pool_size']
-         tight = [f"pool {j}: {peak[j]}/{size[j]}" for j in range(len(size)) if size[j] and peak[j] >= size[j] - 1]
-         if tight:
-            notable.append('BLE buffer pools ran near empty: ' + ', '.join(tight))
+         if declines:
+            notable.append(f"{declines} watchdog pet(s) refused over {len(per_boot)} boot(s); "
+                           f"late tasks: {dict(late) or 'not recorded'}")
+         if suppressed:
+            notable.append(f"{suppressed} charger interrupt(s) discarded as chatter -- the records look clean "
+                           f"because the de-bounce worked, but the pin is bouncing")
+         if failures:
+            largest = max(d['wsf_largest_failed_length'] for d in per_boot)
+            notable.append(f"{failures} BLE buffer allocation(s) returned NULL, largest request {largest} bytes")
+         if not failures:
+            tight = set()
+            for d in per_boot:
+               peak, size = d['wsf_pool_peak'], d['wsf_pool_size']
+               for j in range(len(size)):
+                  if size[j] and (size[j] - peak[j]) <= 1:
+                     tight.add(f"pool {j} peaked {peak[j]}/{size[j]}")
+            if tight:
+               notable.append('BLE buffer pools ran near empty: ' + ', '.join(sorted(tight)))
          if notable:
-            print(f"INFO: log from {uid_to_labels[from_uid]} reports near-misses (cumulative since last boot):")
+            print(f"INFO: log from {uid_to_labels[from_uid]} reports near-misses:")
             for line in notable:
                print(f"   {line}")
 
