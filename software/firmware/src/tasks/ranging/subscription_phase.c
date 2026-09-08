@@ -45,7 +45,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    }
    else if (!schedule_index)
    {
-      dwt_setpreambledetecttimeout(DW_PREAMBLE_TIMEOUT);
+      dwt_setpreambledetecttimeout(0);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp - RECEIVE_EARLY_START_US));
       dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US));
       if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
@@ -89,11 +89,12 @@ scheduler_phase_t subscription_phase_rx_error(void)
       return ranging_phase_rx_error();
 
    // Attempt to re-enable listening for additional Subscription packets
-   register const uint32_t time_elapsed_us = DWT_TO_US((uint64_t)dwt_readsystimestamphi32() << 8) - next_action_timestamp;
-   if ((time_elapsed_us + 300) <= SUBSCRIPTION_TIMEOUT_US)
+   const uint32_t window_elapsed_dw = (uint32_t)((uint64_t)dwt_readsystimestamphi32() << 8) - reference_time;
+   const int32_t time_elapsed_us = (int32_t)DWT_TO_US(window_elapsed_dw) - (int32_t)next_action_timestamp;
+   if ((time_elapsed_us >= 0) && (((uint32_t)time_elapsed_us + SUBSCRIPTION_RELISTEN_MARGIN_US) <= SUBSCRIPTION_TIMEOUT_US))
    {
       print("INFO: More time left in the Subscription phase...listening again\n");
-      dwt_setrxtimeout(DW_TIMEOUT_FROM_US(SUBSCRIPTION_TIMEOUT_US - time_elapsed_us));
+      dwt_setrxtimeout(DW_TIMEOUT_FROM_US(SUBSCRIPTION_TIMEOUT_US - (uint32_t)time_elapsed_us));
       if (dwt_rxenable(DWT_START_RX_IMMEDIATE) != DWT_SUCCESS)
          print("ERROR: Unable to restart listening for SUBSCRIPTION packets\n");
       else

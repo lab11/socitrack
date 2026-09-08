@@ -16,15 +16,31 @@
 
 static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
-static uint8_t empty_round_timeout, eui[EUI_LEN];
+static uint8_t empty_round_timeout, eui[EUI_LEN], read_buffer[128];
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
-static uint8_t read_buffer[128], device_eui, reception_timeout;
+static uint32_t last_round_stimer, search_started_stimer;
 static volatile schedule_role_t current_role = ROLE_IDLE;
 static volatile scheduler_phase_t ranging_phase;
 static volatile bool is_running;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static void begin_schedule_phase(void)
+{
+   // Publish the phase with no window in which a radio interrupt could advance it and be overwritten
+   AM_CRITICAL_BEGIN
+   ranging_phase = schedule_phase_begin();
+   AM_CRITICAL_END
+}
+
+__attribute__((unused))
+static uint32_t schedule_reference_age_ms(void)
+{
+   // How long ago the master's timestamp for this round was sampled
+   const uint32_t elapsed = am_hal_stimer_counter_get() - schedule_phase_get_reference_stimer();
+   return (elapsed < RANGING_MS_TO_STIMER(SCHEDULING_INTERVAL_US / 1000u)) ? ((elapsed * 1000u) / RANGING_STIMER_HZ) : 0u;
+}
 
 static void fix_network_errors(uint8_t num_ranging_results)
 {
@@ -85,7 +101,11 @@ static void handle_range_computation_phase(void)
 #ifndef _TEST_RANGING_TASK
 #ifndef _TEST_NO_STORAGE
          if (ranging_results[0])
-            storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), (int32_t)data_timestamp - (int32_t)app_get_experiment_time(0));
+         {
+            // Wind back the local clock to match the master's timestamp for this round
+            const int64_t local_at_reference = (int64_t)app_get_experiment_time(0) - (int64_t)schedule_reference_age_ms();
+            storage_write_ranging_data(data_timestamp, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH), (int32_t)((int64_t)data_timestamp - local_at_reference));
+         }
 #endif
 #endif
          print_ranges(app_experiment_time_to_rtc_time(data_timestamp), data_timestamp % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
@@ -102,6 +122,7 @@ static void handle_range_computation_phase(void)
       }
    }
    ranging_phase = UNSCHEDULED_TIME_PHASE;
+   last_round_stimer = am_hal_stimer_counter_get();
 }
 
 
@@ -145,7 +166,7 @@ static void rx_callback(const dwt_cb_data_t *rxData)
    }
 }
 
-static void rx_timeout_callback(const dwt_cb_data_t *rxData)
+static void handle_rx_failure(uint32_t notification_reason)
 {
    // Allow the scheduling protocol to handle the interrupt
    ranging_phase = schedule_phase_rx_error();
@@ -154,9 +175,21 @@ static void rx_timeout_callback(const dwt_cb_data_t *rxData)
    if ((ranging_phase == RANGING_ERROR) || (ranging_phase == RADIO_ERROR) || (ranging_phase == RANGE_COMPUTATION_PHASE))
    {
       BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-      xTaskNotifyFromISR(notification_handle, RANGING_RX_TIMEOUT, eSetBits, &xHigherPriorityTaskWoken);
+      xTaskNotifyFromISR(notification_handle, notification_reason, eSetBits, &xHigherPriorityTaskWoken);
       portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
    }
+}
+
+static void rx_timeout_callback(const dwt_cb_data_t *rxData)
+{
+   // A listening window that expired with nothing in it
+   handle_rx_failure(RANGING_RX_TIMEOUT);
+}
+
+static void rx_error_callback(const dwt_cb_data_t *rxData)
+{
+   // A frame that arrived and could not be decoded
+   handle_rx_failure(RANGING_RX_ERROR);
 }
 
 
@@ -169,10 +202,9 @@ void scheduler_init(experiment_details_t *details)
    {
       schedule_phase_store_experiment_details(details);
       system_read_UID(eui, sizeof(eui));
-      device_eui = eui[0];
 
       // Set the DW3000 callback configuration
-      ranging_radio_register_callbacks(tx_callback, rx_callback, rx_timeout_callback, rx_timeout_callback);
+      ranging_radio_register_callbacks(tx_callback, rx_callback, rx_timeout_callback, rx_error_callback);
    }
    is_running = false;
 }
@@ -195,7 +227,8 @@ void scheduler_run(schedule_role_t role)
    // Initialize all static ranging variables
    notification_handle = xTaskGetCurrentTaskHandle();
    memset(ranging_results, 0, sizeof(ranging_results));
-   reception_timeout = empty_round_timeout = 0;
+   last_round_stimer = search_started_stimer = am_hal_stimer_counter_get();
+   empty_round_timeout = 0;
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 
    // Initialize the Schedule, Ranging, Status, and Subscription phases
@@ -224,11 +257,12 @@ void scheduler_run(schedule_role_t role)
       // Initialize the radio wakeup timer
       current_role = ROLE_IDLE;
       am_hal_timer_default_config_set(&wakeup_timer_config);
+      wakeup_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
       am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
       NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
       NVIC_EnableIRQ(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER);
       print("INFO: Searching for an existing network\n");
-      ranging_phase = schedule_phase_begin();
+      begin_schedule_phase();
    }
 
    // Notify the application that network connectivity has been established
@@ -236,18 +270,18 @@ void scheduler_run(schedule_role_t role)
 
    // Loop forever waiting for actions to wake us up
    uint32_t pending_actions = 0;
-   const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
+   const TickType_t wait_ticks = pdMS_TO_TICKS(RANGING_ROUND_STALL_TIMEOUT_MS);
    while (is_running)
    {
       system_watchdog_pet(WATCHDOG_TASK_RANGING);
-      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &pending_actions, checkin_ticks) == pdTRUE)
+      if (xTaskNotifyWait(pdFALSE, 0xffffffff, &pending_actions, wait_ticks) == pdTRUE)
       {
          // Handle any pending actions
          if ((pending_actions & RANGING_NEW_ROUND_START))
          {
             // Wake up the radio and wait until all schedule updating tasks have completed
             ranging_radio_wakeup();
-            ranging_phase = schedule_phase_begin();
+            begin_schedule_phase();
          }
          else if ((pending_actions & RANGING_STOP))
             continue;
@@ -256,7 +290,7 @@ void scheduler_run(schedule_role_t role)
          switch (ranging_phase)
          {
             case RANGE_COMPUTATION_PHASE:
-               reception_timeout = 0;
+               search_started_stimer = am_hal_stimer_counter_get();
                if (ranging_phase_was_scheduled() && (current_role == ROLE_IDLE))
                {
                   // Notify the application that our network role has changed
@@ -269,37 +303,45 @@ void scheduler_run(schedule_role_t role)
                if (current_role == ROLE_MASTER)
                   ranging_phase = UNSCHEDULED_TIME_PHASE;
                else
-                  ranging_phase = schedule_phase_begin();
+                  begin_schedule_phase();
                break;
             case RANGING_ERROR:
                if (current_role == ROLE_MASTER)
                   ranging_phase = UNSCHEDULED_TIME_PHASE;
-               else if (++reception_timeout >= NETWORK_SEARCH_TIME_SECONDS)
+               else if ((am_hal_stimer_counter_get() - search_started_stimer) >= NETWORK_SEARCH_TIMEOUT_STIMER)
                {
                      // Stop the ranging task if no network was detected after a period of time
                      print("WARNING: Timed out searching for an existing network\n");
 #ifndef _TEST_RANGING_TASK
                      is_running = false;
 #else
-                     ranging_phase = schedule_phase_begin();
-                     reception_timeout = 0;
+                     begin_schedule_phase();
+                     search_started_stimer = am_hal_stimer_counter_get();
 #endif
                }
                else
-                  ranging_phase = schedule_phase_begin();
+                  begin_schedule_phase();
                break;
             case MESSAGE_COLLISION:
                print("WARNING: Stopping ranging due to possible network collision\n");
 #ifndef _TEST_RANGING_TASK
                is_running = false;
 #else
-               ranging_phase = schedule_phase_begin();
-               reception_timeout = 0;
+               begin_schedule_phase();
+               search_started_stimer = am_hal_stimer_counter_get();
 #endif
                break;
             default:
                break;
          }
+      }
+      else if ((current_role != ROLE_MASTER) && ((am_hal_stimer_counter_get() - last_round_stimer) > RANGING_ROUND_STALL_STIMER))
+      {
+         // A participant's rounds are restarted only by its own wake-up timer
+         print("WARNING: No ranging round completed in %u ms...restarting the Schedule Phase\n", (uint32_t)RANGING_ROUND_STALL_TIMEOUT_MS);
+         last_round_stimer = am_hal_stimer_counter_get();
+         ranging_radio_wakeup();
+         begin_schedule_phase();
       }
    }
 

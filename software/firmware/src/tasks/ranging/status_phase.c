@@ -54,12 +54,12 @@ scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uin
    // Reset the necessary Schedule Phase parameters
    current_slot = 1;
    num_present_devices = 0;
-   total_num_slots = num_slots;
    scheduled_slot = status_slot;
    success_packet.sequence_number = 0;
    success_packet.success = responses_received();
    next_action_timestamp = next_action_time;
    memset(present_devices, 0, sizeof(present_devices));
+   total_num_slots = (num_slots > MAX_NUM_RANGING_DEVICES) ? MAX_NUM_RANGING_DEVICES : num_slots;
    dwt_writetxfctrl(sizeof(status_success_packet_t), 0, 0);
    dwt_writetxdata(sizeof(status_success_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&success_packet, 0);
 
@@ -93,7 +93,7 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
    }
 
    // Record the presence of the transmitting device
-   if (!scheduled_slot)
+   if (!scheduled_slot && (num_present_devices < MAX_NUM_RANGING_DEVICES))
       present_devices[num_present_devices++] = packet->src_addr;
 
    // Retransmit the status packet upon reception

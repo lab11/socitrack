@@ -168,9 +168,31 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define RADIO_WAKEUP_SAFETY_DELAY_US                3000
 #define RECEIVE_EARLY_START_US                      (5 + (uint32_t)DW_PREAMBLE_LENGTH_US)
 
+#define RANGING_ROUNDS_PER_SECOND                   (1000000u / SCHEDULING_INTERVAL_US)
+#define RANGING_STIMER_HZ                           32768u
+#define RANGING_MS_TO_STIMER(_ms)                   ((((uint32_t)(_ms) / 1000u) * RANGING_STIMER_HZ) + ((((uint32_t)(_ms) % 1000u) * RANGING_STIMER_HZ) / 1000u))
+#define RANGING_INVALID_TIMESTAMP                   0x7FFFFFFFu
+
 #define DEVICE_TIMEOUT_SECONDS                      60
+#define DEVICE_TIMEOUT_ROUNDS                       (DEVICE_TIMEOUT_SECONDS * RANGING_ROUNDS_PER_SECOND)
+#define DEVICE_FILTER_RESET_SECONDS                 2
+#define DEVICE_FILTER_RESET_ROUNDS                  (DEVICE_FILTER_RESET_SECONDS * RANGING_ROUNDS_PER_SECOND)
+#define MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE        (3u * RANGING_ROUNDS_PER_SECOND)
+
 #define NETWORK_SEARCH_TIME_SECONDS                 3
-#define MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE        (3 * (1000000 / SCHEDULING_INTERVAL_US))
+#define NETWORK_SEARCH_TIMEOUT_STIMER               RANGING_MS_TO_STIMER(NETWORK_SEARCH_TIME_SECONDS * 1000u)
+
+#define RANGING_ROUND_STALL_TIMEOUT_MS              2000
+#define RANGING_ROUND_STALL_STIMER                  RANGING_MS_TO_STIMER(RANGING_ROUND_STALL_TIMEOUT_MS)
+
+#define RADIO_ISR_MAX_ITERATIONS                    16
+
+#if (DEVICE_TIMEOUT_ROUNDS > 255)
+#error "DEVICE_TIMEOUT_ROUNDS must fit in the uint8_t per-device round counters in schedule_phase.c"
+#endif
+#if (RANGING_ROUND_STALL_TIMEOUT_MS <= (2 * (SCHEDULING_INTERVAL_US / 1000)))
+#error "The round-stall backstop must tolerate a missed round, or ordinary packet loss will restart the schedule phase"
+#endif
 
 #define SCHEDULE_NUM_TOTAL_BROADCASTS               5
 #define SCHEDULE_NUM_MASTER_BROADCASTS              2
@@ -189,5 +211,6 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define SUBSCRIPTION_BROADCAST_PERIOD_US            2000
 #define SUBSCRIPTION_TIMEOUT_US                     1000
+#define SUBSCRIPTION_RELISTEN_MARGIN_US             300
 
 #endif  // #ifndef __APP_CONFIG_HEADER_H__

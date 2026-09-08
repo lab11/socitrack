@@ -65,6 +65,8 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
 {
    // Ensure there are at least two devices to begin ranging
    my_slot = scheduled_slot;
+   if (schedule_size > MAX_NUM_RANGING_DEVICES)
+      schedule_size = MAX_NUM_RANGING_DEVICES;
    reset_computation_phase(schedule_size);
    memset(&measurements, 0, sizeof(measurements));
    slots_per_range = (uint32_t)schedule_size * (RANGING_NUM_PACKETS_PER_DEVICE - 1);
@@ -190,27 +192,32 @@ scheduler_phase_t ranging_phase_rx_error(void)
       return status_phase_rx_error();
 
    // Record an invalid packet reception time in all relevant storage structures
-   const int16_t to_send = 0x7FFF;
+   const uint32_t to_send = RANGING_INVALID_TIMESTAMP;
    const div_t slot_results = div(time_slot, slots_per_range);
    register const uint32_t slot = (uint32_t)slot_results.rem, sequence_number = (uint32_t)slot_results.quot;
    if (slot < my_slot)
    {
-      measurements[slot].poll_tx_times[sequence_number] = 0;
-      measurements[slot].poll_rx_times[sequence_number] = 0x00FFFFFF;
+      measurements[slot].poll_tx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
+      measurements[slot].poll_rx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
       dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot]));
    }
    else if (slot < schedule_length)
    {
-      measurements[slot].resp_tx_times[sequence_number] = 0;
-      measurements[slot].poll_rx_times[sequence_number] = 0x00FFFFFF;
-      measurements[slot].resp_rx_times[sequence_number] = 0x00FFFFFF;
+      measurements[slot].resp_tx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
+      measurements[slot].poll_rx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
+      measurements[slot].resp_rx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
       dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[slot - my_slot - 1]));
    }
    else
    {
       register const uint32_t tx_device_slot = slot - schedule_length;
+      measurements[tx_device_slot].final_rx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
       if (my_slot > tx_device_slot)
+      {
+         measurements[tx_device_slot].final_tx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
+         measurements[tx_device_slot].resp_rx_times[sequence_number] = RANGING_INVALID_TIMESTAMP;
          dwt_writetxdata(sizeof(to_send), (uint8_t*)&to_send, offsetof(ranging_packet_t, tx_rx_times[schedule_length - my_slot + tx_device_slot - 1]));
+      }
    }
 
    // Move to the next time slot operation

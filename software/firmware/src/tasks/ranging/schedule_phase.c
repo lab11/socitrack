@@ -9,7 +9,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static uint8_t device_timeouts[MAX_NUM_RANGING_DEVICES], valid_devices[MAX_NUM_RANGING_DEVICES];
-static uint32_t reference_time, next_action_timestamp;
+static uint32_t reference_time, next_action_timestamp, reference_stimer;
 static uint8_t scheduled_slot, num_valid_devices;
 static schedule_packet_t schedule_packet;
 static scheduler_phase_t current_phase;
@@ -83,8 +83,10 @@ scheduler_phase_t schedule_phase_begin(void)
    {
       // Increment the epoch timestamp and increment all device timeouts
       schedule_packet.experiment_time_ms = app_get_experiment_time(app_get_time_offset());
+      reference_stimer = am_hal_stimer_counter_get();
       for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
-         ++device_timeouts[i];
+         if (device_timeouts[i] < UINT8_MAX)
+            ++device_timeouts[i];
 
       // Schedule packet transmission
       const uint16_t packet_size = sizeof(schedule_packet_t) - MAX_NUM_RANGING_DEVICES + schedule_packet.num_devices;
@@ -159,16 +161,23 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    }
 
    // Unpack the received schedule
+   uint8_t num_devices = schedule->num_devices;
+   if (num_devices > MAX_NUM_RANGING_DEVICES)
+   {
+      print("WARNING: Received a schedule claiming %u devices...clamping to %u\n", (uint32_t)num_devices, (uint32_t)MAX_NUM_RANGING_DEVICES);
+      num_devices = MAX_NUM_RANGING_DEVICES;
+   }
    scheduled_slot = UNSCHEDULED_SLOT;
    schedule_packet.experiment_time_ms = schedule->experiment_time_ms;
-   schedule_packet.num_devices = schedule->num_devices;
-   for (uint8_t i = 0; i < schedule->num_devices; ++i)
+   schedule_packet.num_devices = num_devices;
+   reference_stimer = am_hal_stimer_counter_get();
+   for (uint8_t i = 0; i < num_devices; ++i)
    {
       schedule_packet.schedule[i] = schedule->schedule[i];
       if (schedule->schedule[i] == schedule_packet.src_addr)
          scheduled_slot = i;
    }
-   for (uint8_t i = schedule->num_devices; i < MAX_NUM_RANGING_DEVICES; ++i)
+   for (uint8_t i = num_devices; i < MAX_NUM_RANGING_DEVICES; ++i)
       schedule_packet.schedule[i] = 0;
 
    // Set up the reference timestamp for scheduling future messages
@@ -220,6 +229,12 @@ uint32_t schedule_phase_get_timestamp(void)
    return schedule_packet.experiment_time_ms;
 }
 
+uint32_t schedule_phase_get_reference_stimer(void)
+{
+   // The 32 kHz counter reading at the instant the timestamp above was sampled for this round
+   return reference_stimer;
+}
+
 void schedule_phase_add_device(uint8_t eui)
 {
    // Search for the first empty schedule slot
@@ -261,8 +276,8 @@ void schedule_phase_handle_device_timeouts(void)
 {
    // De-schedule any devices that have been absent for a long time
    for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
-      if (device_timeouts[i] > DEVICE_TIMEOUT_SECONDS)
+      if (device_timeouts[i] > DEVICE_TIMEOUT_ROUNDS)
          deschedule_device(i--);
-      else if (device_timeouts[i] > 3)
+      else if (device_timeouts[i] > DEVICE_FILTER_RESET_ROUNDS)
          computation_phase_reset_range_filter(schedule_packet.schedule[i]);
 }

@@ -44,6 +44,7 @@ void ranging_radio_choose_antenna(uint8_t antenna_number);
 void ranging_radio_disable(void);
 void ranging_radio_sleep(bool deep_sleep);
 void ranging_radio_wakeup(void);
+uint32_t ranging_radio_get_isr_overrun_count(void);
 bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
 uint32_t ranging_radio_readrxtimestamp_lo(void);

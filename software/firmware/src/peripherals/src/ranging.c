@@ -13,6 +13,7 @@ static void *spi_handle;
 static dwt_config_t dw_config;
 static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
 static volatile bool spi_ready, initialized = false;
+static volatile uint32_t isr_overrun_count;
 static uint8_t eui64_array[8];
 
 
@@ -27,15 +28,41 @@ static void ranging_radio_spi_ready(const dwt_cb_data_t *rxData)
 static void ranging_radio_spi_event(const dwt_cb_data_t *rxData) {}
 static void ranging_radio_spi_error(void) {}
 
+static void ranging_radio_set_interrupt(bool enabled)
+{
+   // Gate this radio's interrupt line individually
+   const am_hal_gpio_int_ctrl_e control = enabled ? AM_HAL_GPIO_INT_CTRL_INDV_ENABLE : AM_HAL_GPIO_INT_CTRL_INDV_DISABLE;
+   uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, control, &radio_interrupt_pin);
+#if REVISION_ID == REVISION_M
+   radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, control, &radio_interrupt_pin);
+   radio_interrupt_pin = PIN_RADIO_INTERRUPT3;
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, control, &radio_interrupt_pin);
+#endif
+}
+
 static void ranging_radio_isr(void *args)
 {
    // Call the DW3000 ISR as long as the interrupt pin is asserted
-   static uint32_t pin_status;
+   uint32_t pin_status = 0, iterations = 0;
    do
    {
       dwt_isr();
       am_hal_gpio_state_read(PIN_RADIO_INTERRUPT, AM_HAL_GPIO_INPUT_READ, &pin_status);
-   } while (pin_status);
+   } while (pin_status && (++iterations < RADIO_ISR_MAX_ITERATIONS));
+
+   // Silence the radio, so that the scheduler sees the round fail and recovers
+   if (pin_status)
+   {
+      if (isr_overrun_count < UINT32_MAX)
+         ++isr_overrun_count;
+      ranging_radio_set_interrupt(false);
+      dwt_forcetrxoff();
+      dwt_setinterrupt(DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
+      dwt_writesysstatuslo(DWT_INT_ALL_LO);
+      print("ERROR: DW3000 interrupt line stuck asserted after %u handler passes...radio silenced\n", (uint32_t)iterations);
+   }
 }
 
 static void ranging_radio_spi_slow(void)
@@ -460,6 +487,9 @@ void ranging_radio_disable(void)
 
 void ranging_radio_sleep(bool deep_sleep)
 {
+   // Clear the radio's interrupt line
+   ranging_radio_set_interrupt(false);
+
    // Disable all antennas
 #if REVISION_ID > REVISION_M
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
@@ -480,6 +510,9 @@ void ranging_radio_sleep(bool deep_sleep)
 
 void ranging_radio_wakeup(void)
 {
+   // Re-arm the radio's interrupt
+   ranging_radio_set_interrupt(true);
+
    // Assert the WAKEUP pin for >=500us and wait for it to become accessible
    wakeup_device_with_io();
    for (int i = 0; !spi_ready && (i < 100); ++i)
@@ -500,6 +533,12 @@ void ranging_radio_wakeup(void)
             DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK  |
             DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
    }
+}
+
+uint32_t ranging_radio_get_isr_overrun_count(void)
+{
+   // Non-zero means the radio interrupt line was stuck asserted
+   return isr_overrun_count;
 }
 
 bool ranging_radio_rxenable(int mode)
