@@ -11,7 +11,7 @@
 static scheduler_phase_t current_phase;
 static subscription_packet_t subscription_packet;
 static uint8_t schedule_index, schedule_length;
-static uint32_t reference_time, next_action_timestamp;
+static uint32_t reference_time;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -23,7 +23,7 @@ void subscription_phase_initialize(const uint8_t *uid)
    srand(dwt_readsystimestamphi32());
 }
 
-scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time, uint32_t next_action_time)
+scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time)
 {
    // Initialize the Subscription Phase parameters
    current_phase = SUBSCRIPTION_PHASE;
@@ -31,13 +31,12 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    schedule_length = schedule_size;
    ranging_radio_choose_antenna(0);
    reference_time = ref_time;
-   next_action_timestamp = next_action_time;
 
    // Reset the necessary Subscription Phase parameters
    if (schedule_index == UNSCHEDULED_SLOT)
    {
       dwt_writetxfctrl(sizeof(subscription_packet_t), 0, 0);
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp + (rand() % (SUBSCRIPTION_TIMEOUT_US - 100))));
+      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(SUBSCRIPTION_PHASE_START_US + (rand() % (SUBSCRIPTION_TIMEOUT_US - 100))));
       if ((dwt_writetxdata(sizeof(subscription_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&subscription_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
          print("ERROR: Failed to transmit SUBSCRIPTION request packet\n");
       else
@@ -46,7 +45,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    else if (!schedule_index)
    {
       dwt_setpreambledetecttimeout(0);
-      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp - RECEIVE_EARLY_START_US));
+      dwt_setdelayedtrxtime(DW_DELAY_FROM_US(SUBSCRIPTION_PHASE_START_US - RECEIVE_EARLY_START_US));
       dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US));
       if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
          print("ERROR: Unable to start listening for SUBSCRIPTION packets\n");
@@ -56,7 +55,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
 
    // Transition to the Ranging Phase at the appropriate future time
    current_phase = RANGING_PHASE;
-   return ranging_phase_begin(schedule_index, schedule_length, reference_time, next_action_timestamp + SUBSCRIPTION_BROADCAST_PERIOD_US);
+   return ranging_phase_begin(schedule_index, schedule_length, reference_time);
 }
 
 scheduler_phase_t subscription_phase_tx_complete(void)
@@ -65,7 +64,7 @@ scheduler_phase_t subscription_phase_tx_complete(void)
    if (current_phase != SUBSCRIPTION_PHASE)
       return ranging_phase_tx_complete();
    current_phase = RANGING_PHASE;
-   return ranging_phase_begin(schedule_index, schedule_length, reference_time, next_action_timestamp + SUBSCRIPTION_BROADCAST_PERIOD_US);
+   return ranging_phase_begin(schedule_index, schedule_length, reference_time);
 }
 
 scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet)
@@ -90,7 +89,7 @@ scheduler_phase_t subscription_phase_rx_error(void)
 
    // Attempt to re-enable listening for additional Subscription packets
    const uint32_t window_elapsed_dw = (uint32_t)((uint64_t)dwt_readsystimestamphi32() << 8) - reference_time;
-   const int32_t time_elapsed_us = (int32_t)DWT_TO_US(window_elapsed_dw) - (int32_t)next_action_timestamp;
+   const int32_t time_elapsed_us = (int32_t)DWT_TO_US(window_elapsed_dw) - (int32_t)SUBSCRIPTION_PHASE_START_US;
    if ((time_elapsed_us >= 0) && (((uint32_t)time_elapsed_us + SUBSCRIPTION_RELISTEN_MARGIN_US) <= SUBSCRIPTION_TIMEOUT_US))
    {
       print("INFO: More time left in the Subscription phase...listening again\n");
@@ -103,5 +102,5 @@ scheduler_phase_t subscription_phase_rx_error(void)
 
    // Move on to the Ranging phase
    current_phase = RANGING_PHASE;
-   return ranging_phase_begin(schedule_index, schedule_length, reference_time, next_action_timestamp + SUBSCRIPTION_BROADCAST_PERIOD_US);
+   return ranging_phase_begin(schedule_index, schedule_length, reference_time);
 }

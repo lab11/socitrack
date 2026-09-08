@@ -61,7 +61,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
 
 void ranging_phase_initialize(const uint8_t *uid) {}
 
-scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time, uint32_t next_action_time)
+scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time)
 {
    // Ensure there are at least two devices to begin ranging
    my_slot = scheduled_slot;
@@ -78,7 +78,7 @@ scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_s
    // Reset the necessary Ranging Phase parameters
    current_phase = RANGING_PHASE;
    schedule_length = schedule_size;
-   next_action_timestamp = next_action_time;
+   next_action_timestamp = RANGING_PHASE_START_US;
    static const ieee154_header_t ranging_packet_header = { .msgType = RANGING_PACKET };
    dwt_writetxdata(sizeof(ieee154_header_t), (uint8_t*)&ranging_packet_header, 0);
    current_antenna = NUM_XMIT_ANTENNAS - 1;

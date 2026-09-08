@@ -34,13 +34,14 @@ static void begin_schedule_phase(void)
    AM_CRITICAL_END
 }
 
-__attribute__((unused))
+#if !defined(_TEST_RANGING_TASK) && !defined(_TEST_NO_STORAGE)
 static uint32_t schedule_reference_age_ms(void)
 {
    // How long ago the master's timestamp for this round was sampled
    const uint32_t elapsed = am_hal_stimer_counter_get() - schedule_phase_get_reference_stimer();
    return (elapsed < RANGING_MS_TO_STIMER(SCHEDULING_INTERVAL_US / 1000u)) ? ((elapsed * 1000u) / RANGING_STIMER_HZ) : 0u;
 }
+#endif
 
 static void fix_network_errors(uint8_t num_ranging_results)
 {

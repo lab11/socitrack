@@ -27,7 +27,7 @@ typedef struct
 // Public API ----------------------------------------------------------------------------------------------------------
 
 void ranging_phase_initialize(const uint8_t *uid);
-scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time, uint32_t next_action_time);
+scheduler_phase_t ranging_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time);
 scheduler_phase_t ranging_phase_tx_complete(void);
 scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet);
 scheduler_phase_t ranging_phase_rx_error(void);
