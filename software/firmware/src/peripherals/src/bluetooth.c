@@ -33,9 +33,10 @@ static volatile bool is_scanning, is_advertising, is_connected, ranges_requested
 static volatile bool expected_scanning, expected_advertising, is_initialized, first_initialization;
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
-static const char adv_local_name[] = { 'T', 'o', 't', 'T', 'a', 'g' };
+static const char adv_name_prefix[] = { 'T', 'o', 't', 'T', 'a', 'g' };
+static char adv_local_name[sizeof(adv_name_prefix) + 3];
+static uint8_t adv_local_name_length, ble_sys_id[8];
 static ble_discovery_callback_t discovery_callback;
-static uint8_t ble_sys_id[8];
 
 static wsfTimer_t watchdog_checkin_timer;
 static wsfHandlerId_t notification_handler_id;
@@ -191,7 +192,7 @@ static void advertising_setup(void)
    memset((uint8_t*)adv_data_conn, 0, sizeof(adv_data_conn));
    appAdvSetData(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, 0,(uint8_t*)adv_data_conn, HCI_ADV_DATA_LEN, HCI_ADV_DATA_LEN);
    appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_FLAGS, sizeof(adv_data_flags), (uint8_t*)adv_data_flags);
-   appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_LOCAL_NAME, sizeof(adv_local_name), (uint8_t*)adv_local_name);
+   appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_LOCAL_NAME, adv_local_name_length, (uint8_t*)adv_local_name);
    appAdvSetAdValue(DM_ADV_HANDLE_DEFAULT, APP_ADV_DATA_CONNECTABLE, DM_ADV_TYPE_MANUFACTURER, sizeof(current_ranging_role), (uint8_t*)current_ranging_role);
 
    // Set the scan response data
@@ -315,8 +316,8 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
       {
          uint8_t *nameLengthData = DmFindAdType(DM_ADV_TYPE_LOCAL_NAME, pDmEvt->scanReport.len, pDmEvt->scanReport.pData);
          uint8_t *rangingRoleData = DmFindAdType(DM_ADV_TYPE_MANUFACTURER, pDmEvt->scanReport.len, pDmEvt->scanReport.pData);
-         if (nameLengthData && rangingRoleData && (*nameLengthData == (1 + sizeof(adv_local_name))) && (*rangingRoleData == (1 + sizeof(current_ranging_role))) &&
-               (memcmp(adv_local_name, nameLengthData + 2, sizeof(adv_local_name)) == 0) && (current_ranging_role[0] == rangingRoleData[2]) && (current_ranging_role[1] == rangingRoleData[3]))
+         if (nameLengthData && rangingRoleData && (*nameLengthData >= (1 + sizeof(adv_name_prefix))) && (*rangingRoleData == (1 + sizeof(current_ranging_role))) &&
+               (memcmp(adv_name_prefix, nameLengthData + 2, sizeof(adv_name_prefix)) == 0) && (current_ranging_role[0] == rangingRoleData[2]) && (current_ranging_role[1] == rangingRoleData[3]))
          {
             print("TotTag BLE: Found TotTag: %02x:%02x:%02x:%02x:%02x:%02x rssi: %d\n",
                   pDmEvt->scanReport.addr[5], pDmEvt->scanReport.addr[4], pDmEvt->scanReport.addr[3],
@@ -395,6 +396,14 @@ bool bluetooth_init(uint8_t* uid)
    adv_restart_attempts = scan_restart_attempts = 0;
    first_initialization = true;
    discovery_callback = NULL;
+
+   // Build the advertised name from the short UID, so a host chooser can tell tags apart
+   static const char hex_digits[] = "0123456789ABCDEF";
+   memcpy(adv_local_name, adv_name_prefix, sizeof(adv_name_prefix));
+   adv_local_name[sizeof(adv_name_prefix)] = '-';
+   adv_local_name[sizeof(adv_name_prefix) + 1] = hex_digits[(uid[0] >> 4) & 0x0F];
+   adv_local_name[sizeof(adv_name_prefix) + 2] = hex_digits[uid[0] & 0x0F];
+   adv_local_name_length = (uint8_t)sizeof(adv_local_name);
 
    // Initialize the BLE address as the System ID, formatted for GATT 0x2A23
    ble_sys_id[0] = uid[0]; ble_sys_id[1] = uid[1]; ble_sys_id[2] = uid[2];
@@ -636,15 +645,12 @@ void bluetooth_get_buffer_stats(bluetooth_buffer_stats_t *stats)
       // High-water marks are only maintained when the stack is built with WSF_BUF_STATS
       const uint8_t num_pools = WsfBufGetNumPool();
       stats->num_pools = (num_pools > (uint8_t)(sizeof(stats->high_water))) ? (uint8_t)sizeof(stats->high_water) : num_pools;
-      if (stats->num_pools)
+      for (uint8_t pool = 0; pool < stats->num_pools; ++pool)
       {
-         WsfBufPoolStat_t pool_stats[sizeof(stats->high_water)];
-         WsfBufGetPoolStats(pool_stats, stats->num_pools);
-         for (uint8_t i = 0; i < stats->num_pools; ++i)
-         {
-            stats->high_water[i] = pool_stats[i].maxAlloc;
-            stats->capacity[i] = pool_stats[i].numBuf;
-         }
+         WsfBufPoolStat_t pool_stat = { 0 };
+         WsfBufGetPoolStats(&pool_stat, pool);
+         stats->high_water[pool] = pool_stat.maxAlloc;
+         stats->capacity[pool] = pool_stat.numBuf;
       }
    }
 }

@@ -30,6 +30,10 @@ from collections import defaultdict
 
 # Format Constants ------------------------------------------------------------------------------------------------
 
+MAX_EXPERIMENT_ELAPSED_SECONDS = 4294966
+MAX_DEPLOYMENT_DAYS = 49
+MAX_DEPLOYMENT_SECONDS = 4233600
+
 MAX_RANGING_DISTANCE_MM = 16000
 MAX_NUM_DEVICES = 10
 IMU_DATA_LENGTH = 7

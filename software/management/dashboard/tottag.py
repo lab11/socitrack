@@ -115,6 +115,7 @@ def pack_datetime(time_zone, date_string, time_string, daily):
    else:
       offset = datetime.datetime.strptime(date_string, '%m/%d/%Y').astimezone(pytz.timezone(time_zone)).utcoffset().total_seconds()
       timestamp = int((datetime.datetime.strptime(time_string, '%H:%M') - datetime.datetime.strptime('00:00', '%H:%M')).total_seconds() - offset)
+      timestamp %= 86400
    return timestamp
 
 def unpack_datetime(time_zone, start_timestamp, timestamp):
@@ -619,11 +620,18 @@ class TotTagBLE(threading.Thread):
 
    async def download_logs(self):
       params = await self.command_queue.get()
+      if self.downloading_log_file:
+         print('A download is already in progress; ignoring the duplicate request')
+         self.command_queue.task_done()
+         return
       self.storage_directory = params['dir']
       self.download_raw_logs = params['raw']
       if params['full']:
          params['start'] = params['end'] = 0
+      self.data = None
+      self.data_index = 0
       self.data_length = 0
+      self.data_details = None
       self.original_stream = None
       self.repairs = {}
       self.repair_round = 0
@@ -719,9 +727,13 @@ class TotTagBLE(threading.Thread):
                print(f'No pages received after {MAX_REPAIR_ROUNDS} attempts')
 
             self.downloading_log_file = False
-            self.result_queue.put_nowait(('DOWNLOADED', len(self.original_stream) > 1))
             if not isinstance(self.connected_device, serial.Serial):
                await self.connected_device.stop_notify(MAINTENANCE_DATA_SERVICE_UUID)
+            if not self.original_stream or len(self.original_stream) <= 1 or self.data_details is None:
+               print('Download produced no usable data; nothing was saved')
+               self.result_queue.put_nowait(('DOWNLOADED', False))
+               return
+            self.result_queue.put_nowait(('DOWNLOADED', True))
             process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, self.download_raw_logs, self.repairs)
          except Exception as e:
             self.downloading_log_file = False
@@ -886,7 +898,8 @@ class TotTagGUI(tk.Frame):
          date_entry_end['state'] = ['disabled' if self.download_full_log.get() else 'normal']
       ttk.Checkbutton(prompt_area, text="Download Full Logs", variable=self.download_full_log, command=partial(change_dl_times_state, self)).grid(column=0, columnspan=4, row=8, pady=(5, 0), sticky=tk.W+tk.N)
       ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=9, pady=5, sticky=tk.W+tk.N)
-      def begin_download(self):
+      def begin_download(self, button):
+         button.state(['disabled'])
          self.data_length = 0
          ble_issue_command(self.event_loop, self.ble_command_queue, 'DOWNLOAD')
          ble_issue_command(self.event_loop, self.ble_command_queue, {
@@ -896,7 +909,9 @@ class TotTagGUI(tk.Frame):
             'start': pack_datetime(str(tzlocal.get_localzone()), self.start_date.get(), "00:00", False),
             'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False) + 86400
          })
-      ttk.Button(prompt_area, text="Begin", command=partial(begin_download, self)).grid(column=1, row=10)
+      begin_button = ttk.Button(prompt_area, text="Begin")
+      begin_button.configure(command=partial(begin_download, self, begin_button))
+      begin_button.grid(column=1, row=10)
       ttk.Button(prompt_area, text="Cancel", command=partial(self._clear_canvas_with_prompt)).grid(column=2, row=10)
 
    def _create_new_experiment(self):
@@ -996,8 +1011,8 @@ class TotTagGUI(tk.Frame):
          if not errors:
             start_timestamp = int(datetime.datetime.strptime(self.start_date.get(), '%m/%d/%Y').astimezone(pytz.utc).timestamp())
             end_timestamp = int(datetime.datetime.strptime(self.end_date.get(), '%m/%d/%Y').astimezone(pytz.utc).timestamp())
-            if end_timestamp - start_timestamp > 1814400:
-               tk.messagebox.showerror('TotTag Error', 'ERROR: Deployment duration cannot last longer than 21 days')
+            if end_timestamp - start_timestamp > tottag_format.MAX_DEPLOYMENT_SECONDS:
+               tk.messagebox.showerror('TotTag Error', 'ERROR: Deployment duration cannot last longer than %d days'%tottag_format.MAX_DEPLOYMENT_DAYS)
                errors = True
          if not errors:
             details = {
