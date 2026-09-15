@@ -153,7 +153,7 @@ def unpack_experiment_details(data):
       'terminated': experiment_struct[-1],
    }
 
-def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file, repairs=None):
+def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file, repaired_pages=0):
    experiment_start_time = details['start_time']
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
@@ -164,9 +164,9 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          file.write(data)
 
    # Dispatches on the stream magic, so legacy and page-framed downloads both decode here
-   log_data, report = tottag_format.parse(data, experiment_start_time, uid_to_labels, repairs)
-   if report['repaired'] and tottag_format.is_verbose():
-      print(f"Recovered {len(report['repaired'])} page(s) from {uid_to_labels[from_uid]} by retransmission")
+   log_data, report = tottag_format.parse(data, experiment_start_time, uid_to_labels)
+   if repaired_pages and tottag_format.is_verbose():
+      print(f"Recovered {repaired_pages} page(s) from {uid_to_labels[from_uid]} by retransmission")
 
    # Say what was lost. A v1 download cannot report this at all -- a dropped page is simply absent, and a
    # short log is indistinguishable from a lossy one -- so staying quiet would hide real data loss.
@@ -297,7 +297,7 @@ class TotTagBLE(threading.Thread):
       self.data_index = 0
       self.data = None
       self.original_stream = None
-      self.repairs = {}
+      self.repaired_pages = 0
       self.repair_round = 0
 
    def run(self):
@@ -634,7 +634,7 @@ class TotTagBLE(threading.Thread):
       self.data_length = 0
       self.data_details = None
       self.original_stream = None
-      self.repairs = {}
+      self.repaired_pages = 0
       self.repair_round = 0
       if isinstance(self.connected_device, serial.Serial):
          self.connected_device.reset_input_buffer()
@@ -698,15 +698,19 @@ class TotTagBLE(threading.Thread):
             if self.repair_round == 0:
                self.original_stream = received
             else:
-               self.repairs.update(tottag_format.extract_pages(received))
+               frames = tottag_format.extract_page_frames(received)
+               merged = tottag_format.merge_repairs(self.original_stream, frames)
+               if merged is not self.original_stream:
+                  self.repaired_pages += len(frames)
+                  self.original_stream = merged
 
             # Ask for whatever is still missing, up to a fixed number of rounds. Each round re-parses the
-            # ORIGINAL stream with every repair collected so far, so the decision to stop is made against
-            # the log as it now stands rather than against the round that just finished.
+            # stream as it now stands, so the decision to stop is made against the log in hand rather than
+            # against the round that just finished.
             wanted, nothing_arrived = [], False
             if tottag_format.detect_format(self.original_stream) == tottag_format.FORMAT_V2:
                start_time = self.data_details['start_time'] if self.data_details else None
-               _log_data, report = tottag_format.parse(self.original_stream, start_time, None, self.repairs)
+               _log_data, report = tottag_format.parse(self.original_stream, start_time, None)
                wanted = tottag_format.missing_seqs(report)
                # No page at all means there is no sequence number to count from, so the whole transfer has
                # to be repeated rather than repaired. Naming pages is only possible for a PARTIAL loss.
@@ -721,6 +725,7 @@ class TotTagBLE(threading.Thread):
                if nothing_arrived:
                   self.repair_round = 0   # a repeated transfer replaces the original rather than patching it
                   self.original_stream = None
+                  self.repaired_pages = 0
                return                     # the repair stream brings us back here when it completes
             if wanted:
                print(f'Giving up on {len(wanted)} page(s) after {MAX_REPAIR_ROUNDS} rounds: {wanted[:10]}')
@@ -735,7 +740,7 @@ class TotTagBLE(threading.Thread):
                self.result_queue.put_nowait(('DOWNLOADED', False))
                return
             self.result_queue.put_nowait(('DOWNLOADED', True))
-            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, self.download_raw_logs, self.repairs)
+            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, self.download_raw_logs, self.repaired_pages)
          except Exception as e:
             self.downloading_log_file = False
             print('Log file processing error:', e);

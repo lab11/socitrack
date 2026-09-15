@@ -511,21 +511,27 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
    return _finalize(log_data), report
 
 
-def extract_pages(data):
-   """Return ``{seq: payload}`` for every CRC-valid page in a stream.
+def extract_page_frames(data):
+   """Return ``{seq: frame}`` for every CRC-valid page in a stream, frame being header plus payload.
 
    A retransmission response carries the same page framing as a normal download, but with no experiment
    details, since the host already holds them.  Pages that are still unreadable on the device come back
    as zero-length frames and are simply absent from the result.
+
+   Keeping the header is what makes a repaired page substitutable.  The device sends its own timestamps,
+   record count, payload length and CRC with each page, all mutually consistent and verified here, so
+   splicing a frame into a stream needs no field rewritten and cannot leave a header disagreeing with the
+   payload under it.
    """
-   pages = {}
+   frames = {}
    if len(data) < V2_STREAM_HEADER.size or data[:4] != V2_STREAM_MAGIC:
-      return pages
+      return frames
    _magic, version, details_length, _total_pages, _total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
    if version not in (1, FRAMED_VERSION):
-      return pages
+      return frames
    offset = V2_STREAM_HEADER.size + details_length
    while offset + V2_PAGE_HEADER.size <= len(data):
+      start = offset
       seq, _first_ts, _last_ts, payload_length, _record_count, payload_crc = \
          V2_PAGE_HEADER.unpack_from(data, offset)
       offset += V2_PAGE_HEADER.size
@@ -536,8 +542,66 @@ def extract_pages(data):
       payload = data[offset:offset + payload_length]
       offset += payload_length
       if zlib.crc32(payload) == payload_crc:
-         pages[seq] = payload
-   return pages
+         frames[seq] = data[start:offset]
+   return frames
+
+
+def extract_pages(data):
+   """Return ``{seq: payload}`` for every CRC-valid page in a stream."""
+   return {seq: frame[V2_PAGE_HEADER.size:] for seq, frame in extract_page_frames(data).items()}
+
+
+def merge_repairs(data, repairs):
+   """Splice repaired pages into a stream, returning one that holds what was recovered.
+
+   This is what makes a repair survive.  Asking the device to resend a page and then writing a file that
+   still lacks it means the recovery lives only in whatever the tool happened to display, and re-reading
+   the saved log reports holes that were already fixed.  The merged stream is the artefact of record.
+
+   A frame is replaced only where the original is genuinely bad -- absent payload, or a CRC that does not
+   check -- so a page that arrived intact keeps its original bytes.  Repairs for sequence numbers the
+   stream never carried are appended in order, which is how a transfer truncated partway through gets its
+   tail back.  With nothing to merge the input is returned unchanged, so a clean download stays
+   byte-for-byte what the tag sent.
+
+   The only bytes that do not survive a merge are any the device sent past its own declared page total --
+   it samples that total before reading the last page, so a few trailing bytes are possible, and no reader
+   treats them as a page.
+
+   ``repairs`` is ``{seq: frame}`` as returned by :func:`extract_page_frames`.
+   """
+   if not repairs or len(data) < V2_STREAM_HEADER.size or data[:4] != V2_STREAM_MAGIC:
+      return data
+   _magic, _version, details_length, total_pages, _total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
+   header_length = V2_STREAM_HEADER.size + details_length
+
+   pieces, present, changed = [data[:header_length]], set(), False
+   offset, position = header_length, 0
+   while position < total_pages and offset + V2_PAGE_HEADER.size <= len(data):
+      start = offset
+      seq, _first_ts, _last_ts, payload_length, _record_count, payload_crc = \
+         V2_PAGE_HEADER.unpack_from(data, offset)
+      offset += V2_PAGE_HEADER.size
+      # A payload running past the end is the transfer stopping mid-page.  Drop the partial frame and let
+      # the tail below supply it, rather than emitting a header with nothing under it.
+      if payload_length and offset + payload_length > len(data):
+         break
+      offset += payload_length
+      position += 1
+      present.add(seq)
+
+      intact = payload_length != 0 and \
+         zlib.crc32(data[start + V2_PAGE_HEADER.size:start + V2_PAGE_HEADER.size + payload_length]) == payload_crc
+      if not intact and seq in repairs:
+         pieces.append(repairs[seq])
+         changed = True
+      else:
+         pieces.append(data[start:offset])
+
+   for seq in sorted(seq for seq in repairs if seq not in present):
+      pieces.append(repairs[seq])
+      changed = True
+   return b''.join(pieces) if changed else data
 
 
 def missing_seqs(report):
