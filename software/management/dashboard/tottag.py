@@ -47,6 +47,7 @@ MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 MAX_SEQS_PER_BLE_WRITE = 60
 MAX_SEQS_PER_USB_WRITE = 255
 MAX_REPAIR_ROUNDS = 3
+TOTTAG_ADVERTISED_NAME_PREFIX = 'TotTag'
 
 USB_VERSION_COMMAND = 0x20
 USB_VOLTAGE_COMMAND = 0x10
@@ -425,7 +426,7 @@ class TotTagBLE(threading.Thread):
             self.discovered_devices['USB-Connected Device'] = port.device
             self.result_queue.put_nowait(('DEVICE', 'USB-Connected Device'))
       for device_address, device_info in scanner.discovered_devices_and_advertisement_data.items():
-         if device_info[1].local_name == 'TotTag':
+         if device_info[1].local_name and device_info[1].local_name.startswith(TOTTAG_ADVERTISED_NAME_PREFIX):
             self.discovered_devices[device_address] = device_info[0]
             self.result_queue.put_nowait(('DEVICE', device_address))
       self.result_queue.put_nowait(('SCANNING', False))
