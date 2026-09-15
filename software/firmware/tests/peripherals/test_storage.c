@@ -21,9 +21,32 @@
 static uint8_t page_buffer[NANDLOG_MAX_DATA_BYTES_PER_PAGE];
 static uint8_t verify_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES];
 
+// Bytes the log spends on a record before the application's own payload begins: the framing length
+// prefix, where the build has one, plus the record type and timestamp
+#define TEST_RECORD_PREFIX_BYTES (NANDLOG_RECORD_FRAMING ? NANDLOG_FRAMING_LENGTH_BYTES : 0)
+#define TEST_RECORD_OVERHEAD     (TEST_RECORD_PREFIX_BYTES + 5)
+
 // One record sized to exactly fill a page, flushed immediately, so page index == record index and the
-// existing per-page assertions still hold under the record-framed format
-#define TEST_RECORD_DATA_BYTES   (nandlog_data_bytes_per_page() - 5)
+// existing per-page assertions still hold. This MUST account for the framing prefix: a record two bytes
+// too large is not truncated, it is dropped whole by nandlog_store_record(), and every assertion in this
+// file then fails against an empty log rather than against a wrong one
+#define TEST_RECORD_DATA_BYTES   (nandlog_data_bytes_per_page() - TEST_RECORD_OVERHEAD)
+
+// The offload hands back a page payload verbatim, framing included, so the tests walk it the way any
+// reader would rather than assuming where the first record starts. Returns [type:1][timestamp:4][data]
+static const uint8_t *first_record_in(const uint8_t *payload, uint32_t length, uint32_t *record_bytes)
+{
+#if NANDLOG_RECORD_FRAMING
+   uint32_t offset = 0;
+   const uint8_t *record = NULL;
+   return nandlog_framed_next_record(payload, length, &offset, &record, record_bytes) ? record : NULL;
+#else
+   if (!length)
+      return NULL;
+   *record_bytes = length;
+   return payload;
+#endif
+}
 
 static void write_tagged_page(uint32_t index)
 {
@@ -48,28 +71,35 @@ static bool verify_tagged_page(uint32_t expected_index, uint32_t length)
       print("  ERROR: page %u length %u, expected %u\n", expected_index, length, (uint32_t)nandlog_data_bytes_per_page());
       return false;
    }
-   if (verify_buffer[0] != STORAGE_TYPE_IMU)
+   uint32_t record_bytes = 0;
+   const uint8_t *record = first_record_in(verify_buffer, length, &record_bytes);
+   if (!record || (record_bytes != (TEST_RECORD_DATA_BYTES + 5)))
    {
-      print("  ERROR: page %u record type %u, expected %u\n", expected_index, verify_buffer[0], (uint32_t)STORAGE_TYPE_IMU);
+      print("  ERROR: page %u holds a %u-byte record, expected %u\n", expected_index, record_bytes, (uint32_t)TEST_RECORD_DATA_BYTES + 5);
+      return false;
+   }
+   if (record[0] != STORAGE_TYPE_IMU)
+   {
+      print("  ERROR: page %u record type %u, expected %u\n", expected_index, record[0], (uint32_t)STORAGE_TYPE_IMU);
       return false;
    }
    uint32_t timestamp = 0;
-   memcpy(&timestamp, verify_buffer + 1, sizeof(timestamp));
+   memcpy(&timestamp, record + 1, sizeof(timestamp));
    if (timestamp != (500 * expected_index))
    {
       print("  ERROR: page %u timestamp %u, expected %u\n", expected_index, timestamp, 500 * expected_index);
       return false;
    }
-   const uint8_t *record = verify_buffer + 5;
+   const uint8_t *data = record + 5;
    uint32_t page_index = 0;
-   memcpy(&page_index, record + 4, sizeof(page_index));
-   if (memcmp(record, "PAGE", 4) || (page_index != expected_index))
+   memcpy(&page_index, data + 4, sizeof(page_index));
+   if (memcmp(data, "PAGE", 4) || (page_index != expected_index))
    {
       print("  ERROR: page %u carries index %u (corrupt or out of order)\n", expected_index, page_index);
       return false;
    }
    for (uint32_t i = 8; i < TEST_RECORD_DATA_BYTES; ++i)
-      if (record[i] != (uint8_t)expected_index)
+      if (data[i] != (uint8_t)expected_index)
       {
          print("  ERROR: page %u body mismatch at offset %u\n", expected_index, i);
          return false;
@@ -218,14 +248,17 @@ static void test_partial_page_flush(void)
       if (chunk == PARTIAL_TEST_FULL_PAGES)
       {
          // The partial page: verify it kept exactly the bytes that were buffered, no more and no less
-         if ((length != (PARTIAL_TEST_PARTIAL_BYTES + 5)) || memcmp(verify_buffer + 5, "PART", 4))
+         uint32_t record_bytes = 0;
+         const uint8_t *record = first_record_in(verify_buffer, length, &record_bytes);
+         const uint32_t expected_length = PARTIAL_TEST_PARTIAL_BYTES + TEST_RECORD_OVERHEAD;
+         if (!record || (length != expected_length) || memcmp(record + 5, "PART", 4))
          {
-            print("  ERROR: partial page came back as %u bytes, expected %u\n", length, (uint32_t)PARTIAL_TEST_PARTIAL_BYTES + 5);
+            print("  ERROR: partial page came back as %u bytes, expected %u\n", length, expected_length);
             ++errors;
          }
          else
             for (uint32_t i = 4; i < PARTIAL_TEST_PARTIAL_BYTES; ++i)
-               if (verify_buffer[5 + i] != 0xA5)
+               if (record[5 + i] != 0xA5)
                {
                   print("  ERROR: partial page body mismatch at offset %u\n", i);
                   ++errors;
@@ -287,11 +320,12 @@ static void test_time_range_seek(void)
    nandlog_read_span(&num_chunks, NULL);
    const uint32_t length = nandlog_retrieve_next_page(verify_buffer, NULL);
 
-   uint32_t first_index = 0xFFFFFFFF, first_timestamp = 0;
-   if (length >= 9)
+   uint32_t first_index = 0xFFFFFFFF, first_timestamp = 0, record_bytes = 0;
+   const uint8_t *record = first_record_in(verify_buffer, length, &record_bytes);
+   if (record && (record_bytes >= 13))
    {
-      memcpy(&first_timestamp, verify_buffer + 1, sizeof(first_timestamp));
-      memcpy(&first_index, verify_buffer + 5 + 4, sizeof(first_index));
+      memcpy(&first_timestamp, record + 1, sizeof(first_timestamp));
+      memcpy(&first_index, record + 5 + 4, sizeof(first_index));
    }
    nandlog_end_reading();
    nandlog_exit_maintenance_mode();
@@ -601,10 +635,12 @@ static void test_reboot_survival(void)
       const uint32_t length = nandlog_retrieve_next_page(verify_buffer, NULL);
 
       // Anything that is not this test's data (a previous test, a real deployment) is discarded rather
-      // than reported as corruption. The tag sits at offset 5 because a chunk is a framed record:
-      // [type:1][timestamp:4][data...] -- offset 0 holds the record type, never the tag.
-      if (!chunk && ((length != nandlog_data_bytes_per_page()) ||
-                     (verify_buffer[0] != STORAGE_TYPE_IMU) || memcmp(verify_buffer + 5, "PAGE", 4)))
+      // than reported as corruption. The chunk is walked rather than indexed, because where the first
+      // record starts depends on whether the build frames its records.
+      uint32_t record_bytes = 0;
+      const uint8_t *record = first_record_in(verify_buffer, length, &record_bytes);
+      if (!chunk && ((length != nandlog_data_bytes_per_page()) || !record ||
+                     (record[0] != STORAGE_TYPE_IMU) || memcmp(record + 5, "PAGE", 4)))
       {
          foreign = true;
          break;

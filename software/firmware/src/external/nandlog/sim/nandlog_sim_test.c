@@ -82,6 +82,28 @@ static void test_roundtrip(void)
    nandlog_deinit();
 }
 
+static void test_a_record_can_exactly_fill_a_page(void)
+{
+   printf("A record sized to a page fills exactly one page\n");
+   const uint32_t overhead = (NANDLOG_RECORD_FRAMING ? NANDLOG_FRAMING_LENGTH_BYTES : 0) + 5;
+   static uint8_t big[NANDLOG_MAX_DATA_BYTES_PER_PAGE];
+   memset(big, 0x5A, sizeof(big));
+
+   fresh_log();
+   const uint32_t capacity = nandlog_data_bytes_per_page();
+   nandlog_store_record(7, 1000, big, capacity - overhead);
+   nandlog_flush(true);
+   CHECK(read_all_pages() == 1, "a record sized to fill a page did not produce exactly one page");
+   nandlog_deinit();
+
+   // One byte more than fits has nowhere to go: records are never split, so there is no partial page to find either
+   fresh_log();
+   nandlog_store_record(7, 1000, big, capacity - overhead + 1);
+   nandlog_flush(true);
+   CHECK(read_all_pages() == 0, "a record one byte too large for a page was stored anyway");
+   nandlog_deinit();
+}
+
 static void test_image_dump_for_the_parser(void)
 {
    printf("Dumping an image for the reference parser\n");
@@ -386,6 +408,7 @@ int main(void)
    printf("nandlog host tests (record framing %s)\n==================================%s\n",
           NANDLOG_RECORD_FRAMING ? "on" : "off", NANDLOG_RECORD_FRAMING ? "=" : "");
    test_roundtrip();
+   test_a_record_can_exactly_fill_a_page();
    test_metadata_survives();
    test_image_dump_for_the_parser();
 #if NANDLOG_RECORD_FRAMING

@@ -11,12 +11,11 @@ OUT_F    = nandlog_sim_test_framed
 DEPS     = ../nandlog.h ../nandlog_chip.h ../nandlog_conf.h nandlog_port_sim.h
 
 .PHONY: all run clean
-# Both settings of NANDLOG_RECORD_FRAMING are built and run: it is an on-flash format switch, so the one that
-# is off by default is exactly the one that would otherwise rot
+# Both settings of NANDLOG_RECORD_FRAMING are built and run
 all: run
 
 $(OUT): $(SRC) $(DEPS)
-	$(CC) $(CFLAGS) $(INCLUDES) $(SRC) -o $(OUT)
+	$(CC) $(CFLAGS) -DNANDLOG_RECORD_FRAMING=0 $(INCLUDES) $(SRC) -o $(OUT)
 
 $(OUT_F): $(SRC) $(DEPS)
 	$(CC) $(CFLAGS) -DNANDLOG_RECORD_FRAMING=1 $(INCLUDES) $(SRC) -o $(OUT_F)
