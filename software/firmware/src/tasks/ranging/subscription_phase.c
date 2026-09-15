@@ -29,11 +29,12 @@ void subscription_phase_initialize(const uint8_t *uid)
    srand(seed ? seed : 1u);
 }
 
-static bool relay_listen_this_round(uint8_t slot)
+static bool relay_listen_this_round(uint8_t slot, uint8_t schedule_size)
 {
-   // Every device derives the same round number from the master's broadcast timestamp
+   // One relay listens per round rotating over the non-master slots so exactly one is always covering the window
+   const uint32_t peers = (schedule_size > 1u) ? (uint32_t)(schedule_size - 1u) : 1u;
    const uint32_t round = schedule_phase_get_timestamp() / (SCHEDULING_INTERVAL_US / 1000u);
-   return ((round + slot) % SUBSCRIPTION_LISTEN_DIVISOR) == 0;
+   return ((round + slot) % peers) == 0;
 }
 
 scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time)
@@ -56,7 +57,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
       else
          return SUBSCRIPTION_PHASE;
    }
-   else if ((schedule_length < MAX_NUM_RANGING_DEVICES) && (!schedule_index || relay_listen_this_round(schedule_index)))
+   else if ((schedule_length < MAX_NUM_RANGING_DEVICES) && (!schedule_index || relay_listen_this_round(schedule_index, schedule_length)))
    {
       dwt_setpreambledetecttimeout(0);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(SUBSCRIPTION_PHASE_START_US - RECEIVE_EARLY_START_US));
