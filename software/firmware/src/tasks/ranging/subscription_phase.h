@@ -23,5 +23,6 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
 scheduler_phase_t subscription_phase_tx_complete(void);
 scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet);
 scheduler_phase_t subscription_phase_rx_error(void);
+uint8_t subscription_phase_get_heard_subscriber(void);
 
 #endif  // #ifndef __SUBSCRIPTION_PHASE_HEADER_H__

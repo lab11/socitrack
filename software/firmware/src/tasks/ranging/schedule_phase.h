@@ -13,6 +13,8 @@ typedef struct __attribute__ ((__packed__))
    ieee154_header_t header;
    uint8_t src_addr, sequence_number;
    uint32_t experiment_time_ms;
+   uint16_t master_heard;
+   uint8_t master_nearest;
    uint8_t num_devices;
    uint8_t schedule[MAX_NUM_RANGING_DEVICES];
    ieee154_footer_t footer;
@@ -32,6 +34,11 @@ uint32_t schedule_phase_get_timestamp(void);
 uint32_t schedule_phase_get_reference_stimer(void);
 void schedule_phase_add_device(uint8_t eui);
 uint8_t schedule_phase_get_addr_from_slot(uint8_t slot);
+uint8_t schedule_phase_get_slot_from_addr(uint8_t eui);
+uint16_t schedule_phase_get_master_heard(void);
+uint8_t schedule_phase_get_master_nearest(void);
+void schedule_phase_set_master_nearest(uint8_t slot);
+uint64_t schedule_phase_get_reference_time_full(void);
 void schedule_phase_update_device_presence(uint8_t eui);
 void schedule_phase_handle_device_timeouts(void);
 

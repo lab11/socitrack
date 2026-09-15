@@ -43,14 +43,58 @@ static uint32_t schedule_reference_age_ms(void)
 }
 #endif
 
+static uint32_t round_elapsed_us(void)
+{
+   // How far into the round this device actually is
+   const uint64_t now = (uint64_t)dwt_readsystimestamphi32() << 8;
+   return DWT_TO_US((now - schedule_phase_get_reference_time_full()) & 0xFFFFFFFFFFULL);
+}
+
+static void arm_wakeup_timer(uint32_t elapsed_us)
+{
+   // Wake RADIO_WAKEUP_SAFETY_DELAY_US before the next round's reference instant
+   const uint32_t target_us = SCHEDULING_INTERVAL_US - RADIO_WAKEUP_SAFETY_DELAY_US;
+   const uint32_t remaining_us = (elapsed_us < target_us) ? (target_us - elapsed_us) : RADIO_WAKEUP_SAFETY_DELAY_US;
+   wakeup_timer_config.ui32Compare0 = (uint32_t)(((uint64_t)RADIO_WAKEUP_TIMER_TICK_RATE_HZ * remaining_us) / 1000000u);
+   am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
+   am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
+}
+
 static void fix_network_errors(uint8_t num_ranging_results)
 {
-   // Have the Scheduler Phase handle any new device timeouts
-   uint8_t num_devices = 0;
-   const uint8_t *device_list = status_phase_get_detected_devices(&num_devices);
-   for (uint8_t i = 0; i < num_devices; ++i)
-      schedule_phase_update_device_presence(device_list[i]);
+   // Presence is the union of what every device reachable from here reported
+   const uint16_t present = status_phase_get_present_slots();
+   const uint32_t num_scheduled = schedule_phase_get_num_devices();
+   uint32_t num_devices = 0;
+   for (uint32_t slot = 1; slot < num_scheduled; ++slot)
+      if (present & (1u << slot))
+      {
+         schedule_phase_update_device_presence(schedule_phase_get_addr_from_slot((uint8_t)slot));
+         ++num_devices;
+      }
    schedule_phase_handle_device_timeouts();
+
+   // Nominate the closest device heard this round to transmit last in the next one
+   uint8_t nearest_slot = 0;
+   int16_t nearest_mm = INT16_MAX;
+   for (uint8_t i = 0; i < ranging_results[0]; ++i)
+   {
+      const uint32_t offset = 1 + ((uint32_t)i * COMPRESSED_RANGE_DATUM_LENGTH);
+      int16_t range_mm = 0;
+      memcpy(&range_mm, &ranging_results[offset + 1], sizeof(range_mm));
+      const uint8_t slot = schedule_phase_get_slot_from_addr(ranging_results[offset]);
+      if ((slot != UNSCHEDULED_SLOT) && slot && (range_mm < nearest_mm))
+      {
+         nearest_mm = range_mm;
+         nearest_slot = slot;
+      }
+   }
+   schedule_phase_set_master_nearest(nearest_slot);
+
+   // A request from a device the master cannot hear arrives by way of one that can
+   const uint8_t pending_subscriber = status_phase_get_pending_subscriber();
+   if (pending_subscriber)
+      schedule_phase_add_device(pending_subscriber);
 
    // Check if we are still synchronized with the network
    empty_round_timeout = (!num_devices && !num_ranging_results) ? (empty_round_timeout + 1) : 0;
@@ -67,9 +111,12 @@ static void fix_network_errors(uint8_t num_ranging_results)
 
 static void handle_range_computation_phase(void)
 {
-   // Put the radio into deep-sleep mode and handle role-specific tasks
+   // Read the radio clock before the radio goes away then arm the next wake-up from it
+   const uint32_t elapsed_us = round_elapsed_us();
    ranging_radio_sleep(true);
-   switch (current_role)
+   if (current_role != ROLE_MASTER)
+      arm_wakeup_timer(elapsed_us);
+   switch (ranging_phase_was_scheduled() ? current_role : ROLE_IDLE)
    {
       case ROLE_MASTER:
       {
@@ -89,12 +136,6 @@ static void handle_range_computation_phase(void)
       }
       case ROLE_PARTICIPANT:
       {
-         // Set a timer to wake the radio before the next round
-         const uint32_t remaing_time_us = SCHEDULING_INTERVAL_US - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US - ranging_phase_get_duration() - (schedule_phase_get_num_devices() * RANGE_STATUS_BROADCAST_PERIOD_US);
-         wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
-         am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
-         am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
-
          // Carry out the ranging algorithm and fix any detected network errors
          compute_ranges(ranging_results);
          const uint32_t data_timestamp = schedule_phase_get_timestamp();
@@ -113,14 +154,7 @@ static void handle_range_computation_phase(void)
          break;
       }
       default:
-      {
-         // Set a timer to wake the radio before the next round
-         const uint32_t remaing_time_us = SCHEDULING_INTERVAL_US - RADIO_WAKEUP_SAFETY_DELAY_US - SCHEDULE_BROADCAST_PERIOD_US - SUBSCRIPTION_BROADCAST_PERIOD_US;
-         wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / remaing_time_us));
-         am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
-         am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
          break;
-      }
    }
    ranging_phase = UNSCHEDULED_TIME_PHASE;
    last_round_stimer = am_hal_stimer_counter_get();
@@ -246,7 +280,8 @@ void scheduler_run(schedule_role_t role)
       current_role = ROLE_MASTER;
       am_hal_timer_default_config_set(&wakeup_timer_config);
       wakeup_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
-      wakeup_timer_config.ui32Compare0 = (uint32_t)((float)RADIO_WAKEUP_TIMER_TICK_RATE_HZ / (1000000.0f / SCHEDULING_INTERVAL_US));
+      wakeup_timer_config.eInputClock = AM_HAL_TIMER_CLOCK_XT;
+      wakeup_timer_config.ui32Compare0 = (uint32_t)(((uint64_t)RADIO_WAKEUP_TIMER_TICK_RATE_HZ * SCHEDULING_INTERVAL_US) / 1000000u);
       am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
       am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
       NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
@@ -259,6 +294,7 @@ void scheduler_run(schedule_role_t role)
       current_role = ROLE_IDLE;
       am_hal_timer_default_config_set(&wakeup_timer_config);
       wakeup_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
+      wakeup_timer_config.eInputClock = AM_HAL_TIMER_CLOCK_XT;
       am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
       NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
       NVIC_EnableIRQ(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER);

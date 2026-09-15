@@ -12,6 +12,7 @@ static scheduler_phase_t current_phase;
 static subscription_packet_t subscription_packet;
 static uint8_t schedule_index, schedule_length;
 static uint32_t reference_time;
+static uint8_t heard_subscriber;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -20,7 +21,19 @@ void subscription_phase_initialize(const uint8_t *uid)
 {
    // Initialize all Subscription Phase parameters
    subscription_packet = (subscription_packet_t){ .header = { .msgType = SUBSCRIPTION_PACKET }, .src_addr = uid[0], .footer = { { 0 } } };
-   srand(dwt_readsystimestamphi32());
+
+   // Seed from the device identity rather than the radio clock
+   unsigned seed = 0;
+   for (uint32_t i = 0; i < EUI_LEN; ++i)
+      seed = (seed * 31u) + uid[i];
+   srand(seed ? seed : 1u);
+}
+
+static bool relay_listen_this_round(uint8_t slot)
+{
+   // Every device derives the same round number from the master's broadcast timestamp
+   const uint32_t round = schedule_phase_get_timestamp() / (SCHEDULING_INTERVAL_US / 1000u);
+   return ((round + slot) % SUBSCRIPTION_LISTEN_DIVISOR) == 0;
 }
 
 scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time)
@@ -31,6 +44,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    schedule_length = schedule_size;
    ranging_radio_choose_antenna(0);
    reference_time = ref_time;
+   heard_subscriber = 0;
 
    // Reset the necessary Subscription Phase parameters
    if (schedule_index == UNSCHEDULED_SLOT)
@@ -42,7 +56,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
       else
          return SUBSCRIPTION_PHASE;
    }
-   else if (!schedule_index)
+   else if ((schedule_length < MAX_NUM_RANGING_DEVICES) && (!schedule_index || relay_listen_this_round(schedule_index)))
    {
       dwt_setpreambledetecttimeout(0);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(SUBSCRIPTION_PHASE_START_US - RECEIVE_EARLY_START_US));
@@ -77,7 +91,10 @@ scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet)
       print("ERROR: Received an unexpected message type during SUBSCRIPTION phase...possible network collision\n");
       return MESSAGE_COLLISION;
    }
-   schedule_phase_add_device(packet->src_addr);
+   if (!schedule_index)
+      schedule_phase_add_device(packet->src_addr);
+   else if (!heard_subscriber)
+      heard_subscriber = packet->src_addr;
    return subscription_phase_rx_error();
 }
 
@@ -103,4 +120,10 @@ scheduler_phase_t subscription_phase_rx_error(void)
    // Move on to the Ranging phase
    current_phase = RANGING_PHASE;
    return ranging_phase_begin(schedule_index, schedule_length, reference_time);
+}
+
+uint8_t subscription_phase_get_heard_subscriber(void)
+{
+   // A subscription request this device overheard and that the master may not have
+   return heard_subscriber;
 }

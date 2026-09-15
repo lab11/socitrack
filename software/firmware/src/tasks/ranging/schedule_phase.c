@@ -2,6 +2,7 @@
 
 #include "logging.h"
 #include "schedule_phase.h"
+#include "status_phase.h"
 #include "subscription_phase.h"
 #include "computation_phase.h"
 
@@ -10,10 +11,12 @@
 
 static uint8_t device_timeouts[MAX_NUM_RANGING_DEVICES], valid_devices[MAX_NUM_RANGING_DEVICES];
 static uint32_t reference_time, reference_stimer;
+static uint64_t reference_time_full;
 static uint8_t scheduled_slot, num_valid_devices;
 static schedule_packet_t schedule_packet;
 static scheduler_phase_t current_phase;
 static bool is_master_scheduler;
+static uint8_t master_nearest_slot;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -57,7 +60,7 @@ void schedule_phase_initialize(const uint8_t *uid, bool is_master)
 {
    // Initialize all Schedule Phase parameters
    schedule_packet = (schedule_packet_t){ .header = { .msgType = SCHEDULE_PACKET },
-      .src_addr = uid[0], .sequence_number = 0, .experiment_time_ms = 0, .num_devices = 1,
+      .src_addr = uid[0], .sequence_number = 0, .experiment_time_ms = 0, .master_heard = 0, .master_nearest = 0, .num_devices = 1,
       .schedule = { 0 }, .footer = { { 0 } } };
    memset(device_timeouts, 0, sizeof(device_timeouts));
    schedule_packet.schedule[0] = uid[0];
@@ -89,6 +92,10 @@ scheduler_phase_t schedule_phase_begin(void)
       // Increment the epoch timestamp and increment all device timeouts
       schedule_packet.experiment_time_ms = app_get_experiment_time(app_get_time_offset());
       reference_stimer = am_hal_stimer_counter_get();
+
+      // Publish which devices the master could hear first-hand last round
+      schedule_packet.master_heard = status_phase_get_directly_heard();
+      schedule_packet.master_nearest = master_nearest_slot;
       for (uint8_t i = 1; i < schedule_packet.num_devices; ++i)
          if (device_timeouts[i] < UINT8_MAX)
             ++device_timeouts[i];
@@ -131,6 +138,7 @@ scheduler_phase_t schedule_phase_tx_complete(void)
          uint64_t ref_time = (ranging_radio_readtxtimestamp() - TX_ANTENNA_DELAY) & 0xFFFFFFFE00;
          dwt_setreferencetrxtime((uint32_t)(ref_time >> 8));
          reference_time = (uint32_t)ref_time;
+         reference_time_full = ref_time;
       }
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(schedule_broadcast_time(schedule_packet.sequence_number)));
       if ((dwt_writetxdata(sizeof(schedule_packet.sequence_number), &schedule_packet.sequence_number, offsetof(schedule_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
@@ -169,6 +177,8 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    }
    scheduled_slot = UNSCHEDULED_SLOT;
    schedule_packet.experiment_time_ms = schedule->experiment_time_ms;
+   schedule_packet.master_heard = schedule->master_heard;
+   schedule_packet.master_nearest = schedule->master_nearest;
    schedule_packet.num_devices = num_devices;
    reference_stimer = am_hal_stimer_counter_get();
    for (uint8_t i = 0; i < num_devices; ++i)
@@ -184,6 +194,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    uint64_t ref_time = (ranging_radio_readrxtimestamp() + RX_ANTENNA_DELAY - US_TO_DWT((uint32_t)schedule->sequence_number * SCHEDULE_RESEND_INTERVAL_US)) & 0xFFFFFFFE00;
    dwt_setreferencetrxtime((uint32_t)(ref_time >> 8));
    reference_time = (uint32_t)ref_time;
+   reference_time_full = ref_time;
 
    // Retransmit the schedule at the specified time slot
    schedule_packet.sequence_number = scheduled_slot + SCHEDULE_NUM_MASTER_BROADCASTS - 1;
@@ -256,6 +267,39 @@ void schedule_phase_add_device(uint8_t eui)
 uint8_t schedule_phase_get_addr_from_slot(uint8_t slot)
 {
    return schedule_packet.schedule[slot];
+}
+
+uint8_t schedule_phase_get_slot_from_addr(uint8_t eui)
+{
+   // Schedule slot holding this EUI, or UNSCHEDULED_SLOT if it holds none
+   for (uint8_t i = 0; i < schedule_packet.num_devices; ++i)
+      if (schedule_packet.schedule[i] == eui)
+         return i;
+   return UNSCHEDULED_SLOT;
+}
+
+uint8_t schedule_phase_get_master_nearest(void)
+{
+   // Slot of the master's closest audible device this round, or 0 if it named none
+   return schedule_packet.master_nearest;
+}
+
+void schedule_phase_set_master_nearest(uint8_t slot)
+{
+   // Nominated by the master from this round's ranges, broadcast at the start of the next
+   master_nearest_slot = slot;
+}
+
+uint16_t schedule_phase_get_master_heard(void)
+{
+   // The master's own first-hand audibility set for this round, as broadcast in the schedule
+   return schedule_packet.master_heard;
+}
+
+uint64_t schedule_phase_get_reference_time_full(void)
+{
+   // All 40 bits of this round's reference instant
+   return reference_time_full;
 }
 
 void schedule_phase_update_device_presence(uint8_t eui)

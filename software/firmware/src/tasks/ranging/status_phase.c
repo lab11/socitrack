@@ -3,24 +3,67 @@
 #include "computation_phase.h"
 #include "logging.h"
 #include "ranging_phase.h"
+#include "schedule_phase.h"
 #include "status_phase.h"
+#include "subscription_phase.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static status_success_packet_t success_packet;
-static uint8_t current_slot, scheduled_slot, total_num_slots;
-static uint32_t transmitted_seq_num, next_action_timestamp;
-static uint8_t present_devices[MAX_NUM_RANGING_DEVICES], num_present_devices;
+static uint8_t current_index, scheduled_slot, total_num_slots, transmit_index;
+static uint32_t status_phase_start;
+static uint16_t present_slots, directly_heard;
+static uint8_t pending_subscriber;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-static inline scheduler_phase_t start_tx(const char *error_message, status_success_packet_t *packet)
+static uint8_t transmit_tier(uint8_t slot, uint16_t master_heard, uint8_t nearest)
 {
-   transmitted_seq_num = packet->sequence_number;
-   dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp));
-   if ((dwt_writetxdata(2 * sizeof(success_packet.sequence_number), &packet->sequence_number, offsetof(status_success_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
+   // 0: the master could not hear this device, so it transmits early and feeds those that follow
+   // 1: the master could hear it
+   // 2: this is the closest device the master could hear and most likely to still be audible
+   if (slot && (slot == nearest))
+      return 2;
+   return ((master_heard >> slot) & 1u) ? 1 : 0;
+}
+
+static uint8_t compute_transmit_index(uint8_t my_slot, uint8_t total, uint16_t master_heard, uint8_t nearest)
+{
+   // A strict total order every device derives identically from the schedule: by tier then by descending slot
+   if (!my_slot)
+      return total;
+   const uint8_t mine = transmit_tier(my_slot, master_heard, nearest);
+   uint8_t index = 1;
+   for (uint8_t slot = 1; slot < total; ++slot)
+   {
+      if (slot == my_slot)
+         continue;
+      const uint8_t tier = transmit_tier(slot, master_heard, nearest);
+      if (tier != mine)
+      {
+         if (tier < mine)
+            ++index;
+      }
+      else if (slot > my_slot)
+         ++index;
+   }
+   return index;
+}
+
+static inline uint32_t status_slot_time(uint32_t index)
+{
+   return status_phase_start + ((index - 1) * RANGE_STATUS_BROADCAST_PERIOD_US);
+}
+
+static inline scheduler_phase_t start_tx(const char *error_message)
+{
+   // Announce everything known so far
+   success_packet.heard_slots = present_slots;
+   success_packet.pending_subscriber = pending_subscriber;
+   dwt_setdelayedtrxtime(DW_DELAY_FROM_US(status_slot_time(current_index)));
+   if ((dwt_writetxdata(sizeof(status_success_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&success_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
    {
       print(error_message);
       return RANGE_COMPUTATION_PHASE;
@@ -30,7 +73,7 @@ static inline scheduler_phase_t start_tx(const char *error_message, status_succe
 
 static inline scheduler_phase_t start_rx(const char *error_message)
 {
-   dwt_setdelayedtrxtime(DW_DELAY_FROM_US(next_action_timestamp - RECEIVE_EARLY_START_US));
+   dwt_setdelayedtrxtime(DW_DELAY_FROM_US(status_slot_time(current_index) - RECEIVE_EARLY_START_US));
    if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
    {
       print(error_message);
@@ -39,48 +82,66 @@ static inline scheduler_phase_t start_rx(const char *error_message)
    return RANGE_STATUS_PHASE;
 }
 
+static scheduler_phase_t advance_to_next_slot(void)
+{
+   if (++current_index >= total_num_slots)
+      return RANGE_COMPUTATION_PHASE;
+   return (current_index == transmit_index) ?
+         start_tx("ERROR: Failed to transmit STATUS packet\n") :
+         start_rx("ERROR: Unable to re-enable listening for STATUS packets\n");
+}
+
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 void status_phase_initialize(const uint8_t *uid)
 {
-   // Initialize all Schedule Phase parameters
+   // Initialize all Status Phase parameters
    success_packet = (status_success_packet_t){ .header = { .msgType = STATUS_SUCCESS_PACKET },
-      .src_addr = uid[0], .sequence_number = 0, .success = 0, .footer = { { 0 } } };
+      .src_addr = uid[0], .heard_slots = 0, .pending_subscriber = 0, .footer = { { 0 } } };
+}
+
+void status_phase_reset(void)
+{
+   // Called for a round that never reaches this phase
+   present_slots = 0;
+   directly_heard = 0;
+   pending_subscriber = 0;
 }
 
 scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uint32_t next_action_time)
 {
-   // Reset the necessary Schedule Phase parameters
-   current_slot = 1;
-   num_present_devices = 0;
+   // Reset the necessary Status Phase parameters
+   current_index = 1;
    scheduled_slot = status_slot;
-   success_packet.sequence_number = 0;
-   success_packet.success = responses_received();
-   next_action_timestamp = next_action_time;
-   memset(present_devices, 0, sizeof(present_devices));
+   status_phase_start = next_action_time;
    total_num_slots = (num_slots > MAX_NUM_RANGING_DEVICES) ? MAX_NUM_RANGING_DEVICES : num_slots;
+   transmit_index = compute_transmit_index(scheduled_slot, total_num_slots, schedule_phase_get_master_heard(), schedule_phase_get_master_nearest());
+
+   // Seed with what this device knows first-hand
+   present_slots = ranging_phase_get_heard_slots();
+   directly_heard = present_slots;
+   if (status_slot < MAX_NUM_RANGING_DEVICES)
+      present_slots |= (uint16_t)(1u << status_slot);
+
+   // A subscription request this device overheard rides to the master in the packet below
+   pending_subscriber = subscription_phase_get_heard_subscriber();
+
    dwt_writetxfctrl(sizeof(status_success_packet_t), 0, 0);
-   dwt_writetxdata(sizeof(status_success_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&success_packet, 0);
 
    // Set up the correct initial antenna and RX timeout duration
    ranging_radio_choose_antenna(0);
    dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RANGE_STATUS_TIMEOUT_US));
 
    // Begin transmission or reception depending on the scheduled time slot
-   return (scheduled_slot == current_slot) ?
-         start_tx("ERROR: Failed to transmit initial STATUS packet\n", &success_packet) :
+   return (transmit_index == current_index) ?
+         start_tx("ERROR: Failed to transmit initial STATUS packet\n") :
          start_rx("ERROR: Unable to start listening for STATUS packets\n");
 }
 
 scheduler_phase_t status_phase_tx_complete(void)
 {
-   next_action_timestamp += RANGE_STATUS_BROADCAST_PERIOD_US - (transmitted_seq_num * RANGE_STATUS_RESEND_INTERVAL_US);
-   if (++current_slot == scheduled_slot)
-      return start_tx("ERROR: Failed to transmit STATUS packet after prior transmission\n", &success_packet);
-   else if (current_slot < total_num_slots)
-      return start_rx("ERROR: Unable to re-enable listening for STATUS packets after transmission\n");
-   return RANGE_COMPUTATION_PHASE;
+   return advance_to_next_slot();
 }
 
 scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
@@ -92,44 +153,37 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
       return MESSAGE_COLLISION;
    }
 
-   // Record the presence of the transmitting device
-   if (!scheduled_slot && (num_present_devices < MAX_NUM_RANGING_DEVICES))
-      present_devices[num_present_devices++] = packet->src_addr;
-
-   // Retransmit the status packet upon reception
-   register const uint32_t seqNum = packet->sequence_number;
-   if (scheduled_slot && (scheduled_slot <= RANGE_STATUS_NUM_TOTAL_BROADCASTS) && (packet->sequence_number < scheduled_slot))
+   // Take on everything the sender knows so that whatever this device transmits next carries it onward
+   const uint8_t sender_slot = schedule_phase_get_slot_from_addr(packet->src_addr);
+   if (sender_slot < MAX_NUM_RANGING_DEVICES)
    {
-      packet->sequence_number = (scheduled_slot < current_slot) ? scheduled_slot : (scheduled_slot - 1);
-      next_action_timestamp += (packet->sequence_number - seqNum) * RANGE_STATUS_RESEND_INTERVAL_US;
-      return start_tx("ERROR: Failed to retransmit received STATUS packet\n", packet);
+      directly_heard |= (uint16_t)(1u << sender_slot);
+      present_slots |= (uint16_t)(1u << sender_slot);
    }
-   else if (++current_slot == scheduled_slot)
-   {
-      next_action_timestamp += RANGE_STATUS_BROADCAST_PERIOD_US - (seqNum * RANGE_STATUS_RESEND_INTERVAL_US);
-      return start_tx("ERROR: Failed to transmit STATUS packet\n", &success_packet);
-   }
-   else if (current_slot < total_num_slots)
-   {
-      next_action_timestamp += RANGE_STATUS_BROADCAST_PERIOD_US - (seqNum * RANGE_STATUS_RESEND_INTERVAL_US);
-      return start_rx("ERROR: Unable to re-enable listening for STATUS packets after reception\n");
-   }
-   return RANGE_COMPUTATION_PHASE;
+   present_slots |= packet->heard_slots;
+   if (!pending_subscriber)
+      pending_subscriber = packet->pending_subscriber;
+   return advance_to_next_slot();
 }
 
 scheduler_phase_t status_phase_rx_error(void)
 {
-   // Move to the next expected status packet to receive
-   next_action_timestamp += RANGE_STATUS_BROADCAST_PERIOD_US;
-   if (++current_slot == scheduled_slot)
-      return start_tx("ERROR: Failed to transmit STATUS packet after error\n", &success_packet);
-   else if (current_slot < total_num_slots)
-      return start_rx("ERROR: Unable to re-enable listening for STATUS packets after error\n");
-   return RANGE_COMPUTATION_PHASE;
+   return advance_to_next_slot();
 }
 
-const uint8_t* status_phase_get_detected_devices(uint8_t *num_devices)
+uint16_t status_phase_get_present_slots(void)
 {
-   *num_devices = num_present_devices;
-   return present_devices;
+   // The union of every device's view that reached this one
+   return present_slots;
+}
+
+uint8_t status_phase_get_pending_subscriber(void)
+{
+   return pending_subscriber;
+}
+
+uint16_t status_phase_get_directly_heard(void)
+{
+   // Only what this device received first-hand this round with nothing relayed folded in
+   return directly_heard;
 }

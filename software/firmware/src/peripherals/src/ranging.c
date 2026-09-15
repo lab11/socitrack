@@ -516,7 +516,7 @@ void ranging_radio_wakeup(void)
    // Assert the WAKEUP pin for >=500us and wait for it to become accessible
    wakeup_device_with_io();
    for (int i = 0; !spi_ready && (i < 100); ++i)
-      deca_usleep(20);
+      __WFI();
    if (!spi_ready)
    {
       print("WARNING: DW3000 radio could not be woken up...resetting peripheral\n");
@@ -550,7 +550,7 @@ bool ranging_radio_rxenable(int mode)
 uint64_t ranging_radio_readrxtimestamp(void)
 {
    // Read the current DW3000 RX timestamp
-   static uint64_t cur_dw_timestamp;
+   uint64_t cur_dw_timestamp = 0;
    dwt_readrxtimestamp((uint8_t*)&cur_dw_timestamp, DWT_COMPAT_NONE);
    return cur_dw_timestamp;
 }
@@ -570,7 +570,7 @@ uint32_t ranging_radio_readrxtimestamp_hi(void)
 uint64_t ranging_radio_readtxtimestamp(void)
 {
    // Read the current DW3000 TX timestamp
-   static uint64_t cur_dw_timestamp;
+   uint64_t cur_dw_timestamp = 0;
    dwt_readtxtimestamp((uint8_t*)&cur_dw_timestamp);
    return cur_dw_timestamp;
 }

@@ -34,19 +34,19 @@ static inline bool measurement_complete(const ranging_device_state_t *state, uin
    return timestamp_present(state->poll_tx_times[attempt]) && timestamp_present(state->poll_rx_times[attempt]) && timestamp_present(state->resp_tx_times[attempt]) && timestamp_present(state->resp_rx_times[attempt]) && timestamp_present(state->final_tx_times[attempt]) && timestamp_present(state->final_rx_times[attempt]);
 }
 
-void insert_sorted(int arr[], int new, unsigned end)
+static void insert_sorted(int arr[], int value, unsigned end)
 {
    unsigned insert_at = 0;
-   while ((insert_at < end) && (new >= arr[insert_at]))
+   while ((insert_at < end) && (value >= arr[insert_at]))
       ++insert_at;
    if (insert_at == end)
-      arr[insert_at] = new;
+      arr[insert_at] = value;
    else
       while (insert_at <= end)
       {
          int temp = arr[insert_at];
-         arr[insert_at] = new;
-         new = temp;
+         arr[insert_at] = value;
+         value = temp;
          ++insert_at;
       }
 }

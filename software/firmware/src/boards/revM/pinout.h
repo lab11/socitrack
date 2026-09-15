@@ -76,8 +76,8 @@
 // Timers
 #define BUZZER_TIMER_NUMBER                         0
 #define RADIO_WAKEUP_TIMER_NUMBER                   2
-#define RADIO_WAKEUP_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
+#define RADIO_WAKEUP_TIMER_TICK_RATE_HZ             32768
 #define BLE_SCANNING_TIMER_NUMBER                   3
-#define BLE_SCANNING_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
+#define BLE_SCANNING_TIMER_TICK_RATE_HZ             32768
 
 #endif  // #ifndef __PINOUT_HEADER_H__

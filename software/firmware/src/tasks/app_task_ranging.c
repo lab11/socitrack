@@ -500,7 +500,8 @@ void AppTaskRanging(void *uid)
    am_hal_timer_config_t scanning_timer_config;
    am_hal_timer_default_config_set(&scanning_timer_config);
    scanning_timer_config.eFunction = AM_HAL_TIMER_FN_UPCOUNT;
-   scanning_timer_config.ui32Compare0 = (uint32_t)((BLE_SCANNING_TIMER_TICK_RATE_HZ / 1000) * BLE_DISCOVERY_WINDOW_MS);
+   scanning_timer_config.eInputClock = AM_HAL_TIMER_CLOCK_XT;
+   scanning_timer_config.ui32Compare0 = (uint32_t)(((uint64_t)BLE_SCANNING_TIMER_TICK_RATE_HZ * BLE_DISCOVERY_WINDOW_MS) / 1000u);
    am_hal_timer_config(BLE_SCANNING_TIMER_NUMBER, &scanning_timer_config);
    am_hal_timer_interrupt_enable(AM_HAL_TIMER_MASK(BLE_SCANNING_TIMER_NUMBER, AM_HAL_TIMER_COMPARE0));
    NVIC_SetPriority(TIMER0_IRQn + BLE_SCANNING_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY);

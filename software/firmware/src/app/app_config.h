@@ -205,16 +205,18 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define RANGING_NUM_RANGE_ATTEMPTS                  NUM_XMIT_ANTENNAS
 #define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 100)
 
-#define RANGE_STATUS_NUM_TOTAL_BROADCASTS           4
-#define RANGE_STATUS_RESEND_INTERVAL_US             1000
-#define RANGE_STATUS_BROADCAST_PERIOD_US            (RANGE_STATUS_NUM_TOTAL_BROADCASTS * RANGE_STATUS_RESEND_INTERVAL_US)
-#define RANGE_STATUS_TIMEOUT_US                     (RANGE_STATUS_BROADCAST_PERIOD_US - 900 + RECEIVE_EARLY_START_US)
+#define RANGE_STATUS_BROADCAST_PERIOD_US            1000
+#define RANGE_STATUS_TIMEOUT_US                     (RECEIVE_EARLY_START_US + 100)
 
 #define SUBSCRIPTION_BROADCAST_PERIOD_US            2000
 #define SUBSCRIPTION_TIMEOUT_US                     1000
 #define SUBSCRIPTION_RELISTEN_MARGIN_US             300
+#define SUBSCRIPTION_LISTEN_DIVISOR                 4
 
 #define SUBSCRIPTION_PHASE_START_US                 SCHEDULE_BROADCAST_PERIOD_US
 #define RANGING_PHASE_START_US                      (SUBSCRIPTION_PHASE_START_US + SUBSCRIPTION_BROADCAST_PERIOD_US)
+
+_Static_assert(RANGE_STATUS_TIMEOUT_US < RANGE_STATUS_BROADCAST_PERIOD_US, "a status listening window must close before the next slot on the grid opens");
+_Static_assert(RANGING_TIMEOUT_US < RANGING_BROADCAST_INTERVAL_US, "a ranging listening window must close before the next slot on the grid opens");
 
 #endif  // #ifndef __APP_CONFIG_HEADER_H__
