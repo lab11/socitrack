@@ -188,8 +188,13 @@ void StorageTask(void *params)
    if (recover_time_anchor(&anchor_network_ms, &anchor_local_ms))
    {
       // The anchor holds network time and local time at the same instant, so the offset is their difference
-      app_set_time_offset((int32_t)((int64_t)anchor_network_ms - (int64_t)anchor_local_ms));
-      print("INFO: Recovered ranging time offset from a log anchor: %d ms\n", app_get_time_offset());
+      if (time_anchor_is_plausible(anchor_network_ms, anchor_local_ms))
+      {
+         app_set_time_offset((int32_t)((int64_t)anchor_network_ms - (int64_t)anchor_local_ms));
+         print("INFO: Recovered ranging time offset from a log anchor: %d ms\n", app_get_time_offset());
+      }
+      else
+         print("ERROR: Recovered log anchor is implausible (network %u ms, local %u ms); keeping a zero offset until a ranging round supplies one\n", anchor_network_ms, anchor_local_ms);
    }
 #endif
 

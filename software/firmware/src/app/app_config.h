@@ -41,6 +41,7 @@
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
 #define STORAGE_FLUSH_TIMEOUT_S                     120
 #define STORAGE_DIAGNOSTIC_NUM_POOLS                5
+#define STORAGE_MAX_PLAUSIBLE_OFFSET_MS             3600000
 
 #define BATTERY_CHECK_INTERVAL_S                    300
 

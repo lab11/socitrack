@@ -99,41 +99,64 @@ static inline uint32_t stored_record_length(const uint8_t *payload, uint32_t off
    }
 }
 
-static inline bool last_time_anchor_in_page(const uint8_t *payload, uint32_t length, uint32_t *experiment_ms, uint32_t *rtc)
+static inline bool last_time_anchor_in_page(const uint8_t *payload, uint32_t length, bool framed, uint32_t *experiment_ms, uint32_t *rtc)
 {
    // Keep the newest anchor in this page; payloads are record-aligned so a forward walk is exact
    bool found = false;
    uint32_t offset = 0;
-   while ((offset + 5) < length)
+   while ((offset + 5) <= length)
    {
-      const uint32_t record_length = stored_record_length(payload, offset, length);
-      if (!record_length || ((offset + record_length) > length))
-         break;
-      if (payload[offset] == STORAGE_TYPE_TIME_ANCHOR)
+      const uint8_t *record = NULL;
+      if (framed)
       {
-         memcpy(experiment_ms, payload + offset + 1, sizeof(*experiment_ms));
-         memcpy(rtc, payload + offset + 5, sizeof(*rtc));
+         // The framing is stepped by nandlog which owns the layout
+         uint32_t record_bytes = 0;
+         if (!nandlog_framed_next_record(payload, length, &offset, &record, &record_bytes))
+            break;
+      }
+      else
+      {
+         const uint32_t record_length = stored_record_length(payload, offset, length);
+         if (!record_length || ((offset + record_length) > length))
+            break;
+         record = payload + offset;
+         offset += record_length;
+      }
+      if (record[0] == STORAGE_TYPE_TIME_ANCHOR)
+      {
+         memcpy(experiment_ms, record + 1, sizeof(*experiment_ms));
+         memcpy(rtc, record + 5, sizeof(*rtc));
          found = true;
       }
-      offset += record_length;
    }
    return found;
 }
 
 static inline bool recover_time_anchor(uint32_t *experiment_ms, uint32_t *rtc)
 {
-   // The newest anchor pairs an experiment timestamp with the raw RTC value at the instant it was written
+   // The newest anchor pairs an experiment timestamp with the device's own clock at the instant it was written
    static uint8_t page_buffer[NANDLOG_MAX_DATA_BYTES_PER_PAGE];
    for (uint32_t back = 0; back < ANCHOR_SEARCH_MAX_PAGES; ++back)
    {
       bool end_of_epoch = false;
-      const uint32_t length = nandlog_read_recent_page(back, page_buffer, NULL, &end_of_epoch);
-      if (length && last_time_anchor_in_page(page_buffer, length, experiment_ms, rtc))
+      nandlog_page_header_t header = { 0 };
+      const uint32_t length = nandlog_read_recent_page(back, page_buffer, &header, &end_of_epoch);
+      if (length && last_time_anchor_in_page(page_buffer, length, header.magic == NANDLOG_PAGE_MAGIC_FRAMED, experiment_ms, rtc))
          return true;
       if (end_of_epoch)
          break;
    }
    return false;
+}
+
+static inline bool time_anchor_is_plausible(uint32_t anchor_network_ms, uint32_t anchor_local_ms)
+{
+   // Two sanity checks on a recovered anchor: An anchor from the future cannot exist and the offset itself must be plausible
+   const uint32_t now_local_ms = app_get_experiment_time(0);
+   if (anchor_local_ms > now_local_ms)
+      return false;
+   const int64_t offset = (int64_t)anchor_network_ms - (int64_t)anchor_local_ms;
+   return (offset <= STORAGE_MAX_PLAUSIBLE_OFFSET_MS) && (offset >= -STORAGE_MAX_PLAUSIBLE_OFFSET_MS);
 }
 
 #endif

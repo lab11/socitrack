@@ -165,6 +165,9 @@ uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *head
 // Returns zero, with the header describing the gap, if that page cannot be produced
 uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_page_header_t *header);
 
+// Step through the records of a payload belonging to a page that announced NANDLOG_PAGE_MAGIC_FRAMED.
+bool nandlog_framed_next_record(const uint8_t *payload, uint32_t length, uint32_t *offset, const uint8_t **record, uint32_t *record_bytes);
+
 // Walk backwards from the write head, newest page first, independently of any open read. Zero means that
 // page could not be read, which is not the end of the log; 'end_of_epoch' is the signal to stop
 uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_page_header_t *header, bool *end_of_epoch);

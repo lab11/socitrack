@@ -28,7 +28,7 @@ extern uint8_t _uid_base_address;
 static uint16_t boot_reset_status = 0;
 static volatile uint16_t watchdog_declines;
 static volatile uint32_t watchdog_last_checkin[WATCHDOG_NUM_TASKS], watchdog_armed_at;
-static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS], watchdog_enabled = false, watchdog_was_late[WATCHDOG_NUM_TASKS];
+static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS], watchdog_enabled = false, watchdog_was_late[WATCHDOG_NUM_TASKS], watchdog_grace_elapsed = false;
 static volatile uint8_t watchdog_late_episodes[WATCHDOG_NUM_TASKS];
 
 __attribute__((unused))
@@ -48,11 +48,14 @@ static reset_diagnostic_t watchdog_find_stalled_tasks(void)
    // Report which registered tasks have gone quiet for longer than they are allowed to
    uint32_t num_stalled = 0;
    reset_diagnostic_t first_stalled = RESET_DIAGNOSTIC_NONE;
-   const uint32_t now = watchdog_now(), deadline = WATCHDOG_MS_TO_STIMER(WATCHDOG_CHECKIN_DEADLINE_MS);
+   const int32_t deadline = (int32_t)WATCHDOG_MS_TO_STIMER(WATCHDOG_CHECKIN_DEADLINE_MS);
    AM_CRITICAL_BEGIN
+   const uint32_t now = watchdog_now();
    for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
    {
-      const bool late = watchdog_registered[task] && ((now - watchdog_last_checkin[task]) > deadline);
+      // Signed, so a check-in from the future reads as a small negative age rather than an enormous positive one
+      const int32_t age = (int32_t)(now - watchdog_last_checkin[task]);
+      const bool late = watchdog_registered[task] && (age > deadline);
       if (late)
       {
          if (!watchdog_was_late[task])
@@ -100,10 +103,15 @@ static void watchdog_withdraw_stall_diagnostic(void)
 static void watchdog_evaluate_and_pet(void)
 {
    // Pet the watchdog from whichever task last checked in
-   if ((watchdog_now() - watchdog_armed_at) < WATCHDOG_MS_TO_STIMER(WATCHDOG_STARTUP_GRACE_MS))
+   if (!watchdog_grace_elapsed)
    {
-      am_hal_wdt_restart(AM_HAL_WDT_MCU);        // still starting up; nothing is expected of anyone yet
-      return;
+      // Latch because the STIMER wraps every ~36 hours and an unlatched test would re-open this blind window
+      if ((watchdog_now() - watchdog_armed_at) < WATCHDOG_MS_TO_STIMER(WATCHDOG_STARTUP_GRACE_MS))
+      {
+         am_hal_wdt_restart(AM_HAL_WDT_MCU);     // still starting up; nothing is expected of anyone yet
+         return;
+      }
+      watchdog_grace_elapsed = true;
    }
 
    // Only pet if all registered tasks have checked in within their allowed time
@@ -391,6 +399,7 @@ void system_watchdog_enable(void)
 
    // Never lock the watchdog
    watchdog_armed_at = watchdog_now();
+   watchdog_grace_elapsed = false;
    for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
       watchdog_last_checkin[task] = watchdog_armed_at;
    watchdog_enabled = true;

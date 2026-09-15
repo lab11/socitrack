@@ -1116,6 +1116,27 @@ uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_pag
    return result;
 }
 
+bool nandlog_framed_next_record(const uint8_t *payload, uint32_t length, uint32_t *offset,
+                                const uint8_t **record, uint32_t *record_bytes)
+{
+   if (!payload || !offset || (*offset >= length))
+      return false;
+   uint16_t data_length = 0;
+   if ((*offset + NANDLOG_FRAMING_LENGTH_BYTES) > length)
+      return false;
+   memcpy(&data_length, payload + *offset, sizeof(data_length));
+   const uint32_t body = *offset + NANDLOG_FRAMING_LENGTH_BYTES;
+   const uint32_t bytes = 5 + (uint32_t)data_length;
+   if ((body + bytes) > length)
+      return false;
+   if (record)
+      *record = payload + body;
+   if (record_bytes)
+      *record_bytes = bytes;
+   *offset = body + bytes;
+   return true;
+}
+
 uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_page_header_t *header, bool *end_of_epoch)
 {
    nandlog_port_lock();
@@ -1179,6 +1200,7 @@ void nandlog_exit_maintenance_mode(void) {}
 void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes) { if (num_pages) *num_pages = 0; if (num_bytes) *num_bytes = 0; }
 uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *header) { (void)header; return 0; }
 uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_page_header_t *header) { (void)seq; (void)header; return 0; }
+bool nandlog_framed_next_record(const uint8_t *payload, uint32_t length, uint32_t *offset, const uint8_t **record, uint32_t *record_bytes) { (void)payload; (void)length; (void)offset; (void)record; (void)record_bytes; return false; }
 uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_page_header_t *header, bool *end_of_epoch) { (void)pages_back; (void)buffer; (void)header; if (end_of_epoch) *end_of_epoch = true; return 0; }
 void nandlog_retransmit_clear(void) {}
 uint32_t nandlog_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)seqs; (void)count; return 0; }

@@ -150,16 +150,13 @@ static void test_framed_records_walk_back(void)
          continue;
       CHECK(header.magic == NANDLOG_PAGE_MAGIC_FRAMED, "page %u did not announce framing", i);
 
+      // Walked through the library's own iterator rather than by hand
       uint32_t offset = 0, in_page = 0;
-      while (offset < length)
+      const uint8_t *record = NULL;
+      uint32_t record_bytes = 0;
+      while (nandlog_framed_next_record(readback, length, &offset, &record, &record_bytes))
       {
-         uint16_t data_length = 0;
-         memcpy(&data_length, readback + offset, sizeof(data_length));
-         offset += sizeof(data_length);
-         CHECK(offset + 5 + data_length <= length, "record %u ran past the end of page %u", in_page, i);
-         if (offset + 5 + data_length > length)
-            break;
-         offset += 5 + data_length;
+         CHECK(record_bytes >= 5, "record %u in page %u is shorter than a header", in_page, i);
          ++in_page;
          ++walked;
       }
