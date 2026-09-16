@@ -26,6 +26,13 @@ static volatile bool is_running;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
+static void idle_until_next_round(void)
+{
+   // Nothing further happens this round and the next one is a free-running timer away
+   ranging_radio_sleep(true);
+   ranging_phase = UNSCHEDULED_TIME_PHASE;
+}
+
 static void begin_schedule_phase(void)
 {
    // Publish the phase with no window in which a radio interrupt could advance it and be overwritten
@@ -156,6 +163,7 @@ static void handle_range_computation_phase(void)
       default:
          break;
    }
+   ranging_radio_note_network_size((uint8_t)schedule_phase_get_num_devices());
    ranging_phase = UNSCHEDULED_TIME_PHASE;
    last_round_stimer = am_hal_stimer_counter_get();
 }
@@ -287,6 +295,7 @@ void scheduler_run(schedule_role_t role)
       NVIC_SetPriority(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
       NVIC_EnableIRQ(TIMER0_IRQn + RADIO_WAKEUP_TIMER_NUMBER);
       am_hal_timer_clear(RADIO_WAKEUP_TIMER_NUMBER);
+      ranging_radio_sleep(true);
    }
    else
    {
@@ -338,13 +347,13 @@ void scheduler_run(schedule_role_t role)
                break;
             case RADIO_ERROR:
                if (current_role == ROLE_MASTER)
-                  ranging_phase = UNSCHEDULED_TIME_PHASE;
+                  idle_until_next_round();
                else
                   begin_schedule_phase();
                break;
             case RANGING_ERROR:
                if (current_role == ROLE_MASTER)
-                  ranging_phase = UNSCHEDULED_TIME_PHASE;
+                  idle_until_next_round();
                else if ((am_hal_stimer_counter_get() - search_started_stimer) >= NETWORK_SEARCH_TIMEOUT_STIMER)
                {
                      // Stop the ranging task if no network was detected after a period of time

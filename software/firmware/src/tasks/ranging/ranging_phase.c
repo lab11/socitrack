@@ -36,7 +36,8 @@ static inline scheduler_phase_t start_tx(const char *error_message)
    dwt_setdelayedtrxtime(DW_DELAY_FROM_US(ranging_slot_time(time_slot)));
    if (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS)
    {
-      print(error_message);
+      ranging_radio_note_tx_failure();
+      print_isr(error_message);
       return RADIO_ERROR;
    }
    return RANGING_PHASE;
@@ -55,7 +56,8 @@ static inline scheduler_phase_t start_rx(const char *error_message)
    dwt_setdelayedtrxtime(DW_DELAY_FROM_US(ranging_slot_time(time_slot) - RECEIVE_EARLY_START_US));
    if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
    {
-      print(error_message);
+      ranging_radio_note_rx_arm_failure();
+      print_isr(error_message);
       return RADIO_ERROR;
    }
    return RANGING_PHASE;
@@ -139,9 +141,10 @@ scheduler_phase_t ranging_phase_rx_complete(ranging_packet_t* packet)
       return status_phase_rx_complete((status_success_packet_t*)packet);
    else if (packet->header.msgType != RANGING_PACKET)
    {
-      print("ERROR: Received an unexpected message type during RANGING phase...possible network collision\n");
+      print_isr("ERROR: Received an unexpected message type during RANGING phase...possible network collision\n");
       return MESSAGE_COLLISION;
    }
+   ranging_radio_note_rx_result(true);
 
    // Record the packet reception time in all relevant storage structures
    const div_t slot_results = div(time_slot, slots_per_range);
@@ -194,6 +197,7 @@ scheduler_phase_t ranging_phase_rx_error(void)
    // Forward this request to the next phase if not currently in the Ranging Phase
    if (current_phase != RANGING_PHASE)
       return status_phase_rx_error();
+   ranging_radio_note_rx_result(false);
 
    // Record an invalid packet reception time in all relevant storage structures
    const uint32_t to_send = RANGING_INVALID_TIMESTAMP;

@@ -53,7 +53,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
       dwt_writetxfctrl(sizeof(subscription_packet_t), 0, 0);
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(SUBSCRIPTION_PHASE_START_US + (rand() % (SUBSCRIPTION_TIMEOUT_US - 100))));
       if ((dwt_writetxdata(sizeof(subscription_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&subscription_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
-         print("ERROR: Failed to transmit SUBSCRIPTION request packet\n");
+         print_isr("ERROR: Failed to transmit SUBSCRIPTION request packet\n");
       else
          return SUBSCRIPTION_PHASE;
    }
@@ -63,7 +63,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(SUBSCRIPTION_PHASE_START_US - RECEIVE_EARLY_START_US));
       dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RECEIVE_EARLY_START_US + SUBSCRIPTION_TIMEOUT_US));
       if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
-         print("ERROR: Unable to start listening for SUBSCRIPTION packets\n");
+         print_isr("ERROR: Unable to start listening for SUBSCRIPTION packets\n");
       else
          return SUBSCRIPTION_PHASE;
    }
@@ -89,7 +89,7 @@ scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet)
       return ranging_phase_rx_complete((ranging_packet_t*)packet);
    else if (packet->header.msgType != SUBSCRIPTION_PACKET)
    {
-      print("ERROR: Received an unexpected message type during SUBSCRIPTION phase...possible network collision\n");
+      print_isr("ERROR: Received an unexpected message type during SUBSCRIPTION phase...possible network collision\n");
       return MESSAGE_COLLISION;
    }
    if (!schedule_index)
@@ -110,10 +110,10 @@ scheduler_phase_t subscription_phase_rx_error(void)
    const int32_t time_elapsed_us = (int32_t)DWT_TO_US(window_elapsed_dw) - (int32_t)SUBSCRIPTION_PHASE_START_US;
    if ((time_elapsed_us >= 0) && (((uint32_t)time_elapsed_us + SUBSCRIPTION_RELISTEN_MARGIN_US) <= SUBSCRIPTION_TIMEOUT_US))
    {
-      print("INFO: More time left in the Subscription phase...listening again\n");
+      print_isr("INFO: More time left in the Subscription phase...listening again\n");
       dwt_setrxtimeout(DW_TIMEOUT_FROM_US(SUBSCRIPTION_TIMEOUT_US - (uint32_t)time_elapsed_us));
       if (dwt_rxenable(DWT_START_RX_IMMEDIATE) != DWT_SUCCESS)
-         print("ERROR: Unable to restart listening for SUBSCRIPTION packets\n");
+         print_isr("ERROR: Unable to restart listening for SUBSCRIPTION packets\n");
       else
          return SUBSCRIPTION_PHASE;
    }

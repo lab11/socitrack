@@ -65,7 +65,8 @@ static inline scheduler_phase_t start_tx(const char *error_message)
    dwt_setdelayedtrxtime(DW_DELAY_FROM_US(status_slot_time(current_index)));
    if ((dwt_writetxdata(sizeof(status_success_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&success_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
    {
-      print(error_message);
+      ranging_radio_note_tx_failure();
+      print_isr(error_message);
       return RANGE_COMPUTATION_PHASE;
    }
    return RANGE_STATUS_PHASE;
@@ -76,7 +77,8 @@ static inline scheduler_phase_t start_rx(const char *error_message)
    dwt_setdelayedtrxtime(DW_DELAY_FROM_US(status_slot_time(current_index) - RECEIVE_EARLY_START_US));
    if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
    {
-      print(error_message);
+      ranging_radio_note_rx_arm_failure();
+      print_isr(error_message);
       return RANGE_COMPUTATION_PHASE;
    }
    return RANGE_STATUS_PHASE;
@@ -149,7 +151,7 @@ scheduler_phase_t status_phase_rx_complete(status_success_packet_t* packet)
    // Ensure that this packet is of the expected type
    if (packet->header.msgType != STATUS_SUCCESS_PACKET)
    {
-      print("ERROR: Received an unexpected message type during STATUS phase...possible network collision\n");
+      print_isr("ERROR: Received an unexpected message type during STATUS phase...possible network collision\n");
       return MESSAGE_COLLISION;
    }
 

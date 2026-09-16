@@ -142,7 +142,7 @@ scheduler_phase_t schedule_phase_tx_complete(void)
       }
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(schedule_broadcast_time(schedule_packet.sequence_number)));
       if ((dwt_writetxdata(sizeof(schedule_packet.sequence_number), &schedule_packet.sequence_number, offsetof(schedule_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
-         print("ERROR: Failed to retransmit schedule\n");   // the loop's own increment moves to the next sub-slot
+         print_isr("ERROR: Failed to retransmit schedule\n");   // the loop's own increment moves to the next sub-slot
       else
          return SCHEDULE_PHASE;
    }
@@ -162,7 +162,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
       // Immediately restart listening for schedule packets
       if (!ranging_radio_rxenable(DWT_START_RX_IMMEDIATE))
       {
-         print("ERROR: Unable to restart listening for schedule packets\n");
+         print_isr("ERROR: Unable to restart listening for schedule packets\n");
          return RADIO_ERROR;
       }
       return SCHEDULE_PHASE;
@@ -172,7 +172,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    uint8_t num_devices = schedule->num_devices;
    if (num_devices > MAX_NUM_RANGING_DEVICES)
    {
-      print("WARNING: Received a schedule claiming %u devices...clamping to %u\n", (uint32_t)num_devices, (uint32_t)MAX_NUM_RANGING_DEVICES);
+      print_isr("WARNING: Received a schedule claiming %u devices...clamping to %u\n", (uint32_t)num_devices, (uint32_t)MAX_NUM_RANGING_DEVICES);
       num_devices = MAX_NUM_RANGING_DEVICES;
    }
    scheduled_slot = UNSCHEDULED_SLOT;
@@ -206,7 +206,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
       if ((dwt_writetxdata(packet_size - sizeof(ieee154_footer_t), (uint8_t*)&schedule_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
       {
          current_phase = SUBSCRIPTION_PHASE;
-         print("ERROR: Failed to retransmit received schedule\n");
+         print_isr("ERROR: Failed to retransmit received schedule\n");
          return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, reference_time);
       }
       return SCHEDULE_PHASE;

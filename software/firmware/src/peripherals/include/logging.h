@@ -17,12 +17,19 @@ void logging_disable(void);
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
 
 #define print(...) am_util_stdio_printf(__VA_ARGS__)
+
+#ifdef ENABLE_ISR_LOGGING
+#define print_isr(...) am_util_stdio_printf(__VA_ARGS__)
+#else
+#define print_isr(...)
+#endif
 void print_reset_reason(const am_hal_reset_status_t* reason);
 void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8_t* range_data, uint32_t range_data_length);
 
 #else
 
 #define print(...)
+#define print_isr(...)
 #define print_reset_reason(...)
 #define print_ranges(...)
 

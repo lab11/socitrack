@@ -18,6 +18,22 @@
 #define DW_DELAY_FROM_US(_us)                               ((uint32_t)(US_TO_DWT((_us)) >> 8))
 #define DW_TIMEOUT_FROM_US(_us)                             ((uint32_t)((_us) * 499.2 / 512.0))
 
+typedef struct
+{
+   uint32_t rx_ok;          // ranging slots that produced a decoded packet
+   uint32_t rx_failed;      // ranging slots that timed out or errored -- the receive-sensitivity metric
+   uint32_t tx_failed;      // delayed transmissions programmed after their slot had already passed
+   uint32_t rx_arm_failed;  // delayed receives rejected for the same reason -- these abort the whole round
+   uint32_t isr_max_us;     // longest single radio interrupt since boot
+   uint32_t isr_max_events; // radio events serviced by that longest interrupt, since one entry may drain several
+   uint32_t isr_over_count; // radio interrupts that exceeded RADIO_ISR_BUDGET_US
+   uint32_t isr_count;      // radio interrupts serviced, so the overrun count has a denominator
+   uint8_t network_size;    // devices in the schedule, without which the receive ratio cannot be read
+   uint32_t full_restores;  // wake-ups that ran the expensive dwt_restoreconfig(1)
+   uint32_t wake_skipped;   // wake-ups that found the radio already awake and did nothing
+   bool cycle_counter_ok;   // false means isr_max_us is not measurable on this build
+} ranging_radio_stats_t;
+
 
 // Data structures for 802.15.4 packets --------------------------------------------------------------------------------
 
@@ -45,6 +61,12 @@ void ranging_radio_disable(void);
 void ranging_radio_sleep(bool deep_sleep);
 void ranging_radio_wakeup(void);
 uint32_t ranging_radio_get_isr_overrun_count(void);
+void ranging_radio_get_wake_timing(uint32_t *pin_us, uint32_t *ready_us, uint32_t *restore_us);
+void ranging_radio_note_tx_failure(void);
+void ranging_radio_note_rx_arm_failure(void);
+void ranging_radio_note_rx_result(bool decoded);
+void ranging_radio_note_network_size(uint8_t devices);
+void ranging_radio_get_stats(ranging_radio_stats_t *stats);
 bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
 uint32_t ranging_radio_readrxtimestamp_lo(void);

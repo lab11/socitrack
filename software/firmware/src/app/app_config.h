@@ -188,6 +188,16 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define RADIO_ISR_MAX_ITERATIONS                    16
 
+#ifndef RADIO_FULL_RESTORE_INTERVAL_ROUNDS            // overridable, so an A/B needs no source edit
+#define RADIO_FULL_RESTORE_INTERVAL_ROUNDS          1
+#endif
+#ifndef RADIO_STATS_REPORT_INTERVAL_S                 // bench cadence; compiled out of a release build
+#define RADIO_STATS_REPORT_INTERVAL_S               30
+#endif
+#ifndef RADIO_ISR_BUDGET_US
+#define RADIO_ISR_BUDGET_US                         (RANGING_BROADCAST_INTERVAL_US - RECEIVE_EARLY_START_US)
+#endif
+
 #if (DEVICE_TIMEOUT_ROUNDS > 255)
 #error "DEVICE_TIMEOUT_ROUNDS must fit in the uint8_t per-device round counters in schedule_phase.c"
 #endif
