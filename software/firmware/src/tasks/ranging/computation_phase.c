@@ -117,6 +117,11 @@ void compute_ranges(uint8_t *ranging_results)
          if (range_millimeters < 0)
             range_millimeters = 0;
 
+         // Record the range sample for instrumentation purposes
+#if RADIO_INSTRUMENTATION
+         ranging_radio_note_range_sample(state[dev_index].device_eui, range_millimeters);
+#endif
+
          // Filter the range estimate
          for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
             if (range_filters[i].eui == state[dev_index].device_eui)

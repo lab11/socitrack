@@ -14,24 +14,37 @@ static dwt_config_t dw_config;
 static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
 static volatile bool spi_ready, initialized = false;
 static volatile uint32_t isr_overrun_count;
-static volatile uint32_t wake_pin_us, wake_ready_us, wake_restore_us, wakes_since_full_restore = 0;
-static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_max_us, stat_isr_over, stat_full_restores;
+static volatile uint32_t wake_pin_us, wake_ready_us, wake_restore_us;
+static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_max_us, stat_isr_over;
 static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed, stat_wake_skipped;
+static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
+static volatile uint32_t stat_wake_max_us, stat_wake_last_us;
 static volatile uint8_t stat_network_size;
 static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
+
+#if RADIO_INSTRUMENTATION
+static ranging_range_stats_t range_stats[MAX_NUM_RANGING_DEVICES];
+static volatile uint32_t stat_isr_phase_max[RANGING_ISR_PHASE_COUNT], stat_isr_phase_count[RANGING_ISR_PHASE_COUNT];
+static volatile uint8_t current_isr_phase;
+#endif
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
 static void cycle_counter_init(void)
 {
+#if RADIO_INSTRUMENTATION
+   // Powers up the DWT trace block
    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
    DWT->CYCCNT = 0;
    DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
    const uint32_t first = DWT->CYCCNT;
    for (volatile uint32_t spin = 0; spin < 64; ++spin) { }
    cycle_counter_ok = (DWT->CYCCNT != first);
+#else
+   cycle_counter_ok = false;
+#endif
 }
 
 static inline uint32_t cycles_to_us(uint32_t cycles)
@@ -71,6 +84,9 @@ static void ranging_radio_isr(void *args)
 {
    // Call the DW3000 ISR as long as the interrupt pin is asserted
    const uint32_t isr_entry_cycles = DWT->CYCCNT;
+#if RADIO_INSTRUMENTATION
+   const uint8_t phase_at_entry = current_isr_phase;
+#endif
    uint32_t pin_status = 0, iterations = 0;
    do
    {
@@ -87,6 +103,22 @@ static void ranging_radio_isr(void *args)
       {
          stat_isr_max_us = elapsed_us;
          stat_isr_max_events = iterations + 1u;
+      }
+      stat_isr_us_total += elapsed_us;
+#if RADIO_INSTRUMENTATION
+      if (phase_at_entry < RANGING_ISR_PHASE_COUNT)
+      {
+         ++stat_isr_phase_count[phase_at_entry];
+         if (elapsed_us > stat_isr_phase_max[phase_at_entry])
+            stat_isr_phase_max[phase_at_entry] = elapsed_us;
+      }
+#endif
+      if (stat_isr_count > RADIO_ISR_WARMUP_COUNT)
+      {
+         // A since-boot maximum is pinned forever by the cold-cache first executions, so keep a warm one too
+         ++stat_isr_warm_count;
+         if (elapsed_us > stat_isr_warm_max_us)
+            stat_isr_warm_max_us = elapsed_us;
       }
       if (elapsed_us > RADIO_ISR_BUDGET_US)
          ++stat_isr_over;
@@ -400,7 +432,6 @@ bool ranging_radio_reset(void)
    deca_sleep(50);
 
    // Initialize the DW3000 driver and transceiver
-   wakes_since_full_restore = 0;
    if (dwt_probe((struct dwt_probe_s*)&driver_interface) != DWT_SUCCESS)
    {
 #ifdef _MANUFACTURING_TEST_
@@ -579,17 +610,15 @@ void ranging_radio_wakeup(void)
    else
    {
       // Restore configuration and re-enable allowable interrupts
-      const bool full_restore = (wakes_since_full_restore == 0);
-      if (++wakes_since_full_restore >= RADIO_FULL_RESTORE_INTERVAL_ROUNDS)
-         wakes_since_full_restore = 0;
-      if (full_restore)
-         ++stat_full_restores;
-      dwt_restoreconfig(full_restore ? 1 : 0);
+      dwt_restoreconfig(1);
       dwt_setinterrupt(DWT_INT_TXFRS_BIT_MASK | DWT_INT_RXFCG_BIT_MASK | DWT_INT_RXPHE_BIT_MASK |
             DWT_INT_RXFCE_BIT_MASK | DWT_INT_RXFSL_BIT_MASK | DWT_INT_RXFTO_BIT_MASK |
             DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK  |
             DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
       wake_restore_us = stimer_ticks_to_us(am_hal_stimer_counter_get() - t_ready);
+      stat_wake_last_us = wake_pin_us + wake_ready_us + wake_restore_us;
+      if (stat_wake_last_us > stat_wake_max_us)
+         stat_wake_max_us = stat_wake_last_us;
    }
 }
 
@@ -604,6 +633,57 @@ void ranging_radio_note_rx_arm_failure(void)
    // A delayed receive could not be armed in time
    ++stat_rx_arm_failed;
 }
+
+#if RADIO_INSTRUMENTATION
+
+void ranging_radio_note_phase(uint8_t phase)
+{
+   current_isr_phase = phase;
+}
+
+void ranging_radio_get_isr_phase_max(uint32_t *max_us, uint32_t *counts)
+{
+   for (uint8_t i = 0; i < RANGING_ISR_PHASE_COUNT; ++i)
+   {
+      if (max_us)
+         max_us[i] = stat_isr_phase_max[i];
+      if (counts)
+         counts[i] = stat_isr_phase_count[i];
+   }
+}
+
+void ranging_radio_note_range_sample(uint8_t eui, int32_t range_mm)
+{
+   // Accumulate the spread of the pre-filter range per peer, which is the per-link quality metric
+   if (eui)
+   {
+      for (uint8_t i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+      {
+         if (!range_stats[i].eui)
+            range_stats[i].eui = eui;
+         if (range_stats[i].eui == eui)
+         {
+            if (!range_stats[i].offset_set)
+            {
+               range_stats[i].offset_set = true;
+               range_stats[i].offset_mm = range_mm;
+            }
+            const int64_t deviation = (int64_t)range_mm - (int64_t)range_stats[i].offset_mm;
+            ++range_stats[i].n;
+            range_stats[i].sum_mm += deviation;
+            range_stats[i].sumsq_mm += (uint64_t)(deviation * deviation);
+            break;
+         }
+      }
+   }
+}
+
+const ranging_range_stats_t* ranging_radio_get_range_stats(void)
+{
+   return range_stats;
+}
+
+#endif
 
 void ranging_radio_note_rx_result(bool decoded)
 {
@@ -624,15 +704,19 @@ void ranging_radio_get_stats(ranging_radio_stats_t *stats)
    {
       stats->rx_ok = stat_rx_ok;
       stats->rx_failed = stat_rx_failed;
+      stats->wake_max_us = stat_wake_max_us;
+      stats->wake_last_us = stat_wake_last_us;
       stats->tx_failed = stat_tx_failed;
       stats->rx_arm_failed = stat_rx_arm_failed;
       stats->wake_skipped = stat_wake_skipped;
       stats->isr_max_us = stat_isr_max_us;
       stats->isr_max_events = stat_isr_max_events;
       stats->isr_count = stat_isr_count;
+      stats->isr_us_total = stat_isr_us_total;
+      stats->isr_warm_max_us = stat_isr_warm_max_us;
+      stats->isr_warm_count = stat_isr_warm_count;
       stats->network_size = stat_network_size;
       stats->isr_over_count = stat_isr_over;
-      stats->full_restores = stat_full_restores;
       stats->cycle_counter_ok = cycle_counter_ok;
    }
 }

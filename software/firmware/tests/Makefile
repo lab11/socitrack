@@ -17,9 +17,7 @@ $(info BSP = $(BSP))
 $(info PART = $(PART))
 $(info PART_DEF = $(PART_DEF))
 
-OPT ?= -O2 -fno-strict-aliasing
 HAL_VALIDATION ?= 0
-
 TOOLCHAIN ?= arm-none-eabi
 CPU = cortex-m4
 FPU = fpv4-sp-d16
@@ -41,6 +39,7 @@ DEFINES += -DDM_NUM_ADV_SETS=1
 DEFINES += -DWSF_OS_DIAG=1
 DEFINES += -DWSF_BUF_STATS=1
 DEFINES += $(EXTRA_DEFINES)
+DEFINES += -DRADIO_INSTRUMENTATION=1
 DEFINES += -DWSF_TRACE_ENABLED
 DEFINES += -DAM_DEBUG_PRINTF
 ifeq ($(HAL_VALIDATION),0)
@@ -432,7 +431,7 @@ LIBS += ../AmbiqSDK/mcu/$(PART)/hal/mcu/gcc/bin/libam_hal.a
 
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 CFLAGS+= -ffunction-sections -fdata-sections -fno-omit-frame-pointer
-CFLAGS+= -MMD -MP -std=c99 -Wall -g $(OPT)
+CFLAGS+= -MMD -MP -std=c99 -Wall -g -Ofast -fno-strict-aliasing
 CFLAGS+= $(DEFINES)
 CFLAGS+= $(INCLUDES)
 
@@ -449,6 +448,7 @@ $(CONFIG):
 	@mkdir -p $@
 
 $(CONFIG)/dm_sec.o: EXTRA_CFLAGS = -Wno-array-bounds
+$(CONFIG)/dm_conn.o: EXTRA_CFLAGS = -Wno-array-bounds
 
 $(CONFIG)/%.o: %.c $(CONFIG)/%.d
 	@echo " Compiling $<" ;\

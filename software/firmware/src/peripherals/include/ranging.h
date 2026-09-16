@@ -22,17 +22,31 @@ typedef struct
 {
    uint32_t rx_ok;          // ranging slots that produced a decoded packet
    uint32_t rx_failed;      // ranging slots that timed out or errored -- the receive-sensitivity metric
+   uint32_t wake_max_us;    // worst wake-up seen, which is what a safety margin actually has to cover
+   uint32_t wake_last_us;
    uint32_t tx_failed;      // delayed transmissions programmed after their slot had already passed
    uint32_t rx_arm_failed;  // delayed receives rejected for the same reason -- these abort the whole round
    uint32_t isr_max_us;     // longest single radio interrupt since boot
    uint32_t isr_max_events; // radio events serviced by that longest interrupt, since one entry may drain several
    uint32_t isr_over_count; // radio interrupts that exceeded RADIO_ISR_BUDGET_US
    uint32_t isr_count;      // radio interrupts serviced, so the overrun count has a denominator
+   uint32_t isr_us_total;   // summed duration of every measured radio interrupt, to recover a mean
+   uint32_t isr_warm_max_us;// longest radio interrupt after the instruction cache has warmed
+   uint32_t isr_warm_count; // radio interrupts behind isr_warm_max_us
    uint8_t network_size;    // devices in the schedule, without which the receive ratio cannot be read
-   uint32_t full_restores;  // wake-ups that ran the expensive dwt_restoreconfig(1)
    uint32_t wake_skipped;   // wake-ups that found the radio already awake and did nothing
    bool cycle_counter_ok;   // false means isr_max_us is not measurable on this build
 } ranging_radio_stats_t;
+
+typedef struct
+{
+   uint8_t eui;             // device this row accumulates, or 0 for an unused row
+   bool offset_set;         // deviations accumulate against the first sample seen, because a variance
+   int32_t offset_mm;       // taken about zero cancels catastrophically at metre-scale ranges
+   uint32_t n;              // pre-filter range samples accumulated for this peer
+   int64_t sum_mm;          // summed deviations from offset_mm, from which a mean and a standard
+   uint64_t sumsq_mm;       // deviation are recovered without ever squaring a metre-scale range
+} ranging_range_stats_t;
 
 
 // Data structures for 802.15.4 packets --------------------------------------------------------------------------------
@@ -67,6 +81,10 @@ void ranging_radio_note_rx_arm_failure(void);
 void ranging_radio_note_rx_result(bool decoded);
 void ranging_radio_note_network_size(uint8_t devices);
 void ranging_radio_get_stats(ranging_radio_stats_t *stats);
+void ranging_radio_note_phase(uint8_t phase);
+void ranging_radio_get_isr_phase_max(uint32_t *max_us, uint32_t *counts);
+void ranging_radio_note_range_sample(uint8_t eui, int32_t range_mm);
+const ranging_range_stats_t* ranging_radio_get_range_stats(void);
 bool ranging_radio_rxenable(int mode);
 uint64_t ranging_radio_readrxtimestamp(void);
 uint32_t ranging_radio_readrxtimestamp_lo(void);

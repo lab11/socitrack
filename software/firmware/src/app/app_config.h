@@ -166,7 +166,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define UNSCHEDULED_SLOT                            0xFF
 
 #define SCHEDULING_INTERVAL_US                      500000
-#define RADIO_WAKEUP_SAFETY_DELAY_US                3000
+#define RADIO_WAKEUP_SAFETY_DELAY_US                2400
 #define RECEIVE_EARLY_START_US                      (5 + (uint32_t)DW_PREAMBLE_LENGTH_US)
 
 #define RANGING_ROUNDS_PER_SECOND                   (1000000u / SCHEDULING_INTERVAL_US)
@@ -186,13 +186,17 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define RANGING_ROUND_STALL_TIMEOUT_MS              2000
 #define RANGING_ROUND_STALL_STIMER                  RANGING_MS_TO_STIMER(RANGING_ROUND_STALL_TIMEOUT_MS)
 
+#define RANGING_ISR_PHASE_COUNT                     9
 #define RADIO_ISR_MAX_ITERATIONS                    16
 
-#ifndef RADIO_FULL_RESTORE_INTERVAL_ROUNDS            // overridable, so an A/B needs no source edit
-#define RADIO_FULL_RESTORE_INTERVAL_ROUNDS          1
-#endif
-#ifndef RADIO_STATS_REPORT_INTERVAL_S                 // bench cadence; compiled out of a release build
+#ifndef RADIO_STATS_REPORT_INTERVAL_S               // bench cadence; compiled out of a release build
 #define RADIO_STATS_REPORT_INTERVAL_S               30
+#endif
+#ifndef RADIO_INSTRUMENTATION
+#define RADIO_INSTRUMENTATION                       0
+#endif
+#ifndef RADIO_ISR_WARMUP_COUNT
+#define RADIO_ISR_WARMUP_COUNT                      256
 #endif
 #ifndef RADIO_ISR_BUDGET_US
 #define RADIO_ISR_BUDGET_US                         (RANGING_BROADCAST_INTERVAL_US - RECEIVE_EARLY_START_US)
@@ -211,7 +215,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define SCHEDULE_BROADCAST_PERIOD_US                (SCHEDULE_NUM_TOTAL_BROADCASTS * SCHEDULE_RESEND_INTERVAL_US)
 
 #define RANGING_NUM_PACKETS_PER_DEVICE              3
-#define RANGING_BROADCAST_INTERVAL_US               700
+#define RANGING_BROADCAST_INTERVAL_US               650
 #define RANGING_NUM_RANGE_ATTEMPTS                  NUM_XMIT_ANTENNAS
 #define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 100)
 

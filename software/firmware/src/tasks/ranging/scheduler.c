@@ -38,6 +38,9 @@ static void begin_schedule_phase(void)
    // Publish the phase with no window in which a radio interrupt could advance it and be overwritten
    AM_CRITICAL_BEGIN
    ranging_phase = schedule_phase_begin();
+#if RADIO_INSTRUMENTATION
+   ranging_radio_note_phase((uint8_t)ranging_phase);
+#endif
    AM_CRITICAL_END
 }
 
@@ -184,6 +187,9 @@ static void tx_callback(const dwt_cb_data_t *txData)
 {
    // Allow the scheduling protocol to handle the interrupt
    ranging_phase = schedule_phase_tx_complete();
+#if RADIO_INSTRUMENTATION
+   ranging_radio_note_phase((uint8_t)ranging_phase);
+#endif
 
    // Determine if the main task needs to be woken up to handle the current ranging phase
    if ((ranging_phase == RADIO_ERROR) || (ranging_phase == RANGE_COMPUTATION_PHASE))
@@ -199,6 +205,9 @@ static void rx_callback(const dwt_cb_data_t *rxData)
    // Read the received data packet and allow the scheduling protocol to handle it
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
    ranging_phase = schedule_phase_rx_complete((schedule_packet_t*)read_buffer);
+#if RADIO_INSTRUMENTATION
+   ranging_radio_note_phase((uint8_t)ranging_phase);
+#endif
 
    // Determine if the main task needs to be woken up to handle the current ranging phase
    if ((ranging_phase == RANGE_COMPUTATION_PHASE) || (ranging_phase == MESSAGE_COLLISION) || (ranging_phase == RADIO_ERROR))
@@ -213,6 +222,9 @@ static void handle_rx_failure(uint32_t notification_reason)
 {
    // Allow the scheduling protocol to handle the interrupt
    ranging_phase = schedule_phase_rx_error();
+#if RADIO_INSTRUMENTATION
+   ranging_radio_note_phase((uint8_t)ranging_phase);
+#endif
 
    // Determine if the main task needs to be woken up to handle the current ranging phase
    if ((ranging_phase == RANGING_ERROR) || (ranging_phase == RADIO_ERROR) || (ranging_phase == RANGE_COMPUTATION_PHASE))
