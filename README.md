@@ -1,6 +1,18 @@
 TotTag
 ======
 
+The TotTag is a self-contained PCB which utilizes a hybrid ultra wideband (UWB)
+and Bluetooth Low Energy (BLE) radio design to enable high-fidelity interaction
+tracking between devices _without_ requiring any supporting infrastructure.
+
+- [Documentation & Getting Started Guide](doc/)
+- [Hardware details](hardware/)
+- [Software details](software/)
+
+
+Open-Source Usage
+=================
+
 If you are interested in incorporating TotTag devices into your future
 research, please fill out this [Interest Form](https://forms.gle/SqWca9DrKpcx9rBL6).
 
@@ -9,29 +21,6 @@ research, please fill out this [Interest Form](https://forms.gle/SqWca9DrKpcx9rB
 > otherwise.  In the future, once the project has reached a steady state and
 > staffing has ramped up, we may begin providing limited support. We will post
 > any updates on that front here. Thank you for your understanding!**
-
-The TotTag is a self-contained PCB which utilizes a hybrid ultra wideband (UWB)
-and Bluetooth Low Energy (BLE) radio design to enable high-fidelity interaction
-tracking between devices _without_ requiring any supporting infrastructure.
-
-<!--
-- The SquarePoint module - 3 UWB antennas
-- Nordic Semiconductors nRF52840 BLE radio
-- 3.3V LDO designed to be used with 4.2V LiPo batteries
-- Battery charge management controller
-- SD card holder
-- microUSB connector including FTDI FT232R for debugging
-- 3-axis accelerometer
--->
-
-TotTag saw a major plaform refresh in 2023 with a largely new hardware and
-software design. Please bear with us as documentation and guidance throughout
-this repositority updates to match the latest state of the TotTag project.
-
-- [Documentation & Getting Started Guide](doc/)
-- [Hardware details](hardware/)
-- [Software details](software/)
-
 
 
 History, Related Projects, & Relevant Publications
