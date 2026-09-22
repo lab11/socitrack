@@ -329,7 +329,7 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
 
          elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):
             status = struct.unpack('<H', data[i + 5:i + 7])[0]
-            if status <= MAX_RESET_STATUS:
+            if ((status >> RESET_DIAGNOSTIC_SHIFT) & RESET_DIAGNOSTIC_MASK) in RESET_DIAGNOSTICS:
                log_data[timestamp]['rst'] = decode_reset_reason(status)
                consumed = 7
 

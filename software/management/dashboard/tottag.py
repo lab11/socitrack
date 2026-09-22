@@ -686,8 +686,13 @@ class TotTagBLE(threading.Thread):
          data_callback_thread.start()
          data_callback_thread.join()
       else:
-         for i in range(0, len(seqs), MAX_SEQS_PER_BLE_WRITE):
-            batch = seqs[i:i+MAX_SEQS_PER_BLE_WRITE]
+         per_write = MAX_SEQS_PER_BLE_WRITE
+         try:
+            per_write = max(1, min(per_write, (self.connected_device.mtu_size - 3 - 2) // 4))
+         except Exception:
+            pass
+         for i in range(0, len(seqs), per_write):
+            batch = seqs[i:i+per_write]
             await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, bytes([MAINTENANCE_RETRANSMIT_PAGES, len(batch)]) + struct.pack(f'<{len(batch)}I', *batch), True)
          await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, struct.pack('B', MAINTENANCE_DOWNLOAD_LOG), True)
 
@@ -741,10 +746,14 @@ class TotTagBLE(threading.Thread):
                return
             self.result_queue.put_nowait(('DOWNLOADED', True))
             process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, self.download_raw_logs, self.repaired_pages)
+         except OSError as e:
+            self.downloading_log_file = False
+            print('Log file write error:', e)
+            self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
          except Exception as e:
             self.downloading_log_file = False
-            print('Log file processing error:', e);
-            self.result_queue.put_nowait(('ERROR', ('TotTag Error', 'Unable to write log file to ' + self.storage_directory)))
+            print('Log file processing error:', e)
+            self.result_queue.put_nowait(('ERROR', ('TotTag Error', f'Log download failed: {e}')))
 
 
 # GUI DESIGN ----------------------------------------------------------------------------------------------------------

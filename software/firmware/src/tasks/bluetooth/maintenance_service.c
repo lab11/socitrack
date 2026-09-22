@@ -3,11 +3,15 @@
 #include "app_tasks.h"
 #include "wsf_types.h"
 #include "att_api.h"
+#include "maintenance_functionality.h"
 #include "maintenance_service.h"
 #include "util/bstream.h"
 
 
 // TotTag Maintenance Services and Characteristics ---------------------------------------------------------------------
+
+#define MAINTENANCE_COMMAND_MAX_LEN ((1 + sizeof(experiment_details_t)) > BLE_MAINTENANCE_RETRANSMIT_WRITE_LEN ? (1 + sizeof(experiment_details_t)) : BLE_MAINTENANCE_RETRANSMIT_WRITE_LEN)
+_Static_assert(MAINTENANCE_COMMAND_MAX_LEN <= (BLE_DESIRED_MTU - 3), "a maintenance command must fit in one ATT write payload");
 
 static const uint8_t maintenanceService[] = { BLE_MAINTENANCE_SERVICE_ID };
 static const uint16_t maintenanceServiceLen = sizeof(maintenanceService);
@@ -21,7 +25,7 @@ static const uint16_t experimentDetailsDescLen = sizeof(experimentDetailsDesc);
 static const uint8_t maintenanceCommandChUuid[] = { BLE_MAINTENANCE_COMMAND_CHAR };
 static const uint8_t maintenanceCommandChar[] = { ATT_PROP_WRITE, UINT16_TO_BYTES(MAINTENANCE_COMMAND_HANDLE), BLE_MAINTENANCE_COMMAND_CHAR };
 static const uint16_t maintenanceCommandCharLen = sizeof(maintenanceCommandChar);
-static uint8_t maintenanceCommand[1+sizeof(experiment_details_t)] = { 0 };
+static uint8_t maintenanceCommand[MAINTENANCE_COMMAND_MAX_LEN] = { 0 };
 static const uint16_t maintenanceCommandLen = sizeof(maintenanceCommand);
 static const uint8_t maintenanceCommandDesc[] = "MaintenanceCommand";
 static const uint16_t maintenanceCommandDescLen = sizeof(maintenanceCommandDesc);

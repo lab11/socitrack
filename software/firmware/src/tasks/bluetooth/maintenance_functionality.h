@@ -21,6 +21,7 @@
 #define BLE_MAINTENANCE_PACKET_COMPLETE                 0xFF
 
 #define BLE_MAINTENANCE_MAX_SEQS_PER_WRITE              60
+#define BLE_MAINTENANCE_RETRANSMIT_WRITE_LEN            (2 + (BLE_MAINTENANCE_MAX_SEQS_PER_WRITE * sizeof(uint32_t)))
 
 
 // Public API ----------------------------------------------------------------------------------------------------------
