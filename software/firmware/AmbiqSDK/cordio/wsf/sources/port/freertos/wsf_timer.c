@@ -404,5 +404,6 @@ void WsfTimerUpdateTicks(void)
     {
         BaseType_t xTimerResult = xTimerChangePeriod(xWsfTimer, pdMS_TO_TICKS(xNextExpiration*CLK_TICKS_PER_WSF_TICKS), 100);
         configASSERT(pdPASS == xTimerResult);
+        (void)xTimerResult;
     }
 }

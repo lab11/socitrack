@@ -10,7 +10,7 @@ except ImportError: import tottag_format
 from functools import partial
 from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog
-from collections import defaultdict
+from collections import defaultdict, Counter
 import struct, queue, datetime, tzlocal
 import serial.tools.list_ports
 import os, pickle, pytz, time
@@ -46,7 +46,9 @@ MAINTENANCE_DOWNLOAD_COMPLETE = 0xFF
 
 MAX_SEQS_PER_BLE_WRITE = 60
 MAX_SEQS_PER_USB_WRITE = 255
-MAX_REPAIR_ROUNDS = 3
+MAX_PAGE_ATTEMPTS = 6
+MAX_REPAIR_ROUNDS = 40
+DEVICE_RETRANSMIT_CAPACITY = 256
 TOTTAG_ADVERTISED_NAME_PREFIX = 'TotTag'
 
 USB_VERSION_COMMAND = 0x20
@@ -299,6 +301,7 @@ class TotTagBLE(threading.Thread):
       self.original_stream = None
       self.repaired_pages = 0
       self.repair_round = 0
+      self.page_attempts = Counter()
 
    def run(self):
       self.event_loop.run_until_complete(self.await_command())
@@ -636,6 +639,7 @@ class TotTagBLE(threading.Thread):
       self.original_stream = None
       self.repaired_pages = 0
       self.repair_round = 0
+      self.page_attempts = Counter()
       if isinstance(self.connected_device, serial.Serial):
          self.connected_device.reset_input_buffer()
          self.connected_device.write(struct.pack('<BII', MAINTENANCE_SET_LOG_DOWNLOAD_DATES, params['start'], params['end']))
@@ -720,20 +724,30 @@ class TotTagBLE(threading.Thread):
                # No page at all means there is no sequence number to count from, so the whole transfer has
                # to be repeated rather than repaired. Naming pages is only possible for a PARTIAL loss.
                nothing_arrived = bool(report['total_pages']) and not report['pages_read']
-            if (wanted or nothing_arrived) and self.repair_round < MAX_REPAIR_ROUNDS:
+            askable = [seq for seq in wanted if self.page_attempts[seq] < MAX_PAGE_ATTEMPTS]
+            batch = askable[:DEVICE_RETRANSMIT_CAPACITY]
+            exhausted = [seq for seq in wanted if self.page_attempts[seq] >= MAX_PAGE_ATTEMPTS]
+            if (batch or nothing_arrived) and self.repair_round < MAX_REPAIR_ROUNDS:
                self.repair_round += 1
                if nothing_arrived:
-                  print(f'No pages received; repeating the download, attempt {self.repair_round} of {MAX_REPAIR_ROUNDS}...')
+                  print(f'No pages received; repeating the download, attempt {self.repair_round}...')
                else:
-                  print(f'Requesting {len(wanted)} missing page(s), round {self.repair_round} of {MAX_REPAIR_ROUNDS}...')
-               await self.request_retransmission(wanted)
+                  for seq in batch:
+                     self.page_attempts[seq] += 1
+                  remaining = len(askable) - len(batch)
+                  print(f'Requesting {len(batch)} of {len(wanted)} missing page(s), round {self.repair_round}'
+                        + (f' ({remaining} deferred to a later round)' if remaining else '')
+                        + (f', {len(exhausted)} given up' if exhausted else '') + '...')
+               await self.request_retransmission(batch)
                if nothing_arrived:
                   self.repair_round = 0   # a repeated transfer replaces the original rather than patching it
                   self.original_stream = None
                   self.repaired_pages = 0
+                  self.page_attempts.clear()
                return                     # the repair stream brings us back here when it completes
             if wanted:
-               print(f'Giving up on {len(wanted)} page(s) after {MAX_REPAIR_ROUNDS} rounds: {wanted[:10]}')
+               why = (f'after {MAX_PAGE_ATTEMPTS} attempts each' if exhausted else f'after {MAX_REPAIR_ROUNDS} rounds')
+               print(f'Giving up on {len(wanted)} page(s) {why}: {wanted[:10]}')
             elif nothing_arrived:
                print(f'No pages received after {MAX_REPAIR_ROUNDS} attempts')
 
