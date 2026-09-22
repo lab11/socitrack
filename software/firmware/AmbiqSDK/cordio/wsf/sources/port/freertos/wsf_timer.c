@@ -402,8 +402,7 @@ void WsfTimerUpdateTicks(void)
     //
     if ( xNextExpiration )
     {
-        configASSERT(pdPASS == xTimerChangePeriod( xWsfTimer,
-                pdMS_TO_TICKS(xNextExpiration*CLK_TICKS_PER_WSF_TICKS), 100)) ;
+        BaseType_t xTimerResult = xTimerChangePeriod(xWsfTimer, pdMS_TO_TICKS(xNextExpiration*CLK_TICKS_PER_WSF_TICKS), 100);
+        configASSERT(pdPASS == xTimerResult);
     }
 }
-

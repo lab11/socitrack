@@ -359,6 +359,11 @@ void WsfOsInit(void)
  *  \return None.
  */
 /*************************************************************************************************/
+
+#ifndef WSF_OS_MAX_SLEEP_MS
+#define WSF_OS_MAX_SLEEP_MS 10000
+#endif
+
 void wsfOsDispatcher(void)
 {
   wsfOsTask_t       *pTask;
@@ -426,9 +431,7 @@ void wsfOsDispatcher(void)
 
   if (wsfOsReadyToSleep())
   {
-    xEventGroupWaitBits(xRadioTaskEventObject, 1, pdTRUE,
-                      pdFALSE, portMAX_DELAY);
+    xEventGroupWaitBits(xRadioTaskEventObject, 1, pdTRUE, pdFALSE, pdMS_TO_TICKS(WSF_OS_MAX_SLEEP_MS));
   }
 
 }
-
