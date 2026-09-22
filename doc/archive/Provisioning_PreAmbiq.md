@@ -1,5 +1,12 @@
-Provisioning
-============
+Provisioning (ARCHIVED — pre-Apollo4 hardware)
+=============================================
+
+> **This document is kept for historical reference only.** It describes TotTag revisions up to H,
+> which pair an STM32 with an nRF52840. Current hardware is Ambiq Apollo4 and is provisioned per
+> [the firmware README](../../software/firmware/README.md). Links below to `software/tottag` and
+> `software/squarepoint` refer to directories that have since been removed; they are left as written
+> so the original procedure still reads coherently.
+
 
 Every TotTag has two microcontrollers that must be programmed. In addition, each
 new revision of the board hardware needs to be calibrated to ensure high-accuracy
@@ -41,7 +48,7 @@ the [TotTag README](../software/tottag/firmware).
 
 1. Connect the JLink programmer to the nRF programming header:
 
-   ![Programmer plugged into nRF side](media/tottag_nrf_connection.jpeg)
+   ![Programmer plugged into nRF side](../media/tottag_nrf_connection.jpeg)
 
    Do not worry about the LEDs at this stage, they will be random as the boards
    are not yet programmed.
@@ -98,7 +105,7 @@ the [TotTag README](../software/tottag/firmware).
 
         make SEGGER_SERIAL=<segger_id> DEBUG_MODE=1 flash
 
-   Having problems? Check the [JLink FAQs.](./Glossary.md#miscellaneous)
+   Having problems? Check the [JLink FAQs.](../Glossary.md#miscellaneous)
 
 
 ## Programming the STM Microcontroller
@@ -108,7 +115,7 @@ differences have been highlighted.
 
 1. Connect the JLink programmer to the **STM programming header**.
 
-   ![Programmer plugged into STM side](media/tottag_idle.jpeg)
+   ![Programmer plugged into STM side](../media/tottag_idle.jpeg)
 
    Do not worry about the LEDs at this stage, they will be random as the boards
    are not yet programmed.
@@ -153,7 +160,7 @@ differences have been highlighted.
 
    The second case will happen if the device was already programmed correctly.
 
-   Having problems? Check the [JLink FAQs.](./Glossary.md#miscellaneous)
+   Having problems? Check the [JLink FAQs.](../Glossary.md#miscellaneous)
 
 
 ## Test basic operation
@@ -162,7 +169,7 @@ At this point, basic operation of the board should work. You will need to power
 cycle the board so that both microcontrollers reset. Assuming no other tags are
 nearby, both LEDs should turn solid blue:
 
-![An idle TotTag](media/tottag_idle.jpeg)
+![An idle TotTag](../media/tottag_idle.jpeg)
 
 
 ## Calibration

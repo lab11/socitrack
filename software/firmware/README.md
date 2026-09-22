@@ -40,7 +40,12 @@ Updating the Firmware
 ---------------------
 
 If you ever need to update the firmware on your TotTag, you can always obtain the latest firmware
-and flash it onto your device by doing the following (**REPLACE `BOARD_REV=X` WITH THE REVISION OF THE BOARD YOU ARE FLASHING**):
+and flash it onto your device by doing the following (**REPLACE `BOARD_REV=X` WITH THE REVISION OF THE BOARD YOU ARE FLASHING**).
+
+The revision is silkscreened on the board. Supported values are **`M`, `N`, `O` and `P`**, each with its
+own pinout under `src/boards/rev<X>/`; `P` is the default if `BOARD_REV` is not given. Flashing a board
+with the wrong revision produces firmware that builds cleanly and then misdrives the pins, so it is worth
+checking rather than assuming.
 
 ```
 cd socitrack
@@ -69,3 +74,45 @@ Comparing flash   [100%] Done.
 ```
 
 The second case will happen if the device was already programmed correctly.
+
+Test Firmware
+-------------
+
+`tests/` builds the same application against individual subsystems, which is how a new board is brought
+up and how the radio timing numbers are measured. Each target flashes a standalone image that exercises
+one thing and prints what it finds over SEGGER RTT:
+
+```
+cd software/firmware/tests
+make ranging          # UWB ranging and the scheduler
+make storage          # NAND logging
+make bluetooth        # BLE advertising, scanning and the maintenance service
+make imu / rtc / battery / buzzer / button / led / usb / system / logging
+make full             # the complete application, with logging and instrumentation enabled
+```
+
+`make full` is the production application plus console output. It is built with
+`-DRADIO_INSTRUMENTATION=1`, which enables the radio timing report that the production build compiles
+out entirely — wake-up budget, per-phase interrupt duration, ranging slot yield, and the pre-filter
+range spread per peer, printed every `RADIO_STATS_REPORT_INTERVAL_S` seconds. Use it to answer a timing
+question, not to run a deployment: it powers up the DWT trace block, which a release build leaves off.
+
+Anything guarded by `#ifndef` in `src/app/app_config.h` can be overridden at build time, which at
+present is the instrumentation cadence:
+
+```
+make full EXTRA_DEFINES="-DRADIO_STATS_REPORT_INTERVAL_S=10"
+```
+
+Protocol timing constants — `RANGING_BROADCAST_INTERVAL_US`, `SCHEDULING_INTERVAL_US` and the phase
+offsets derived from them — are deliberately **not** overridable. They describe a slot grid every
+device on the network shares, so a value that differs between two devices does not test a tighter
+grid, it breaks the round. Change them in `app_config.h` and reflash the whole fleet.
+
+Storage Format
+--------------
+
+Logs are written to on-board NAND flash in a page-framed format with a per-page CRC, described in
+full in [doc/Storage_Redesign.md](../../doc/Storage_Redesign.md). Both management tools read it; the
+TypeScript reader is drift-checked against the constants in `src/app/app_config.h` so the two cannot
+silently diverge.

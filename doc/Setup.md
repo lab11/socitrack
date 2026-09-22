@@ -115,27 +115,15 @@ are available from
 however these are the basic directions for Linux and/or Mac:
 
 ```bash
-# Go to your home directory
-cd ~
+# macOS, via Homebrew
+brew install --cask gcc-arm-embedded
 
-# Download the toolchain
-# This is reasonably large (~100 MB) and may take a moment
-wget https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2020q2/gcc-arm-none-eabi-9-2020-q2-update-x86_64-linux.tar.bz2
+# Ubuntu / Debian
+sudo apt install gcc-arm-none-eabi
 
-# Decompress the toolchain (.tar.bz2 is similar to a .zip, just different format)
-# You can make life easier with "tab completion", just type "tar -xf gcc<tab>"
-tar -xf gcc-arm-none-eabi-8-2019-q3-update-linux.tar.bz2
-
-# Add this new program to your PATH
-# You can use any text editor, nano is very user-friendly for a text-based program
-nano .bashrc
-
-# At the bottom of the file, add this line
-# Be careful to add this exactly, no extra spaces, and don't miss quotes
-PATH="$PATH:$HOME/gcc-arm-none-eabi-9-2020-q2-update/bin/"
-
-# Press Ctrl-X to exit nano, type Y for yes to save, and enter to accept the
-# file name.
+# Or download a release directly and add its bin/ directory to your PATH.
+# Arm now publishes the toolchain here:
+#   https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads
 ```
 
 There is also a Windows version of the compiler available from the same site.
@@ -144,27 +132,31 @@ After installation, everything works exactly the same regardless of the
 Operating System.
 
 Now, **open a new terminal**, and verify that the compiler is set up correctly
-by trying to run the compiler. Here's the result on my machine:
+by trying to run the compiler. Any reasonably recent version will do; the
+firmware is built and tested with GCC 15:
 
-    ppannuto@ubuntu:~$ arm-none-eabi-gcc --version
-    arm-none-eabi-gcc (GNU Tools for Arm Embedded Processors 9-2019-q4-major) 9.2.1 20191025 (release) [ARM/arm-9-branch revision 277599]
-    Copyright (C) 2019 Free Software Foundation, Inc.
-    This is free software; see the source for copying conditions.  There is NO
-    warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+    $ arm-none-eabi-gcc --version
+    arm-none-eabi-gcc (xPack GNU Arm Embedded GCC arm64) 15.2.1 20251203
 
 
 ### Verify you can build firmware
 
 ```bash
-cd socitrack/software/squarepoint
-make ID=c0:98:e5:42:00:FF
-# ... hopefully lots of output, ending something like this:
-arm-none-eabi-objcopy -Obinary _build/squarepoint.elf _build/squarepoint.bin
-arm-none-eabi-size _build/squarepoint.elf
-   text	   data	    bss	    dec	    hex	filename
-  44076	    344	   9728	  54148	   d384	_build/squarepoint.elf
-# it's fine if the exact numbers vary a little
+cd socitrack/software/firmware
+make BOARD_REV=P
+# ... lots of output, ending something like this:
+ Linking bin/SociTrack.axf
+Memory region         Used Size  Region Size  %age Used
+        MCU_MRAM:      228784 B    1998840 B     11.45%
+         MCU_TCM:      393120 B     393120 B    100.00%
+ Copying bin/SociTrack.bin...
+# It is fine if the exact numbers vary. MCU_TCM always reports 100%: the linker
+# gives whatever is left of it to the stack, so the region is full by
+# construction rather than because it is out of room.
 ```
+
+Replace `P` with the revision silkscreened on your board — see
+[the firmware README](../software/firmware/README.md) for the supported values.
 
 
 ## Getting Python
@@ -333,4 +325,4 @@ back of the device.
 
 This should be everything you need to install.
 
-The next step is [Provisioning!](Provisioning.md)
+The next step is [assigning your device an ID and flashing it](../software/firmware/README.md).

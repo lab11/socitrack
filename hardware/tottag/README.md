@@ -130,7 +130,7 @@ Rev D updates:
 
 ### Rev C
 
-[Rev C](../../tritag/rev_c/)
+[Rev C](../tritag/rev_c/)
 
 Revision C was the first of the 'tottag' family of revisions (though not yet
 named as such). It converted the previous hardware modularity into Eagle design

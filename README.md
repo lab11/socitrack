@@ -148,7 +148,7 @@ project.
 
 #### SquarePoint
 
-Found in [`software/squarepoint`](software/squarepoint/), the core firmware that
+Found in `software/squarepoint` (removed), the core firmware that
 enables the SquarePoint module to work includes all of the logic implementing
 our custom ranging protocol on top of the DecaWave DW1000 UWB radio. It makes
 use of frequency and antenna diversity and leverages both one-way and two-way
@@ -164,7 +164,7 @@ be selected on-the-fly; currently, we officially support:
 
 #### TotTag
 
-The TotTag code, located in [`software/tottag`](software/tottag/firmware/),
+The TotTag code, located in `software/tottag` (removed),
 implements a BLE application that uses the SquarePoint module as an
 I<sup>2</sup>C slave and provides for external BLE connectivity. It exposes BLE
 services to configure and enable the device, to set the current time to enable
@@ -173,7 +173,7 @@ real-time.
 
 #### Mobile App and BLE
 
-The tools in the [`software/tottag/mobile_app`](software/tottag/mobile_app/)
+The tools in the `software/tottag/mobile_app` (removed)
 directory interact with TotTag and read data across the BLE interface. They uses
 the Summon app ([Google Play](https://play.google.com/store/apps/details?id=edu.umich.eecs.lab11.summon),
 [App Store](https://itunes.apple.com/us/app/summon-lab11/id1051205682)) to
