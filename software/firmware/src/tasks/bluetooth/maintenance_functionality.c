@@ -202,6 +202,13 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       }
       else if (transmit_length)
       {
+         // Enqueueing into the last few buffers is what turns a congested link into a dead transfer
+         if (!bluetooth_transmit_has_headroom((uint16_t)(transmit_length + ATT_VALUE_NTF_LEN + L2C_PAYLOAD_START)))
+         {
+            bluetooth_defer_log_send((uint8_t)connId, max_length);
+            return;
+         }
+
          // Transmit the next chunk of data
          AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, transmit_length, transmit_buffer + buffer_index);
          memcpy(previous_buffer, transmit_buffer + buffer_index, transmit_length);

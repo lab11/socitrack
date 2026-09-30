@@ -43,6 +43,8 @@ void bluetooth_reset_scanning(void);
 bool bluetooth_is_scanning(void);
 bool bluetooth_is_connected(void);
 void bluetooth_register_buffer_diagnostics(void);
+bool bluetooth_transmit_has_headroom(uint16_t length);
+void bluetooth_defer_log_send(uint8_t conn_id, uint16_t max_length);
 void bluetooth_get_buffer_stats(bluetooth_buffer_stats_t *stats);
 void bluetooth_print_buffer_stats(const char *context);
 void bluetooth_clear_whitelist(void);

@@ -23,6 +23,7 @@
 #define TOTTAG_EVT_RANGES                           (1 << 0)
 #define TOTTAG_EVT_IMU_DATA                         (1 << 1)
 #define TOTTAG_MSG_WATCHDOG                         0x01
+#define TOTTAG_MSG_RESUME_LOG_SEND                  0x02
 
 #define BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS          3
 
@@ -38,13 +39,13 @@ static char adv_local_name[sizeof(adv_name_prefix) + 3];
 static uint8_t adv_local_name_length, ble_sys_id[8];
 static ble_discovery_callback_t discovery_callback;
 
-static wsfTimer_t watchdog_checkin_timer;
+static wsfTimer_t watchdog_checkin_timer, log_resume_timer;
 static wsfHandlerId_t notification_handler_id;
 static volatile bool notification_handler_registered;
-static uint8_t pending_range_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
-static uint8_t pending_imu_data[MAX_IMU_DATA_LENGTH];
-static volatile uint16_t pending_range_length, pending_imu_length, buffer_alloc_largest_failed;
+static uint8_t pending_range_results[MAX_COMPRESSED_RANGE_DATA_LENGTH], pending_imu_data[MAX_IMU_DATA_LENGTH];
+static volatile uint16_t pending_range_length, pending_imu_length, buffer_alloc_largest_failed, deferred_max_length;
 static volatile uint32_t buffer_alloc_failures;
+static volatile uint8_t deferred_conn_id;
 
 static void issue_connection_update(void)
 {
@@ -117,6 +118,14 @@ static void notificationHandler(wsfEventMask_t event, wsfMsgHdr_t *pMsg)
    {
       system_watchdog_pet(WATCHDOG_TASK_BLE);
       WsfTimerStartMs(&watchdog_checkin_timer, WATCHDOG_CHECKIN_INTERVAL_MS);
+      return;
+   }
+
+   // A send deferred for want of buffers resumes here
+   if (pMsg && (pMsg->event == TOTTAG_MSG_RESUME_LOG_SEND))
+   {
+      if (data_requested)
+         continueSendingLogData((dmConnId_t)deferred_conn_id, deferred_max_length, false);
       return;
    }
 
@@ -466,6 +475,8 @@ void bluetooth_start(void)
    // Start the periodic check-in and ask to be watched
    watchdog_checkin_timer.handlerId = notification_handler_id;
    watchdog_checkin_timer.msg.event = TOTTAG_MSG_WATCHDOG;
+   log_resume_timer.handlerId = notification_handler_id;
+   log_resume_timer.msg.event = TOTTAG_MSG_RESUME_LOG_SEND;
    WsfTimerStartMs(&watchdog_checkin_timer, WATCHDOG_CHECKIN_INTERVAL_MS);
    system_watchdog_register(WATCHDOG_TASK_BLE);
 
@@ -631,6 +642,28 @@ void bluetooth_register_buffer_diagnostics(void)
 #if WSF_OS_DIAG == TRUE
    WsfBufDiagRegister(buffer_diagnostic_callback);
 #endif
+}
+
+bool bluetooth_transmit_has_headroom(uint16_t length)
+{
+   // Would enqueueing a notification of this size leave the pool that serves it with a reserve to spare
+   const uint8_t num_pools = WsfBufGetNumPool();
+   for (uint8_t pool = 0; pool < num_pools; ++pool)
+   {
+      WsfBufPoolStat_t pool_stat = { 0 };
+      WsfBufGetPoolStats(&pool_stat, pool);
+      if (length <= pool_stat.bufSize)
+         return (pool_stat.numBuf - pool_stat.numAlloc) > (uint8_t)BLE_TRANSMIT_POOL_RESERVE;
+   }
+   return true;
+}
+
+void bluetooth_defer_log_send(uint8_t conn_id, uint16_t max_length)
+{
+   // Retry shortly rather than enqueueing now; the radio drains the queue in the meantime
+   deferred_conn_id = conn_id;
+   deferred_max_length = max_length;
+   WsfTimerStartMs(&log_resume_timer, BLE_TRANSMIT_RESUME_BACKOFF_MS);
 }
 
 void bluetooth_get_buffer_stats(bluetooth_buffer_stats_t *stats)

@@ -129,6 +129,8 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define BLE_CONFIG_VERIFY_WINDOWS                   120         // 120 x 500 ms = 60 s
 
 #define BLE_DESIRED_MTU                             247
+#define BLE_TRANSMIT_POOL_RESERVE                   6
+#define BLE_TRANSMIT_RESUME_BACKOFF_MS              10
 #define BLE_TRANSACTION_TIMEOUT_S                   1
 #define BLE_MIN_CONNECTION_INTERVAL_1_25_MS         12          // 15 ms
 #define BLE_MAX_CONNECTION_INTERVAL_1_25_MS         24          // 30 ms
@@ -229,6 +231,8 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define SUBSCRIPTION_PHASE_START_US                 SCHEDULE_BROADCAST_PERIOD_US
 #define RANGING_PHASE_START_US                      (SUBSCRIPTION_PHASE_START_US + SUBSCRIPTION_BROADCAST_PERIOD_US)
 
+_Static_assert((1000000u % SCHEDULING_INTERVAL_US) == 0, "the round period must divide one second exactly, or every round-counted timeout is wrong");
+_Static_assert(RANGING_ROUNDS_PER_SECOND >= 1, "the round period must be at most one second");
 _Static_assert(RANGE_STATUS_TIMEOUT_US < RANGE_STATUS_BROADCAST_PERIOD_US, "a status listening window must close before the next slot on the grid opens");
 _Static_assert(RANGING_TIMEOUT_US < RANGING_BROADCAST_INTERVAL_US, "a ranging listening window must close before the next slot on the grid opens");
 
