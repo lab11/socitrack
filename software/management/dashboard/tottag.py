@@ -9,7 +9,7 @@ try: from . import tottag_format
 except ImportError: import tottag_format
 from functools import partial
 from bleak import BleakClient, BleakScanner
-from tkinter import ttk, filedialog
+from tkinter import ttk, filedialog, font
 from collections import defaultdict, Counter
 import struct, queue, datetime, tzlocal
 import serial.tools.list_ports
@@ -832,7 +832,8 @@ class TotTagGUI(tk.Frame):
       except Exception:
          self.master.iconphoto(True, tk.PhotoImage(file=os.path.dirname(os.path.realpath(__file__)) + '/tottag_dashboard.png'))
       self.master.protocol('WM_DELETE_WINDOW', self._exit)
-      self.master.geometry("900x700+" + str((self.winfo_screenwidth()-900)//2) + "+" + str((self.winfo_screenheight()-700)//2))
+      self.master.geometry("1000x700+" + str((self.winfo_screenwidth()-1000)//2) + "+" + str((self.winfo_screenheight()-700)//2))
+      self.master.minsize(1000, 700)
       self.pack(fill=tk.BOTH, expand=True)
 
       # Create an asynchronous event loop
@@ -1051,7 +1052,9 @@ class TotTagGUI(tk.Frame):
             tottag_label = tk.StringVar(row)
             row.grid(row=17+len(self.tottag_rows), column=0, columnspan=5, sticky=tk.W+tk.E)
             schedulable_devices = [device for device in self.device_list if device_uid(device)]
-            tottag_selector = ttk.Combobox(row, width=32, values=schedulable_devices, state=['readonly' if self.connect_button['text'] != 'Disconnect' else ''])
+            text_font = font.nametofont('TkTextFont')
+            selector_width = max([18] + [-(-text_font.measure(device) // text_font.measure('0')) + 1 for device in schedulable_devices])
+            tottag_selector = ttk.Combobox(row, width=selector_width, values=schedulable_devices, state=['readonly' if self.connect_button['text'] != 'Disconnect' else ''])
             tottag_selector.pack(side=tk.LEFT, expand=False)
             tottag_selector.set(schedulable_devices[0] if schedulable_devices else '')
             ttk.Label(row, text="  using label  ").pack(side=tk.LEFT, expand=False)
