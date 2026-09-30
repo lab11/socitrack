@@ -13,7 +13,7 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-#define USB_RETRANSMIT_READ_ATTEMPTS   1000   // ~1 s at the 1 ms tick
+#define USB_READ_ATTEMPTS              1000   // ~1 s at the 1 ms tick
 
 #define CONFIG_TOTAL_LEN        (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
 
@@ -113,6 +113,22 @@ AM_USED void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 }
 
 
+// Private Helper Functions --------------------------------------------------------------------------------------------
+
+static bool usb_read_exact(void* data, uint32_t num_bytes)
+{
+   // A payload larger than one USB packet may still be arriving when its command byte is read
+   uint32_t have = 0;
+   for (uint32_t attempt = 0; (have < num_bytes) && (attempt < USB_READ_ATTEMPTS); ++attempt)
+   {
+      have += tud_cdc_read(((uint8_t*)data) + have, num_bytes - have);
+      if (have < num_bytes)
+         vTaskDelay(1);
+   }
+   return (have == num_bytes);
+}
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 extern void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate);
@@ -178,10 +194,14 @@ void UsbCdcTask(void *params)
             case USB_SET_TIMESTAMP_COMMAND:
             {
                uint32_t timestamp = 0;
-               if (tud_cdc_read(&timestamp, sizeof(timestamp)) == sizeof(timestamp))
+               if (usb_read_exact(&timestamp, sizeof(timestamp)))
                   rtc_set_time_from_timestamp(timestamp);
                break;
             }
+            case USB_GET_UID_COMMAND:
+               tud_cdc_write(uid, sizeof(uid));
+               tud_cdc_write_flush();
+               break;
             case USB_FIND_MY_TOTTAG_COMMAND:
                app_maintenance_activate_find_my_tottag(10);
                break;
@@ -207,7 +227,7 @@ void UsbCdcTask(void *params)
             case USB_NEW_EXPERIMENT_COMMAND:
             {
                experiment_details_t new_details = { 0 };
-               if (tud_cdc_read(&new_details, sizeof(new_details)) == sizeof(new_details))
+               if (usb_read_exact(&new_details, sizeof(new_details)))
                   if (storage_store_experiment_details(&new_details))
                      app_set_experiment_start_time(new_details.experiment_start_time);
                break;
@@ -227,18 +247,10 @@ void UsbCdcTask(void *params)
                nandlog_retransmit_clear();
                if ((tud_cdc_read(&count, sizeof(count)) != sizeof(count)) || !count)
                   break;
-               const uint32_t wanted = count * sizeof(uint32_t);
-               uint32_t have = 0;
-               for (uint32_t attempt = 0; (have < wanted) && (attempt < USB_RETRANSMIT_READ_ATTEMPTS); ++attempt)
-               {
-                  have += tud_cdc_read(((uint8_t*)seqs) + have, wanted - have);
-                  if (have < wanted)
-                     vTaskDelay(1);
-               }
-               if (have == wanted)
+               if (usb_read_exact(seqs, count * sizeof(uint32_t)))
                   nandlog_retransmit_add(seqs, count);
                else
-                  print("ERROR: USB retransmission request truncated (%u of %u bytes)\n", have, wanted);
+                  print("ERROR: USB retransmission request truncated (%u pages)\n", count);
                break;
             }
             case USB_DOWNLOAD_LOG_COMMAND:

@@ -24,6 +24,8 @@ To discover the devices, click the scan button.
 
 To schedule a new experiment for a group of devices, the devices have to be placed on chargers, otherwise they will not be discovered by scanning.
 
+Devices plugged into the computer over USB are discovered by the same scan and listed as `USB-Connected XX:XX:XX:XX:XX:XX`. They can be included in a deployment exactly like devices discovered over Bluetooth; the schedule is simply written to them over USB. A USB device running firmware that predates the USB UID command is listed as `USB-Connected Device` instead, and cannot be included in a deployment until its firmware is updated.
+
 Once a deployment is scheduled, the schedule will be push to all devices.
 
 ### Connected state

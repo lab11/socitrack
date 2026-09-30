@@ -57,7 +57,11 @@ USB_GET_TIMESTAMP_COMMAND = 0x11
 USB_FIND_MY_TOTTAG_COMMAND = 0x12
 USB_GET_EXPERIMENT_COMMAND = 0x13
 USB_SET_TIMESTAMP_COMMAND = 0x14
+USB_GET_UID_COMMAND = 0x15
 USB_RETRANSMIT_PAGES_COMMAND = MAINTENANCE_RETRANSMIT_PAGES
+USB_DEVICE_NAME_PREFIX = 'USB-Connected'
+USB_UNIDENTIFIED_DEVICE_NAME = 'USB-Connected Device'
+EUI_LEN = 6
 
 FIND_MY_TOTTAG_ACTIVATION_SECONDS = 10
 MAX_RANGING_DISTANCE_MM = 16000
@@ -91,6 +95,27 @@ async def ble_command_sender(message_queue, command):
 
 def ble_issue_command(event_loop, message_queue, command):
    asyncio.run_coroutine_threadsafe(ble_command_sender(message_queue, command), event_loop)
+
+def usb_device_name(uid):
+   return USB_DEVICE_NAME_PREFIX + ' ' + ':'.join(f'{b:02X}' for b in reversed(uid))
+
+def device_address(device_name):
+   return device_name.split()[-1] if device_name else ''
+
+def device_uid(device_name):
+   groups = device_address(device_name).split(':')
+   if len(groups) != EUI_LEN or not all(len(g) == 2 and all(c in '0123456789abcdefABCDEF' for c in g) for g in groups):
+      return None
+   return [int(g, 16) for g in reversed(groups)]
+
+def usb_write_experiment_details(device, packed_details):
+   device.reset_input_buffer()
+   device.write(bytes([USB_SET_TIMESTAMP_COMMAND]) + struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())))
+   device.write(packed_details)
+   device.write(bytes([USB_GET_EXPERIMENT_COMMAND]))
+   details_len = struct.unpack('<H', device.read(2))[0]
+   if device.read(details_len) != packed_details[1:]:
+      raise IOError('TotTag did not store the requested deployment details')
 
 def get_download_directory():
    if os.name == 'nt':
@@ -293,6 +318,7 @@ class TotTagBLE(threading.Thread):
       self.result_queue = result_queue
       self.discovered_devices = {}
       self.connected_device = None
+      self.connected_device_name = None
       self.event_loop = event_loop
       self.data_details = None
       self.data_length = 0
@@ -417,6 +443,18 @@ class TotTagBLE(threading.Thread):
       except serial.SerialException:
          self.connected_device.close()
 
+   def identify_usb_tottag(self, port_name):
+      try:
+         with serial.Serial(port_name, timeout=1.0, write_timeout=1.0) as device:
+            device.reset_input_buffer()
+            device.write(bytes([USB_GET_UID_COMMAND]))
+            response = device.read(EUI_LEN + 1)
+            if len(response) == EUI_LEN + 1 and response[-1] == ord('\n'):
+               return usb_device_name(response[:EUI_LEN])
+      except serial.SerialException:
+         pass
+      return USB_UNIDENTIFIED_DEVICE_NAME
+
    async def scan_for_tottags(self):
       self.result_queue.put_nowait(('SCANNING', True))
       self.discovered_devices.clear()
@@ -426,8 +464,11 @@ class TotTagBLE(threading.Thread):
       await scanner.stop()
       for port in sorted(serial.tools.list_ports.comports()):
          if port.vid == TOTTAG_USB_VID and port.pid == TOTTAG_USB_PID:
-            self.discovered_devices['USB-Connected Device'] = port.device
-            self.result_queue.put_nowait(('DEVICE', 'USB-Connected Device'))
+            device_name = self.identify_usb_tottag(port.device)
+            if device_name in self.discovered_devices:
+               device_name += f' ({port.device})'
+            self.discovered_devices[device_name] = port.device
+            self.result_queue.put_nowait(('DEVICE', device_name))
       for device_address, device_info in scanner.discovered_devices_and_advertisement_data.items():
          if device_info[1].local_name and device_info[1].local_name.startswith(TOTTAG_ADVERTISED_NAME_PREFIX):
             self.discovered_devices[device_address] = device_info[0]
@@ -438,10 +479,11 @@ class TotTagBLE(threading.Thread):
       self.result_queue.put_nowait(('CONNECTING', True))
       device_address = await self.command_queue.get()
       try:
-         if 'USB-Connected Device' in device_address:
+         if device_address.startswith(USB_DEVICE_NAME_PREFIX):
             device = serial.Serial(self.discovered_devices[device_address], timeout=3.0, write_timeout=3.0)
             if device.is_open:
                self.connected_device = device
+               self.connected_device_name = device_address
                self.connected_device.reset_input_buffer()
                self.connected_device.reset_output_buffer()
                disconnect_check_thread = threading.Thread(target=partial(self.serial_disconnect_check))
@@ -561,10 +603,14 @@ class TotTagBLE(threading.Thread):
          retry_count = 0
          while retry_count < 3:
             try:
-               async with BleakClient(self.discovered_devices[device_id]) as client:
-                  await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
-                  await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
-                  retry_count = 3
+               if device_id.startswith(USB_DEVICE_NAME_PREFIX):
+                  with serial.Serial(self.discovered_devices[device_id], timeout=3.0, write_timeout=3.0) as device:
+                     usb_write_experiment_details(device, packed_details)
+               else:
+                  async with BleakClient(self.discovered_devices[device_id]) as client:
+                     await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
+                     await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+               retry_count = 3
             except Exception:
                retry_count += 1
                if retry_count == 3:
@@ -577,9 +623,10 @@ class TotTagBLE(threading.Thread):
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
       if isinstance(self.connected_device, serial.Serial):
-         self.connected_device.write(bytes([USB_SET_TIMESTAMP_COMMAND]))
-         self.connected_device.write(struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())))
-         self.connected_device.write(bytes([MAINTENANCE_DELETE_EXPERIMENT]))
+         try:
+            usb_write_experiment_details(self.connected_device, packed_details)
+         except Exception:
+            self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device_name))
       else:
          retry_count = 0
          while retry_count < 3:
@@ -683,8 +730,8 @@ class TotTagBLE(threading.Thread):
          else:
             await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, bytes([MAINTENANCE_RETRANSMIT_PAGES, 0]), True)
       if isinstance(self.connected_device, serial.Serial):
-         for i in range(0, len(seqs), MAX_SEQS_PER_USB_WRITE):
-            batch = seqs[i:i+MAX_SEQS_PER_USB_WRITE]
+         batch = seqs[:MAX_SEQS_PER_USB_WRITE]
+         if batch:
             self.connected_device.write(bytes([USB_RETRANSMIT_PAGES_COMMAND, len(batch)]) + struct.pack(f'<{len(batch)}I', *batch))
          data_callback_thread = threading.Thread(target=partial(self.data_callback_serial))
          data_callback_thread.start()
@@ -725,7 +772,8 @@ class TotTagBLE(threading.Thread):
                # to be repeated rather than repaired. Naming pages is only possible for a PARTIAL loss.
                nothing_arrived = bool(report['total_pages']) and not report['pages_read']
             askable = [seq for seq in wanted if self.page_attempts[seq] < MAX_PAGE_ATTEMPTS]
-            batch = askable[:DEVICE_RETRANSMIT_CAPACITY]
+            capacity = min(DEVICE_RETRANSMIT_CAPACITY, MAX_SEQS_PER_USB_WRITE) if isinstance(self.connected_device, serial.Serial) else DEVICE_RETRANSMIT_CAPACITY
+            batch = askable[:capacity]
             exhausted = [seq for seq in wanted if self.page_attempts[seq] >= MAX_PAGE_ATTEMPTS]
             if (batch or nothing_arrived) and self.repair_round < MAX_REPAIR_ROUNDS:
                self.repair_round += 1
@@ -1002,9 +1050,10 @@ class TotTagGUI(tk.Frame):
             row = tk.Frame(prompt_area)
             tottag_label = tk.StringVar(row)
             row.grid(row=17+len(self.tottag_rows), column=0, columnspan=5, sticky=tk.W+tk.E)
-            tottag_selector = ttk.Combobox(row, width=18, values=self.device_list, state=['readonly' if self.connect_button['text'] != 'Disconnect' else ''])
+            schedulable_devices = [device for device in self.device_list if device_uid(device)]
+            tottag_selector = ttk.Combobox(row, width=32, values=schedulable_devices, state=['readonly' if self.connect_button['text'] != 'Disconnect' else ''])
             tottag_selector.pack(side=tk.LEFT, expand=False)
-            tottag_selector.set(self.device_list[0])
+            tottag_selector.set(schedulable_devices[0] if schedulable_devices else '')
             ttk.Label(row, text="  using label  ").pack(side=tk.LEFT, expand=False)
             ttk.Entry(row, textvariable=tottag_label, validate='all', validatecommand=(row.register(lambda new_val: len(new_val) <= MAX_LABEL_LENGTH), '%P')).pack(side=tk.LEFT, fill=tk.X, expand=True)
             ttk.Label(row, text="  ").pack(side=tk.LEFT, expand=False)
@@ -1018,15 +1067,17 @@ class TotTagGUI(tk.Frame):
             for child in row.winfo_children():
                if isinstance(child, ttk.Combobox):
                   devices.append(child.get())
-                  for j, grouping in enumerate(child.get().split(':')[::-1]):
-                     uids[i][j] = int(grouping, 16)
+                  uids[i] = device_uid(child.get())
                elif isinstance(child, ttk.Entry):
                   labels[i] = bytes(child.get(), 'utf-8')
          chosen_tags, chosen_labels, errors = [], [], False
          for i in range(len(self.tottag_rows)):
             if errors:
                break
-            if uids[i] in chosen_tags:
+            if uids[i] is None:
+               errors = True
+               tk.messagebox.showerror('TotTag Error', 'ERROR: "%s" is not a valid TotTag ID!'%devices[i])
+            elif uids[i] in chosen_tags:
                errors = True
                tk.messagebox.showerror('TotTag Error', 'ERROR: You have chosen more than one of the same TotTag!')
             else:
@@ -1215,7 +1266,10 @@ class TotTagGUI(tk.Frame):
                if isinstance(item, ttk.Button):
                   item.configure(state=['enabled'])
             self.subscribe_button['state'] = ['disabled']
-            self.schedule_button['state'] = ['disabled']
+            if device_uid(data):
+               self.schedule_button['text'] = 'Update Deployment On Current Device'
+            else:
+               self.schedule_button['state'] = ['disabled']
             self.cancel_button['text'] = 'Cancel Deployment On Current Device'
             self._clear_canvas_with_prompt()
          elif key == 'DISCONNECTED':
