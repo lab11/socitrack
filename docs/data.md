@@ -33,7 +33,7 @@ timestamp) plus whichever fields were recorded at that moment:
 | `b` | Other badges seen over Bluetooth |
 | `rst` | A restart, with its cause as a list of strings |
 | `rtc`, `offset`, `lag` | Timekeeping — see [clock drift](#clock-drift) |
-| `diag` | Internal health counters |
+| `diag` | Internal health counters, which firmware build wrote the log, the chip temperature, and radio health |
 
 So the distances over time to badge `0x3E`:
 

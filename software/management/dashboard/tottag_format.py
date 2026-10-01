@@ -94,9 +94,18 @@ MAX_RESET_STATUS = 0xFFF
 WATCHDOG_TASK_NAMES = ['TimeAlignedTask', 'StorageTask', 'AppTask', 'BLETask', 'RangingTask']
 
 # STORAGE_TYPE_DIAGNOSTICS payload: counters describing how close the firmware came to a fault without
-# reaching one. All are cumulative since boot and saturate rather than wrap, so a reboot partitions them.
+# reaching one, then which firmware wrote the log, TempCo and the chip temperature, radio health, records lost
+# to a full queue, stack headroom, and recoveries. Counters are cumulative since boot and saturate rather than
+# wrap, so a reboot partitions them.
 DIAGNOSTICS_NUM_POOLS = 5
-DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sB')
+DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sBIBbIIHHHHHHHH6HBH')
+DIAGNOSTICS_NUM_STACKS = 6
+DIAGNOSTICS_STACK_NAMES = WATCHDOG_TASK_NAMES + ['TimerService']
+DIAGNOSTICS_FLAG_TEMPCO_AVAILABLE = 0x01
+DIAGNOSTICS_FLAG_TEMPCO_APPLIED = 0x02
+DIAGNOSTICS_FLAG_FIRMWARE_MODIFIED = 0x04
+DIAGNOSTICS_STACK_UNMONITORED = 0xFFFF
+DIAGNOSTICS_TEMPERATURE_UNKNOWN = -128
 
 # The hardware status says only THAT the device stopped, never what stopped it, which is why a run of watchdog
 # resets used to be uninterpretable. The firmware therefore packs its own verdict into the four bits above the
@@ -315,8 +324,10 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
             # Near-misses, not faults. A non-zero value in any of these is the firmware reporting that it
             # came close to something without the log otherwise showing it: watchdog pets refused, charger
             # interrupts discarded as chatter, or BLE buffer allocations that returned NULL
-            declines, late, suppressed, failures, largest, high_water, capacity, master_failures = \
-               DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
+            (declines, late, suppressed, failures, largest, high_water, capacity, master_failures,
+             revision, flags, temperature, rx_ok, rx_failed, tx_late, rx_arm_late, isr_over_budget, isr_warm_max_us,
+             irq_stuck, wake_max_us, wake_failures, dropped, *rest) = DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
+            stacks, ble_resets, bad_blocks = rest[:DIAGNOSTICS_NUM_STACKS], rest[-2], rest[-1]
             log_data[timestamp]['diag'] = {
                'watchdog_declines': declines,
                'watchdog_late': {name: late[j] for j, name in enumerate(WATCHDOG_TASK_NAMES) if late[j]},
@@ -326,6 +337,25 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'wsf_pool_peak': list(high_water),
                'wsf_pool_size': list(capacity),
                'master_cycle_failures': master_failures,
+               'firmware': f'{revision:08x}',
+               'firmware_modified': bool(flags & DIAGNOSTICS_FLAG_FIRMWARE_MODIFIED),
+               'tempco_available': bool(flags & DIAGNOSTICS_FLAG_TEMPCO_AVAILABLE),
+               'tempco_applied': bool(flags & DIAGNOSTICS_FLAG_TEMPCO_APPLIED),
+               'temperature_c': None if temperature == DIAGNOSTICS_TEMPERATURE_UNKNOWN else temperature,
+               'radio_rx_ok': rx_ok,
+               'radio_rx_failed': rx_failed,
+               'radio_tx_late': tx_late,
+               'radio_rx_arm_late': rx_arm_late,
+               'radio_isr_over_budget': isr_over_budget,
+               'radio_isr_warm_max_us': isr_warm_max_us,
+               'radio_irq_stuck': irq_stuck,
+               'radio_wake_max_us': wake_max_us,
+               'radio_wake_failures': wake_failures,
+               'records_dropped': dropped,
+               'stack_free_words': {name: (None if words == DIAGNOSTICS_STACK_UNMONITORED else words)
+                                    for name, words in zip(DIAGNOSTICS_STACK_NAMES, stacks)},
+               'ble_resets': ble_resets,
+               'nand_bad_blocks': bad_blocks,
             }
             consumed = 5 + DIAGNOSTICS_STRUCT.size
 

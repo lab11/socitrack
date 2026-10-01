@@ -54,6 +54,11 @@
 static uint8_t saved_status_2;
 static uint32_t marker_page;
 
+// Whether step 0 found a marker from a previous run. Once it has, the power-cycle question is answered and
+// the marker can be cleared -- otherwise it stays on the part for good, and every later survey counts it as
+// a factory-bad block
+static bool persistence_confirmed;
+
 
 // A minimal command layer, owned by this test ---------------------------------------------------------------------------
 
@@ -204,7 +209,12 @@ static void step_0_check_previous_run(void)
    print("  spare byte 0, ECC off: %02X\n", without_ecc);
 
    if (without_ecc == 0x00)
+   {
+      persistence_confirmed = true;
       print("  => A MARKER SURVIVED A POWER CYCLE. This is the result that matters most.\n");
+      print("     The marker will be cleared at the end of this run, so it does not sit on the part\n"
+            "     for good and turn up in every later bad-block survey.\n");
+   }
    else if (without_ecc == 0xFF)
       print("  => nothing there. First run, or the previous run did not reach step 3.\n");
    else
@@ -311,6 +321,7 @@ static void step_5_second_partial_program(void)
 static void step_6_factory_survey(void)
 {
    print("\n--- STEP 6: factory bad-block survey and full-scan cost ---\n");
+   print("     (run before anything is programmed, so the survey counts only the factory's markers)\n");
    const uint32_t blocks = nandlog_chip_geometry()->block_count;
    const uint32_t pages_per_block = nandlog_chip_geometry()->pages_per_block;
    uint32_t bad = 0, unreadable = 0;
@@ -328,13 +339,15 @@ static void step_6_factory_survey(void)
    const uint32_t elapsed_us = hw_elapsed_us(start, hw_cycle_count());
 
    print("  %u blocks scanned in %u us (%u us each)\n", blocks, elapsed_us, blocks ? (elapsed_us / blocks) : 0);
-   print("  factory-marked bad: %u    page 0 unreadable: %u    total unusable: %u (%u%% of the array)\n",
-         bad, unreadable, bad + unreadable, (100 * (bad + unreadable)) / blocks);
+   print("  factory-marked bad: %u    page 0 unreadable: %u    total unusable: %u (%u.%02u%% of the array)\n",
+         bad, unreadable, bad + unreadable,
+         (10000 * (bad + unreadable)) / blocks / 100, (10000 * (bad + unreadable)) / blocks % 100);
    print("\n  *** THIS IS THE DECIDING NUMBER: %u ms per boot is what a scheme with no persisted\n"
          "  *** bad-block table would spend, on every boot, to rebuild it from the spare area.\n", elapsed_us / 1000);
-   print("  For comparison, the reserve it would let us reclaim is %u blocks (%u%% of the array).\n",
+   print("  For comparison, the reserve it would let us reclaim is %u blocks (%u.%02u%% of the array).\n",
          nandlog_chip_geometry()->reserved_blocks,
-         (100 * nandlog_chip_geometry()->reserved_blocks) / blocks);
+         (10000 * nandlog_chip_geometry()->reserved_blocks) / blocks / 100,
+         (10000 * nandlog_chip_geometry()->reserved_blocks) / blocks % 100);
 }
 
 
@@ -342,16 +355,20 @@ static void clean_up(void)
 {
    // Everything except the marker block, which is left programmed on purpose: it is what the next boot's
    // step 0 looks for, and erasing it here would throw away the power-cycle result the test exists to get
-   print("\n--- Cleaning up: erasing the scratch blocks, except the marker ---\n");
+   // On the first run the marker is left behind on purpose, because it is what the next boot's step 0
+   // looks for. Once step 0 has found one, the question is answered and leaving another would only
+   // pollute the array: a programmed spare byte is indistinguishable from a factory bad-block marker
+   print("\n--- Cleaning up ---\n");
    set_ecc(true);
    write_register(STATUS_REGISTER_1, PROTECT_NONE);
    for (uint32_t i = 0; i < HW_SCRATCH_BLOCKS; ++i)
-      if (hw_scratch_page(i) != marker_page)
+      if (persistence_confirmed || (hw_scratch_page(i) != marker_page))
          erase_block(hw_scratch_page(i));
    write_register(STATUS_REGISTER_2, saved_status_2);
    nandlog_port_transfer_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
-   print("  done; SR2 restored to %02X; marker block %u left programmed\n",
-         read_register(STATUS_REGISTER_2), marker_page / nandlog_chip_geometry()->pages_per_block);
+   print("  SR2 restored to %02X; marker block %u %s\n", read_register(STATUS_REGISTER_2),
+         marker_page / nandlog_chip_geometry()->pages_per_block,
+         persistence_confirmed ? "ERASED -- the array is back as it was" : "left programmed for the next run");
 }
 
 
@@ -376,19 +393,26 @@ int main(void)
    step_0_check_previous_run();
    if (step_1_registers())
    {
+      // The survey runs first: steps 3 and 5 program markers of their own, and a survey taken
+      // afterwards counts them as factory-bad blocks
+      step_6_factory_survey();
       step_3_program_the_marker();
       print("\n--- STEP 4: is the marker visible with ECC back on? ---\n");
       step_4_read_with_ecc_on("now");
       step_5_second_partial_program();
-      step_6_factory_survey();
 
-      print("\n============================================================\n");
-      print("POWER-CYCLE THE BOARD NOW AND RUN THIS TEST AGAIN.\n");
-      print("On the second run, STEP 4 is what matters: the marker must still\n");
-      print("be there. A marker that does not survive a power cycle is no\n");
-      print("marker at all. The second run will reprogram it, which is fine.\n");
-      print("============================================================\n");
       clean_up();
+      if (!persistence_confirmed)
+      {
+         print("\n============================================================\n");
+         print("POWER-CYCLE THE BOARD, THEN RE-FLASH AND RUN THIS AGAIN.\n");
+         print("Re-flashing is fine: it rewrites the MCU, not the NAND, and\n");
+         print("STEP 0 runs before anything on the part is erased.\n");
+         print("STEP 0 of that run is the answer.\n");
+         print("============================================================\n");
+      }
+      else
+         print("\nNothing further to run: the power-cycle question is answered and the part is clean.\n");
    }
 
    HW_REPORT("TEST 3: SPARE-AREA MARKING");

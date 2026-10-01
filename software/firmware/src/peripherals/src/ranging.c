@@ -18,7 +18,7 @@ static volatile uint32_t wake_pin_us, wake_ready_us, wake_restore_us;
 static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_max_us, stat_isr_over;
 static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed, stat_wake_skipped;
 static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
-static volatile uint32_t stat_wake_max_us, stat_wake_last_us;
+static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed;
 static volatile uint8_t stat_network_size;
 static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
@@ -602,6 +602,7 @@ void ranging_radio_wakeup(void)
    wake_ready_us = stimer_ticks_to_us(t_ready - t_pin);
    if (!spi_ready)
    {
+      ++stat_wake_failed;
       print("WARNING: DW3000 radio could not be woken up...resetting peripheral\n");
       ranging_radio_spi_slow();
       ranging_radio_reset();
@@ -709,6 +710,7 @@ void ranging_radio_get_stats(ranging_radio_stats_t *stats)
       stats->tx_failed = stat_tx_failed;
       stats->rx_arm_failed = stat_rx_arm_failed;
       stats->wake_skipped = stat_wake_skipped;
+      stats->wake_failed = stat_wake_failed;
       stats->isr_max_us = stat_isr_max_us;
       stats->isr_max_events = stat_isr_max_events;
       stats->isr_count = stat_isr_count;

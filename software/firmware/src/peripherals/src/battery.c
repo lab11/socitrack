@@ -1,6 +1,7 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
 #include "battery.h"
+#include "logging.h"
 
 
 // TODO: Zero-CPU Brownout Detection -----------------------------------------------------------------------------------
@@ -47,6 +48,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 #define BATTERY_ADC_SLOT                            0
+#define TEMPERATURE_ADC_SLOT                        7
 
 #define BATTERY_STIMER_HZ                           32768u
 #define BATTERY_MS_TO_STIMER(ms)                    (((uint32_t)(ms) * BATTERY_STIMER_HZ) / 1000u)
@@ -63,9 +65,12 @@ static SemaphoreHandle_t adc_mutex;
 static StaticSemaphore_t adc_mutex_buffer;
 static uint32_t last_valid_voltage_mV;
 static battery_event_callback_t event_callback;
-static volatile uint32_t battery_voltage_code, suppressed_edge_count;
+static volatile uint32_t battery_voltage_code, temperature_sample_count, suppressed_edge_count;
 static volatile charger_signal_t plugged_signal, charging_signal;
 static volatile bool conversion_complete;
+static am_hal_adc_sample_t temperature_samples[AM_HAL_TEMPCO_NUMSAMPLES];
+static volatile int8_t last_temperature_c = BATTERY_TEMPERATURE_UNKNOWN;
+static bool tempco_available, tempco_applied;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -132,9 +137,53 @@ static void release_adc(void)
 static void shut_down_adc(void)
 {
    // Disable the ADC and put it into Deep Sleep mode
-   am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
+   am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_SCNCMP);
    am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
    NVIC_DisableIRQ(ADC_IRQn);
+}
+
+static uint32_t run_adc_scans(uint32_t num_scans, bool discard_first)
+{
+   // Each scan converts every enabled slot once, battery and temperature together. The caller holds the ADC
+   if (am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true) != AM_HAL_STATUS_SUCCESS)
+      return 0;
+   am_hal_adc_interrupt_enable(adc_handle, AM_HAL_ADC_INT_SCNCMP);
+   NVIC_SetPriority(ADC_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 2);
+   NVIC_EnableIRQ(ADC_IRQn);
+   if (am_hal_adc_enable(adc_handle) != AM_HAL_STATUS_SUCCESS)
+   {
+      shut_down_adc();
+      return 0;
+   }
+
+   // Trigger and wait for each scan in turn
+   const uint32_t poll_interval_us = 200;
+   const uint32_t polls = (1000 * BATTERY_ADC_TIMEOUT_MS) / poll_interval_us;
+   const bool can_yield = (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && !xPortIsInsideInterrupt();
+   uint32_t completed = 0;
+   temperature_sample_count = 0;
+   while (completed < num_scans)
+   {
+      conversion_complete = false;
+      if (am_hal_adc_sw_trigger(adc_handle) != AM_HAL_STATUS_SUCCESS)
+         break;
+      for (uint32_t poll = 0; !conversion_complete && (poll < polls); ++poll)
+      {
+         if (can_yield && ((poll % 50) == 49))
+            vTaskDelay(1);
+         else
+            am_hal_delay_us(poll_interval_us);
+      }
+      if (!conversion_complete)
+         break;
+
+      // The first conversion after the ADC wakes is the least settled, so a caller averaging samples can drop it
+      if (discard_first && !completed)
+         temperature_sample_count = 0;
+      ++completed;
+   }
+   shut_down_adc();
+   return completed;
 }
 
 static void signal_charge_complete(bool charge_complete)
@@ -247,6 +296,8 @@ void am_adc_isr(void)
       am_hal_adc_samples_read(adc_handle, true, NULL, &samples_to_read, &sample);
       if (sample.ui32Slot == BATTERY_ADC_SLOT)
          battery_voltage_code = AM_HAL_ADC_FIFO_SAMPLE(sample.ui32Sample);
+      else if ((sample.ui32Slot == TEMPERATURE_ADC_SLOT) && (temperature_sample_count < AM_HAL_TEMPCO_NUMSAMPLES))
+         temperature_samples[temperature_sample_count++] = sample;
    }
 
    // Set the conversion complete flag
@@ -292,10 +343,21 @@ void battery_monitor_init(void)
       .ui32TrkCyc = AM_HAL_ADC_MIN_TRKCYC,
       .eMeasToAvg = AM_HAL_ADC_SLOT_AVG_1
    };
+   am_hal_adc_slot_config_t temperature_slot_config =
+   {
+      .bEnabled = true,
+      .bWindowCompare = false,
+      .eChannel = AM_HAL_ADC_SLOT_CHSEL_TEMP,
+      .ePrecisionMode = AM_HAL_ADC_SLOT_12BIT,
+      .ui32TrkCyc = 32,
+      .eMeasToAvg = AM_HAL_ADC_SLOT_AVG_1
+   };
 
    // Initialize static variables
    conversion_complete = false;
-   battery_voltage_code = 0;
+   battery_voltage_code = temperature_sample_count = 0;
+   tempco_applied = false;
+   last_temperature_c = BATTERY_TEMPERATURE_UNKNOWN;
    event_callback = NULL;
 
    // Initialize the charging, plugged-in status, and voltage pins
@@ -332,8 +394,15 @@ void battery_monitor_init(void)
    for (int slot = 0; slot < AM_HAL_ADC_MAX_SLOTS; ++slot)
       if (slot == BATTERY_ADC_SLOT)
          am_hal_adc_configure_slot(adc_handle, slot, &used_slot_config);
+      else if (slot == TEMPERATURE_ADC_SLOT)
+         am_hal_adc_configure_slot(adc_handle, slot, &temperature_slot_config);
       else
          am_hal_adc_configure_slot(adc_handle, slot, &unused_slot_config);
+
+   // TempCo lowers the regulator trims as far as the chip temperature allows
+   tempco_available = (am_hal_pwrctrl_tempco_init(adc_handle, TEMPERATURE_ADC_SLOT) == AM_HAL_STATUS_SUCCESS);
+   if (!tempco_available)
+      print("WARNING: TempCo power optimization unavailable on this device\n");
 
    // Put the ADC into Deep Sleep mode
    configASSERT0(am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
@@ -350,6 +419,14 @@ void battery_monitor_deinit(void)
 #ifdef PIN_BATTERY_VOLTAGE_COMPARATOR
    brownout_detection_deinit();
 #endif
+
+   // Nothing refreshes the trims while powered off
+   if (tempco_available)
+   {
+      am_hal_adc_sample_t unreliable[AM_HAL_TEMPCO_NUMSAMPLES] = { 0 };
+      am_hal_pwrctrl_tempco_sample_handler(AM_HAL_TEMPCO_NUMSAMPLES, unreliable);
+      tempco_applied = false;
+   }
 
    // Deinitialize the ADC module
    am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true);
@@ -403,44 +480,10 @@ uint32_t battery_monitor_get_level_mV(void)
    if (!acquire_adc())
       return last_valid_voltage_mV;
 
-   // Wake up the ADC
+   // One scan is enough for the battery voltage
    battery_voltage_code = 0;
-   conversion_complete = false;
-   if (am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_WAKE, true) != AM_HAL_STATUS_SUCCESS)
-   {
-      release_adc();
-      return last_valid_voltage_mV;
-   }
-
-   // Enable interrupts upon completion of an ADC conversion
-   am_hal_adc_interrupt_enable(adc_handle, AM_HAL_ADC_INT_CNVCMP);
-   NVIC_SetPriority(ADC_IRQn, NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY + 2);
-   NVIC_EnableIRQ(ADC_IRQn);
-
-   // Enable the ADC
-   if ((am_hal_adc_enable(adc_handle) != AM_HAL_STATUS_SUCCESS) || am_hal_adc_sw_trigger(adc_handle))
-   {
-      shut_down_adc();
-      release_adc();
-      return last_valid_voltage_mV;
-   }
-
-   // Wait until the conversion has completed
-   const uint32_t poll_interval_us = 200;
-   const uint32_t polls = (1000 * BATTERY_ADC_TIMEOUT_MS) / poll_interval_us;
-   const bool can_yield = (xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && !xPortIsInsideInterrupt();
-   for (uint32_t poll = 0; !conversion_complete && (poll < polls); ++poll)
-   {
-      if (can_yield && ((poll % 50) == 49))
-         vTaskDelay(1);
-      else
-         am_hal_delay_us(poll_interval_us);
-   }
-
-   // Disable the ADC
-   const bool converted = conversion_complete;
+   const bool converted = (run_adc_scans(1, false) == 1);
    const uint32_t code = battery_voltage_code;
-   shut_down_adc();
    release_adc();
    if (!converted)
       return last_valid_voltage_mV;
@@ -448,6 +491,48 @@ uint32_t battery_monitor_get_level_mV(void)
    // Calculate and return the battery voltage
    last_valid_voltage_mV = (code * AM_HAL_ADC_VREFMV / 4096) * (VOLTAGE_DIVIDER_UPPER + VOLTAGE_DIVIDER_LOWER) / VOLTAGE_DIVIDER_LOWER;
    return last_valid_voltage_mV;
+}
+
+void battery_monitor_service_tempco(void)
+{
+   // Sample the chip temperature, record it, and let TempCo retune the regulator trims to match
+   if (!adc_handle || !acquire_adc())
+      return;
+   const uint32_t scans = run_adc_scans(AM_HAL_TEMPCO_NUMSAMPLES + 1, true);
+   const uint32_t count = temperature_sample_count;
+   if ((scans == (AM_HAL_TEMPCO_NUMSAMPLES + 1)) && (count == AM_HAL_TEMPCO_NUMSAMPLES))
+   {
+      // The temperature itself, independent of whether this chip supports TempCo
+      float volts = 0.0f;
+      for (uint32_t i = 0; i < count; ++i)
+         volts += (float)AM_HAL_ADC_FIFO_SAMPLE(temperature_samples[i].ui32Sample) * AM_HAL_ADC_VREF / 4096.0f;
+      float conversion[3] = { volts / (float)count, 0.0f, -123.456f };
+      if (am_hal_adc_control(adc_handle, AM_HAL_ADC_REQ_TEMP_CELSIUS_GET, conversion) == AM_HAL_STATUS_SUCCESS)
+      {
+         const int32_t rounded = (int32_t)(conversion[1] + ((conversion[1] >= 0.0f) ? 0.5f : -0.5f));
+         last_temperature_c = (int8_t)((rounded > INT8_MAX) ? INT8_MAX : ((rounded <= BATTERY_TEMPERATURE_UNKNOWN) ? (BATTERY_TEMPERATURE_UNKNOWN + 1) : rounded));
+      }
+
+      // The HAL falls back to its coldest-safe trims whenever it judges the samples unreliable
+      if (tempco_available)
+         tempco_applied = (am_hal_pwrctrl_tempco_sample_handler(count, temperature_samples) == AM_HAL_STATUS_SUCCESS);
+   }
+   release_adc();
+}
+
+int8_t battery_monitor_get_temperature_c(void)
+{
+   return last_temperature_c;
+}
+
+bool battery_monitor_tempco_available(void)
+{
+   return tempco_available;
+}
+
+bool battery_monitor_tempco_applied(void)
+{
+   return tempco_applied;
 }
 
 bool battery_monitor_is_plugged_in(void)

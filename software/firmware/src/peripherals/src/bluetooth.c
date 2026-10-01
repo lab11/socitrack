@@ -27,6 +27,7 @@
 
 #define BLE_MAX_IMMEDIATE_RESTART_ATTEMPTS          3
 
+static volatile uint32_t reset_count;
 static volatile uint16_t connection_mtu;
 static volatile bool conn_update_in_flight, conn_update_target_fast, conn_update_sent_fast, conn_update_applied_fast;
 static volatile uint8_t conn_update_conn_id, adv_restart_attempts, scan_restart_attempts;
@@ -460,6 +461,7 @@ void bluetooth_deinit(void)
 void bluetooth_reset(void)
 {
    // Shutdown and reboot the BLE controller
+   ++reset_count;
    bluetooth_set_uninitialized();
    HciDrvRadioShutdown();
    HciDrvRadioBoot(false);
@@ -622,6 +624,12 @@ void bluetooth_reset_scanning(void)
    // Attempt to stop scanning without changing the scanning expectation
    if (is_initialized && is_scanning)
       DmScanStop();
+}
+
+uint32_t bluetooth_get_reset_count(void)
+{
+   // Controller restarts since boot, each one a recovery from a stalled stack
+   return reset_count;
 }
 
 bool bluetooth_is_scanning(void)

@@ -25,6 +25,7 @@ typedef struct
 bool bluetooth_init(uint8_t* uid);
 void bluetooth_deinit(void);
 void bluetooth_reset(void);
+uint32_t bluetooth_get_reset_count(void);
 void bluetooth_start(void);
 bool bluetooth_is_initialized(void);
 void bluetooth_set_uninitialized(void);

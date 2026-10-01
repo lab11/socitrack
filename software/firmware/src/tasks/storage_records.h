@@ -32,7 +32,28 @@ typedef struct __attribute__ ((__packed__))
    uint8_t wsf_pool_high_water[STORAGE_DIAGNOSTIC_NUM_POOLS];   // peak simultaneous allocations per pool
    uint8_t wsf_pool_capacity[STORAGE_DIAGNOSTIC_NUM_POOLS];     // buffers in each pool, so headroom is readable
    uint8_t master_cycle_failures;                          // times this device ran a network as master and heard nothing
+   uint32_t firmware_revision;                             // leading eight hex digits of the git commit the firmware was built from
+   uint8_t status_flags;                                   // STORAGE_DIAGNOSTIC_FLAG_* bits
+   int8_t temperature_c;                                   // chip temperature, or BATTERY_TEMPERATURE_UNKNOWN before the first reading
+   uint32_t radio_rx_ok;                                   // ranging slots that produced a decoded packet
+   uint32_t radio_rx_failed;                               // ranging slots that timed out or errored -- the receive-sensitivity metric
+   uint16_t radio_tx_late;                                 // delayed transmissions programmed after their slot had already passed
+   uint16_t radio_rx_arm_late;                             // delayed receives that could not be armed in time, each aborting a round
+   uint16_t radio_isr_over_budget;                         // radio interrupts that ran past RADIO_ISR_BUDGET_US
+   uint16_t radio_isr_warm_max_us;                         // longest radio interrupt once the first few had run
+   uint16_t radio_irq_stuck;                               // times the radio interrupt line stayed asserted and the radio was silenced
+   uint16_t radio_wake_max_us;                             // worst radio wake-up, against RADIO_WAKEUP_SAFETY_DELAY_US
+   uint16_t radio_wake_failures;                           // wake-ups the radio never answered, so it had to be reset
+   uint16_t storage_records_dropped;                       // records discarded because the storage queue was full
+   uint16_t stack_free_words[STORAGE_DIAGNOSTIC_NUM_STACKS];   // least free stack ever seen, per watchdog task then the timer service
+   uint8_t ble_resets;                                     // Bluetooth controller restarts by the self-check
+   uint16_t nand_bad_blocks;                               // retired flash blocks, factory-marked and grown
 } storage_diagnostics_t;
+
+#define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_AVAILABLE    0x01   // this chip's trims support TempCo
+#define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_APPLIED      0x02   // the last temperature reading adjusted the voltage trims
+#define STORAGE_DIAGNOSTIC_FLAG_FIRMWARE_MODIFIED   0x04   // built from a tree with uncommitted firmware changes
+#define STORAGE_DIAGNOSTIC_STACK_UNMONITORED        0xFFFF // a stack entry for a task that is not running in this mode
 
 #define STORAGE_IMU_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
 #define STORAGE_DIAGNOSTICS_RECORD_BYTES            (1 + 4 + sizeof(storage_diagnostics_t))

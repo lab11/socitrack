@@ -41,9 +41,11 @@
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
 #define STORAGE_FLUSH_TIMEOUT_S                     120
 #define STORAGE_DIAGNOSTIC_NUM_POOLS                5
+#define STORAGE_DIAGNOSTIC_NUM_STACKS               6           // each watchdog-monitored task, then the timer service
 #define STORAGE_MAX_PLAUSIBLE_OFFSET_MS             3600000
 
 #define BATTERY_CHECK_INTERVAL_S                    300
+#define TEMPCO_UPDATE_INTERVAL_S                    10          // Ambiq's recommended refresh for the TempCo voltage trims
 
 #define TIME_BASE_CHANGE_THRESHOLD_MS               2000
 

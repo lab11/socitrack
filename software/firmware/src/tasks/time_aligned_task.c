@@ -103,7 +103,8 @@ void TimeAlignedTask(void *scheduled_experiment)
    system_watchdog_register(WATCHDOG_TASK_TIME_ALIGNED);
    const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    const TickType_t work_period_ticks = pdMS_TO_TICKS(BATTERY_CHECK_INTERVAL_S * 1000);
-   TickType_t next_work_at = xTaskGetTickCount();
+   const TickType_t tempco_period_ticks = pdMS_TO_TICKS(TEMPCO_UPDATE_INTERVAL_S * 1000);
+   TickType_t next_work_at = xTaskGetTickCount(), next_tempco_at = xTaskGetTickCount();
 #if RADIO_INSTRUMENTATION
    TickType_t next_report_at = xTaskGetTickCount();
 #endif
@@ -113,6 +114,13 @@ void TimeAlignedTask(void *scheduled_experiment)
    {
       // Check in with the watchdog and wait until the next work period
       system_watchdog_pet(WATCHDOG_TASK_TIME_ALIGNED);
+
+      // Keep the TempCo voltage trims matched to the chip temperature
+      if ((int32_t)(xTaskGetTickCount() - next_tempco_at) >= 0)
+      {
+         next_tempco_at = xTaskGetTickCount() + tempco_period_ticks;
+         battery_monitor_service_tempco();
+      }
 #if RADIO_INSTRUMENTATION
       if ((int32_t)(xTaskGetTickCount() - next_report_at) >= 0)
       {

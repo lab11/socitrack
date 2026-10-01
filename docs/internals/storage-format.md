@@ -4693,7 +4693,7 @@ belong there. **The log is the right place**, because the question is always ask
 
 #### `STORAGE_TYPE_DIAGNOSTICS` (= 9)
 
-A 23-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~299.4 s:
+A 69-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~299.4 s:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4704,6 +4704,19 @@ A 23-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~29
 | `wsf_largest_failed_length` | 2 | how big the request that failed was |
 | `wsf_pool_high_water[5]` | 5 | peak simultaneous allocations per pool |
 | `wsf_pool_capacity[5]` | 5 | pool sizes, so headroom is readable without a schema lookup |
+| `master_cycle_failures` | 1 | times this device ran a network as master and heard nobody |
+| `firmware_revision` | 4 | leading eight hex digits of the git commit the firmware was built from |
+| `status_flags` | 1 | bit 0 TempCo supported, bit 1 TempCo trims applied, bit 2 built with uncommitted firmware changes |
+| `temperature_c` | 1 | chip temperature, signed °C; -128 before the first reading |
+| `radio_rx_ok`, `radio_rx_failed` | 4 + 4 | ranging slots decoded and lost — the receive-sensitivity metric |
+| `radio_tx_late`, `radio_rx_arm_late` | 2 + 2 | delayed transmits and receives programmed after their slot; a late receive aborts the round |
+| `radio_isr_over_budget`, `radio_isr_warm_max_us` | 2 + 2 | radio interrupts past `RADIO_ISR_BUDGET_US`, and the longest once warmed up |
+| `radio_irq_stuck` | 2 | times the radio interrupt line stayed asserted and the radio was silenced |
+| `radio_wake_max_us`, `radio_wake_failures` | 2 + 2 | worst wake-up against `RADIO_WAKEUP_SAFETY_DELAY_US`, and wake-ups that needed a radio reset |
+| `storage_records_dropped` | 2 | records discarded because the storage queue was full |
+| `stack_free_words[6]` | 12 | least free stack ever seen, in words: each `watchdog_task_t` task, then the timer service; `0xFFFF` for a task not running |
+| `ble_resets` | 1 | Bluetooth controller restarts by the self-check |
+| `nand_bad_blocks` | 2 | retired flash blocks, factory-marked and grown |
 
 Every counter is **cumulative since boot and saturating**. Cumulative because a reboot then partitions them,
 which lets the host attribute a near-miss to a particular boot; saturating because a wrapped diagnostic

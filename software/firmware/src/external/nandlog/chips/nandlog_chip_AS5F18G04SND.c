@@ -93,18 +93,21 @@ static void write_register(uint8_t register_number, uint8_t value)
    nandlog_port_transfer_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
 }
 
-static void wait_until_not_busy(void)
+static uint8_t wait_until_not_busy(void)
 {
+   // Returns the status word that ended the wait
    for (uint32_t polls_remaining = NANDLOG_BUSY_TIMEOUT_POLLS; polls_remaining; --polls_remaining)
    {
-      if ((read_register(STATUS_REGISTER_3) & STATUS_BUSY) != STATUS_BUSY)
-         return;
+      const uint8_t status = read_register(STATUS_REGISTER_3);
+      if ((status & STATUS_BUSY) != STATUS_BUSY)
+         return status;
       nandlog_port_delay_us(NANDLOG_BUSY_POLL_INTERVAL_US);
    }
 
    // Reset immediately rather than flushing first
    nandlog_port_log("ERROR: Storage flash never cleared BUSY after %u polls (>= %u ms); resetting\n", (uint32_t)NANDLOG_BUSY_TIMEOUT_POLLS, (uint32_t)NANDLOG_BUSY_TIMEOUT_MS);
    nandlog_port_fatal("SPI transfer failed after all retries");
+   return 0;
 }
 
 static void write_protect(bool protect)
@@ -131,10 +134,9 @@ static bool read_page_region(uint8_t *buffer, uint32_t page, uint32_t column, ui
    split_page_address(page, page_number_reordered);
    wait_until_not_busy();
    nandlog_port_transfer_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
-   wait_until_not_busy();
+   const uint8_t status = wait_until_not_busy();
    nandlog_port_transfer_read(COMMAND_READ, column_address, sizeof(column_address), buffer, length);
-   wait_until_not_busy();
-   return (read_register(STATUS_REGISTER_3) & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
+   return (status & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
 }
 
 static bool read_page_raw(uint8_t *buffer, uint32_t page, uint32_t length)
@@ -155,8 +157,7 @@ static bool write_page_raw(const uint8_t *data, uint32_t page)
       nandlog_port_transfer_write(COMMAND_PROGRAM_DATA_LOAD, &byte_offset, 2, data, NANDLOG_CHIP_PAGE_SIZE_BYTES);
       wait_until_not_busy();
       nandlog_port_transfer_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
-      wait_until_not_busy();
-      if ((read_register(STATUS_REGISTER_3) & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
+      if ((wait_until_not_busy() & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
          return true;
    }
    return false;
@@ -170,8 +171,7 @@ static bool erase_block_raw(uint32_t page)
    wait_until_not_busy();
    nandlog_port_transfer_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
    nandlog_port_transfer_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
-   wait_until_not_busy();
-   return (read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) != STATUS_ERASE_FAILURE;
+   return (wait_until_not_busy() & STATUS_ERASE_FAILURE) != STATUS_ERASE_FAILURE;
 }
 
 static bool verify_device_id(void)
@@ -366,8 +366,7 @@ nandlog_copy_result_t nandlog_chip_copy_page(uint32_t source_page, uint32_t dest
       wait_until_not_busy();
       nandlog_port_transfer_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
       nandlog_port_transfer_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, destination_address, sizeof(destination_address));
-      wait_until_not_busy();
-      if ((read_register(STATUS_REGISTER_3) & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
+      if ((wait_until_not_busy() & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
          result = NANDLOG_COPY_OK;
    }
    write_protect(true);

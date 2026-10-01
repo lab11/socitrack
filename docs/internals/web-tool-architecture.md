@@ -208,8 +208,8 @@ Also in this increment:
   the numbers are drift-checked before anything depends on them. `BLE_MAINTENANCE_MAX_SEQS_PER_WRITE`
   is the important one: the firmware applies `MIN(count, 60)` and silently ignores the excess, so a
   host that sends more loses the remainder with no error. `STORAGE_QUEUE_MAX_NUM_ITEMS` was
-  considered and **dropped** — no diagnostics counter records a queue overflow, so it is not
-  observable from a log and would be a fact this package does not depend on.
+  considered and **dropped** — at the time no diagnostics counter recorded a queue overflow, so it
+  was not observable from a log. (The diagnostics record now carries `storage_records_dropped`.)
 - **A stale claim in `health.ts` was corrected.** The charger-storm message told the reader the
   charge-status ISR had "no comparison against the last reported state and no debounce". Both were
   fixed in firmware by `626b34bc`, and the message was not, so it spent that time advising

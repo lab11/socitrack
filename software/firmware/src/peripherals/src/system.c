@@ -30,6 +30,7 @@ static volatile uint16_t watchdog_declines;
 static volatile uint32_t watchdog_last_checkin[WATCHDOG_NUM_TASKS], watchdog_armed_at;
 static volatile bool watchdog_registered[WATCHDOG_NUM_TASKS], watchdog_enabled = false, watchdog_was_late[WATCHDOG_NUM_TASKS], watchdog_grace_elapsed = false;
 static volatile uint8_t watchdog_late_episodes[WATCHDOG_NUM_TASKS];
+static TaskHandle_t watchdog_task_handles[WATCHDOG_NUM_TASKS];
 
 __attribute__((unused))
 static const char *const watchdog_task_names[WATCHDOG_NUM_TASKS] = { "TimeAlignedTask", "StorageTask", "AppTask", "BLETask", "RangingTask" };
@@ -376,7 +377,16 @@ void system_watchdog_register(watchdog_task_t task)
    {
       watchdog_last_checkin[task] = watchdog_now();
       watchdog_registered[task] = true;
+      watchdog_task_handles[task] = xTaskGetCurrentTaskHandle();
    }
+}
+
+uint32_t system_get_task_stack_free_words(watchdog_task_t task)
+{
+   // Every monitored task registers from its own context, so the handle captured then names its stack
+   if ((task >= WATCHDOG_NUM_TASKS) || !watchdog_task_handles[task])
+      return UINT32_MAX;
+   return (uint32_t)uxTaskGetStackHighWaterMark(watchdog_task_handles[task]);
 }
 
 void system_watchdog_enable(void)
