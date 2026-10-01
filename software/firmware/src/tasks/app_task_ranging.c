@@ -59,6 +59,8 @@ static void verify_app_configuration(void)
 
    // Verify the current BLE-advertised role
    uint8_t current_role = scheduler_get_current_role();
+   if ((current_role == ROLE_IDLE) && !scheduler_master_eligible())
+      current_role = ROLE_MASTER_INELIGIBLE;
    if (current_role != bluetooth_get_current_ranging_role())
    {
       bluetooth_set_current_ranging_role(current_role);
@@ -181,22 +183,28 @@ static void handle_notification(app_notification_t notification)
       {
          // Determine if an actively ranging device was located
          bool ranging_device_located = false, idle_device_located = false;
+         bool eligible_candidate_seen = scheduler_master_eligible();
          for (uint8_t i = 0; !ranging_device_located && (i < num_discovered); ++i)
             if ((discovered[i][EUI_LEN] == ROLE_MASTER) || (discovered[i][EUI_LEN] == ROLE_PARTICIPANT))
                ranging_device_located = true;
-            else if (discovered[i][EUI_LEN] == ROLE_IDLE)
+            else if ((discovered[i][EUI_LEN] == ROLE_IDLE) || (discovered[i][EUI_LEN] == ROLE_MASTER_INELIGIBLE))
+            {
                idle_device_located = true;
+               if (discovered[i][EUI_LEN] == ROLE_IDLE)
+                  eligible_candidate_seen = true;
+            }
 
          // Start the ranging task based on the state of the detected devices
          if (ranging_device_located)
             ranging_begin(ROLE_PARTICIPANT);
          else if (idle_device_located)
          {
-            // Search for the non-sleeping device with the highest ID that is higher than our own
+            // Search for the non-sleeping eligible device with the highest ID that is higher than our own
             int32_t best_device_idx = -1;
             uint8_t highest_device_id = device_uid_short;
             for (uint8_t i = 0; i < num_discovered; ++i)
-               if (discovered[i][0] > highest_device_id)
+               if ((discovered[i][0] > highest_device_id) &&
+                     (!eligible_candidate_seen || (discovered[i][EUI_LEN] != ROLE_MASTER_INELIGIBLE)))
                {
                   best_device_idx = i;
                   highest_device_id = discovered[i][0];
@@ -205,8 +213,10 @@ static void handle_notification(app_notification_t notification)
             // If a potential master candidate device was found, attempt to connect to it
             if (best_device_idx >= 0)
                ranging_begin(ROLE_PARTICIPANT);
-            else
+            else if (scheduler_master_eligible() || !eligible_candidate_seen)
                ranging_begin(ROLE_MASTER);
+            else
+               ranging_begin(ROLE_PARTICIPANT);
          }
       }
 

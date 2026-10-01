@@ -96,7 +96,7 @@ WATCHDOG_TASK_NAMES = ['TimeAlignedTask', 'StorageTask', 'AppTask', 'BLETask', '
 # STORAGE_TYPE_DIAGNOSTICS payload: counters describing how close the firmware came to a fault without
 # reaching one. All are cumulative since boot and saturate rather than wrap, so a reboot partitions them.
 DIAGNOSTICS_NUM_POOLS = 5
-DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5s')
+DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sB')
 
 # The hardware status says only THAT the device stopped, never what stopped it, which is why a run of watchdog
 # resets used to be uninterpretable. The firmware therefore packs its own verdict into the four bits above the
@@ -315,7 +315,8 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
             # Near-misses, not faults. A non-zero value in any of these is the firmware reporting that it
             # came close to something without the log otherwise showing it: watchdog pets refused, charger
             # interrupts discarded as chatter, or BLE buffer allocations that returned NULL
-            declines, late, suppressed, failures, largest, high_water, capacity = DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
+            declines, late, suppressed, failures, largest, high_water, capacity, master_failures = \
+               DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
             log_data[timestamp]['diag'] = {
                'watchdog_declines': declines,
                'watchdog_late': {name: late[j] for j, name in enumerate(WATCHDOG_TASK_NAMES) if late[j]},
@@ -324,6 +325,7 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'wsf_largest_failed_length': largest,
                'wsf_pool_peak': list(high_water),
                'wsf_pool_size': list(capacity),
+               'master_cycle_failures': master_failures,
             }
             consumed = 5 + DIAGNOSTICS_STRUCT.size
 

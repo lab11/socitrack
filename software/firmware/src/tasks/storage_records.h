@@ -31,6 +31,7 @@ typedef struct __attribute__ ((__packed__))
    uint16_t wsf_largest_failed_length;                      // size of the largest request that failed
    uint8_t wsf_pool_high_water[STORAGE_DIAGNOSTIC_NUM_POOLS];   // peak simultaneous allocations per pool
    uint8_t wsf_pool_capacity[STORAGE_DIAGNOSTIC_NUM_POOLS];     // buffers in each pool, so headroom is readable
+   uint8_t master_cycle_failures;                          // times this device ran a network as master and heard nothing
 } storage_diagnostics_t;
 
 #define STORAGE_IMU_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)

@@ -8,7 +8,7 @@
 
 // Task Type Definitions -----------------------------------------------------------------------------------------------
 
-typedef enum { ROLE_IDLE = 10, ROLE_MASTER, ROLE_PARTICIPANT, ROLE_ASLEEP } schedule_role_t;
+typedef enum { ROLE_IDLE = 10, ROLE_MASTER, ROLE_PARTICIPANT, ROLE_ASLEEP, ROLE_MASTER_INELIGIBLE } schedule_role_t;
 
 typedef enum { NOT_IN_MOTION = 0, IN_MOTION } motion_code_t;
 
