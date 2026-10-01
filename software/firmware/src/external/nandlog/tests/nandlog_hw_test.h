@@ -51,6 +51,21 @@ static inline uint32_t hw_cycle_count(void)
 uint32_t hw_elapsed_us(uint32_t start_cycles, uint32_t end_cycles);
 
 
+// Powering The Part ---------------------------------------------------------------------------------------------------
+
+// nandlog_init() deliberately leaves the part asleep and the SPI peripheral in its lowest-power state: the
+// log core wakes both around each operation and puts them back afterwards. A test that calls nandlog_chip_*
+// or the port directly is BELOW that layer and gets no such service, so the first transfer it issues goes to
+// a peripheral that is not clocked -- which is a bus fault, not an error return.
+//
+// Call this before anything that reaches past nandlog.h, and again after any nandlog_deinit()/nandlog_init()
+// cycle, which puts the part back to sleep. It is idempotent
+void hw_power_up(void);
+
+// Hand the part back to the log core's own power management
+void hw_power_down(void);
+
+
 // Scratch Area --------------------------------------------------------------------------------------------------------
 
 // Tests that program and erase need somewhere to do it that the log will never place a page in. The top of

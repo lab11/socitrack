@@ -32,6 +32,7 @@ static uint8_t verify_buffer[NANDLOG_MAX_PAGE_SIZE_BYTES + NANDLOG_MAX_SPARE_SIZ
 static void test_a_copied_page_is_the_source_page(void)
 {
    print("\n--- 2a: a copied page arrives intact and reads back clean ---\n");
+   hw_power_up();
    const uint32_t source = hw_scratch_page(0), destination = hw_scratch_page(1);
 
    HW_CHECK(nandlog_chip_erase_block(source), "could not erase the source block");
@@ -84,6 +85,7 @@ static void test_a_copy_does_not_carry_the_spare_area(void)
 {
    print("\n--- 2b: a copy does not drag the source's spare area to the destination ---\n");
    print("     (a stray non-0xFF byte here would make a good block look factory-bad)\n");
+   hw_power_up();
 
    const uint32_t destination = hw_scratch_page(1);
    uint8_t marker = 0x00;
@@ -104,6 +106,7 @@ static void test_a_copy_does_not_carry_the_spare_area(void)
 static void test_copying_a_run_of_pages(void)
 {
    print("\n--- 2c: a run of pages, including an erased one ---\n");
+   hw_power_up();
    const uint32_t source = hw_scratch_page(0), destination = hw_scratch_page(1);
    const uint32_t pages_per_block = nandlog_chip_geometry()->pages_per_block;
    const uint32_t run = (pages_per_block < 8) ? pages_per_block : 8;
@@ -146,6 +149,7 @@ static void test_copying_a_run_of_pages(void)
 static void test_copy_timing(void)
 {
    print("\n--- 2d: what the internal copy costs against a read and a write ---\n");
+   hw_power_up();
    const uint32_t source = hw_scratch_page(0), destination = hw_scratch_page(2);
    const uint32_t rounds = 8;
 
@@ -189,6 +193,7 @@ static void test_copy_timing(void)
 
 static void check_previous_run_survived(void)
 {
+   hw_power_up();
    // Run before anything is erased. On a first run the destination is erased or holds something else, which
    // is not a failure; on a second run after a power cycle it must still hold what the first run copied
    const uint32_t destination = hw_scratch_page(1);
@@ -211,6 +216,7 @@ int main(void)
          am_hal_delay_us(1000000);
    }
    system_enable_interrupts(true);
+   hw_power_up();                   // every test below calls nandlog_chip_* directly
 
    print("\n============================================================\n");
    print("nandlog on-device test 2: chip-internal page copy\n");
@@ -226,6 +232,7 @@ int main(void)
    test_copying_a_run_of_pages();
    test_copy_timing();
 
+   hw_power_down();
    HW_REPORT("TEST 2: INTERNAL PAGE COPY");
    print("\nIf 2a failed, set NANDLOG_CHIP_PAGE_COPY to 0 in nandlog_conf.h before deploying.\n"
          "If only 2b failed, the copy works but carries the spare area -- tell me, because the\n"
