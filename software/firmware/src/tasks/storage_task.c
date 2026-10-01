@@ -6,15 +6,23 @@
 #include "imu.h"
 #include "logging.h"
 #include "nandlog.h"
+#include "ranging.h"
 #include "scheduler.h"
 #include "rtc.h"
 #include "storage_records.h"
 #include "system.h"
+#include "timers.h"
 
 
 // Storage Task and Notification Types ---------------------------------------------------------------------------------
 
 #define MAX_NUM_DATA_ITEMS      STORAGE_QUEUE_MAX_NUM_ITEMS
+
+#ifndef _FW_DIRTY
+#define _FW_DIRTY               0
+#endif
+
+_Static_assert(STORAGE_DIAGNOSTIC_NUM_STACKS == (WATCHDOG_NUM_TASKS + 1), "a diagnostics record reports every watchdog task's stack and then the timer service's");
 
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
 typedef struct imu_data_t { uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length; } imu_data_t;
@@ -25,6 +33,7 @@ typedef struct ble_data_t { uint8_t data[1 + MAX_NUM_RANGING_DEVICES]; uint32_t 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static volatile bool shutdown_requested;
+static volatile uint16_t records_dropped;
 static uint32_t previous_imu_timestamp;
 static uint8_t ucQueueStorage[STORAGE_QUEUE_MAX_NUM_ITEMS * sizeof(storage_item_t)];
 static StaticQueue_t xQueueBuffer;
@@ -44,8 +53,43 @@ static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 static bool enqueue_storage_item(const storage_item_t *item)
 {
    // A record produced before the queue exists is discarded rather than handed to FreeRTOS as a null handle
-   return storage_queue && (xQueueSendToBack(storage_queue, item, 0) == pdPASS);
+   if (!storage_queue)
+      return false;
+   if (xQueueSendToBack(storage_queue, item, 0) == pdPASS)
+      return true;
+
+   // Anything else lost here would leave a gap in the log with nothing to say why
+   if (records_dropped < UINT16_MAX)
+      ++records_dropped;
+   return false;
 }
+
+#ifndef _TEST_NO_STORAGE
+
+static uint16_t saturate_u16(uint32_t value)
+{
+   return (value > UINT16_MAX) ? UINT16_MAX : (uint16_t)value;
+}
+
+static uint32_t firmware_revision_code(void)
+{
+   // The build stamps the leading eight hex digits of its git commit, which fill a 32-bit word exactly
+   static const char revision[] = STRINGIZE_VAL(_FW_REVISION);
+   uint32_t code = 0;
+   for (const char *digit = revision; *digit; ++digit)
+   {
+      const char c = *digit;
+      const uint32_t nibble = ((c >= '0') && (c <= '9')) ? (uint32_t)(c - '0') :
+                              ((c >= 'a') && (c <= 'f')) ? (uint32_t)(c - 'a' + 10) :
+                              ((c >= 'A') && (c <= 'F')) ? (uint32_t)(c - 'A' + 10) : 16u;
+      if (nibble > 15u)
+         return 0;
+      code = (code << 4) | nibble;
+   }
+   return code;
+}
+
+#endif  // #ifndef _TEST_NO_STORAGE
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
@@ -311,6 +355,34 @@ void StorageTask(void *params)
                   diagnostics.wsf_pool_capacity[pool] = buffers.capacity[pool];
                }
                diagnostics.master_cycle_failures = scheduler_get_master_cycle_failures();
+               diagnostics.firmware_revision = firmware_revision_code();
+               diagnostics.status_flags = (battery_monitor_tempco_available() ? STORAGE_DIAGNOSTIC_FLAG_TEMPCO_AVAILABLE : 0) |
+                                          (battery_monitor_tempco_applied() ? STORAGE_DIAGNOSTIC_FLAG_TEMPCO_APPLIED : 0) |
+                                          (_FW_DIRTY ? STORAGE_DIAGNOSTIC_FLAG_FIRMWARE_MODIFIED : 0);
+               diagnostics.temperature_c = battery_monitor_get_temperature_c();
+
+               // Radio health, since boot
+               ranging_radio_stats_t radio;
+               ranging_radio_get_stats(&radio);
+               diagnostics.radio_rx_ok = radio.rx_ok;
+               diagnostics.radio_rx_failed = radio.rx_failed;
+               diagnostics.radio_tx_late = saturate_u16(radio.tx_failed);
+               diagnostics.radio_rx_arm_late = saturate_u16(radio.rx_arm_failed);
+               diagnostics.radio_isr_over_budget = saturate_u16(radio.isr_over_count);
+               diagnostics.radio_isr_warm_max_us = saturate_u16(radio.isr_warm_max_us);
+               diagnostics.radio_irq_stuck = saturate_u16(ranging_radio_get_isr_overrun_count());
+               diagnostics.radio_wake_max_us = saturate_u16(radio.wake_max_us);
+               diagnostics.radio_wake_failures = saturate_u16(radio.wake_failed);
+
+               // Silent losses, stack headroom, and recoveries
+               diagnostics.storage_records_dropped = records_dropped;
+               for (uint32_t task = 0; task < WATCHDOG_NUM_TASKS; ++task)
+                  diagnostics.stack_free_words[task] = saturate_u16(system_get_task_stack_free_words((watchdog_task_t)task));
+               const TaskHandle_t timer_service = xTimerGetTimerDaemonTaskHandle();
+               diagnostics.stack_free_words[WATCHDOG_NUM_TASKS] = timer_service ? saturate_u16(uxTaskGetStackHighWaterMark(timer_service)) : STORAGE_DIAGNOSTIC_STACK_UNMONITORED;
+               const uint32_t ble_resets = bluetooth_get_reset_count();
+               diagnostics.ble_resets = (ble_resets > UINT8_MAX) ? UINT8_MAX : (uint8_t)ble_resets;
+               diagnostics.nand_bad_blocks = saturate_u16(nandlog_bad_block_count());
                nandlog_store_record(STORAGE_TYPE_DIAGNOSTICS, item.timestamp, &diagnostics, sizeof(diagnostics));
                break;
             }

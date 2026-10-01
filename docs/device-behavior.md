@@ -92,7 +92,7 @@ Beyond distances, a badge logs a few things that are useful when interpreting a 
 | **Accelerometer** | On motion | Finer-grained activity |
 | **Restarts** | On every boot | Shows every interruption and its cause |
 | **Timekeeping** | Every 5 minutes | Lets clock drift be measured and corrected |
-| **Diagnostics** | Every 5 minutes | Internal health counters |
+| **Diagnostics** | Every 5 minutes | Internal health counters, firmware build, chip temperature |
 
 The 5-minute housekeeping records are why a log is never completely empty, even for a badge that spent
 a day alone in a drawer. A stretch of log containing only housekeeping means the badge was running but

@@ -13,8 +13,9 @@
 //      byte, the destination would then look factory-bad and a later scan would retire a perfectly good
 //      block. 2b catches this, and it is the subtle one.
 //
-// WHAT TO REPORT BACK: the PASS/FAIL line and the timing table. If you can, power-cycle and run it again;
-// it checks the previous run's copy on startup before erasing anything.
+// WHAT TO REPORT BACK: the PASS/FAIL line and the timing table. Then power-cycle and run it again. RE-FLASHING
+// BETWEEN THE TWO RUNS IS FINE: flashing rewrites the MCU, not the NAND, and the check below runs before
+// anything on the part is erased.
 
 #include <string.h>
 #include "nandlog_hw_test.h"
@@ -201,7 +202,8 @@ static void check_previous_run_survived(void)
       print("\nPREVIOUS RUN: the page copied before the last power cycle is still correct [PASSED]\n");
    else
       print("\nPREVIOUS RUN: nothing to check (first run, or the last run did not get that far)\n"
-            "              Power-cycle and run this test again to check that a copy survives.\n");
+            "              Power-cycle, then re-flash and run again -- flashing rewrites the MCU, not\n"
+            "              the NAND, and this check runs before anything on the part is erased.\n");
 }
 
 
@@ -237,7 +239,8 @@ int main(void)
    print("\nIf 2a failed, set NANDLOG_CHIP_PAGE_COPY to 0 in nandlog_conf.h before deploying.\n"
          "If only 2b failed, the copy works but carries the spare area -- tell me, because the\n"
          "driver then has to clear the destination's marker byte after every relocation.\n");
-   print("\nNow power-cycle the board and run this same test again to check that a copied page survives.\n");
+   print("\nNow power-cycle the board, then re-flash and run this test again. Re-flashing does not\n"
+         "disturb the NAND, and the check at the top runs before anything is erased.\n");
 
    while (true)
       am_hal_delay_us(1000000);

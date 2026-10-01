@@ -105,8 +105,9 @@ Four parts, and it asks to be run twice with a power cycle in between.
 - **2c** a run of eight pages including an erased one, which catches a stale cache register.
 - **2d** what it costs against a read and a write back, per page and per block.
 
-**Report back:** the PASS/FAIL line and 2d's timing table. Then **power-cycle and run it again** — it checks
-the previous run's copied page on startup, before erasing anything.
+**Report back:** the PASS/FAIL line and 2d's timing table. Then **power-cycle the board, re-flash, and run it
+again.** Re-flashing between runs is fine and expected: it rewrites the MCU, not the NAND, and the check runs
+before anything on the part is erased.
 
 **What the result means.** If 2a fails, set `NANDLOG_CHIP_PAGE_COPY` to 0 in `nandlog_conf.h` before
 deploying; the log falls back to reading and writing each page and everything else still works. If only 2b
@@ -151,6 +152,7 @@ every boot, and that scan is what it costs. Weigh it against the 80 blocks — 2
 us reclaim.
 
 **Report back: every line from step 0 onwards.** Most of this test has no pass/fail verdict; the values are
-the answer. Then **power-cycle and run it again** — the marker block is deliberately left programmed at the
-end of a run so the next boot's step 0 has something to find, and a marker that does not survive a power
-cycle is no marker at all.
+the answer. Then **power-cycle, re-flash, and run it again** — the marker block is deliberately left
+programmed at the end of the first run so the next boot's step 0 has something to find. Once step 0 has found
+it, the run erases it, so the array is left as it was; a marker left behind permanently would show up as a
+factory-bad block in every later survey.

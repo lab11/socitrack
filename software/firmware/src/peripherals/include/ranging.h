@@ -35,6 +35,7 @@ typedef struct
    uint32_t isr_warm_count; // radio interrupts behind isr_warm_max_us
    uint8_t network_size;    // devices in the schedule, without which the receive ratio cannot be read
    uint32_t wake_skipped;   // wake-ups that found the radio already awake and did nothing
+   uint32_t wake_failed;    // wake-ups the radio never answered, so it had to be reset
    bool cycle_counter_ok;   // false means isr_max_us is not measurable on this build
 } ranging_radio_stats_t;
 

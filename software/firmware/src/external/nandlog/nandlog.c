@@ -23,11 +23,21 @@ static uint32_t retransmit_seqs[NANDLOG_MAX_RETRANSMIT_PAGES], retransmit_num_pa
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index;
 static volatile bool is_reading, in_session, disabled, is_initialized = false, log_region_full, epoch_is_current = true;
 static volatile uint32_t page_first_timestamp = NANDLOG_NO_TIMESTAMP, page_last_timestamp = NANDLOG_NO_TIMESTAMP;
-static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_ring_page;
+static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_ring_page, bad_block_count;
 static volatile uint32_t selected_epoch, selected_start_page, selected_end_page, selected_ring_page;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static void count_bad_blocks(void)
+{
+   // Retired blocks across everything the log manages, factory-marked and grown alike
+   uint32_t count = 0;
+   for (uint32_t page = 0; page < log_region_end_page; page += pages_per_block)
+      if (nandlog_chip_is_bad_block(page))
+         ++count;
+   bad_block_count = count;
+}
 
 static inline uint32_t view_epoch(void)      { return epoch_is_current ? log_epoch : selected_epoch; }
 static inline uint32_t view_start_page(void) { return epoch_is_current ? starting_page : selected_start_page; }
@@ -123,7 +133,10 @@ static void erase_page_range(uint32_t starting_page, uint32_t ending_page)
          if (nandlog_chip_is_bad_block(page))
             continue;
          if (!nandlog_chip_erase_block(page))
+         {
             nandlog_chip_mark_bad_block(page);
+            count_bad_blocks();
+         }
       }
 
       // A range that wraps resumes at the first log page
@@ -228,6 +241,7 @@ static void write_page(uint16_t data_length)
          erase_page_range(next_block, next_block);
          transfer_block(original_page & page_block_mask, next_block, current_page & (pages_per_block - 1));
          nandlog_chip_mark_bad_block(current_page);
+         count_bad_blocks();
          current_page = next_block | (current_page & (pages_per_block - 1));
       }
    }
@@ -505,6 +519,7 @@ static bool nandlog_init_locked(void)
    {
       // Configure the chip and load or build its bad-block table
       nandlog_chip_init();
+      count_bad_blocks();
 
       // Recover the current epoch from the metadata ring, then locate the write head within it
       uint32_t metadata_page = 0;
@@ -1366,6 +1381,11 @@ uint32_t nandlog_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, nandl
    return result;
 }
 
+uint32_t nandlog_bad_block_count(void)
+{
+   return bad_block_count;
+}
+
 void nandlog_reset_bad_block_table(void)
 {
    nandlog_port_lock();
@@ -1404,6 +1424,7 @@ uint32_t nandlog_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)se
 uint32_t nandlog_retransmit_count(void) { return 0; }
 uint32_t nandlog_retransmit_total_bytes(void) { return 0; }
 uint32_t nandlog_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, nandlog_page_header_t *header) { (void)index; (void)header; return 0; }
+uint32_t nandlog_bad_block_count(void) { return 0; }
 void nandlog_reset_bad_block_table(void) {}
 
 #endif  // #if NANDLOG_HAS_HARDWARE

@@ -241,11 +241,13 @@ static void test_a_factory_marked_block_is_found_in_the_spare_area(void)
    CHECK(nandlog_init(), "init failed with a factory-marked block present");
    CHECK(nandlog_chip_is_bad_block(marked_page), "the factory-marked block was not retired at first boot");
    CHECK(!nandlog_chip_is_bad_block(marked_page + pages_per_block), "a block with no marker was retired anyway");
+   CHECK(nandlog_bad_block_count() == 1, "the retired-block count is %u, expected 1", nandlog_bad_block_count());
 
    // And it still holds after a reboot, which is the persisted table doing its job
    nandlog_deinit();
    CHECK(nandlog_init(), "re-init failed");
    CHECK(nandlog_chip_is_bad_block(marked_page), "the factory-marked block was forgotten across a reboot");
+   CHECK(nandlog_bad_block_count() == 1, "the retired-block count did not survive a reboot (%u)", nandlog_bad_block_count());
    nandlog_deinit();
 }
 
@@ -270,6 +272,7 @@ static void test_bad_block_is_skipped(void)
    const uint32_t pages = read_all_pages();
    CHECK(pages > 0, "no pages readable with two dead blocks");
    CHECK(nandlog_chip_is_bad_block(9 * 64) || nandlog_chip_is_bad_block(10 * 64), "neither dead block was retired");
+   CHECK(nandlog_bad_block_count() > 0, "a block was retired at runtime but the count still reads zero");
    nandlog_deinit();
 }
 

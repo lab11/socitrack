@@ -63,6 +63,7 @@ void system_record_diagnostic(reset_diagnostic_t diagnostic);
 void system_watchdog_enable(void);
 void system_watchdog_disable(void);
 void system_watchdog_register(watchdog_task_t task);
+uint32_t system_get_task_stack_free_words(watchdog_task_t task);
 void system_watchdog_pet(watchdog_task_t task);
 void system_enable_interrupts(bool enabled);
 void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timestamp);

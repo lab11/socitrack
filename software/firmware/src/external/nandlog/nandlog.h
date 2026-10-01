@@ -22,7 +22,7 @@
 // added in a minor release. Note that this versions the LIBRARY; NANDLOG_FORMAT_VERSION below versions the
 // RECORD GRAMMAR a particular build writes, and the two move independently
 #define NANDLOG_VERSION_MAJOR                       1
-#define NANDLOG_VERSION_MINOR                       1
+#define NANDLOG_VERSION_MINOR                       2
 
 #define NANDLOG_VERSION_AT_LEAST(major, minor)      ((NANDLOG_VERSION_MAJOR > (major)) || \
                                                     ((NANDLOG_VERSION_MAJOR == (major)) && (NANDLOG_VERSION_MINOR >= (minor))))
@@ -230,6 +230,9 @@ uint32_t nandlog_retransmit_add(const uint32_t *seqs, uint32_t count);
 uint32_t nandlog_retransmit_count(void);
 uint32_t nandlog_retransmit_total_bytes(void);
 uint32_t nandlog_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, nandlog_page_header_t *header);
+
+// Retired blocks, factory-marked and grown, across the metadata ring and log region. Answers from RAM
+uint32_t nandlog_bad_block_count(void);
 
 // RECOVERY UTILITY. Discard the persisted bad-block table so it is rebuilt from the factory markers on the
 // next boot. What this can achieve depends on the part: one that remaps in hardware cannot forget

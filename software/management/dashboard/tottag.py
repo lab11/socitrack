@@ -49,6 +49,7 @@ MAX_SEQS_PER_USB_WRITE = 255
 MAX_PAGE_ATTEMPTS = 6
 MAX_REPAIR_ROUNDS = 40
 DEVICE_RETRANSMIT_CAPACITY = 256
+LOW_STACK_WARNING_WORDS = 64
 TOTTAG_ADVERTISED_NAME_PREFIX = 'TotTag'
 
 USB_VERSION_COMMAND = 0x20
@@ -220,6 +221,12 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
          if len(notable) > 10:
             print(f"   ... and {len(notable) - 10} more")
 
+   # Say which firmware wrote the log, which matters whenever builds are being compared
+   if tottag_format.is_verbose():
+      builds = sorted({d['diag']['firmware'] + (' (modified)' if d['diag']['firmware_modified'] else '') for d in log_data if 'diag' in d})
+      if builds:
+         print(f"INFO: log from {uid_to_labels[from_uid]} was written by firmware {', '.join(builds)}")
+
    # Report near-misses recorded by the log when something is actually non-zero
    if tottag_format.is_verbose():
       per_boot, pending = [], None
@@ -263,6 +270,31 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
                      tight.add(f"pool {j} peaked {peak[j]}/{size[j]}")
             if tight:
                notable.append('BLE buffer pools ran near empty: ' + ', '.join(sorted(tight)))
+
+         dropped = sum(d['records_dropped'] for d in per_boot)
+         if dropped:
+            notable.append(f"{dropped} record(s) discarded because the storage queue was full -- data is missing "
+                           f"from the log with no other trace")
+         radio = {label: sum(d[key] for d in per_boot) for key, label in (
+            ('radio_wake_failures', 'wake-up(s) needing a radio reset'), ('radio_irq_stuck', 'stuck radio interrupt(s)'),
+            ('radio_rx_arm_late', 'round(s) aborted by a late receive'), ('radio_tx_late', 'late transmission(s)'))}
+         if any(radio.values()):
+            notable.append('UWB radio trouble: ' + ', '.join(f"{count} {label}" for label, count in radio.items() if count))
+         resets = sum(d['ble_resets'] for d in per_boot)
+         if resets:
+            notable.append(f"{resets} Bluetooth controller restart(s) by the self-check")
+         low = {}
+         for d in per_boot:
+            for task, words in d['stack_free_words'].items():
+               if words is not None and words < LOW_STACK_WARNING_WORDS:
+                  low[task] = min(words, low.get(task, words))
+         if low:
+            notable.append('stack nearly exhausted (free words): ' + ', '.join(f"{t} {w}" for t, w in sorted(low.items())))
+         # Not a since-boot counter, so every record counts rather than the last of each boot
+         bad_blocks = [d['diag']['nand_bad_blocks'] for d in log_data if 'diag' in d]
+         grown = max(bad_blocks) - min(bad_blocks)
+         if grown:
+            notable.append(f"{grown} flash block(s) retired during this log")
          if notable:
             print(f"INFO: log from {uid_to_labels[from_uid]} reports near-misses:")
             for line in notable:
