@@ -12,6 +12,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static volatile uint32_t cable_connected;
+static bool booted_on_usb;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -30,11 +31,15 @@ static void usb_cable_connected_deferred(void *unused, uint32_t unused_value)
 
 static void usb_cable_callback(void *pin_number)
 {
-   // Only care about a connection change when a USB cable is plugged in
-   if (!cable_connected)
+   uint32_t detected = 0;
+   am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &detected);
+   if (cable_connected)
    {
-      uint32_t detected = 0;
-      am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &detected);
+      if (booted_on_usb && !detected)
+         system_reset(true);
+   }
+   else
+   {
       cable_connected = detected;
       if (detected)
       {
@@ -70,6 +75,7 @@ void usb_init(void)
    uint32_t pin_number = PIN_USB_DETECT, detected = 0;
    am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &detected);
    cable_connected = detected;
+   booted_on_usb = detected;
    cable_detect_config.GP.cfg_b.eIntDir = cable_connected ? AM_HAL_GPIO_PIN_INTDIR_HI2LO : AM_HAL_GPIO_PIN_INTDIR_LO2HI;
    configASSERT0(am_hal_gpio_pinconfig(PIN_USB_DETECT, cable_detect_config));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_USB_DETECT, usb_cable_callback, (void*)pin_number));
