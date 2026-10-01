@@ -434,7 +434,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
 
    log_data = defaultdict(dict)
    report = {'total_pages': total_pages, 'pages_read': 0, 'holes': [], 'crc_failures': [],
-             'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'last_verified': None,
+             'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'first_verified': None, 'verified_seqs': set(),
              'time_discontinuities': [], 'details': details, 'truncated': False}
    previous_last = None
 
@@ -488,9 +488,11 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
          report[failure].append((position - 1, seq))
          continue
 
-      # The last page whose payload verified is the only trustworthy anchor for naming the pages around
-      # it: a page that failed CRC carries its sequence number in the same damaged bytes as its payload.
-      report['last_verified'] = (position - 1, seq)
+      # Only a page whose payload verified can be believed about its own sequence number: one that failed CRC
+      # carries that number in the same damaged bytes as the payload.
+      if report['first_verified'] is None:
+         report['first_verified'] = (position - 1, seq)
+      report['verified_seqs'].add(seq)
 
       decoded, rejected = _parse_records(payload, experiment_start_time, log_data, uid_to_labels,
                                         resynchronize=False, framed=framed)
@@ -508,6 +510,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
                                          resynchronize=False, framed=framed)
       report['pages_read'] += 1
       report['repaired'].append((None, seq))
+      report['verified_seqs'].add(seq)
       if report['last_seq'] is None or seq > report['last_seq']:
          report['last_seq'] = seq
       if rejected:
@@ -557,6 +560,23 @@ def extract_pages(data):
    return {seq: frame[V2_PAGE_HEADER.size:] for seq, frame in extract_page_frames(data).items()}
 
 
+def _expected_seqs(first_verified, held, total_pages):
+   """The sequence numbers a stream declaring ``total_pages`` should carry.
+
+   Sequence numbers run contiguously within an epoch, so the whole set follows from one page whose number
+   can be believed and where it sat. ``first_verified`` is that page as ``(position, seq)``; counting back
+   from its POSITION rather than starting at its number is what still finds a missing first page.
+
+   A damaged frame ahead of it can shift that position either way -- a junk header inserts a phantom page,
+   a bad payload length swallows a real one -- so the estimate is clamped by the pages actually ``held``:
+   the range must reach down to the lowest of them and up to the highest.
+   """
+   first_position, first_seq = first_verified
+   base = first_seq - first_position
+   base = max(min(base, min(held)), max(held) - total_pages + 1)
+   return range(max(base, 0), base + total_pages)
+
+
 def merge_repairs(data, repairs):
    """Splice repaired pages into a stream, returning one that holds what was recovered.
 
@@ -564,101 +584,85 @@ def merge_repairs(data, repairs):
    still lacks it means the recovery lives only in whatever the tool happened to display, and re-reading
    the saved log reports holes that were already fixed.  The merged stream is the artefact of record.
 
-   A frame is replaced only where the original is genuinely bad -- absent payload, or a CRC that does not
-   check -- so a page that arrived intact keeps its original bytes.  Repairs for sequence numbers the
-   stream never carried are appended in order, which is how a transfer truncated partway through gets its
-   tail back.  With nothing to merge the input is returned unchanged, so a clean download stays
-   byte-for-byte what the tag sent.
+   The merged stream is rebuilt from the pages that can be believed, in sequence order: every page that
+   arrived intact keeps its original bytes, a repair fills each page that did not, and a page the device
+   reported unreadable keeps its empty frame if nothing has replaced it, so a re-read still names it.  A
+   frame whose CRC failed is dropped -- its payload is unusable and its header, sequence number included,
+   sits in the same untrustworthy bytes -- which is also what removes a phantom page a damaged transfer
+   wrote into the stream.  With nothing new to merge the input is returned unchanged, so a clean download
+   stays byte-for-byte what the tag sent.
 
-   The only bytes that do not survive a merge are any the device sent past its own declared page total --
-   it samples that total before reading the last page, so a few trailing bytes are possible, and no reader
-   treats them as a page.
+   The stream header keeps the page total the DEVICE declared.  It is the only record of how many pages
+   the log should hold, so a merge that still lacks some leaves a file that reads as incomplete and says
+   which pages are missing, rather than one that has quietly shrunk to fit what arrived.
 
    ``repairs`` is ``{seq: frame}`` as returned by :func:`extract_page_frames`.
    """
    if not repairs or len(data) < V2_STREAM_HEADER.size or data[:4] != V2_STREAM_MAGIC:
       return data
-   _magic, _version, details_length, total_pages, _total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
+   _magic, version, details_length, total_pages, total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
    header_length = V2_STREAM_HEADER.size + details_length
 
-   pieces, present, changed = [], set(), False
+   intact, unreadable, first_verified = {}, {}, None
    offset, position = header_length, 0
    while position < total_pages and offset + V2_PAGE_HEADER.size <= len(data):
       start = offset
       seq, _first_ts, _last_ts, payload_length, _record_count, payload_crc = \
          V2_PAGE_HEADER.unpack_from(data, offset)
       offset += V2_PAGE_HEADER.size
-      # A payload running past the end is the transfer stopping mid-page.  Drop the partial frame and let
-      # the tail below supply it, rather than emitting a header with nothing under it.  One claiming more
-      # than a page can hold is damaged outright: stepping by it would desynchronise every page after.
+      # A payload running past the end is the transfer stopping mid-page.  One claiming more than a page
+      # can hold is damaged outright, and stepping by it would desynchronise every page after.
       if payload_length and ((offset + payload_length > len(data)) or (payload_length > V2_MAX_PAYLOAD_BYTES)):
          break
       offset += payload_length
       position += 1
-      present.add(seq)
+      if not payload_length:
+         unreadable.setdefault(seq, data[start:offset])
+      elif zlib.crc32(data[start + V2_PAGE_HEADER.size:offset]) == payload_crc:
+         intact.setdefault(seq, data[start:offset])
+         if first_verified is None:
+            first_verified = (position - 1, seq)
 
-      intact = payload_length != 0 and \
-         zlib.crc32(data[start + V2_PAGE_HEADER.size:start + V2_PAGE_HEADER.size + payload_length]) == payload_crc
-      if not intact and seq in repairs:
-         pieces.append(repairs[seq])
-         changed = True
-      else:
-         pieces.append(data[start:offset])
-
-   for seq in sorted(seq for seq in repairs if seq not in present):
-      pieces.append(repairs[seq])
-      changed = True
-   if not changed:
+   recovered = {seq: frame for seq, frame in repairs.items() if seq not in intact}
+   if not recovered:
       return data
+   frames = {**intact, **recovered}
 
-   # The stream header describes the stream so it has to be rewritten to describe THIS one
-   merged_pages, merged_payload = 0, 0
-   scan = 0
-   body = b''.join(pieces)
-   while scan + V2_PAGE_HEADER.size <= len(body):
-      _seq, _f, _l, payload_length, _rc, _crc = V2_PAGE_HEADER.unpack_from(body, scan)
-      if payload_length > V2_MAX_PAYLOAD_BYTES or scan + V2_PAGE_HEADER.size + payload_length > len(body):
-         break
-      scan += V2_PAGE_HEADER.size + payload_length
-      merged_pages += 1
-      merged_payload += payload_length
+   # Only an empty frame whose number falls inside the declared range can be the device's own marker; one
+   # outside it is a header read out of damaged bytes.
+   if first_verified is not None:
+      expected = _expected_seqs(first_verified, frames.keys(), total_pages)
+      for seq, frame in unreadable.items():
+         if seq in expected and seq not in frames:
+            frames[seq] = frame
+
+   body = b''.join(frames[seq] for seq in sorted(frames))
+   payload_bytes = len(body) - len(frames) * V2_PAGE_HEADER.size
    header = bytearray(data[:header_length])
-   V2_STREAM_HEADER.pack_into(header, 0, V2_STREAM_MAGIC, _version, details_length, merged_pages, merged_payload)
+   V2_STREAM_HEADER.pack_into(header, 0, V2_STREAM_MAGIC, version, details_length, max(total_pages, len(frames)), max(total_payload, payload_bytes))
    return bytes(header) + body
 
 
 def missing_seqs(report):
    """Sequence numbers worth asking the device to resend.
 
-   Holes and CRC failures only.  A page whose CRC passed arrived intact, so a page that merely stopped
-   decoding early has a record-level problem that a second copy of the same bytes would not fix.
-
-   Pages lost to a truncated transfer are inferred rather than observed: sequence numbers are contiguous
-   within an epoch, so the tail the device never sent runs on from the last one that did arrive.
+   Every page the device declared that is not held intact: holes, CRC failures, and pages a truncated or
+   damaged transfer never delivered at all.  A page whose CRC passed arrived intact, so a page that merely
+   stopped decoding early has a record-level problem that a second copy of the same bytes would not fix.
 
    A transfer in which NO page arrived yields an empty list, because there is no anchor to count from --
    a stream does not necessarily begin at sequence zero, since a wrapped log or a time-bounded download
    starts partway through the epoch.  That case is a failed transfer rather than a partial one, and the
    caller should repeat the whole download instead of naming pages.
    """
-   anchor = report.get('last_verified')
-   if anchor is None:
+   first = report.get('first_verified')
+   if first is None or not report['total_pages']:
       return []
-   anchor_position, anchor_seq = anchor
-
-   def seq_at(position):
-      # Sequence numbers are contiguous within an epoch
-      return anchor_seq + (position - anchor_position)
-
-   # A hole is a page the device deliberately sent empty, so its header arrived intact and can be believed.
-   seqs = {seq for _position, seq in report['holes']}
-   # A CRC failure cannot be: the sequence number sits in the same damaged region as the payload, so
-   # believing it sends the repair loop chasing a page that never existed while the real one goes unasked.
-   seqs |= {seq_at(position) for position, _seq in report['crc_failures']}
-   # Everything past the last page that verified was either damaged in transit or never sent at all.
-   if report['total_pages']:
-      seqs |= set(range(seq_at(anchor_position + 1), seq_at(report['total_pages'])))
-   return sorted(n for n in seqs if n >= 0)
+   # Ask for what the device declared less what is held, rather than naming each bad page by its position:
+   # a phantom page written into the stream by a damaged transfer would otherwise shift every name after it,
+   # sending the repair loop after pages it already holds while the real gaps go unasked for.
+   expected = _expected_seqs(first, report['verified_seqs'], report['total_pages'])
+   return [seq for seq in expected if seq not in report['verified_seqs']]
 
 
 def parse(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
@@ -672,5 +676,5 @@ def parse(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
       return parse_v2(data, experiment_start_time, uid_to_labels, repairs)
    records = parse_v1(data, experiment_start_time, uid_to_labels)
    return records, {'total_pages': None, 'pages_read': None, 'holes': [], 'crc_failures': [],
-                    'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'last_verified': None,
+                    'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'first_verified': None, 'verified_seqs': set(),
                     'time_discontinuities': [], 'details': None, 'truncated': False}

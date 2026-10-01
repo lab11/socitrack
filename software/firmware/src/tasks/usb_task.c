@@ -234,8 +234,17 @@ void UsbCdcTask(void *params)
             }
             case USB_SET_LOG_DL_DATES_COMMAND:
             {
-               tud_cdc_read(&download_start_timestamp, sizeof(download_start_timestamp));
-               tud_cdc_read(&download_end_timestamp, sizeof(download_end_timestamp));
+               uint32_t range[2] = { 0, 0 };
+               if (usb_read_exact(range, sizeof(range)))
+               {
+                  download_start_timestamp = range[0];
+                  download_end_timestamp = range[1];
+               }
+               else
+               {
+                  download_start_timestamp = download_end_timestamp = 0;
+                  print("ERROR: USB download date range truncated...downloading the whole log instead\n");
+               }
                nandlog_retransmit_clear();
                break;
             }
@@ -244,9 +253,11 @@ void UsbCdcTask(void *params)
                // [count][seq0..seqN-1]; a count of zero clears a list left over from an abandoned round
                static uint32_t seqs[NANDLOG_MAX_RETRANSMIT_PAGES];
                uint8_t count = 0;
-               nandlog_retransmit_clear();
-               if ((tud_cdc_read(&count, sizeof(count)) != sizeof(count)) || !count)
+               if (!usb_read_exact(&count, sizeof(count)) || !count)
+               {
+                  nandlog_retransmit_clear();
                   break;
+               }
                if (usb_read_exact(seqs, count * sizeof(uint32_t)))
                   nandlog_retransmit_add(seqs, count);
                else
