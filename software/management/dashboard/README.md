@@ -75,6 +75,57 @@ untouched either way — reconnect and download again.
 
 **The device must be on its charger to download.**
 
+## Recovering logs from tags on pre-nandlog firmware
+
+Firmware older than `cf7249d5` found its log at boot by pattern-matching page markers, and when that search
+failed it wrote a fresh, empty metadata page and carried on. Such a tag reports that it has no log even
+though the log is still on its flash. `legacy_recovery.py` gets it back from a raw dump of the flash.
+
+It handles every firmware from April 2023 up to that commit. The changes in between are recognised from the
+dump itself: the metadata layout, the record timestamps (Unix seconds before March 2024, milliseconds since
+the start after), and the shorter bad-block reserve of Nov-Dec 2024. The report says which of each it found.
+The only builds not covered are the transitional ones from March 1-18, 2024.
+
+**Do this before flashing current firmware: that firmware reformats the flash.**
+
+1. Flash the read-only recovery firmware (`firmware/tests/tools/legacy_log_recovery.c`). It reads every page
+   and never programs or erases anything:
+   ```
+   cd software/firmware/tests
+   make clean log_recovery            # revisions O and P, dumped over USB
+   make clean log_recovery_segger     # any revision, dumped over a J-Link (M and N have no USB)
+   ```
+2. Take the dump and recover the log in one step:
+   ```
+   python3 legacy_recovery.py usb -o OUTDIR     # tag plugged in over USB
+   python3 legacy_recovery.py rtt -o OUTDIR     # J-Link attached; needs JLinkRTTLoggerExe on the PATH
+   ```
+   Reading the whole flash takes a few minutes. Over RTT the tag dumps once per boot, so reset it before
+   trying again.
+3. Keep the `.ttrd` dump. It is the complete contents of the flash, and it can be analysed again later with
+   `python3 legacy_recovery.py recover DUMP.ttrd -o OUTDIR` after the tag has been wiped.
+
+The outputs are named the way a download is named. `<label>_<start>.pkl` is loaded like any other log.
+`<label>_<start>_recovery.txt` lists what was on the flash and which pages were used, and gives the reason
+for every break in the log. The log is split wherever two pages cannot be shown to have been written one
+after the other: a missing or damaged page, or a partial page written at shutdown. Each piece is decoded
+on its own, so a break costs at most the one record that straddled it, and a record is never assembled
+from unrelated bytes.
+
+Options for the harder cases:
+- `--start-time UNIX` gives the start time when no metadata page survived. Without it, record times are
+  seconds since the deployment started.
+- `--meta-page N` recovers the deployment described by a particular metadata page.
+- `--include-damaged` also decodes pages that failed ECC. Each one is decoded on its own and marked in the
+  report, because its bytes are only probably right.
+- `--timestamps relative|absolute` and `--reserved-blocks N` override the detected timestamp encoding and
+  reserve size, if the report shows that a detection was wrong.
+
+`python3 test_legacy_recovery.py` checks all of this against simulated flash images laid out exactly as the
+old firmware wrote them. Once `make` has been run in `firmware/tests/tools/legacy_log_recovery_sim`, the
+test also runs the recovery firmware's own code against the nandlog flash simulator and fails if that code
+changes a single byte of the flash.
+
 ## Processing
 
 ### Statistics

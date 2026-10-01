@@ -141,6 +141,7 @@ V2_STREAM_HEADER = struct.Struct('<4sHHII')
 
 # v2 per-page header: seq, first timestamp, last timestamp, payload length, record count, payload CRC
 V2_PAGE_HEADER = struct.Struct('<IIIHHI')
+V2_MAX_PAYLOAD_BYTES = 4096
 NO_TIMESTAMP = 0xFFFFFFFF
 
 # Format version 2 additionally prefixes every record with its own data length, so a payload can be walked
@@ -432,7 +433,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
 
    log_data = defaultdict(dict)
    report = {'total_pages': total_pages, 'pages_read': 0, 'holes': [], 'crc_failures': [],
-             'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None,
+             'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'last_verified': None,
              'time_discontinuities': [], 'details': details, 'truncated': False}
    previous_last = None
 
@@ -485,6 +486,10 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
       if failure:
          report[failure].append((position - 1, seq))
          continue
+
+      # The last page whose payload verified is the only trustworthy anchor for naming the pages around
+      # it: a page that failed CRC carries its sequence number in the same damaged bytes as its payload.
+      report['last_verified'] = (position - 1, seq)
 
       decoded, rejected = _parse_records(payload, experiment_start_time, log_data, uid_to_labels,
                                         resynchronize=False, framed=framed)
@@ -575,7 +580,7 @@ def merge_repairs(data, repairs):
    _magic, _version, details_length, total_pages, _total_payload = V2_STREAM_HEADER.unpack_from(data, 0)
    header_length = V2_STREAM_HEADER.size + details_length
 
-   pieces, present, changed = [data[:header_length]], set(), False
+   pieces, present, changed = [], set(), False
    offset, position = header_length, 0
    while position < total_pages and offset + V2_PAGE_HEADER.size <= len(data):
       start = offset
@@ -583,8 +588,9 @@ def merge_repairs(data, repairs):
          V2_PAGE_HEADER.unpack_from(data, offset)
       offset += V2_PAGE_HEADER.size
       # A payload running past the end is the transfer stopping mid-page.  Drop the partial frame and let
-      # the tail below supply it, rather than emitting a header with nothing under it.
-      if payload_length and offset + payload_length > len(data):
+      # the tail below supply it, rather than emitting a header with nothing under it.  One claiming more
+      # than a page can hold is damaged outright: stepping by it would desynchronise every page after.
+      if payload_length and ((offset + payload_length > len(data)) or (payload_length > V2_MAX_PAYLOAD_BYTES)):
          break
       offset += payload_length
       position += 1
@@ -601,7 +607,23 @@ def merge_repairs(data, repairs):
    for seq in sorted(seq for seq in repairs if seq not in present):
       pieces.append(repairs[seq])
       changed = True
-   return b''.join(pieces) if changed else data
+   if not changed:
+      return data
+
+   # The stream header describes the stream so it has to be rewritten to describe THIS one
+   merged_pages, merged_payload = 0, 0
+   scan = 0
+   body = b''.join(pieces)
+   while scan + V2_PAGE_HEADER.size <= len(body):
+      _seq, _f, _l, payload_length, _rc, _crc = V2_PAGE_HEADER.unpack_from(body, scan)
+      if payload_length > V2_MAX_PAYLOAD_BYTES or scan + V2_PAGE_HEADER.size + payload_length > len(body):
+         break
+      scan += V2_PAGE_HEADER.size + payload_length
+      merged_pages += 1
+      merged_payload += payload_length
+   header = bytearray(data[:header_length])
+   V2_STREAM_HEADER.pack_into(header, 0, V2_STREAM_MAGIC, _version, details_length, merged_pages, merged_payload)
+   return bytes(header) + body
 
 
 def missing_seqs(report):
@@ -618,12 +640,24 @@ def missing_seqs(report):
    starts partway through the epoch.  That case is a failed transfer rather than a partial one, and the
    caller should repeat the whole download instead of naming pages.
    """
+   anchor = report.get('last_verified')
+   if anchor is None:
+      return []
+   anchor_position, anchor_seq = anchor
+
+   def seq_at(position):
+      # Sequence numbers are contiguous within an epoch
+      return anchor_seq + (position - anchor_position)
+
+   # A hole is a page the device deliberately sent empty, so its header arrived intact and can be believed.
    seqs = {seq for _position, seq in report['holes']}
-   seqs |= {seq for _position, seq in report['crc_failures']}
-   if report['truncated'] and report['last_seq'] is not None:
-      shortfall = report['total_pages'] - report['pages_read']
-      seqs |= set(range(report['last_seq'] + 1, report['last_seq'] + 1 + max(0, shortfall)))
-   return sorted(seqs)
+   # A CRC failure cannot be: the sequence number sits in the same damaged region as the payload, so
+   # believing it sends the repair loop chasing a page that never existed while the real one goes unasked.
+   seqs |= {seq_at(position) for position, _seq in report['crc_failures']}
+   # Everything past the last page that verified was either damaged in transit or never sent at all.
+   if report['total_pages']:
+      seqs |= set(range(seq_at(anchor_position + 1), seq_at(report['total_pages'])))
+   return sorted(n for n in seqs if n >= 0)
 
 
 def parse(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
@@ -637,5 +671,5 @@ def parse(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
       return parse_v2(data, experiment_start_time, uid_to_labels, repairs)
    records = parse_v1(data, experiment_start_time, uid_to_labels)
    return records, {'total_pages': None, 'pages_read': None, 'holes': [], 'crc_failures': [],
-                    'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None,
+                    'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'last_verified': None,
                     'time_discontinuities': [], 'details': None, 'truncated': False}

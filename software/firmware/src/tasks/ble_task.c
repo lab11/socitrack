@@ -17,7 +17,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 #define WSF_BUF_POOLS 5
-static uint32_t g_pui32BufMem[(WSF_BUF_POOLS*16 + 16*12 + 32*12 + 64*16 + 280*24 + 424*8) / sizeof(uint32_t)];
+static uint32_t g_pui32BufMem[(WSF_BUF_POOLS*16 + 16*12 + 32*16 + 64*16 + 280*24 + 424*8) / sizeof(uint32_t)];
 static wsfBufPoolDesc_t g_psPoolDescriptors[WSF_BUF_POOLS];
 
 
@@ -73,7 +73,7 @@ void BLETask(void *params)
 {
    // Initialize static variables
    g_psPoolDescriptors[0] = (wsfBufPoolDesc_t){16, 12};
-   g_psPoolDescriptors[1] = (wsfBufPoolDesc_t){32, 12};
+   g_psPoolDescriptors[1] = (wsfBufPoolDesc_t){32, 16};
    g_psPoolDescriptors[2] = (wsfBufPoolDesc_t){64, 16};
    g_psPoolDescriptors[3] = (wsfBufPoolDesc_t){280, 24};
    g_psPoolDescriptors[4] = (wsfBufPoolDesc_t){424, 8};

@@ -213,7 +213,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define SCHEDULE_NUM_TOTAL_BROADCASTS               5
 #define SCHEDULE_NUM_MASTER_BROADCASTS              2
-#define SCHEDULE_RESEND_INTERVAL_US                 1000
+#define SCHEDULE_RESEND_INTERVAL_US                 800
 #define SCHEDULE_BROADCAST_PERIOD_US                (SCHEDULE_NUM_TOTAL_BROADCASTS * SCHEDULE_RESEND_INTERVAL_US)
 
 #define RANGING_NUM_PACKETS_PER_DEVICE              3
@@ -221,10 +221,10 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define RANGING_NUM_RANGE_ATTEMPTS                  NUM_XMIT_ANTENNAS
 #define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 100)
 
-#define RANGE_STATUS_BROADCAST_PERIOD_US            1000
+#define RANGE_STATUS_BROADCAST_PERIOD_US            600
 #define RANGE_STATUS_TIMEOUT_US                     (RECEIVE_EARLY_START_US + 100)
 
-#define SUBSCRIPTION_BROADCAST_PERIOD_US            2000
+#define SUBSCRIPTION_BROADCAST_PERIOD_US            1500
 #define SUBSCRIPTION_TIMEOUT_US                     1000
 #define SUBSCRIPTION_RELISTEN_MARGIN_US             300
 
@@ -233,6 +233,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 _Static_assert((1000000u % SCHEDULING_INTERVAL_US) == 0, "the round period must divide one second exactly, or every round-counted timeout is wrong");
 _Static_assert(RANGING_ROUNDS_PER_SECOND >= 1, "the round period must be at most one second");
+_Static_assert((SUBSCRIPTION_TIMEOUT_US + 250 + RECEIVE_EARLY_START_US) < SUBSCRIPTION_BROADCAST_PERIOD_US, "a subscription request must finish before the ranging phase opens its receiver");
 _Static_assert(RANGE_STATUS_TIMEOUT_US < RANGE_STATUS_BROADCAST_PERIOD_US, "a status listening window must close before the next slot on the grid opens");
 _Static_assert(RANGING_TIMEOUT_US < RANGING_BROADCAST_INTERVAL_US, "a ranging listening window must close before the next slot on the grid opens");
 

@@ -288,12 +288,12 @@ SRC += subscription_phase.c
 SRC += time_aligned_task.c
 SRC += usb_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -357,6 +357,15 @@ imu: $(CONFIG) $(CONFIG)/test_imu.o $(CONFIG)/$$(TARGET).bin program
 led: TARGET = TestLED
 led: SRC += test_led.c
 led: $(CONFIG) $(CONFIG)/test_led.o $(CONFIG)/$$(TARGET).bin program
+
+log_recovery: TARGET = LegacyLogRecovery
+log_recovery: SRC += legacy_log_recovery.c
+log_recovery: $(CONFIG) $(CONFIG)/legacy_log_recovery.o $(CONFIG)/$$(TARGET).bin program
+
+log_recovery_segger: TARGET = LegacyLogRecoverySegger
+log_recovery_segger: SRC += legacy_log_recovery.c SEGGER_RTT.c
+log_recovery_segger: CFLAGS += -D__USE_SEGGER__
+log_recovery_segger: $(CONFIG) $(CONFIG)/legacy_log_recovery.o $(CONFIG)/SEGGER_RTT.o $(CONFIG)/$$(TARGET).bin program
 
 logging: TARGET = TestLogging
 logging: SRC += test_logging.c
