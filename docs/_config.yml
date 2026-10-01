@@ -1,0 +1,33 @@
+title: TotTag
+description: Infrastructure-free proximity tracking for naturalistic research
+theme: jekyll-theme-cayman
+
+# Rewrites the relative .md links between pages into site URLs, so the same links work
+# both when browsing docs/ on GitHub and on the published site.
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: false
+
+# Pages are listed in the order a new user should meet them.
+header_pages:
+  - index.md
+  - getting-started.md
+  - running-a-deployment.md
+  - device-behavior.md
+  - dashboard.md
+  - data.md
+  - troubleshooting.md
+  - reference.md
+
+exclude:
+  - archive/
+  - datasheets/
+  - internals/storage-format.md
+
+defaults:
+  - scope:
+      path: ""
+    values:
+      layout: default
