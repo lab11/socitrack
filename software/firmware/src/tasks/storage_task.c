@@ -6,6 +6,7 @@
 #include "imu.h"
 #include "logging.h"
 #include "nandlog.h"
+#include "scheduler.h"
 #include "rtc.h"
 #include "storage_records.h"
 #include "system.h"
@@ -309,6 +310,7 @@ void StorageTask(void *params)
                   diagnostics.wsf_pool_high_water[pool] = buffers.high_water[pool];
                   diagnostics.wsf_pool_capacity[pool] = buffers.capacity[pool];
                }
+               diagnostics.master_cycle_failures = scheduler_get_master_cycle_failures();
                nandlog_store_record(STORAGE_TYPE_DIAGNOSTICS, item.timestamp, &diagnostics, sizeof(diagnostics));
                break;
             }

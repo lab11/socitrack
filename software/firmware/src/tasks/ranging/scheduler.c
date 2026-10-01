@@ -14,8 +14,10 @@
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
+static bool heard_anyone_as_master;
 static TaskHandle_t notification_handle;
 static am_hal_timer_config_t wakeup_timer_config;
+static uint8_t failed_master_cycles, total_master_cycle_failures;
 static uint8_t empty_round_timeout, eui[EUI_LEN], read_buffer[128];
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint32_t last_round_stimer, search_started_stimer;
@@ -107,9 +109,18 @@ static void fix_network_errors(uint8_t num_ranging_results)
       schedule_phase_add_device(pending_subscriber);
 
    // Check if we are still synchronized with the network
+   if (num_devices || num_ranging_results)
+      heard_anyone_as_master = true;
    empty_round_timeout = (!num_devices && !num_ranging_results) ? (empty_round_timeout + 1) : 0;
    if (empty_round_timeout >= MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE)
    {
+      // A master run that ends having heard nothing from anyone at all is a network nobody could reach
+      if (!heard_anyone_as_master && (total_master_cycle_failures < UINT8_MAX))
+         ++total_master_cycle_failures;
+      failed_master_cycles = heard_anyone_as_master ? 0 :
+            ((failed_master_cycles < UINT8_MAX) ? (failed_master_cycles + 1) : failed_master_cycles);
+      if (failed_master_cycles == MASTER_INELIGIBLE_AFTER_CYCLES)
+         print("WARNING: Formed a network as MASTER %u times without hearing any device...no longer offering to be elected\n", (uint32_t)failed_master_cycles);
       print("WARNING: No network traffic received\n");
 #ifndef _TEST_RANGING_TASK
       is_running = false;
@@ -126,6 +137,12 @@ static void handle_range_computation_phase(void)
    ranging_radio_sleep(true);
    if (current_role != ROLE_MASTER)
       arm_wakeup_timer(elapsed_us);
+
+   // Hearing any device at all, in any role, proves this device's UWB path works in both directions
+   if (ranging_phase_get_heard_slots())
+      failed_master_cycles = 0;
+
+   // Continue based on the current role
    switch (ranging_phase_was_scheduled() ? current_role : ROLE_IDLE)
    {
       case ROLE_MASTER:
@@ -284,6 +301,7 @@ void scheduler_run(schedule_role_t role)
    memset(ranging_results, 0, sizeof(ranging_results));
    last_round_stimer = search_started_stimer = am_hal_stimer_counter_get();
    empty_round_timeout = 0;
+   heard_anyone_as_master = (role != ROLE_MASTER);
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 
    // Initialize the Schedule, Ranging, Status, and Subscription phases
@@ -419,6 +437,18 @@ void scheduler_run(schedule_role_t role)
    // Notify the application that network connectivity has been lost
    current_role = ROLE_IDLE;
    app_notify(APP_NOTIFY_NETWORK_LOST);
+}
+
+uint8_t scheduler_get_master_cycle_failures(void)
+{
+   // Cumulative since boot, unlike the live strike count
+   return total_master_cycle_failures;
+}
+
+bool scheduler_master_eligible(void)
+{
+   // False once this device has formed a network as master and heard nothing for MASTER_INELIGIBLE_AFTER_CYCLES
+   return failed_master_cycles < MASTER_INELIGIBLE_AFTER_CYCLES;
 }
 
 void scheduler_stop(void)

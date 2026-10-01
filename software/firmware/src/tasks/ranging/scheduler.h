@@ -46,6 +46,8 @@ typedef enum
 
 void scheduler_init(experiment_details_t *details);
 schedule_role_t scheduler_get_current_role(void);
+bool scheduler_master_eligible(void);
+uint8_t scheduler_get_master_cycle_failures(void);
 void scheduler_run(schedule_role_t role);
 void scheduler_stop(void);
 
