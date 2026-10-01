@@ -43,12 +43,12 @@ typedef struct __attribute__ ((__packed__))
 
 static inline void storage_retrieve_experiment_details(experiment_details_t *details)
 {
-   nandlog_retrieve_metadata(details, sizeof(*details));
+   nandlog_retrieve_epoch_details(details, sizeof(*details));
 }
 
 static inline bool storage_store_experiment_details(const experiment_details_t *details)
 {
-   if (!nandlog_store_metadata(details, sizeof(*details)))
+   if (!nandlog_begin_epoch(details, sizeof(*details)))
       return false;
 
    const uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();

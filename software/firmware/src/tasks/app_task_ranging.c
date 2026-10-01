@@ -476,7 +476,7 @@ static void apply_allow_downloads(bool allow)
       print("INFO: Allowing downloads...\n");
       // Disable writing to storage
       nandlog_disable(true);
-      nandlog_enter_maintenance_mode();
+      nandlog_begin_session();
 
       // Stop IMU
       imu_deinit();
@@ -487,7 +487,7 @@ static void apply_allow_downloads(bool allow)
       imu_init();
 
       // Enable writing to storage
-      nandlog_exit_maintenance_mode();
+      nandlog_end_session();
       nandlog_disable(false);
    }
 }

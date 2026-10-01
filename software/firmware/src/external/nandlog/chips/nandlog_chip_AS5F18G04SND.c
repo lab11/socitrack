@@ -56,6 +56,9 @@
 #define BBM_MARKER                                  "BBM_"
 #define BBM_MARKER_LENGTH                           4
 
+// What a marker page actually holds
+#define BBM_STORED_BYTES                            (BBM_MARKER_LENGTH + sizeof(uint32_t) + (BBM_TABLE_SIZE * sizeof(uint32_t)))
+
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
@@ -81,13 +84,13 @@ static void split_page_address(uint32_t page, uint8_t *out)
 static uint8_t read_register(uint8_t register_number)
 {
    static uint8_t register_value;
-   nandlog_port_spi_read(COMMAND_READ_STATUS_REGISTER, &register_number, 1, &register_value, 1);
+   nandlog_port_transfer_read(COMMAND_READ_STATUS_REGISTER, &register_number, 1, &register_value, 1);
    return register_value;
 }
 
 static void write_register(uint8_t register_number, uint8_t value)
 {
-   nandlog_port_spi_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
+   nandlog_port_transfer_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
 }
 
 static void wait_until_not_busy(void)
@@ -119,17 +122,24 @@ static void write_protect(bool protect)
    }
 }
 
-static bool read_page_raw(uint8_t *buffer, uint32_t page, uint32_t length)
+static bool read_page_region(uint8_t *buffer, uint32_t page, uint32_t column, uint32_t length)
 {
-   const uint32_t byte_offset = 0;
+   // Latch the page into the cache register, then clock out 'length' bytes starting at 'column'. The READ
+   // command carries a 16-bit column address, most significant byte first, followed by a dummy byte
+   const uint8_t column_address[3] = { (uint8_t)(column >> 8), (uint8_t)column, 0x00 };
    uint8_t page_number_reordered[3];
    split_page_address(page, page_number_reordered);
    wait_until_not_busy();
-   nandlog_port_spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+   nandlog_port_transfer_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
    wait_until_not_busy();
-   nandlog_port_spi_read(COMMAND_READ, &byte_offset, 3, buffer, length);
+   nandlog_port_transfer_read(COMMAND_READ, column_address, sizeof(column_address), buffer, length);
    wait_until_not_busy();
    return (read_register(STATUS_REGISTER_3) & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
+}
+
+static bool read_page_raw(uint8_t *buffer, uint32_t page, uint32_t length)
+{
+   return read_page_region(buffer, page, 0, length);
 }
 
 static bool write_page_raw(const uint8_t *data, uint32_t page)
@@ -141,10 +151,10 @@ static bool write_page_raw(const uint8_t *data, uint32_t page)
    for (uint8_t retry_index = 0; retry_index < NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL; ++retry_index)
    {
       wait_until_not_busy();
-      nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-      nandlog_port_spi_write(COMMAND_PROGRAM_DATA_LOAD, &byte_offset, 2, data, NANDLOG_CHIP_PAGE_SIZE_BYTES);
+      nandlog_port_transfer_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      nandlog_port_transfer_write(COMMAND_PROGRAM_DATA_LOAD, &byte_offset, 2, data, NANDLOG_CHIP_PAGE_SIZE_BYTES);
       wait_until_not_busy();
-      nandlog_port_spi_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+      nandlog_port_transfer_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
       wait_until_not_busy();
       if ((read_register(STATUS_REGISTER_3) & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
          return true;
@@ -158,8 +168,8 @@ static bool erase_block_raw(uint32_t page)
    uint8_t page_number_reordered[3];
    split_page_address(page & NANDLOG_CHIP_BLOCK_MASK, page_number_reordered);
    wait_until_not_busy();
-   nandlog_port_spi_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
-   nandlog_port_spi_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
+   nandlog_port_transfer_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+   nandlog_port_transfer_write(COMMAND_BLOCK_ERASE, NULL, 0, page_number_reordered, sizeof(page_number_reordered));
    wait_until_not_busy();
    return (read_register(STATUS_REGISTER_3) & STATUS_ERASE_FAILURE) != STATUS_ERASE_FAILURE;
 }
@@ -168,7 +178,7 @@ static bool verify_device_id(void)
 {
    static const uint8_t address = 0x01;
    uint8_t device_id_read[sizeof(device_id)];
-   nandlog_port_spi_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), device_id_read, sizeof(device_id_read));
+   nandlog_port_transfer_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), device_id_read, sizeof(device_id_read));
    return (memcmp(device_id_read, device_id, sizeof(device_id)) == 0);
 }
 
@@ -180,13 +190,18 @@ static void clear_bad_block_table(void)
 
 static bool record_bad_block(uint32_t page)
 {
+   // Recording a block that is already retired twice spends a table slot for nothing
+   page &= NANDLOG_CHIP_BLOCK_MASK;
+   if (nandlog_chip_is_bad_block(page))
+      return true;
+
    // Refuse to run off the end of the table
    if (bbm_index >= BBM_TABLE_SIZE)
    {
       nandlog_port_log("ERROR: Bad-block table is full at %u entries; block %u not retired\n", (uint32_t)BBM_TABLE_SIZE, (uint32_t)(page / NANDLOG_CHIP_PAGES_PER_BLOCK));
       return false;
    }
-   bad_block_lookup_table[bbm_index++] = page & NANDLOG_CHIP_BLOCK_MASK;
+   bad_block_lookup_table[bbm_index++] = page;
    return true;
 }
 
@@ -205,7 +220,7 @@ static void load_bad_block_table(void)
    // Search the reserve from the top down for the most recently written marker page
    clear_bad_block_table();
    for (bbm_storage_page = NANDLOG_CHIP_PAGE_COUNT - NANDLOG_CHIP_PAGES_PER_BLOCK; bbm_storage_page >= NANDLOG_CHIP_RESERVED_BASE_PAGE; bbm_storage_page -= NANDLOG_CHIP_PAGES_PER_BLOCK)
-      if (read_page_raw(scratch, bbm_storage_page, NANDLOG_CHIP_PAGE_SIZE_BYTES) && (memcmp(scratch, BBM_MARKER, BBM_MARKER_LENGTH) == 0))
+      if (read_page_raw(scratch, bbm_storage_page, BBM_MARKER_LENGTH) && (memcmp(scratch, BBM_MARKER, BBM_MARKER_LENGTH) == 0) && read_page_raw(scratch, bbm_storage_page, BBM_STORED_BYTES))
       {
          memcpy(&bbm_index, scratch + BBM_MARKER_LENGTH, sizeof(bbm_index));
          memcpy(bad_block_lookup_table, scratch + BBM_MARKER_LENGTH + sizeof(bbm_index), sizeof(bad_block_lookup_table));
@@ -234,7 +249,7 @@ static bool is_first_boot(void)
       memset(scratch, 0, NANDLOG_CHIP_PAGE_SIZE_BYTES);
       memcpy(scratch, first_boot_marker, sizeof(first_boot_marker));
       write_page_raw(scratch, FIRST_BOOT_ADDRESS);
-      nandlog_port_spi_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
+      nandlog_port_transfer_write(COMMAND_WRITE_DISABLE, NULL, 0, NULL, 0);
       first_boot = true;
    }
    write_register(STATUS_REGISTER_2, CONFIG_NORMAL);
@@ -246,9 +261,11 @@ static void build_bad_block_table_from_factory_markers(void)
    // A factory-marked bad block carries a non-0xFF byte at the start of its spare area. Blocks already in
    // the table are skipped rather than the table being rebuilt, so anything loaded earlier survives the scan
    for (uint32_t page = 0; page < NANDLOG_CHIP_PAGE_COUNT; page += NANDLOG_CHIP_PAGES_PER_BLOCK)
-      if ((!read_page_raw(scratch, page, NANDLOG_CHIP_PAGE_WITH_SPARE_SIZE_BYTES) ||
-           (scratch[NANDLOG_CHIP_PAGE_SIZE_BYTES] != 0xFF)) && !nandlog_chip_is_bad_block(page))
+   {
+      uint8_t marker = 0xFF;
+      if (!read_page_region(&marker, page, NANDLOG_CHIP_PAGE_SIZE_BYTES, sizeof(marker)) || (marker != 0xFF))
          record_bad_block(page);
+   }
 
    // Persist into the first block of the reserve that is usable
    bbm_storage_page = NANDLOG_CHIP_RESERVED_BASE_PAGE;
@@ -310,6 +327,11 @@ bool nandlog_chip_read_page(uint8_t *buffer, uint32_t page)
    return read_page_raw(buffer, page, NANDLOG_CHIP_PAGE_SIZE_BYTES);
 }
 
+bool nandlog_chip_read_page_region(uint8_t *buffer, uint32_t page, uint32_t offset, uint32_t length)
+{
+   return read_page_region(buffer, page, offset, length);
+}
+
 bool nandlog_chip_write_page(const uint8_t *data, uint32_t page)
 {
    write_protect(false);
@@ -324,6 +346,36 @@ bool nandlog_chip_erase_block(uint32_t page)
    const bool success = erase_block_raw(page);
    write_protect(true);
    return success;
+}
+
+nandlog_copy_result_t nandlog_chip_copy_page(uint32_t source_page, uint32_t destination_page)
+{
+   // Latch the source page into the chip's cache register, then program that register straight back out to
+   // the destination. There is deliberately no PROGRAM DATA LOAD between the two, which is the whole point:
+   // the only thing that crosses the bus is six bytes of address
+   uint8_t source_address[3], destination_address[3];
+   split_page_address(source_page, source_address);
+   split_page_address(destination_page, destination_address);
+
+   write_protect(false);
+   nandlog_copy_result_t result = NANDLOG_COPY_FAILED;
+   for (uint8_t retry_index = 0; (result != NANDLOG_COPY_OK) && (retry_index < NANDLOG_BLOCK_ERRORS_BEFORE_REMOVAL); ++retry_index)
+   {
+      wait_until_not_busy();
+      nandlog_port_transfer_write(COMMAND_PAGE_DATA_READ, NULL, 0, source_address, sizeof(source_address));
+      wait_until_not_busy();
+      nandlog_port_transfer_write(COMMAND_WRITE_ENABLE, NULL, 0, NULL, 0);
+      nandlog_port_transfer_write(COMMAND_PROGRAM_EXECUTE, NULL, 0, destination_address, sizeof(destination_address));
+      wait_until_not_busy();
+      if ((read_register(STATUS_REGISTER_3) & STATUS_WRITE_FAILURE) != STATUS_WRITE_FAILURE)
+         result = NANDLOG_COPY_OK;
+   }
+   write_protect(true);
+
+   // An uncorrectable source page is not reported as a failure here. Its uncorrected bytes are what lands at
+   // the destination, which reads back with sound ECC and a payload CRC that will not match -- a gap, which
+   // is exactly what reading it into RAM and finding it unreadable would have produced
+   return result;
 }
 
 bool nandlog_chip_is_bad_block(uint32_t page)
@@ -374,7 +426,7 @@ bool nandlog_chip_reset_bad_blocks(void)
    // Verify rather than assume
    uint32_t markers_remaining = 0;
    for (uint32_t page = NANDLOG_CHIP_RESERVED_BASE_PAGE; page < NANDLOG_CHIP_PAGE_COUNT; page += NANDLOG_CHIP_PAGES_PER_BLOCK)
-      if (read_page_raw(scratch, page, NANDLOG_CHIP_PAGE_SIZE_BYTES) && (memcmp(scratch, BBM_MARKER, BBM_MARKER_LENGTH) == 0))
+      if (read_page_raw(scratch, page, BBM_MARKER_LENGTH) && (memcmp(scratch, BBM_MARKER, BBM_MARKER_LENGTH) == 0))
          ++markers_remaining;
 
    clear_bad_block_table();

@@ -61,7 +61,7 @@ void nandlog_port_deinit(void)
    spi_handle = NULL;
 }
 
-void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
+void nandlog_port_transfer_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
 {
    // Create the SPI transaction structure
    uint32_t instruction = command, retries_remaining = 4;
@@ -140,7 +140,7 @@ void nandlog_port_unlock(void)
       xSemaphoreGive(log_mutex);
 }
 
-void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
+void nandlog_port_transfer_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
 {
    // Create the SPI transaction structure
    uint32_t instruction = command, retries_remaining = 4;

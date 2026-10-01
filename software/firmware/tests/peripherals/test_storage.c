@@ -130,9 +130,9 @@ static void test_forced_block_crossings(void)
          (uint32_t)PAGES_PER_BLOCK, (uint32_t)(BLOCK_CROSSING_NUM_PAGES / PAGES_PER_BLOCK));
 
    // Reset the log so page indices start from zero
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    reset_log_to_known_state();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
 
    // Write one full page per iteration
@@ -145,7 +145,7 @@ static void test_forced_block_crossings(void)
    print("Write phase complete\n");
 
    // Read every page back and verify content, ordering, and completeness
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_begin_reading(0, 0);
    uint32_t num_chunks = 0;
    nandlog_read_span(&num_chunks, NULL);
@@ -163,7 +163,7 @@ static void test_forced_block_crossings(void)
          ++errors;
    }
    nandlog_end_reading();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
 
    const bool passed = !errors && (verified == BLOCK_CROSSING_NUM_PAGES);
    print("=== Block-crossing test %s: %u/%u pages verified, %u errors ===\n\n",
@@ -190,9 +190,9 @@ static void test_partial_page_flush(void)
 {
    print("\n=== Partial-page flush test ===\n");
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    reset_log_to_known_state();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
 
    uint32_t errors = 0;
@@ -230,7 +230,7 @@ static void test_partial_page_flush(void)
       write_tagged_page(PARTIAL_TEST_FULL_PAGES + page);
 
    // Read back: N full pages, one partial, N full pages, then the empty in-RAM cache
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_begin_reading(0, 0);
    uint32_t num_chunks = 0;
    nandlog_read_span(&num_chunks, NULL);
@@ -274,7 +274,7 @@ static void test_partial_page_flush(void)
       }
    }
    nandlog_end_reading();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
 
    print("=== Partial-page flush test %s: %u errors ===\n\n", errors ? "FAILED" : "PASSED", errors);
 }
@@ -297,9 +297,9 @@ static void test_time_range_seek(void)
 {
    print("\n=== Time-range seek test ===\n");
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    reset_log_to_known_state();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
 
    // Page N carries exactly one record stamped 500*N ms after the experiment start
@@ -314,7 +314,7 @@ static void test_time_range_seek(void)
    const uint32_t target_relative_ms = 1000 * (seek_timestamp - 1);
    const uint32_t target_page = target_relative_ms / 500;
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_begin_reading(target_relative_ms, 0);
    uint32_t num_chunks = 0;
    nandlog_read_span(&num_chunks, NULL);
@@ -328,7 +328,7 @@ static void test_time_range_seek(void)
       memcpy(&first_index, record + 5 + 4, sizeof(first_index));
    }
    nandlog_end_reading();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
 
    // Seeking to time T must land on the page holding T, not before it and not past it
    const uint32_t expected_chunks = SEEK_TEST_NUM_PAGES - target_page;
@@ -361,9 +361,9 @@ static void test_timestamp_jump(void)
    // seek at all, so such a record has to start a new page.
    print("\n=== Timestamp jump test ===\n");
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    reset_log_to_known_state();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
 
    // Four small records in what would otherwise be a single page, with a backwards step in the middle
@@ -383,7 +383,7 @@ static void test_timestamp_jump(void)
    nandlog_store_record(STORAGE_TYPE_IMU, 20100, record, sizeof(record));
    nandlog_flush(true);
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_begin_reading(0, 0);
    uint32_t num_chunks = 0;
    nandlog_read_span(&num_chunks, NULL);
@@ -421,7 +421,7 @@ static void test_timestamp_jump(void)
       }
    }
    nandlog_end_reading();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
 
    if (errors)
       print("=== Timestamp jump test FAILED: %u errors ===\n", errors);
@@ -447,9 +447,9 @@ static void test_time_anchor_recovery(void)
 {
    print("\n=== Time anchor recovery test ===\n");
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    reset_log_to_known_state();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
 
    uint32_t errors = 0, experiment_ms = 0, rtc = 0;
@@ -544,14 +544,14 @@ static void test_page_retransmission(void)
 {
    print("\n=== Page retransmission test ===\n");
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    reset_log_to_known_state();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
    for (uint32_t page = 0; page < RETRANSMIT_TEST_PAGES; ++page)
       write_tagged_page(page);
 
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_begin_reading(0, 0);
    nandlog_read_span(NULL, NULL);        // establishes the readable range
 
@@ -594,7 +594,7 @@ static void test_page_retransmission(void)
    }
 
    nandlog_end_reading();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    print("=== Page retransmission test %s: %u errors ===\n\n", errors ? "FAILED" : "PASSED", errors);
 }
 
@@ -622,7 +622,7 @@ static void test_reboot_survival(void)
    print("\n=== Reboot-survival test ===\n");
 
    // Count and verify whatever survived previous rounds
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_begin_reading(0, 0);
    uint32_t num_chunks = 0;
    nandlog_read_span(&num_chunks, NULL);
@@ -674,7 +674,7 @@ static void test_reboot_survival(void)
             passed ? "PASSED" : "FAILED", verified, existing_pages, errors);
       base_index = existing_pages;
    }
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    nandlog_disable(false);
 
    // Append another round, continuing the index sequence
@@ -701,9 +701,9 @@ int main(void)
    // One-shot recovery: clear a bad-block table polluted by a firmware fault that retired good blocks.
    // Run this once, then reflash a normal test build.
    print("\n=== Bad-block table reset ===\n");
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
    nandlog_reset_bad_block_table();
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
    print("=== Reset complete -- power-cycle, then flash a normal build ===\n");
    while (true)
       am_hal_delay_us(1000000);
@@ -737,7 +737,7 @@ int main(void)
 
    // Test storing and retrieving a set of experiment details
    print("\n=== Experiment details round-trip test ===\n");
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
 
    experiment_details_t details = {
       .experiment_start_time = 1, .experiment_end_time = 2,
@@ -759,7 +759,7 @@ int main(void)
    // Retrieve and compare against what was written
    memset(&details, 0, sizeof(details));
    storage_retrieve_experiment_details(&details);
-   nandlog_exit_maintenance_mode();
+   nandlog_end_session();
 
    print("Start/End Times: %u, %u\n", details.experiment_start_time, details.experiment_end_time);
    print("Daily Start/End Times: %u, %u\n", details.daily_start_time, details.daily_end_time);

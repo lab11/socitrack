@@ -26,7 +26,8 @@ typedef struct
 
 typedef struct
 {
-   uint32_t spi_reads, spi_writes;
+   uint32_t spi_reads, spi_writes;                             // transfers issued
+   uint32_t spi_read_bytes, spi_write_bytes;                   // payload bytes those transfers carried
    uint32_t page_reads, page_writes, block_erases;
 } nandlog_sim_counters_t;
 
@@ -59,6 +60,10 @@ jmp_buf *nandlog_sim_fatal_jump(void);
 bool nandlog_sim_dump(const char *path, uint32_t first_page, uint32_t num_pages);
 
 nandlog_sim_counters_t nandlog_sim_counters(void);
+
+// Zero the counters without disturbing the part, so a test can measure one span of work rather than a run
+void nandlog_sim_reset_counters(void);
+
 void nandlog_sim_set_verbose(bool on);
 
 #endif  // #ifndef __NANDLOG_PORT_SIM_HEADER_H__

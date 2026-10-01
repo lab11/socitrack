@@ -296,7 +296,7 @@ static void send_error(const char *message)
 static uint8_t read_register(uint8_t register_number)
 {
    uint8_t value = 0;
-   nandlog_port_spi_read(COMMAND_READ_STATUS_REGISTER, &register_number, 1, &value, 1);
+   nandlog_port_transfer_read(COMMAND_READ_STATUS_REGISTER, &register_number, 1, &value, 1);
    return value;
 }
 
@@ -304,7 +304,7 @@ static void write_register(uint8_t register_number, uint8_t value)
 {
    // Configuration only. Nothing here can alter the array: there is no write enable, and neither value used
    // below sets a lock or OTP bit
-   nandlog_port_spi_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
+   nandlog_port_transfer_write(COMMAND_WRITE_STATUS_REGISTER, &register_number, 1, &value, 1);
 }
 
 static bool wait_until_not_busy(void)
@@ -327,10 +327,10 @@ static const chip_description_t *identify_chip(void)
    for (uint32_t attempt = 0; attempt < 1000; ++attempt)
    {
       memset(chip_id, 0, sizeof(chip_id));
-      nandlog_port_spi_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), chip_id, 1);
+      nandlog_port_transfer_read(COMMAND_READ_DEVICE_ID, &address, sizeof(address), chip_id, 1);
       if (chip_id[0] == 0x8D)
          return &supported_chips[1];
-      nandlog_port_spi_read(COMMAND_READ_DEVICE_ID, NULL, 0, chip_id, sizeof(chip_id));
+      nandlog_port_transfer_read(COMMAND_READ_DEVICE_ID, NULL, 0, chip_id, sizeof(chip_id));
       if ((chip_id[1] == 0xEF) && (chip_id[2] == 0xBA) && (chip_id[3] == 0x21))
          return &supported_chips[0];
       nandlog_port_delay_ms(1);
@@ -346,10 +346,10 @@ static bool read_page(uint32_t page, uint8_t *status_register_3)
    const uint8_t column_and_dummy[3] = { 0, 0, 0 };
    if (!wait_until_not_busy())
       return false;
-   nandlog_port_spi_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_address, sizeof(page_address));
+   nandlog_port_transfer_write(COMMAND_PAGE_DATA_READ, NULL, 0, page_address, sizeof(page_address));
    if (!wait_until_not_busy())
       return false;
-   nandlog_port_spi_read(COMMAND_READ, column_and_dummy, sizeof(column_and_dummy), page_buffer, chip->page_size_bytes);
+   nandlog_port_transfer_read(COMMAND_READ, column_and_dummy, sizeof(column_and_dummy), page_buffer, chip->page_size_bytes);
    *status_register_3 = read_register(STATUS_REGISTER_3);
    return (*status_register_3 & STATUS_PAGE_FATAL_ERROR) != STATUS_PAGE_FATAL_ERROR;
 }
@@ -424,7 +424,7 @@ static bool send_info(void)
       uint8_t lut[W25N_LUT_BYTES];
       const uint8_t dummy = 0;
       memset(lut, 0, sizeof(lut));
-      nandlog_port_spi_read(COMMAND_READ_BBM_LUT, &dummy, sizeof(dummy), lut, sizeof(lut));
+      nandlog_port_transfer_read(COMMAND_READ_BBM_LUT, &dummy, sizeof(dummy), lut, sizeof(lut));
       if (!send_frame(FRAME_LUT, 0, lut, sizeof(lut), NULL, 0))
          return false;
    }
