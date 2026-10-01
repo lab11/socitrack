@@ -159,7 +159,7 @@ void UsbCdcTask(void *params)
    uid[EUI_LEN] = '\n';
 
    // Put the storage peripheral into maintenance mode
-   nandlog_enter_maintenance_mode();
+   nandlog_begin_session();
 
    // Loop forever listening for incoming data
    while (true)

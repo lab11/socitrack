@@ -191,6 +191,11 @@ nandlog_sim_counters_t nandlog_sim_counters(void)
    return counters;
 }
 
+void nandlog_sim_reset_counters(void)
+{
+   memset(&counters, 0, sizeof(counters));
+}
+
 void nandlog_sim_set_verbose(bool on)
 {
    verbose = on;
@@ -294,11 +299,12 @@ void nandlog_port_fatal(const char *reason)
    longjmp(fatal_jump, 1);
 }
 
-void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
+void nandlog_port_transfer_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length)
 {
    const uint8_t *addr = (const uint8_t*)address;
    uint8_t *out = (uint8_t*)read_buffer;
    ++counters.spi_reads;
+   counters.spi_read_bytes += read_length;
 
    switch (command)
    {
@@ -335,10 +341,15 @@ void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t addres
 
       case SIM_COMMAND_READ:
       {
+         // The address is a 16-bit column, most significant byte first, then a dummy byte
+         const uint32_t column = (addr && (address_length >= 2)) ? (((uint32_t)addr[0] << 8) | addr[1]) : 0;
          const uint8_t *src = page_at(read_page_address);
-         const uint32_t available = page_stride;
          memset(out, 0xFF, read_length);
-         memcpy(out, src, (read_length < available) ? read_length : available);
+         if (column < page_stride)
+         {
+            const uint32_t available = page_stride - column;
+            memcpy(out, src + column, (read_length < available) ? read_length : available);
+         }
          break;
       }
 
@@ -348,11 +359,12 @@ void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t addres
    }
 }
 
-void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
+void nandlog_port_transfer_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length)
 {
    const uint8_t *addr = (const uint8_t*)address;
    const uint8_t *in = (const uint8_t*)write_buffer;
    ++counters.spi_writes;
+   counters.spi_write_bytes += write_length;
 
    switch (command)
    {
@@ -370,7 +382,12 @@ void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t addre
          break;
 
       case SIM_COMMAND_PAGE_DATA_READ:
+         // The part has one cache register, and a page read is what fills it. Modelling that is what makes an
+         // internal data move work here at all: a PROGRAM EXECUTE arriving with no PROGRAM DATA LOAD between
+         // the two writes this register straight back out, which is precisely the copy the driver is asking for
          read_page_address = address_from(in);
+         memcpy(program_buffer, page_at(read_page_address), page_stride);
+         program_buffer_length = page_stride;
          ++counters.page_reads;
          break;
 

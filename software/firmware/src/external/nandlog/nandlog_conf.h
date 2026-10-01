@@ -5,19 +5,15 @@
 
 // Whether a NAND part is fitted in this build. When it is not, the library compiles to stand-ins that accept
 // everything and return nothing, so the application above it needs no conditionals of its own
-#if !defined(NANDLOG_HAS_HARDWARE)
-#if defined(_TEST_NO_STORAGE)
-#define NANDLOG_HAS_HARDWARE                        0
-#else
+#ifndef NANDLOG_HAS_HARDWARE
 #define NANDLOG_HAS_HARDWARE                        1
-#endif
 #endif
 
 
 // Static Sizing Budget ------------------------------------------------------------------------------------------------
 
 // The largest page and spare area the host is prepared to set aside RAM for. Buffers throughout the library
-// and the application above it are sized from these, which is what keeps every allocation static. A part
+// and the application above it are sized from these which is what keeps every allocation static. A part
 // whose page exceeds the budget is a compile error inside that part's driver, so the only cost of setting
 // these larger than the fitted part needs is unused RAM
 #define NANDLOG_MAX_PAGE_SIZE_BYTES                 4096
@@ -39,7 +35,7 @@
 #define NANDLOG_PAGE_PLACEMENT_ATTEMPTS             3
 
 // Largest caller-defined metadata blob stored alongside the log
-#define NANDLOG_MAX_METADATA_BYTES                  512
+#define NANDLOG_MAX_EPOCH_DETAILS_BYTES                  512
 
 // A record whose timestamp steps backwards by no more than this is treated as writer disagreement and
 // pulled forward, rather than as the time base having moved and the page having to be committed
@@ -47,12 +43,19 @@
 
 // Whether each record carries its own length so that a reader can walk a page without knowing the
 // application's record types
-#if !defined(NANDLOG_RECORD_FRAMING)
+#ifndef NANDLOG_RECORD_FRAMING
 #define NANDLOG_RECORD_FRAMING                      1
 #endif
 
 // How long to wait for the chip to clear BUSY after a program or erase before declaring it dead
 #define NANDLOG_BUSY_POLL_INTERVAL_US               10
 #define NANDLOG_BUSY_TIMEOUT_MS                     500
+
+// Whether a page being relocated may be moved inside the chip instead of across the bus. Each driver already
+// answers for its own part, so this exists only to take the path out of a build whose part turns out to
+// mishandle it
+#ifndef NANDLOG_CHIP_PAGE_COPY
+#define NANDLOG_CHIP_PAGE_COPY                      1
+#endif
 
 #endif  // #ifndef __NANDLOG_CONF_HEADER_H__

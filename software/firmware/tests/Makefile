@@ -149,6 +149,7 @@ VPATH += ../src/boards/rev$(REVISION)
 VPATH += ../src/external/decadriver
 VPATH += ../src/external/nandlog
 VPATH += ../src/external/nandlog/chips
+VPATH += ../src/external/nandlog/tests
 VPATH += ../src/external/segger
 VPATH += ../src/external/tinyusb
 VPATH += ../src/external/tinyusb/src
@@ -288,12 +289,12 @@ SRC += subscription_phase.c
 SRC += time_aligned_task.c
 SRC += usb_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging nandlog_copy nandlog_marker nandlog_reads power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging nandlog_copy nandlog_marker nandlog_reads power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -309,17 +310,17 @@ battery: $(CONFIG) $(CONFIG)/test_battery.o $(CONFIG)/$$(TARGET).bin program
 
 ble_and_range: TARGET = TestBleAndRanging
 ble_and_range: SRC += test_ble_and_ranging.c
-ble_and_range: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D__USE_FREERTOS__
+ble_and_range: CFLAGS += -D_TEST_NO_STORAGE -DNANDLOG_HAS_HARDWARE=0 -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D__USE_FREERTOS__
 ble_and_range: $(CONFIG) $(CONFIG)/test_ble_and_ranging.o $(CONFIG)/$$(TARGET).bin program
 
 ble_reset: TARGET = TestBleReset
 ble_reset: SRC += test_ble_reset.c
-ble_reset: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D__USE_FREERTOS__
+ble_reset: CFLAGS += -D_TEST_NO_STORAGE -DNANDLOG_HAS_HARDWARE=0 -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D__USE_FREERTOS__
 ble_reset: $(CONFIG) $(CONFIG)/test_ble_reset.o $(CONFIG)/$$(TARGET).bin program
 
 ble_range_imu: TARGET = TestBleRangingIMU
 ble_range_imu: SRC += test_ble_range_imu.c
-ble_range_imu: CFLAGS += -D_TEST_NO_STORAGE -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D__USE_FREERTOS__
+ble_range_imu: CFLAGS += -D_TEST_NO_STORAGE -DNANDLOG_HAS_HARDWARE=0 -D_TEST_NO_EXP_DETAILS -D_TEST_NO_BATTERY_CALLBACK -D__USE_FREERTOS__
 ble_range_imu: $(CONFIG) $(CONFIG)/test_ble_range_imu.o $(CONFIG)/$$(TARGET).bin program
 
 bluetooth: TARGET = TestBluetooth
@@ -401,6 +402,18 @@ rtc_set: $(CONFIG) $(CONFIG)/test_rtc.o $(CONFIG)/$$(TARGET).bin program
 rtc: TARGET = TestRTC
 rtc: SRC += test_rtc.c
 rtc: $(CONFIG) $(CONFIG)/test_rtc.o $(CONFIG)/$$(TARGET).bin program
+
+nandlog_reads: TARGET = TestNandlogReads
+nandlog_reads: SRC += test_nandlog_partial_read.c nandlog_hw_test.c
+nandlog_reads: $(CONFIG) $(CONFIG)/test_nandlog_partial_read.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+
+nandlog_copy: TARGET = TestNandlogCopy
+nandlog_copy: SRC += test_nandlog_page_copy.c nandlog_hw_test.c
+nandlog_copy: $(CONFIG) $(CONFIG)/test_nandlog_page_copy.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+
+nandlog_marker: TARGET = TestNandlogMarker
+nandlog_marker: SRC += test_nandlog_ecc_marker.c nandlog_hw_test.c
+nandlog_marker: $(CONFIG) $(CONFIG)/test_nandlog_ecc_marker.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
 
 storage: TARGET = TestStorage
 storage: SRC += test_storage.c

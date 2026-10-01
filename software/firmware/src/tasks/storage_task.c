@@ -205,9 +205,9 @@ void StorageTask(void *params)
 
    // Set whether the storage peripheral should be in maintenance mode
    if (params)
-      nandlog_exit_maintenance_mode();
+      nandlog_end_session();
    else
-      nandlog_enter_maintenance_mode();
+      nandlog_begin_session();
 
 #if defined(_TEST_NO_STORAGE)
 

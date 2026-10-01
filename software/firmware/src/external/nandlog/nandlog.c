@@ -21,12 +21,24 @@ static uint32_t page_size_bytes, pages_per_block, page_block_mask, data_bytes_pe
 static uint32_t metadata_ring_pages, log_region_first_page, log_region_end_page, log_region_page_count;
 static uint32_t retransmit_seqs[NANDLOG_MAX_RETRANSMIT_PAGES], retransmit_num_pages = 0;
 static volatile uint32_t starting_page, current_page, reading_page, last_reading_page, cache_index;
-static volatile bool is_reading, in_maintenance_mode, disabled, is_initialized = false, log_region_full;
+static volatile bool is_reading, in_session, disabled, is_initialized = false, log_region_full, epoch_is_current = true;
 static volatile uint32_t page_first_timestamp = NANDLOG_NO_TIMESTAMP, page_last_timestamp = NANDLOG_NO_TIMESTAMP;
 static volatile uint32_t log_epoch, next_page_seq, page_record_count, metadata_ring_page;
+static volatile uint32_t selected_epoch, selected_start_page, selected_end_page, selected_ring_page;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static inline uint32_t view_epoch(void)      { return epoch_is_current ? log_epoch : selected_epoch; }
+static inline uint32_t view_start_page(void) { return epoch_is_current ? starting_page : selected_start_page; }
+static inline uint32_t view_ring_page(void)  { return epoch_is_current ? metadata_ring_page : selected_ring_page; }
+
+static inline uint32_t view_end_page(void)
+{
+   // One past the last page of the view. For the current epoch that is the write head, which has nothing in it
+   // yet; for an earlier one it is where the epoch that replaced it began
+   return epoch_is_current ? current_page : selected_end_page;
+}
 
 static inline uint32_t log_wrap_page(uint32_t page)
 {
@@ -74,6 +86,20 @@ static bool transfer_block(uint32_t source, uint32_t destination, uint32_t num_p
 {
    for (uint32_t i = 0, page = source; i < num_pages; ++i, ++page, ++destination)
    {
+      // Relocation is where a failing part spends its time, so ask the chip to move the page through its own
+      // cache register first. A part that can do it never puts the page on the bus in either direction; one
+      // that cannot says so, once per page and without a transfer, and the read-and-write path below runs
+      if (NANDLOG_CHIP_PAGE_COPY)
+      {
+         const nandlog_copy_result_t copied = nandlog_chip_copy_page(page, destination);
+         if (copied == NANDLOG_COPY_OK)
+            continue;
+         if (copied == NANDLOG_COPY_FAILED)
+            return false;      // the destination block would not take it, exactly as a failed write
+      }
+
+      // An unreadable source is relocated as an erased page rather than abandoning the block's other pages;
+      // it fails its own header CRC at the destination and is served as a gap, which it already was
       if (!nandlog_chip_read_page(transfer_buffer, page))
          memset(transfer_buffer, 0xFF, page_size_bytes);
       if (!nandlog_chip_write_page(transfer_buffer, destination))
@@ -92,8 +118,13 @@ static void erase_page_range(uint32_t starting_page, uint32_t ending_page)
    for (uint8_t i = 0; i < num_iterations; ++i)
    {
       for (uint32_t page = starting_page; page <= end; page += pages_per_block)
+      {
+         // Never erase a block that is already retired
+         if (nandlog_chip_is_bad_block(page))
+            continue;
          if (!nandlog_chip_erase_block(page))
             nandlog_chip_mark_bad_block(page);
+      }
 
       // A range that wraps resumes at the first log page
       starting_page = log_region_first_page;
@@ -157,7 +188,7 @@ static bool page_header_valid(const nandlog_page_header_t *header)
 static void write_page(uint16_t data_length)
 {
    // Wake the storage peripheral; each chip call opens and closes write protection for itself
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
@@ -201,7 +232,7 @@ static void write_page(uint16_t data_length)
       }
    }
 
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_chip_low_power(true);
       nandlog_port_power(false);
@@ -234,13 +265,13 @@ static void erase_ahead_of(uint32_t page)
 static void erase_ahead_of_head(void)
 {
    // Wake the storage peripheral around the erase, mirroring what write_page() does
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
    }
    erase_ahead_of(current_page);
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_chip_low_power(true);
       nandlog_port_power(false);
@@ -281,7 +312,7 @@ static bool meta_header_valid(const nandlog_meta_header_t *header)
 {
    return (header->magic == NANDLOG_META_MAGIC) &&
           (header->header_crc == crc32_compute(header, NANDLOG_META_HEADER_CRC_BYTES)) &&
-          (header->details_length <= NANDLOG_MAX_METADATA_BYTES) &&
+          (header->details_length <= NANDLOG_MAX_EPOCH_DETAILS_BYTES) &&
           (header->log_start_page >= log_region_first_page) && (header->log_start_page < log_region_end_page);
 }
 
@@ -291,12 +322,18 @@ static bool find_newest_metadata(uint32_t *ring_page, nandlog_meta_header_t *new
    bool found = false;
    for (uint32_t page = 0; page < metadata_ring_pages; ++page)
    {
-      if (nandlog_chip_is_bad_block(page) || !nandlog_chip_read_page(transfer_buffer, page))
+      if (nandlog_chip_is_bad_block(page) || !nandlog_chip_read_page_region(transfer_buffer, page, 0, sizeof(nandlog_meta_header_t)))
          continue;
       const nandlog_meta_header_t *header = (const nandlog_meta_header_t*)transfer_buffer;
       if (!meta_header_valid(header))
          continue;
-      if (header->details_crc != crc32_compute(transfer_buffer + sizeof(nandlog_meta_header_t), header->details_length))
+
+      // The second read rewrites the same header bytes, so 'header' stays valid across it, but the length is
+      // taken first because the buffer it lives in is about to be written through
+      const uint32_t details_length = header->details_length;
+      if (!nandlog_chip_read_page_region(transfer_buffer, page, 0, sizeof(nandlog_meta_header_t) + details_length))
+         continue;
+      if (header->details_crc != crc32_compute(transfer_buffer + sizeof(nandlog_meta_header_t), details_length))
          continue;
       if (!found || (header->epoch > newest->epoch))
       {
@@ -317,7 +354,7 @@ static uint32_t recover_write_head(uint32_t epoch, uint32_t log_start_page, uint
       const uint32_t mid = low + ((high - low) / 2);
       const uint32_t page = log_wrap_page(log_start_page + mid);
       bool belongs = false;
-      if (!nandlog_chip_is_bad_block(page) && nandlog_chip_read_page(transfer_buffer, page))
+      if (!nandlog_chip_is_bad_block(page) && nandlog_chip_read_page_region(transfer_buffer, page, 0, sizeof(nandlog_page_header_t)))
       {
          const nandlog_page_header_t *header = (const nandlog_page_header_t*)transfer_buffer;
          belongs = page_header_valid(header) && (header->epoch == epoch);
@@ -334,7 +371,7 @@ static uint32_t recover_write_head(uint32_t epoch, uint32_t log_start_page, uint
    if (low)
    {
       const uint32_t last = log_wrap_page(log_start_page + low - 1);
-      if (nandlog_chip_read_page(transfer_buffer, last))
+      if (nandlog_chip_read_page_region(transfer_buffer, last, 0, sizeof(nandlog_page_header_t)))
       {
          const nandlog_page_header_t *header = (const nandlog_page_header_t*)transfer_buffer;
          if (page_header_valid(header) && (header->epoch == epoch))
@@ -387,8 +424,8 @@ static void resolve_geometry(void)
 
 static uint32_t epoch_page_count(void)
 {
-   // Physical pages spanned by the current epoch
-   return log_region_full ? log_region_page_count : log_page_distance(starting_page, current_page);
+   // Physical pages spanned by the epoch being read
+   return (epoch_is_current && log_region_full) ? log_region_page_count : log_page_distance(view_start_page(), view_end_page());
 }
 
 static bool probe_epoch_page(uint32_t index, uint32_t page_count, nandlog_page_header_t *header, uint32_t *found_index)
@@ -397,11 +434,11 @@ static bool probe_epoch_page(uint32_t index, uint32_t page_count, nandlog_page_h
    // as bad, so step forward rather than concluding the epoch has ended
    for (uint32_t i = index; i < page_count; ++i)
    {
-      const uint32_t page = log_wrap_page(starting_page + i);
-      if (!nandlog_chip_is_bad_block(page) && nandlog_chip_read_page(transfer_buffer, page))
+      const uint32_t page = log_wrap_page(view_start_page() + i);
+      if (!nandlog_chip_is_bad_block(page) && nandlog_chip_read_page_region(transfer_buffer, page, 0, sizeof(nandlog_page_header_t)))
       {
          const nandlog_page_header_t *candidate = (const nandlog_page_header_t*)transfer_buffer;
-         if (page_header_valid(candidate) && (candidate->epoch == log_epoch))
+         if (page_header_valid(candidate) && (candidate->epoch == view_epoch()))
          {
             memcpy(header, candidate, sizeof(*header));
             *found_index = i;
@@ -418,11 +455,11 @@ static uint32_t seek_page_for_timestamp(uint32_t timestamp, uint32_t page_count,
    uint32_t result = at_or_after ? page_count : 0;
    for (uint32_t index = 0; index < page_count; ++index)
    {
-      const uint32_t page = log_wrap_page(starting_page + index);
-      if (nandlog_chip_is_bad_block(page) || !nandlog_chip_read_page(transfer_buffer, page))
+      const uint32_t page = log_wrap_page(view_start_page() + index);
+      if (nandlog_chip_is_bad_block(page) || !nandlog_chip_read_page_region(transfer_buffer, page, 0, sizeof(nandlog_page_header_t)))
          continue;
       const nandlog_page_header_t *header = (const nandlog_page_header_t*)transfer_buffer;
-      if (!page_header_valid(header) || (header->epoch != log_epoch))
+      if (!page_header_valid(header) || (header->epoch != view_epoch()))
          continue;
 
       if (at_or_after)
@@ -456,7 +493,7 @@ static bool nandlog_init_locked(void)
       return true;
 
    // Everything platform-specific about reaching the chip lives behind this call
-   is_reading = in_maintenance_mode = disabled = false;
+   is_reading = in_session = disabled = false;
    if (!nandlog_port_init())
       return false;
 
@@ -516,26 +553,26 @@ static void nandlog_deinit_locked(void)
       return;
 
    // Disable all chip communications
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
    }
    nandlog_port_deinit();
-   is_reading = in_maintenance_mode = is_initialized = false;
+   is_reading = in_session = is_initialized = false;
 }
 
 static void nandlog_reset_bad_block_table_locked(void)
 {
    // RECOVERY UTILITY. Discards the persisted bad-block table so it is rebuilt on the next boot. How much of
    // that is possible depends on the part, so the chip driver decides and reports whether it succeeded
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
    }
    const bool cleared = nandlog_chip_reset_bad_blocks();
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_chip_low_power(true);
       nandlog_port_power(false);
@@ -546,16 +583,16 @@ static void nandlog_reset_bad_block_table_locked(void)
       nandlog_port_log("ERROR: Bad-block table NOT cleared\n");
 }
 
-static bool nandlog_store_metadata_locked(const void *blob, uint16_t length)
+static bool nandlog_begin_epoch_locked(const void *blob, uint16_t length)
 {
    // Ensure that the metadata length is within the expected bounds
-   if (length > NANDLOG_MAX_METADATA_BYTES)
+   if (length > NANDLOG_MAX_EPOCH_DETAILS_BYTES)
       return false;
 
    // Refuse loudly rather than silently discarding the write
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
-      nandlog_port_log("ERROR: Refusing to store metadata details outside of maintenance mode\n");
+      nandlog_port_log("ERROR: Refusing to begin an epoch outside of a session\n");
       return false;
    }
 
@@ -603,6 +640,7 @@ static bool nandlog_store_metadata_locked(const void *blob, uint16_t length)
    }
 
    // The new epoch is now live
+   epoch_is_current = true;
    log_epoch = new_epoch;
    log_region_full = false;
    starting_page = current_page = new_log_start;
@@ -611,10 +649,10 @@ static bool nandlog_store_metadata_locked(const void *blob, uint16_t length)
    return true;
 }
 
-static void nandlog_retrieve_metadata_locked(void *blob, uint16_t length)
+static void nandlog_retrieve_epoch_details_locked(void *blob, uint16_t length)
 {
    // Wake up the chip if need be
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
@@ -622,7 +660,7 @@ static void nandlog_retrieve_metadata_locked(void *blob, uint16_t length)
 
    // Metadata lives in a ring, validated by its own CRC, rather than in the log itself
    memset(blob, 0, length);
-   if ((metadata_ring_page < metadata_ring_pages) && nandlog_chip_read_page(transfer_buffer, metadata_ring_page))
+   if ((view_ring_page() < metadata_ring_pages) && nandlog_chip_read_page(transfer_buffer, view_ring_page()))
    {
       const nandlog_meta_header_t *header = (const nandlog_meta_header_t*)transfer_buffer;
       const uint8_t *stored = transfer_buffer + sizeof(nandlog_meta_header_t);
@@ -631,7 +669,7 @@ static void nandlog_retrieve_metadata_locked(void *blob, uint16_t length)
    }
 
    // Put the chip back to sleep if need be
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_chip_low_power(true);
       nandlog_port_power(false);
@@ -658,7 +696,7 @@ static void write_record_prefix(uint8_t *destination, uint32_t data_length)
 static void nandlog_store_record_locked(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length)
 {
    // Add a complete record to the page currently being assembled if storage is not disabled
-   if (disabled)
+   if (disabled || !epoch_is_current)
       return;
 
    // A single record larger than a page cannot be represented; drop it rather than corrupt the stream
@@ -706,8 +744,8 @@ static void nandlog_store_record_locked(uint8_t record_type, uint32_t timestamp,
 
 static void nandlog_flush_locked(bool write_partial_pages)
 {
-   // Do not flush if currently reading or if the memory is full
-   if (disabled || is_reading || log_region_full)
+   // Do not flush if currently reading, if an earlier epoch is selected, or if the memory is full
+   if (disabled || is_reading || log_region_full || !epoch_is_current)
       return;
 
    // A page is committed as soon as the next record will not fit, so the only reason to
@@ -719,17 +757,17 @@ static void nandlog_flush_locked(bool write_partial_pages)
 static void nandlog_begin_reading_locked(uint32_t starting_timestamp, uint32_t ending_timestamp)
 {
    // Establish the span to be read
-   reading_page = starting_page;
-   last_reading_page = current_page;
-   is_reading = in_maintenance_mode;
+   reading_page = view_start_page();
+   last_reading_page = view_end_page();
+   is_reading = in_session;
    const uint32_t page_count = epoch_page_count();
    if (starting_timestamp)
    {
       const uint32_t index = seek_page_for_timestamp(starting_timestamp, page_count, true);
-      reading_page = (index < page_count) ? log_wrap_page(starting_page + index) : current_page;
+      reading_page = (index < page_count) ? log_wrap_page(view_start_page() + index) : view_end_page();
    }
    if (ending_timestamp)
-      last_reading_page = log_wrap_page(starting_page + seek_page_for_timestamp(ending_timestamp, page_count, false));
+      last_reading_page = log_wrap_page(view_start_page() + seek_page_for_timestamp(ending_timestamp, page_count, false));
 }
 
 static void nandlog_end_reading_locked(void)
@@ -738,25 +776,26 @@ static void nandlog_end_reading_locked(void)
    is_reading = false;
 }
 
-static void nandlog_enter_maintenance_mode_locked(void)
+static void nandlog_begin_session_locked(void)
 {
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
    }
-   in_maintenance_mode = true;
+   in_session = true;
 }
 
-static void nandlog_exit_maintenance_mode_locked(void)
+static void nandlog_end_session_locked(void)
 {
    nandlog_end_reading_locked();
-   if (in_maintenance_mode)
+   epoch_is_current = true;
+   if (in_session)
    {
       nandlog_chip_low_power(true);
       nandlog_port_power(false);
    }
-   in_maintenance_mode = false;
+   in_session = false;
 }
 
 static void nandlog_read_span_locked(uint32_t *num_pages, uint32_t *num_bytes)
@@ -785,10 +824,11 @@ static void nandlog_read_span_locked(uint32_t *num_pages, uint32_t *num_bytes)
       }
 
       // The trailing chunk is whatever is still buffered in RAM
-      if (last_reading_page == current_page)
+      if (last_reading_page == view_end_page())
       {
-         pages = log_page_distance(reading_page, last_reading_page) + (cache_index ? 1 : 0);
-         bytes += cache_index;
+         const uint32_t buffered = epoch_is_current ? cache_index : 0;
+         pages = log_page_distance(reading_page, last_reading_page) + (buffered ? 1 : 0);
+         bytes += buffered;
       }
       else
          pages = 1 + log_page_distance(reading_page, last_reading_page);
@@ -807,7 +847,7 @@ static uint32_t nandlog_retrieve_next_page_locked(uint8_t *buffer, nandlog_page_
       header = &discarded;
    memset(header, 0, sizeof(*header));
    header->magic = NANDLOG_PAGE_MAGIC_THIS_BUILD;
-   header->epoch = log_epoch;
+   header->epoch = view_epoch();
    header->first_timestamp = header->last_timestamp = NANDLOG_NO_TIMESTAMP;
    if (!is_reading)
       return 0;
@@ -817,7 +857,7 @@ static uint32_t nandlog_retrieve_next_page_locked(uint8_t *buffer, nandlog_page_
    if (reading_page == last_reading_page)
    {
       is_last = true;
-      if (reading_page == current_page)
+      if (epoch_is_current && (reading_page == current_page))
       {
          // Whatever is still buffered in RAM, described by the header fields being accumulated for it
          memcpy(buffer, cache, cache_index);
@@ -832,10 +872,10 @@ static uint32_t nandlog_retrieve_next_page_locked(uint8_t *buffer, nandlog_page_
       if (nandlog_chip_is_bad_block(reading_page))
          reading_page = log_next_good_block(reading_page);
 
-   if (!length && !(is_last && (reading_page == current_page)))
+   if (!length && !(is_last && epoch_is_current && (reading_page == current_page)))
    {
       // Capture the header before extract_page_payload() strips it out of the buffer
-      const uint32_t position = log_page_distance(starting_page, reading_page);
+      const uint32_t position = log_page_distance(view_start_page(), reading_page);
       if (nandlog_chip_read_page(buffer, reading_page))
       {
          const nandlog_page_header_t stored = *(const nandlog_page_header_t*)buffer;
@@ -867,7 +907,7 @@ static uint32_t nandlog_retrieve_page_by_seq_locked(uint32_t seq, uint8_t *buffe
    // Fetch one specific page so the host can ask for the ones it lost
    memset(header, 0, sizeof(*header));
    header->magic = NANDLOG_PAGE_MAGIC_THIS_BUILD;
-   header->epoch = log_epoch;
+   header->epoch = view_epoch();
    header->seq = seq;
    header->first_timestamp = header->last_timestamp = NANDLOG_NO_TIMESTAMP;
    if (!is_reading)
@@ -887,7 +927,7 @@ static uint32_t nandlog_retrieve_page_by_seq_locked(uint32_t seq, uint8_t *buffe
       }
       if (probe.seq == seq)
       {
-         if (!nandlog_chip_read_page(buffer, log_wrap_page(starting_page + found)))
+         if (!nandlog_chip_read_page(buffer, log_wrap_page(view_start_page() + found)))
             return 0;
          const nandlog_page_header_t stored = *(const nandlog_page_header_t*)buffer;
          const uint32_t length = extract_page_payload(buffer);
@@ -910,14 +950,14 @@ static uint32_t nandlog_read_recent_page_locked(uint32_t pages_back, uint8_t *bu
    // Returns the payload length or zero if that page could not be read
    if (end_of_epoch)
       *end_of_epoch = true;
-   if (current_page == starting_page)
+   if (view_end_page() == view_start_page())
       return 0;
-   uint32_t page = current_page;
+   uint32_t page = view_end_page();
    for (uint32_t step = 0; step <= pages_back; ++step)
       page = log_prev_page(page);
 
    // Wake up the chip if need be
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_port_power(true);
       nandlog_chip_low_power(false);
@@ -927,7 +967,7 @@ static uint32_t nandlog_read_recent_page_locked(uint32_t pages_back, uint8_t *bu
    if (!nandlog_chip_is_bad_block(page) && nandlog_chip_read_page(transfer_buffer, page))
    {
       const nandlog_page_header_t *stored = (const nandlog_page_header_t*)transfer_buffer;
-      if (page_header_valid(stored) && (stored->epoch == log_epoch))
+      if (page_header_valid(stored) && (stored->epoch == view_epoch()))
       {
          if (header)
             memcpy(header, stored, sizeof(*header));
@@ -935,19 +975,143 @@ static uint32_t nandlog_read_recent_page_locked(uint32_t pages_back, uint8_t *bu
          if (length && buffer)
             memcpy(buffer, transfer_buffer, length);
          if (end_of_epoch)
-            *end_of_epoch = (page == starting_page);
+            *end_of_epoch = (page == view_start_page());
       }
    }
    else if (end_of_epoch)
       *end_of_epoch = false;
 
    // Put the chip back to sleep if need be
-   if (!in_maintenance_mode)
+   if (!in_session)
    {
       nandlog_chip_low_power(true);
       nandlog_port_power(false);
    }
    return length;
+}
+
+static uint32_t list_epochs(uint32_t *epochs, uint32_t *ring_pages, uint32_t capacity)
+{
+   // One pass over the ring, keeping the highest epochs it names in descending order
+   uint32_t found = 0;
+   for (uint32_t page = 0; page < metadata_ring_pages; ++page)
+   {
+      if (nandlog_chip_is_bad_block(page) || !nandlog_chip_read_page_region(transfer_buffer, page, 0, sizeof(nandlog_meta_header_t)))
+         continue;
+      const nandlog_meta_header_t *header = (const nandlog_meta_header_t*)transfer_buffer;
+      if (!meta_header_valid(header))
+         continue;
+      const uint32_t epoch = header->epoch;
+      uint32_t slot = found;
+      while (slot && (epochs[slot - 1] < epoch))
+         --slot;
+      if (slot >= capacity)
+         continue;
+      for (uint32_t i = (found < capacity) ? found : (capacity - 1); i > slot; --i)
+      {
+         epochs[i] = epochs[i - 1];
+         ring_pages[i] = ring_pages[i - 1];
+      }
+      epochs[slot] = epoch;
+      ring_pages[slot] = page;
+      if (found < capacity)
+         ++found;
+   }
+   return found;
+}
+
+static uint32_t nandlog_epoch_count_locked(void)
+{
+   uint32_t epochs[NANDLOG_MAX_LISTED_EPOCHS], ring_pages[NANDLOG_MAX_LISTED_EPOCHS];
+   if (!in_session)
+   {
+      nandlog_port_power(true);
+      nandlog_chip_low_power(false);
+   }
+   const uint32_t count = list_epochs(epochs, ring_pages, NANDLOG_MAX_LISTED_EPOCHS);
+   if (!in_session)
+   {
+      nandlog_chip_low_power(true);
+      nandlog_port_power(false);
+   }
+   return count;
+}
+
+static bool nandlog_epoch_info_locked(uint32_t index, nandlog_epoch_info_t *info)
+{
+   uint32_t epochs[NANDLOG_MAX_LISTED_EPOCHS], ring_pages[NANDLOG_MAX_LISTED_EPOCHS];
+   memset(info, 0, sizeof(*info));
+   if (!in_session)
+   {
+      nandlog_port_power(true);
+      nandlog_chip_low_power(false);
+   }
+
+   bool described = false;
+   if ((index < NANDLOG_MAX_LISTED_EPOCHS) && (index < list_epochs(epochs, ring_pages, NANDLOG_MAX_LISTED_EPOCHS)) && nandlog_chip_read_page_region(transfer_buffer, ring_pages[index], 0, sizeof(nandlog_meta_header_t)))
+   {
+      const nandlog_meta_header_t *header = (const nandlog_meta_header_t*)transfer_buffer;
+      if (meta_header_valid(header))
+      {
+         info->epoch = header->epoch;
+         info->created_timestamp = header->created_timestamp;
+         info->first_page = header->log_start_page;
+         info->details_length = header->details_length;
+         info->is_current = (header->epoch == log_epoch);
+         described = true;
+      }
+   }
+
+   if (!in_session)
+   {
+      nandlog_chip_low_power(true);
+      nandlog_port_power(false);
+   }
+   return described;
+}
+
+static void nandlog_select_current_epoch_locked(void)
+{
+   epoch_is_current = true;
+}
+
+static bool nandlog_select_epoch_locked(uint32_t epoch)
+{
+   // A selection is part of a read
+   if (!in_session || is_reading)
+      return false;
+   if (epoch == log_epoch)
+   {
+      nandlog_select_current_epoch_locked();
+      return true;
+   }
+
+   // An epoch ends where the one that replaced it began, because a new epoch starts at the next good block
+   // after the head that wrote the old one. The bound therefore comes from the lowest epoch above this one
+   uint32_t epochs[NANDLOG_MAX_LISTED_EPOCHS], ring_pages[NANDLOG_MAX_LISTED_EPOCHS];
+   const uint32_t count = list_epochs(epochs, ring_pages, NANDLOG_MAX_LISTED_EPOCHS);
+   uint32_t index = count;
+   for (uint32_t i = 0; i < count; ++i)
+      if (epochs[i] == epoch)
+         index = i;
+   if ((index >= count) || !index)
+      return false;
+
+   // Read both slots for their start pages
+   if (!nandlog_chip_read_page_region(transfer_buffer, ring_pages[index - 1], 0, sizeof(nandlog_meta_header_t)) ||
+       !meta_header_valid((const nandlog_meta_header_t*)transfer_buffer))
+      return false;
+   const uint32_t end_page = ((const nandlog_meta_header_t*)transfer_buffer)->log_start_page;
+   if (!nandlog_chip_read_page_region(transfer_buffer, ring_pages[index], 0, sizeof(nandlog_meta_header_t)) ||
+       !meta_header_valid((const nandlog_meta_header_t*)transfer_buffer))
+      return false;
+
+   selected_start_page = ((const nandlog_meta_header_t*)transfer_buffer)->log_start_page;
+   selected_end_page = end_page;
+   selected_ring_page = ring_pages[index];
+   selected_epoch = epoch;
+   epoch_is_current = false;
+   return true;
 }
 
 static uint32_t nandlog_retransmit_add_locked(const uint32_t *seqs, uint32_t count)
@@ -1011,37 +1175,30 @@ void nandlog_deinit(void)
    nandlog_port_unlock();
 }
 
-uint32_t nandlog_data_bytes_per_page(void)
-{
-   // Answered from the chip rather than the cached copy so it is correct before nandlog_init() has run
-   return nandlog_chip_geometry()->page_size_bytes - sizeof(nandlog_page_header_t);
-}
-
 void nandlog_disable(bool disable)
 {
    // Set the storage disabled flag
    disabled = disable;
 }
 
-void nandlog_reset_bad_block_table(void)
+uint32_t nandlog_data_bytes_per_page(void)
 {
-   nandlog_port_lock();
-   nandlog_reset_bad_block_table_locked();
-   nandlog_port_unlock();
+   // Answered from the chip rather than the cached copy so it is correct before nandlog_init() has run
+   return nandlog_chip_geometry()->page_size_bytes - sizeof(nandlog_page_header_t);
 }
 
-bool nandlog_store_metadata(const void *blob, uint16_t length)
+bool nandlog_begin_epoch(const void *blob, uint16_t length)
 {
    nandlog_port_lock();
-   const bool result = nandlog_store_metadata_locked(blob, length);
+   const bool result = nandlog_begin_epoch_locked(blob, length);
    nandlog_port_unlock();
    return result;
 }
 
-void nandlog_retrieve_metadata(void *blob, uint16_t length)
+void nandlog_retrieve_epoch_details(void *blob, uint16_t length)
 {
    nandlog_port_lock();
-   nandlog_retrieve_metadata_locked(blob, length);
+   nandlog_retrieve_epoch_details_locked(blob, length);
    nandlog_port_unlock();
 }
 
@@ -1065,17 +1222,17 @@ bool nandlog_has_buffered_data(void)
    return (cache_index != 0);
 }
 
-void nandlog_enter_maintenance_mode(void)
+void nandlog_begin_session(void)
 {
    nandlog_port_lock();
-   nandlog_enter_maintenance_mode_locked();
+   nandlog_begin_session_locked();
    nandlog_port_unlock();
 }
 
-void nandlog_exit_maintenance_mode(void)
+void nandlog_end_session(void)
 {
    nandlog_port_lock();
-   nandlog_exit_maintenance_mode_locked();
+   nandlog_end_session_locked();
    nandlog_port_unlock();
 }
 
@@ -1116,8 +1273,7 @@ uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_pag
    return result;
 }
 
-bool nandlog_framed_next_record(const uint8_t *payload, uint32_t length, uint32_t *offset,
-                                const uint8_t **record, uint32_t *record_bytes)
+bool nandlog_framed_next_record(const uint8_t *payload, uint32_t length, uint32_t *offset, const uint8_t **record, uint32_t *record_bytes)
 {
    if (!payload || !offset || (*offset >= length))
       return false;
@@ -1143,6 +1299,37 @@ uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_
    const uint32_t result = nandlog_read_recent_page_locked(pages_back, buffer, header, end_of_epoch);
    nandlog_port_unlock();
    return result;
+}
+
+uint32_t nandlog_epoch_count(void)
+{
+   nandlog_port_lock();
+   const uint32_t result = nandlog_epoch_count_locked();
+   nandlog_port_unlock();
+   return result;
+}
+
+bool nandlog_epoch_info(uint32_t index, nandlog_epoch_info_t *info)
+{
+   nandlog_port_lock();
+   const bool result = nandlog_epoch_info_locked(index, info);
+   nandlog_port_unlock();
+   return result;
+}
+
+bool nandlog_select_epoch(uint32_t epoch)
+{
+   nandlog_port_lock();
+   const bool result = nandlog_select_epoch_locked(epoch);
+   nandlog_port_unlock();
+   return result;
+}
+
+void nandlog_select_current_epoch(void)
+{
+   nandlog_port_lock();
+   nandlog_select_current_epoch_locked();
+   nandlog_port_unlock();
 }
 
 void nandlog_retransmit_clear(void)
@@ -1179,33 +1366,44 @@ uint32_t nandlog_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, nandl
    return result;
 }
 
+void nandlog_reset_bad_block_table(void)
+{
+   nandlog_port_lock();
+   nandlog_reset_bad_block_table_locked();
+   nandlog_port_unlock();
+}
+
 
 #else
 
 bool nandlog_probe(void) { return true; }
 bool nandlog_init(void) { return true; }
-uint32_t nandlog_data_bytes_per_page(void) { return NANDLOG_MAX_DATA_BYTES_PER_PAGE; }
 void nandlog_deinit(void) {}
 void nandlog_disable(bool disable) {}
-void nandlog_reset_bad_block_table(void) {}
-bool nandlog_store_metadata(const void *blob, uint16_t length) { (void)blob; (void)length; return true; }
-void nandlog_retrieve_metadata(void *blob, uint16_t length) { memset(blob, 0, length); };
+uint32_t nandlog_data_bytes_per_page(void) { return NANDLOG_MAX_DATA_BYTES_PER_PAGE; }
+bool nandlog_begin_epoch(const void *blob, uint16_t length) { (void)blob; (void)length; return true; }
+void nandlog_retrieve_epoch_details(void *blob, uint16_t length) { memset(blob, 0, length); };
 void nandlog_store_record(uint8_t record_type, uint32_t timestamp, const void *data, uint32_t data_length) {}
 void nandlog_flush(bool write_partial_pages) {}
 bool nandlog_has_buffered_data(void) { return false; }
 void nandlog_begin_reading(uint32_t starting_timestamp, uint32_t ending_timestamp) {}
 void nandlog_end_reading(void) {}
-void nandlog_enter_maintenance_mode(void){}
-void nandlog_exit_maintenance_mode(void) {}
+void nandlog_begin_session(void){}
+void nandlog_end_session(void) {}
 void nandlog_read_span(uint32_t *num_pages, uint32_t *num_bytes) { if (num_pages) *num_pages = 0; if (num_bytes) *num_bytes = 0; }
 uint32_t nandlog_retrieve_next_page(uint8_t *buffer, nandlog_page_header_t *header) { (void)header; return 0; }
 uint32_t nandlog_retrieve_page_by_seq(uint32_t seq, uint8_t *buffer, nandlog_page_header_t *header) { (void)seq; (void)header; return 0; }
 bool nandlog_framed_next_record(const uint8_t *payload, uint32_t length, uint32_t *offset, const uint8_t **record, uint32_t *record_bytes) { (void)payload; (void)length; (void)offset; (void)record; (void)record_bytes; return false; }
 uint32_t nandlog_read_recent_page(uint32_t pages_back, uint8_t *buffer, nandlog_page_header_t *header, bool *end_of_epoch) { (void)pages_back; (void)buffer; (void)header; if (end_of_epoch) *end_of_epoch = true; return 0; }
+uint32_t nandlog_epoch_count(void) { return 0; }
+bool nandlog_epoch_info(uint32_t index, nandlog_epoch_info_t *info) { (void)index; memset(info, 0, sizeof(*info)); return false; }
+bool nandlog_select_epoch(uint32_t epoch) { (void)epoch; return false; }
+void nandlog_select_current_epoch(void) {}
 void nandlog_retransmit_clear(void) {}
 uint32_t nandlog_retransmit_add(const uint32_t *seqs, uint32_t count) { (void)seqs; (void)count; return 0; }
 uint32_t nandlog_retransmit_count(void) { return 0; }
 uint32_t nandlog_retransmit_total_bytes(void) { return 0; }
 uint32_t nandlog_retrieve_retransmit_page(uint32_t index, uint8_t *buffer, nandlog_page_header_t *header) { (void)index; (void)header; return 0; }
+void nandlog_reset_bad_block_table(void) {}
 
 #endif  // #if NANDLOG_HAS_HARDWARE

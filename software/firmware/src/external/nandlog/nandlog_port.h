@@ -13,8 +13,8 @@ void nandlog_port_lock(void);
 void nandlog_port_unlock(void);
 
 // Assumes a transfer either completes or does not return, so a failure that cannot be retried must end in nandlog_port_fatal()
-void nandlog_port_spi_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length);
-void nandlog_port_spi_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length);
+void nandlog_port_transfer_read(uint8_t command, const void *address, uint32_t address_length, void *read_buffer, uint32_t read_length);
+void nandlog_port_transfer_write(uint8_t command, const void *address, uint32_t address_length, const void *write_buffer, uint32_t write_length);
 
 // Gate the chip's write-protect pin: true permits programming and erasing
 void nandlog_port_write_enable(bool enable);

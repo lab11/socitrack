@@ -109,11 +109,11 @@ void run_tasks(void)
             .is_terminated = 0
          };
          //new exp details can only be set in maintenance mode
-         nandlog_enter_maintenance_mode();
+         nandlog_begin_session();
          if (storage_store_experiment_details(&details))
             app_set_experiment_start_time(details.experiment_start_time);
          if (!battery_monitor_is_plugged_in())
-            nandlog_exit_maintenance_mode();
+            nandlog_end_session();
       }
 #endif
 
