@@ -44,6 +44,21 @@ uint32_t hw_elapsed_us(uint32_t start_cycles, uint32_t end_cycles)
 }
 
 
+// Powering The Part ---------------------------------------------------------------------------------------------------
+
+void hw_power_up(void)
+{
+   // A session is exactly this: the part held powered across a run of operations instead of being woken and
+   // slept around each one. Opening one twice is harmless
+   nandlog_begin_session();
+}
+
+void hw_power_down(void)
+{
+   nandlog_end_session();
+}
+
+
 // Scratch Area --------------------------------------------------------------------------------------------------------
 
 uint32_t hw_scratch_page(uint32_t block_index)

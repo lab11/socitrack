@@ -29,6 +29,7 @@ static uint8_t region[NANDLOG_MAX_PAGE_SIZE_BYTES];
 static void test_short_read_agrees_with_whole_page(void)
 {
    print("\n--- 1a: a short read returns the same bytes as a whole-page read ---\n");
+   hw_power_up();
 
    // Put something on a scratch page that is neither erased nor constant, so a read from the wrong place
    // cannot coincidentally agree
@@ -55,6 +56,7 @@ static void test_short_read_agrees_with_whole_page(void)
 static void test_column_addressing(void)
 {
    print("\n--- 1b: a read from a non-zero column lands at that column ---\n");
+   hw_power_up();
    const uint32_t page = hw_scratch_page(0);
 
    HW_CHECK(nandlog_chip_read_page(whole_page, page), "whole-page read reported an ECC failure");
@@ -94,6 +96,7 @@ static void test_spare_area_marker_agrees(void)
 {
    print("\n--- 1c: the spare-area marker reads the same via a long read and via its column ---\n");
    print("     (this is the one that decides whether the bad-block scan can be trusted)\n");
+   hw_power_up();
 
    uint32_t mismatches = 0, factory_bad = 0, unreadable = 0, scanned = 0;
    const uint32_t start = hw_cycle_count();
@@ -147,6 +150,7 @@ static void test_page_header_only_read(void)
 {
    print("\n--- 1d: a page header reads correctly without the page behind it ---\n");
 
+   // These go through nandlog.h, which manages the part's power for itself
    // Commit a real log page, then read only its header the way every boot and every bounded download now do
    nandlog_disable(false);
    hw_fill_pattern(region, 512, 0x5EED1234);
@@ -170,12 +174,11 @@ static void test_page_header_only_read(void)
    // recover_write_head(), both of which are now header-only reads
    nandlog_deinit();
    HW_CHECK(nandlog_init(), "re-initialising after a header-only boot path failed");
-   nandlog_begin_session();
+   hw_power_up();
    uint32_t pages = 0;
    nandlog_begin_reading(0, 0);
    nandlog_read_span(&pages, NULL);
    nandlog_end_reading();
-   nandlog_end_session();
    HW_CHECK(pages > 0, "the write head was not recovered -- the log reads as empty after a re-init");
    print("  write head recovered, %u pages in the epoch\n", pages);
 }
@@ -192,6 +195,7 @@ static void test_boot_timing(void)
    const bool ok = nandlog_init();
    const uint32_t warm_boot_us = hw_elapsed_us(start, hw_cycle_count());
    HW_CHECK(ok, "nandlog_init() failed while being timed");
+   hw_power_up();                   // the init just timed left the part asleep again
 
    // One latch plus a 32-byte read, and one latch plus a whole page, so the ratio of the two says how much
    // of a read is the flash and how much is the bus
@@ -227,6 +231,7 @@ int main(void)
          am_hal_delay_us(1000000);
    }
    system_enable_interrupts(true);
+   hw_power_up();
 
    print("\n============================================================\n");
    print("nandlog on-device test 1: partial and column-addressed reads\n");
@@ -240,6 +245,7 @@ int main(void)
    test_page_header_only_read();
    test_boot_timing();
 
+   hw_power_down();
    HW_REPORT("TEST 1: PARTIAL READS");
    print("\nIf 1b or 1c failed, do not deploy: the bad-block scan is reading the wrong place\n"
          "and will silently fail to retire factory-bad blocks.\n");
