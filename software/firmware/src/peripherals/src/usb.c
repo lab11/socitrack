@@ -1,7 +1,9 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
+#include "app_tasks.h"
 #include "logging.h"
 #include "system.h"
+#include "timers.h"
 #include "usb.h"
 
 
@@ -14,6 +16,18 @@ static volatile uint32_t cable_connected;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
+#ifdef __USE_FREERTOS__
+
+static void usb_cable_connected_deferred(void *unused, uint32_t unused_value)
+{
+   // Record why the log ends here then restart into USB mode through the storage task
+   storage_write_charging_status(BATTERY_PLUGGED);
+   if (!storage_flush_and_shutdown())
+      system_reset(true);
+}
+
+#endif  // #ifdef __USE_FREERTOS__
+
 static void usb_cable_callback(void *pin_number)
 {
    // Only care about a connection change when a USB cable is plugged in
@@ -23,7 +37,18 @@ static void usb_cable_callback(void *pin_number)
       am_hal_gpio_state_read(PIN_USB_DETECT, AM_HAL_GPIO_INPUT_READ, &detected);
       cable_connected = detected;
       if (detected)
+      {
+#ifdef __USE_FREERTOS__
+         // Tell the main task to reboot
+         BaseType_t higher_priority_task_woken = pdFALSE;
+         if ((xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && (xTimerPendFunctionCallFromISR(usb_cable_connected_deferred, NULL, 0, &higher_priority_task_woken) == pdPASS))
+         {
+            portYIELD_FROM_ISR(higher_priority_task_woken);
+            return;
+         }
+#endif  // #ifdef __USE_FREERTOS__
          system_reset(true);
+      }
    }
 }
 

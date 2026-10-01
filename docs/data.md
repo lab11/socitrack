@@ -124,7 +124,7 @@ Not every gap is a problem, and the kind of gap tells you which.
 | Gap | Meaning |
 | --- | --- |
 | Distances stop, housekeeping continues every 5 min | The badge was running but had nobody in range. Normal when people separate. |
-| Everything stops, then a `Plugged` event | On a charger. Recording is suspended while plugged in. |
+| Everything stops, then a `Plugged` event | On a charger or a USB cable. Recording is suspended while plugged in. |
 | Everything stops, then a restart | Powered off — outside the study window, or flat battery. Check the voltage before the gap. |
 | Everything stops with no explanation | Investigate. Start with [Troubleshooting](troubleshooting.md). |
 
