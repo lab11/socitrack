@@ -156,7 +156,7 @@ Memory region         Used Size  Region Size  %age Used
 ```
 
 Replace `P` with the revision silkscreened on your board — see
-[the firmware README](../software/firmware/README.md) for the supported values.
+[the firmware README](../../software/firmware/README.md) for the supported values.
 
 
 ## Getting Python
@@ -325,4 +325,4 @@ back of the device.
 
 This should be everything you need to install.
 
-The next step is [assigning your device an ID and flashing it](../software/firmware/README.md).
+The next step is [assigning your device an ID and flashing it](../../software/firmware/README.md).

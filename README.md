@@ -1,26 +1,43 @@
 TotTag
 ======
 
-The TotTag is a self-contained PCB which utilizes a hybrid ultra wideband (UWB)
-and Bluetooth Low Energy (BLE) radio design to enable high-fidelity interaction
-tracking between devices _without_ requiring any supporting infrastructure.
+TotTag is a wearable badge that measures **how close people are to one another**, continuously, with
+no infrastructure in the room. Each badge carries an ultra-wideband (UWB) radio and ranges against
+every other badge nearby twice a second, recording distances to on-board flash. Nothing is installed
+in the environment, nothing is transmitted during a deployment, and no audio or video is captured.
 
-- [Documentation & Getting Started Guide](doc/)
-- [Hardware details](hardware/)
-- [Software details](software/)
+If you are interested in using TotTag in your own research, please fill out this
+[Interest Form](https://forms.gle/SqWca9DrKpcx9rBL6).
+
+> **Note: This system is under heavy development and is provided as-is, with no mechanism for external
+> support, technical or otherwise. In the future, once the project has reached a steady state and
+> staffing has ramped up, we may begin providing limited support. We will post any updates on that
+> front here. Thank you for your understanding!**
 
 
-Open-Source Usage
-=================
+Documentation
+-------------
 
-If you are interested in incorporating TotTag devices into your future
-research, please fill out this [Interest Form](https://forms.gle/SqWca9DrKpcx9rBL6).
+**All user documentation lives at [lab11.github.io/socitrack](https://lab11.github.io/socitrack/),
+built from [`docs/`](docs/).**
 
-> **Note: This system is currently under heavy development. At the moment, it
-> is provided as-is with no mechanism for external support, technical or
-> otherwise.  In the future, once the project has reached a steady state and
-> staffing has ramped up, we may begin providing limited support. We will post
-> any updates on that front here. Thank you for your understanding!**
+Start with [Running a Deployment](docs/running-a-deployment.md) if you want to use TotTag, or
+[Getting Started](docs/getting-started.md) if you have badges that have never been set up.
+
+
+Repository layout
+-----------------
+
+| Directory | Contents |
+| --- | --- |
+| [`docs/`](docs/) | All user and developer documentation; the source of the documentation site |
+| [`software/`](software/) | Badge firmware and the tools that configure badges and read their data |
+| [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD |
+| [`media/`](media/) | Photographs and diagrams used by the documentation |
+
+TotTag saw a major platform refresh in 2023, moving to a new hardware and software design built
+around the Ambiq Apollo4. Documentation describing the earlier generation is kept under
+[`docs/archive/`](docs/archive/).
 
 
 History, Related Projects, & Relevant Publications
