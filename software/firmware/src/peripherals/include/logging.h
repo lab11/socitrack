@@ -39,7 +39,14 @@ void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8
 #define transmit_log_data(...) SEGGER_RTT_Write(1, __VA_ARGS__)
 #define transmit_log_flush()   do {} while (0)
 #else
-#define transmit_log_data(data, num_bytes) do { for (uint32_t i = 0; i < num_bytes; ) { if (!tud_cdc_write_available()) taskYIELD() else i += usb_write(data + i, num_bytes - i); } } while(0)
+#define transmit_log_data(data, num_bytes) do { \
+      const uint8_t *_log_bytes = (const uint8_t*)(data); \
+      const uint32_t _log_total = (uint32_t)(num_bytes); \
+      for (uint32_t _log_sent = 0; _log_sent < _log_total; ) { \
+         if (!tud_cdc_write_available()) { taskYIELD(); } \
+         else { _log_sent += usb_write(_log_bytes + _log_sent, _log_total - _log_sent); } \
+      } \
+   } while (0)
 #define transmit_log_flush()   tud_cdc_write_flush()
 #endif  // #ifdef __USE_SEGGER__
 
