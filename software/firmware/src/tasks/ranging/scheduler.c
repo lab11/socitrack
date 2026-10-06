@@ -3,11 +3,14 @@
 #include "bluetooth.h"
 #include "computation_phase.h"
 #include "deca_interface.h"
+#include "battery.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging_phase.h"
 #include "schedule_phase.h"
 #include "scheduler.h"
 #include "status_phase.h"
+#include "storage_records.h"
 #include "subscription_phase.h"
 #include "system.h"
 
@@ -24,6 +27,12 @@ static uint32_t last_round_stimer, search_started_stimer;
 static volatile schedule_role_t current_role = ROLE_IDLE;
 static volatile scheduler_phase_t ranging_phase;
 static volatile bool is_running;
+
+#if DIAGNOSTIC_BUILD
+static volatile bool abort_pending;
+static storage_radio_abort_t pending_abort;
+static uint32_t pending_abort_timestamp;
+#endif
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
@@ -60,6 +69,22 @@ static uint32_t round_elapsed_us(void)
    // How far into the round this device actually is
    const uint64_t now = (uint64_t)dwt_readsystimestamphi32() << 8;
    return DWT_TO_US((now - schedule_phase_get_reference_time_full()) & 0xFFFFFFFFFFULL);
+}
+
+static void log_pending_abort(void)
+{
+#if DIAGNOSTIC_BUILD && !defined(_TEST_RANGING_TASK) && !defined(_TEST_NO_STORAGE)
+   if (!abort_pending)
+      return;
+   storage_radio_abort_t abort;
+   uint32_t timestamp;
+   AM_CRITICAL_BEGIN
+   abort = pending_abort;
+   timestamp = pending_abort_timestamp;
+   abort_pending = false;
+   AM_CRITICAL_END
+   storage_write_radio_abort(timestamp, &abort);
+#endif
 }
 
 static void arm_wakeup_timer(uint32_t elapsed_us)
@@ -353,6 +378,7 @@ void scheduler_run(schedule_role_t role)
       if (xTaskNotifyWait(pdFALSE, 0xffffffff, &pending_actions, wait_ticks) == pdTRUE)
       {
          // Handle any pending actions
+         log_pending_abort();
          if ((pending_actions & RANGING_NEW_ROUND_START))
          {
             // Wake up the radio and wait until all schedule updating tasks have completed
@@ -437,6 +463,30 @@ void scheduler_run(schedule_role_t role)
    // Notify the application that network connectivity has been lost
    current_role = ROLE_IDLE;
    app_notify(APP_NOTIFY_NETWORK_LOST);
+}
+
+void scheduler_note_rx_arm_failure(scheduler_phase_t phase, uint32_t slot, uint32_t schedule_size, uint32_t deadline_us)
+{
+#if DIAGNOSTIC_BUILD
+   // Runs in the radio interrupt the moment a delayed receive is refused, so everything here is as of that instant
+   if (abort_pending)
+      return;
+   const int32_t late_us = (int32_t)round_elapsed_us() - (int32_t)deadline_us;
+   uint32_t isr_us = 0, events = 0;
+   const bool timed = ranging_radio_isr_progress(&isr_us, &events);
+   const uint32_t since_ms = battery_monitor_ms_since_temperature_sample();
+   pending_abort = (storage_radio_abort_t){
+      .phase = (phase == RANGING_PHASE) ? STORAGE_RADIO_ABORT_PHASE_RANGING : STORAGE_RADIO_ABORT_PHASE_STATUS,
+      .slot = (uint8_t)((slot > UINT8_MAX) ? UINT8_MAX : slot),
+      .schedule_size = (uint8_t)schedule_size,
+      .late_us = (int16_t)((late_us > INT16_MAX) ? INT16_MAX : ((late_us < INT16_MIN) ? INT16_MIN : late_us)),
+      .isr_elapsed_us = (uint16_t)(!timed ? STORAGE_RADIO_ABORT_UNMEASURED : ((isr_us >= STORAGE_RADIO_ABORT_UNMEASURED) ? (STORAGE_RADIO_ABORT_UNMEASURED - 1) : isr_us)),
+      .isr_events = (uint8_t)((events > UINT8_MAX) ? UINT8_MAX : events),
+      .since_temperature_ms = (uint16_t)((since_ms >= STORAGE_RADIO_ABORT_UNMEASURED) ? STORAGE_RADIO_ABORT_UNMEASURED : since_ms)
+   };
+   pending_abort_timestamp = schedule_phase_get_timestamp();
+   abort_pending = true;
+#endif
 }
 
 uint8_t scheduler_get_master_cycle_failures(void)

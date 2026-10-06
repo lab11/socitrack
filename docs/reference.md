@@ -113,7 +113,9 @@ From `software/firmware`:
 | `make BOARD_REV=P flash` | Build and flash |
 | `make ID=c0:98:e5:42:00:XX UID` | Assign a badge its permanent ID (once ever) |
 | `make BOARD_REV=P flashb` | Flash the Bluetooth controller firmware, then the application |
-| `make clean` | Required when switching revisions |
+| `make clean` | Required when switching revisions or build switches |
+| `make BOARD_REV=P TEMPCO=0` | TempCo switched off: factory regulator voltages, no 10 s temperature refresh |
+| `make BOARD_REV=P DIAGNOSTIC=1` | Diagnostic build: logs every late radio receive and times radio interrupts, at some cost in power and log space. Not for deployments |
 | `SEGGER_SERIAL=...` | Choose among several attached programmers |
 
 From `software/firmware/tests` — diagnostic builds that exercise one subsystem and print over SEGGER

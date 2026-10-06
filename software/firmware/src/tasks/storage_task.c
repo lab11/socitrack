@@ -45,6 +45,11 @@ static imu_data_t imu_data[MAX_NUM_DATA_ITEMS];
 static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
 static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 
+#if DIAGNOSTIC_BUILD
+#define MAX_NUM_ABORT_ITEMS     4
+static storage_radio_abort_t abort_data[MAX_NUM_ABORT_ITEMS];
+#endif
+
 #endif  // #if !defined(_TEST_NO_STORAGE)
 
 
@@ -206,6 +211,17 @@ void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
    }
 }
 
+void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort)
+{
+#if DIAGNOSTIC_BUILD
+   static uint32_t abort_index = 0;
+   abort_data[abort_index] = *abort;
+   const storage_item_t storage_item = { .timestamp = timestamp, .value = abort_index, .type = STORAGE_TYPE_RADIO_ABORT };
+   if (enqueue_storage_item(&storage_item))
+      abort_index = (abort_index + 1) % MAX_NUM_ABORT_ITEMS;
+#endif
+}
+
 #else
 
 bool storage_flush_and_shutdown(void) { return false; }
@@ -215,6 +231,7 @@ void storage_write_charging_status(battery_event_t battery_event) {}
 void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data, uint32_t ranging_data_len, int32_t timestamp_offset) {}
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices) {}
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
+void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort) {}
 void storage_write_time_anchor(void) {}
 void storage_write_diagnostics(void) {}
 
@@ -333,6 +350,11 @@ void StorageTask(void *params)
             case STORAGE_TYPE_BLE_SCAN:
                nandlog_store_record(STORAGE_TYPE_BLE_SCAN, item.timestamp, ble_data[item.value].data, ble_data[item.value].length);
                break;
+#if DIAGNOSTIC_BUILD
+            case STORAGE_TYPE_RADIO_ABORT:
+               nandlog_store_record(STORAGE_TYPE_RADIO_ABORT, item.timestamp, &abort_data[item.value], sizeof(abort_data[item.value]));
+               break;
+#endif
             case STORAGE_TYPE_DIAGNOSTICS:
             {
                // Gathered here rather than at the call site so the counters are read as late as possible
@@ -358,7 +380,9 @@ void StorageTask(void *params)
                diagnostics.firmware_revision = firmware_revision_code();
                diagnostics.status_flags = (battery_monitor_tempco_available() ? STORAGE_DIAGNOSTIC_FLAG_TEMPCO_AVAILABLE : 0) |
                                           (battery_monitor_tempco_applied() ? STORAGE_DIAGNOSTIC_FLAG_TEMPCO_APPLIED : 0) |
-                                          (_FW_DIRTY ? STORAGE_DIAGNOSTIC_FLAG_FIRMWARE_MODIFIED : 0);
+                                          (_FW_DIRTY ? STORAGE_DIAGNOSTIC_FLAG_FIRMWARE_MODIFIED : 0) |
+                                          (DIAGNOSTIC_BUILD ? STORAGE_DIAGNOSTIC_FLAG_DIAGNOSTIC_BUILD : 0) |
+                                          (TEMPCO_ENABLED ? 0 : STORAGE_DIAGNOSTIC_FLAG_TEMPCO_DISABLED);
                diagnostics.temperature_c = battery_monitor_get_temperature_c();
 
                // Radio health, since boot

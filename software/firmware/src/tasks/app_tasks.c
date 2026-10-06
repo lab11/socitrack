@@ -32,6 +32,38 @@ static uint32_t experiment_start_time;
 static int32_t network_time_offset;
 
 
+// Private Helper Functions --------------------------------------------------------------------------------------------
+
+static bool experiment_is_active(const experiment_details_t *details)
+{
+   // Inside the deployment window and inside today's hours if it has them
+   const uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
+   const bool valid_experiment = rtc_is_valid() && details->num_devices && !details->is_terminated;
+   return valid_experiment &&
+         (timestamp >= details->experiment_start_time) && (timestamp < details->experiment_end_time) &&
+         (!details->use_daily_times ||
+            ((details->daily_start_time < details->daily_end_time) && (time_of_day >= details->daily_start_time) && (time_of_day < details->daily_end_time)) ||
+            ((details->daily_start_time > details->daily_end_time) && ((time_of_day >= details->daily_start_time) || (time_of_day < details->daily_end_time))));
+}
+
+static void record_usb_boot(void)
+{
+#if !defined(_TEST_NO_STORAGE)
+   static experiment_details_t details;
+   storage_retrieve_experiment_details(&details);
+   if (!experiment_is_active(&details))
+      return;
+   experiment_start_time = details.experiment_start_time;
+   const uint32_t timestamp = app_get_experiment_time(0);
+   const uint16_t reset_reason = system_get_reset_reason();
+   const uint8_t plugged = BATTERY_PLUGGED;
+   nandlog_store_record(STORAGE_TYPE_RESET_REASON, timestamp, &reset_reason, sizeof(reset_reason));
+   nandlog_store_record(STORAGE_TYPE_CHARGING_EVENT, timestamp, &plugged, sizeof(plugged));
+   nandlog_flush(true);
+#endif
+}
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 uint32_t app_get_experiment_time(int32_t offset)
@@ -67,6 +99,7 @@ void run_tasks(void)
       buzzer_init();
       rtc_init();
       nandlog_init();
+      record_usb_boot();
 
       // Create the USB processing tasks
       uid[0] = uid[1] = uid[2] = uid[3] = 0xEF;
@@ -120,15 +153,9 @@ void run_tasks(void)
       // Determine whether there is an active experiment taking place
       static experiment_details_t scheduled_experiment;
       storage_retrieve_experiment_details(&scheduled_experiment);
-      uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
-      bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices && !scheduled_experiment.is_terminated;
-      bool active_experiment = valid_experiment &&
-            (timestamp >= scheduled_experiment.experiment_start_time) && (timestamp < scheduled_experiment.experiment_end_time) &&
-            (!scheduled_experiment.use_daily_times ||
-               ((scheduled_experiment.daily_start_time < scheduled_experiment.daily_end_time) &&
-                  (time_of_day >= scheduled_experiment.daily_start_time) && (time_of_day < scheduled_experiment.daily_end_time)) ||
-               ((scheduled_experiment.daily_start_time > scheduled_experiment.daily_end_time) &&
-                  ((time_of_day >= scheduled_experiment.daily_start_time) || (time_of_day < scheduled_experiment.daily_end_time))));
+      const uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
+      const bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices && !scheduled_experiment.is_terminated;
+      const bool active_experiment = experiment_is_active(&scheduled_experiment);
       experiment_start_time = scheduled_experiment.experiment_start_time;
       nandlog_disable(!active_experiment);
 

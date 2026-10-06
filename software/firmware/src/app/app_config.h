@@ -49,6 +49,13 @@
 
 #define TIME_BASE_CHANGE_THRESHOLD_MS               2000
 
+#ifndef TEMPCO_ENABLED
+#define TEMPCO_ENABLED                              1           // 0: factory regulator trims and no 10 s temperature refresh
+#endif
+#ifndef DIAGNOSTIC_BUILD
+#define DIAGNOSTIC_BUILD                            0           // 1: log every late radio arm and time radio interrupts, at some power and log space
+#endif
+
 
 // Watchdog Configuration ----------------------------------------------------------------------------------------------
 

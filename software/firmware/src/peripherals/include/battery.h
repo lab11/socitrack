@@ -26,6 +26,7 @@ bool battery_monitor_has_brownout_detection(void);
 void battery_monitor_poll_charger_state(void);
 uint32_t battery_monitor_get_suppressed_edge_count(void);
 void battery_monitor_service_tempco(void);
+uint32_t battery_monitor_ms_since_temperature_sample(void);
 int8_t battery_monitor_get_temperature_c(void);
 bool battery_monitor_tempco_available(void);
 bool battery_monitor_tempco_applied(void);

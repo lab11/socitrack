@@ -67,9 +67,10 @@ static uint32_t last_valid_voltage_mV;
 static battery_event_callback_t event_callback;
 static volatile uint32_t battery_voltage_code, temperature_sample_count, suppressed_edge_count;
 static volatile charger_signal_t plugged_signal, charging_signal;
-static volatile bool conversion_complete;
+static volatile bool conversion_complete, temperature_refreshed;
 static am_hal_adc_sample_t temperature_samples[AM_HAL_TEMPCO_NUMSAMPLES];
 static volatile int8_t last_temperature_c = BATTERY_TEMPERATURE_UNKNOWN;
+static volatile uint32_t last_temperature_stimer;
 static bool tempco_available, tempco_applied;
 
 
@@ -140,6 +141,20 @@ static void shut_down_adc(void)
    am_hal_adc_interrupt_disable(adc_handle, AM_HAL_ADC_INT_SCNCMP);
    am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true);
    NVIC_DisableIRQ(ADC_IRQn);
+}
+
+static void record_temperature(const am_hal_adc_sample_t *samples, uint32_t count)
+{
+   // Average the samples and convert them with the chip's own temperature calibration
+   float volts = 0.0f;
+   for (uint32_t i = 0; i < count; ++i)
+      volts += (float)AM_HAL_ADC_FIFO_SAMPLE(samples[i].ui32Sample) * AM_HAL_ADC_VREF / 4096.0f;
+   float conversion[3] = { volts / (float)count, 0.0f, -123.456f };
+   if (am_hal_adc_control(adc_handle, AM_HAL_ADC_REQ_TEMP_CELSIUS_GET, conversion) == AM_HAL_STATUS_SUCCESS)
+   {
+      const int32_t rounded = (int32_t)(conversion[1] + ((conversion[1] >= 0.0f) ? 0.5f : -0.5f));
+      last_temperature_c = (int8_t)((rounded > INT8_MAX) ? INT8_MAX : ((rounded <= BATTERY_TEMPERATURE_UNKNOWN) ? (BATTERY_TEMPERATURE_UNKNOWN + 1) : rounded));
+   }
 }
 
 static uint32_t run_adc_scans(uint32_t num_scans, bool discard_first)
@@ -400,9 +415,13 @@ void battery_monitor_init(void)
          am_hal_adc_configure_slot(adc_handle, slot, &unused_slot_config);
 
    // TempCo lowers the regulator trims as far as the chip temperature allows
+#if TEMPCO_ENABLED
    tempco_available = (am_hal_pwrctrl_tempco_init(adc_handle, TEMPERATURE_ADC_SLOT) == AM_HAL_STATUS_SUCCESS);
    if (!tempco_available)
       print("WARNING: TempCo power optimization unavailable on this device\n");
+#else
+   tempco_available = false;
+#endif
 
    // Put the ADC into Deep Sleep mode
    configASSERT0(am_hal_adc_power_control(adc_handle, AM_HAL_SYSCTRL_DEEPSLEEP, true));
@@ -484,6 +503,11 @@ uint32_t battery_monitor_get_level_mV(void)
    battery_voltage_code = 0;
    const bool converted = (run_adc_scans(1, false) == 1);
    const uint32_t code = battery_voltage_code;
+#if !TEMPCO_ENABLED
+   // Without the 10 s refresh, the temperature sample this scan took is the only one there is
+   if (converted && temperature_sample_count)
+      record_temperature(temperature_samples, temperature_sample_count);
+#endif
    release_adc();
    if (!converted)
       return last_valid_voltage_mV;
@@ -495,29 +519,33 @@ uint32_t battery_monitor_get_level_mV(void)
 
 void battery_monitor_service_tempco(void)
 {
+#if TEMPCO_ENABLED
    // Sample the chip temperature, record it, and let TempCo retune the regulator trims to match
    if (!adc_handle || !acquire_adc())
       return;
+   last_temperature_stimer = am_hal_stimer_counter_get();
+   temperature_refreshed = true;
    const uint32_t scans = run_adc_scans(AM_HAL_TEMPCO_NUMSAMPLES + 1, true);
    const uint32_t count = temperature_sample_count;
    if ((scans == (AM_HAL_TEMPCO_NUMSAMPLES + 1)) && (count == AM_HAL_TEMPCO_NUMSAMPLES))
    {
       // The temperature itself, independent of whether this chip supports TempCo
-      float volts = 0.0f;
-      for (uint32_t i = 0; i < count; ++i)
-         volts += (float)AM_HAL_ADC_FIFO_SAMPLE(temperature_samples[i].ui32Sample) * AM_HAL_ADC_VREF / 4096.0f;
-      float conversion[3] = { volts / (float)count, 0.0f, -123.456f };
-      if (am_hal_adc_control(adc_handle, AM_HAL_ADC_REQ_TEMP_CELSIUS_GET, conversion) == AM_HAL_STATUS_SUCCESS)
-      {
-         const int32_t rounded = (int32_t)(conversion[1] + ((conversion[1] >= 0.0f) ? 0.5f : -0.5f));
-         last_temperature_c = (int8_t)((rounded > INT8_MAX) ? INT8_MAX : ((rounded <= BATTERY_TEMPERATURE_UNKNOWN) ? (BATTERY_TEMPERATURE_UNKNOWN + 1) : rounded));
-      }
+      record_temperature(temperature_samples, count);
 
       // The HAL falls back to its coldest-safe trims whenever it judges the samples unreliable
       if (tempco_available)
          tempco_applied = (am_hal_pwrctrl_tempco_sample_handler(count, temperature_samples) == AM_HAL_STATUS_SUCCESS);
    }
    release_adc();
+#endif
+}
+
+uint32_t battery_monitor_ms_since_temperature_sample(void)
+{
+   // Safe from an interrupt: how long ago the 10 s temperature refresh last began, or UINT32_MAX if it never has
+   if (!temperature_refreshed)
+      return UINT32_MAX;
+   return (uint32_t)(((uint64_t)(am_hal_stimer_counter_get() - last_temperature_stimer) * 1000u) / BATTERY_STIMER_HZ);
 }
 
 int8_t battery_monitor_get_temperature_c(void)
