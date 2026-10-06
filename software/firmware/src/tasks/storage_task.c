@@ -23,6 +23,7 @@
 #endif
 
 _Static_assert(STORAGE_DIAGNOSTIC_NUM_STACKS == (WATCHDOG_NUM_TASKS + 1), "a diagnostics record reports every watchdog task's stack and then the timer service's");
+_Static_assert(STORAGE_DIAGNOSTIC_NUM_ANTENNAS == NUM_XMIT_ANTENNAS, "a diagnostics record reports receive counts for every antenna");
 
 typedef struct storage_item_t { uint32_t timestamp, value; uint8_t type; } storage_item_t;
 typedef struct imu_data_t { uint8_t data[MAX_IMU_DATA_LENGTH]; uint32_t length; } imu_data_t;
@@ -46,8 +47,9 @@ static ranging_data_t range_data[MAX_NUM_DATA_ITEMS];
 static ble_data_t ble_data[MAX_NUM_DATA_ITEMS];
 
 #if DIAGNOSTIC_BUILD
-#define MAX_NUM_ABORT_ITEMS     4
-static storage_radio_abort_t abort_data[MAX_NUM_ABORT_ITEMS];
+#define MAX_NUM_TRACE_ITEMS     8
+typedef struct trace_data_t { uint8_t data[STORAGE_MAX_TRACE_BYTES]; uint8_t length; } trace_data_t;
+static trace_data_t trace_data[MAX_NUM_TRACE_ITEMS];
 #endif
 
 #endif  // #if !defined(_TEST_NO_STORAGE)
@@ -68,6 +70,21 @@ static bool enqueue_storage_item(const storage_item_t *item)
       ++records_dropped;
    return false;
 }
+
+#if DIAGNOSTIC_BUILD
+
+static void enqueue_trace(storage_data_type_t type, uint32_t timestamp, const void *data, uint32_t length)
+{
+   // Every diagnostic trace record shares one ring, each slot consumed only once its record is queued
+   static uint32_t trace_index = 0;
+   memcpy(trace_data[trace_index].data, data, length);
+   trace_data[trace_index].length = (uint8_t)length;
+   const storage_item_t storage_item = { .timestamp = timestamp, .value = trace_index, .type = (uint8_t)type };
+   if (enqueue_storage_item(&storage_item))
+      trace_index = (trace_index + 1) % MAX_NUM_TRACE_ITEMS;
+}
+
+#endif
 
 #ifndef _TEST_NO_STORAGE
 
@@ -214,11 +231,28 @@ void storage_write_imu_data(const uint8_t *data, uint32_t data_len)
 void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort)
 {
 #if DIAGNOSTIC_BUILD
-   static uint32_t abort_index = 0;
-   abort_data[abort_index] = *abort;
-   const storage_item_t storage_item = { .timestamp = timestamp, .value = abort_index, .type = STORAGE_TYPE_RADIO_ABORT };
-   if (enqueue_storage_item(&storage_item))
-      abort_index = (abort_index + 1) % MAX_NUM_ABORT_ITEMS;
+   enqueue_trace(STORAGE_TYPE_RADIO_ABORT, timestamp, abort, sizeof(*abort));
+#endif
+}
+
+void storage_write_schedule_catch(uint32_t timestamp, const storage_schedule_catch_t *catch_record)
+{
+#if DIAGNOSTIC_BUILD
+   enqueue_trace(STORAGE_TYPE_SCHEDULE_CATCH, timestamp, catch_record, sizeof(*catch_record));
+#endif
+}
+
+void storage_write_round_start(uint32_t timestamp, const storage_round_start_t *round_start)
+{
+#if DIAGNOSTIC_BUILD
+   enqueue_trace(STORAGE_TYPE_ROUND_START, timestamp, round_start, sizeof(*round_start));
+#endif
+}
+
+void storage_write_session_end(uint32_t timestamp, const storage_session_end_t *session_end)
+{
+#if DIAGNOSTIC_BUILD
+   enqueue_trace(STORAGE_TYPE_SESSION_END, timestamp, session_end, sizeof(*session_end));
 #endif
 }
 
@@ -232,6 +266,9 @@ void storage_write_ranging_data(uint32_t timestamp, const uint8_t *ranging_data,
 void storage_write_ble_scan_results(uint8_t *found_devices, uint32_t num_devices) {}
 void storage_write_imu_data(const uint8_t *data, uint32_t data_len) {}
 void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort) {}
+void storage_write_schedule_catch(uint32_t timestamp, const storage_schedule_catch_t *catch_record) {}
+void storage_write_round_start(uint32_t timestamp, const storage_round_start_t *round_start) {}
+void storage_write_session_end(uint32_t timestamp, const storage_session_end_t *session_end) {}
 void storage_write_time_anchor(void) {}
 void storage_write_diagnostics(void) {}
 
@@ -352,7 +389,10 @@ void StorageTask(void *params)
                break;
 #if DIAGNOSTIC_BUILD
             case STORAGE_TYPE_RADIO_ABORT:
-               nandlog_store_record(STORAGE_TYPE_RADIO_ABORT, item.timestamp, &abort_data[item.value], sizeof(abort_data[item.value]));
+            case STORAGE_TYPE_SCHEDULE_CATCH:
+            case STORAGE_TYPE_ROUND_START:
+            case STORAGE_TYPE_SESSION_END:
+               nandlog_store_record(item.type, item.timestamp, trace_data[item.value].data, trace_data[item.value].length);
                break;
 #endif
             case STORAGE_TYPE_DIAGNOSTICS:
@@ -397,6 +437,11 @@ void StorageTask(void *params)
                diagnostics.radio_irq_stuck = saturate_u16(ranging_radio_get_isr_overrun_count());
                diagnostics.radio_wake_max_us = saturate_u16(radio.wake_max_us);
                diagnostics.radio_wake_failures = saturate_u16(radio.wake_failed);
+               for (uint32_t antenna = 0; antenna < STORAGE_DIAGNOSTIC_NUM_ANTENNAS; ++antenna)
+               {
+                  diagnostics.radio_rx_ok_by_antenna[antenna] = radio.rx_ok_antenna[antenna];
+                  diagnostics.radio_rx_failed_by_antenna[antenna] = radio.rx_failed_antenna[antenna];
+               }
 
                // Silent losses, stack headroom, and recoveries
                diagnostics.storage_records_dropped = records_dropped;

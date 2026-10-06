@@ -46,7 +46,7 @@ static void usb_cable_callback(void *pin_number)
 #ifdef __USE_FREERTOS__
          // Tell the main task to reboot
          BaseType_t higher_priority_task_woken = pdFALSE;
-         if ((xTaskGetSchedulerState() == taskSCHEDULER_RUNNING) && (xTimerPendFunctionCallFromISR(usb_cable_connected_deferred, NULL, 0, &higher_priority_task_woken) == pdPASS))
+         if ((xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED) && (xTimerPendFunctionCallFromISR(usb_cable_connected_deferred, NULL, 0, &higher_priority_task_woken) == pdPASS))
          {
             portYIELD_FROM_ISR(higher_priority_task_woken);
             return;

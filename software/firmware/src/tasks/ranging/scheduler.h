@@ -42,7 +42,22 @@ typedef enum
 } packet_t;
 
 
+typedef enum
+{
+   SCHEDULER_EVENT_SCHEDULE_HEARD,           // a schedule copy was decoded, with its sequence number
+   SCHEDULER_EVENT_SCHEDULE_RESEND_FAILED,   // a schedule copy could not be armed in time, with its sequence number
+   SCHEDULER_EVENT_JOIN_REQUEST_SENT,        // this unscheduled device asked to join
+   SCHEDULER_EVENT_JOIN_REQUEST_HEARD        // the master's join window heard a request, with the requester's address
+} scheduler_event_t;
+
+
 // Public API ----------------------------------------------------------------------------------------------------------
+
+#if DIAGNOSTIC_BUILD
+void scheduler_note_event(scheduler_event_t event, uint32_t value);
+#else
+#define scheduler_note_event(event, value) do {} while (0)
+#endif
 
 void scheduler_init(experiment_details_t *details);
 schedule_role_t scheduler_get_current_role(void);

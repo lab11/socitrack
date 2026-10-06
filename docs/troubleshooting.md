@@ -80,6 +80,28 @@ This is usually a hardware matter — antenna connection or per-board calibratio
 configurable. Worth identifying before a real study, because a weak badge that becomes the network's
 coordinator degrades the whole group rather than only itself.
 
+### Checking badges on the bench
+
+The browser tool's **Radio check** tab does this comparison for you:
+
+1. Set up a deployment with the badges you want to check, starting now.
+2. Put them on a table where they can all see each other, at least half a metre apart, and leave them for
+   10 minutes. Note where each one sat if you can.
+3. Download every badge's log and open them in the Radio check tab.
+
+It judges each badge the deployment selected against the others and gives a **Pass**, **Check** or
+**Fail** with the reason:
+
+- **Receives failed** well above the other badges' rate means a weak receiver, antenna or connection.
+- **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
+  they should match; a mismatch names the faulty one.
+- **Ranged in few rounds** means the badge was not taking part in the network.
+- **Distance offset**, with positions entered, means a badge that reads long or short on every link, so
+  its calibration is off.
+
+The **Links** grid shows how often each pair ranged. A badge that is weak on every link is the badge; a
+single weak pair is more likely something between them.
+
 ---
 
 ## A download reported missing pages

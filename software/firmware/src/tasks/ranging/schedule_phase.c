@@ -142,7 +142,10 @@ scheduler_phase_t schedule_phase_tx_complete(void)
       }
       dwt_setdelayedtrxtime(DW_DELAY_FROM_US(schedule_broadcast_time(schedule_packet.sequence_number)));
       if ((dwt_writetxdata(sizeof(schedule_packet.sequence_number), &schedule_packet.sequence_number, offsetof(schedule_packet_t, sequence_number)) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
+      {
          print_isr("ERROR: Failed to retransmit schedule\n");   // the loop's own increment moves to the next sub-slot
+         scheduler_note_event(SCHEDULER_EVENT_SCHEDULE_RESEND_FAILED, schedule_packet.sequence_number);
+      }
       else
          return SCHEDULE_PHASE;
    }
@@ -195,6 +198,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    dwt_setreferencetrxtime((uint32_t)(ref_time >> 8));
    reference_time = (uint32_t)ref_time;
    reference_time_full = ref_time;
+   scheduler_note_event(SCHEDULER_EVENT_SCHEDULE_HEARD, schedule->sequence_number);
 
    // Retransmit the schedule at the specified time slot
    schedule_packet.sequence_number = scheduled_slot + SCHEDULE_NUM_MASTER_BROADCASTS - 1;
@@ -207,6 +211,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
       {
          current_phase = SUBSCRIPTION_PHASE;
          print_isr("ERROR: Failed to retransmit received schedule\n");
+         scheduler_note_event(SCHEDULER_EVENT_SCHEDULE_RESEND_FAILED, schedule_packet.sequence_number);
          return subscription_phase_begin(scheduled_slot, schedule_packet.num_devices, reference_time);
       }
       return SCHEDULE_PHASE;

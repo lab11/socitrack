@@ -114,8 +114,8 @@ From `software/firmware`:
 | `make ID=c0:98:e5:42:00:XX UID` | Assign a badge its permanent ID (once ever) |
 | `make BOARD_REV=P flashb` | Flash the Bluetooth controller firmware, then the application |
 | `make clean` | Required when switching revisions or build switches |
-| `make BOARD_REV=P TEMPCO=0` | TempCo switched off: factory regulator voltages, no 10 s temperature refresh |
-| `make BOARD_REV=P DIAGNOSTIC=1` | Diagnostic build: logs every late radio receive and times radio interrupts, at some cost in power and log space. Not for deployments |
+| `make BOARD_REV=P TEMPCO=1` | TempCo on: regulator voltages lowered to suit the temperature, saving microamps. Off by default, because it slows the processor ~6%, enough to push radio interrupts past their slot budget |
+| `make BOARD_REV=P DIAGNOSTIC=1` | Diagnostic build: logs every late radio receive, times radio interrupts, and traces how each badge finds each round's schedule and why it leaves a network, at some cost in power and about 50 bytes a second of log space. Not for deployments |
 | `SEGGER_SERIAL=...` | Choose among several attached programmers |
 
 From `software/firmware/tests` — diagnostic builds that exercise one subsystem and print over SEGGER
@@ -144,7 +144,8 @@ test a tighter grid — it breaks the round. Change it in the header and reflash
 | `RANGING_BROADCAST_INTERVAL_US` | 650 | One ranging slot |
 | `RANGE_STATUS_BROADCAST_PERIOD_US` | 600 | One status slot |
 | `SCHEDULE_RESEND_INTERVAL_US` | 800 | Spacing of the repeated schedule broadcasts |
-| `SUBSCRIPTION_BROADCAST_PERIOD_US` | 1500 | Window for a new badge to join |
+| `SUBSCRIPTION_BROADCAST_PERIOD_US` | 1500 | Time between the schedule and the first ranging slot |
+| `SUBSCRIPTION_TIMEOUT_US` | 650 | How long the master and one other badge listen for a new badge's join request; the rest of the period is the time needed to switch to ranging |
 
 `SCHEDULING_INTERVAL_US` must divide one second exactly — several timeouts are counted in rounds per
 second, and a value that does not divide evenly silently shortens all of them. A compile-time check

@@ -20,6 +20,9 @@ typedef enum {
    STORAGE_TYPE_TIME_ANCHOR,
    STORAGE_TYPE_DIAGNOSTICS,
    STORAGE_TYPE_RADIO_ABORT,
+   STORAGE_TYPE_SCHEDULE_CATCH,
+   STORAGE_TYPE_ROUND_START,
+   STORAGE_TYPE_SESSION_END,
    STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
@@ -49,6 +52,8 @@ typedef struct __attribute__ ((__packed__))
    uint16_t stack_free_words[STORAGE_DIAGNOSTIC_NUM_STACKS];   // least free stack ever seen, per watchdog task then the timer service
    uint8_t ble_resets;                                     // Bluetooth controller restarts by the self-check
    uint16_t nand_bad_blocks;                               // retired flash blocks, factory-marked and grown
+   uint32_t radio_rx_ok_by_antenna[STORAGE_DIAGNOSTIC_NUM_ANTENNAS];       // radio_rx_ok split by the antenna used
+   uint32_t radio_rx_failed_by_antenna[STORAGE_DIAGNOSTIC_NUM_ANTENNAS];   // radio_rx_failed split the same way
 } storage_diagnostics_t;
 
 #define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_AVAILABLE    0x01   // this chip's trims support TempCo
@@ -74,7 +79,73 @@ typedef struct __attribute__ ((__packed__))
 #define STORAGE_RADIO_ABORT_PHASE_STATUS            2      // the status exchange ends early and the round is computed from what arrived
 #define STORAGE_RADIO_ABORT_UNMEASURED              0xFFFF
 
+// How a participant's timed wake-up found the next round's schedule, logged only by a DIAGNOSTIC_BUILD
+typedef struct __attribute__ ((__packed__))
+{
+   uint8_t first_copy;                                     // sequence number of the first copy decoded: 0-1 sent by the master, 2-4 relayed
+   uint8_t rounds_missed;                                  // rounds that went by before a copy was decoded, or 0xFF if the schedule timestamps went backwards
+   int32_t lead_us;                                        // receiver on this long before the expected round's first copy, negative if after it
+   uint16_t timer_to_task_us;                              // wake-up timer firing to the ranging task running, saturating
+   uint16_t wake_us;                                       // radio wake-up, 0xFFFF if the radio had to be reset
+   uint8_t rx_errors;                                      // frames heard but not decodable before the schedule, saturating
+   uint8_t other_frames;                                   // decodable frames before the schedule that were not one, saturating
+   uint16_t first_error_us;                                // receiver on to the first undecodable frame, saturating, 0xFFFF if none
+   int16_t carrier_offset_cppm;                            // carrier offset of the decoded copy in hundredths of a ppm, as the DW3000 reports it
+} storage_schedule_catch_t;
+
+#define STORAGE_SCHEDULE_CATCH_NONE                 0xFF   // first_copy when the network was lost before any copy arrived
+#define STORAGE_SCHEDULE_CATCH_UNKNOWN              0xFF   // rounds_missed when the schedule timestamps went backwards
+#define STORAGE_SCHEDULE_CATCH_UNMEASURED           0xFFFF
+
+// How the master started a round, logged one round late by a DIAGNOSTIC_BUILD so that the whole round is known
+typedef struct __attribute__ ((__packed__))
+{
+   uint16_t timer_to_task_us;                              // wake-up timer firing to the ranging task running, saturating
+   uint16_t wake_us;                                       // radio wake-up, 0 if it was already awake, 0xFFFF if it had to be reset
+   uint16_t timer_to_transmit_us;                          // wake-up timer firing to the first copy being sent, saturating
+   uint8_t flags;                                          // STORAGE_ROUND_START_FLAG_* bits
+   uint8_t schedule_size;                                  // devices in this round's schedule
+   uint8_t devices_ranged;                                 // ranges the master computed this round
+} storage_round_start_t;
+
+#define STORAGE_ROUND_START_FLAG_SECOND_COPY_FAILED 0x01   // the master's second schedule copy could not be armed in time
+#define STORAGE_ROUND_START_FLAG_COMPUTED           0x02   // the round reached the computation phase
+#define STORAGE_ROUND_START_FLAG_ABANDONED          0x04   // the round ended early on a radio or ranging error
+#define STORAGE_ROUND_START_FLAG_JOIN_HEARD         0x08   // the join window heard a request directly
+#define STORAGE_ROUND_START_FLAG_JOIN_RELAYED       0x10   // a request arrived relayed through the status exchange
+
+// Why one run of the ranging scheduler ended, logged only by a DIAGNOSTIC_BUILD
+typedef struct __attribute__ ((__packed__))
+{
+   uint8_t reason;                                         // STORAGE_SESSION_END_* code
+   uint8_t role;                                           // schedule_role_t when it ended
+   uint8_t schedule_size;                                  // devices in the last schedule this device knew
+   uint8_t collision_phase;                                // scheduler phase an unexpected frame arrived in, for a collision
+   uint8_t collision_type;                                 // that frame's message type byte
+   uint8_t collision_source;                               // the byte after its header: the sender, for every type but a ranging packet
+   uint16_t collision_at_us;                               // how far into the round it arrived, saturating
+   uint32_t session_ms;                                    // how long this run lasted
+   uint16_t rounds_ranged;                                 // rounds computed while scheduled, saturating
+   uint16_t schedules_heard;                               // schedules decoded, saturating
+   uint16_t join_requests_sent;                            // rounds spent unscheduled, each sending a join request, saturating
+   uint16_t join_requests_heard;                           // join requests that reached this device as master, saturating
+   uint16_t listen_errors;                                 // undecodable frames while listening for a schedule, saturating
+   uint8_t stalls;                                         // times no round completed for RANGING_ROUND_STALL_TIMEOUT_MS, saturating
+} storage_session_end_t;
+
+#define STORAGE_SESSION_END_UNKNOWN                 0
+#define STORAGE_SESSION_END_STOPPED                 1      // the application stopped it, as it does on finding a higher-ID master
+#define STORAGE_SESSION_END_SEARCH_TIMEOUT          2      // no round completed within NETWORK_SEARCH_TIME_SECONDS
+#define STORAGE_SESSION_END_COLLISION               3      // a frame of an unexpected type arrived mid-round
+#define STORAGE_SESSION_END_SILENT                  4      // as master, heard nobody for MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE rounds
+
+#define STORAGE_MAX_TRACE_BYTES                     sizeof(storage_session_end_t)
+_Static_assert((sizeof(storage_radio_abort_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_schedule_catch_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_round_start_t) <= STORAGE_MAX_TRACE_BYTES), "every diagnostic trace record must fit the shared trace buffer");
+
 void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort);
+void storage_write_schedule_catch(uint32_t timestamp, const storage_schedule_catch_t *catch_record);
+void storage_write_round_start(uint32_t timestamp, const storage_round_start_t *round_start);
+void storage_write_session_end(uint32_t timestamp, const storage_session_end_t *session_end);
 
 #define STORAGE_IMU_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
 #define STORAGE_DIAGNOSTICS_RECORD_BYTES            (1 + 4 + sizeof(storage_diagnostics_t))
@@ -139,6 +210,12 @@ static inline uint32_t stored_record_length(const uint8_t *payload, uint32_t off
          return 5 + sizeof(storage_diagnostics_t);
       case STORAGE_TYPE_RADIO_ABORT:
          return 5 + sizeof(storage_radio_abort_t);
+      case STORAGE_TYPE_SCHEDULE_CATCH:
+         return 5 + sizeof(storage_schedule_catch_t);
+      case STORAGE_TYPE_ROUND_START:
+         return 5 + sizeof(storage_round_start_t);
+      case STORAGE_TYPE_SESSION_END:
+         return 5 + sizeof(storage_session_end_t);
       default:
          return 0;
    }

@@ -110,6 +110,10 @@ falls back to a file picker.
 The browser tool does not install anything and does not upload your data anywhere — it runs entirely
 in the page.
 
+Its **Radio check** tab compares the badges of one deployment against each other to find one with a
+weak receiver, a faulty antenna or a calibration that is off. See
+[checking badges on the bench](troubleshooting.md#checking-badges-on-the-bench).
+
 ---
 
 ## Which tool wrote my log?
