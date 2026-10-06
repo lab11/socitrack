@@ -57,6 +57,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
    if (dwt_rxenable(DWT_START_RX_DLY_REF | DWT_IDLE_ON_DLY_ERR) != DWT_SUCCESS)
    {
       ranging_radio_note_rx_arm_failure();
+      scheduler_note_rx_arm_failure(RANGING_PHASE, time_slot, schedule_length, ranging_slot_time(time_slot) - RECEIVE_EARLY_START_US);
       print_isr(error_message);
       return RADIO_ERROR;
    }

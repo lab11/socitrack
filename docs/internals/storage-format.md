@@ -4706,7 +4706,7 @@ A 69-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~29
 | `wsf_pool_capacity[5]` | 5 | pool sizes, so headroom is readable without a schema lookup |
 | `master_cycle_failures` | 1 | times this device ran a network as master and heard nobody |
 | `firmware_revision` | 4 | leading eight hex digits of the git commit the firmware was built from |
-| `status_flags` | 1 | bit 0 TempCo supported, bit 1 TempCo trims applied, bit 2 built with uncommitted firmware changes |
+| `status_flags` | 1 | bit 0 TempCo supported, bit 1 TempCo trims applied, bit 2 built with uncommitted firmware changes, bit 3 diagnostic build, bit 4 TempCo switched off at build time |
 | `temperature_c` | 1 | chip temperature, signed °C; -128 before the first reading |
 | `radio_rx_ok`, `radio_rx_failed` | 4 + 4 | ranging slots decoded and lost — the receive-sensitivity metric |
 | `radio_tx_late`, `radio_rx_arm_late` | 2 + 2 | delayed transmits and receives programmed after their slot; a late receive aborts the round |
@@ -4735,6 +4735,23 @@ Three details worth recording:
 - **The counter updates run under `AM_CRITICAL`.** `watchdog_find_stalled_tasks()` is reached from both a
   task and the pre-reset ISR, and a torn read-modify-write on a diagnostic counter is indistinguishable from
   the fault it exists to measure.
+
+#### `STORAGE_TYPE_RADIO_ABORT` (= 10)
+
+Written only by a diagnostic build (`make DIAGNOSTIC=1`), once for each radio receive that could not be armed
+before its slot. A 10-byte payload, timestamped with the round it belongs to:
+
+| field | bytes | what it answers |
+|---|---|---|
+| `phase` | 1 | 1 ranging (the round is abandoned), 2 status (the status exchange ends early) |
+| `slot` | 1 | slot within that phase |
+| `schedule_size` | 1 | devices in the round's schedule |
+| `late_us` | 2 | signed µs past the arm deadline when the attempt was made |
+| `isr_elapsed_us` | 2 | how long the radio interrupt had already been running; `0xFFFF` if unmeasured |
+| `isr_events` | 1 | radio events that interrupt had serviced so far |
+| `since_temperature_ms` | 2 | since the last 10 s temperature refresh; `0xFFFF` if none |
+
+A small `isr_elapsed_us` with a positive `late_us` means the interrupt started late; a large one means it ran long.
 
 #### Record framing, turned on
 

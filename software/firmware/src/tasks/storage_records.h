@@ -19,6 +19,7 @@ typedef enum {
    STORAGE_TYPE_RESET_REASON,
    STORAGE_TYPE_TIME_ANCHOR,
    STORAGE_TYPE_DIAGNOSTICS,
+   STORAGE_TYPE_RADIO_ABORT,
    STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
@@ -53,7 +54,27 @@ typedef struct __attribute__ ((__packed__))
 #define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_AVAILABLE    0x01   // this chip's trims support TempCo
 #define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_APPLIED      0x02   // the last temperature reading adjusted the voltage trims
 #define STORAGE_DIAGNOSTIC_FLAG_FIRMWARE_MODIFIED   0x04   // built from a tree with uncommitted firmware changes
+#define STORAGE_DIAGNOSTIC_FLAG_DIAGNOSTIC_BUILD    0x08   // built with DIAGNOSTIC_BUILD: radio aborts are logged and interrupts timed
+#define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_DISABLED     0x10   // built with TempCo switched off, whatever the chip supports
 #define STORAGE_DIAGNOSTIC_STACK_UNMONITORED        0xFFFF // a stack entry for a task that is not running in this mode
+
+// One radio receive that could not be armed before its slot, logged only by a DIAGNOSTIC_BUILD
+typedef struct __attribute__ ((__packed__))
+{
+   uint8_t phase;                                          // STORAGE_RADIO_ABORT_PHASE_*
+   uint8_t slot;                                           // slot within that phase
+   uint8_t schedule_size;                                  // devices in this round's schedule
+   int16_t late_us;                                        // how far past the arm deadline the attempt came, saturating
+   uint16_t isr_elapsed_us;                                // time already spent in this radio interrupt, or 0xFFFF if unmeasurable
+   uint8_t isr_events;                                     // radio events serviced by this interrupt so far
+   uint16_t since_temperature_ms;                          // since the last 10 s temperature refresh, saturating, 0xFFFF if none
+} storage_radio_abort_t;
+
+#define STORAGE_RADIO_ABORT_PHASE_RANGING           1      // the round is abandoned
+#define STORAGE_RADIO_ABORT_PHASE_STATUS            2      // the status exchange ends early and the round is computed from what arrived
+#define STORAGE_RADIO_ABORT_UNMEASURED              0xFFFF
+
+void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort);
 
 #define STORAGE_IMU_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
 #define STORAGE_DIAGNOSTICS_RECORD_BYTES            (1 + 4 + sizeof(storage_diagnostics_t))
@@ -116,6 +137,8 @@ static inline uint32_t stored_record_length(const uint8_t *payload, uint32_t off
          return 9;
       case STORAGE_TYPE_DIAGNOSTICS:
          return 5 + sizeof(storage_diagnostics_t);
+      case STORAGE_TYPE_RADIO_ABORT:
+         return 5 + sizeof(storage_radio_abort_t);
       default:
          return 0;
    }

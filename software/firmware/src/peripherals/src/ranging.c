@@ -19,6 +19,7 @@ static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_ma
 static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed, stat_wake_skipped;
 static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
 static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed;
+static volatile uint32_t isr_entry_cycles_now, isr_events_now;
 static volatile uint8_t stat_network_size;
 static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
@@ -34,7 +35,7 @@ static volatile uint8_t current_isr_phase;
 
 static void cycle_counter_init(void)
 {
-#if RADIO_INSTRUMENTATION
+#if RADIO_INSTRUMENTATION || DIAGNOSTIC_BUILD
    // Powers up the DWT trace block
    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
    DWT->CYCCNT = 0;
@@ -88,8 +89,11 @@ static void ranging_radio_isr(void *args)
    const uint8_t phase_at_entry = current_isr_phase;
 #endif
    uint32_t pin_status = 0, iterations = 0;
+   isr_entry_cycles_now = isr_entry_cycles;
+   isr_events_now = 0;
    do
    {
+      ++isr_events_now;
       dwt_isr();
       am_hal_gpio_state_read(PIN_RADIO_INTERRUPT, AM_HAL_GPIO_INPUT_READ, &pin_status);
    } while (pin_status && (++iterations < RADIO_ISR_MAX_ITERATIONS));
@@ -621,6 +625,14 @@ void ranging_radio_wakeup(void)
       if (stat_wake_last_us > stat_wake_max_us)
          stat_wake_max_us = stat_wake_last_us;
    }
+}
+
+bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events)
+{
+   // How long the radio interrupt now running has taken so far and how many events it has serviced
+   *events = isr_events_now;
+   *elapsed_us = cycle_counter_ok ? cycles_to_us(DWT->CYCCNT - isr_entry_cycles_now) : 0;
+   return cycle_counter_ok;
 }
 
 void ranging_radio_note_tx_failure(void)
