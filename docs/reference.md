@@ -9,10 +9,10 @@ deployment logs rather than calculated.
 
 | | Value | Why |
 | --- | --- | --- |
-| Badges per deployment | **10** | `MAX_NUM_RANGING_DEVICES` |
+| Devices per deployment | **10** | `MAX_NUM_RANGING_DEVICES` |
 | Distance measurements | **2 per second**, every pair | `SCHEDULING_INTERVAL_US` = 500 ms |
 | Maximum recorded distance | **32 m** | `MAX_VALID_RANGE_MM`; both reading tools use the same limit |
-| Badge name length | 16 characters | `EUI_NAME_MAX_LEN` |
+| Device name length | 16 characters | `EUI_NAME_MAX_LEN` |
 | Dropped from a network after | 60 seconds unheard | `DEVICE_TIMEOUT_SECONDS` |
 
 ---
@@ -21,7 +21,7 @@ deployment logs rather than calculated.
 
 | Threshold | Value | Meaning |
 | --- | --- | --- |
-| Full | 4200 mV | A fully charged badge |
+| Full | 4200 mV | A fully charged device |
 | Will not start recording below | **3750 mV** | `BATTERY_NOMINAL` |
 | Critical | 3680 mV | Treated as empty |
 
@@ -38,18 +38,18 @@ Plan on a day of continuous recording per charge.
 
 ## How long can a deployment run?
 
-*Measured* log growth, for a badge ranging continuously:
+*Measured* log growth, for a device ranging continuously:
 
 | Deployment size | Log growth |
 | --- | --- |
-| 4 badges | 2.7 MB/day |
-| 10 badges | 5.7 MB/day |
+| 4 devices | 2.7 MB/day |
+| 10 devices | 5.7 MB/day |
 
-More badges means more distances per round, so the log grows roughly in proportion.
+More devices means more distances per round, so the log grows roughly in proportion.
 
 Storage depends on the board revision:
 
-| Revision | Flash | 4 badges | 10 badges |
+| Revision | Flash | 4 devices | 10 devices |
 | --- | --- | --- | --- |
 | **N, O, P** | 8 Gbit (~1074 MB) | ~390 days | ~190 days |
 | **M** | 1 Gbit (~134 MB) | ~49 days | ~24 days |
@@ -62,8 +62,8 @@ starts to matter.
 
 ## Accuracy
 
-*Measured* across a ten-badge deployment: every pair agreed with itself, measured from both ends, to
-**within 1 mm** of the median. That is precision between badges, not absolute accuracy.
+*Measured* across a ten-device deployment: every pair agreed with itself, measured from both ends, to
+**within 1 mm** of the median. That is precision between devices, not absolute accuracy.
 
 | Condition | Typical spread |
 | --- | --- |
@@ -77,12 +77,12 @@ something in between. See [Your Data](data.md#how-accurate-is-a-distance).
 
 ## Clocks
 
-*Measured*: badges run **160–190 ppm slow**, about **15 seconds per day**, consistent across devices
+*Measured*: devices run **160–190 ppm slow**, about **15 seconds per day**, consistent across devices
 and deployments.
 
-All badges in a deployment share a network clock and stay within a few ppm **of each other**. The
-drift is common-mode, so it affects alignment against external records but not cross-badge analysis.
-Scheduling a deployment resets the badge clock.
+All devices in a deployment share a network clock and stay within a few ppm **of each other**. The
+drift is common-mode, so it affects alignment against external records but not cross-device analysis.
+Scheduling a deployment resets the device clock.
 
 ---
 
@@ -111,11 +111,11 @@ From `software/firmware`:
 | --- | --- |
 | `make BOARD_REV=P` | Build |
 | `make BOARD_REV=P flash` | Build and flash |
-| `make ID=c0:98:e5:42:00:XX UID` | Assign a badge its permanent ID (once ever) |
+| `make ID=c0:98:e5:42:00:XX UID` | Assign a device its permanent ID (once ever) |
 | `make BOARD_REV=P flashb` | Flash the Bluetooth controller firmware, then the application |
 | `make clean` | Required when switching revisions or build switches |
 | `make BOARD_REV=P TEMPCO=1` | TempCo on: regulator voltages lowered to suit the temperature, saving microamps. Off by default, because it slows the processor ~6%, enough to push radio interrupts past their slot budget |
-| `make BOARD_REV=P DIAGNOSTIC=1` | Diagnostic build: logs every late radio receive, times radio interrupts, and traces how each badge finds each round's schedule and why it leaves a network, at some cost in power and about 50 bytes a second of log space. Not for deployments |
+| `make BOARD_REV=P DIAGNOSTIC=1` | Diagnostic build: logs every late radio receive, times radio interrupts, and traces how each device finds each round's schedule and why it leaves a network, at some cost in power and about 50 bytes a second of log space. Not for deployments |
 | `SEGGER_SERIAL=...` | Choose among several attached programmers |
 
 From `software/firmware/tests` — diagnostic builds that exercise one subsystem and print over SEGGER
@@ -135,7 +135,7 @@ diagnostic build, not a deployment build — it powers up debug hardware a relea
 ## Timing constants
 
 Protocol timing lives in `src/app/app_config.h` and is deliberately **not** overridable at build time.
-Every badge on a network shares one slot grid, so a value that differs between two badges does not
+Every device on a network shares one slot grid, so a value that differs between two devices does not
 test a tighter grid — it breaks the round. Change it in the header and reflash the whole fleet.
 
 | Constant | Value | What it sets |
@@ -145,7 +145,7 @@ test a tighter grid — it breaks the round. Change it in the header and reflash
 | `RANGE_STATUS_BROADCAST_PERIOD_US` | 600 | One status slot |
 | `SCHEDULE_RESEND_INTERVAL_US` | 800 | Spacing of the repeated schedule broadcasts |
 | `SUBSCRIPTION_BROADCAST_PERIOD_US` | 1500 | Time between the schedule and the first ranging slot |
-| `SUBSCRIPTION_TIMEOUT_US` | 650 | How long the master and one other badge listen for a new badge's join request; the rest of the period is the time needed to switch to ranging |
+| `SUBSCRIPTION_TIMEOUT_US` | 650 | How long the master and one other device listen for a new device's join request; the rest of the period is the time needed to switch to ranging |
 
 `SCHEDULING_INTERVAL_US` must divide one second exactly — several timeouts are counted in rounds per
 second, and a value that does not divide evenly silently shortens all of them. A compile-time check

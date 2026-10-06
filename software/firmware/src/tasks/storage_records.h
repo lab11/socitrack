@@ -23,6 +23,7 @@ typedef enum {
    STORAGE_TYPE_SCHEDULE_CATCH,
    STORAGE_TYPE_ROUND_START,
    STORAGE_TYPE_SESSION_END,
+   STORAGE_TYPE_RADIO_TIMING,
    STORAGE_NUM_TYPES,
 } storage_data_type_t;
 
@@ -74,14 +75,16 @@ typedef struct __attribute__ ((__packed__))
    uint8_t trigger;                                        // STORAGE_RADIO_ABORT_TRIGGER_*: the radio event this interrupt was handling
    uint16_t isr_entry_us;                                  // when this interrupt started, after the round's reference, saturating, 0xFFFF if unmeasurable
    int16_t event_to_isr_us;                                // from the triggering frame's radio timestamp to the interrupt starting, saturating, or STORAGE_RADIO_ABORT_NO_EVENT_TIME
+   uint16_t asleep_us;                                     // how long the processor had slept when this interrupt woke it, 0 if it arrived as the processor was going to sleep, 0xFFFF if it was awake
+   uint16_t wake_to_isr_us;                                // from the processor waking to this interrupt starting, saturating, 0xFFFF if it was awake
 } storage_radio_abort_t;
 
 #define STORAGE_RADIO_ABORT_PHASE_RANGING           1      // the round is abandoned
 #define STORAGE_RADIO_ABORT_PHASE_STATUS            2      // the status exchange ends early and the round is computed from what arrived
 #define STORAGE_RADIO_ABORT_UNMEASURED              0xFFFF
 #define STORAGE_RADIO_ABORT_TRIGGER_UNKNOWN         0      // not inside a radio interrupt, or before it had handled an event
-#define STORAGE_RADIO_ABORT_TRIGGER_TX_DONE         1      // a frame this badge sent
-#define STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME        2      // a frame this badge received
+#define STORAGE_RADIO_ABORT_TRIGGER_TX_DONE         1      // a frame this device sent
+#define STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME        2      // a frame this device received
 #define STORAGE_RADIO_ABORT_TRIGGER_RX_TIMEOUT      3      // a receive window that closed empty
 #define STORAGE_RADIO_ABORT_TRIGGER_RX_ERROR        4      // a frame that could not be decoded
 #define STORAGE_RADIO_ABORT_NO_EVENT_TIME           (-32768)    // the event has no radio timestamp, or the interrupt start is unknown
@@ -98,7 +101,7 @@ typedef struct __attribute__ ((__packed__))
    uint8_t other_frames;                                   // decodable frames before the schedule that were not one, saturating
    uint16_t first_error_us;                                // receiver on to the first undecodable frame, saturating, 0xFFFF if none
    int16_t carrier_offset_cppm;                            // carrier offset of the decoded copy in hundredths of a ppm, as the DW3000 reports it
-   int16_t wake_correction_us;                             // what this badge had learned to add to RADIO_WAKEUP_SAFETY_DELAY_US for this wake-up
+   int16_t wake_correction_us;                             // what this device had learned to add to RADIO_WAKEUP_SAFETY_DELAY_US for this wake-up
    uint16_t timer_latency_us;                              // wake-up timer's compare match to its interrupt running, saturating
 } storage_schedule_catch_t;
 
@@ -149,13 +152,34 @@ typedef struct __attribute__ ((__packed__))
 #define STORAGE_SESSION_END_COLLISION               3      // a frame of an unexpected type arrived mid-round
 #define STORAGE_SESSION_END_SILENT                  4      // as master, heard nobody for MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE rounds
 
-#define STORAGE_MAX_TRACE_BYTES                     sizeof(storage_session_end_t)
-_Static_assert((sizeof(storage_radio_abort_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_schedule_catch_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_round_start_t) <= STORAGE_MAX_TRACE_BYTES), "every diagnostic trace record must fit the shared trace buffer");
+// How close a minute of receives came to their deadlines, logged only by a DIAGNOSTIC_BUILD
+#define STORAGE_RADIO_TIMING_BANDS                  7      // event_to_isr_counts: below FIRST_US, then STEP_US wide, the last open-ended
+#define STORAGE_RADIO_TIMING_FIRST_US               40
+#define STORAGE_RADIO_TIMING_STEP_US                5
+
+typedef struct __attribute__ ((__packed__))
+{
+   uint16_t arms;                                          // receives armed in time straight after a received frame, saturating
+   uint16_t after_sleep;                                   // of those, ones whose interrupt had to wake the processor first
+   uint16_t during_sleep_entry;                            // of those, ones whose interrupt arrived as the processor was going to sleep
+   int16_t slack_min_us;                                   // least time to spare at any of them, 0x7FFF if none
+   uint16_t slack_under_25_us;                             // how many had less than 25 us to spare
+   uint16_t event_to_isr_min_us;                           // fastest from the frame's radio timestamp to the interrupt starting, 0xFFFF if none
+   uint16_t event_to_isr_max_us;                           // slowest
+   uint16_t event_to_isr_counts[STORAGE_RADIO_TIMING_BANDS];   // how many fell in each band
+   uint16_t wake_to_isr_max_us;                            // longest from the processor waking to the radio interrupt starting
+} storage_radio_timing_t;
+
+#define STORAGE_RADIO_TIMING_INTERVAL_MS            60000
+#define STORAGE_MAX_TRACE_BYTES                     sizeof(storage_radio_timing_t)
+
+_Static_assert((sizeof(storage_radio_abort_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_schedule_catch_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_round_start_t) <= STORAGE_MAX_TRACE_BYTES) && (sizeof(storage_session_end_t) <= STORAGE_MAX_TRACE_BYTES), "every diagnostic trace record must fit the shared trace buffer");
 
 void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *abort);
 void storage_write_schedule_catch(uint32_t timestamp, const storage_schedule_catch_t *catch_record);
 void storage_write_round_start(uint32_t timestamp, const storage_round_start_t *round_start);
 void storage_write_session_end(uint32_t timestamp, const storage_session_end_t *session_end);
+void storage_write_radio_timing(uint32_t timestamp, const storage_radio_timing_t *timing);
 
 #define STORAGE_IMU_RECORD_BYTES                    (1 + 4 + 1 + MAX_IMU_DATA_LENGTH)
 #define STORAGE_DIAGNOSTICS_RECORD_BYTES            (1 + 4 + sizeof(storage_diagnostics_t))
@@ -226,6 +250,8 @@ static inline uint32_t stored_record_length(const uint8_t *payload, uint32_t off
          return 5 + sizeof(storage_round_start_t);
       case STORAGE_TYPE_SESSION_END:
          return 5 + sizeof(storage_session_end_t);
+      case STORAGE_TYPE_RADIO_TIMING:
+         return 5 + sizeof(storage_radio_timing_t);
       default:
          return 0;
    }

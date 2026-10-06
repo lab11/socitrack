@@ -78,7 +78,7 @@ SECTIONS
         _ebss = .;
     } > MCU_TCM
 
-    /* Left alone by the startup code, so a software reset does not clear it: a radio test's badge list rides here */
+    /* Left alone by the startup code, so a software reset does not clear it: a radio test's device list rides here */
     .noinit (NOLOAD):
     {
         . = ALIGN(4);

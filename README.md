@@ -1,9 +1,9 @@
 TotTag
 ======
 
-TotTag is a wearable badge that measures **how close people are to one another**, continuously, with
-no infrastructure in the room. Each badge carries an ultra-wideband (UWB) radio and ranges against
-every other badge nearby twice a second, recording distances to on-board flash. Nothing is installed
+TotTag is a wearable device that measures **how close people are to one another**, continuously, with
+no infrastructure in the room. Each device carries an ultra-wideband (UWB) radio and ranges against
+every other device nearby twice a second, recording distances to on-board flash. Nothing is installed
 in the environment, nothing is transmitted during a deployment, and no audio or video is captured.
 
 If you are interested in using TotTag in your own research, please fill out this
@@ -22,7 +22,7 @@ Documentation
 built from [`docs/`](docs/).**
 
 Start with [Running a Deployment](docs/running-a-deployment.md) if you want to use TotTag, or
-[Getting Started](docs/getting-started.md) if you have badges that have never been set up.
+[Getting Started](docs/getting-started.md) if you have devices that have never been set up.
 
 
 Repository layout
@@ -31,7 +31,7 @@ Repository layout
 | Directory | Contents |
 | --- | --- |
 | [`docs/`](docs/) | All user and developer documentation; the source of the documentation site |
-| [`software/`](software/) | Badge firmware and the tools that configure badges and read their data |
+| [`software/`](software/) | Device firmware and the tools that configure devices and read their data |
 | [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD |
 | [`media/`](media/) | Photographs and diagrams used by the documentation |
 

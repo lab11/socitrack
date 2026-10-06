@@ -123,11 +123,10 @@ def feet_and_inches(millimetres):
    return f'{tenths / 10:.1f} in' if not feet else f'{feet} ft {tenths / 10:.1f} in'
 
 def radio_wording(text):
-   text = re.sub(r'(\d+) of the (\d+) selected badges (?:has|have) no log loaded, so', r'\1 of the \2 TotTags in the test sent no data, so', text)
-   text = text.replace('No positions entered, so distances are checked for consistency only. Enter where each badge sat to check accuracy as well.',
+   text = re.sub(r'(\d+) of the (\d+) selected devices (?:has|have) no log loaded, so', r'\1 of the \2 TotTags in the test sent no data, so', text)
+   text = text.replace('No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well.',
                        'No layout chosen, so distances are checked for consistency only. Choose the circle or line the TotTags sit in to check accuracy as well.')
-   text = re.sub(r'(\d+) mm', lambda match: f'{int(match.group(1)) / MM_PER_INCH:.1f} in', text)
-   return re.sub(r'\bbadge', 'TotTag', text)
+   return re.sub(r'(\d+) mm', lambda match: f'{int(match.group(1)) / MM_PER_INCH:.1f} in', text)
 
 def usb_write_experiment_details(device, packed_details):
    device.reset_input_buffer()
@@ -1427,7 +1426,7 @@ class TotTagGUI(tk.Frame):
    # LIVE RADIO CHECK ------------------------------------------------------------------------------------------------
 
    def _radio_devices(self):
-      """Scanned badges a radio test can run on: those reached over Bluetooth, whose address is their EUI."""
+      """Scanned devices a radio test can run on: those reached over Bluetooth, whose address is their EUI."""
       return [name for name in self.device_list if not name.startswith(USB_DEVICE_NAME_PREFIX) and device_uid(name)]
 
    def _radio_testing(self):
@@ -1495,10 +1494,10 @@ class TotTagGUI(tk.Frame):
       about.pack(anchor=tk.W, fill=tk.X, pady=(2, 6))
       body.bind('<Configure>', lambda event: about.configure(wraplength=max(200, event.width - 10)))
 
-      # Which badges, for how long, and where they sit
+      # Which devices, for how long, and where they sit
       choices = tk.Frame(body)
       choices.pack(anchor=tk.W, fill=tk.X)
-      names = [badge['name'] for badge in test.state()['badges']] if test else self._radio_devices()
+      names = [device['name'] for device in test.state()['devices']] if test else self._radio_devices()
       self.radio_choices = []
       for index, name in enumerate(names):
          chosen = tk.IntVar(choices, 1)
@@ -1528,7 +1527,7 @@ class TotTagGUI(tk.Frame):
       self.radio_status = ttk.Label(actions, font=('Helvetica', 12, 'bold'))
       self.radio_status.pack(side=tk.LEFT)
 
-      # One row per badge, then how often each ranged to each other, then everything worth reading in words. The
+      # One row per device, then how often each ranged to each other, then everything worth reading in words. The
       # columns start narrow enough to fit beside the actions bar and widen with the window.
       columns = (('status', 'Status', 95), ('role', 'Role', 85), ('ranged', 'Rounds ranged', 95), ('failed', 'Rx failed', 70),
                  ('antennas', 'Rx failed by antenna', 135), ('position', 'Position (ft)', 90), ('verdict', 'Verdict', 60))
@@ -1609,15 +1608,15 @@ class TotTagGUI(tk.Frame):
          if failure is not None:
             tk.messagebox.showerror('TotTag Error', 'The radio test could not be started: %s'%failure)
 
-      # The badges as they stand: chosen ones before a test, the test's own once it starts
+      # The devices as they stand: chosen ones before a test, the test's own once it starts
       if test is None:
-         badges = [{'name': name, 'uid': device_uid(name)[0], 'label': f'{device_uid(name)[0]:02X}', 'status': 'ready', 'message': None,
+         devices = [{'name': name, 'uid': device_uid(name)[0], 'label': f'{device_uid(name)[0]:02X}', 'status': 'ready', 'message': None,
                     'stats': None, 'ranged_recent': None, 'truncated': 0} for name, chosen in self.radio_choices if chosen.get()]
          state, result = None, None
       else:
          state = test.state()
-         badges = state['badges']
-      positions = self._radio_positions([badge['uid'] for badge in badges if badge['uid'] is not None])
+         devices = state['devices']
+      positions = self._radio_positions([device['uid'] for device in devices if device['uid'] is not None])
       if test is not None and state['start_time'] is not None:
          metres = {uid: (x * METRES_PER_FOOT, y * METRES_PER_FOOT) for uid, (x, y) in positions.items()}
          result = radio_check.analyse_radio(test.deployment(), metres)
@@ -1637,25 +1636,25 @@ class TotTagGUI(tk.Frame):
       self.radio_status['text'] = status
 
       self.radio_tree.delete(*self.radio_tree.get_children())
-      for badge in badges:
-         stats = badge['stats']
+      for device in devices:
+         stats = device['stats']
          total = stats['rx_ok'] + stats['rx_failed'] if stats else 0
          antennas = ' / '.join(radio_check.format_percent(failed / (failed + ok) if failed + ok else None)
                                for ok, failed in zip(stats['rx_ok_by_antenna'], stats['rx_failed_by_antenna'])) if stats else '—'
-         where = positions.get(badge['uid'])
-         verdict = verdicts.get(badge['uid'])
-         self.radio_tree.insert('', tk.END, text=badge['label'] or '??', tags=(verdict['verdict'],) if verdict else (), values=(
-            radio_check.STATUS_LABELS[badge['status']],
+         where = positions.get(device['uid'])
+         verdict = verdicts.get(device['uid'])
+         self.radio_tree.insert('', tk.END, text=device['label'] or '??', tags=(verdict['verdict'],) if verdict else (), values=(
+            radio_check.STATUS_LABELS[device['status']],
             stats['role'] if stats else '—',
-            radio_check.format_percent(badge['ranged_recent']),
+            radio_check.format_percent(device['ranged_recent']),
             radio_check.format_percent(stats['rx_failed'] / total if total else None),
             antennas,
             '%.1f, %.1f'%where if where else '—',
             RADIO_VERDICTS[verdict['verdict']] if verdict else '—'))
 
       # How often the TotTag in each row ranged to the one in each column
-      uids = [badge['uid'] for badge in badges if badge['uid'] is not None]
-      labels = {badge['uid']: badge['label'] or f"{badge['uid']:02X}" for badge in badges if badge['uid'] is not None}
+      uids = [device['uid'] for device in devices if device['uid'] is not None]
+      labels = {device['uid']: device['label'] or f"{device['uid']:02X}" for device in devices if device['uid'] is not None}
       if uids != self.radio_link_uids:
          self.radio_link_uids = uids
          self.radio_links['columns'] = [str(uid) for uid in uids]
@@ -1676,8 +1675,8 @@ class TotTagGUI(tk.Frame):
          self.radio_links.insert('', tk.END, text=labels[row], values=['' if row == column else coverage(row, column) for column in uids])
 
       # Everything worth reading in words, redrawn only when it changes so the reader keeps their place
-      lines = [f"{badge['label']}: {badge['message']}" for badge in badges if badge['message']]
-      if any(badge['truncated'] for badge in badges):
+      lines = [f"{device['label']}: {device['message']}" for device in devices if device['message']]
+      if any(device['truncated'] for device in devices):
          lines.append("Some range reports arrived cut short, because this computer's Bluetooth negotiated small packets. Rounds are "
                       'still counted from each TotTag\'s own counter, but links to the TotTags cut off will read low.')
       if test is not None and not judged:
@@ -1685,9 +1684,9 @@ class TotTagGUI(tk.Frame):
       if judged:
          lines += [radio_wording(note) for note in result['notes']]
          order = {'fail': 0, 'check': 1, 'missing': 2, 'pass': 3}
-         messages = {badge['uid']: badge['message'] for badge in badges}
+         messages = {device['uid']: device['message'] for device in devices}
          for device in sorted(result['devices'], key=lambda d: (order[d['verdict']], d['label'])):
-            # A badge with no data says why, from how its test went, rather than that it has no log
+            # A device with no data says why, from how its test went, rather than that it has no log
             reasons = [messages.get(device['uid']) or 'Sent no data during the test.'] if device['verdict'] == 'missing' else device['reasons']
             if reasons:
                lines.append(f"{device['label']} ({RADIO_VERDICTS[device['verdict']]}):\n" + '\n'.join(f'   - {radio_wording(reason)}' for reason in reasons))

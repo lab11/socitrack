@@ -65,13 +65,13 @@ static volatile struct
 static storage_round_start_t round_record, finished_round_record;
 static uint32_t round_record_timestamp, finished_round_timestamp, round_task_stimer, round_wake_us;
 static bool round_record_pending, finished_round_pending;
-static volatile uint8_t isr_trigger, round_flags;
 static volatile uint32_t timer_fired_stimer, timer_latency_ticks;
 static volatile uint32_t schedules_heard_total, join_requests_sent, join_requests_heard, listen_errors;
 static volatile bool collision_seen;
-static volatile uint8_t collision_phase, collision_type, collision_source;
+static volatile uint8_t collision_phase, collision_type, collision_source, isr_trigger, round_flags;
 static volatile uint16_t collision_at_us;
-static uint32_t session_started_stimer, rounds_ranged, stalls;
+static volatile storage_radio_timing_t radio_timing;
+static uint32_t session_started_stimer, rounds_ranged, stalls, radio_timing_started_stimer;
 static uint8_t end_reason;
 #endif
 
@@ -224,6 +224,31 @@ static int16_t read_carrier_offset_cppm(void)
    return (cppm >= (float)INT16_MAX) ? INT16_MAX : ((cppm <= (float)INT16_MIN) ? INT16_MIN : (int16_t)cppm);
 }
 
+static void reset_radio_timing(void)
+{
+   AM_CRITICAL_BEGIN
+   memset((void*)&radio_timing, 0, sizeof(radio_timing));
+   radio_timing.slack_min_us = INT16_MAX;
+   radio_timing.event_to_isr_min_us = UINT16_MAX;
+   AM_CRITICAL_END
+}
+
+static void flush_radio_timing(bool session_over)
+{
+   // Once a minute and whatever is left when the session ends
+   const uint32_t now = am_hal_stimer_counter_get();
+   if (!session_over && ((now - radio_timing_started_stimer) < RANGING_MS_TO_STIMER(STORAGE_RADIO_TIMING_INTERVAL_MS)))
+      return;
+   storage_radio_timing_t record;
+   AM_CRITICAL_BEGIN
+   record = *(const storage_radio_timing_t*)&radio_timing;
+   AM_CRITICAL_END
+   reset_radio_timing();
+   radio_timing_started_stimer = now;
+   if (record.arms)
+      storage_write_radio_timing(app_get_experiment_time(app_get_time_offset()), &record);
+}
+
 static void trace_session_begin(void)
 {
    // Every counter describes one run of the scheduler
@@ -232,7 +257,8 @@ static void trace_session_begin(void)
    schedules_heard_total = join_requests_sent = join_requests_heard = listen_errors = 0;
    rounds_ranged = stalls = 0;
    end_reason = STORAGE_SESSION_END_UNKNOWN;
-   session_started_stimer = am_hal_stimer_counter_get();
+   session_started_stimer = radio_timing_started_stimer = am_hal_stimer_counter_get();
+   reset_radio_timing();
 }
 
 static void retire_round_record(void)
@@ -386,6 +412,7 @@ static void trace_session_end(void)
    flush_schedule_catch(true);
    retire_round_record();
    flush_round_record();
+   flush_radio_timing(true);
    const storage_session_end_t record = { .reason = end_reason, .role = (uint8_t)current_role,
       .schedule_size = (uint8_t)schedule_phase_get_num_devices(),
       .collision_phase = collision_seen ? collision_phase : 0, .collision_type = collision_seen ? collision_type : 0,
@@ -768,6 +795,7 @@ void scheduler_run(schedule_role_t role)
          log_pending_abort();
 #if DIAGNOSTIC_BUILD
          flush_schedule_catch(false);
+         flush_radio_timing(false);
 #endif
          if ((pending_actions & RANGING_NEW_ROUND_START))
          {
@@ -905,6 +933,8 @@ void scheduler_note_rx_arm_failure(scheduler_phase_t phase, uint32_t slot, uint3
 
    // When this interrupt started and how long after the event it was handling
    const uint8_t trigger = in_isr ? isr_trigger : STORAGE_RADIO_ABORT_TRIGGER_UNKNOWN;
+   uint32_t asleep_us = 0, wake_to_isr_us = 0;
+   const bool woke = in_isr && ranging_radio_isr_woke_processor(&asleep_us, &wake_to_isr_us);
    const uint32_t entry_us = now_us - isr_us;
    int32_t event_to_isr_us = STORAGE_RADIO_ABORT_NO_EVENT_TIME;
    if (timed && ((trigger == STORAGE_RADIO_ABORT_TRIGGER_TX_DONE) || (trigger == STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME)))
@@ -924,12 +954,59 @@ void scheduler_note_rx_arm_failure(scheduler_phase_t phase, uint32_t slot, uint3
       .since_temperature_ms = (uint16_t)((since_ms >= STORAGE_RADIO_ABORT_UNMEASURED) ? STORAGE_RADIO_ABORT_UNMEASURED : since_ms),
       .trigger = trigger,
       .isr_entry_us = (uint16_t)(!timed ? STORAGE_RADIO_ABORT_UNMEASURED : ((entry_us >= STORAGE_RADIO_ABORT_UNMEASURED) ? (STORAGE_RADIO_ABORT_UNMEASURED - 1) : entry_us)),
-      .event_to_isr_us = (int16_t)event_to_isr_us
+      .event_to_isr_us = (int16_t)event_to_isr_us,
+      .asleep_us = woke ? ((asleep_us >= STORAGE_RADIO_ABORT_UNMEASURED) ? (STORAGE_RADIO_ABORT_UNMEASURED - 1) : (uint16_t)asleep_us) : STORAGE_RADIO_ABORT_UNMEASURED,
+      .wake_to_isr_us = woke ? ((wake_to_isr_us >= STORAGE_RADIO_ABORT_UNMEASURED) ? (STORAGE_RADIO_ABORT_UNMEASURED - 1) : (uint16_t)wake_to_isr_us) : STORAGE_RADIO_ABORT_UNMEASURED
    };
    pending_abort_timestamp = schedule_phase_get_timestamp();
    abort_pending = true;
 #endif
 }
+
+#if DIAGNOSTIC_BUILD
+
+void scheduler_note_rx_armed(uint32_t deadline_us)
+{
+   // Runs in the radio interrupt straight after a delayed receive was armed in time. Only a receive armed for the first
+   // event of an interrupt, a received frame, is counted, since only then did the interrupt start because of that frame.
+   uint32_t isr_us = 0, events = 0;
+   if ((__get_IPSR() == 0) || (isr_trigger != STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME) || !ranging_radio_isr_progress(&isr_us, &events) || (events != 1))
+      return;
+   const uint32_t now_us = round_elapsed_us();
+   const uint64_t event = ranging_radio_readrxtimestamp();
+   if (isr_us > now_us)
+      return;
+   const int32_t event_us = (int32_t)DWT_TO_US((event - schedule_phase_get_reference_time_full()) & 0xFFFFFFFFFFULL);
+   const int32_t event_to_isr_us = (int32_t)(now_us - isr_us) - event_us;
+   const int32_t slack_us = (int32_t)deadline_us - (int32_t)now_us;
+   uint32_t asleep_us = 0, wake_to_isr_us = 0;
+   const bool woke = ranging_radio_isr_woke_processor(&asleep_us, &wake_to_isr_us);
+
+   if (radio_timing.arms == UINT16_MAX)
+      return;
+   ++radio_timing.arms;
+   if (woke)
+   {
+      ++radio_timing.after_sleep;
+      if (!asleep_us)
+         ++radio_timing.during_sleep_entry;
+      if (wake_to_isr_us > radio_timing.wake_to_isr_max_us)
+         radio_timing.wake_to_isr_max_us = saturate_u16(wake_to_isr_us);
+   }
+   if (slack_us < radio_timing.slack_min_us)
+      radio_timing.slack_min_us = (int16_t)((slack_us < INT16_MIN) ? INT16_MIN : slack_us);
+   if (slack_us < 25)
+      ++radio_timing.slack_under_25_us;
+   const uint16_t e2i = (event_to_isr_us <= 0) ? 0 : saturate_u16((uint32_t)event_to_isr_us);
+   if (e2i < radio_timing.event_to_isr_min_us)
+      radio_timing.event_to_isr_min_us = e2i;
+   if (e2i > radio_timing.event_to_isr_max_us)
+      radio_timing.event_to_isr_max_us = e2i;
+   const uint32_t band = (e2i < STORAGE_RADIO_TIMING_FIRST_US) ? 0 : (1 + ((e2i - STORAGE_RADIO_TIMING_FIRST_US) / STORAGE_RADIO_TIMING_STEP_US));
+   ++radio_timing.event_to_isr_counts[(band < STORAGE_RADIO_TIMING_BANDS) ? band : (STORAGE_RADIO_TIMING_BANDS - 1)];
+}
+
+#endif
 
 uint8_t scheduler_get_master_cycle_failures(void)
 {

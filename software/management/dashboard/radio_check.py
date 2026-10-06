@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""The live radio check: badges ranging in a radio test, read over Bluetooth while it runs.
+"""The live radio check: devices ranging in a radio test, read over Bluetooth while it runs.
 
-A radio test is started by a maintenance command naming every badge in it. Each badge restarts into the test, ranges
-with the others for the time asked, logs nothing, and restarts back to normal when it ends. While it runs, each badge
+A radio test is started by a maintenance command naming every device in it. Each device restarts into the test, ranges
+with the others for the time asked, logs nothing, and restarts back to normal when it ends. While it runs, each device
 notifies its ranges every round and answers reads of its radio counters.
 
 Three layers, the first two pure so they can be tested without Bluetooth:
-   - analyse_radio() judges every badge against the others, a line-for-line port of analyseRadio() in the web tool's
+   - analyse_radio() judges every device against the others, a line-for-line port of analyseRadio() in the web tool's
      schema package (radioCheck.ts). test_radio_check.py holds both to the same verdicts on a shared fixture.
-   - LiveRadioRecorder reduces what one badge streams to the summary analyse_radio() reads, as LiveRadioRecorder in
+   - LiveRadioRecorder reduces what one device streams to the summary analyse_radio() reads, as LiveRadioRecorder in
      liveRadio.ts does.
-   - LiveRadioTest runs a test with bleak on an asyncio event loop, following each badge through its restart into the
+   - LiveRadioTest runs a test with bleak on an asyncio event loop, following each device through its restart into the
      test and any dropped connection after.
 """
 
@@ -23,7 +23,7 @@ except ImportError: import tottag_format
 
 # THRESHOLDS ---------------------------------------------------------------------------------------------------------
 #
-# Comparisons are against the MEDIAN OF THE OTHER BADGES, so that in a three-badge test one bad badge cannot drag the
+# Comparisons are against the MEDIAN OF THE OTHER DEVICES, so that in a three-device test one bad device cannot drag the
 # yardstick towards itself. Absolute floors catch a fleet that is bad as a whole. Keep in step with radioCheck.ts.
 
 MINUTE_MS = 60_000
@@ -69,10 +69,10 @@ def format_mm(millimetres):
    return '—' if millimetres is None else f'{_js_round(millimetres)} mm'
 
 
-# CROSS-BADGE ANALYSIS -----------------------------------------------------------------------------------------------
+# CROSS-DEVICE ANALYSIS -----------------------------------------------------------------------------------------------
 
 def _solve_biases(uids, residuals):
-   """Least-squares per-badge offsets from link residuals: residual(a, b) ~ bias(a) + bias(b)."""
+   """Least-squares per-device offsets from link residuals: residual(a, b) ~ bias(a) + bias(b)."""
    index = {uid: i for i, uid in enumerate(uids)}
    n = len(uids)
    if n < 3 or len(residuals) < n:
@@ -83,7 +83,7 @@ def _solve_biases(uids, residuals):
       matrix[i][i] += 1; matrix[j][j] += 1
       matrix[i][j] += 1; matrix[j][i] += 1
       matrix[i][n] += residual; matrix[j][n] += residual
-   # Gaussian elimination with partial pivoting; a near-zero pivot means the links cannot separate the badges' offsets
+   # Gaussian elimination with partial pivoting; a near-zero pivot means the links cannot separate the devices' offsets
    for col in range(n):
       pivot = col
       for row in range(col + 1, n):
@@ -102,10 +102,10 @@ def _solve_biases(uids, residuals):
 
 
 def analyse_radio(devices, positions=None):
-   """Judge every badge against the others.
+   """Judge every device against the others.
 
    ``devices`` is a list of {'uid', 'label', 'summary'}, the summary as LiveRadioRecorder.summary() makes it or None
-   for a badge with no data. ``positions`` maps a badge's uid to its (x, y) in metres, for whichever badges have one.
+   for a device with no data. ``positions`` maps a device's uid to its (x, y) in metres, for whichever devices have one.
    """
    positions = positions or {}
    notes = []
@@ -113,18 +113,18 @@ def analyse_radio(devices, positions=None):
    loaded = [device for device in devices if is_loaded(device)]
    missing = len(devices) - len(loaded)
    if missing:
-      notes.append(f"{missing} of the {len(devices)} selected badges {'has' if missing == 1 else 'have'} no log loaded, so "
+      notes.append(f"{missing} of the {len(devices)} selected devices {'has' if missing == 1 else 'have'} no log loaded, so "
                    f"{'it is' if missing == 1 else 'they are'} not judged and {'its' if missing == 1 else 'their'} links are missing from the others.")
 
-   # The stretch every badge was on, in whole minutes, so no badge is penalised for rounds it was off for
+   # The stretch every device was on, in whole minutes, so no device is penalised for rounds it was off for
    start = max(math.ceil(d['summary']['first_ms'] / MINUTE_MS) for d in loaded) if loaded else None
    end = min(math.floor(d['summary']['last_ms'] / MINUTE_MS) for d in loaded) if loaded else None
    minutes = max(0, end - start) if start is not None and end is not None else 0
    rounds = minutes * ROUNDS_PER_MINUTE
    if loaded and minutes < 2:
-      notes.append('The badges were running together for less than two whole minutes, which is too short to judge ranging. Run the test for at least five.')
+      notes.append('The devices were running together for less than two whole minutes, which is too short to judge ranging. Run the test for at least five.')
    if loaded and len(loaded) < 3:
-      notes.append('With fewer than three badges there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single badge.')
+      notes.append('With fewer than three devices there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single device.')
    in_window = lambda minute: start is not None and end is not None and start <= minute < end
 
    # Per-link evidence from both ends
@@ -161,11 +161,11 @@ def analyse_radio(devices, positions=None):
       solved_uids = list(dict.fromkeys(uid for link in with_residuals for uid in (link['a'], link['b'])))
       biases = _solve_biases(solved_uids, [(link['a'], link['b'], link['residual_mm']) for link in with_residuals])
    if positions and not biases:
-      notes.append("The positions entered do not let each badge's distance offset be told apart — it needs at least three badges with positions and ranges between them.")
+      notes.append("The positions entered do not let each device's distance offset be told apart — it needs at least three devices with positions and ranges between them.")
    if not positions:
-      notes.append('No positions entered, so distances are checked for consistency only. Enter where each badge sat to check accuracy as well.')
+      notes.append('No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well.')
 
-   # Each badge's own figures
+   # Each device's own figures
    figures = {}
    for device in devices:
       summary = device['summary']
@@ -200,7 +200,7 @@ def analyse_radio(devices, positions=None):
       diagnostics = device['summary']['diagnostics'] if device['summary'] else None
       if not f['loaded']:
          results.append({
-            'uid': device['uid'], 'label': device['label'], 'verdict': 'missing', 'reasons': ['No log loaded for this badge.'],
+            'uid': device['uid'], 'label': device['label'], 'verdict': 'missing', 'reasons': ['No log loaded for this device.'],
             'participation': None, 'rx_failure_rate': None, 'antenna_failure_rates': [], 'link_coverage': None,
             'bias_mm': None, 'noise_mm': None, 'diagnostics': None, 'aborts': 0,
          })
@@ -216,7 +216,7 @@ def analyse_radio(devices, positions=None):
       rx_others = others_median(device['uid'], 'rx_failure_rate')
       if f['rx_failure_rate'] is not None:
          excess = f['rx_failure_rate'] - (rx_others if rx_others is not None else 0)
-         versus = f' against {_percent(rx_others)} for the other badges' if rx_others is not None else ''
+         versus = f' against {_percent(rx_others)} for the other devices' if rx_others is not None else ''
          if excess > RX_FAILURE_FAIL_EXCESS:
             fails.append(f"{_percent(f['rx_failure_rate'])} of its ranging receives failed{versus}. A weak receiver or a damaged antenna or connection.")
          elif excess > RX_FAILURE_CHECK_EXCESS:
@@ -241,7 +241,7 @@ def analyse_radio(devices, positions=None):
          if f['link_coverage'] < COVERAGE_FAIL:
             fails.append(f"Ranged to a typical peer in only {_percent(f['link_coverage'])} of rounds.")
          elif coverage_others is not None and f['link_coverage'] < coverage_others - COVERAGE_CHECK_DROP:
-            checks.append(f"Ranged to a typical peer in {_percent(f['link_coverage'])} of rounds, against {_percent(coverage_others)} for the other badges.")
+            checks.append(f"Ranged to a typical peer in {_percent(f['link_coverage'])} of rounds, against {_percent(coverage_others)} for the other devices.")
 
       bias_mm = biases.get(device['uid']) if biases else None
       if bias_mm is not None:
@@ -253,7 +253,7 @@ def analyse_radio(devices, positions=None):
 
       noise_others = others_median(device['uid'], 'noise_mm')
       if f['noise_mm'] is not None and noise_others is not None and f['noise_mm'] > NOISE_CHECK_MIN_MM and f['noise_mm'] > NOISE_CHECK_FACTOR * noise_others:
-         checks.append(f"Its distances spread by about {_js_round(f['noise_mm'])} mm, against {_js_round(noise_others)} mm for the other badges.")
+         checks.append(f"Its distances spread by about {_js_round(f['noise_mm'])} mm, against {_js_round(noise_others)} mm for the other devices.")
 
       if diagnostics:
          recoveries = diagnostics['wake_failures'] + diagnostics['irq_stuck']
@@ -261,7 +261,7 @@ def analyse_radio(devices, positions=None):
             checks.append(f"The radio needed resetting {recoveries} time{'' if recoveries == 1 else 's'} ({diagnostics['wake_failures']} failed "
                           f"wake-up{'' if diagnostics['wake_failures'] == 1 else 's'}, {diagnostics['irq_stuck']} stuck interrupt{'' if diagnostics['irq_stuck'] == 1 else 's'}).")
          if rounds and diagnostics['rx_arm_late'] / rounds > ARM_LATE_CHECK:
-            checks.append(f"Lost {diagnostics['rx_arm_late']} rounds to a receive it could not start in time. That points to firmware timing, not this badge's radio.")
+            checks.append(f"Lost {diagnostics['rx_arm_late']} rounds to a receive it could not start in time. That points to firmware timing, not this device's radio.")
 
       results.append({
          'uid': device['uid'], 'label': device['label'],
@@ -288,13 +288,13 @@ def line_positions(uids, spacing_m):
    return {uid: (_millimetre(i * spacing_m), 0.0) for i, uid in enumerate(uids)}
 
 
-# RECORDING ONE BADGE ------------------------------------------------------------------------------------------------
+# RECORDING ONE DEVICE ------------------------------------------------------------------------------------------------
 
 class LiveRadioRecorder:
-   """Everything one badge has streamed during a live test, reduced to a summary on request.
+   """Everything one device has streamed during a live test, reduced to a summary on request.
 
-   Rounds are counted from the badge's own counter wherever it is available, because a notification Bluetooth dropped
-   is a round the badge still ranged in; ranges per peer come from the notifications, scaled minute by minute for the
+   Rounds are counted from the device's own counter wherever it is available, because a notification Bluetooth dropped
+   is a round the device still ranged in; ranges per peer come from the notifications, scaled minute by minute for the
    ones that went missing. Times passed in are Unix milliseconds.
    """
 
@@ -332,10 +332,10 @@ class LiveRadioRecorder:
          self.peer_values.setdefault(uid, {}).setdefault(minute, []).append(millimetres)
 
    def add_stats(self, at_ms, stats):
-      """One read of the radio counters, which are cumulative since the badge booted into the test."""
+      """One read of the radio counters, which are cumulative since the device booted into the test."""
       at = self._touch(at_ms)
       last = self.previous[1] if self.previous else None
-      # A badge that restarted mid-test counts from zero again, so keep what it had reached
+      # A device that restarted mid-test counts from zero again, so keep what it had reached
       restarted = last is not None and (stats['rx_ok'] < last['rx_ok'] or stats['rounds_ranged'] < last['rounds_ranged'])
       if restarted:
          for key in self.banked:
@@ -421,12 +421,12 @@ STATUS_LABELS = {
    'running': 'Testing', 'reconnecting': 'Reconnecting', 'finished': 'Finished', 'failed': 'Failed',
 }
 
-RESTART_SETTLE_S = 2.5      # a badge restarting into the test is unreachable for a couple of seconds
-START_GRACE_S = 30          # a badge still outside the test this long after the start is taken to have refused it
+RESTART_SETTLE_S = 2.5      # a device restarting into the test is unreachable for a couple of seconds
+START_GRACE_S = 30          # a device still outside the test this long after the start is taken to have refused it
 POLL_S = 5
 RECONNECT_S = 2
 CONNECT_TIMEOUT_S = 8
-RECENT_S = 60               # how far back the share of rounds a badge is ranging in looks
+RECENT_S = 60               # how far back the share of rounds a device is ranging in looks
 RECENT_MIN_S = 15           # and how much history it needs before it means anything
 
 TOO_OLD = "Its firmware is too old to run a radio test. Update it, then try again."
@@ -434,13 +434,13 @@ NOT_HEARD = 'Not heard from since it restarted into the test. Still trying to re
 
 
 def ranged_share(history):
-   """Share of the recent rounds in which a badge produced ranges, from its own counters read over time.
+   """Share of the recent rounds in which a device produced ranges, from its own counters read over time.
 
    ``history`` is ``[(seconds, rounds_scheduled, rounds_ranged), ...]``, oldest first, all from one boot. Dividing rounds
    by the time between two reads is no good: a read lands anywhere within a round, so a window of a few seconds holds a
-   whole round more or less than its length suggests, and a perfect badge reads anywhere from 1.8 to 2.2 rounds a
-   second. The badge's count of the rounds it took part in has no such slop, so that is the yardstick whenever it
-   agrees with the clock to within a round; when it falls further short, the badge sat out rounds and the clock decides.
+   whole round more or less than its length suggests, and a perfect device reads anywhere from 1.8 to 2.2 rounds a
+   second. The device's count of the rounds it took part in has no such slop, so that is the yardstick whenever it
+   agrees with the clock to within a round; when it falls further short, the device sat out rounds and the clock decides.
    """
    if len(history) < 2:
       return None
@@ -454,7 +454,7 @@ def ranged_share(history):
 
 
 class LiveRadioTest:
-   """One live radio test among the badges added to it, run as tasks on an asyncio event loop.
+   """One live radio test among the devices added to it, run as tasks on an asyncio event loop.
 
    Everything that touches Bluetooth runs on that loop; the GUI thread reads state() and deployment(), which take a
    lock, and calls start() and stop() through asyncio.run_coroutine_threadsafe().
@@ -463,17 +463,17 @@ class LiveRadioTest:
    def __init__(self, now=time.time):
       self.now = now
       self.lock = threading.Lock()
-      self.badges = []
+      self.devices = []
       self.phase = 'setup'
       self.start_time = self.end_time = None
       self.tasks = []
 
    def add(self, name, ble_device, eui=None, label=None):
-      """Add a badge found by the scan. ``eui`` (6 bytes, low byte first) is read from the badge when not given."""
+      """Add a device found by the scan. ``eui`` (6 bytes, low byte first) is read from the device when not given."""
       with self.lock:
-         if self.phase != 'setup' or any(badge['name'] == name for badge in self.badges):
+         if self.phase != 'setup' or any(device['name'] == name for device in self.devices):
             return
-         self.badges.append({'name': name, 'device': ble_device, 'eui': bytes(eui) if eui else None,
+         self.devices.append({'name': name, 'ble_device': ble_device, 'eui': bytes(eui) if eui else None,
                              'label': label, 'status': 'ready', 'message': None, 'stats': None, 'ranged_recent': None,
                              'previous': None, 'history': collections.deque(), 'recorder': None})
 
@@ -481,79 +481,79 @@ class LiveRadioTest:
       with self.lock:
          return {
             'phase': self.phase, 'start_time': self.start_time, 'end_time': self.end_time,
-            'badges': [{key: badge[key] for key in ('name', 'label', 'status', 'message', 'stats', 'ranged_recent')} |
-                       {'uid': badge['eui'][0] if badge['eui'] else None, 'truncated': badge['recorder'].truncated if badge['recorder'] else 0}
-                       for badge in self.badges],
+            'devices': [{key: device[key] for key in ('name', 'label', 'status', 'message', 'stats', 'ranged_recent')} |
+                       {'uid': device['eui'][0] if device['eui'] else None, 'truncated': device['recorder'].truncated if device['recorder'] else 0}
+                       for device in self.devices],
          }
 
    def deployment(self):
-      """The test as analyse_radio() takes it: every badge, with its recording standing in for a log."""
+      """The test as analyse_radio() takes it: every device, with its recording standing in for a log."""
       with self.lock:
-         return [{'uid': badge['eui'][0], 'label': badge['label'] or f"{badge['eui'][0]:02X}",
-                  'summary': badge['recorder'].summary() if badge['recorder'] else None}
-                 for badge in self.badges if badge['eui']]
+         return [{'uid': device['eui'][0], 'label': device['label'] or f"{device['eui'][0]:02X}",
+                  'summary': device['recorder'].summary() if device['recorder'] else None}
+                 for device in self.devices if device['eui']]
 
-   def _set(self, badge, **changes):
+   def _set(self, device, **changes):
       with self.lock:
-         badge.update(changes)
+         device.update(changes)
 
    def _over(self):
       return self.phase == 'finished' or (self.end_time is not None and self.now() >= self.end_time)
 
-   async def _connect(self, badge, timeout=CONNECT_TIMEOUT_S, on_disconnect=None):
+   async def _connect(self, device, timeout=CONNECT_TIMEOUT_S, on_disconnect=None):
       from bleak import BleakClient, BleakScanner
-      # A badge that has just restarted has to be seen advertising again before the stack will connect to it. Badges
+      # A device that has just restarted has to be seen advertising again before the stack will connect to it. Devices
       # are known by their Bluetooth address, which macOS hides unless asked, as the dashboard's own scan does
-      device = await BleakScanner.find_device_by_address(getattr(badge['device'], 'address', badge['device']), timeout=timeout,
+      found = await BleakScanner.find_device_by_address(getattr(device['ble_device'], 'address', device['ble_device']), timeout=timeout,
                                                          cb={'use_bdaddr': True})
-      if device is None:
+      if found is None:
          return None
-      client = BleakClient(device, disconnected_callback=on_disconnect)
+      client = BleakClient(found, disconnected_callback=on_disconnect)
       await client.connect(timeout=timeout)
       return client if client.is_connected else None
 
    @staticmethod
    def _supports_radio_test(client):
       # Firmware from before radio tests accepts the start command as an unknown one and carries on as it was, so
-      # whether a badge can run one shows only in whether it has the radio statistics to read during it
+      # whether a device can run one shows only in whether it has the radio statistics to read during it
       try:
          return client.services.get_characteristic(tottag_format.BLE_RADIO_STATS_UUID) is not None
       except Exception:
-         return True   # cannot tell from here; the badge's own answers decide
+         return True   # cannot tell from here; the device's own answers decide
 
    async def start(self, duration_s):
-      """Start every badge on the same test, then follow each one into it."""
+      """Start every device on the same test, then follow each one into it."""
       with self.lock:
-         if self.phase != 'setup' or len(self.badges) < 2:
+         if self.phase != 'setup' or len(self.devices) < 2:
             return
          self.phase = 'starting'
-      for badge in self.badges:
-         if badge['eui'] is None:
+      for device in self.devices:
+         if device['eui'] is None:
             try:
-               client = await self._connect(badge)
+               client = await self._connect(device)
                if client:
-                  self._set(badge, eui=tottag_format.eui_from_system_id(await client.read_gatt_char(tottag_format.BLE_SYSTEM_ID_UUID)))
+                  self._set(device, eui=tottag_format.eui_from_system_id(await client.read_gatt_char(tottag_format.BLE_SYSTEM_ID_UUID)))
                   await client.disconnect()
             except Exception:
                pass
-            if badge['eui'] is None:
-               self._set(badge, status='failed', message='Could not be reached to read its address.')
-      euis = [badge['eui'] for badge in self.badges if badge['eui']]
+            if device['eui'] is None:
+               self._set(device, status='failed', message='Could not be reached to read its address.')
+      euis = [device['eui'] for device in self.devices if device['eui']]
       with self.lock:
          self.start_time = int(self.now())
          self.end_time = self.start_time + int(duration_s)
       command = tottag_format.encode_radio_test_start(self.start_time, self.end_time, euis)
       uids = [eui[0] for eui in euis]
-      labels = [next(b['label'] or f'{b["eui"][0]:02X}' for b in self.badges if b['eui'] == eui) for eui in euis]
+      labels = [next(b['label'] or f'{b["eui"][0]:02X}' for b in self.devices if b['eui'] == eui) for eui in euis]
 
-      for badge in self.badges:
+      for device in self.devices:
          if self.phase != 'starting':
             return   # stopped while the others were being started
-         if badge['eui'] is None:
+         if device['eui'] is None:
             continue
-         self._set(badge, status='starting')
+         self._set(device, status='starting')
          try:
-            client = await self._connect(badge)
+            client = await self._connect(device)
             if client is None:
                raise IOError('Could not be reached.')
             if not self._supports_radio_test(client):
@@ -561,25 +561,25 @@ class LiveRadioTest:
                except Exception: pass
                raise IOError(TOO_OLD)
             try:
-               # Clock first, so every badge agrees on when the test began
+               # Clock first, so every device agrees on when the test began
                await client.write_gatt_char(tottag_format.BLE_TIMESTAMP_UUID, int(self.now()).to_bytes(4, 'little'), True)
                await client.write_gatt_char(tottag_format.BLE_MAINTENANCE_COMMAND_UUID, command, True)
             except Exception:
-               raise IOError('The badge refused the test. Its clock may not be set, or its firmware may be too old to run one.')
+               raise IOError('The device refused the test. Its clock may not be set, or its firmware may be too old to run one.')
             finally:
                try: await client.disconnect()
                except Exception: pass
          except Exception as error:
-            self._set(badge, status='failed', message=str(error) or 'Could not be started.')
+            self._set(device, status='failed', message=str(error) or 'Could not be started.')
             continue
-         self._set(badge, status='restarting', recorder=LiveRadioRecorder(self.start_time, uids, labels, badge['eui'][0]))
-         self.tasks.append(asyncio.ensure_future(self._follow(badge, command)))
+         self._set(device, status='restarting', recorder=LiveRadioRecorder(self.start_time, uids, labels, device['eui'][0]))
+         self.tasks.append(asyncio.ensure_future(self._follow(device, command)))
       with self.lock:
          if self.phase == 'starting':
-            self.phase = 'running' if any(badge['status'] != 'failed' for badge in self.badges) else 'finished'
+            self.phase = 'running' if any(device['status'] != 'failed' for device in self.devices) else 'finished'
 
    async def stop(self):
-      """End the test early: each badge restarts into whatever it would otherwise be doing."""
+      """End the test early: each device restarts into whatever it would otherwise be doing."""
       with self.lock:
          if self.phase not in ('starting', 'running'):
             return
@@ -587,48 +587,48 @@ class LiveRadioTest:
       for task in self.tasks:
          task.cancel()
       stop = tottag_format.encode_radio_test_stop()
-      for badge in self.badges:
-         if badge['status'] == 'failed' or badge['eui'] is None:
+      for device in self.devices:
+         if device['status'] == 'failed' or device['eui'] is None:
             continue
          try:
-            client = await self._connect(badge, timeout=4)
+            client = await self._connect(device, timeout=4)
             if client:
                await client.write_gatt_char(tottag_format.BLE_MAINTENANCE_COMMAND_UUID, stop, True)
                await client.disconnect()
          except Exception:
             pass   # restarting anyway at its scheduled end, or out of reach
-         self._set(badge, status='finished')
+         self._set(device, status='finished')
 
-   async def _follow(self, badge, command):
-      """Keep one badge connected for the rest of the test: reconnect after its restart and after any drop."""
+   async def _follow(self, device, command):
+      """Keep one device connected for the rest of the test: reconnect after its restart and after any drop."""
       try:
          await asyncio.sleep(RESTART_SETTLE_S)
          while not self._over():
-            if await self._attach(badge, command) == 'failed':
+            if await self._attach(device, command) == 'failed':
                return
-            if badge['previous'] is None and self.now() >= self.start_time + START_GRACE_S:
-               self._set(badge, message=NOT_HEARD)
+            if device['previous'] is None and self.now() >= self.start_time + START_GRACE_S:
+               self._set(device, message=NOT_HEARD)
             await asyncio.sleep(RECONNECT_S)
       finally:
          with self.lock:
-            if badge['status'] != 'failed':
-               badge['status'] = 'finished'
-            if self.phase == 'running' and all(b['status'] in ('finished', 'failed') for b in self.badges):
+            if device['status'] != 'failed':
+               device['status'] = 'finished'
+            if self.phase == 'running' and all(b['status'] in ('finished', 'failed') for b in self.devices):
                self.phase = 'finished'
 
-   async def _attach(self, badge, command):
-      """One connection to a badge in the test, polled until it drops or the test ends."""
+   async def _attach(self, device, command):
+      """One connection to a device in the test, polled until it drops or the test ends."""
       dropped = asyncio.Event()
       loop = asyncio.get_running_loop()
       client = None
       try:
-         client = await self._connect(badge, on_disconnect=lambda _client: loop.call_soon_threadsafe(dropped.set))
+         client = await self._connect(device, on_disconnect=lambda _client: loop.call_soon_threadsafe(dropped.set))
          if client is None:
             return 'unreachable'
          if not self._supports_radio_test(client):
-            self._set(badge, status='failed', message=TOO_OLD)
+            self._set(device, status='failed', message=TOO_OLD)
             return 'failed'
-         recorder = badge['recorder']
+         recorder = device['recorder']
          def on_ranges(_sender, data):
             ranges, truncated = tottag_format.decode_range_results(data)
             with self.lock:
@@ -636,7 +636,7 @@ class LiveRadioTest:
          try:
             await client.start_notify(tottag_format.BLE_RANGES_UUID, on_ranges)
          except Exception:
-            pass   # rounds still count from the badge's own counter; only distances go missing
+            pass   # rounds still count from the device's own counter; only distances go missing
          while not self._over() and not dropped.is_set():
             try:
                stats = tottag_format.decode_radio_stats(await client.read_gatt_char(tottag_format.BLE_RADIO_STATS_UUID))
@@ -646,28 +646,28 @@ class LiveRadioTest:
             if stats is None:
                pass
             elif stats['test_waiting']:
-               # Restarted without its badge list: send the same test again, which it takes without restarting
-               self._set(badge, status='waiting')
+               # Restarted without its device list: send the same test again, which it takes without restarting
+               self._set(device, status='waiting')
                try: await client.write_gatt_char(tottag_format.BLE_MAINTENANCE_COMMAND_UUID, command, True)
                except Exception: pass
             elif not stats['test_running']:
-               # Reached before its restart into the test, which a badge flushing a deployment's log can be slow to make
-               if badge['previous'] is None and now < self.start_time + START_GRACE_S:
+               # Reached before its restart into the test, which a device flushing a deployment's log can be slow to make
+               if device['previous'] is None and now < self.start_time + START_GRACE_S:
                   return 'early'
-               self._set(badge, status='failed', message='This badge is not running the test. It may have restarted out of it, or refused it.')
+               self._set(device, status='failed', message='This device is not running the test. It may have restarted out of it, or refused it.')
                return 'failed'
             else:
                with self.lock:
-                  history = badge['history']
+                  history = device['history']
                   if history and (stats['rounds_scheduled'] < history[-1][1] or stats['rounds_ranged'] < history[-1][2]):
                      history.clear()   # restarted, so its counters began again from zero
                   history.append((now, stats['rounds_scheduled'], stats['rounds_ranged']))
                   while len(history) > 2 and now - history[1][0] >= RECENT_S:
                      history.popleft()
-                  badge['ranged_recent'] = ranged_share(list(history))
-                  badge['previous'] = (now, stats)
+                  device['ranged_recent'] = ranged_share(list(history))
+                  device['previous'] = (now, stats)
                   recorder.add_stats(now * 1000, stats)
-                  badge.update(status='running', message=None, stats=stats)
+                  device.update(status='running', message=None, stats=stats)
             try:
                await asyncio.wait_for(dropped.wait(), POLL_S)
             except asyncio.TimeoutError:
@@ -681,5 +681,5 @@ class LiveRadioTest:
          if client is not None:
             try: await client.disconnect()
             except Exception: pass
-         if not self._over() and badge['status'] != 'failed':
-            self._set(badge, status='restarting' if badge['previous'] is None else 'reconnecting')
+         if not self._over() and device['status'] != 'failed':
+            self._set(device, status='restarting' if device['previous'] is None else 'reconnecting')

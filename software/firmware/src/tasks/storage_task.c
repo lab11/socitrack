@@ -264,6 +264,13 @@ void storage_write_session_end(uint32_t timestamp, const storage_session_end_t *
 #endif
 }
 
+void storage_write_radio_timing(uint32_t timestamp, const storage_radio_timing_t *timing)
+{
+#if DIAGNOSTIC_BUILD
+   enqueue_trace(STORAGE_TYPE_RADIO_TIMING, timestamp, timing, sizeof(*timing));
+#endif
+}
+
 #else
 
 bool storage_flush_and_shutdown(void) { return false; }
@@ -277,6 +284,7 @@ void storage_write_radio_abort(uint32_t timestamp, const storage_radio_abort_t *
 void storage_write_schedule_catch(uint32_t timestamp, const storage_schedule_catch_t *catch_record) {}
 void storage_write_round_start(uint32_t timestamp, const storage_round_start_t *round_start) {}
 void storage_write_session_end(uint32_t timestamp, const storage_session_end_t *session_end) {}
+void storage_write_radio_timing(uint32_t timestamp, const storage_radio_timing_t *timing) {}
 void storage_write_time_anchor(void) {}
 void storage_write_diagnostics(void) {}
 
@@ -400,6 +408,7 @@ void StorageTask(void *params)
             case STORAGE_TYPE_SCHEDULE_CATCH:
             case STORAGE_TYPE_ROUND_START:
             case STORAGE_TYPE_SESSION_END:
+            case STORAGE_TYPE_RADIO_TIMING:
                nandlog_store_record(item.type, item.timestamp, trace_data[item.value].data, trace_data[item.value].length);
                trace_data[item.value].length = 0;
                break;

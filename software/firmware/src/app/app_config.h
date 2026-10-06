@@ -221,6 +221,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #ifndef RADIO_ISR_WARMUP_COUNT
 #define RADIO_ISR_WARMUP_COUNT                      256
 #endif
+#define RADIO_ISR_WAKE_WINDOW_US                    200
 #ifndef RADIO_ISR_BUDGET_US
 #define RADIO_ISR_BUDGET_US                         (RANGING_BROADCAST_INTERVAL_US - RECEIVE_EARLY_START_US)
 #endif
