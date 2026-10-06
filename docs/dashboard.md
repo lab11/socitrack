@@ -8,6 +8,7 @@ a badge does not care which one you use.
 | Install | `pip install -e .` | None |
 | Runs on | macOS, Linux, Windows | Chrome, Edge, Opera on a computer |
 | Connection | Bluetooth or USB | Bluetooth |
+| Radio check | Live over Bluetooth | Live over Bluetooth, or from downloaded logs |
 | Analysis helpers | Yes — plotting, event overlays | No |
 
 Use the desktop dashboard unless you have a reason not to. The browser tool is convenient on a machine
@@ -56,6 +57,32 @@ Set the **Deployment Timezone** before entering times — changing it reinterpre
 | **Current Device Voltage** | Battery, in mV. Below 3750 mV a badge will not start recording. |
 | **Activate Find my TotTag** | Plays a tune so you can find a badge |
 | **Subscribe to Live Ranging Data** | Streams distances in real time. Requires the badge **off** its charger, since it has to be ranging. |
+
+### Checking badges' radios
+
+**Live Radio Check** runs several badges in a short radio test and compares them, to find one with a
+weak receiver, a faulty antenna or a calibration that is off. It needs no deployment and downloads
+nothing. It is available after a scan has found at least two badges over Bluetooth, while you are **not**
+connected to one. Disconnect first if you are.
+
+1. Tick the badges to test (up to 10) and choose how long to run, from 5 minutes to an hour.
+2. Optionally choose a **Layout** — a circle of a given radius, or a line at a given spacing, in feet —
+   and set the badges out in the order listed, at least 2 feet apart. The **Position** column shows where
+   each one goes. With positions, the check can tell whether one badge reads long or short on every link.
+3. **Start Test**. Each badge restarts into the test and starts ranging, on its charger or off it.
+
+The table updates every second with each badge's status, the share of the last minute's rounds it
+ranged in, and its receive failures, overall and per antenna. Distances are shown in feet and inches. The grid below it shows how often each badge ranged to each other badge. Once
+every badge has a full minute of data, each gets a **Pass**, **Check** or **Fail**, with the reasons
+listed underneath. The verdicts follow the same rules, in the same words, as the browser tool's radio check.
+
+A badge whose firmware predates radio tests is marked **Failed** at the start and left alone. One that
+cannot be reached after restarting into the test says so, and is still tried until the test ends.
+
+Scanning, connecting and scheduling are locked while a test runs. **Stop Test** ends it early. Either
+way, each badge restarts back to whatever it was doing, even if the dashboard has been closed. See
+[checking badges on the bench](troubleshooting.md#checking-badges-on-the-bench) for what each verdict
+means.
 
 ### Downloading
 
@@ -110,8 +137,10 @@ falls back to a file picker.
 The browser tool does not install anything and does not upload your data anywhere — it runs entirely
 in the page.
 
-Its **Radio check** tab compares the badges of one deployment against each other to find one with a
-weak receiver, a faulty antenna or a calibration that is off. See
+Its **Radio check** tab compares badges against each other to find one with a weak receiver, a faulty
+antenna or a calibration that is off. Like the desktop dashboard's **Live Radio Check**, it can run a
+short live test over Bluetooth, with no deployment and nothing to download. It can also read the logs of
+a deployment that already ran. See
 [checking badges on the bench](troubleshooting.md#checking-badges-on-the-bench).
 
 ---

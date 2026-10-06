@@ -8,6 +8,7 @@
 #include "led.h"
 #include "logging.h"
 #include "nandlog.h"
+#include "radio_test.h"
 #include "ranging.h"
 #include "rtc.h"
 #include "storage_records.h"
@@ -152,20 +153,22 @@ void run_tasks(void)
 
       // Determine whether there is an active experiment taking place
       static experiment_details_t scheduled_experiment;
-      storage_retrieve_experiment_details(&scheduled_experiment);
+      const bool radio_test = radio_test_boot(&scheduled_experiment);
+      if (!radio_test)
+         storage_retrieve_experiment_details(&scheduled_experiment);
       const uint32_t timestamp = rtc_get_timestamp(), time_of_day = rtc_get_time_of_day();
       const bool valid_experiment = rtc_is_valid() && scheduled_experiment.num_devices && !scheduled_experiment.is_terminated;
-      const bool active_experiment = experiment_is_active(&scheduled_experiment);
+      const bool active_experiment = radio_test || experiment_is_active(&scheduled_experiment);
       experiment_start_time = scheduled_experiment.experiment_start_time;
-      nandlog_disable(!active_experiment);
+      nandlog_disable(radio_test || !active_experiment);
 
       // Determine whether to power off for some time based on the device state
       uint32_t wake_on_timestamp = 0;
-      bool power_off = false, allow_ranging = !battery_monitor_is_plugged_in();
+      bool power_off = false, allow_ranging = radio_test || !battery_monitor_is_plugged_in();
       if (allow_ranging)
       {
          uint32_t battery_level = battery_monitor_get_level_mV();
-         if (battery_level < BATTERY_NOMINAL)
+         if ((battery_level < BATTERY_NOMINAL) && !battery_monitor_is_plugged_in())
          {
             print("WARNING: Battery level (%u mV) is too low to begin ranging!\n", battery_level);
             power_off = true;
@@ -199,12 +202,12 @@ void run_tasks(void)
       system_watchdog_enable();
 
       // Create tasks with the following priority order:
-      //    IdleTask < TimeAlignedTask < AppTask < BLETask < RangingTask < StorageTask
-      xTaskCreateStatic(StorageTask, "StorageTask", STORAGE_TASK_STACK_WORDS, allow_ranging ? uid : NULL, 5, storage_task_stack, &storage_task_tcb);
+      //    IdleTask < TimeAlignedTask < AppTask < BLETask < StorageTask < RangingTask
+      xTaskCreateStatic(StorageTask, "StorageTask", STORAGE_TASK_STACK_WORDS, allow_ranging ? uid : NULL, 4, storage_task_stack, &storage_task_tcb);
 #if !defined(_TEST_NO_EXP_DETAILS)
-      xTaskCreateStatic(RangingTask, "RangingTask", RANGING_TASK_STACK_WORDS, allow_ranging ? &scheduled_experiment : NULL, 4, ranging_task_stack, &ranging_task_tcb);
+      xTaskCreateStatic(RangingTask, "RangingTask", RANGING_TASK_STACK_WORDS, allow_ranging ? &scheduled_experiment : NULL, 5, ranging_task_stack, &ranging_task_tcb);
 #else
-      xTaskCreateStatic(RangingTask, "RangingTask", RANGING_TASK_STACK_WORDS, allow_ranging ? uid : NULL, 4, ranging_task_stack, &ranging_task_tcb);
+      xTaskCreateStatic(RangingTask, "RangingTask", RANGING_TASK_STACK_WORDS, allow_ranging ? uid : NULL, 5, ranging_task_stack, &ranging_task_tcb);
 #endif
       xTaskCreateStatic(BLETask, "BLETask", BLE_TASK_STACK_WORDS, NULL, 3, ble_task_stack, &ble_task_tcb);
       xTaskCreateStatic(allow_ranging ? AppTaskRanging : AppTaskMaintenance, "AppTask", APP_TASK_STACK_WORDS, uid, 2, app_task_stack, &app_task_tcb);

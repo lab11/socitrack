@@ -8,6 +8,7 @@
 #include "led.h"
 #include "logging.h"
 #include "nandlog.h"
+#include "radio_test.h"
 #include "ranging.h"
 #include "rtc.h"
 #include "scheduler.h"
@@ -265,7 +266,7 @@ static void handle_notification(app_notification_t notification)
          storage_write_charging_status(BATTERY_CRITICAL_VOLTAGE);
 
       // A charger transition or a critical battery both end the current run
-      if (plugged_event || critical_voltage)
+      if ((plugged_event && !radio_test_running()) || critical_voltage)
          storage_flush_and_shutdown();
    }
    if ((notification & APP_NOTIFY_FIND_MY_TOTTAG_ACTIVATED))
@@ -522,7 +523,7 @@ void AppTaskRanging(void *uid)
    motion_changed = imu_data_ready = false;
    bluetooth_register_discovery_callback(ble_discovery_handler);
 #ifndef _TEST_NO_BATTERY_CALLBACK
-   if (battery_monitor_is_plugged_in())
+   if (battery_monitor_is_plugged_in() && !radio_test_running())
       storage_flush_and_shutdown();
    else
       battery_register_event_callback(battery_event_handler);
@@ -534,10 +535,6 @@ void AppTaskRanging(void *uid)
 #ifndef _TEST_NO_STORAGE
    storage_write_motion_status(imu_read_in_motion() ? IN_MOTION : NOT_IN_MOTION);
 #endif
-
-   // Retrieve current experiment details from non-volatile storage
-   static experiment_details_t current_experiment;
-   storage_retrieve_experiment_details(&current_experiment);
 
    // Wait until the BLE stack has been fully initialized
    devices_found = false;
@@ -551,6 +548,23 @@ void AppTaskRanging(void *uid)
       if (!bluetooth_is_initialized())
          system_reset(true);
    }
+
+   // Retrieve current experiment details from non-volatile storage
+   static experiment_details_t current_experiment;
+   if (radio_test_running())
+   {
+      // A test whose device list did not survive the restart waits for its client which has to be able to find it
+      if (radio_test_waiting_for_devices())
+         bluetooth_start_advertising();
+      for (uint32_t waited_ms = 0; radio_test_waiting_for_devices() && (waited_ms < (1000 * RADIO_TEST_LIST_WAIT_S)); waited_ms += 100)
+         vTaskDelay(pdMS_TO_TICKS(100));
+      if (radio_test_waiting_for_devices())
+         radio_test_stop();
+      scheduler_reload_experiment_details();
+      memcpy(&current_experiment, scheduler_get_experiment_details(), sizeof(current_experiment));
+   }
+   else
+      storage_retrieve_experiment_details(&current_experiment);
 
    // Update the BLE address whitelist
    bluetooth_clear_whitelist();

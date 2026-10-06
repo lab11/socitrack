@@ -15,6 +15,19 @@
 #include "system.h"
 
 
+// Local Scheduler Definitions -----------------------------------------------------------------------------------------
+
+typedef struct
+{
+   int32_t correction_us;        // learned on top of RADIO_WAKEUP_SAFETY_DELAY_US, for every wake-up
+   int32_t anchor_shift_us;      // extra head start for the next wake-up alone, when the master sent this round late
+   bool settled;                 // the last round learned from came within RADIO_WAKEUP_SETTLED_US of its target lead
+   uint8_t late_rounds;          // late rounds in a row the wake-ups have been aimed past, at the master's usual timing
+} wake_timing_t;
+
+#define WAKE_TIMING_INITIAL { .correction_us = RADIO_WAKEUP_CORRECTION_INITIAL_US, .anchor_shift_us = 0, .settled = false, .late_rounds = 0 }
+
+
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static bool heard_anyone_as_master;
@@ -24,6 +37,12 @@ static uint8_t failed_master_cycles, total_master_cycle_failures;
 static uint8_t empty_round_timeout, eui[EUI_LEN], read_buffer[128];
 static uint8_t ranging_results[MAX_COMPRESSED_RANGE_DATA_LENGTH];
 static uint32_t last_round_stimer, search_started_stimer;
+static uint32_t rounds_scheduled, rounds_with_ranges;
+static experiment_details_t *experiment;
+static wake_timing_t wake_timing = WAKE_TIMING_INITIAL;
+static int32_t wake_armed_head_start_us = RADIO_WAKEUP_CORRECTION_INITIAL_US;
+static bool wake_expectation_valid, wake_measure_pending;
+static uint32_t wake_expected_timestamp, wake_listen_dw_hi;
 static volatile schedule_role_t current_role = ROLE_IDLE;
 static volatile scheduler_phase_t ranging_phase;
 static volatile bool is_running;
@@ -38,22 +57,16 @@ static volatile struct
 {
    bool pending, listened, heard, measured;
    uint8_t first_copy, rx_errors, other_frames;
-   uint16_t timer_to_task_us, wake_us, first_error_us;
-   int16_t carrier_offset_cppm;
+   uint16_t timer_to_task_us, wake_us, first_error_us, timer_latency_us;
+   int16_t carrier_offset_cppm, wake_correction_us;
    uint32_t listen_dw_hi, listen_stimer, expected_timestamp, heard_timestamp;
    uint64_t heard_reference;
 } catch_state;
-static bool expected_timestamp_valid;
-static uint32_t expected_timestamp;
-
-// The master's current round, written out when the next one starts
-static storage_round_start_t round_record;
-static uint32_t round_record_timestamp, round_task_stimer, round_wake_us;
-static bool round_record_pending;
-static volatile uint8_t round_flags;
-static volatile uint32_t timer_fired_stimer;
-
-// This run of the scheduler as a whole
+static storage_round_start_t round_record, finished_round_record;
+static uint32_t round_record_timestamp, finished_round_timestamp, round_task_stimer, round_wake_us;
+static bool round_record_pending, finished_round_pending;
+static volatile uint8_t isr_trigger, round_flags;
+static volatile uint32_t timer_fired_stimer, timer_latency_ticks;
 static volatile uint32_t schedules_heard_total, join_requests_sent, join_requests_heard, listen_errors;
 static volatile bool collision_seen;
 static volatile uint8_t collision_phase, collision_type, collision_source;
@@ -102,6 +115,75 @@ static uint32_t round_elapsed_us(void)
    return DWT_TO_US((now - schedule_phase_get_reference_time_full()) & 0xFFFFFFFFFFULL);
 }
 
+static inline void wake_timing_learn(wake_timing_t *state, int32_t lead_us, int32_t rounds_missed)
+{
+   // Nudge the next wake-up so the receiver opens RADIO_WAKEUP_TARGET_LEAD_US ahead of the round
+   const int32_t error_us = (int32_t)RADIO_WAKEUP_TARGET_LEAD_US - lead_us;
+   const bool far_ahead = (rounds_missed == 0) && (error_us < -(int32_t)RADIO_WAKEUP_LATE_MASTER_US);
+   state->anchor_shift_us = 0;
+   if (far_ahead && (state->late_rounds ? (state->late_rounds < RADIO_WAKEUP_LATE_MASTER_ROUNDS) : state->settled))
+   {
+      // A settled participant whose receiver suddenly opened far ahead of the schedule means the master sent this round late
+      state->anchor_shift_us = (-error_us > (int32_t)RADIO_WAKEUP_LATE_MASTER_MAX_US) ? (int32_t)RADIO_WAKEUP_LATE_MASTER_MAX_US : -error_us;
+      ++state->late_rounds;
+      return;
+   }
+   if (state->late_rounds)
+   {
+      // Still late after RADIO_WAKEUP_LATE_MASTER_ROUNDS, so the master's rounds have moved
+      state->late_rounds = 0;
+      if (far_ahead)
+         return;
+   }
+   state->settled = (error_us <= (int32_t)RADIO_WAKEUP_SETTLED_US) && (error_us >= -(int32_t)RADIO_WAKEUP_SETTLED_US);
+   state->correction_us += state->settled ? (error_us / 4) : (error_us / 2);
+   if (state->correction_us > RADIO_WAKEUP_CORRECTION_MAX_US)
+      state->correction_us = RADIO_WAKEUP_CORRECTION_MAX_US;
+   else if (state->correction_us < RADIO_WAKEUP_CORRECTION_MIN_US)
+      state->correction_us = RADIO_WAKEUP_CORRECTION_MIN_US;
+}
+
+static inline int32_t wake_timing_head_start_us(wake_timing_t *state)
+{
+   // How long before the next round's reference instant to wake beyond RADIO_WAKEUP_SAFETY_DELAY_US
+   const int32_t head_start_us = state->correction_us + state->anchor_shift_us;
+   state->anchor_shift_us = 0;
+   return head_start_us;
+}
+
+static bool wake_lead_us(uint64_t reference_full, uint32_t timestamp, uint32_t listen_dw_hi, uint32_t expected_timestamp, int32_t *lead_us, int32_t *rounds_missed)
+{
+   // How far ahead of the expected round's first schedule copy the receiver opened, from the radio clock
+   const int32_t period_ms = (int32_t)(SCHEDULING_INTERVAL_US / 1000u);
+   const int32_t ahead_ms = (int32_t)(timestamp - expected_timestamp);
+   if (ahead_ms < -(period_ms / 2))
+      return false;
+   const int32_t rounds = (ahead_ms + (period_ms / 2)) / period_ms;
+   int64_t lead_dw = (int64_t)((reference_full - ((uint64_t)listen_dw_hi << 8)) & 0xFFFFFFFFFFULL);
+   if (lead_dw >= (int64_t)0x8000000000LL)
+      lead_dw -= (int64_t)0x10000000000LL;
+   const int64_t lead = ((lead_dw * 10) / 638976) - ((int64_t)rounds * (int64_t)SCHEDULING_INTERVAL_US);
+   if ((lead > (int64_t)SCHEDULING_INTERVAL_US) || (lead < -(int64_t)SCHEDULING_INTERVAL_US))
+      return false;
+   *lead_us = (int32_t)lead;
+   *rounds_missed = rounds;
+   return true;
+}
+
+static void learn_wake_timing(void)
+{
+   // Learn from how far ahead of the round this wake-up opened the receiver
+   if (!wake_measure_pending)
+      return;
+   wake_measure_pending = false;
+   int32_t lead_us = 0, rounds_missed = 0;
+   if (!wake_lead_us(schedule_phase_get_reference_time_full(), schedule_phase_get_timestamp(), wake_listen_dw_hi, wake_expected_timestamp, &lead_us, &rounds_missed))
+      return;
+   if (rounds_missed > 1)
+      return;
+   wake_timing_learn(&wake_timing, lead_us, rounds_missed);
+}
+
 static void log_pending_abort(void)
 {
 #if DIAGNOSTIC_BUILD && !defined(_TEST_RANGING_TASK) && !defined(_TEST_NO_STORAGE)
@@ -146,21 +228,32 @@ static void trace_session_begin(void)
 {
    // Every counter describes one run of the scheduler
    catch_state.pending = catch_state.heard = catch_state.measured = false;
-   expected_timestamp_valid = round_record_pending = collision_seen = false;
+   round_record_pending = finished_round_pending = collision_seen = false;
    schedules_heard_total = join_requests_sent = join_requests_heard = listen_errors = 0;
    rounds_ranged = stalls = 0;
    end_reason = STORAGE_SESSION_END_UNKNOWN;
    session_started_stimer = am_hal_stimer_counter_get();
 }
 
-static void flush_round_record(void)
+static void retire_round_record(void)
 {
    // The master's record for the round just finished
    if (!round_record_pending)
       return;
    round_record_pending = false;
    round_record.flags = round_flags;
-   storage_write_round_start(round_record_timestamp, &round_record);
+   finished_round_record = round_record;
+   finished_round_timestamp = round_record_timestamp;
+   finished_round_pending = true;
+}
+
+static void flush_round_record(void)
+{
+   // Hand a retired record to storage
+   if (!finished_round_pending)
+      return;
+   finished_round_pending = false;
+   storage_write_round_start(finished_round_timestamp, &finished_round_record);
 }
 
 static void flush_schedule_catch(bool network_lost)
@@ -170,24 +263,21 @@ static void flush_schedule_catch(bool network_lost)
       return;
    storage_schedule_catch_t record = { .first_copy = STORAGE_SCHEDULE_CATCH_NONE, .rounds_missed = 0, .lead_us = 0,
       .timer_to_task_us = catch_state.timer_to_task_us, .wake_us = catch_state.wake_us, .rx_errors = catch_state.rx_errors,
-      .other_frames = catch_state.other_frames, .first_error_us = catch_state.first_error_us, .carrier_offset_cppm = 0 };
+      .other_frames = catch_state.other_frames, .first_error_us = catch_state.first_error_us, .carrier_offset_cppm = 0,
+      .wake_correction_us = catch_state.wake_correction_us, .timer_latency_us = catch_state.timer_latency_us };
    uint32_t timestamp = catch_state.expected_timestamp;
    if (catch_state.heard && catch_state.listened)
    {
-      // Measure against the round this wake-up was aimed at, assuming the master kept to its period in between
-      const int32_t ahead_ms = (int32_t)(catch_state.heard_timestamp - catch_state.expected_timestamp);
-      const int32_t period_ms = (int32_t)(SCHEDULING_INTERVAL_US / 1000u);
-      const int32_t rounds = (ahead_ms < -(period_ms / 2)) ? -1 : ((ahead_ms + (period_ms / 2)) / period_ms);
-      const uint64_t listen_full = (uint64_t)catch_state.listen_dw_hi << 8;
-      int64_t lead_dw = (int64_t)((catch_state.heard_reference - listen_full) & 0xFFFFFFFFFFULL);
-      if (lead_dw >= (int64_t)0x8000000000LL)
-         lead_dw -= (int64_t)0x10000000000LL;
-      int64_t lead_us = (lead_dw * 10) / 638976;
-      if (rounds > 0)
-         lead_us -= (int64_t)rounds * (int64_t)SCHEDULING_INTERVAL_US;
+      // Measure against the round this wake-up was aimed at
+      int32_t lead_us = 0, rounds = 0;
+      if (wake_lead_us(catch_state.heard_reference, catch_state.heard_timestamp, catch_state.listen_dw_hi, catch_state.expected_timestamp, &lead_us, &rounds))
+      {
+         record.rounds_missed = (rounds > 254) ? 254 : (uint8_t)rounds;
+         record.lead_us = lead_us;
+      }
+      else
+         record.rounds_missed = STORAGE_SCHEDULE_CATCH_UNKNOWN;
       record.first_copy = catch_state.first_copy;
-      record.rounds_missed = (rounds < 0) ? STORAGE_SCHEDULE_CATCH_UNKNOWN : ((rounds > 254) ? 254 : (uint8_t)rounds);
-      record.lead_us = (lead_us > INT32_MAX) ? INT32_MAX : ((lead_us < INT32_MIN) ? INT32_MIN : (int32_t)lead_us);
       record.carrier_offset_cppm = catch_state.carrier_offset_cppm;
       timestamp = catch_state.heard_timestamp;
    }
@@ -197,6 +287,7 @@ static void flush_schedule_catch(bool network_lost)
       const uint32_t listened_ms = stimer_ticks_to_us(am_hal_stimer_counter_get() - catch_state.listen_stimer) / 1000u;
       const uint32_t rounds = listened_ms / (SCHEDULING_INTERVAL_US / 1000u);
       record.rounds_missed = (rounds > 254) ? 254 : (uint8_t)rounds;
+      timestamp = app_get_experiment_time(app_get_time_offset());
    }
    catch_state.pending = false;
    storage_write_schedule_catch(timestamp, &record);
@@ -211,10 +302,10 @@ static void trace_round_prepare(uint32_t task_stimer)
    if (current_role == ROLE_MASTER)
    {
       // Cleared before the first copy goes out, since its completion interrupt may set a flag
-      flush_round_record();
+      retire_round_record();
       round_flags = 0;
    }
-   else if (!catch_state.pending && expected_timestamp_valid && wake)
+   else if (!catch_state.pending && wake_expectation_valid && wake)
    {
       // Only a wake-up from sleep is a timed attempt: one landing on a radio still listening carries on the earlier one
       catch_state.listened = catch_state.heard = catch_state.measured = false;
@@ -223,7 +314,9 @@ static void trace_round_prepare(uint32_t task_stimer)
       catch_state.first_error_us = STORAGE_SCHEDULE_CATCH_UNMEASURED;
       catch_state.timer_to_task_us = saturate_u16(stimer_ticks_to_us(task_stimer - timer_fired_stimer));
       catch_state.wake_us = round_wake_us;
-      catch_state.expected_timestamp = expected_timestamp;
+      catch_state.expected_timestamp = wake_expected_timestamp;
+      catch_state.wake_correction_us = (int16_t)((wake_armed_head_start_us > INT16_MAX) ? INT16_MAX : ((wake_armed_head_start_us < INT16_MIN) ? INT16_MIN : wake_armed_head_start_us));
+      catch_state.timer_latency_us = saturate_u16(stimer_ticks_to_us(timer_latency_ticks));
       catch_state.listen_stimer = am_hal_stimer_counter_get();
       catch_state.pending = true;
    }
@@ -234,16 +327,19 @@ static void trace_round_begin(void)
    // The receiver or the first schedule copy has just been started
    if (current_role == ROLE_MASTER)
    {
+      flush_round_record();
       const uint32_t fired = timer_fired_stimer;
       round_record = (storage_round_start_t){ .timer_to_task_us = saturate_u16(stimer_ticks_to_us(round_task_stimer - fired)),
          .wake_us = round_wake_us, .timer_to_transmit_us = saturate_u16(stimer_ticks_to_us(am_hal_stimer_counter_get() - fired)),
-         .flags = 0, .schedule_size = (uint8_t)schedule_phase_get_num_devices(), .devices_ranged = 0 };
+         .flags = 0, .schedule_size = (uint8_t)schedule_phase_get_num_devices(), .devices_ranged = 0,
+         .timer_latency_us = saturate_u16(stimer_ticks_to_us(timer_latency_ticks)) };
       round_record_timestamp = schedule_phase_get_timestamp();
       round_record_pending = true;
    }
    else if (catch_state.pending && !catch_state.listened)
    {
-      catch_state.listen_dw_hi = dwt_readsystimestamphi32();
+      // The same instant the wake-up correction measures from when it is measuring
+      catch_state.listen_dw_hi = wake_measure_pending ? wake_listen_dw_hi : dwt_readsystimestamphi32();
       catch_state.listened = true;
    }
 }
@@ -288,6 +384,7 @@ static void trace_session_end(void)
 {
    // Close out anything still open, then say why this run ended
    flush_schedule_catch(true);
+   retire_round_record();
    flush_round_record();
    const storage_session_end_t record = { .reason = end_reason, .role = (uint8_t)current_role,
       .schedule_size = (uint8_t)schedule_phase_get_num_devices(),
@@ -305,7 +402,8 @@ static void trace_session_end(void)
 static void arm_wakeup_timer(uint32_t elapsed_us)
 {
    // Wake RADIO_WAKEUP_SAFETY_DELAY_US before the next round's reference instant
-   const uint32_t target_us = SCHEDULING_INTERVAL_US - RADIO_WAKEUP_SAFETY_DELAY_US;
+   wake_armed_head_start_us = wake_timing_head_start_us(&wake_timing);
+   const uint32_t target_us = SCHEDULING_INTERVAL_US - (uint32_t)((int32_t)RADIO_WAKEUP_SAFETY_DELAY_US + wake_armed_head_start_us);
    const uint32_t remaining_us = (elapsed_us < target_us) ? (target_us - elapsed_us) : RADIO_WAKEUP_SAFETY_DELAY_US;
    wakeup_timer_config.ui32Compare0 = (uint32_t)(((uint64_t)RADIO_WAKEUP_TIMER_TICK_RATE_HZ * remaining_us) / 1000000u);
    am_hal_timer_config(RADIO_WAKEUP_TIMER_NUMBER, &wakeup_timer_config);
@@ -383,14 +481,13 @@ static void handle_range_computation_phase(void)
 {
    // Read the radio clock before the radio goes away then arm the next wake-up from it
    const uint32_t elapsed_us = round_elapsed_us();
+   learn_wake_timing();
    ranging_radio_sleep(true);
    if (current_role != ROLE_MASTER)
    {
       arm_wakeup_timer(elapsed_us);
-#if DIAGNOSTIC_BUILD
-      expected_timestamp = schedule_phase_get_timestamp() + (SCHEDULING_INTERVAL_US / 1000u);
-      expected_timestamp_valid = true;
-#endif
+      wake_expected_timestamp = schedule_phase_get_timestamp() + (SCHEDULING_INTERVAL_US / 1000u);
+      wake_expectation_valid = true;
    }
 #if DIAGNOSTIC_BUILD
    if (ranging_phase_was_scheduled())
@@ -446,6 +543,12 @@ static void handle_range_computation_phase(void)
       default:
          break;
    }
+   if (ranging_phase_was_scheduled())
+   {
+      ++rounds_scheduled;
+      if (ranging_results[0])
+         ++rounds_with_ranges;
+   }
    ranging_radio_note_network_size((uint8_t)schedule_phase_get_num_devices());
    ranging_phase = UNSCHEDULED_TIME_PHASE;
    last_round_stimer = am_hal_stimer_counter_get();
@@ -460,6 +563,8 @@ void am_timer02_isr(void)
    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 #if DIAGNOSTIC_BUILD
    timer_fired_stimer = am_hal_stimer_counter_get();
+   const uint32_t count = am_hal_timer_read(RADIO_WAKEUP_TIMER_NUMBER), compare = wakeup_timer_config.ui32Compare0;
+   timer_latency_ticks = (count >= compare) ? (count - compare) : count;
 #endif
    am_hal_timer_interrupt_clear(AM_HAL_TIMER_MASK(RADIO_WAKEUP_TIMER_NUMBER, AM_HAL_TIMER_COMPARE_BOTH));
    xTaskNotifyFromISR(notification_handle, RANGING_NEW_ROUND_START, eSetBits, &xHigherPriorityTaskWoken);
@@ -469,6 +574,9 @@ void am_timer02_isr(void)
 static void tx_callback(const dwt_cb_data_t *txData)
 {
    // Allow the scheduling protocol to handle the interrupt
+#if DIAGNOSTIC_BUILD
+   isr_trigger = STORAGE_RADIO_ABORT_TRIGGER_TX_DONE;
+#endif
    ranging_phase = schedule_phase_tx_complete();
 #if RADIO_INSTRUMENTATION
    ranging_radio_note_phase((uint8_t)ranging_phase);
@@ -488,6 +596,7 @@ static void rx_callback(const dwt_cb_data_t *rxData)
    // Read the received data packet and allow the scheduling protocol to handle it
    dwt_readrxdata(read_buffer, rxData->datalength, 0);
 #if DIAGNOSTIC_BUILD
+   isr_trigger = STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME;
    const scheduler_phase_t phase_before = ranging_phase;
    const uint32_t heard_before = schedules_heard_total;
 #endif
@@ -512,6 +621,7 @@ static void handle_rx_failure(uint32_t notification_reason)
 {
    // Allow the scheduling protocol to handle the interrupt
 #if DIAGNOSTIC_BUILD
+   isr_trigger = (notification_reason == RANGING_RX_ERROR) ? STORAGE_RADIO_ABORT_TRIGGER_RX_ERROR : STORAGE_RADIO_ABORT_TRIGGER_RX_TIMEOUT;
    if ((notification_reason == RANGING_RX_ERROR) && (ranging_phase == SCHEDULE_PHASE) && (current_role != ROLE_MASTER))
       trace_listen_error();
 #endif
@@ -547,6 +657,7 @@ static void rx_error_callback(const dwt_cb_data_t *rxData)
 void scheduler_init(experiment_details_t *details)
 {
    // Store the device EUI and experiment details
+   experiment = details;
    if (details)
    {
       schedule_phase_store_experiment_details(details);
@@ -561,6 +672,26 @@ void scheduler_init(experiment_details_t *details)
 schedule_role_t scheduler_get_current_role(void)
 {
    return current_role;
+}
+
+void scheduler_reload_experiment_details(void)
+{
+   // For a radio test whose device list arrived after the scheduler was initialized
+   if (experiment)
+      schedule_phase_store_experiment_details(experiment);
+}
+
+const experiment_details_t* scheduler_get_experiment_details(void)
+{
+   static const experiment_details_t none = { 0 };
+   return experiment ? experiment : &none;
+}
+
+void scheduler_get_round_counts(uint32_t *scheduled, uint32_t *with_ranges)
+{
+   // Rounds this device took part in since boot and those that produced at least one range
+   *scheduled = rounds_scheduled;
+   *with_ranges = rounds_with_ranges;
 }
 
 void scheduler_run(schedule_role_t role)
@@ -580,6 +711,7 @@ void scheduler_run(schedule_role_t role)
    empty_round_timeout = 0;
    heard_anyone_as_master = (role != ROLE_MASTER);
    ranging_phase = UNSCHEDULED_TIME_PHASE;
+   wake_expectation_valid = wake_measure_pending = false;
 #if DIAGNOSTIC_BUILD
    trace_session_begin();
 #endif
@@ -644,10 +776,17 @@ void scheduler_run(schedule_role_t role)
             const uint32_t task_stimer = am_hal_stimer_counter_get();
 #endif
             ranging_radio_wakeup();
+            const bool woke_from_sleep = (ranging_radio_last_wake_us() != 0);
 #if DIAGNOSTIC_BUILD
             trace_round_prepare(task_stimer);
 #endif
             begin_schedule_phase();
+            if ((current_role != ROLE_MASTER) && woke_from_sleep && wake_expectation_valid)
+            {
+               // Note when the receiver opened to learn from once the round is caught
+               wake_listen_dw_hi = dwt_readsystimestamphi32();
+               wake_measure_pending = true;
+            }
 #if DIAGNOSTIC_BUILD
             trace_round_begin();
 #endif
@@ -672,9 +811,16 @@ void scheduler_run(schedule_role_t role)
                if (current_role == ROLE_MASTER)
                   idle_until_next_round();
                else
+               {
+                  // The radio may have been reset along the way, taking the clock a pending wake-up measurement relies on
+                  wake_measure_pending = false;
                   begin_schedule_phase();
+               }
                break;
             case RANGING_ERROR:
+               // A participant that caught this round's schedule still learns from its wake-up before listening for the next round
+               if (current_role != ROLE_MASTER)
+                  learn_wake_timing();
                if (current_role == ROLE_MASTER)
                   idle_until_next_round();
                else if ((am_hal_stimer_counter_get() - search_started_stimer) >= NETWORK_SEARCH_TIMEOUT_STIMER)
@@ -750,10 +896,24 @@ void scheduler_note_rx_arm_failure(scheduler_phase_t phase, uint32_t slot, uint3
    // Runs in the radio interrupt the moment a delayed receive is refused, so everything here is as of that instant
    if (abort_pending)
       return;
-   const int32_t late_us = (int32_t)round_elapsed_us() - (int32_t)deadline_us;
+   const uint32_t now_us = round_elapsed_us();
+   const int32_t late_us = (int32_t)now_us - (int32_t)deadline_us;
    uint32_t isr_us = 0, events = 0;
-   const bool timed = ranging_radio_isr_progress(&isr_us, &events);
+   const bool in_isr = (__get_IPSR() != 0);
+   const bool timed = ranging_radio_isr_progress(&isr_us, &events) && in_isr && (isr_us <= now_us);
    const uint32_t since_ms = battery_monitor_ms_since_temperature_sample();
+
+   // When this interrupt started and how long after the event it was handling
+   const uint8_t trigger = in_isr ? isr_trigger : STORAGE_RADIO_ABORT_TRIGGER_UNKNOWN;
+   const uint32_t entry_us = now_us - isr_us;
+   int32_t event_to_isr_us = STORAGE_RADIO_ABORT_NO_EVENT_TIME;
+   if (timed && ((trigger == STORAGE_RADIO_ABORT_TRIGGER_TX_DONE) || (trigger == STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME)))
+   {
+      const uint64_t event = (trigger == STORAGE_RADIO_ABORT_TRIGGER_TX_DONE) ? ranging_radio_readtxtimestamp() : ranging_radio_readrxtimestamp();
+      const int32_t event_us = (int32_t)DWT_TO_US((event - schedule_phase_get_reference_time_full()) & 0xFFFFFFFFFFULL);
+      event_to_isr_us = (int32_t)entry_us - event_us;
+      event_to_isr_us = (event_to_isr_us > INT16_MAX) ? INT16_MAX : ((event_to_isr_us <= INT16_MIN) ? (INT16_MIN + 1) : event_to_isr_us);
+   }
    pending_abort = (storage_radio_abort_t){
       .phase = (phase == RANGING_PHASE) ? STORAGE_RADIO_ABORT_PHASE_RANGING : STORAGE_RADIO_ABORT_PHASE_STATUS,
       .slot = (uint8_t)((slot > UINT8_MAX) ? UINT8_MAX : slot),
@@ -761,7 +921,10 @@ void scheduler_note_rx_arm_failure(scheduler_phase_t phase, uint32_t slot, uint3
       .late_us = (int16_t)((late_us > INT16_MAX) ? INT16_MAX : ((late_us < INT16_MIN) ? INT16_MIN : late_us)),
       .isr_elapsed_us = (uint16_t)(!timed ? STORAGE_RADIO_ABORT_UNMEASURED : ((isr_us >= STORAGE_RADIO_ABORT_UNMEASURED) ? (STORAGE_RADIO_ABORT_UNMEASURED - 1) : isr_us)),
       .isr_events = (uint8_t)((events > UINT8_MAX) ? UINT8_MAX : events),
-      .since_temperature_ms = (uint16_t)((since_ms >= STORAGE_RADIO_ABORT_UNMEASURED) ? STORAGE_RADIO_ABORT_UNMEASURED : since_ms)
+      .since_temperature_ms = (uint16_t)((since_ms >= STORAGE_RADIO_ABORT_UNMEASURED) ? STORAGE_RADIO_ABORT_UNMEASURED : since_ms),
+      .trigger = trigger,
+      .isr_entry_us = (uint16_t)(!timed ? STORAGE_RADIO_ABORT_UNMEASURED : ((entry_us >= STORAGE_RADIO_ABORT_UNMEASURED) ? (STORAGE_RADIO_ABORT_UNMEASURED - 1) : entry_us)),
+      .event_to_isr_us = (int16_t)event_to_isr_us
    };
    pending_abort_timestamp = schedule_phase_get_timestamp();
    abort_pending = true;

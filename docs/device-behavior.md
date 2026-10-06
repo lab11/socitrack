@@ -77,6 +77,14 @@ Two consequences are worth knowing:
 - **A badge needs to hear the coordinator**, not just its neighbours. A badge at the far edge of a
   group may drop in and out even though it is close to several others.
 
+### Radio tests
+
+The live radio check, in either the desktop dashboard or the browser tool, runs badges in a *radio test*:
+a timed network among the badges it names, started over Bluetooth. A badge restarts into the test and ranges even on its charger, and
+plugging or unplugging it does not interrupt the test. It records nothing, and its stored deployment is
+left alone. When the test ends, or the tool stops it, the badge restarts into whatever it would
+otherwise be doing. A test lasts at most an hour.
+
 ---
 
 ## What gets recorded

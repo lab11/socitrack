@@ -946,9 +946,10 @@ static void wait_until_not_busy(void)
 ```
 
 If the flash never clears BUSY — chip fault, wedged SPI, a marginal supply on the flash — this never
-returns. Worse, `am_hal_delay_us()` is a busy delay rather than a yield, and `StorageTask` runs at
-priority 5, the highest. So a wedged flash starves ranging (4), BLE (3), the app task (2) and the
-time-aligned task (1). The device keeps its power and stops being a device.
+returns. Worse, `am_hal_delay_us()` is a busy delay rather than a yield, and `StorageTask` runs above every
+task but ranging (it was the highest, 5, when this was written; §12.4 explains why ranging now outranks it).
+So a wedged flash starves BLE (3), the app task (2) and the time-aligned task (1). The device keeps its power
+and stops being a device.
 
 An earlier draft of this section argued that a return code would be preferable to a reset here, on the
 grounds that a reset discards the RAM page buffer. That reasoning was wrong twice over. If the flash is
@@ -1270,6 +1271,16 @@ One real issue did surface. Triggering the erase at the block boundary placed it
 activation, restoring worst-case contiguous blocking to a single page write — identical to pre-Phase-0
 firmware. This measurement therefore also **retired a planned 1.75-hour ranging-timing experiment**: with no
 increase in worst-case contiguous blocking, there is nothing left to observe.
+
+**Revisited from the field (October 2026).** The conclusion above holds for every slot in a round, because those
+are timed by the radio interrupt, which no task can delay. It missed the one moment that runs in a task: a
+master's round start, from its wake-up timer through the ranging task to its first schedule copy. The schedule
+tracing records (`ROUND_START`, `SCHEDULE_CATCH`) caught masters sending that copy about 3.7 ms late, each time right after filling a
+page, because the round start handed storage a record and `StorageTask` then wrote the page before the ranging
+task could transmit. Participants time their next wake-up from the round they caught, so each late round cost
+the network the round after it. Ranging now runs at priority 5 and storage at 4: a page write that is under way
+is preempted for the round start, and records wait in the queue meanwhile. The flash's SPI port is not the radio's
+and its driver takes no critical sections, so preempting a page write mid-transfer is safe.
 
 Timing values were reproducible to the microsecond across independent boots (2893 µs and 1946 µs observed
 twice each), indicating both that the flash operations are highly deterministic and that the empirical
@@ -4693,7 +4704,7 @@ belong there. **The log is the right place**, because the question is always ask
 
 #### `STORAGE_TYPE_DIAGNOSTICS` (= 9)
 
-A 93-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~299.4 s:
+A 69-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~299.4 s:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4717,7 +4728,10 @@ A 93-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~29
 | `stack_free_words[6]` | 12 | least free stack ever seen, in words: each `watchdog_task_t` task, then the timer service; `0xFFFF` for a task not running |
 | `ble_resets` | 1 | Bluetooth controller restarts by the self-check |
 | `nand_bad_blocks` | 2 | retired flash blocks, factory-marked and grown |
-| `radio_rx_ok_by_antenna[3]`, `radio_rx_failed_by_antenna[3]` | 12 + 12 | the ranging receive counts split by antenna; each round cycles all three, so one damaged antenna shows as one high failure rate |
+
+The receive counts split by antenna were in this record for one test and came back out. They answer a bench
+question, so the live radio check now reads them over Bluetooth (`BLE_LIVE_STATS_RADIO_CHAR`, laid out as
+`ble_radio_stats_t`) rather than every deployment carrying them.
 
 Every counter is **cumulative since boot and saturating**. Cumulative because a reboot then partitions them,
 which lets the host attribute a near-miss to a particular boot; saturating because a wrapped diagnostic
@@ -4740,7 +4754,7 @@ Three details worth recording:
 #### `STORAGE_TYPE_RADIO_ABORT` (= 10)
 
 Written only by a diagnostic build (`make DIAGNOSTIC=1`), once for each radio receive that could not be armed
-before its slot. A 10-byte payload, timestamped with the round it belongs to:
+before its slot. A 15-byte payload, timestamped with the round it belongs to:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4751,8 +4765,15 @@ before its slot. A 10-byte payload, timestamped with the round it belongs to:
 | `isr_elapsed_us` | 2 | how long the radio interrupt had already been running; `0xFFFF` if unmeasured |
 | `isr_events` | 1 | radio events that interrupt had serviced so far |
 | `since_temperature_ms` | 2 | since the last 10 s temperature refresh; `0xFFFF` if none |
+| `trigger` | 1 | the radio event that interrupt was handling: 1 a frame sent, 2 a frame received, 3 an empty receive window, 4 an undecodable frame; 0 unknown |
+| `isr_entry_us` | 2 | when that interrupt started, µs after the round's reference; `0xFFFF` if unmeasured |
+| `event_to_isr_us` | 2 | signed µs from the triggering frame's radio timestamp to the interrupt starting; `-32768` for an event with no timestamp |
 
 A small `isr_elapsed_us` with a positive `late_us` means the interrupt started late; a large one means it ran long.
+The last three fields say which. `event_to_isr_us` includes the rest of the frame's air time after its timestamp,
+so it is steady for a given frame and only a change in it matters: a larger value than usual means something
+held the interrupt off, while a usual value with a later `isr_entry_us` means the event itself came late, for
+instance a peer transmitting late.
 
 #### Schedule tracing: `STORAGE_TYPE_SCHEDULE_CATCH` (= 11), `STORAGE_TYPE_ROUND_START` (= 12), `STORAGE_TYPE_SESSION_END` (= 13)
 
@@ -4761,7 +4782,7 @@ round lost network-wide can be put down either to participants opening their rec
 starting a round early, and a dropped network can be put down to its actual cause.
 
 **`SCHEDULE_CATCH`** is written by a participant for every wake-up from its timer, timestamped with the round it
-eventually joined. 16 bytes:
+eventually joined. 20 bytes:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4774,14 +4795,32 @@ eventually joined. 16 bytes:
 | `other_frames` | 1 | decodable frames before the schedule that were not one |
 | `first_error_us` | 2 | receiver on to the first undecodable frame; `0xFFFF` if none |
 | `carrier_offset_cppm` | 2 | the decoded copy's carrier offset, in hundredths of a ppm as the DW3000 reports it |
+| `wake_correction_us` | 2 | signed µs of head start this wake-up was armed with beyond `RADIO_WAKEUP_SAFETY_DELAY_US`: what the badge had learned, plus any one-round allowance for a late master, saturating |
+| `timer_latency_us` | 2 | the wake-up timer's compare match to its interrupt running |
+
+A record for a wake-up that never found the network (`first_copy` `0xFF`) is stamped with the moment the
+network was given up on, not the round it was waiting for, which is seconds earlier, so a log's timestamps keep
+running forwards.
 
 For a missed round, `lead_us` is measured against the round that was missed, assuming the master kept its
-500 ms period. A late receiver with no `rx_errors` was simply late. `rx_errors` around the time of the first
+500 ms period. Every build, not just the diagnostic one, makes this same measurement after each timed
+wake-up and uses it to adjust the next: the participant nudges its wake-up so its receiver opens
+`RADIO_WAKEUP_TARGET_LEAD_US` ahead of the round, learning whatever its own wake-up, interrupt and timer
+latencies add up to. The first test of the tracing found participants opening about 0.9 ms after the
+master's first copy under the fixed 2400 µs margin. A round then survived only if a relay caught the second
+copy, which made about every other round fail. `wake_correction_us` shows what each badge learned, which
+settled at 1055–1152 µs and tracks each badge's own `wake_us`; it starts from
+`RADIO_WAKEUP_CORRECTION_INITIAL_US` (1100 µs) so the first rounds after joining are caught too. A settled
+participant whose receiver suddenly opens more than `RADIO_WAKEUP_LATE_MASTER_US` (600 µs) further ahead than
+usual takes the master to have sent that round late. It learns nothing from that round and aims its next
+wake-up at where the round should have been, for up to `RADIO_WAKEUP_LATE_MASTER_ROUNDS` (4) late rounds in a
+row before it follows the master's new timing. Without that allowance, each late master round cost every
+participant the next one. A late receiver with no `rx_errors` was simply late. `rx_errors` around the time of the first
 copies, or carrier offsets that are larger just after a wake-up than after a long listen, point to a radio
 that had not settled.
 
 **`ROUND_START`** is written by the master for every round. It goes out one round late, so the whole round is
-known, and is timestamped with that round. 9 bytes:
+known, and is timestamped with that round. 11 bytes:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4791,6 +4830,7 @@ known, and is timestamped with that round. 9 bytes:
 | `flags` | 1 | 0x01 second copy could not be armed, 0x02 computed, 0x04 abandoned on an error, 0x08 join request heard, 0x10 join request relayed |
 | `schedule_size` | 1 | devices in the round's schedule |
 | `devices_ranged` | 1 | ranges the master computed |
+| `timer_latency_us` | 2 | the wake-up timer's compare match to its interrupt running |
 
 The master's timer has a fixed period, so a change in `timer_to_transmit_us` from one round to the next moves
 its first copy by the same amount against what participants expect.

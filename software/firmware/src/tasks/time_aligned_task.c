@@ -3,6 +3,7 @@
 #include "app_tasks.h"
 #include "battery.h"
 #include "logging.h"
+#include "radio_test.h"
 #include "ranging.h"
 #include "rtc.h"
 #include "system.h"
@@ -114,6 +115,7 @@ void TimeAlignedTask(void *scheduled_experiment)
    {
       // Check in with the watchdog and wait until the next work period
       system_watchdog_pet(WATCHDOG_TASK_TIME_ALIGNED);
+      radio_test_check_end();
 
       // Keep the TempCo voltage trims matched to the chip temperature
       if ((int32_t)(xTaskGetTickCount() - next_tempco_at) >= 0)

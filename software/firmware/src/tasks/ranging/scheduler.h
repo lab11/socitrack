@@ -61,6 +61,9 @@ void scheduler_note_event(scheduler_event_t event, uint32_t value);
 
 void scheduler_init(experiment_details_t *details);
 schedule_role_t scheduler_get_current_role(void);
+void scheduler_reload_experiment_details(void);
+const experiment_details_t* scheduler_get_experiment_details(void);
+void scheduler_get_round_counts(uint32_t *scheduled, uint32_t *with_ranges);
 bool scheduler_master_eligible(void);
 uint8_t scheduler_get_master_cycle_failures(void);
 void scheduler_note_rx_arm_failure(scheduler_phase_t phase, uint32_t slot, uint32_t schedule_size, uint32_t deadline_us);

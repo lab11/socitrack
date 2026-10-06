@@ -52,8 +52,6 @@ typedef struct __attribute__ ((__packed__))
    uint16_t stack_free_words[STORAGE_DIAGNOSTIC_NUM_STACKS];   // least free stack ever seen, per watchdog task then the timer service
    uint8_t ble_resets;                                     // Bluetooth controller restarts by the self-check
    uint16_t nand_bad_blocks;                               // retired flash blocks, factory-marked and grown
-   uint32_t radio_rx_ok_by_antenna[STORAGE_DIAGNOSTIC_NUM_ANTENNAS];       // radio_rx_ok split by the antenna used
-   uint32_t radio_rx_failed_by_antenna[STORAGE_DIAGNOSTIC_NUM_ANTENNAS];   // radio_rx_failed split the same way
 } storage_diagnostics_t;
 
 #define STORAGE_DIAGNOSTIC_FLAG_TEMPCO_AVAILABLE    0x01   // this chip's trims support TempCo
@@ -73,11 +71,20 @@ typedef struct __attribute__ ((__packed__))
    uint16_t isr_elapsed_us;                                // time already spent in this radio interrupt, or 0xFFFF if unmeasurable
    uint8_t isr_events;                                     // radio events serviced by this interrupt so far
    uint16_t since_temperature_ms;                          // since the last 10 s temperature refresh, saturating, 0xFFFF if none
+   uint8_t trigger;                                        // STORAGE_RADIO_ABORT_TRIGGER_*: the radio event this interrupt was handling
+   uint16_t isr_entry_us;                                  // when this interrupt started, after the round's reference, saturating, 0xFFFF if unmeasurable
+   int16_t event_to_isr_us;                                // from the triggering frame's radio timestamp to the interrupt starting, saturating, or STORAGE_RADIO_ABORT_NO_EVENT_TIME
 } storage_radio_abort_t;
 
 #define STORAGE_RADIO_ABORT_PHASE_RANGING           1      // the round is abandoned
 #define STORAGE_RADIO_ABORT_PHASE_STATUS            2      // the status exchange ends early and the round is computed from what arrived
 #define STORAGE_RADIO_ABORT_UNMEASURED              0xFFFF
+#define STORAGE_RADIO_ABORT_TRIGGER_UNKNOWN         0      // not inside a radio interrupt, or before it had handled an event
+#define STORAGE_RADIO_ABORT_TRIGGER_TX_DONE         1      // a frame this badge sent
+#define STORAGE_RADIO_ABORT_TRIGGER_RX_FRAME        2      // a frame this badge received
+#define STORAGE_RADIO_ABORT_TRIGGER_RX_TIMEOUT      3      // a receive window that closed empty
+#define STORAGE_RADIO_ABORT_TRIGGER_RX_ERROR        4      // a frame that could not be decoded
+#define STORAGE_RADIO_ABORT_NO_EVENT_TIME           (-32768)    // the event has no radio timestamp, or the interrupt start is unknown
 
 // How a participant's timed wake-up found the next round's schedule, logged only by a DIAGNOSTIC_BUILD
 typedef struct __attribute__ ((__packed__))
@@ -91,6 +98,8 @@ typedef struct __attribute__ ((__packed__))
    uint8_t other_frames;                                   // decodable frames before the schedule that were not one, saturating
    uint16_t first_error_us;                                // receiver on to the first undecodable frame, saturating, 0xFFFF if none
    int16_t carrier_offset_cppm;                            // carrier offset of the decoded copy in hundredths of a ppm, as the DW3000 reports it
+   int16_t wake_correction_us;                             // what this badge had learned to add to RADIO_WAKEUP_SAFETY_DELAY_US for this wake-up
+   uint16_t timer_latency_us;                              // wake-up timer's compare match to its interrupt running, saturating
 } storage_schedule_catch_t;
 
 #define STORAGE_SCHEDULE_CATCH_NONE                 0xFF   // first_copy when the network was lost before any copy arrived
@@ -106,6 +115,7 @@ typedef struct __attribute__ ((__packed__))
    uint8_t flags;                                          // STORAGE_ROUND_START_FLAG_* bits
    uint8_t schedule_size;                                  // devices in this round's schedule
    uint8_t devices_ranged;                                 // ranges the master computed this round
+   uint16_t timer_latency_us;                              // wake-up timer's compare match to its interrupt running, saturating
 } storage_round_start_t;
 
 #define STORAGE_ROUND_START_FLAG_SECOND_COPY_FAILED 0x01   // the master's second schedule copy could not be armed in time

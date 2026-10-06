@@ -42,7 +42,6 @@
 #define STORAGE_FLUSH_TIMEOUT_S                     120
 #define STORAGE_DIAGNOSTIC_NUM_POOLS                5
 #define STORAGE_DIAGNOSTIC_NUM_STACKS               6           // each watchdog-monitored task, then the timer service
-#define STORAGE_DIAGNOSTIC_NUM_ANTENNAS             3           // per-antenna receive counts, one per NUM_XMIT_ANTENNAS
 #define STORAGE_MAX_PLAUSIBLE_OFFSET_MS             3600000
 
 #define BATTERY_CHECK_INTERVAL_S                    300
@@ -158,6 +157,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define BLE_LIVE_STATS_RANGING_CHAR                 0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x56,0x31,0x8c,0xd6
 #define BLE_LIVE_STATS_ADDRESS_CHAR                 0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x57,0x31,0x8c,0xd6
 #define BLE_LIVE_STATS_IMU_DATA_CHAR                0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x58,0x31,0x8c,0xd6
+#define BLE_LIVE_STATS_RADIO_CHAR                   0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x59,0x31,0x8c,0xd6
 #define BLE_SCHEDULING_SERVICE_ID                   0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x5A,0x31,0x8c,0xd6
 #define BLE_SCHEDULING_REQUEST_CHAR                 0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x5B,0x31,0x8c,0xd6
 #define BLE_MAINTENANCE_SERVICE_ID                  0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x60,0x31,0x8c,0xd6
@@ -180,6 +180,15 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define SCHEDULING_INTERVAL_US                      500000
 #define RADIO_WAKEUP_SAFETY_DELAY_US                2400
 #define RECEIVE_EARLY_START_US                      (5 + (uint32_t)DW_PREAMBLE_LENGTH_US)
+
+#define RADIO_WAKEUP_TARGET_LEAD_US                 (RECEIVE_EARLY_START_US + 150)
+#define RADIO_WAKEUP_CORRECTION_MIN_US              (-1500)
+#define RADIO_WAKEUP_CORRECTION_MAX_US              5000
+#define RADIO_WAKEUP_CORRECTION_INITIAL_US          1100
+#define RADIO_WAKEUP_SETTLED_US                     200
+#define RADIO_WAKEUP_LATE_MASTER_US                 600
+#define RADIO_WAKEUP_LATE_MASTER_MAX_US             (SCHEDULING_INTERVAL_US / 4)
+#define RADIO_WAKEUP_LATE_MASTER_ROUNDS             4
 
 #define RANGING_ROUNDS_PER_SECOND                   (1000000u / SCHEDULING_INTERVAL_US)
 #define RANGING_STIMER_HZ                           32768u
@@ -246,6 +255,10 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 _Static_assert((1000000u % SCHEDULING_INTERVAL_US) == 0, "the round period must divide one second exactly, or every round-counted timeout is wrong");
 _Static_assert(RANGING_ROUNDS_PER_SECOND >= 1, "the round period must be at most one second");
+_Static_assert((RADIO_WAKEUP_SAFETY_DELAY_US + RADIO_WAKEUP_CORRECTION_MIN_US) >= 500, "a learned wake-up must still leave the radio time to wake");
+_Static_assert((RADIO_WAKEUP_CORRECTION_INITIAL_US >= RADIO_WAKEUP_CORRECTION_MIN_US) && (RADIO_WAKEUP_CORRECTION_INITIAL_US <= RADIO_WAKEUP_CORRECTION_MAX_US), "the wake-up correction must start within its bounds");
+_Static_assert(RADIO_WAKEUP_LATE_MASTER_US > RADIO_WAKEUP_SETTLED_US, "a late master must stand out from a settled participant's own wander");
+_Static_assert((RADIO_WAKEUP_SAFETY_DELAY_US + RADIO_WAKEUP_CORRECTION_MAX_US + RADIO_WAKEUP_LATE_MASTER_MAX_US) < SCHEDULING_INTERVAL_US, "a wake-up moved for a late master must still land within the round");
 _Static_assert((SUBSCRIPTION_TIMEOUT_US + SUBSCRIPTION_TO_RANGING_SWITCH_US + RECEIVE_EARLY_START_US) <= SUBSCRIPTION_BROADCAST_PERIOD_US, "a device listening for join requests must have time to arm ranging slot 0 after the window closes, or it loses the round");
 _Static_assert(RANGE_STATUS_TIMEOUT_US < RANGE_STATUS_BROADCAST_PERIOD_US, "a status listening window must close before the next slot on the grid opens");
 _Static_assert(RANGING_TIMEOUT_US < RANGING_BROADCAST_INTERVAL_US, "a ranging listening window must close before the next slot on the grid opens");
