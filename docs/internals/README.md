@@ -21,7 +21,7 @@ the following are the places worth reading directly:
 | --- | --- |
 | What is a constant's value? | `software/firmware/src/app/app_config.h` |
 | How does a ranging round work? | `software/firmware/src/tasks/ranging/` — one file per phase |
-| When does a badge record or sleep? | `software/firmware/src/tasks/app_tasks.c` |
+| When does a device record or sleep? | `software/firmware/src/tasks/app_tasks.c` |
 | What is in a log record? | `software/management/dashboard/tottag_format.py` |
 | What does a build target do? | `software/firmware/Makefile` and `Jtag.mk` |
 
@@ -33,4 +33,4 @@ other follows.
 ## Archived documentation
 
 [`../archive/`](../archive/) holds documentation for hardware and software the project no longer uses,
-kept for badges that predate the Apollo4 platform refresh. Nothing there applies to current hardware.
+kept for devices that predate the Apollo4 platform refresh. Nothing there applies to current hardware.

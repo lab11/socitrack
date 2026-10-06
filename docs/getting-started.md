@@ -1,7 +1,7 @@
 # Getting Started
 
-This page takes a badge from "box of hardware" to "ready for a study". You need to do it once per
-badge. If your badges are already set up, skip to [Running a Deployment](running-a-deployment.md).
+This page takes a device from "box of hardware" to "ready for a study". You need to do it once per
+device. If your devices are already set up, skip to [Running a Deployment](running-a-deployment.md).
 
 ---
 
@@ -9,7 +9,7 @@ badge. If your badges are already set up, skip to [Running a Deployment](running
 
 ### Hardware
 
-A **SEGGER J-Link programmer** and two cables to reach the badge's programming pads:
+A **SEGGER J-Link programmer** and two cables to reach the device's programming pads:
 
 - [J-Link EDU Probe](https://shop-us.segger.com/product-category/debug-probes/educational/) — heavily
   discounted for educational and research use. The commercial
@@ -17,7 +17,7 @@ A **SEGGER J-Link programmer** and two cables to reach the badge's programming p
 - [Tag-Connect TC2050-ARM2010 adapter](https://www.tag-connect.com/product/tc2050-arm2010-arm-20-pin-to-tc2050-adapter) (20-pin to 10-pin)
 - [Tag-Connect TC2050-IDC-NL cable](https://www.tag-connect.com/product/tc2050-idc-nl-10-pin-no-legs-cable-with-ribbon-connector) (10-pin, no legs)
 
-The programmer is only needed for setup. Once a badge is running you never need it again unless you
+The programmer is only needed for setup. Once a device is running you never need it again unless you
 update firmware.
 
 ### Software
@@ -43,8 +43,8 @@ arm-none-eabi-gcc --version
 **M**, **N**, **O** or **P**.
 
 Each revision has a different pinout. Firmware built for the wrong one compiles perfectly and then
-drives the wrong pins, which looks like a dead or erratic badge rather than an obvious error. It is
-worth checking rather than assuming, especially with a mixed set of badges.
+drives the wrong pins, which looks like a dead or erratic device rather than an obvious error. It is
+worth checking rather than assuming, especially with a mixed set of devices.
 
 Every command below uses `BOARD_REV=P`. Substitute your own letter. `P` is the default if you omit it.
 
@@ -54,7 +54,7 @@ Every command below uses `BOARD_REV=P`. Substitute your own letter. `P` is the d
 
 1. Plug the Tag-Connect adapter and cable into the J-Link.
 2. Plug the J-Link into your computer over USB.
-3. Press the Tag-Connect cable into the pads on the badge labelled **XA2**.
+3. Press the Tag-Connect cable into the pads on the device labelled **XA2**.
 
 The no-legs cable is held in place by hand or with a clip — it does not latch. Keep gentle pressure on
 it for the whole of each command below.
@@ -63,9 +63,9 @@ it for the whole of each command below.
 
 ---
 
-## Step 2 — Give the badge an ID (once per badge, ever)
+## Step 2 — Give the device an ID (once per device, ever)
 
-Every badge needs a unique identifier, in the form `c0:98:e5:42:00:XX`. Only the last byte `XX` is
+Every device needs a unique identifier, in the form `c0:98:e5:42:00:XX`. Only the last byte `XX` is
 yours to choose — any two hex digits, so `00` through `FF`.
 
 ```bash
@@ -73,8 +73,8 @@ cd socitrack/software/firmware
 make ID=c0:98:e5:42:00:02 UID
 ```
 
-**Choose carefully and write it down.** That last byte is how the badge identifies itself everywhere
-— in the dashboard device list, in the log files, and in your analysis. Giving two badges the same ID
+**Choose carefully and write it down.** That last byte is how the device identifies itself everywhere
+— in the dashboard device list, in the log files, and in your analysis. Giving two devices the same ID
 will make a deployment impossible to interpret. A piece of tape on the case with the last two digits
 saves a great deal of confusion later.
 
@@ -98,7 +98,7 @@ Programming flash [100%] Done.
 Verifying flash   [100%] Done.
 ```
 
-Seeing only `Comparing flash [100%] Done.` is also success — it means the badge already had exactly
+Seeing only `Comparing flash [100%] Done.` is also success — it means the device already had exactly
 this firmware and nothing needed rewriting.
 
 If you have several J-Links plugged in, name the one you want:
@@ -111,13 +111,13 @@ make BOARD_REV=P SEGGER_SERIAL=123456789 flash
 
 ## Step 4 — Confirm it works
 
-Unplug everything, close the case, replace the screws, and set the badge on a wireless charger.
+Unplug everything, close the case, replace the screws, and set the device on a wireless charger.
 
-**You should hear a short rising chime.** That is the badge telling you it has booted, detected the
+**You should hear a short rising chime.** That is the device telling you it has booted, detected the
 charger, and is healthy. No chime means something is wrong — start with
-[Troubleshooting](troubleshooting.md#a-badge-makes-no-sound-on-the-charger).
+[Troubleshooting](troubleshooting.md#a-device-makes-no-sound-on-the-charger).
 
-Repeat for each badge.
+Repeat for each device.
 
 ---
 
@@ -134,7 +134,7 @@ make BOARD_REV=P flash
 `make clean` matters when switching revisions, because object files from a previous build are not
 revision-aware.
 
-Updating firmware **does not** erase the badge's ID or its stored logs. Download anything you still
+Updating firmware **does not** erase the device's ID or its stored logs. Download anything you still
 need first, though — a firmware change can alter the log format, and the tools assume a log was
 written by firmware of the same era.
 
@@ -154,5 +154,5 @@ This writes the controller image first, waits for it to apply, then writes the a
 
 ## Next
 
-Your badges are ready. [Running a Deployment](running-a-deployment.md) covers scheduling a study and
+Your devices are ready. [Running a Deployment](running-a-deployment.md) covers scheduling a study and
 collecting the data.

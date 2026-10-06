@@ -7,7 +7,7 @@ interface, and the on-board NAND log.
 **Flashing instructions, build commands and timing constants are documented at
 [lab11.github.io/socitrack](https://lab11.github.io/socitrack/):**
 
-- [Getting Started](../../docs/getting-started.md) — programmer, cables, assigning a badge its ID, flashing
+- [Getting Started](../../docs/getting-started.md) — programmer, cables, assigning a device its ID, flashing
 - [Reference](../../docs/reference.md#build-commands) — every build target and what it does
 - [Device Behaviour](../../docs/device-behavior.md) — what the firmware decides at runtime and why
 

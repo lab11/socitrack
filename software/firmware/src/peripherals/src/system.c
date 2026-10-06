@@ -197,13 +197,44 @@ void am_watchdog_isr(void)
       watchdog_evaluate_and_pet();
 }
 
+#if DIAGNOSTIC_BUILD
+static volatile uint32_t sleep_started_stimer, sleep_ticks, woke_cycles;
+static volatile bool wake_unclaimed;
+#endif
+
 uint32_t am_freertos_sleep(uint32_t idleTime)
 {
+#if DIAGNOSTIC_BUILD
+   sleep_started_stimer = am_hal_stimer_counter_get();
+#endif
    am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
    return 0;
 }
 
-void am_freertos_wakeup(uint32_t idleTime) { return; }
+void am_freertos_wakeup(uint32_t idleTime)
+{
+#if DIAGNOSTIC_BUILD
+   // Interrupts stay masked from here through the port's tick bookkeeping, so whatever woke the processor waits on it
+   woke_cycles = DWT->CYCCNT;
+   sleep_ticks = am_hal_stimer_counter_get() - sleep_started_stimer;
+   wake_unclaimed = true;
+#endif
+}
+
+bool system_claim_wake(uint32_t at_cycles, uint32_t *asleep_ticks, uint32_t *wake_to_now_cycles)
+{
+   // The latest wake from sleep for the first interrupt to ask after it
+#if DIAGNOSTIC_BUILD
+   if (!wake_unclaimed)
+      return false;
+   wake_unclaimed = false;
+   *asleep_ticks = sleep_ticks;
+   *wake_to_now_cycles = at_cycles - woke_cycles;
+   return true;
+#else
+   return false;
+#endif
+}
 
 
 // Helpful Debugging Functions and Macros ------------------------------------------------------------------------------

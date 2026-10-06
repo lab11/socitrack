@@ -12,16 +12,16 @@
 static void *spi_handle;
 static dwt_config_t dw_config;
 static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
-static volatile bool spi_ready, initialized = false;
-static volatile uint32_t isr_overrun_count;
+static volatile bool spi_ready, isr_woke_processor_now, initialized = false;
 static volatile uint32_t wake_pin_us, wake_ready_us, wake_restore_us;
 static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_max_us, stat_isr_over;
 static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed, stat_wake_skipped;
 static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
 static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed, wake_this_call_us;
 static volatile uint32_t stat_rx_ok_antenna[NUM_XMIT_ANTENNAS], stat_rx_failed_antenna[NUM_XMIT_ANTENNAS];
-static volatile uint32_t isr_entry_cycles_now, isr_events_now;
+static volatile uint32_t isr_entry_cycles_now, isr_events_now, isr_asleep_us_now, isr_wake_to_entry_us_now;
 static volatile uint8_t current_antenna, stat_network_size;
+static volatile uint32_t isr_overrun_count;
 static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
 
@@ -92,6 +92,12 @@ static void ranging_radio_isr(void *args)
    uint32_t pin_status = 0, iterations = 0;
    isr_entry_cycles_now = isr_entry_cycles;
    isr_events_now = 0;
+#if DIAGNOSTIC_BUILD
+   uint32_t asleep_ticks = 0, wake_cycles = 0;
+   isr_woke_processor_now = cycle_counter_ok && system_claim_wake(isr_entry_cycles, &asleep_ticks, &wake_cycles) && (cycles_to_us(wake_cycles) < RADIO_ISR_WAKE_WINDOW_US);
+   isr_asleep_us_now = stimer_ticks_to_us(asleep_ticks);
+   isr_wake_to_entry_us_now = cycles_to_us(wake_cycles);
+#endif
    do
    {
       ++isr_events_now;
@@ -637,6 +643,14 @@ uint32_t ranging_radio_last_wake_us(void)
 {
    // The most recent ranging_radio_wakeup() alone: 0 if the radio was already awake, UINT32_MAX if it had to be reset
    return wake_this_call_us;
+}
+
+bool ranging_radio_isr_woke_processor(uint32_t *asleep_us, uint32_t *wake_to_isr_us)
+{
+   // Whether the radio interrupt now running had to wake the processor first, how long it had slept, and how long the wake-up held the interrupt off
+   *asleep_us = isr_asleep_us_now;
+   *wake_to_isr_us = isr_wake_to_entry_us_now;
+   return isr_woke_processor_now;
 }
 
 bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events)

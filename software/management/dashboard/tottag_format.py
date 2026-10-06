@@ -51,7 +51,8 @@ STORAGE_TYPE_RADIO_ABORT = 10
 STORAGE_TYPE_SCHEDULE_CATCH = 11
 STORAGE_TYPE_ROUND_START = 12
 STORAGE_TYPE_SESSION_END = 13
-STORAGE_NUM_TYPES = 14
+STORAGE_TYPE_RADIO_TIMING = 14
+STORAGE_NUM_TYPES = 15
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'
@@ -115,7 +116,7 @@ DIAGNOSTICS_TEMPERATURE_UNKNOWN = -128
 
 # STORAGE_TYPE_RADIO_ABORT payload, written only by a diagnostic build: one radio receive that could not be armed
 # before its slot. A ranging-phase abort costs the whole round; a status-phase one only cuts that exchange short.
-RADIO_ABORT_STRUCT = struct.Struct('<BBBhHBHBHh')
+RADIO_ABORT_STRUCT = struct.Struct('<BBBhHBHBHhHH')
 RADIO_ABORT_PHASES = {1: 'ranging', 2: 'status'}
 RADIO_ABORT_UNMEASURED = 0xFFFF
 RADIO_ABORT_TRIGGERS = {0: None, 1: 'tx done', 2: 'rx frame', 3: 'rx timeout', 4: 'rx error'}
@@ -143,6 +144,12 @@ SCHEDULER_PHASES = {0: 'schedule', 1: 'subscription', 2: 'ranging', 3: 'status',
                     6: 'ranging error', 7: 'radio error', 8: 'collision'}
 PACKET_TYPES = {0x80: 'ranging', 0x81: 'schedule', 0x82: 'status', 0x83: 'join request'}
 
+# STORAGE_TYPE_RADIO_TIMING: how close a minute of receives came to their deadlines
+RADIO_TIMING_BANDS = 7
+RADIO_TIMING_FIRST_US = 40
+RADIO_TIMING_STEP_US = 5
+RADIO_TIMING_STRUCT = struct.Struct('<HHHhHHH7HH')
+
 # A live radio test, run over Bluetooth rather than read from logs
 BLE_SYSTEM_ID_UUID = '00002a23-0000-1000-8000-00805f9b34fb'
 BLE_TIMESTAMP_UUID = 'd68c3154-a23f-ee90-0c45-5231395e5d2e'
@@ -164,15 +171,15 @@ SYSTEM_ID_EUI_OFFSETS = (0, 1, 2, 5, 6, 7)
 
 def encode_radio_test_start(start_time, end_time, euis):
    """The maintenance command that starts a radio test among ``euis`` (6-byte, low byte first), which must include
-   the badge it is written to. Times are Unix seconds; send every badge the same two."""
+   the device it is written to. Times are Unix seconds; send every device the same two."""
    if not 1 <= len(euis) <= MAX_NUM_DEVICES:
-      raise ValueError(f'A radio test needs between 1 and {MAX_NUM_DEVICES} badges, not {len(euis)}.')
+      raise ValueError(f'A radio test needs between 1 and {MAX_NUM_DEVICES} devices, not {len(euis)}.')
    if end_time <= start_time:
       raise ValueError('A radio test must end after it starts.')
    if end_time - start_time > RADIO_TEST_MAX_SECONDS:
       raise ValueError(f'A radio test can run for at most {RADIO_TEST_MAX_SECONDS // 60} minutes.')
    if any(len(eui) != EUI_LEN for eui in euis):
-      raise ValueError(f'Every badge address must be {EUI_LEN} bytes.')
+      raise ValueError(f'Every device address must be {EUI_LEN} bytes.')
    return struct.pack('<BIIB', BLE_MAINTENANCE_START_RADIO_TEST, int(start_time), int(end_time), len(euis)) + \
           b''.join(bytes(eui) for eui in euis)
 
@@ -183,14 +190,14 @@ def encode_radio_test_stop():
 
 
 def decode_radio_stats(data):
-   """A read of the radio statistics characteristic: the badge's radio counters since it booted."""
+   """A read of the radio statistics characteristic: the device's radio counters since it booted."""
    data = bytes(data)
    if len(data) < RADIO_STATS_STRUCT.size:
-      raise ValueError(f'Radio statistics are {RADIO_STATS_STRUCT.size} bytes; this badge sent {len(data)}.')
+      raise ValueError(f'Radio statistics are {RADIO_STATS_STRUCT.size} bytes; this device sent {len(data)}.')
    (version, role, schedule_size, flags, seconds_left, rounds_scheduled, rounds_ranged, rx_ok, rx_failed,
     *rest) = RADIO_STATS_STRUCT.unpack_from(data)
    if version != RADIO_STATS_VERSION:
-      raise ValueError(f'This badge reports radio statistics in layout {version}, which this tool does not read.')
+      raise ValueError(f'This device reports radio statistics in layout {version}, which this tool does not read.')
    ok_by_antenna = list(rest[:NUM_XMIT_ANTENNAS])
    failed_by_antenna = list(rest[NUM_XMIT_ANTENNAS:2 * NUM_XMIT_ANTENNAS])
    tx_late, rx_arm_late, isr_over_budget, wake_max_us, wake_failures = rest[2 * NUM_XMIT_ANTENNAS:]
@@ -233,7 +240,7 @@ def decode_range_results(data):
 
 
 def eui_from_system_id(data):
-   """The badge's 6-byte EUI, low byte first, from its GATT System ID."""
+   """The device's 6-byte EUI, low byte first, from its GATT System ID."""
    data = bytes(data)
    return bytes(data[offset] for offset in SYSTEM_ID_EUI_OFFSETS)
 
@@ -354,6 +361,8 @@ def _record_length(data, i):
       length = 5 + ROUND_START_STRUCT.size
    elif record_type == STORAGE_TYPE_SESSION_END:
       length = 5 + SESSION_END_STRUCT.size
+   elif record_type == STORAGE_TYPE_RADIO_TIMING:
+      length = 5 + RADIO_TIMING_STRUCT.size
    else:
       return None
    return length if (length is not None and i + length <= len(data)) else None
@@ -502,8 +511,8 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
             consumed = 5 + DIAGNOSTICS_STRUCT.size
 
          elif record_type == STORAGE_TYPE_RADIO_ABORT and i + 5 + RADIO_ABORT_STRUCT.size <= len(data):
-            phase, slot, schedule_size, late_us, isr_elapsed_us, isr_events, since_temperature_ms, trigger, isr_entry_us, event_to_isr_us = \
-               RADIO_ABORT_STRUCT.unpack_from(data, i + 5)
+            phase, slot, schedule_size, late_us, isr_elapsed_us, isr_events, since_temperature_ms, trigger, isr_entry_us, event_to_isr_us, \
+               asleep_us, wake_to_isr_us = RADIO_ABORT_STRUCT.unpack_from(data, i + 5)
             log_data[timestamp]['abort'] = {
                'phase': RADIO_ABORT_PHASES.get(phase, phase),
                'slot': slot,
@@ -515,6 +524,8 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'trigger': RADIO_ABORT_TRIGGERS.get(trigger, trigger),
                'isr_entry_us': None if isr_entry_us == RADIO_ABORT_UNMEASURED else isr_entry_us,
                'event_to_isr_us': None if event_to_isr_us == RADIO_ABORT_NO_EVENT_TIME else event_to_isr_us,
+               'asleep_us': None if asleep_us == RADIO_ABORT_UNMEASURED else asleep_us,
+               'wake_to_isr_us': None if wake_to_isr_us == RADIO_ABORT_UNMEASURED else wake_to_isr_us,
             }
             consumed = 5 + RADIO_ABORT_STRUCT.size
 
@@ -578,6 +589,22 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'stalls': stalls,
             }
             consumed = 5 + SESSION_END_STRUCT.size
+
+         elif record_type == STORAGE_TYPE_RADIO_TIMING and i + 5 + RADIO_TIMING_STRUCT.size <= len(data):
+            arms, after_sleep, during_sleep_entry, slack_min_us, slack_under_25_us, event_to_isr_min_us, event_to_isr_max_us, \
+               *bands, wake_to_isr_max_us = RADIO_TIMING_STRUCT.unpack_from(data, i + 5)
+            log_data[timestamp]['timing'] = {
+               'arms': arms,
+               'after_sleep': after_sleep,
+               'during_sleep_entry': during_sleep_entry,
+               'slack_min_us': None if slack_min_us == 0x7FFF else slack_min_us,
+               'slack_under_25_us': slack_under_25_us,
+               'event_to_isr_min_us': None if event_to_isr_min_us == 0xFFFF else event_to_isr_min_us,
+               'event_to_isr_max_us': event_to_isr_max_us,
+               'event_to_isr_counts': list(bands),
+               'wake_to_isr_max_us': wake_to_isr_max_us,
+            }
+            consumed = 5 + RADIO_TIMING_STRUCT.size
 
          elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):
             status = struct.unpack('<H', data[i + 5:i + 7])[0]

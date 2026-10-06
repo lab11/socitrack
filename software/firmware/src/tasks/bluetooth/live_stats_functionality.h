@@ -15,7 +15,7 @@ typedef struct __attribute__ ((__packed__))
    uint8_t schedule_size;                                  // devices in the current schedule
    uint8_t flags;                                          // BLE_RADIO_STATS_FLAG_* bits
    uint16_t test_seconds_left;                             // until the radio test ends, 0 outside one
-   uint32_t rounds_scheduled;                              // rounds this badge took part in
+   uint32_t rounds_scheduled;                              // rounds this device took part in
    uint32_t rounds_ranged;                                 // of those, rounds that produced at least one range
    uint32_t rx_ok;                                         // ranging slots that produced a decoded packet
    uint32_t rx_failed;                                     // ranging slots that timed out or errored
@@ -30,7 +30,7 @@ typedef struct __attribute__ ((__packed__))
 
 #define BLE_RADIO_STATS_VERSION                     1
 #define BLE_RADIO_STATS_FLAG_TEST_RUNNING           0x01   // this boot is a radio test
-#define BLE_RADIO_STATS_FLAG_TEST_WAITING           0x02   // a radio test waiting to be re-sent its badge list
+#define BLE_RADIO_STATS_FLAG_TEST_WAITING           0x02   // a radio test waiting to be re-sent its device list
 
 
 // Public API ----------------------------------------------------------------------------------------------------------

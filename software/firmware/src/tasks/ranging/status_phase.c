@@ -82,6 +82,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
       print_isr(error_message);
       return RANGE_COMPUTATION_PHASE;
    }
+   scheduler_note_rx_armed(status_slot_time(current_index) - RECEIVE_EARLY_START_US);
    return RANGE_STATUS_PHASE;
 }
 

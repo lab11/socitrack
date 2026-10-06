@@ -61,6 +61,7 @@ static inline scheduler_phase_t start_rx(const char *error_message)
       print_isr(error_message);
       return RADIO_ERROR;
    }
+   scheduler_note_rx_armed(ranging_slot_time(time_slot) - RECEIVE_EARLY_START_US);
    return RANGING_PHASE;
 }
 

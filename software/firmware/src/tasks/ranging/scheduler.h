@@ -55,8 +55,10 @@ typedef enum
 
 #if DIAGNOSTIC_BUILD
 void scheduler_note_event(scheduler_event_t event, uint32_t value);
+void scheduler_note_rx_armed(uint32_t deadline_us);
 #else
 #define scheduler_note_event(event, value) do {} while (0)
+#define scheduler_note_rx_armed(deadline_us) do {} while (0)
 #endif
 
 void scheduler_init(experiment_details_t *details);

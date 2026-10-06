@@ -4754,7 +4754,7 @@ Three details worth recording:
 #### `STORAGE_TYPE_RADIO_ABORT` (= 10)
 
 Written only by a diagnostic build (`make DIAGNOSTIC=1`), once for each radio receive that could not be armed
-before its slot. A 15-byte payload, timestamped with the round it belongs to:
+before its slot. A 19-byte payload, timestamped with the round it belongs to:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4768,16 +4768,25 @@ before its slot. A 15-byte payload, timestamped with the round it belongs to:
 | `trigger` | 1 | the radio event that interrupt was handling: 1 a frame sent, 2 a frame received, 3 an empty receive window, 4 an undecodable frame; 0 unknown |
 | `isr_entry_us` | 2 | when that interrupt started, µs after the round's reference; `0xFFFF` if unmeasured |
 | `event_to_isr_us` | 2 | signed µs from the triggering frame's radio timestamp to the interrupt starting; `-32768` for an event with no timestamp |
+| `asleep_us` | 2 | how long the processor had slept when this interrupt woke it, to the 30.5 µs of the system timer; 0 if the interrupt arrived as the processor was going to sleep; `0xFFFF` if it was awake |
+| `wake_to_isr_us` | 2 | from the processor waking to this interrupt starting, which is the FreeRTOS port's bookkeeping with interrupts masked; `0xFFFF` if it was awake |
 
 A small `isr_elapsed_us` with a positive `late_us` means the interrupt started late; a large one means it ran long.
 The last three fields say which. `event_to_isr_us` includes the rest of the frame's air time after its timestamp,
 so it is steady for a given frame and only a change in it matters: a larger value than usual means something
 held the interrupt off, while a usual value with a later `isr_entry_us` means the event itself came late, for
-instance a peer transmitting late.
+instance a peer transmitting late. Where a delay comes from the processor sleeping, `asleep_us` and
+`wake_to_isr_us` show it. The processor deep-sleeps whenever FreeRTOS's tickless idle finds nothing to run, so
+a frame can arrive while it is asleep, or while it is on its way in or out with interrupts masked.
+
+The October 2026 runs found every abort to have the same shape: a received frame, a handler that took a steady
+435 µs, and an interrupt that started 120–147 µs after the frame's timestamp. Slots are 650 µs apart and a
+receive must be armed 152 µs before its slot, which leaves 498 µs from one frame to the next arm, so the
+interrupt has to start within about 63 µs of the frame (`late_us` ≈ `event_to_isr_us` − 62).
 
 #### Schedule tracing: `STORAGE_TYPE_SCHEDULE_CATCH` (= 11), `STORAGE_TYPE_ROUND_START` (= 12), `STORAGE_TYPE_SESSION_END` (= 13)
 
-Also written only by a diagnostic build. Together they show how each badge finds each round's schedule, so a
+Also written only by a diagnostic build. Together they show how each device finds each round's schedule, so a
 round lost network-wide can be put down either to participants opening their receivers late or to the master
 starting a round early, and a dropped network can be put down to its actual cause.
 
@@ -4795,7 +4804,7 @@ eventually joined. 20 bytes:
 | `other_frames` | 1 | decodable frames before the schedule that were not one |
 | `first_error_us` | 2 | receiver on to the first undecodable frame; `0xFFFF` if none |
 | `carrier_offset_cppm` | 2 | the decoded copy's carrier offset, in hundredths of a ppm as the DW3000 reports it |
-| `wake_correction_us` | 2 | signed µs of head start this wake-up was armed with beyond `RADIO_WAKEUP_SAFETY_DELAY_US`: what the badge had learned, plus any one-round allowance for a late master, saturating |
+| `wake_correction_us` | 2 | signed µs of head start this wake-up was armed with beyond `RADIO_WAKEUP_SAFETY_DELAY_US`: what the device had learned, plus any one-round allowance for a late master, saturating |
 | `timer_latency_us` | 2 | the wake-up timer's compare match to its interrupt running |
 
 A record for a wake-up that never found the network (`first_copy` `0xFF`) is stamped with the moment the
@@ -4808,14 +4817,24 @@ wake-up and uses it to adjust the next: the participant nudges its wake-up so it
 `RADIO_WAKEUP_TARGET_LEAD_US` ahead of the round, learning whatever its own wake-up, interrupt and timer
 latencies add up to. The first test of the tracing found participants opening about 0.9 ms after the
 master's first copy under the fixed 2400 µs margin. A round then survived only if a relay caught the second
-copy, which made about every other round fail. `wake_correction_us` shows what each badge learned, which
-settled at 1055–1152 µs and tracks each badge's own `wake_us`; it starts from
+copy, which made about every other round fail. `wake_correction_us` shows what each device learned, which
+settled at 1055–1152 µs and tracks each device's own `wake_us`; it starts from
 `RADIO_WAKEUP_CORRECTION_INITIAL_US` (1100 µs) so the first rounds after joining are caught too. A settled
 participant whose receiver suddenly opens more than `RADIO_WAKEUP_LATE_MASTER_US` (600 µs) further ahead than
 usual takes the master to have sent that round late. It learns nothing from that round and aims its next
 wake-up at where the round should have been, for up to `RADIO_WAKEUP_LATE_MASTER_ROUNDS` (4) late rounds in a
 row before it follows the master's new timing. Without that allowance, each late master round cost every
-participant the next one. A late receiver with no `rx_errors` was simply late. `rx_errors` around the time of the first
+participant the next one.
+
+Each measurement is taken from the wake-up it belongs to. A wake-up from sleep always starts a fresh one,
+and a participant whose ranging then aborts still learns from the schedule it caught that round, because it
+listens straight through to the next round with no timed wake-up to measure. A radio error discards the
+measurement, since the radio may have been reset. A measurement spanning more than one missed round is
+ignored, because it also carries the master's period error over every round in between. Before this, a run of
+aborted rounds left one measurement pending for about 11 rounds, and the correction learned roughly 1.1 ms of
+apparent lateness from it.
+
+A late receiver with no `rx_errors` was simply late. `rx_errors` around the time of the first
 copies, or carrier offsets that are larger just after a wake-up than after a long listen, point to a radio
 that had not settled.
 
@@ -4835,7 +4854,7 @@ known, and is timestamped with that round. 11 bytes:
 The master's timer has a fixed period, so a change in `timer_to_transmit_us` from one round to the next moves
 its first copy by the same amount against what participants expect.
 
-**`SESSION_END`** is written by every badge each time its ranging scheduler stops. 23 bytes:
+**`SESSION_END`** is written by every device each time its ranging scheduler stops. 23 bytes:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4846,13 +4865,35 @@ its first copy by the same amount against what participants expect.
 | `collision_at_us` | 2 | how far into the round the colliding frame arrived |
 | `session_ms` | 4 | how long the run lasted |
 | `rounds_ranged`, `schedules_heard` | 4 | rounds computed while scheduled, and schedules decoded |
-| `join_requests_sent`, `join_requests_heard` | 4 | join requests this badge sent while unscheduled, and those that reached it as master |
+| `join_requests_sent`, `join_requests_heard` | 4 | join requests this device sent while unscheduled, and those that reached it as master |
 | `listen_errors` | 2 | undecodable frames while listening for a schedule |
 | `stalls` | 1 | times no round completed for `RANGING_ROUND_STALL_TIMEOUT_MS` |
 
-A badge that cannot join shows a run of `search timeout` records whose `schedules_heard` and
-`join_requests_sent` say whether it heard the network at all. Their cost, about 50 bytes a second per badge,
+A device that cannot join shows a run of `search timeout` records whose `schedules_heard` and
+`join_requests_sent` say whether it heard the network at all. Their cost, about 50 bytes a second per device,
 is why they are confined to the diagnostic build.
+
+#### `STORAGE_TYPE_RADIO_TIMING` (= 14)
+
+Written only by a diagnostic build, once a minute and at the end of each ranging session, by every device that
+armed a receive in that time. It shows how close the receives that **succeeded** came to their deadlines,
+which the abort records cannot: those only show the ones that missed. Each count is a delayed receive armed
+in time straight after a received frame, the case every abort so far has been. 30 bytes:
+
+| field | bytes | what it answers |
+|---|---|---|
+| `arms` | 2 | receives armed in time straight after a received frame |
+| `after_sleep` | 2 | of those, ones whose interrupt had to wake the processor first |
+| `during_sleep_entry` | 2 | of those, ones whose interrupt arrived as the processor was going to sleep |
+| `slack_min_us` | 2 | signed µs to spare at the closest one; `0x7FFF` if none |
+| `slack_under_25_us` | 2 | how many had less than 25 µs to spare |
+| `event_to_isr_min_us`, `event_to_isr_max_us` | 4 | fastest and slowest from the frame's radio timestamp to the interrupt starting; the minimum is `0xFFFF` if none |
+| `event_to_isr_counts` | 14 | how many fell in each of `STORAGE_RADIO_TIMING_BANDS` (7) bands: below 40 µs, then 5 µs wide, the last from 65 µs up |
+| `wake_to_isr_max_us` | 2 | longest from the processor waking to a radio interrupt starting |
+
+If the typical frame-to-interrupt time sits just under the ~63 µs limit and the slowest successful ones came
+after a wake from sleep, the processor's deep sleep is what pushes the occasional one over. If even interrupts
+that found the processor awake come close, the handler itself has to get shorter.
 
 #### Record framing, turned on
 

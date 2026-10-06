@@ -5,8 +5,8 @@
    python3 test_radio_check.py
 
 The fixture (managementweb/packages/tottag-schema/test/fixtures/radio-check-parity.json) holds scenarios and the web
-tool's answers to them: fleets built to fail in one known way per badge, and a live test as the raw Bluetooth payloads
-four badges would stream. Each is replayed here through the Python port, which must reach the same verdicts, for the
+tool's answers to them: fleets built to fail in one known way per device, and a live test as the raw Bluetooth payloads
+four devices would stream. Each is replayed here through the Python port, which must reach the same verdicts, for the
 same reasons, in the same words. When the web tool's rules change, `npm run parity:update` in that package rewrites
 the fixture and this test fails until radio_check.py follows.
 """
@@ -98,7 +98,7 @@ class ParityWithTheWebTool(Matches):
                recorder.add_ranges(at_ms, ranges, truncated)
          recorded.append({'uid': stream['uid'], 'label': stream['label'], 'summary': recorder.summary(), 'truncated': recorder.truncated})
       self.assertSame(keys(recorded, camel), live['expected']['summaries'], 'live summaries')
-      result = radio_check.analyse_radio([{key: badge[key] for key in ('uid', 'label', 'summary')} for badge in recorded],
+      result = radio_check.analyse_radio([{key: device[key] for key in ('uid', 'label', 'summary')} for device in recorded],
                                          positions_from_fixture(live['positions']))
       self.assertSame(keys(result, camel), live['expected']['analysis'], 'live analysis')
 
@@ -143,32 +143,32 @@ class Codec(unittest.TestCase):
 
 
 class Session(unittest.TestCase):
-   """The parts of a live test that do not need a badge: who is in it, and what a refusal looks like."""
+   """The parts of a live test that do not need a device: who is in it, and what a refusal looks like."""
 
-   def test_a_test_needs_two_badges_and_adds_each_once(self):
+   def test_a_test_needs_two_devices_and_adds_each_once(self):
       test = radio_check.LiveRadioTest()
       test.add('TotTag 02', 'AA:BB', eui=bytes([2, 1, 1, 1, 1, 1]))
       test.add('TotTag 02', 'AA:BB', eui=bytes([2, 1, 1, 1, 1, 1]))
-      self.assertEqual(len(test.state()['badges']), 1)
+      self.assertEqual(len(test.state()['devices']), 1)
       asyncio.run(test.start(300))
-      self.assertEqual(test.state()['phase'], 'setup', 'a single badge was started on a test with nobody to range to')
+      self.assertEqual(test.state()['phase'], 'setup', 'a single device was started on a test with nobody to range to')
 
-   def test_a_badge_that_cannot_be_reached_is_marked_failed_and_the_others_still_start(self):
+   def test_a_device_that_cannot_be_reached_is_marked_failed_and_the_others_still_start(self):
       test = radio_check.LiveRadioTest()
       reached = []
 
-      async def connect(badge, timeout=None, on_disconnect=None):
-         return None if badge['name'] == 'TotTag 0B' else FakeClient(reached, badge['name'])
+      async def connect(device, timeout=None, on_disconnect=None):
+         return None if device['name'] == 'TotTag 0B' else FakeClient(reached, device['name'])
       test._connect = connect
-      test._follow = lambda badge, command: asyncio.sleep(0)
+      test._follow = lambda device, command: asyncio.sleep(0)
       test.add('TotTag 02', 'AA', eui=bytes([0x02, 1, 1, 1, 1, 1]))
       test.add('TotTag 0B', 'BB', eui=bytes([0x0b, 1, 1, 1, 1, 1]))
       test.add('TotTag 3E', 'CC', eui=bytes([0x3e, 1, 1, 1, 1, 1]))
       asyncio.run(test.start(300))
       state = test.state()
       self.assertEqual(state['phase'], 'running')
-      self.assertEqual([badge['status'] for badge in state['badges']], ['restarting', 'failed', 'restarting'])
-      # Every badge reached was sent its clock and then the same command naming all three
+      self.assertEqual([device['status'] for device in state['devices']], ['restarting', 'failed', 'restarting'])
+      # Every device reached was sent its clock and then the same command naming all three
       commands = [data for name, uuid, data in reached if uuid == tottag_format.BLE_MAINTENANCE_COMMAND_UUID]
       self.assertEqual(len(commands), 2)
       self.assertEqual(commands[0], commands[1])
@@ -178,18 +178,18 @@ class Session(unittest.TestCase):
       self.assertEqual([d['uid'] for d in test.deployment()], [0x02, 0x0b, 0x3e])
 
 
-   def test_a_badge_is_followed_through_its_restart_a_lost_badge_list_and_a_dropped_connection_to_the_end(self):
+   def test_a_device_is_followed_through_its_restart_a_lost_device_list_and_a_dropped_connection_to_the_end(self):
       clock = FakeClock(1_791_300_000)
       running = lambda ranged: stats_payload(ranged, tottag_format.RADIO_STATS_FLAG_TEST_RUNNING)
       waiting = stats_payload(0, tottag_format.RADIO_STATS_FLAG_TEST_RUNNING | tottag_format.RADIO_STATS_FLAG_TEST_WAITING)
-      badge = FakeBadge(clock, [
+      device = FakeDevice(clock, [
          [],                                              # the start command
          [stats_payload(0, 0)],                           # reached before its restart: tried again shortly
          [running(20), waiting, running(40), 'drop'],     # in the test; restarts and loses its list; drops
          [running(60), 'end'],                            # reconnected, until the test is over
       ])
       test = radio_check.LiveRadioTest(now=clock)
-      test._connect = lambda b, timeout=None, on_disconnect=None: badge.connect(on_disconnect) if b['name'] == 'TotTag 02' else none()
+      test._connect = lambda b, timeout=None, on_disconnect=None: device.connect(on_disconnect) if b['name'] == 'TotTag 02' else none()
       test.add('TotTag 02', 'AA', eui=bytes([0x02, 1, 1, 1, 1, 1]))
       test.add('TotTag 0B', 'BB', eui=bytes([0x0b, 1, 1, 1, 1, 1]))
       seen = []
@@ -204,63 +204,63 @@ class Session(unittest.TestCase):
 
       state = test.state()
       self.assertEqual(state['phase'], 'finished')
-      self.assertEqual([b['status'] for b in state['badges']], ['finished', 'failed'])
+      self.assertEqual([b['status'] for b in state['devices']], ['finished', 'failed'])
       self.assertEqual(seen, ['starting', 'restarting', 'restarting', 'waiting', 'reconnecting'])
-      self.assertEqual(state['badges'][0]['ranged_recent'], 1.0, 'the share carries across the reconnection')
+      self.assertEqual(state['devices'][0]['ranged_recent'], 1.0, 'the share carries across the reconnection')
       start = tottag_format.encode_radio_test_start(test.start_time, test.end_time, [bytes([0x02, 1, 1, 1, 1, 1]), bytes([0x0b, 1, 1, 1, 1, 1])])
-      self.assertEqual(badge.writes, [tottag_format.BLE_TIMESTAMP_UUID, tottag_format.BLE_MAINTENANCE_COMMAND_UUID,
+      self.assertEqual(device.writes, [tottag_format.BLE_TIMESTAMP_UUID, tottag_format.BLE_MAINTENANCE_COMMAND_UUID,
                                       tottag_format.BLE_MAINTENANCE_COMMAND_UUID])
-      self.assertEqual(badge.commands, [start, start], 'the lost list is resent as the same test')
+      self.assertEqual(device.commands, [start, start], 'the lost list is resent as the same test')
       summary = test.deployment()[0]['summary']
       self.assertEqual(summary['diagnostics']['samples'], 3)
       self.assertEqual([peer['uid'] for peer in summary['peers']], [0x0b])
 
 
-   def test_a_badge_whose_firmware_cannot_run_a_test_is_refused_without_being_sent_it(self):
+   def test_a_device_whose_firmware_cannot_run_a_test_is_refused_without_being_sent_it(self):
       # Older firmware accepts the start command as an unknown one and carries on as it was, so it is never sent it
       test = radio_check.LiveRadioTest()
       reached = []
-      async def connect(badge, timeout=None, on_disconnect=None):
-         return FakeClient(reached, badge['name'], has_radio_stats=badge['name'] != 'TotTag 49')
+      async def connect(device, timeout=None, on_disconnect=None):
+         return FakeClient(reached, device['name'], has_radio_stats=device['name'] != 'TotTag 49')
       test._connect = connect
-      test._follow = lambda badge, command: asyncio.sleep(0)
+      test._follow = lambda device, command: asyncio.sleep(0)
       test.add('TotTag 02', 'AA', eui=bytes([0x02, 1, 1, 1, 1, 1]))
       test.add('TotTag 49', 'BB', eui=bytes([0x49, 1, 1, 1, 1, 1]))
       test.add('TotTag 3E', 'CC', eui=bytes([0x3e, 1, 1, 1, 1, 1]))
       asyncio.run(test.start(300))
-      badges = test.state()['badges']
-      self.assertEqual([b['status'] for b in badges], ['restarting', 'failed', 'restarting'])
-      self.assertEqual(badges[1]['message'], radio_check.TOO_OLD)
+      devices = test.state()['devices']
+      self.assertEqual([b['status'] for b in devices], ['restarting', 'failed', 'restarting'])
+      self.assertEqual(devices[1]['message'], radio_check.TOO_OLD)
       self.assertNotIn('TotTag 49', [name for name, uuid, data in reached])
 
-   def test_a_badge_never_heard_from_after_its_restart_says_so_while_it_is_still_tried(self):
+   def test_a_device_never_heard_from_after_its_restart_says_so_while_it_is_still_tried(self):
       clock = FakeClock(1_791_300_000)
       test = radio_check.LiveRadioTest(now=clock)
       attempts = []
-      async def attach(badge, command):
+      async def attach(device, command):
          attempts.append(clock.now)
          clock.now += 20
          return 'unreachable'
       test._attach = attach
       test.add('TotTag 49', 'BB', eui=bytes([0x49, 1, 1, 1, 1, 1]))
       test.start_time, test.end_time, test.phase = clock.now, clock.now + 60, 'running'
-      test.badges[0].update(status='restarting')
+      test.devices[0].update(status='restarting')
       with quick_session():
-         asyncio.run(test._follow(test.badges[0], b''))
+         asyncio.run(test._follow(test.devices[0], b''))
       self.assertEqual(len(attempts), 3, 'it was tried until the test ended')
-      self.assertEqual(test.state()['badges'][0]['message'], radio_check.NOT_HEARD)
+      self.assertEqual(test.state()['devices'][0]['message'], radio_check.NOT_HEARD)
 
 
 class RecentShare(unittest.TestCase):
-   """The share of recent rounds a badge ranged in, which has to read 100% for a badge ranging in every one."""
+   """The share of recent rounds a device ranged in, which has to read 100% for a device ranging in every one."""
 
-   def test_a_badge_ranging_every_round_reads_all_of_them_wherever_the_reads_land_in_a_round(self):
+   def test_a_device_ranging_every_round_reads_all_of_them_wherever_the_reads_land_in_a_round(self):
       for offset in (0.0, 0.1, 0.26, 0.49):
          # Reads every 5.05 s, each counting the rounds finished by then: 10 or 11 between reads, never 2 a second
          history = [(t, math.floor((t + offset) * 2), math.floor((t + offset) * 2)) for t in [i * 5.05 for i in range(13)]]
          self.assertEqual(radio_check.ranged_share(history), 1.0, offset)
 
-   def test_rounds_a_badge_sat_out_count_against_it(self):
+   def test_rounds_a_device_sat_out_count_against_it(self):
       history = [(t, int(t), int(t)) for t in range(0, 61, 5)]   # in only every other round
       self.assertAlmostEqual(radio_check.ranged_share(history), 0.5, places=2)
 
@@ -304,8 +304,8 @@ def stats_payload(rounds_ranged, flags):
                                                 rounds_ranged * 6, 0, *[rounds_ranged * 2] * 3, *[0] * 3, 0, 0, 0, 1900, 0)
 
 
-class FakeBadge:
-   """A badge's side of a live test, scripted one connection at a time; every read moves the clock on five seconds."""
+class FakeDevice:
+   """A device's side of a live test, scripted one connection at a time; every read moves the clock on five seconds."""
 
    def __init__(self, clock, connections):
       self.clock, self.connections = clock, list(connections)
@@ -316,29 +316,29 @@ class FakeBadge:
 
 
 class FakeLiveClient:
-   def __init__(self, badge, reads, on_disconnect):
-      self.badge, self.reads, self.on_disconnect, self.notify = badge, list(reads), on_disconnect, None
+   def __init__(self, device, reads, on_disconnect):
+      self.device, self.reads, self.on_disconnect, self.notify = device, list(reads), on_disconnect, None
 
    async def start_notify(self, uuid, callback):
       self.notify = callback
 
    async def read_gatt_char(self, uuid):
-      self.badge.clock.now += 5
+      self.device.clock.now += 5
       item = self.reads.pop(0)
       if item == 'drop':
          self.on_disconnect(self)
          raise IOError('disconnected')
       if item == 'end':
-         self.badge.clock.now += 3600
+         self.device.clock.now += 3600
          raise IOError('gone')
       if self.notify:
          self.notify(None, bytearray([1, 0x0b, 0xdc, 0x05]))
       return bytearray(item)
 
    async def write_gatt_char(self, uuid, data, response=False):
-      self.badge.writes.append(uuid)
+      self.device.writes.append(uuid)
       if uuid == tottag_format.BLE_MAINTENANCE_COMMAND_UUID:
-         self.badge.commands.append(bytes(data))
+         self.device.commands.append(bytes(data))
 
    async def disconnect(self):
       pass

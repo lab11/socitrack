@@ -81,6 +81,7 @@ uint32_t ranging_radio_get_isr_overrun_count(void);
 void ranging_radio_get_wake_timing(uint32_t *pin_us, uint32_t *ready_us, uint32_t *restore_us);
 uint32_t ranging_radio_last_wake_us(void);
 bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events);
+bool ranging_radio_isr_woke_processor(uint32_t *asleep_us, uint32_t *wake_to_isr_us);
 void ranging_radio_note_tx_failure(void);
 void ranging_radio_note_rx_arm_failure(void);
 void ranging_radio_note_rx_result(bool decoded);

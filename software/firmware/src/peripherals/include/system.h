@@ -68,5 +68,6 @@ void system_watchdog_pet(watchdog_task_t task);
 void system_enable_interrupts(bool enabled);
 void system_enter_power_off_mode(uint32_t wake_on_gpio, uint32_t wake_on_timestamp);
 void system_read_UID(uint8_t *uid, uint32_t uid_length);
+bool system_claim_wake(uint32_t at_cycles, uint32_t *asleep_ticks, uint32_t *wake_to_now_cycles);
 
 #endif  // #ifndef __SYSTEM_HEADER_H__
