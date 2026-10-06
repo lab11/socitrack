@@ -7,13 +7,15 @@ try: from .tkcal import DateEntry
 except: from tkcal import DateEntry
 try: from . import tottag_format
 except ImportError: import tottag_format
+try: from . import radio_check
+except ImportError: import radio_check
 from functools import partial
 from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog, font
 from collections import defaultdict, Counter
 import struct, queue, datetime, tzlocal
 import serial.tools.list_ports
-import os, pickle, pytz, time
+import os, pickle, pytz, re, sys, time
 import tkinter as tk
 import traceback
 import threading
@@ -88,6 +90,12 @@ BATTERY_CODES[5] = 'Critical Voltage'
 TOTTAG_USB_VID = 0x1209
 TOTTAG_USB_PID = 0x2828
 
+RADIO_TEST_MINUTES = [minutes for minutes in (5, 10, 15, 30, 60) if minutes * 60 <= tottag_format.RADIO_TEST_MAX_SECONDS]
+RADIO_LAYOUTS = ('Not given', 'Circle, radius (ft):', 'Line, spacing (ft):')
+RADIO_VERDICTS = {'fail': 'Fail', 'check': 'Check', 'missing': 'No data', 'pass': 'Pass'}
+METRES_PER_FOOT = 0.3048
+MM_PER_INCH = 25.4
+
 
 # HELPER FUNCTIONS ----------------------------------------------------------------------------------------------------
 
@@ -108,6 +116,18 @@ def device_uid(device_name):
    if len(groups) != EUI_LEN or not all(len(g) == 2 and all(c in '0123456789abcdefABCDEF' for c in g) for g in groups):
       return None
    return [int(g, 16) for g in reversed(groups)]
+
+def feet_and_inches(millimetres):
+   tenths = round(abs(millimetres) / MM_PER_INCH * 10)
+   feet, tenths = divmod(tenths, 120)
+   return f'{tenths / 10:.1f} in' if not feet else f'{feet} ft {tenths / 10:.1f} in'
+
+def radio_wording(text):
+   text = re.sub(r'(\d+) of the (\d+) selected badges (?:has|have) no log loaded, so', r'\1 of the \2 TotTags in the test sent no data, so', text)
+   text = text.replace('No positions entered, so distances are checked for consistency only. Enter where each badge sat to check accuracy as well.',
+                       'No layout chosen, so distances are checked for consistency only. Choose the circle or line the TotTags sit in to check accuracy as well.')
+   text = re.sub(r'(\d+) mm', lambda match: f'{int(match.group(1)) / MM_PER_INCH:.1f} in', text)
+   return re.sub(r'\bbadge', 'TotTag', text)
 
 def usb_write_experiment_details(device, packed_details):
    device.reset_input_buffer()
@@ -891,6 +911,13 @@ class TotTagGUI(tk.Frame):
       self.end_date = tk.StringVar(self.master, datetime.datetime.today().strftime('%m/%d/%Y'))
       self.active_data_entry = None
       self.data_length = 0
+      self.radio_test = None
+      self.radio_start = None
+      self.radio_view = None
+      self.radio_was_testing = False
+      self.radio_minutes = tk.StringVar(self.master, str(RADIO_TEST_MINUTES[1] if len(RADIO_TEST_MINUTES) > 1 else RADIO_TEST_MINUTES[0]))
+      self.radio_layout = tk.StringVar(self.master, RADIO_LAYOUTS[0])
+      self.radio_layout_size = tk.StringVar(self.master, '3')
 
       # Create the control bar
       control_bar = tk.Frame(self)
@@ -921,9 +948,11 @@ class TotTagGUI(tk.Frame):
       self.cancel_button.grid(row=8, sticky=tk.W+tk.E)
       self.download_button = ttk.Button(self.operations_bar, text="Download Deployment Logs", command=self._download_logs, state=['disabled'])
       self.download_button.grid(row=9, sticky=tk.W+tk.E)
+      self.radio_button = ttk.Button(self.operations_bar, text="Live Radio Check", command=self._radio_check, state=['disabled'])
+      self.radio_button.grid(row=10, sticky=tk.W+tk.E)
       if mode_switch_visibility:
           self.switch_button = ttk.Button(self.operations_bar, text="Mode Switch", command=partial(ble_issue_command, self.event_loop, self.ble_command_queue, 'ENABLE_STORAGE_MAINTENANCE'), state=['disabled'])
-          self.switch_button.grid(row=10)
+          self.switch_button.grid(row=11)
 
       # Create the workspace canvas
       self.canvas = tk.Frame(self)
@@ -1258,6 +1287,7 @@ class TotTagGUI(tk.Frame):
                self.scan_button['state'] = ['disabled']
                self.connect_button['state'] = ['disabled']
                self.schedule_button['state'] = ['disabled']
+               self.radio_button['state'] = ['disabled']
                self.tottag_selection.set('Scanning for TotTags...')
                tk.Label(self.canvas, text="Scanning for TotTag devices. Please wait...").pack(fill=tk.BOTH, expand=True)
             else:
@@ -1268,6 +1298,7 @@ class TotTagGUI(tk.Frame):
                else:
                   self.connect_button['state'] = ['enabled']
                   self.schedule_button['state'] = ['enabled']
+                  self.radio_button['state'] = ['enabled' if len(self._radio_devices()) >= 2 else 'disabled']
                   self.tottag_selector['values'] = self.device_list
                   self.tottag_selection.set(self.device_list[0])
                   tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
@@ -1291,6 +1322,7 @@ class TotTagGUI(tk.Frame):
                   item.configure(state=['enabled'])
             self.schedule_button['text'] = 'Update Deployment On Current Device'
             self.cancel_button['text'] = 'Cancel Deployment On Current Device'
+            self.radio_button['state'] = ['disabled']
             self._clear_canvas_with_prompt()
          elif key == 'CONNECTEDUSB':
             self.tottag_selection.set('Connected to ' + data)
@@ -1301,6 +1333,7 @@ class TotTagGUI(tk.Frame):
                if isinstance(item, ttk.Button):
                   item.configure(state=['enabled'])
             self.subscribe_button['state'] = ['disabled']
+            self.radio_button['state'] = ['disabled']
             if device_uid(data):
                self.schedule_button['text'] = 'Update Deployment On Current Device'
             else:
@@ -1321,6 +1354,7 @@ class TotTagGUI(tk.Frame):
                if isinstance(item, ttk.Button):
                   item.configure(state=['disabled'])
             self.schedule_button['state'] = ['enabled']
+            self.radio_button['state'] = ['enabled' if len(self._radio_devices()) >= 2 else 'disabled']
             tk.Label(self.canvas, text="Connect to a TotTag from the list above to continue...").pack(fill=tk.BOTH, expand=True)
          elif key == 'DISRECONNECT':
             self._connect(True)
@@ -1389,6 +1423,293 @@ class TotTagGUI(tk.Frame):
             print('Unrecognized BLE Data:', key, '=', data)
       if self.ble_comms.is_alive():
          self.master.after(100, self._refresh_data)
+
+   # LIVE RADIO CHECK ------------------------------------------------------------------------------------------------
+
+   def _radio_devices(self):
+      """Scanned badges a radio test can run on: those reached over Bluetooth, whose address is their EUI."""
+      return [name for name in self.device_list if not name.startswith(USB_DEVICE_NAME_PREFIX) and device_uid(name)]
+
+   def _radio_testing(self):
+      return self.radio_test is not None and self.radio_test.phase in ('starting', 'running')
+
+   def _radio_positions(self, uids):
+      """Where the layout puts each TotTag, in feet, in the order they are listed."""
+      try:
+         size = float(self.radio_layout_size.get())
+      except ValueError:
+         return {}
+      if size <= 0:
+         return {}
+      if self.radio_layout.get() == RADIO_LAYOUTS[1]:
+         return radio_check.circle_positions(uids, size)
+      if self.radio_layout.get() == RADIO_LAYOUTS[2]:
+         return radio_check.line_positions(uids, size)
+      return {}
+
+   def _scrolling_frame(self):
+      """A frame in the workspace that scrolls up and down when its contents are taller than the window."""
+      outer = tk.Frame(self.canvas)
+      outer.pack(fill=tk.BOTH, expand=True)
+      scroller = tk.Canvas(outer, highlightthickness=0, borderwidth=0)
+      scrollbar = ttk.Scrollbar(outer, orient=tk.VERTICAL, command=scroller.yview)
+      scroller.configure(yscrollcommand=scrollbar.set)
+      scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+      scroller.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+      inner = tk.Frame(scroller)
+      window = scroller.create_window((0, 0), window=inner, anchor=tk.NW)
+      inner.bind('<Configure>', lambda _event: scroller.configure(scrollregion=scroller.bbox('all')))
+      scroller.bind('<Configure>', lambda event: scroller.itemconfigure(window, width=event.width))
+      def wheel(event):
+         if not scroller.winfo_exists() or scroller.yview() == (0.0, 1.0):
+            return
+         if event.num in (4, 5):
+            scroller.yview_scroll(-1 if event.num == 4 else 1, 'units')
+         else:
+            scroller.yview_scroll(-event.delta if sys.platform == 'darwin' else -event.delta // 120, 'units')
+      def bind_wheel(_event):
+         for sequence in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+            scroller.bind_all(sequence, wheel)
+      def unbind_wheel(_event):
+         for sequence in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+            scroller.unbind_all(sequence)
+      outer.bind('<Enter>', bind_wheel)
+      outer.bind('<Leave>', unbind_wheel)
+      outer.bind('<Destroy>', unbind_wheel)
+      return inner
+
+   def _radio_check(self):
+      self._clear_canvas()
+      view = self._scrolling_frame()
+      body = tk.Frame(view)
+      body.pack(fill=tk.BOTH, expand=True, padx=(10, 6), pady=(4, 6))
+      self.radio_view = view
+      test = self.radio_test
+      tk.Label(body, text='Live Radio Check', font=('Helvetica', 14, 'bold')).pack(anchor=tk.W)
+      about = tk.Label(body, justify=tk.LEFT, anchor=tk.W, text=(
+         'Runs the chosen TotTags in a short radio test and reads their ranges and receive counts over Bluetooth as it goes, '
+         'to find one with a weak receiver, a damaged antenna, or a distance calibration that is off. Nothing is logged, a '
+         "TotTag's deployment is left as it was, and every TotTag restarts back to normal when the test ends, even if this "
+         'dashboard is closed first. Set them where they can all see each other, at least 2 feet apart. Verdicts appear '
+         'once every TotTag has a full minute of data, and settle over the next few.'))
+      about.pack(anchor=tk.W, fill=tk.X, pady=(2, 6))
+      body.bind('<Configure>', lambda event: about.configure(wraplength=max(200, event.width - 10)))
+
+      # Which badges, for how long, and where they sit
+      choices = tk.Frame(body)
+      choices.pack(anchor=tk.W, fill=tk.X)
+      names = [badge['name'] for badge in test.state()['badges']] if test else self._radio_devices()
+      self.radio_choices = []
+      for index, name in enumerate(names):
+         chosen = tk.IntVar(choices, 1)
+         chosen.trace_add('write', lambda *_: self._radio_show(view))
+         ttk.Checkbutton(choices, text=f'{device_uid(name)[0]:02X}  ({name})', variable=chosen, state='normal' if test is None else 'disabled').grid(
+            row=index // 3, column=index % 3, sticky=tk.W, padx=(0, 18))
+         self.radio_choices.append((name, chosen))
+      settings = tk.Frame(body)
+      settings.pack(anchor=tk.W, fill=tk.X, pady=(6, 2))
+      ttk.Label(settings, text='Run for').pack(side=tk.LEFT)
+      ttk.Combobox(settings, textvariable=self.radio_minutes, values=RADIO_TEST_MINUTES, width=4, state='readonly' if test is None else 'disabled').pack(side=tk.LEFT, padx=4)
+      ttk.Label(settings, text='minutes.     Layout:').pack(side=tk.LEFT)
+      layout = ttk.Combobox(settings, textvariable=self.radio_layout, values=RADIO_LAYOUTS, width=18, state='readonly')
+      layout.pack(side=tk.LEFT, padx=4)
+      layout.bind('<<ComboboxSelected>>', lambda _event: self._radio_show(view))
+      size = ttk.Entry(settings, textvariable=self.radio_layout_size, width=5)
+      size.pack(side=tk.LEFT)
+      size.bind('<KeyRelease>', lambda _event: self._radio_show(view))
+      actions = tk.Frame(body)
+      actions.pack(anchor=tk.W, fill=tk.X, pady=(2, 4))
+      self.radio_new_button = ttk.Button(actions, text='New Test', command=self._radio_new)
+      self.radio_new_button.pack(side=tk.RIGHT)
+      self.radio_stop_button = ttk.Button(actions, text='Stop Test', command=self._radio_stop)
+      self.radio_stop_button.pack(side=tk.RIGHT, padx=4)
+      self.radio_start_button = ttk.Button(actions, text='Start Test', command=self._radio_begin)
+      self.radio_start_button.pack(side=tk.RIGHT)
+      self.radio_status = ttk.Label(actions, font=('Helvetica', 12, 'bold'))
+      self.radio_status.pack(side=tk.LEFT)
+
+      # One row per badge, then how often each ranged to each other, then everything worth reading in words. The
+      # columns start narrow enough to fit beside the actions bar and widen with the window.
+      columns = (('status', 'Status', 95), ('role', 'Role', 85), ('ranged', 'Rounds ranged', 95), ('failed', 'Rx failed', 70),
+                 ('antennas', 'Rx failed by antenna', 135), ('position', 'Position (ft)', 90), ('verdict', 'Verdict', 60))
+      self.radio_tree = ttk.Treeview(body, columns=[column[0] for column in columns], height=min(10, max(3, len(names))))
+      self.radio_tree.heading('#0', text='TotTag')
+      self.radio_tree.column('#0', width=60, minwidth=50)
+      for key, title, width in columns:
+         self.radio_tree.heading(key, text=title)
+         self.radio_tree.column(key, width=width, minwidth=50, anchor=tk.CENTER)
+      self.radio_tree.tag_configure('fail', foreground='#b3261e')
+      self.radio_tree.tag_configure('check', foreground='#9a6700')
+      self.radio_tree.pack(fill=tk.X)
+      self.radio_links = ttk.Treeview(body, height=min(10, max(2, len(names))))
+      self.radio_links.pack(fill=tk.X, pady=(6, 0))
+      self.radio_link_uids = None
+      self.radio_text = tk.Text(body, height=3, wrap=tk.WORD, highlightthickness=0, borderwidth=0, takefocus=0, undo=False, state=tk.DISABLED,
+                                background=body.cget('background'))
+      self.radio_text.pack(fill=tk.X, pady=(8, 0))
+      self.radio_text.bind('<Configure>', lambda _event: self._radio_fit_text())
+      self.radio_text_shown = None
+      self._radio_refresh(view)
+
+   def _radio_fit_text(self):
+      """Size the text to everything in it, so the page scrolls rather than a box within it."""
+      lines = self.radio_text.count('1.0', 'end', 'displaylines')
+      lines = lines[0] if isinstance(lines, tuple) else lines
+      if lines and int(self.radio_text.cget('height')) != lines:
+         self.radio_text.configure(height=lines)
+
+   def _radio_begin(self):
+      chosen = [name for name, var in self.radio_choices if var.get()]
+      if len(chosen) < 2:
+         tk.messagebox.showerror('TotTag Error', 'ERROR: Choose at least two TotTags. Each one is judged against the others.')
+         return
+      if len(chosen) > MAX_NUM_DEVICES:
+         tk.messagebox.showerror('TotTag Error', 'ERROR: A radio test can include at most %d TotTags!'%MAX_NUM_DEVICES)
+         return
+      test = radio_check.LiveRadioTest()
+      for name in chosen:
+         uid = device_uid(name)
+         test.add(name, self.ble_comms.discovered_devices.get(name, name), eui=bytes(uid), label=f'{uid[0]:02X}')
+      self.radio_test = test
+      self.radio_start = asyncio.run_coroutine_threadsafe(test.start(int(self.radio_minutes.get()) * 60), self.event_loop)
+      self._radio_check()
+
+   def _radio_stop(self):
+      if self._radio_testing():
+         asyncio.run_coroutine_threadsafe(self.radio_test.stop(), self.event_loop)
+
+   def _radio_new(self):
+      if not self._radio_testing():
+         self.radio_test = None
+         self._radio_check()
+
+   def _radio_refresh(self, view):
+      """Redraw the view every second for as long as it is the one showing."""
+      if view is not self.radio_view or not view.winfo_exists():
+         return
+      self._radio_show(view)
+      self.master.after(1000, partial(self._radio_refresh, view))
+
+   def _radio_show(self, view):
+      if view is not self.radio_view or not view.winfo_exists():
+         return
+      test = self.radio_test
+      testing = self._radio_testing()
+
+      # Nothing else may use Bluetooth while a test runs, and this view stays reachable through its button until it ends
+      if testing != self.radio_was_testing:
+         self.radio_was_testing = testing
+         for button in (self.scan_button, self.connect_button, self.schedule_button):
+            button['state'] = ['disabled' if testing or (button is not self.scan_button and not self.device_list) else 'enabled']
+      self.radio_start_button['state'] = ['enabled' if test is None else 'disabled']
+      self.radio_stop_button['state'] = ['enabled' if testing else 'disabled']
+      self.radio_new_button['state'] = ['enabled' if test is not None and not testing else 'disabled']
+      if self.radio_start is not None and self.radio_start.done():
+         failure, self.radio_start = self.radio_start.exception(), None
+         if failure is not None:
+            tk.messagebox.showerror('TotTag Error', 'The radio test could not be started: %s'%failure)
+
+      # The badges as they stand: chosen ones before a test, the test's own once it starts
+      if test is None:
+         badges = [{'name': name, 'uid': device_uid(name)[0], 'label': f'{device_uid(name)[0]:02X}', 'status': 'ready', 'message': None,
+                    'stats': None, 'ranged_recent': None, 'truncated': 0} for name, chosen in self.radio_choices if chosen.get()]
+         state, result = None, None
+      else:
+         state = test.state()
+         badges = state['badges']
+      positions = self._radio_positions([badge['uid'] for badge in badges if badge['uid'] is not None])
+      if test is not None and state['start_time'] is not None:
+         metres = {uid: (x * METRES_PER_FOOT, y * METRES_PER_FOOT) for uid, (x, y) in positions.items()}
+         result = radio_check.analyse_radio(test.deployment(), metres)
+      judged = result is not None and result['window_start_minute'] is not None and result['window_end_minute'] is not None \
+               and result['window_end_minute'] > result['window_start_minute']
+      verdicts = {device['uid']: device for device in result['devices']} if judged else {}
+
+      if test is None:
+         status = 'Choose at least two TotTags, then start the test.'
+      elif state['phase'] == 'starting':
+         status = 'Starting each TotTag on the test...'
+      elif state['phase'] == 'running':
+         left = max(0, int(state['end_time'] - time.time()))
+         status = 'Testing: %d:%02d left'%(left // 60, left % 60)
+      else:
+         status = 'Test over. Each TotTag restarts back to normal by itself.'
+      self.radio_status['text'] = status
+
+      self.radio_tree.delete(*self.radio_tree.get_children())
+      for badge in badges:
+         stats = badge['stats']
+         total = stats['rx_ok'] + stats['rx_failed'] if stats else 0
+         antennas = ' / '.join(radio_check.format_percent(failed / (failed + ok) if failed + ok else None)
+                               for ok, failed in zip(stats['rx_ok_by_antenna'], stats['rx_failed_by_antenna'])) if stats else '—'
+         where = positions.get(badge['uid'])
+         verdict = verdicts.get(badge['uid'])
+         self.radio_tree.insert('', tk.END, text=badge['label'] or '??', tags=(verdict['verdict'],) if verdict else (), values=(
+            radio_check.STATUS_LABELS[badge['status']],
+            stats['role'] if stats else '—',
+            radio_check.format_percent(badge['ranged_recent']),
+            radio_check.format_percent(stats['rx_failed'] / total if total else None),
+            antennas,
+            '%.1f, %.1f'%where if where else '—',
+            RADIO_VERDICTS[verdict['verdict']] if verdict else '—'))
+
+      # How often the TotTag in each row ranged to the one in each column
+      uids = [badge['uid'] for badge in badges if badge['uid'] is not None]
+      labels = {badge['uid']: badge['label'] or f"{badge['uid']:02X}" for badge in badges if badge['uid'] is not None}
+      if uids != self.radio_link_uids:
+         self.radio_link_uids = uids
+         self.radio_links['columns'] = [str(uid) for uid in uids]
+         self.radio_links.heading('#0', text='Ranged to →')
+         self.radio_links.column('#0', width=95, minwidth=80, stretch=False)
+         for uid in uids:
+            self.radio_links.heading(str(uid), text=labels[uid])
+            self.radio_links.column(str(uid), width=55, minwidth=45, anchor=tk.CENTER)
+      links = {(link['a'], link['b']): link for link in result['links']} if result else {}
+      silent = {device['uid'] for device in result['devices'] if device['verdict'] == 'missing'} if result else set()
+      def coverage(row, column):
+         link = links.get((row, column)) or links.get((column, row))
+         if not link or row in silent:
+            return '—'
+         return radio_check.format_percent(link['coverage_a_to_b'] if link['a'] == row else link['coverage_b_to_a'])
+      self.radio_links.delete(*self.radio_links.get_children())
+      for row in uids:
+         self.radio_links.insert('', tk.END, text=labels[row], values=['' if row == column else coverage(row, column) for column in uids])
+
+      # Everything worth reading in words, redrawn only when it changes so the reader keeps their place
+      lines = [f"{badge['label']}: {badge['message']}" for badge in badges if badge['message']]
+      if any(badge['truncated'] for badge in badges):
+         lines.append("Some range reports arrived cut short, because this computer's Bluetooth negotiated small packets. Rounds are "
+                      'still counted from each TotTag\'s own counter, but links to the TotTags cut off will read low.')
+      if test is not None and not judged:
+         lines.append('Verdicts appear once every TotTag has a full minute of data.')
+      if judged:
+         lines += [radio_wording(note) for note in result['notes']]
+         order = {'fail': 0, 'check': 1, 'missing': 2, 'pass': 3}
+         messages = {badge['uid']: badge['message'] for badge in badges}
+         for device in sorted(result['devices'], key=lambda d: (order[d['verdict']], d['label'])):
+            # A badge with no data says why, from how its test went, rather than that it has no log
+            reasons = [messages.get(device['uid']) or 'Sent no data during the test.'] if device['verdict'] == 'missing' else device['reasons']
+            if reasons:
+               lines.append(f"{device['label']} ({RADIO_VERDICTS[device['verdict']]}):\n" + '\n'.join(f'   - {radio_wording(reason)}' for reason in reasons))
+         distances = []
+         for link in result['links']:
+            if link['median_mm'] is None:
+               continue
+            residual = '' if link['residual_mm'] is None else \
+               f", {'+' if link['residual_mm'] >= 0 else '-'}{feet_and_inches(link['residual_mm'])} from the layout"
+            distances.append(f"   {labels.get(link['a'], link['a'])} - {labels.get(link['b'], link['b'])}: "
+                             f"{feet_and_inches(link['median_mm'])} ± {feet_and_inches(link['noise_mm'])}{residual}")
+         if distances:
+            lines.append('Distances:\n' + '\n'.join(distances))
+      text = '\n\n'.join(lines)
+      if text != self.radio_text_shown:
+         self.radio_text_shown = text
+         self.radio_text['state'] = tk.NORMAL
+         self.radio_text.delete('1.0', tk.END)
+         self.radio_text.insert(tk.END, text)
+         self.radio_text['state'] = tk.DISABLED
+         self.radio_text.update_idletasks()
+         self._radio_fit_text()
 
    def _clear_canvas(self):
       for item in self.canvas.winfo_children():

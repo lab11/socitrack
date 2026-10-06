@@ -82,15 +82,30 @@ coordinator degrades the whole group rather than only itself.
 
 ### Checking badges on the bench
 
-The browser tool's **Radio check** tab does this comparison for you:
+Both tools do this comparison for you, live over Bluetooth: **Live Radio Check** in the desktop
+dashboard, or the **Radio check** tab in the browser tool.
 
-1. Set up a deployment with the badges you want to check, starting now.
-2. Put them on a table where they can all see each other, at least half a metre apart, and leave them for
-   10 minutes. Note where each one sat if you can.
-3. Download every badge's log and open them in the Radio check tab.
+1. Put the badges on their chargers, or leave them running a deployment, so they can be reached.
+2. In the desktop dashboard, **Scan for TotTags**, then choose **Live Radio Check** and tick each badge.
+   In the browser tool, open **Radio check → Live over Bluetooth** and add each badge. Badges the browser
+   has seen before can be added all at once.
+3. Choose how long to run, from 5 minutes to an hour, and start the test. Each badge restarts into a
+   *radio test* and starts ranging, on its charger or off it.
+4. Put them on a table where they can all see each other, at least half a metre (2 feet) apart. The test carries on
+   while you move them. Note where each one sits if you can.
 
-It judges each badge the deployment selected against the others and gives a **Pass**, **Check** or
-**Fail** with the reason:
+Verdicts appear once every badge has a full minute of data and settle over the next few. A radio test
+logs nothing and leaves a badge's deployment as it was. When it ends, or when you stop it, each badge
+restarts into whatever it would otherwise be doing. A badge that was running a deployment picks it up
+again, with a gap in its log for the test. A badge that is off its charger without one switches off. A
+badge needs firmware with radio-test support. The browser tool also needs a browser with Web Bluetooth
+(Chrome or Edge).
+
+The browser tool can also run the same check on the downloaded logs of a deployment that already ran:
+choose **From downloaded logs** and open every badge's log.
+
+Both tools apply the same rules. Each badge is judged against the others and gives a **Pass**, **Check** or **Fail** with the
+reason:
 
 - **Receives failed** well above the other badges' rate means a weak receiver, antenna or connection.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so

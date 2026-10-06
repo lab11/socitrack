@@ -8,6 +8,7 @@
 #include "maintenance_functionality.h"
 #include "maintenance_service.h"
 #include "nandlog.h"
+#include "radio_test.h"
 #include "storage_records.h"
 
 
@@ -36,6 +37,7 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
 {
    // Handle the incoming BLE request
    print("TotTag BLE: Device Maintenance Write: connID = %d handle = %d, value = %d\n", connId, handle, *pValue);
+   uint8_t result = ATT_SUCCESS;
    if (handle == MAINTENANCE_COMMAND_HANDLE)
       switch (*pValue)
       {
@@ -88,10 +90,26 @@ uint8_t handleDeviceMaintenanceWrite(dmConnId_t connId, uint16_t handle, uint8_t
             }
             break;
          }
+         case BLE_MAINTENANCE_START_RADIO_TEST:
+         {
+            uint32_t start_time = 0, end_time = 0;
+            const uint8_t count = (len >= BLE_MAINTENANCE_RADIO_TEST_HEADER_LEN) ? pValue[9] : 0;
+            if (count && (len >= (BLE_MAINTENANCE_RADIO_TEST_HEADER_LEN + ((uint16_t)count * EUI_LEN))))
+            {
+               memcpy(&start_time, pValue + 1, sizeof(start_time));
+               memcpy(&end_time, pValue + 5, sizeof(end_time));
+            }
+            if (!count || !radio_test_start(start_time, end_time, pValue + BLE_MAINTENANCE_RADIO_TEST_HEADER_LEN, count))
+               result = ATT_ERR_VALUE_NOT_ALLOWED;
+            break;
+         }
+         case BLE_MAINTENANCE_STOP_RADIO_TEST:
+            radio_test_stop();
+            break;
          default:
             break;
    }
-   return ATT_SUCCESS;
+   return result;
 }
 
 static uint16_t append_framed_page(uint8_t *buffer, uint32_t index)

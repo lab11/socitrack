@@ -102,9 +102,8 @@ WATCHDOG_TASK_NAMES = ['TimeAlignedTask', 'StorageTask', 'AppTask', 'BLETask', '
 # to a full queue, stack headroom, and recoveries. Counters are cumulative since boot and saturate rather than
 # wrap, so a reboot partitions them.
 DIAGNOSTICS_NUM_POOLS = 5
-DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sBIBbIIHHHHHHHH6HBH3I3I')
+DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sBIBbIIHHHHHHHH6HBH')
 DIAGNOSTICS_NUM_STACKS = 6
-DIAGNOSTICS_NUM_ANTENNAS = 3
 DIAGNOSTICS_STACK_NAMES = WATCHDOG_TASK_NAMES + ['TimerService']
 DIAGNOSTICS_FLAG_TEMPCO_AVAILABLE = 0x01
 DIAGNOSTICS_FLAG_TEMPCO_APPLIED = 0x02
@@ -116,18 +115,20 @@ DIAGNOSTICS_TEMPERATURE_UNKNOWN = -128
 
 # STORAGE_TYPE_RADIO_ABORT payload, written only by a diagnostic build: one radio receive that could not be armed
 # before its slot. A ranging-phase abort costs the whole round; a status-phase one only cuts that exchange short.
-RADIO_ABORT_STRUCT = struct.Struct('<BBBhHBH')
+RADIO_ABORT_STRUCT = struct.Struct('<BBBhHBHBHh')
 RADIO_ABORT_PHASES = {1: 'ranging', 2: 'status'}
 RADIO_ABORT_UNMEASURED = 0xFFFF
+RADIO_ABORT_TRIGGERS = {0: None, 1: 'tx done', 2: 'rx frame', 3: 'rx timeout', 4: 'rx error'}
+RADIO_ABORT_NO_EVENT_TIME = -32768
 
 # STORAGE_TYPE_SCHEDULE_CATCH: a participant's timed wake-up, from its receiver opening to the first schedule copy it
-# decoded. lead_us is how long before the expected round's first copy the receiver opened, negative when it opened late.
-SCHEDULE_CATCH_STRUCT = struct.Struct('<BBiHHBBHh')
+# decoded. lead_us is how long before the expected round's first copy the receiver opened, negative when it opened late
+SCHEDULE_CATCH_STRUCT = struct.Struct('<BBiHHBBHhhH')
 SCHEDULE_CATCH_NONE = 0xFF
 SCHEDULE_CATCH_UNMEASURED = 0xFFFF
 
 # STORAGE_TYPE_ROUND_START: the master's start of each round, written one round late so the whole round is known
-ROUND_START_STRUCT = struct.Struct('<HHHBBB')
+ROUND_START_STRUCT = struct.Struct('<HHHBBBH')
 ROUND_START_FLAG_SECOND_COPY_FAILED = 0x01
 ROUND_START_FLAG_COMPUTED = 0x02
 ROUND_START_FLAG_ABANDONED = 0x04
@@ -141,6 +142,101 @@ SCHEDULE_ROLES = {10: 'idle', 11: 'master', 12: 'participant', 13: 'asleep', 14:
 SCHEDULER_PHASES = {0: 'schedule', 1: 'subscription', 2: 'ranging', 3: 'status', 4: 'computation', 5: 'unscheduled',
                     6: 'ranging error', 7: 'radio error', 8: 'collision'}
 PACKET_TYPES = {0x80: 'ranging', 0x81: 'schedule', 0x82: 'status', 0x83: 'join request'}
+
+# A live radio test, run over Bluetooth rather than read from logs
+BLE_SYSTEM_ID_UUID = '00002a23-0000-1000-8000-00805f9b34fb'
+BLE_TIMESTAMP_UUID = 'd68c3154-a23f-ee90-0c45-5231395e5d2e'
+BLE_RANGES_UUID = 'd68c3156-a23f-ee90-0c45-5231395e5d2e'
+BLE_RADIO_STATS_UUID = 'd68c3159-a23f-ee90-0c45-5231395e5d2e'
+BLE_MAINTENANCE_COMMAND_UUID = 'd68c3162-a23f-ee90-0c45-5231395e5d2e'
+BLE_MAINTENANCE_START_RADIO_TEST = 0x07
+BLE_MAINTENANCE_STOP_RADIO_TEST = 0x08
+BLE_MAINTENANCE_RADIO_TEST_HEADER_LEN = 10
+RADIO_TEST_MAX_SECONDS = 3600
+EUI_LEN = 6
+NUM_XMIT_ANTENNAS = 3
+RADIO_STATS_STRUCT = struct.Struct('<BBBBHIIII3I3IHHHHH')
+RADIO_STATS_VERSION = 1
+RADIO_STATS_FLAG_TEST_RUNNING = 0x01
+RADIO_STATS_FLAG_TEST_WAITING = 0x02
+SYSTEM_ID_EUI_OFFSETS = (0, 1, 2, 5, 6, 7)
+
+
+def encode_radio_test_start(start_time, end_time, euis):
+   """The maintenance command that starts a radio test among ``euis`` (6-byte, low byte first), which must include
+   the badge it is written to. Times are Unix seconds; send every badge the same two."""
+   if not 1 <= len(euis) <= MAX_NUM_DEVICES:
+      raise ValueError(f'A radio test needs between 1 and {MAX_NUM_DEVICES} badges, not {len(euis)}.')
+   if end_time <= start_time:
+      raise ValueError('A radio test must end after it starts.')
+   if end_time - start_time > RADIO_TEST_MAX_SECONDS:
+      raise ValueError(f'A radio test can run for at most {RADIO_TEST_MAX_SECONDS // 60} minutes.')
+   if any(len(eui) != EUI_LEN for eui in euis):
+      raise ValueError(f'Every badge address must be {EUI_LEN} bytes.')
+   return struct.pack('<BIIB', BLE_MAINTENANCE_START_RADIO_TEST, int(start_time), int(end_time), len(euis)) + \
+          b''.join(bytes(eui) for eui in euis)
+
+
+def encode_radio_test_stop():
+   """The maintenance command that ends a radio test early."""
+   return bytes([BLE_MAINTENANCE_STOP_RADIO_TEST])
+
+
+def decode_radio_stats(data):
+   """A read of the radio statistics characteristic: the badge's radio counters since it booted."""
+   data = bytes(data)
+   if len(data) < RADIO_STATS_STRUCT.size:
+      raise ValueError(f'Radio statistics are {RADIO_STATS_STRUCT.size} bytes; this badge sent {len(data)}.')
+   (version, role, schedule_size, flags, seconds_left, rounds_scheduled, rounds_ranged, rx_ok, rx_failed,
+    *rest) = RADIO_STATS_STRUCT.unpack_from(data)
+   if version != RADIO_STATS_VERSION:
+      raise ValueError(f'This badge reports radio statistics in layout {version}, which this tool does not read.')
+   ok_by_antenna = list(rest[:NUM_XMIT_ANTENNAS])
+   failed_by_antenna = list(rest[NUM_XMIT_ANTENNAS:2 * NUM_XMIT_ANTENNAS])
+   tx_late, rx_arm_late, isr_over_budget, wake_max_us, wake_failures = rest[2 * NUM_XMIT_ANTENNAS:]
+   return {
+      'role': SCHEDULE_ROLES.get(role, str(role)),
+      'schedule_size': schedule_size,
+      'test_running': bool(flags & RADIO_STATS_FLAG_TEST_RUNNING),
+      'test_waiting': bool(flags & RADIO_STATS_FLAG_TEST_WAITING),
+      'test_seconds_left': seconds_left,
+      'rounds_scheduled': rounds_scheduled,
+      'rounds_ranged': rounds_ranged,
+      'rx_ok': rx_ok,
+      'rx_failed': rx_failed,
+      'rx_ok_by_antenna': ok_by_antenna,
+      'rx_failed_by_antenna': failed_by_antenna,
+      'tx_late': tx_late,
+      'rx_arm_late': rx_arm_late,
+      'isr_over_budget': isr_over_budget,
+      'wake_max_us': wake_max_us,
+      'wake_failures': wake_failures,
+   }
+
+
+def decode_range_results(data):
+   """One ranges notification: a count byte, then (u8 uid, u16 mm) pairs, filtered as a RANGES record is. Returns the
+   ranges and whether the notification stopped short of its own count, as a too-small Bluetooth packet makes it."""
+   data = bytes(data)
+   ranges = {}
+   if not data:
+      return ranges, True
+   count = min(data[0], MAX_NUM_DEVICES)
+   decoded = 0
+   while decoded < count and 1 + (decoded + 1) * 3 <= len(data):
+      at = 1 + decoded * 3
+      millimetres = struct.unpack_from('<H', data, at + 1)[0]
+      if millimetres < MAX_RANGING_DISTANCE_MM:
+         ranges[data[at]] = millimetres
+      decoded += 1
+   return ranges, decoded < data[0]
+
+
+def eui_from_system_id(data):
+   """The badge's 6-byte EUI, low byte first, from its GATT System ID."""
+   data = bytes(data)
+   return bytes(data[offset] for offset in SYSTEM_ID_EUI_OFFSETS)
+
 
 # The hardware status says only THAT the device stopped, never what stopped it, which is why a run of watchdog
 # resets used to be uninterpretable. The firmware therefore packs its own verdict into the four bits above the
@@ -372,8 +468,6 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
              irq_stuck, wake_max_us, wake_failures, dropped, *rest) = DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
             stacks = rest[:DIAGNOSTICS_NUM_STACKS]
             ble_resets, bad_blocks = rest[DIAGNOSTICS_NUM_STACKS], rest[DIAGNOSTICS_NUM_STACKS + 1]
-            antennas = rest[DIAGNOSTICS_NUM_STACKS + 2:]
-            ok_by_antenna, failed_by_antenna = antennas[:DIAGNOSTICS_NUM_ANTENNAS], antennas[DIAGNOSTICS_NUM_ANTENNAS:]
             log_data[timestamp]['diag'] = {
                'watchdog_declines': declines,
                'watchdog_late': {name: late[j] for j, name in enumerate(WATCHDOG_TASK_NAMES) if late[j]},
@@ -404,13 +498,11 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                                     for name, words in zip(DIAGNOSTICS_STACK_NAMES, stacks)},
                'ble_resets': ble_resets,
                'nand_bad_blocks': bad_blocks,
-               'radio_rx_ok_by_antenna': list(ok_by_antenna),
-               'radio_rx_failed_by_antenna': list(failed_by_antenna),
             }
             consumed = 5 + DIAGNOSTICS_STRUCT.size
 
          elif record_type == STORAGE_TYPE_RADIO_ABORT and i + 5 + RADIO_ABORT_STRUCT.size <= len(data):
-            phase, slot, schedule_size, late_us, isr_elapsed_us, isr_events, since_temperature_ms = \
+            phase, slot, schedule_size, late_us, isr_elapsed_us, isr_events, since_temperature_ms, trigger, isr_entry_us, event_to_isr_us = \
                RADIO_ABORT_STRUCT.unpack_from(data, i + 5)
             log_data[timestamp]['abort'] = {
                'phase': RADIO_ABORT_PHASES.get(phase, phase),
@@ -420,12 +512,15 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'isr_elapsed_us': None if isr_elapsed_us == RADIO_ABORT_UNMEASURED else isr_elapsed_us,
                'isr_events': isr_events,
                'since_temperature_ms': None if since_temperature_ms == RADIO_ABORT_UNMEASURED else since_temperature_ms,
+               'trigger': RADIO_ABORT_TRIGGERS.get(trigger, trigger),
+               'isr_entry_us': None if isr_entry_us == RADIO_ABORT_UNMEASURED else isr_entry_us,
+               'event_to_isr_us': None if event_to_isr_us == RADIO_ABORT_NO_EVENT_TIME else event_to_isr_us,
             }
             consumed = 5 + RADIO_ABORT_STRUCT.size
 
          elif record_type == STORAGE_TYPE_SCHEDULE_CATCH and i + 5 + SCHEDULE_CATCH_STRUCT.size <= len(data):
             first_copy, rounds_missed, lead_us, timer_to_task_us, wake_us, rx_errors, other_frames, first_error_us, \
-               carrier_cppm = SCHEDULE_CATCH_STRUCT.unpack_from(data, i + 5)
+               carrier_cppm, wake_correction_us, timer_latency_us = SCHEDULE_CATCH_STRUCT.unpack_from(data, i + 5)
             heard = first_copy != SCHEDULE_CATCH_NONE
             log_data[timestamp]['catch'] = {
                'first_copy': first_copy if heard else None,
@@ -437,11 +532,13 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'other_frames': other_frames,
                'first_error_us': None if first_error_us == SCHEDULE_CATCH_UNMEASURED else first_error_us,
                'carrier_offset_ppm': carrier_cppm / 100 if heard else None,
+               'wake_correction_us': wake_correction_us,
+               'timer_latency_us': None if timer_latency_us == SCHEDULE_CATCH_UNMEASURED else timer_latency_us,
             }
             consumed = 5 + SCHEDULE_CATCH_STRUCT.size
 
          elif record_type == STORAGE_TYPE_ROUND_START and i + 5 + ROUND_START_STRUCT.size <= len(data):
-            timer_to_task_us, wake_us, timer_to_transmit_us, flags, schedule_size, devices_ranged = \
+            timer_to_task_us, wake_us, timer_to_transmit_us, flags, schedule_size, devices_ranged, timer_latency_us = \
                ROUND_START_STRUCT.unpack_from(data, i + 5)
             log_data[timestamp]['round'] = {
                'timer_to_task_us': timer_to_task_us,
@@ -454,6 +551,7 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'join_relayed': bool(flags & ROUND_START_FLAG_JOIN_RELAYED),
                'schedule_size': schedule_size,
                'devices_ranged': devices_ranged,
+               'timer_latency_us': None if timer_latency_us == SCHEDULE_CATCH_UNMEASURED else timer_latency_us,
             }
             consumed = 5 + ROUND_START_STRUCT.size
 

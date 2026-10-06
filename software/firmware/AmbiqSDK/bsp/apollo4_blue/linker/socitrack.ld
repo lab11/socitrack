@@ -78,6 +78,14 @@ SECTIONS
         _ebss = .;
     } > MCU_TCM
 
+    /* Left alone by the startup code, so a software reset does not clear it: a radio test's badge list rides here */
+    .noinit (NOLOAD):
+    {
+        . = ALIGN(4);
+        KEEP(*(.noinit))
+        . = ALIGN(4);
+    } > MCU_TCM
+
     .heap (NOLOAD):
     {
         . = ALIGN(8);

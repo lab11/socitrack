@@ -28,6 +28,9 @@ enum
    IMU_DATA_HANDLE,                         // Current IMU data
    IMU_DATA_DESC_HANDLE,                    // Current IMU data description
    IMU_DATA_CCC_HANDLE,                     // Current IMU data CCCD
+   RADIO_STATS_CHAR_HANDLE,                 // Radio statistics characteristic
+   RADIO_STATS_HANDLE,                      // Radio statistics
+   RADIO_STATS_DESC_HANDLE,                 // Radio statistics description
    LIVE_STATS_MAX_HANDLE                    // Maximum live statistics handle
 };
 

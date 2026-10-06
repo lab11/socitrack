@@ -3,6 +3,7 @@
 #include "app_config.h"
 #include "wsf_types.h"
 #include "att_api.h"
+#include "live_stats_functionality.h"
 #include "live_stats_service.h"
 #include "util/bstream.h"
 
@@ -46,7 +47,7 @@ static const uint16_t modeSwitchDescLen = sizeof(modeSwitchDesc);
 static const uint8_t rangingChUuid[] = { BLE_LIVE_STATS_RANGING_CHAR };
 static const uint8_t rangesChar[] = { ATT_PROP_NOTIFY, UINT16_TO_BYTES(RANGES_HANDLE), BLE_LIVE_STATS_RANGING_CHAR };
 static const uint16_t rangesCharLen = sizeof(rangesChar);
-static uint8_t ranges[20] = { 0 };
+static uint8_t ranges[MAX_COMPRESSED_RANGE_DATA_LENGTH] = { 0 };
 static const uint16_t rangesLen = sizeof(ranges);
 static const uint8_t rangesDesc[] = "LiveRangingResults";
 static const uint16_t rangesDescLen = sizeof(rangesDesc);
@@ -61,6 +62,13 @@ static const uint8_t imuDataDesc[] = "LiveImuData";
 static const uint16_t imuDataDescLen = sizeof(imuDataDesc);
 static uint8_t imuDataCcc[] = { UINT16_TO_BYTES(0x0001) };
 static const uint16_t imuDataCccLen = sizeof(imuDataCcc);
+static const uint8_t radioStatsChUuid[] = { BLE_LIVE_STATS_RADIO_CHAR };
+static const uint8_t radioStatsChar[] = { ATT_PROP_READ, UINT16_TO_BYTES(RADIO_STATS_HANDLE), BLE_LIVE_STATS_RADIO_CHAR };
+static const uint16_t radioStatsCharLen = sizeof(radioStatsChar);
+static ble_radio_stats_t radioStats = { 0 };
+static const uint16_t radioStatsLen = sizeof(radioStats);
+static const uint8_t radioStatsDesc[] = "LiveRadioStatistics";
+static const uint16_t radioStatsDescLen = sizeof(radioStatsDesc);
 
 static const attsAttr_t liveStatsList[] =
 {
@@ -233,6 +241,30 @@ static const attsAttr_t liveStatsList[] =
       sizeof(imuDataCcc),
       ATTS_SET_CCC,
       (ATTS_PERMIT_READ | ATTS_PERMIT_WRITE)
+   },
+   {
+      attChUuid,
+      (uint8_t*)radioStatsChar,
+      (uint16_t*)&radioStatsCharLen,
+      sizeof(radioStatsChar),
+      0,
+      ATTS_PERMIT_READ
+   },
+   {
+      radioStatsChUuid,
+      (uint8_t*)&radioStats,
+      (uint16_t*)&radioStatsLen,
+      sizeof(radioStats),
+      (ATTS_SET_UUID_128 | ATTS_SET_READ_CBACK),
+      ATTS_PERMIT_READ
+   },
+   {
+      attChUserDescUuid,
+      (uint8_t*)radioStatsDesc,
+      (uint16_t*)&radioStatsDescLen,
+      sizeof(radioStatsDesc),
+      0,
+      ATTS_PERMIT_READ
    },
 };
 
