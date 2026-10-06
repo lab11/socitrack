@@ -42,6 +42,7 @@
 #define STORAGE_FLUSH_TIMEOUT_S                     120
 #define STORAGE_DIAGNOSTIC_NUM_POOLS                5
 #define STORAGE_DIAGNOSTIC_NUM_STACKS               6           // each watchdog-monitored task, then the timer service
+#define STORAGE_DIAGNOSTIC_NUM_ANTENNAS             3           // per-antenna receive counts, one per NUM_XMIT_ANTENNAS
 #define STORAGE_MAX_PLAUSIBLE_OFFSET_MS             3600000
 
 #define BATTERY_CHECK_INTERVAL_S                    300
@@ -50,7 +51,7 @@
 #define TIME_BASE_CHANGE_THRESHOLD_MS               2000
 
 #ifndef TEMPCO_ENABLED
-#define TEMPCO_ENABLED                              1           // 0: factory regulator trims and no 10 s temperature refresh
+#define TEMPCO_ENABLED                              0           // 1: lower the regulator trims with temperature, which costs ~6% of CPU speed
 #endif
 #ifndef DIAGNOSTIC_BUILD
 #define DIAGNOSTIC_BUILD                            0           // 1: log every late radio arm and time radio interrupts, at some power and log space
@@ -236,15 +237,16 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define RANGE_STATUS_TIMEOUT_US                     (RECEIVE_EARLY_START_US + 100)
 
 #define SUBSCRIPTION_BROADCAST_PERIOD_US            1500
-#define SUBSCRIPTION_TIMEOUT_US                     1000
+#define SUBSCRIPTION_TIMEOUT_US                     650         // how long the master and the round's relay listen for join requests
 #define SUBSCRIPTION_RELISTEN_MARGIN_US             300
+#define SUBSCRIPTION_TO_RANGING_SWITCH_US           600         // closing the join window and arming ranging slot 0, measured up to ~500 us with nine scheduled
 
 #define SUBSCRIPTION_PHASE_START_US                 SCHEDULE_BROADCAST_PERIOD_US
 #define RANGING_PHASE_START_US                      (SUBSCRIPTION_PHASE_START_US + SUBSCRIPTION_BROADCAST_PERIOD_US)
 
 _Static_assert((1000000u % SCHEDULING_INTERVAL_US) == 0, "the round period must divide one second exactly, or every round-counted timeout is wrong");
 _Static_assert(RANGING_ROUNDS_PER_SECOND >= 1, "the round period must be at most one second");
-_Static_assert((SUBSCRIPTION_TIMEOUT_US + 250 + RECEIVE_EARLY_START_US) < SUBSCRIPTION_BROADCAST_PERIOD_US, "a subscription request must finish before the ranging phase opens its receiver");
+_Static_assert((SUBSCRIPTION_TIMEOUT_US + SUBSCRIPTION_TO_RANGING_SWITCH_US + RECEIVE_EARLY_START_US) <= SUBSCRIPTION_BROADCAST_PERIOD_US, "a device listening for join requests must have time to arm ranging slot 0 after the window closes, or it loses the round");
 _Static_assert(RANGE_STATUS_TIMEOUT_US < RANGE_STATUS_BROADCAST_PERIOD_US, "a status listening window must close before the next slot on the grid opens");
 _Static_assert(RANGING_TIMEOUT_US < RANGING_BROADCAST_INTERVAL_US, "a ranging listening window must close before the next slot on the grid opens");
 

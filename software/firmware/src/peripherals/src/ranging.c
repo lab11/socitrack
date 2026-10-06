@@ -18,9 +18,10 @@ static volatile uint32_t wake_pin_us, wake_ready_us, wake_restore_us;
 static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_max_us, stat_isr_over;
 static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed, stat_wake_skipped;
 static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
-static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed;
+static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed, wake_this_call_us;
+static volatile uint32_t stat_rx_ok_antenna[NUM_XMIT_ANTENNAS], stat_rx_failed_antenna[NUM_XMIT_ANTENNAS];
 static volatile uint32_t isr_entry_cycles_now, isr_events_now;
-static volatile uint8_t stat_network_size;
+static volatile uint8_t current_antenna, stat_network_size;
 static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
 
@@ -535,6 +536,8 @@ void ranging_radio_choose_channel(uint8_t channel)
 void ranging_radio_choose_antenna(uint8_t antenna_number)
 {
    // Enable the desired antenna
+   if (antenna_number < NUM_XMIT_ANTENNAS)
+      current_antenna = antenna_number;
 #if REVISION_ID > REVISION_M
    switch (antenna_number)
    {
@@ -592,6 +595,7 @@ void ranging_radio_wakeup(void)
    if (spi_ready)
    {
       ++stat_wake_skipped;
+      wake_this_call_us = 0;
       return;
    }
 
@@ -607,6 +611,7 @@ void ranging_radio_wakeup(void)
    if (!spi_ready)
    {
       ++stat_wake_failed;
+      wake_this_call_us = UINT32_MAX;
       print("WARNING: DW3000 radio could not be woken up...resetting peripheral\n");
       ranging_radio_spi_slow();
       ranging_radio_reset();
@@ -622,9 +627,16 @@ void ranging_radio_wakeup(void)
             DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
       wake_restore_us = stimer_ticks_to_us(am_hal_stimer_counter_get() - t_ready);
       stat_wake_last_us = wake_pin_us + wake_ready_us + wake_restore_us;
+      wake_this_call_us = stat_wake_last_us;
       if (stat_wake_last_us > stat_wake_max_us)
          stat_wake_max_us = stat_wake_last_us;
    }
+}
+
+uint32_t ranging_radio_last_wake_us(void)
+{
+   // The most recent ranging_radio_wakeup() alone: 0 if the radio was already awake, UINT32_MAX if it had to be reset
+   return wake_this_call_us;
 }
 
 bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events)
@@ -700,10 +712,17 @@ const ranging_range_stats_t* ranging_radio_get_range_stats(void)
 
 void ranging_radio_note_rx_result(bool decoded)
 {
+   // Also split by antenna, since a damaged one costs only the slots received through it
    if (decoded)
+   {
       ++stat_rx_ok;
+      ++stat_rx_ok_antenna[current_antenna];
+   }
    else
+   {
       ++stat_rx_failed;
+      ++stat_rx_failed_antenna[current_antenna];
+   }
 }
 
 void ranging_radio_note_network_size(uint8_t devices)
@@ -732,6 +751,11 @@ void ranging_radio_get_stats(ranging_radio_stats_t *stats)
       stats->network_size = stat_network_size;
       stats->isr_over_count = stat_isr_over;
       stats->cycle_counter_ok = cycle_counter_ok;
+      for (uint32_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
+      {
+         stats->rx_ok_antenna[antenna] = stat_rx_ok_antenna[antenna];
+         stats->rx_failed_antenna[antenna] = stat_rx_failed_antenna[antenna];
+      }
    }
 }
 

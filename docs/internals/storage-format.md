@@ -4693,7 +4693,7 @@ belong there. **The log is the right place**, because the question is always ask
 
 #### `STORAGE_TYPE_DIAGNOSTICS` (= 9)
 
-A 69-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~299.4 s:
+A 93-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~299.4 s:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4717,6 +4717,7 @@ A 69-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~29
 | `stack_free_words[6]` | 12 | least free stack ever seen, in words: each `watchdog_task_t` task, then the timer service; `0xFFFF` for a task not running |
 | `ble_resets` | 1 | Bluetooth controller restarts by the self-check |
 | `nand_bad_blocks` | 2 | retired flash blocks, factory-marked and grown |
+| `radio_rx_ok_by_antenna[3]`, `radio_rx_failed_by_antenna[3]` | 12 + 12 | the ranging receive counts split by antenna; each round cycles all three, so one damaged antenna shows as one high failure rate |
 
 Every counter is **cumulative since boot and saturating**. Cumulative because a reboot then partitions them,
 which lets the host attribute a near-miss to a particular boot; saturating because a wrapped diagnostic
@@ -4752,6 +4753,66 @@ before its slot. A 10-byte payload, timestamped with the round it belongs to:
 | `since_temperature_ms` | 2 | since the last 10 s temperature refresh; `0xFFFF` if none |
 
 A small `isr_elapsed_us` with a positive `late_us` means the interrupt started late; a large one means it ran long.
+
+#### Schedule tracing: `STORAGE_TYPE_SCHEDULE_CATCH` (= 11), `STORAGE_TYPE_ROUND_START` (= 12), `STORAGE_TYPE_SESSION_END` (= 13)
+
+Also written only by a diagnostic build. Together they show how each badge finds each round's schedule, so a
+round lost network-wide can be put down either to participants opening their receivers late or to the master
+starting a round early, and a dropped network can be put down to its actual cause.
+
+**`SCHEDULE_CATCH`** is written by a participant for every wake-up from its timer, timestamped with the round it
+eventually joined. 16 bytes:
+
+| field | bytes | what it answers |
+|---|---|---|
+| `first_copy` | 1 | sequence number of the first schedule copy decoded: 0–1 from the master, 2–4 relayed; `0xFF` if the network was lost first |
+| `rounds_missed` | 1 | rounds that went by before a copy was decoded; `0xFF` if the schedule timestamps went backwards |
+| `lead_us` | 4 | signed µs the receiver opened before the expected round's first copy, from the radio clock; negative when late |
+| `timer_to_task_us` | 2 | wake-up timer firing to the ranging task running |
+| `wake_us` | 2 | radio wake-up; `0xFFFF` if the radio had to be reset |
+| `rx_errors` | 1 | frames heard but not decodable before the schedule |
+| `other_frames` | 1 | decodable frames before the schedule that were not one |
+| `first_error_us` | 2 | receiver on to the first undecodable frame; `0xFFFF` if none |
+| `carrier_offset_cppm` | 2 | the decoded copy's carrier offset, in hundredths of a ppm as the DW3000 reports it |
+
+For a missed round, `lead_us` is measured against the round that was missed, assuming the master kept its
+500 ms period. A late receiver with no `rx_errors` was simply late. `rx_errors` around the time of the first
+copies, or carrier offsets that are larger just after a wake-up than after a long listen, point to a radio
+that had not settled.
+
+**`ROUND_START`** is written by the master for every round. It goes out one round late, so the whole round is
+known, and is timestamped with that round. 9 bytes:
+
+| field | bytes | what it answers |
+|---|---|---|
+| `timer_to_task_us` | 2 | wake-up timer firing to the ranging task running |
+| `wake_us` | 2 | radio wake-up; 0 if the radio was already awake, `0xFFFF` if it had to be reset |
+| `timer_to_transmit_us` | 2 | wake-up timer firing to the first schedule copy being sent |
+| `flags` | 1 | 0x01 second copy could not be armed, 0x02 computed, 0x04 abandoned on an error, 0x08 join request heard, 0x10 join request relayed |
+| `schedule_size` | 1 | devices in the round's schedule |
+| `devices_ranged` | 1 | ranges the master computed |
+
+The master's timer has a fixed period, so a change in `timer_to_transmit_us` from one round to the next moves
+its first copy by the same amount against what participants expect.
+
+**`SESSION_END`** is written by every badge each time its ranging scheduler stops. 23 bytes:
+
+| field | bytes | what it answers |
+|---|---|---|
+| `reason` | 1 | 1 stopped by the application (e.g. a higher-ID master found), 2 search timed out, 3 collision, 4 as master heard nobody; 0 unknown |
+| `role` | 1 | `schedule_role_t` when it stopped; `ROLE_IDLE` means it never joined |
+| `schedule_size` | 1 | devices in the last schedule it knew |
+| `collision_phase`, `collision_type`, `collision_source` | 3 | for a collision: the `scheduler_phase_t` the frame arrived in, its message type, and the byte after its header (the sender, for every type but a ranging packet) |
+| `collision_at_us` | 2 | how far into the round the colliding frame arrived |
+| `session_ms` | 4 | how long the run lasted |
+| `rounds_ranged`, `schedules_heard` | 4 | rounds computed while scheduled, and schedules decoded |
+| `join_requests_sent`, `join_requests_heard` | 4 | join requests this badge sent while unscheduled, and those that reached it as master |
+| `listen_errors` | 2 | undecodable frames while listening for a schedule |
+| `stalls` | 1 | times no round completed for `RANGING_ROUND_STALL_TIMEOUT_MS` |
+
+A badge that cannot join shows a run of `search timeout` records whose `schedules_heard` and
+`join_requests_sent` say whether it heard the network at all. Their cost, about 50 bytes a second per badge,
+is why they are confined to the diagnostic build.
 
 #### Record framing, turned on
 

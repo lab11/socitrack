@@ -36,6 +36,8 @@ typedef struct
    uint8_t network_size;    // devices in the schedule, without which the receive ratio cannot be read
    uint32_t wake_skipped;   // wake-ups that found the radio already awake and did nothing
    uint32_t wake_failed;    // wake-ups the radio never answered, so it had to be reset
+   uint32_t rx_ok_antenna[NUM_XMIT_ANTENNAS];       // rx_ok split by the antenna the slot was received through
+   uint32_t rx_failed_antenna[NUM_XMIT_ANTENNAS];   // rx_failed split the same way
    bool cycle_counter_ok;   // false means isr_max_us is not measurable on this build
 } ranging_radio_stats_t;
 
@@ -77,6 +79,7 @@ void ranging_radio_sleep(bool deep_sleep);
 void ranging_radio_wakeup(void);
 uint32_t ranging_radio_get_isr_overrun_count(void);
 void ranging_radio_get_wake_timing(uint32_t *pin_us, uint32_t *ready_us, uint32_t *restore_us);
+uint32_t ranging_radio_last_wake_us(void);
 bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events);
 void ranging_radio_note_tx_failure(void);
 void ranging_radio_note_rx_arm_failure(void);

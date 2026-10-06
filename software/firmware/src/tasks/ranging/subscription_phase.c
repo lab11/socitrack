@@ -55,7 +55,10 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
       if ((dwt_writetxdata(sizeof(subscription_packet_t) - sizeof(ieee154_footer_t), (uint8_t*)&subscription_packet, 0) != DWT_SUCCESS) || (dwt_starttx(DWT_START_TX_DLY_REF) != DWT_SUCCESS))
          print_isr("ERROR: Failed to transmit SUBSCRIPTION request packet\n");
       else
+      {
+         scheduler_note_event(SCHEDULER_EVENT_JOIN_REQUEST_SENT, 0);
          return SUBSCRIPTION_PHASE;
+      }
    }
    else if ((schedule_length < MAX_NUM_RANGING_DEVICES) && (!schedule_index || relay_listen_this_round(schedule_index, schedule_length)))
    {
@@ -93,7 +96,10 @@ scheduler_phase_t subscription_phase_rx_complete(subscription_packet_t* packet)
       return MESSAGE_COLLISION;
    }
    if (!schedule_index)
+   {
       schedule_phase_add_device(packet->src_addr);
+      scheduler_note_event(SCHEDULER_EVENT_JOIN_REQUEST_HEARD, packet->src_addr);
+   }
    else if (!heard_subscriber)
       heard_subscriber = packet->src_addr;
    return subscription_phase_rx_error();

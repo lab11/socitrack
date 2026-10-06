@@ -48,7 +48,10 @@ STORAGE_TYPE_RESET_REASON = 7
 STORAGE_TYPE_TIME_ANCHOR = 8
 STORAGE_TYPE_DIAGNOSTICS = 9
 STORAGE_TYPE_RADIO_ABORT = 10
-STORAGE_NUM_TYPES = 11
+STORAGE_TYPE_SCHEDULE_CATCH = 11
+STORAGE_TYPE_ROUND_START = 12
+STORAGE_TYPE_SESSION_END = 13
+STORAGE_NUM_TYPES = 14
 
 BATTERY_CODES = defaultdict(lambda: 'Unknown Battery Event')
 BATTERY_CODES[1] = 'Plugged'
@@ -99,8 +102,9 @@ WATCHDOG_TASK_NAMES = ['TimeAlignedTask', 'StorageTask', 'AppTask', 'BLETask', '
 # to a full queue, stack headroom, and recoveries. Counters are cumulative since boot and saturate rather than
 # wrap, so a reboot partitions them.
 DIAGNOSTICS_NUM_POOLS = 5
-DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sBIBbIIHHHHHHHH6HBH')
+DIAGNOSTICS_STRUCT = struct.Struct('<H5sHHH5s5sBIBbIIHHHHHHHH6HBH3I3I')
 DIAGNOSTICS_NUM_STACKS = 6
+DIAGNOSTICS_NUM_ANTENNAS = 3
 DIAGNOSTICS_STACK_NAMES = WATCHDOG_TASK_NAMES + ['TimerService']
 DIAGNOSTICS_FLAG_TEMPCO_AVAILABLE = 0x01
 DIAGNOSTICS_FLAG_TEMPCO_APPLIED = 0x02
@@ -115,6 +119,28 @@ DIAGNOSTICS_TEMPERATURE_UNKNOWN = -128
 RADIO_ABORT_STRUCT = struct.Struct('<BBBhHBH')
 RADIO_ABORT_PHASES = {1: 'ranging', 2: 'status'}
 RADIO_ABORT_UNMEASURED = 0xFFFF
+
+# STORAGE_TYPE_SCHEDULE_CATCH: a participant's timed wake-up, from its receiver opening to the first schedule copy it
+# decoded. lead_us is how long before the expected round's first copy the receiver opened, negative when it opened late.
+SCHEDULE_CATCH_STRUCT = struct.Struct('<BBiHHBBHh')
+SCHEDULE_CATCH_NONE = 0xFF
+SCHEDULE_CATCH_UNMEASURED = 0xFFFF
+
+# STORAGE_TYPE_ROUND_START: the master's start of each round, written one round late so the whole round is known
+ROUND_START_STRUCT = struct.Struct('<HHHBBB')
+ROUND_START_FLAG_SECOND_COPY_FAILED = 0x01
+ROUND_START_FLAG_COMPUTED = 0x02
+ROUND_START_FLAG_ABANDONED = 0x04
+ROUND_START_FLAG_JOIN_HEARD = 0x08
+ROUND_START_FLAG_JOIN_RELAYED = 0x10
+
+# STORAGE_TYPE_SESSION_END: why one run of the ranging scheduler ended, and what it saw while it lasted
+SESSION_END_STRUCT = struct.Struct('<BBBBBBHIHHHHHB')
+SESSION_END_REASONS = {0: 'unknown', 1: 'stopped', 2: 'search timeout', 3: 'collision', 4: 'heard nobody'}
+SCHEDULE_ROLES = {10: 'idle', 11: 'master', 12: 'participant', 13: 'asleep', 14: 'master ineligible'}
+SCHEDULER_PHASES = {0: 'schedule', 1: 'subscription', 2: 'ranging', 3: 'status', 4: 'computation', 5: 'unscheduled',
+                    6: 'ranging error', 7: 'radio error', 8: 'collision'}
+PACKET_TYPES = {0x80: 'ranging', 0x81: 'schedule', 0x82: 'status', 0x83: 'join request'}
 
 # The hardware status says only THAT the device stopped, never what stopped it, which is why a run of watchdog
 # resets used to be uninterpretable. The firmware therefore packs its own verdict into the four bits above the
@@ -226,6 +252,12 @@ def _record_length(data, i):
       length = 5 + DIAGNOSTICS_STRUCT.size                           # fixed-size counter block
    elif record_type == STORAGE_TYPE_RADIO_ABORT:
       length = 5 + RADIO_ABORT_STRUCT.size
+   elif record_type == STORAGE_TYPE_SCHEDULE_CATCH:
+      length = 5 + SCHEDULE_CATCH_STRUCT.size
+   elif record_type == STORAGE_TYPE_ROUND_START:
+      length = 5 + ROUND_START_STRUCT.size
+   elif record_type == STORAGE_TYPE_SESSION_END:
+      length = 5 + SESSION_END_STRUCT.size
    else:
       return None
    return length if (length is not None and i + length <= len(data)) else None
@@ -338,7 +370,10 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
             (declines, late, suppressed, failures, largest, high_water, capacity, master_failures,
              revision, flags, temperature, rx_ok, rx_failed, tx_late, rx_arm_late, isr_over_budget, isr_warm_max_us,
              irq_stuck, wake_max_us, wake_failures, dropped, *rest) = DIAGNOSTICS_STRUCT.unpack_from(data, i + 5)
-            stacks, ble_resets, bad_blocks = rest[:DIAGNOSTICS_NUM_STACKS], rest[-2], rest[-1]
+            stacks = rest[:DIAGNOSTICS_NUM_STACKS]
+            ble_resets, bad_blocks = rest[DIAGNOSTICS_NUM_STACKS], rest[DIAGNOSTICS_NUM_STACKS + 1]
+            antennas = rest[DIAGNOSTICS_NUM_STACKS + 2:]
+            ok_by_antenna, failed_by_antenna = antennas[:DIAGNOSTICS_NUM_ANTENNAS], antennas[DIAGNOSTICS_NUM_ANTENNAS:]
             log_data[timestamp]['diag'] = {
                'watchdog_declines': declines,
                'watchdog_late': {name: late[j] for j, name in enumerate(WATCHDOG_TASK_NAMES) if late[j]},
@@ -369,6 +404,8 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                                     for name, words in zip(DIAGNOSTICS_STACK_NAMES, stacks)},
                'ble_resets': ble_resets,
                'nand_bad_blocks': bad_blocks,
+               'radio_rx_ok_by_antenna': list(ok_by_antenna),
+               'radio_rx_failed_by_antenna': list(failed_by_antenna),
             }
             consumed = 5 + DIAGNOSTICS_STRUCT.size
 
@@ -385,6 +422,64 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'since_temperature_ms': None if since_temperature_ms == RADIO_ABORT_UNMEASURED else since_temperature_ms,
             }
             consumed = 5 + RADIO_ABORT_STRUCT.size
+
+         elif record_type == STORAGE_TYPE_SCHEDULE_CATCH and i + 5 + SCHEDULE_CATCH_STRUCT.size <= len(data):
+            first_copy, rounds_missed, lead_us, timer_to_task_us, wake_us, rx_errors, other_frames, first_error_us, \
+               carrier_cppm = SCHEDULE_CATCH_STRUCT.unpack_from(data, i + 5)
+            heard = first_copy != SCHEDULE_CATCH_NONE
+            log_data[timestamp]['catch'] = {
+               'first_copy': first_copy if heard else None,
+               'rounds_missed': None if rounds_missed == SCHEDULE_CATCH_NONE else rounds_missed,
+               'lead_us': lead_us if heard else None,
+               'timer_to_task_us': None if timer_to_task_us == SCHEDULE_CATCH_UNMEASURED else timer_to_task_us,
+               'wake_us': None if wake_us == SCHEDULE_CATCH_UNMEASURED else wake_us,
+               'rx_errors': rx_errors,
+               'other_frames': other_frames,
+               'first_error_us': None if first_error_us == SCHEDULE_CATCH_UNMEASURED else first_error_us,
+               'carrier_offset_ppm': carrier_cppm / 100 if heard else None,
+            }
+            consumed = 5 + SCHEDULE_CATCH_STRUCT.size
+
+         elif record_type == STORAGE_TYPE_ROUND_START and i + 5 + ROUND_START_STRUCT.size <= len(data):
+            timer_to_task_us, wake_us, timer_to_transmit_us, flags, schedule_size, devices_ranged = \
+               ROUND_START_STRUCT.unpack_from(data, i + 5)
+            log_data[timestamp]['round'] = {
+               'timer_to_task_us': timer_to_task_us,
+               'wake_us': None if wake_us == SCHEDULE_CATCH_UNMEASURED else wake_us,
+               'timer_to_transmit_us': timer_to_transmit_us,
+               'second_copy_failed': bool(flags & ROUND_START_FLAG_SECOND_COPY_FAILED),
+               'computed': bool(flags & ROUND_START_FLAG_COMPUTED),
+               'abandoned': bool(flags & ROUND_START_FLAG_ABANDONED),
+               'join_heard': bool(flags & ROUND_START_FLAG_JOIN_HEARD),
+               'join_relayed': bool(flags & ROUND_START_FLAG_JOIN_RELAYED),
+               'schedule_size': schedule_size,
+               'devices_ranged': devices_ranged,
+            }
+            consumed = 5 + ROUND_START_STRUCT.size
+
+         elif record_type == STORAGE_TYPE_SESSION_END and i + 5 + SESSION_END_STRUCT.size <= len(data):
+            reason, role, schedule_size, collision_phase, collision_type, collision_source, collision_at_us, session_ms, \
+               rounds_ranged, schedules_heard, join_requests_sent, join_requests_heard, listen_errors, stalls = \
+               SESSION_END_STRUCT.unpack_from(data, i + 5)
+            log_data[timestamp]['session_end'] = {
+               'reason': SESSION_END_REASONS.get(reason, reason),
+               'role': SCHEDULE_ROLES.get(role, role),
+               'schedule_size': schedule_size,
+               'collision': {
+                  'phase': SCHEDULER_PHASES.get(collision_phase, collision_phase),
+                  'packet': PACKET_TYPES.get(collision_type, collision_type),
+                  'source': collision_source,
+                  'at_us': collision_at_us,
+               } if reason == 3 else None,
+               'session_ms': session_ms,
+               'rounds_ranged': rounds_ranged,
+               'schedules_heard': schedules_heard,
+               'join_requests_sent': join_requests_sent,
+               'join_requests_heard': join_requests_heard,
+               'listen_errors': listen_errors,
+               'stalls': stalls,
+            }
+            consumed = 5 + SESSION_END_STRUCT.size
 
          elif record_type == STORAGE_TYPE_RESET_REASON and i + 7 <= len(data):
             status = struct.unpack('<H', data[i + 5:i + 7])[0]
