@@ -109,7 +109,7 @@ typedef struct __attribute__ ((__packed__))
 #define STORAGE_SCHEDULE_CATCH_UNKNOWN              0xFF   // rounds_missed when the schedule timestamps went backwards
 #define STORAGE_SCHEDULE_CATCH_UNMEASURED           0xFFFF
 
-// How the master started a round, logged one round late by a DIAGNOSTIC_BUILD so that the whole round is known
+// How the master started a round and how it went, logged by a DIAGNOSTIC_BUILD as the round ends
 typedef struct __attribute__ ((__packed__))
 {
    uint16_t timer_to_task_us;                              // wake-up timer firing to the ranging task running, saturating
