@@ -246,7 +246,7 @@ static void flush_radio_timing(bool session_over)
    reset_radio_timing();
    radio_timing_started_stimer = now;
    if (record.arms)
-      storage_write_radio_timing(app_get_experiment_time(app_get_time_offset()), &record);
+      storage_write_radio_timing(session_over ? app_get_experiment_time(app_get_time_offset()) : schedule_phase_get_timestamp(), &record);
 }
 
 static void trace_session_begin(void)

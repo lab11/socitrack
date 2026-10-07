@@ -221,6 +221,20 @@ void am_freertos_wakeup(uint32_t idleTime)
 #endif
 }
 
+void system_idle_sleep(uint32_t expected_idle_ticks)
+{
+   // Called by the idle task with the scheduler suspended
+   if (!ranging_radio_awake())
+   {
+      vPortSuppressTicksAndSleep(expected_idle_ticks);
+      return;
+   }
+   AM_CRITICAL_BEGIN
+   if (eTaskConfirmSleepModeStatus() != eAbortSleep)
+      am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_NORMAL);
+   AM_CRITICAL_END
+}
+
 bool system_claim_wake(uint32_t at_cycles, uint32_t *asleep_ticks, uint32_t *wake_to_now_cycles)
 {
    // The latest wake from sleep for the first interrupt to ask after it

@@ -4782,7 +4782,22 @@ a frame can arrive while it is asleep, or while it is on its way in or out with 
 The October 2026 runs found every abort to have the same shape: a received frame, a handler that took a steady
 435 µs, and an interrupt that started 120–147 µs after the frame's timestamp. Slots are 650 µs apart and a
 receive must be armed 152 µs before its slot, which leaves 498 µs from one frame to the next arm, so the
-interrupt has to start within about 63 µs of the frame (`late_us` ≈ `event_to_isr_us` − 62).
+interrupt has to start within about 63 µs of the frame (`late_us` ≈ `event_to_isr_us` − 62). That limit assumed
+every handler takes 435 µs; the radio timing records later showed interrupts that succeed often start later, so
+handlers that succeed run somewhat faster.
+
+**Cause and fix.** A two-hour run with the fields above settled it. All 1,658 aborts across ten devices were
+interrupts that arrived as the processor was going to sleep (`asleep_us` 0), after which the port's wake-up
+bookkeeping held them off a further ~58 µs (`wake_to_isr_us`). FreeRTOS's tickless idle masks interrupts from
+before it reprograms the tick until after it has accounted for the sleep. A radio frame landing in that window
+waited it out, about 2,500–3,000 times per device in two hours, and about 7% of those cost the round. Interrupts
+that found the processor genuinely asleep or awake did not miss. Since then, the idle task sleeps through
+`system_idle_sleep()` (`portSUPPRESS_TICKS_AND_SLEEP` in `FreeRTOSConfig.h`). While the ranging radio is awake,
+it sleeps lightly with the tick left running, masking interrupts only for the few instructions that check there
+is nothing to run. It deep-sleeps as before the rest of the time. The radio is awake for about 48 ms of each
+500 ms round, drawing at least 16 mA, so the processor's extra light-sleep current (180 µA against 14–47 µA in
+deep sleep, Apollo4 datasheet Table 31) adds at most about 6 µA on average. That is probably less in practice,
+because the tickless bookkeeping it avoids ran the processor at around 1 mA for a good part of every gap.
 
 #### Schedule tracing: `STORAGE_TYPE_SCHEDULE_CATCH` (= 11), `STORAGE_TYPE_ROUND_START` (= 12), `STORAGE_TYPE_SESSION_END` (= 13)
 
@@ -4891,9 +4906,9 @@ in time straight after a received frame, the case every abort so far has been. 3
 | `event_to_isr_counts` | 14 | how many fell in each of `STORAGE_RADIO_TIMING_BANDS` (7) bands: below 40 µs, then 5 µs wide, the last from 65 µs up |
 | `wake_to_isr_max_us` | 2 | longest from the processor waking to a radio interrupt starting |
 
-If the typical frame-to-interrupt time sits just under the ~63 µs limit and the slowest successful ones came
-after a wake from sleep, the processor's deep sleep is what pushes the occasional one over. If even interrupts
-that found the processor awake come close, the handler itself has to get shorter.
+With the processor kept out of deep sleep while the radio is awake, `after_sleep` and `during_sleep_entry`
+should stay near zero. Any aborts that remain are then the handler's own length, and the frame-to-interrupt
+bands show how much margin is left.
 
 #### Record framing, turned on
 

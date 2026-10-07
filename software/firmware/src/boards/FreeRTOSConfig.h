@@ -92,6 +92,11 @@ extern void am_freertos_wakeup(uint32_t);
 
 #define configPOST_SLEEP_PROCESSING(time)    am_freertos_wakeup(time)
 
+// Idle sleep goes through system_idle_sleep(), which keeps out of tickless deep sleep while the ranging radio is awake
+extern void system_idle_sleep(uint32_t expected_idle_ticks);
+extern void vPortSuppressTicksAndSleep(uint32_t xExpectedIdleTime);
+#define portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime )    system_idle_sleep( xExpectedIdleTime )
+
 #define AM_FREERTOS_USE_STIMER_FOR_TICK
 #define configSTIMER_CLOCK_HZ                     32768
 #define configSTIMER_CLOCK                        AM_HAL_STIMER_XTAL_32KHZ
