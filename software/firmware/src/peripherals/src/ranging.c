@@ -639,6 +639,12 @@ void ranging_radio_wakeup(void)
    }
 }
 
+bool ranging_radio_awake(void)
+{
+   // Awake from the radio answering a wake-up until it is next put to sleep
+   return spi_ready;
+}
+
 uint32_t ranging_radio_last_wake_us(void)
 {
    // The most recent ranging_radio_wakeup() alone: 0 if the radio was already awake, UINT32_MAX if it had to be reset
