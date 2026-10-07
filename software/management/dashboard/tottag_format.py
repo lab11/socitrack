@@ -128,7 +128,7 @@ SCHEDULE_CATCH_STRUCT = struct.Struct('<BBiHHBBHhhH')
 SCHEDULE_CATCH_NONE = 0xFF
 SCHEDULE_CATCH_UNMEASURED = 0xFFFF
 
-# STORAGE_TYPE_ROUND_START: the master's start of each round, written one round late so the whole round is known
+# STORAGE_TYPE_ROUND_START: the master's start of each round and how it went, written as the round ends
 ROUND_START_STRUCT = struct.Struct('<HHHBBBH')
 ROUND_START_FLAG_SECOND_COPY_FAILED = 0x01
 ROUND_START_FLAG_COMPUTED = 0x02

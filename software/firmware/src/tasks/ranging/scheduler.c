@@ -65,6 +65,7 @@ static volatile struct
 static storage_round_start_t round_record, finished_round_record;
 static uint32_t round_record_timestamp, finished_round_timestamp, round_task_stimer, round_wake_us;
 static bool round_record_pending, finished_round_pending;
+static void close_round_record(void);
 static volatile uint32_t timer_fired_stimer, timer_latency_ticks;
 static volatile uint32_t schedules_heard_total, join_requests_sent, join_requests_heard, listen_errors;
 static volatile bool collision_seen;
@@ -85,6 +86,7 @@ static void idle_until_next_round(void)
    ranging_phase = UNSCHEDULED_TIME_PHASE;
 #if DIAGNOSTIC_BUILD
    round_flags |= STORAGE_ROUND_START_FLAG_ABANDONED;
+   close_round_record();
 #endif
 }
 
@@ -280,6 +282,13 @@ static void flush_round_record(void)
       return;
    finished_round_pending = false;
    storage_write_round_start(finished_round_timestamp, &finished_round_record);
+}
+
+static void close_round_record(void)
+{
+   // Write the master's record as soon as its round is over, stamped with that round
+   retire_round_record();
+   flush_round_record();
 }
 
 static void flush_schedule_catch(bool network_lost)
@@ -546,6 +555,9 @@ static void handle_range_computation_phase(void)
 #endif
 #endif
          print_ranges(app_experiment_time_to_rtc_time(data_timestamp), data_timestamp % 1000, ranging_results, 1 + ((uint32_t)ranging_results[0] * COMPRESSED_RANGE_DATUM_LENGTH));
+#if DIAGNOSTIC_BUILD
+         close_round_record();
+#endif
          break;
       }
       case ROLE_PARTICIPANT:

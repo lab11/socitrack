@@ -4853,8 +4853,10 @@ A late receiver with no `rx_errors` was simply late. `rx_errors` around the time
 copies, or carrier offsets that are larger just after a wake-up than after a long listen, point to a radio
 that had not settled.
 
-**`ROUND_START`** is written by the master for every round. It goes out one round late, so the whole round is
-known, and is timestamped with that round. 11 bytes:
+**`ROUND_START`** is written by the master for every round as the round ends, once everything it records is
+known, and is timestamped with that round. Earlier builds wrote it at the start of the next round instead, so a
+record written in between, such as the 5-minute diagnostics, could carry a later timestamp and put a backward step
+in the log. 11 bytes:
 
 | field | bytes | what it answers |
 |---|---|---|
