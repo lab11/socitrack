@@ -4719,7 +4719,7 @@ A 69-byte fixed payload written once per `TimeAlignedTask` loop, so once per ~29
 | `firmware_revision` | 4 | leading eight hex digits of the git commit the firmware was built from |
 | `status_flags` | 1 | bit 0 TempCo supported, bit 1 TempCo trims applied, bit 2 built with uncommitted firmware changes, bit 3 diagnostic build, bit 4 TempCo switched off at build time |
 | `temperature_c` | 1 | chip temperature, signed °C; -128 before the first reading |
-| `radio_rx_ok`, `radio_rx_failed` | 4 + 4 | ranging slots decoded and lost — the receive-sensitivity metric |
+| `radio_rx_ok`, `radio_rx_failed` | 4 + 4 | ranging slots decoded and lost — the receive-sensitivity metric. Since October 2026 a lost slot counts only if its sender was transmitting that round (some device heard it); before, a device still scheduled but gone counted against every listener |
 | `radio_tx_late`, `radio_rx_arm_late` | 2 + 2 | delayed transmits and receives programmed after their slot; a late receive aborts the round |
 | `radio_isr_over_budget`, `radio_isr_warm_max_us` | 2 + 2 | radio interrupts past `RADIO_ISR_BUDGET_US`, and the longest once warmed up |
 | `radio_irq_stuck` | 2 | times the radio interrupt line stayed asserted and the radio was silenced |
@@ -4895,7 +4895,7 @@ is why they are confined to the diagnostic build.
 Written only by a diagnostic build, once a minute and at the end of each ranging session, by every device that
 armed a receive in that time. It shows how close the receives that **succeeded** came to their deadlines,
 which the abort records cannot: those only show the ones that missed. Each count is a delayed receive armed
-in time straight after a received frame, the case every abort so far has been. 30 bytes:
+in time straight after a received frame, the case every abort so far has been. 32 bytes:
 
 | field | bytes | what it answers |
 |---|---|---|
@@ -4907,6 +4907,18 @@ in time straight after a received frame, the case every abort so far has been. 3
 | `event_to_isr_min_us`, `event_to_isr_max_us` | 4 | fastest and slowest from the frame's radio timestamp to the interrupt starting; the minimum is `0xFFFF` if none |
 | `event_to_isr_counts` | 14 | how many fell in each of `STORAGE_RADIO_TIMING_BANDS` (7) bands: below 40 µs, then 5 µs wide, the last from 65 µs up |
 | `wake_to_isr_max_us` | 2 | longest from the processor waking to a radio interrupt starting |
+| `antenna` | 1 | antenna, from 0, in use for single-antenna exchanges when the record was written |
+| `antenna_changes` | 1 | times that choice moved during the minute |
+
+**Antenna choice.** Ranging uses all three antennas every round. Listening for schedules, the join window and
+the status exchange each use one, which used to be antenna 0. A device whose antenna 0 was damaged could range
+on its other two but rarely heard a schedule, so it rarely joined. Now the radio driver keeps each antenna's
+recent ranging receives (`RADIO_ANTENNA_WINDOW_RECEIVES`, about the last 512 per antenna, counted only from
+senders that were transmitting). It moves the single-antenna exchanges to another antenna only when that one
+fails at least `RADIO_ANTENNA_SWITCH_MARGIN_PCT` (15) points less, with `RADIO_ANTENNA_MIN_RECEIVES` (64) on each
+to judge by. A device that listens for `SCHEDULE_LISTEN_WINDOW_US` (one round) without decoding a schedule moves
+to the next antenna. The master starts its schedule copies on its chosen antenna and rotates from there. The
+live radio counters (`ble_radio_stats_t`, now version 2) carry the antenna in use and how often it has moved.
 
 With the processor kept out of deep sleep while the radio is awake, `after_sleep` and `during_sleep_entry`
 should stay near zero. Any aborts that remain are then the handler's own length, and the frame-to-interrupt

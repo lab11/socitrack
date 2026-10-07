@@ -34,5 +34,6 @@ scheduler_phase_t ranging_phase_rx_error(void);
 ranging_device_state_t* ranging_phase_get_measurements(void);
 bool ranging_phase_was_scheduled(void);
 uint16_t ranging_phase_get_heard_slots(void);
+void ranging_phase_commit_receive_counts(uint16_t present_slots);
 
 #endif  // #ifndef __RANGING_PHASE_HEADER_H__

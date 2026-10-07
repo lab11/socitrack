@@ -134,7 +134,7 @@ scheduler_phase_t status_phase_begin(uint8_t status_slot, uint8_t num_slots, uin
    dwt_writetxfctrl(sizeof(status_success_packet_t), 0, 0);
 
    // Set up the correct initial antenna and RX timeout duration
-   ranging_radio_choose_antenna(0);
+   ranging_radio_choose_antenna(ranging_radio_preferred_antenna());
    dwt_setrxtimeout(DW_TIMEOUT_FROM_US(RANGE_STATUS_TIMEOUT_US));
 
    // Begin transmission or reception depending on the scheduled time slot

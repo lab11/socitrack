@@ -19,9 +19,10 @@ static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed
 static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
 static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed, wake_this_call_us;
 static volatile uint32_t stat_rx_ok_antenna[NUM_XMIT_ANTENNAS], stat_rx_failed_antenna[NUM_XMIT_ANTENNAS];
+static volatile uint16_t recent_ok_antenna[NUM_XMIT_ANTENNAS], recent_failed_antenna[NUM_XMIT_ANTENNAS];
 static volatile uint32_t isr_entry_cycles_now, isr_events_now, isr_asleep_us_now, isr_wake_to_entry_us_now;
-static volatile uint8_t current_antenna, stat_network_size;
-static volatile uint32_t isr_overrun_count;
+static volatile uint8_t current_antenna, stat_network_size, preferred_antenna;
+static volatile uint32_t isr_overrun_count, antenna_changes;
 static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
 
@@ -730,19 +731,65 @@ const ranging_range_stats_t* ranging_radio_get_range_stats(void)
 
 #endif
 
-void ranging_radio_note_rx_result(bool decoded)
+void ranging_radio_note_rx_results(uint8_t antenna, uint32_t decoded, uint32_t failed)
 {
-   // Also split by antenna, since a damaged one costs only the slots received through it
-   if (decoded)
+   // Split by antenna, since a damaged one costs only the slots received through it
+   if (antenna >= NUM_XMIT_ANTENNAS)
+      return;
+   stat_rx_ok += decoded;
+   stat_rx_failed += failed;
+   stat_rx_ok_antenna[antenna] += decoded;
+   stat_rx_failed_antenna[antenna] += failed;
+   uint32_t recent_ok = recent_ok_antenna[antenna] + decoded, recent_failed = recent_failed_antenna[antenna] + failed;
+   while ((recent_ok + recent_failed) > RADIO_ANTENNA_WINDOW_RECEIVES)
    {
-      ++stat_rx_ok;
-      ++stat_rx_ok_antenna[current_antenna];
+      recent_ok >>= 1;
+      recent_failed >>= 1;
    }
-   else
+   recent_ok_antenna[antenna] = (uint16_t)recent_ok;
+   recent_failed_antenna[antenna] = (uint16_t)recent_failed;
+}
+
+void ranging_radio_reconsider_antenna(void)
+{
+   // Move to the antenna whose recent receives fail least,if it beats the one in use by a clear margin
+   const uint8_t current = preferred_antenna;
+   const uint32_t current_total = recent_ok_antenna[current] + recent_failed_antenna[current];
+   if (current_total < RADIO_ANTENNA_MIN_RECEIVES)
+      return;
+   uint8_t best = current;
+   uint32_t best_failed = recent_failed_antenna[current], best_total = current_total;
+   for (uint8_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
    {
-      ++stat_rx_failed;
-      ++stat_rx_failed_antenna[current_antenna];
+      const uint32_t total = recent_ok_antenna[antenna] + recent_failed_antenna[antenna];
+      if ((antenna == current) || (total < RADIO_ANTENNA_MIN_RECEIVES))
+         continue;
+      if ((recent_failed_antenna[antenna] * best_total) < (best_failed * total))
+      {
+         best = antenna;
+         best_failed = recent_failed_antenna[antenna];
+         best_total = total;
+      }
    }
+
+   // failed(best) / total(best) + margin < failed(current) / total(current), in whole numbers
+   if ((best != current) && (((100u * best_failed * current_total) + (RADIO_ANTENNA_SWITCH_MARGIN_PCT * best_total * current_total)) < (100u * recent_failed_antenna[current] * best_total)))
+   {
+      preferred_antenna = best;
+      ++antenna_changes;
+   }
+}
+
+void ranging_radio_rotate_antenna(void)
+{
+   // Nothing decoded through the antenna in use for a whole round while listening for a schedule: try the next
+   preferred_antenna = (uint8_t)((preferred_antenna + 1) % NUM_XMIT_ANTENNAS);
+   ++antenna_changes;
+}
+
+uint8_t ranging_radio_preferred_antenna(void)
+{
+   return preferred_antenna;
 }
 
 void ranging_radio_note_network_size(uint8_t devices)
@@ -771,6 +818,8 @@ void ranging_radio_get_stats(ranging_radio_stats_t *stats)
       stats->network_size = stat_network_size;
       stats->isr_over_count = stat_isr_over;
       stats->cycle_counter_ok = cycle_counter_ok;
+      stats->antenna = preferred_antenna;
+      stats->antenna_changes = antenna_changes;
       for (uint32_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
       {
          stats->rx_ok_antenna[antenna] = stat_rx_ok_antenna[antenna];

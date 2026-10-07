@@ -72,7 +72,7 @@ static volatile bool collision_seen;
 static volatile uint8_t collision_phase, collision_type, collision_source, isr_trigger, round_flags;
 static volatile uint16_t collision_at_us;
 static volatile storage_radio_timing_t radio_timing;
-static uint32_t session_started_stimer, rounds_ranged, stalls, radio_timing_started_stimer;
+static uint32_t session_started_stimer, rounds_ranged, stalls, radio_timing_started_stimer, radio_timing_antenna_changes;
 static uint8_t end_reason;
 #endif
 
@@ -247,6 +247,12 @@ static void flush_radio_timing(bool session_over)
    AM_CRITICAL_END
    reset_radio_timing();
    radio_timing_started_stimer = now;
+   ranging_radio_stats_t radio;
+   ranging_radio_get_stats(&radio);
+   const uint32_t changes = radio.antenna_changes - radio_timing_antenna_changes;
+   radio_timing_antenna_changes = radio.antenna_changes;
+   record.antenna = radio.antenna;
+   record.antenna_changes = (changes > UINT8_MAX) ? UINT8_MAX : (uint8_t)changes;
    if (record.arms)
       storage_write_radio_timing(session_over ? app_get_experiment_time(app_get_time_offset()) : schedule_phase_get_timestamp(), &record);
 }
@@ -518,6 +524,8 @@ static void handle_range_computation_phase(void)
    // Read the radio clock before the radio goes away then arm the next wake-up from it
    const uint32_t elapsed_us = round_elapsed_us();
    learn_wake_timing();
+   ranging_phase_commit_receive_counts(status_phase_get_present_slots());
+   ranging_radio_reconsider_antenna();
    ranging_radio_sleep(true);
    if (current_role != ROLE_MASTER)
    {
@@ -848,6 +856,9 @@ void scheduler_run(schedule_role_t role)
                handle_range_computation_phase();
                break;
             case RADIO_ERROR:
+               // A round cut short has no presence reports, so only senders this device heard itself count
+               ranging_phase_commit_receive_counts(0);
+               ranging_radio_reconsider_antenna();
                if (current_role == ROLE_MASTER)
                   idle_until_next_round();
                else
@@ -861,6 +872,8 @@ void scheduler_run(schedule_role_t role)
                // A participant that caught this round's schedule still learns from its wake-up before listening for the next round
                if (current_role != ROLE_MASTER)
                   learn_wake_timing();
+               ranging_phase_commit_receive_counts(0);
+               ranging_radio_reconsider_antenna();
                if (current_role == ROLE_MASTER)
                   idle_until_next_round();
                else if ((am_hal_stimer_counter_get() - search_started_stimer) >= NETWORK_SEARCH_TIMEOUT_STIMER)

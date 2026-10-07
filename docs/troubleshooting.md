@@ -89,12 +89,13 @@ dashboard, or the **Radio check** tab in the browser tool.
 2. In the desktop dashboard, **Scan for TotTags**, then choose **Live Radio Check** and tick each device.
    In the browser tool, open **Radio check → Live over Bluetooth** and add each device. Devices the browser
    has seen before can be added all at once.
-3. Choose how long to run, from 5 minutes to an hour, and start the test. Each device restarts into a
+3. Choose how long to run, 2 to 10 minutes (2 by default), and start the test. Each device restarts into a
    *radio test* and starts ranging, on its charger or off it.
 4. Put them on a table where they can all see each other, at least half a metre (2 feet) apart. The test carries on
    while you move them. Note where each one sits if you can.
 
-Verdicts appear once every device has a full minute of data and settle over the next few. A radio test
+Verdicts appear within the first minute and update every 15 seconds. They firm up once every device
+has a minute of data. A radio test
 logs nothing and leaves a device's deployment as it was. When it ends, or when you stop it, each device
 restarts into whatever it would otherwise be doing. A device that was running a deployment picks it up
 again, with a gap in its log for the test. A device that is off its charger without one switches off. A
@@ -108,8 +109,11 @@ Both tools apply the same rules. Each device is judged against the others and gi
 reason:
 
 - **Receives failed** well above the other devices' rate means a weak receiver, antenna or connection.
+  Only receives from devices that were actually transmitting count. A device that has left the network
+  but is still in the schedule no longer makes everyone else look worse.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
-  they should match; a mismatch names the faulty one.
+  they should match; a mismatch names the faulty one. The live checks bracket the antenna each device
+  is using to hear the coordinator, which moves away from a bad one by itself.
 - **Ranged in few rounds** means the device was not taking part in the network.
 - **Distance offset**, with positions entered, means a device that reads long or short on every link, so
   its calibration is off.

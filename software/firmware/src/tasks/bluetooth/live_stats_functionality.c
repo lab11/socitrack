@@ -82,6 +82,8 @@ void fillRadioStats(ble_radio_stats_t *stats)
    stats->isr_over_budget = saturate_u16(radio.isr_over_count);
    stats->wake_max_us = saturate_u16(radio.wake_max_us);
    stats->wake_failures = saturate_u16(radio.wake_failed);
+   stats->antenna = radio.antenna;
+   stats->antenna_changes = (radio.antenna_changes > UINT8_MAX) ? UINT8_MAX : (uint8_t)radio.antenna_changes;
 }
 
 void updateImuData(dmConnId_t connId, const uint8_t *results, uint16_t results_length)

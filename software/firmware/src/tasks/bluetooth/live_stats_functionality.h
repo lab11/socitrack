@@ -18,7 +18,7 @@ typedef struct __attribute__ ((__packed__))
    uint32_t rounds_scheduled;                              // rounds this device took part in
    uint32_t rounds_ranged;                                 // of those, rounds that produced at least one range
    uint32_t rx_ok;                                         // ranging slots that produced a decoded packet
-   uint32_t rx_failed;                                     // ranging slots that timed out or errored
+   uint32_t rx_failed;                                     // ranging slots that timed out or errored while their sender was transmitting
    uint32_t rx_ok_by_antenna[NUM_XMIT_ANTENNAS];           // rx_ok split by the antenna used
    uint32_t rx_failed_by_antenna[NUM_XMIT_ANTENNAS];       // rx_failed split the same way
    uint16_t tx_late;                                       // delayed transmissions programmed after their slot had passed, saturating
@@ -26,9 +26,11 @@ typedef struct __attribute__ ((__packed__))
    uint16_t isr_over_budget;                               // radio interrupts that ran past RADIO_ISR_BUDGET_US, saturating
    uint16_t wake_max_us;                                   // worst radio wake-up, saturating
    uint16_t wake_failures;                                 // wake-ups the radio never answered, saturating
+   uint8_t antenna;                                        // antenna used for schedules, join requests and status exchanges, from 0
+   uint8_t antenna_changes;                                // times that choice has moved since boot, saturating
 } ble_radio_stats_t;
 
-#define BLE_RADIO_STATS_VERSION                     1
+#define BLE_RADIO_STATS_VERSION                     2
 #define BLE_RADIO_STATS_FLAG_TEST_RUNNING           0x01   // this boot is a radio test
 #define BLE_RADIO_STATS_FLAG_TEST_WAITING           0x02   // a radio test waiting to be re-sent its device list
 

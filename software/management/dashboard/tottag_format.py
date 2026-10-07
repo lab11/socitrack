@@ -148,7 +148,7 @@ PACKET_TYPES = {0x80: 'ranging', 0x81: 'schedule', 0x82: 'status', 0x83: 'join r
 RADIO_TIMING_BANDS = 7
 RADIO_TIMING_FIRST_US = 40
 RADIO_TIMING_STEP_US = 5
-RADIO_TIMING_STRUCT = struct.Struct('<HHHhHHH7HH')
+RADIO_TIMING_STRUCT = struct.Struct('<HHHhHHH7HHBB')
 
 # A live radio test, run over Bluetooth rather than read from logs
 BLE_SYSTEM_ID_UUID = '00002a23-0000-1000-8000-00805f9b34fb'
@@ -162,8 +162,8 @@ BLE_MAINTENANCE_RADIO_TEST_HEADER_LEN = 10
 RADIO_TEST_MAX_SECONDS = 3600
 EUI_LEN = 6
 NUM_XMIT_ANTENNAS = 3
-RADIO_STATS_STRUCT = struct.Struct('<BBBBHIIII3I3IHHHHH')
-RADIO_STATS_VERSION = 1
+RADIO_STATS_STRUCT = struct.Struct('<BBBBHIIII3I3IHHHHHBB')
+RADIO_STATS_VERSION = 2
 RADIO_STATS_FLAG_TEST_RUNNING = 0x01
 RADIO_STATS_FLAG_TEST_WAITING = 0x02
 SYSTEM_ID_EUI_OFFSETS = (0, 1, 2, 5, 6, 7)
@@ -200,7 +200,7 @@ def decode_radio_stats(data):
       raise ValueError(f'This device reports radio statistics in layout {version}, which this tool does not read.')
    ok_by_antenna = list(rest[:NUM_XMIT_ANTENNAS])
    failed_by_antenna = list(rest[NUM_XMIT_ANTENNAS:2 * NUM_XMIT_ANTENNAS])
-   tx_late, rx_arm_late, isr_over_budget, wake_max_us, wake_failures = rest[2 * NUM_XMIT_ANTENNAS:]
+   tx_late, rx_arm_late, isr_over_budget, wake_max_us, wake_failures, antenna, antenna_changes = rest[2 * NUM_XMIT_ANTENNAS:]
    return {
       'role': SCHEDULE_ROLES.get(role, str(role)),
       'schedule_size': schedule_size,
@@ -218,6 +218,8 @@ def decode_radio_stats(data):
       'isr_over_budget': isr_over_budget,
       'wake_max_us': wake_max_us,
       'wake_failures': wake_failures,
+      'antenna': antenna,
+      'antenna_changes': antenna_changes,
    }
 
 
@@ -592,7 +594,7 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
 
          elif record_type == STORAGE_TYPE_RADIO_TIMING and i + 5 + RADIO_TIMING_STRUCT.size <= len(data):
             arms, after_sleep, during_sleep_entry, slack_min_us, slack_under_25_us, event_to_isr_min_us, event_to_isr_max_us, \
-               *bands, wake_to_isr_max_us = RADIO_TIMING_STRUCT.unpack_from(data, i + 5)
+               *bands, wake_to_isr_max_us, antenna, antenna_changes = RADIO_TIMING_STRUCT.unpack_from(data, i + 5)
             log_data[timestamp]['timing'] = {
                'arms': arms,
                'after_sleep': after_sleep,
@@ -603,6 +605,8 @@ def _parse_records(data, experiment_start_time, log_data, uid_to_labels, resynch
                'event_to_isr_max_us': event_to_isr_max_us,
                'event_to_isr_counts': list(bands),
                'wake_to_isr_max_us': wake_to_isr_max_us,
+               'antenna': antenna,
+               'antenna_changes': antenna_changes,
             }
             consumed = 5 + RADIO_TIMING_STRUCT.size
 

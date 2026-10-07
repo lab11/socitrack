@@ -90,9 +90,10 @@ BATTERY_CODES[5] = 'Critical Voltage'
 TOTTAG_USB_VID = 0x1209
 TOTTAG_USB_PID = 0x2828
 
-RADIO_TEST_MINUTES = [minutes for minutes in (5, 10, 15, 30, 60) if minutes * 60 <= tottag_format.RADIO_TEST_MAX_SECONDS]
+RADIO_TEST_MIN_MINUTES, RADIO_TEST_MAX_MINUTES, RADIO_TEST_DEFAULT_MINUTES = 2, 10, 2
 RADIO_LAYOUTS = ('Not given', 'Circle, radius (ft):', 'Line, spacing (ft):')
 RADIO_VERDICTS = {'fail': 'Fail', 'check': 'Check', 'missing': 'No data', 'pass': 'Pass'}
+RADIO_ROLES = {'idle': 'searching'}
 METRES_PER_FOOT = 0.3048
 MM_PER_INCH = 25.4
 
@@ -914,7 +915,7 @@ class TotTagGUI(tk.Frame):
       self.radio_start = None
       self.radio_view = None
       self.radio_was_testing = False
-      self.radio_minutes = tk.StringVar(self.master, str(RADIO_TEST_MINUTES[1] if len(RADIO_TEST_MINUTES) > 1 else RADIO_TEST_MINUTES[0]))
+      self.radio_minutes = tk.StringVar(self.master, str(RADIO_TEST_DEFAULT_MINUTES))
       self.radio_layout = tk.StringVar(self.master, RADIO_LAYOUTS[0])
       self.radio_layout_size = tk.StringVar(self.master, '3')
 
@@ -1490,7 +1491,7 @@ class TotTagGUI(tk.Frame):
          'to find one with a weak receiver, a damaged antenna, or a distance calibration that is off. Nothing is logged, a '
          "TotTag's deployment is left as it was, and every TotTag restarts back to normal when the test ends, even if this "
          'dashboard is closed first. Set them where they can all see each other, at least 2 feet apart. Verdicts appear '
-         'once every TotTag has a full minute of data, and settle over the next few.'))
+         'within the first minute and update every 15 seconds; they firm up once every TotTag has a minute of data.'))
       about.pack(anchor=tk.W, fill=tk.X, pady=(2, 6))
       body.bind('<Configure>', lambda event: about.configure(wraplength=max(200, event.width - 10)))
 
@@ -1508,7 +1509,9 @@ class TotTagGUI(tk.Frame):
       settings = tk.Frame(body)
       settings.pack(anchor=tk.W, fill=tk.X, pady=(6, 2))
       ttk.Label(settings, text='Run for').pack(side=tk.LEFT)
-      ttk.Combobox(settings, textvariable=self.radio_minutes, values=RADIO_TEST_MINUTES, width=4, state='readonly' if test is None else 'disabled').pack(side=tk.LEFT, padx=4)
+      ttk.Spinbox(settings, textvariable=self.radio_minutes, from_=RADIO_TEST_MIN_MINUTES, to=RADIO_TEST_MAX_MINUTES, increment=1, width=4,
+                  validate='key', validatecommand=(settings.register(lambda text: text == '' or (text.isdigit() and len(text) <= 2)), '%P'),
+                  state='normal' if test is None else 'disabled').pack(side=tk.LEFT, padx=4)
       ttk.Label(settings, text='minutes.     Layout:').pack(side=tk.LEFT)
       layout = ttk.Combobox(settings, textvariable=self.radio_layout, values=RADIO_LAYOUTS, width=18, state='readonly')
       layout.pack(side=tk.LEFT, padx=4)
@@ -1565,12 +1568,16 @@ class TotTagGUI(tk.Frame):
       if len(chosen) > MAX_NUM_DEVICES:
          tk.messagebox.showerror('TotTag Error', 'ERROR: A radio test can include at most %d TotTags!'%MAX_NUM_DEVICES)
          return
+      minutes = int(self.radio_minutes.get()) if self.radio_minutes.get().isdigit() else 0
+      if not RADIO_TEST_MIN_MINUTES <= minutes <= RADIO_TEST_MAX_MINUTES:
+         tk.messagebox.showerror('TotTag Error', 'ERROR: A radio test runs for %d to %d minutes.'%(RADIO_TEST_MIN_MINUTES, RADIO_TEST_MAX_MINUTES))
+         return
       test = radio_check.LiveRadioTest()
       for name in chosen:
          uid = device_uid(name)
          test.add(name, self.ble_comms.discovered_devices.get(name, name), eui=bytes(uid), label=f'{uid[0]:02X}')
       self.radio_test = test
-      self.radio_start = asyncio.run_coroutine_threadsafe(test.start(int(self.radio_minutes.get()) * 60), self.event_loop)
+      self.radio_start = asyncio.run_coroutine_threadsafe(test.start(minutes * 60), self.event_loop)
       self._radio_check()
 
    def _radio_stop(self):
@@ -1620,8 +1627,8 @@ class TotTagGUI(tk.Frame):
       if test is not None and state['start_time'] is not None:
          metres = {uid: (x * METRES_PER_FOOT, y * METRES_PER_FOOT) for uid, (x, y) in positions.items()}
          result = radio_check.analyse_radio(test.deployment(), metres)
-      judged = result is not None and result['window_start_minute'] is not None and result['window_end_minute'] is not None \
-               and result['window_end_minute'] > result['window_start_minute']
+      judged = result is not None and result['window_start_ms'] is not None and result['window_end_ms'] is not None \
+               and result['window_end_ms'] > result['window_start_ms']
       verdicts = {device['uid']: device for device in result['devices']} if judged else {}
 
       if test is None:
@@ -1639,13 +1646,14 @@ class TotTagGUI(tk.Frame):
       for device in devices:
          stats = device['stats']
          total = stats['rx_ok'] + stats['rx_failed'] if stats else 0
-         antennas = ' / '.join(radio_check.format_percent(failed / (failed + ok) if failed + ok else None)
-                               for ok, failed in zip(stats['rx_ok_by_antenna'], stats['rx_failed_by_antenna'])) if stats else '—'
+         antennas = ' / '.join((f'[{rate}]' if index == stats['antenna'] else rate) for index, rate in enumerate(
+                               radio_check.format_percent(failed / (failed + ok) if failed + ok else None)
+                               for ok, failed in zip(stats['rx_ok_by_antenna'], stats['rx_failed_by_antenna']))) if stats else '—'
          where = positions.get(device['uid'])
          verdict = verdicts.get(device['uid'])
          self.radio_tree.insert('', tk.END, text=device['label'] or '??', tags=(verdict['verdict'],) if verdict else (), values=(
             radio_check.STATUS_LABELS[device['status']],
-            stats['role'] if stats else '—',
+            RADIO_ROLES.get(stats['role'], stats['role']) if stats else '—',
             radio_check.format_percent(device['ranged_recent']),
             radio_check.format_percent(stats['rx_failed'] / total if total else None),
             antennas,
@@ -1680,7 +1688,7 @@ class TotTagGUI(tk.Frame):
          lines.append("Some range reports arrived cut short, because this computer's Bluetooth negotiated small packets. Rounds are "
                       'still counted from each TotTag\'s own counter, but links to the TotTags cut off will read low.')
       if test is not None and not judged:
-         lines.append('Verdicts appear once every TotTag has a full minute of data.')
+         lines.append('Verdicts appear once every TotTag has 15 seconds of data.')
       if judged:
          lines += [radio_wording(note) for note in result['notes']]
          order = {'fail': 0, 'check': 1, 'missing': 2, 'pass': 3}
