@@ -38,6 +38,8 @@ typedef struct
    uint32_t wake_failed;    // wake-ups the radio never answered, so it had to be reset
    uint32_t rx_ok_antenna[NUM_XMIT_ANTENNAS];       // rx_ok split by the antenna the slot was received through
    uint32_t rx_failed_antenna[NUM_XMIT_ANTENNAS];   // rx_failed split the same way
+   uint8_t antenna;         // antenna used for the exchanges that use only one: schedules, join requests and status
+   uint32_t antenna_changes;// times that choice has moved since boot
    bool cycle_counter_ok;   // false means isr_max_us is not measurable on this build
 } ranging_radio_stats_t;
 
@@ -85,7 +87,10 @@ bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events);
 bool ranging_radio_isr_woke_processor(uint32_t *asleep_us, uint32_t *wake_to_isr_us);
 void ranging_radio_note_tx_failure(void);
 void ranging_radio_note_rx_arm_failure(void);
-void ranging_radio_note_rx_result(bool decoded);
+void ranging_radio_note_rx_results(uint8_t antenna, uint32_t decoded, uint32_t failed);
+void ranging_radio_reconsider_antenna(void);
+void ranging_radio_rotate_antenna(void);
+uint8_t ranging_radio_preferred_antenna(void);
 void ranging_radio_note_network_size(uint8_t devices);
 void ranging_radio_get_stats(ranging_radio_stats_t *stats);
 void ranging_radio_note_phase(uint8_t phase);

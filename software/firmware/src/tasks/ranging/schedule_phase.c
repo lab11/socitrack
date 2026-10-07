@@ -15,11 +15,30 @@ static uint64_t reference_time_full;
 static uint8_t scheduled_slot, num_valid_devices;
 static schedule_packet_t schedule_packet;
 static scheduler_phase_t current_phase;
-static bool is_master_scheduler;
+static bool is_master_scheduler, listening_without_schedule;
 static uint8_t master_nearest_slot;
+static uint32_t listen_started_stimer;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static void choose_listening_antenna(void)
+{
+   // A whole round of listening through one antenna without decoding a schedule moves to the next, so that a damaged
+   // antenna cannot keep this device out of the network
+   const uint32_t now = am_hal_stimer_counter_get();
+   if (!listening_without_schedule)
+   {
+      listening_without_schedule = true;
+      listen_started_stimer = now;
+   }
+   else if ((now - listen_started_stimer) >= RANGING_MS_TO_STIMER(SCHEDULE_LISTEN_WINDOW_US / 1000u))
+   {
+      ranging_radio_rotate_antenna();
+      listen_started_stimer = now;
+   }
+   ranging_radio_choose_antenna(ranging_radio_preferred_antenna());
+}
 
 static inline uint32_t schedule_broadcast_time(uint32_t sequence_number)
 {
@@ -65,6 +84,7 @@ void schedule_phase_initialize(const uint8_t *uid, bool is_master)
    memset(device_timeouts, 0, sizeof(device_timeouts));
    schedule_packet.schedule[0] = uid[0];
    is_master_scheduler = is_master;
+   listening_without_schedule = false;
    scheduled_slot = 0;
 }
 
@@ -83,12 +103,12 @@ scheduler_phase_t schedule_phase_begin(void)
    schedule_packet.sequence_number = 0;
    current_phase = SCHEDULE_PHASE;
 
-   // Set up the correct antenna for schedule transmission
-   ranging_radio_choose_antenna(0);
-
    // Begin transmission or reception depending on the current role
    if (is_master_scheduler)
    {
+      // The first copy goes out through this device's chosen antenna, and the copies after it rotate from there
+      ranging_radio_choose_antenna(ranging_radio_preferred_antenna());
+
       // Increment the epoch timestamp and increment all device timeouts
       schedule_packet.experiment_time_ms = app_get_experiment_time(app_get_time_offset());
       reference_stimer = am_hal_stimer_counter_get();
@@ -112,8 +132,9 @@ scheduler_phase_t schedule_phase_begin(void)
    else
    {
       // Set up packet reception with a timeout
+      choose_listening_antenna();
       dwt_setpreambledetecttimeout(0);
-      dwt_setrxtimeout(DW_TIMEOUT_FROM_US(1000000.0));
+      dwt_setrxtimeout(DW_TIMEOUT_FROM_US(SCHEDULE_LISTEN_WINDOW_US));
       if (!ranging_radio_rxenable(DWT_START_RX_IMMEDIATE))
       {
          print("ERROR: Unable to start listening for schedule packets\n");
@@ -132,7 +153,7 @@ scheduler_phase_t schedule_phase_tx_complete(void)
    // Retransmit the schedule up to the specified number of times
    while ((++schedule_packet.sequence_number < SCHEDULE_NUM_MASTER_BROADCASTS) && is_master_scheduler)
    {
-      ranging_radio_choose_antenna(schedule_packet.sequence_number % NUM_XMIT_ANTENNAS);
+      ranging_radio_choose_antenna((ranging_radio_preferred_antenna() + schedule_packet.sequence_number) % NUM_XMIT_ANTENNAS);
       if (schedule_packet.sequence_number == 1)
       {
          uint64_t ref_time = (ranging_radio_readtxtimestamp() - TX_ANTENNA_DELAY) & 0xFFFFFFFE00;
@@ -163,6 +184,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    else if ((schedule->header.msgType != SCHEDULE_PACKET) || !is_valid_device(schedule->src_addr))
    {
       // Immediately restart listening for schedule packets
+      choose_listening_antenna();
       if (!ranging_radio_rxenable(DWT_START_RX_IMMEDIATE))
       {
          print_isr("ERROR: Unable to restart listening for schedule packets\n");
@@ -172,6 +194,7 @@ scheduler_phase_t schedule_phase_rx_complete(schedule_packet_t* schedule)
    }
 
    // Unpack the received schedule
+   listening_without_schedule = false;
    uint8_t num_devices = schedule->num_devices;
    if (num_devices > MAX_NUM_RANGING_DEVICES)
    {

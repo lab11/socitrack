@@ -43,7 +43,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    current_phase = SUBSCRIPTION_PHASE;
    schedule_index = scheduled_slot;
    schedule_length = schedule_size;
-   ranging_radio_choose_antenna(0);
+   ranging_radio_choose_antenna(ranging_radio_preferred_antenna());
    reference_time = ref_time;
    heard_subscriber = 0;
 

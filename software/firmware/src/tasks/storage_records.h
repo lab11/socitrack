@@ -168,6 +168,8 @@ typedef struct __attribute__ ((__packed__))
    uint16_t event_to_isr_max_us;                           // slowest
    uint16_t event_to_isr_counts[STORAGE_RADIO_TIMING_BANDS];   // how many fell in each band
    uint16_t wake_to_isr_max_us;                            // longest from the processor waking to the radio interrupt starting
+   uint8_t antenna;                                        // antenna in use for single-antenna exchanges when written, from 0
+   uint8_t antenna_changes;                                // times that choice moved during the minute, saturating
 } storage_radio_timing_t;
 
 #define STORAGE_RADIO_TIMING_INTERVAL_MS            60000

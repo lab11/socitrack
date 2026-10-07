@@ -77,6 +77,16 @@ Two consequences are worth knowing:
 - **A device needs to hear the coordinator**, not just its neighbours. A device at the far edge of a
   group may drop in and out even though it is close to several others.
 
+### Antennas
+
+Each device has three antennas. When it measures distances it uses all three in turn, and it keeps
+track of how well each one has been receiving over the last few seconds. Everything else uses a single
+antenna: listening for the coordinator, asking to join, and the short status exchange at the end of
+each round. For those, the device uses whichever antenna has been receiving best, and only moves to
+another when that one is clearly better. A device that listens for a full half second without hearing
+the coordinator tries its next antenna. So a damaged antenna costs a device some measurements, but it
+no longer keeps the device out of the network.
+
 ### Radio tests
 
 The live radio check, in either the desktop dashboard or the browser tool, runs devices in a *radio test*:

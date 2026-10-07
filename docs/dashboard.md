@@ -65,16 +65,18 @@ weak receiver, a faulty antenna or a calibration that is off. It needs no deploy
 nothing. It is available after a scan has found at least two devices over Bluetooth, while you are **not**
 connected to one. Disconnect first if you are.
 
-1. Tick the devices to test (up to 10) and choose how long to run, from 5 minutes to an hour.
+1. Tick the devices to test (up to 10) and choose how long to run: 2 to 10 minutes, 2 by default.
 2. Optionally choose a **Layout** — a circle of a given radius, or a line at a given spacing, in feet —
    and set the devices out in the order listed, at least 2 feet apart. The **Position** column shows where
    each one goes. With positions, the check can tell whether one device reads long or short on every link.
 3. **Start Test**. Each device restarts into the test and starts ranging, on its charger or off it.
 
 The table updates every second with each device's status, the share of the last minute's rounds it
-ranged in, and its receive failures, overall and per antenna. Distances are shown in feet and inches. The grid below it shows how often each device ranged to each other device. Once
-every device has a full minute of data, each gets a **Pass**, **Check** or **Fail**, with the reasons
-listed underneath. The verdicts follow the same rules, in the same words, as the browser tool's radio check.
+ranged in, and its receive failures, overall and per antenna. The antenna it is currently using to hear
+the coordinator is shown in brackets. A device not yet in the network shows its role as *searching*. Distances are shown in feet and inches. The grid below it shows how often each device ranged to each other device. Within
+the first minute each device gets a **Pass**, **Check** or **Fail**, with the reasons listed underneath,
+and the verdicts update every 15 seconds. They firm up once every device has a minute of data; until
+then a note says the run is still too short to judge. The verdicts follow the same rules, in the same words, as the browser tool's radio check.
 
 A device whose firmware predates radio tests is marked **Failed** at the start and left alone. One that
 cannot be reached after restarting into the test says so, and is still tried until the test ends.

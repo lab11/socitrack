@@ -26,9 +26,10 @@ except ImportError: import tottag_format
 # Comparisons are against the MEDIAN OF THE OTHER DEVICES, so that in a three-device test one bad device cannot drag the
 # yardstick towards itself. Absolute floors catch a fleet that is bad as a whole. Keep in step with radioCheck.ts.
 
-MINUTE_MS = 60_000
+LOG_BIN_MS = 60_000
+LIVE_BIN_MS = 15_000
+MIN_JUDGED_MS = 60_000
 SCHEDULING_INTERVAL_US = 500_000
-ROUNDS_PER_MINUTE = 60_000_000 // SCHEDULING_INTERVAL_US
 
 PARTICIPATION_FAIL = 0.5
 PARTICIPATION_CHECK = 0.85
@@ -45,7 +46,7 @@ NOISE_CHECK_FACTOR = 2
 NOISE_CHECK_MIN_MM = 50
 ARM_LATE_CHECK = 0.01
 
-# Most a minute's ranges are scaled up for notifications Bluetooth dropped; past this, the minute is not trusted
+# Most a bin's ranges are scaled up for notifications Bluetooth dropped; past this, the bin is not trusted
 MAX_NOTIFICATION_SCALE = 3
 
 
@@ -116,32 +117,34 @@ def analyse_radio(devices, positions=None):
       notes.append(f"{missing} of the {len(devices)} selected devices {'has' if missing == 1 else 'have'} no log loaded, so "
                    f"{'it is' if missing == 1 else 'they are'} not judged and {'its' if missing == 1 else 'their'} links are missing from the others.")
 
-   # The stretch every device was on, in whole minutes, so no device is penalised for rounds it was off for
-   start = max(math.ceil(d['summary']['first_ms'] / MINUTE_MS) for d in loaded) if loaded else None
-   end = min(math.floor(d['summary']['last_ms'] / MINUTE_MS) for d in loaded) if loaded else None
-   minutes = max(0, end - start) if start is not None and end is not None else 0
-   rounds = minutes * ROUNDS_PER_MINUTE
-   if loaded and minutes < 2:
-      notes.append('The devices were running together for less than two whole minutes, which is too short to judge ranging. Run the test for at least five.')
+   # The stretch every device was on, in whole bins, so no device is penalised for rounds it was off for. Every
+   # summary in one check comes from the same source, logs or a live test, so they share a bin length.
+   bin_ms = loaded[0]['summary']['bin_ms'] if loaded else LOG_BIN_MS
+   start = max(math.ceil(d['summary']['first_ms'] / bin_ms) for d in loaded) if loaded else None
+   end = min(math.floor(d['summary']['last_ms'] / bin_ms) for d in loaded) if loaded else None
+   bins = max(0, end - start) if start is not None and end is not None else 0
+   rounds = bins * bin_ms * 1000 / SCHEDULING_INTERVAL_US
+   if loaded and bins * bin_ms < MIN_JUDGED_MS:
+      notes.append('The devices were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.')
    if loaded and len(loaded) < 3:
       notes.append('With fewer than three devices there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single device.')
-   in_window = lambda minute: start is not None and end is not None and start <= minute < end
+   in_window = lambda bin: start is not None and end is not None and start <= bin < end
 
    # Per-link evidence from both ends
-   coverage, link_minutes = {}, {}
+   coverage, link_bins = {}, {}
    pair = lambda a, b: (a, b) if a < b else (b, a)
    for device in loaded:
       for peer in device['summary']['peers']:
-         within = [m for m in peer['minutes'] if in_window(m[0])]
+         within = [m for m in peer['bins'] if in_window(m[0])]
          coverage[(device['uid'], peer['uid'])] = (sum(m[1] for m in within) / rounds) if rounds else 0
-         link_minutes.setdefault(pair(device['uid'], peer['uid']), []).extend(within)
+         link_bins.setdefault(pair(device['uid'], peer['uid']), []).extend(within)
 
    links = []
    uids = [device['uid'] for device in devices]
    for i in range(len(uids)):
       for j in range(i + 1, len(uids)):
          a, b = uids[i], uids[j]
-         evidence = link_minutes.get(pair(a, b), [])
+         evidence = link_bins.get(pair(a, b), [])
          median_mm = _median([m[2] for m in evidence]) if evidence else None
          # Median absolute deviation scaled to a standard deviation, which ignores the occasional wild range
          noise_mm = _median([m[3] for m in evidence]) * 1.4826 if evidence else None
@@ -170,7 +173,7 @@ def analyse_radio(devices, positions=None):
    for device in devices:
       summary = device['summary']
       loaded_here = is_loaded(device)
-      rows = sum(m[1] for m in summary['rows_by_minute'] if in_window(m[0])) if loaded_here else 0
+      rows = sum(m[1] for m in summary['rows_by_bin'] if in_window(m[0])) if loaded_here else 0
       diagnostics = summary['diagnostics'] if summary else None
       rx_total = diagnostics['rx_ok'] + diagnostics['rx_failed'] if diagnostics else 0
       antenna_rates = []
@@ -272,7 +275,8 @@ def analyse_radio(devices, positions=None):
          'aborts': device['summary']['aborts'],
       })
 
-   return {'window_start_minute': start, 'window_end_minute': end, 'devices': results, 'links': links, 'notes': notes}
+   return {'window_start_ms': None if start is None else start * bin_ms, 'window_end_ms': None if end is None else end * bin_ms,
+           'devices': results, 'links': links, 'notes': notes}
 
 
 def _millimetre(value):
@@ -294,7 +298,7 @@ class LiveRadioRecorder:
    """Everything one device has streamed during a live test, reduced to a summary on request.
 
    Rounds are counted from the device's own counter wherever it is available, because a notification Bluetooth dropped
-   is a round the device still ranged in; ranges per peer come from the notifications, scaled minute by minute for the
+   is a round the device still ranged in; ranges per peer come from the notifications, scaled bin by bin for the
    ones that went missing. Times passed in are Unix milliseconds.
    """
 
@@ -326,10 +330,10 @@ class LiveRadioRecorder:
          self.truncated += 1
       if not ranges:
          return
-      minute = math.floor(at / MINUTE_MS)
-      self.notified_rounds[minute] = self.notified_rounds.get(minute, 0) + 1
+      bin = math.floor(at / LIVE_BIN_MS)
+      self.notified_rounds[bin] = self.notified_rounds.get(bin, 0) + 1
       for uid, millimetres in ranges.items():
-         self.peer_values.setdefault(uid, {}).setdefault(minute, []).append(millimetres)
+         self.peer_values.setdefault(uid, {}).setdefault(bin, []).append(millimetres)
 
    def add_stats(self, at_ms, stats):
       """One read of the radio counters, which are cumulative since the device booted into the test."""
@@ -354,15 +358,15 @@ class LiveRadioRecorder:
       if rounds <= 0:
          return
       if to_ms <= from_ms:
-         minute = math.floor(to_ms / MINUTE_MS)
-         self.counted_rounds[minute] = self.counted_rounds.get(minute, 0) + rounds
+         bin = math.floor(to_ms / LIVE_BIN_MS)
+         self.counted_rounds[bin] = self.counted_rounds.get(bin, 0) + rounds
          return
-      minute = math.floor(from_ms / MINUTE_MS)
-      while minute * MINUTE_MS < to_ms:
-         overlap = min(to_ms, (minute + 1) * MINUTE_MS) - max(from_ms, minute * MINUTE_MS)
+      bin = math.floor(from_ms / LIVE_BIN_MS)
+      while bin * LIVE_BIN_MS < to_ms:
+         overlap = min(to_ms, (bin + 1) * LIVE_BIN_MS) - max(from_ms, bin * LIVE_BIN_MS)
          if overlap > 0:
-            self.counted_rounds[minute] = self.counted_rounds.get(minute, 0) + rounds * (overlap / (to_ms - from_ms))
-         minute += 1
+            self.counted_rounds[bin] = self.counted_rounds.get(bin, 0) + rounds * (overlap / (to_ms - from_ms))
+         bin += 1
 
    @property
    def latest_stats(self):
@@ -370,21 +374,21 @@ class LiveRadioRecorder:
 
    def summary(self):
       counted = self.samples > 0
-      rows = sorted((minute, _js_round(value)) for minute, value in (self.counted_rounds if counted else self.notified_rounds).items())
+      rows = sorted((bin, _js_round(value)) for bin, value in (self.counted_rounds if counted else self.notified_rounds).items())
       rows = [entry for entry in rows if entry[1] > 0]
 
-      def scale(minute):
-         notified = self.notified_rounds.get(minute, 0)
-         return min(MAX_NOTIFICATION_SCALE, max(1, self.counted_rounds.get(minute, 0) / notified)) if counted and notified else 1
+      def scale(bin):
+         notified = self.notified_rounds.get(bin, 0)
+         return min(MAX_NOTIFICATION_SCALE, max(1, self.counted_rounds.get(bin, 0) / notified)) if counted and notified else 1
 
       peers = []
-      for uid, minutes in self.peer_values.items():
+      for uid, bins in self.peer_values.items():
          entries = []
-         for minute in sorted(minutes):
-            values = minutes[minute]
+         for bin in sorted(bins):
+            values = bins[bin]
             centre = _median(values)
-            entries.append((minute, _js_round(len(values) * scale(minute)), centre, _median([abs(value - centre) for value in values])))
-         peers.append({'uid': uid, 'minutes': entries})
+            entries.append((bin, _js_round(len(values) * scale(bin)), centre, _median([abs(value - centre) for value in values])))
+         peers.append({'uid': uid, 'bins': entries})
 
       latest = self.latest_stats
       diagnostics = None
@@ -407,7 +411,8 @@ class LiveRadioRecorder:
          'self_uid': self.self_uid,
          'first_ms': self.first_ms,
          'last_ms': self.last_ms,
-         'rows_by_minute': rows,
+         'bin_ms': LIVE_BIN_MS,
+         'rows_by_bin': rows,
          'peers': peers,
          'diagnostics': diagnostics,
          'aborts': 0,

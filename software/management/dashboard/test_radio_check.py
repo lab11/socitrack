@@ -301,7 +301,7 @@ class FakeClock:
 
 def stats_payload(rounds_ranged, flags):
    return tottag_format.RADIO_STATS_STRUCT.pack(tottag_format.RADIO_STATS_VERSION, 12, 2, flags, 0, rounds_ranged, rounds_ranged,
-                                                rounds_ranged * 6, 0, *[rounds_ranged * 2] * 3, *[0] * 3, 0, 0, 0, 1900, 0)
+                                                rounds_ranged * 6, 0, *[rounds_ranged * 2] * 3, *[0] * 3, 0, 0, 0, 1900, 0, 1, 0)
 
 
 class FakeDevice:
