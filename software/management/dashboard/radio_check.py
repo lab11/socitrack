@@ -136,7 +136,7 @@ def analyse_radio(devices, positions=None):
    for device in loaded:
       for peer in device['summary']['peers']:
          within = [m for m in peer['bins'] if in_window(m[0])]
-         coverage[(device['uid'], peer['uid'])] = (sum(m[1] for m in within) / rounds) if rounds else 0
+         coverage[(device['uid'], peer['uid'])] = min(1, sum(m[1] for m in within) / rounds) if rounds else 0
          link_bins.setdefault(pair(device['uid'], peer['uid']), []).extend(within)
 
    links = []
@@ -186,7 +186,7 @@ def analyse_radio(devices, positions=None):
       my_noise = [link['noise_mm'] for link in mine if link['noise_mm'] is not None]
       figures[device['uid']] = {
          'loaded': loaded_here,
-         'participation': rows / rounds if loaded_here and rounds else None,
+         'participation': min(1, rows / rounds) if loaded_here and rounds else None,
          'rx_failure_rate': diagnostics['rx_failed'] / rx_total if rx_total else None,
          'antenna_failure_rates': antenna_rates,
          'link_coverage': _median(my_coverage) if loaded_here and my_coverage else None,
@@ -298,8 +298,9 @@ class LiveRadioRecorder:
    """Everything one device has streamed during a live test, reduced to a summary on request.
 
    Rounds are counted from the device's own counter wherever it is available, because a notification Bluetooth dropped
-   is a round the device still ranged in; ranges per peer come from the notifications, scaled bin by bin for the
-   ones that went missing. Times passed in are Unix milliseconds.
+   is a round the device still ranged in; ranges per peer come from the notifications, scaled bin by bin to the rounds
+   counted. Bluetooth delivers notifications in bunches, so a bin can hold more notifications than rounds and is then
+   scaled down. Only the time between the first and last counter reads is judged. Times passed in are Unix milliseconds.
    """
 
    def __init__(self, start_time, deployment_uids, deployment_labels, self_uid):
@@ -308,7 +309,7 @@ class LiveRadioRecorder:
       self.deployment_uids = list(deployment_uids)
       self.deployment_labels = list(deployment_labels)
       self.self_uid = self_uid
-      self.first_ms = self.last_ms = None
+      self.first_ms = self.last_ms = self.first_read_ms = None
       self.notified_rounds, self.counted_rounds, self.peer_values = {}, {}, {}
       self.previous = None
       self.banked = {'rx_ok': 0, 'rx_failed': 0, 'wake_failures': 0, 'rx_arm_late': 0, 'tx_late': 0}
@@ -348,9 +349,11 @@ class LiveRadioRecorder:
             self.banked_ok[antenna] += last['rx_ok_by_antenna'][antenna]
             self.banked_failed[antenna] += last['rx_failed_by_antenna'][antenna]
       # Rounds since the last read, spread over the time between the two reads
-      from_ms = self.previous[0] if self.previous else 0
-      rounds = stats['rounds_ranged'] - (last['rounds_ranged'] if last is not None and not restarted else 0)
-      self._spread(rounds, from_ms, at)
+      if self.previous:
+         rounds = stats['rounds_ranged'] - (last['rounds_ranged'] if not restarted else 0)
+         self._spread(rounds, self.previous[0], at)
+      else:
+         self.first_read_ms = at
       self.previous = (at, stats)
       self.samples += 1
 
@@ -377,9 +380,10 @@ class LiveRadioRecorder:
       rows = sorted((bin, _js_round(value)) for bin, value in (self.counted_rounds if counted else self.notified_rounds).items())
       rows = [entry for entry in rows if entry[1] > 0]
 
+      # A bin's ranges per peer, scaled to the rounds counted in it
       def scale(bin):
          notified = self.notified_rounds.get(bin, 0)
-         return min(MAX_NOTIFICATION_SCALE, max(1, self.counted_rounds.get(bin, 0) / notified)) if counted and notified else 1
+         return min(MAX_NOTIFICATION_SCALE, self.counted_rounds.get(bin, 0) / notified) if counted and notified else 1
 
       peers = []
       for uid, bins in self.peer_values.items():
@@ -409,8 +413,8 @@ class LiveRadioRecorder:
          'deployment_uids': self.deployment_uids,
          'deployment_labels': self.deployment_labels,
          'self_uid': self.self_uid,
-         'first_ms': self.first_ms,
-         'last_ms': self.last_ms,
+         'first_ms': self.first_read_ms if counted else self.first_ms,
+         'last_ms': self.previous[0] if counted else self.last_ms,
          'bin_ms': LIVE_BIN_MS,
          'rows_by_bin': rows,
          'peers': peers,
@@ -446,7 +450,10 @@ def ranged_share(history):
    whole round more or less than its length suggests, and a perfect device reads anywhere from 1.8 to 2.2 rounds a
    second. The device's count of the rounds it took part in has no such slop, so that is the yardstick whenever it
    agrees with the clock to within a round; when it falls further short, the device sat out rounds and the clock decides.
+   The share starts at the first read after the device's first range: a master runs rounds alone until anyone joins,
+   which says nothing about its radio.
    """
+   history = history[next((i for i, entry in enumerate(history) if entry[2] > 0), 0):]
    if len(history) < 2:
       return None
    (t0, scheduled0, ranged0), (t1, scheduled1, ranged1) = history[0], history[-1]
