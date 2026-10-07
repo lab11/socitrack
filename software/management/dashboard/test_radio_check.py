@@ -268,6 +268,13 @@ class RecentShare(unittest.TestCase):
       history = [(t, 2 * t, int(1.8 * t)) for t in range(0, 61, 5)]
       self.assertAlmostEqual(radio_check.ranged_share(history), 0.9, places=2)
 
+   def test_rounds_a_master_ran_alone_before_anyone_joined_do_not_count_against_it(self):
+      history = [(t, 2 * t, max(0, 2 * t - 14)) for t in range(0, 61, 5)]   # alone for its first 7 seconds
+      self.assertEqual(radio_check.ranged_share(history), 1.0)
+
+   def test_a_device_that_never_ranged_reads_none_of_its_rounds(self):
+      self.assertEqual(radio_check.ranged_share([(t, 2 * t, 0) for t in range(0, 61, 5)]), 0.0)
+
    def test_too_little_history_means_nothing_yet(self):
       self.assertIsNone(radio_check.ranged_share([(0, 0, 0), (10, 20, 20)]))
       self.assertIsNone(radio_check.ranged_share([(0, 0, 0)]))

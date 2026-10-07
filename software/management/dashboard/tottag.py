@@ -1487,11 +1487,10 @@ class TotTagGUI(tk.Frame):
       test = self.radio_test
       tk.Label(body, text='Live Radio Check', font=('Helvetica', 14, 'bold')).pack(anchor=tk.W)
       about = tk.Label(body, justify=tk.LEFT, anchor=tk.W, text=(
-         'Runs the chosen TotTags in a short radio test and reads their ranges and receive counts over Bluetooth as it goes, '
-         'to find one with a weak receiver, a damaged antenna, or a distance calibration that is off. Nothing is logged, a '
-         "TotTag's deployment is left as it was, and every TotTag restarts back to normal when the test ends, even if this "
-         'dashboard is closed first. Set them where they can all see each other, at least 2 feet apart. Verdicts appear '
-         'within the first minute and update every 15 seconds; they firm up once every TotTag has a minute of data.'))
+         'Tests the chosen TotTags over Bluetooth to detect potential hardware failures before deployment. Nothing is '
+         "logged, a TotTag's deployment is left as it was, and every TotTag restarts back to normal when the test ends. Set "
+         'each device where they can see each other, at least 2 feet apart. Verdicts will appear within the first minute '
+         'of testing and update every 15 seconds.'))
       about.pack(anchor=tk.W, fill=tk.X, pady=(2, 6))
       body.bind('<Configure>', lambda event: about.configure(wraplength=max(200, event.width - 10)))
 
@@ -1543,6 +1542,10 @@ class TotTagGUI(tk.Frame):
       self.radio_tree.tag_configure('fail', foreground='#b3261e')
       self.radio_tree.tag_configure('check', foreground='#9a6700')
       self.radio_tree.pack(fill=tk.X)
+      legend = tk.Label(body, justify=tk.LEFT, anchor=tk.W, font=('Helvetica', 11),
+                        text="Brackets in the 'by antenna' column mark the antenna that a TotTag listens for schedules on.")
+      legend.pack(anchor=tk.W, fill=tk.X, pady=(2, 0))
+      body.bind('<Configure>', lambda event: legend.configure(wraplength=max(200, event.width - 10)), add='+')
       self.radio_links = ttk.Treeview(body, height=min(10, max(2, len(names))))
       self.radio_links.pack(fill=tk.X, pady=(6, 0))
       self.radio_link_uids = None

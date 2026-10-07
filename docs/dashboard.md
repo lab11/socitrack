@@ -72,7 +72,8 @@ connected to one. Disconnect first if you are.
 3. **Start Test**. Each device restarts into the test and starts ranging, on its charger or off it.
 
 The table updates every second with each device's status, the share of the last minute's rounds it
-ranged in, and its receive failures, overall and per antenna. The antenna it is currently using to hear
+ranged in, and its receive failures, overall and per antenna. The share counts from a device's first range, so
+the coordinator is not marked down for the rounds it ran alone before anyone joined. The antenna it is currently using to hear
 the coordinator is shown in brackets. A device not yet in the network shows its role as *searching*. Distances are shown in feet and inches. The grid below it shows how often each device ranged to each other device. Within
 the first minute each device gets a **Pass**, **Check** or **Fail**, with the reasons listed underneath,
 and the verdicts update every 15 seconds. They firm up once every device has a minute of data; until
