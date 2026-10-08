@@ -1,0 +1,159 @@
+/*
+ * Design tokens.
+ *
+ * Hand-written rather than a framework, so every value here is one someone chose. The audience is
+ * clinical psychologists on study laptops, not developers: the calibration favours legibility and
+ * unambiguous status over density.
+ *
+ * Three rules the rest of the app depends on:
+ *   1. Severity has exactly three levels and they never appear as raw colour. `warning` and `note`
+ *      carry a label as well as a hue, because a colour-only signal is not readable by everyone and
+ *      not printable at all — and these reports do get printed and put in study binders.
+ *   2. Every colour is defined on bare :root first. Dark overrides only redefine; nothing gets its
+ *      only definition inside a media query.
+ *   3. Numbers that a reader might act on are rendered in the mono stack, so a column of them
+ *      aligns and a transposed digit is visible.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* --- Type ------------------------------------------------------------------------------- */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.55;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* --- Space: a 4px scale, used for everything so rhythm stays consistent ------------------ */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4rem;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+
+  /* --- Surface -------------------------------------------------------------------------------- */
+  --bg-page: #f7f7f6;
+  --bg-surface: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-sunken: #f0f0ee;
+  --bg-hover: #ecebe8;
+
+  --border-subtle: #e2e1dd;
+  --border-default: #cfcec9;
+  --border-strong: #a8a7a1;
+
+  --text-primary: #1c1c1a;
+  --text-secondary: #5c5b56;
+  --text-tertiary: #85847e;
+  --text-inverse: #ffffff;
+
+  /* --- Accent: one hue, used only for interactive affordances ----------------------------- */
+  --accent: #2f5d50;
+  --accent-hover: #26493f;
+  --accent-subtle: #e7efec;
+  --accent-text: #1f3f36;
+
+  /* --- Severity. Three levels, no more. --------------------------------------------------- */
+  --ok: #2d6a4a;
+  --ok-subtle: #e6f0ea;
+  --note: #45556b;
+  --note-subtle: #e9edf2;
+  --warning: #8a5a10;
+  --warning-subtle: #fbf0dd;
+  --error: #9b2c2c;
+  --error-subtle: #fbeaea;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 0.07);
+
+  --max-content: 58rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-page: #16161a;
+    --bg-surface: #1d1d22;
+    --bg-raised: #24242a;
+    --bg-sunken: #141417;
+    --bg-hover: #2b2b32;
+
+    --border-subtle: #2c2c33;
+    --border-default: #3a3a43;
+    --border-strong: #55555f;
+
+    --text-primary: #ececef;
+    --text-secondary: #a8a8b0;
+    --text-tertiary: #7c7c85;
+    --text-inverse: #16161a;
+
+    --accent: #6fae99;
+    --accent-hover: #85c0ac;
+    --accent-subtle: #1e2f2a;
+    --accent-text: #9ed0bf;
+
+    --ok: #6bbd92;
+    --ok-subtle: #16291f;
+    --note: #90a6c2;
+    --note-subtle: #1a2029;
+    --warning: #d9a441;
+    --warning-subtle: #2a2113;
+    --error: #e08585;
+    --error-subtle: #2b1717;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 2px 10px rgb(0 0 0 / 0.5);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg-page: #16161a;
+  --bg-surface: #1d1d22;
+  --bg-raised: #24242a;
+  --bg-sunken: #141417;
+  --bg-hover: #2b2b32;
+
+  --border-subtle: #2c2c33;
+  --border-default: #3a3a43;
+  --border-strong: #55555f;
+
+  --text-primary: #ececef;
+  --text-secondary: #a8a8b0;
+  --text-tertiary: #7c7c85;
+  --text-inverse: #16161a;
+
+  --accent: #6fae99;
+  --accent-hover: #85c0ac;
+  --accent-subtle: #1e2f2a;
+  --accent-text: #9ed0bf;
+
+  --ok: #6bbd92;
+  --ok-subtle: #16291f;
+  --note: #90a6c2;
+  --note-subtle: #1a2029;
+  --warning: #d9a441;
+  --warning-subtle: #2a2113;
+  --error: #e08585;
+  --error-subtle: #2b1717;
+
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 2px 10px rgb(0 0 0 / 0.5);
+}

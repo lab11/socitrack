@@ -1,0 +1,26 @@
+{
+  "name": "tottag-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Web-based deployment configuration and data processing for TotTag",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6.0"
+  },
+  "workspaces": [
+    "packages/*",
+    "app"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @tottag/app",
+    "drift": "npm run drift --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "ci": "npm run drift && npm run typecheck && npm run test && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^5.8.0"
+  }
+}
