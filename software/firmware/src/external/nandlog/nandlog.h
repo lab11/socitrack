@@ -52,8 +52,8 @@ typedef struct __attribute__ ((__packed__))
    uint32_t magic;               // NANDLOG_PAGE_MAGIC, or NANDLOG_PAGE_MAGIC_FRAMED
    uint32_t epoch;               // experiment generation; makes stale data from a prior run unmistakable
    uint32_t seq;                 // page index within the epoch, starting at 0
-   uint32_t first_timestamp;     // experiment-relative ms of the first record, or NANDLOG_NO_TIMESTAMP
-   uint32_t last_timestamp;      // experiment-relative ms of the last record, or NANDLOG_NO_TIMESTAMP
+   uint32_t first_timestamp;     // experiment-relative ms of the earliest record, or NANDLOG_NO_TIMESTAMP
+   uint32_t last_timestamp;      // experiment-relative ms of the latest record, or NANDLOG_NO_TIMESTAMP
    uint16_t payload_length;      // valid payload bytes
    uint16_t record_count;        // complete records in the payload
    uint32_t payload_crc;         // CRC-32 over payload[0 .. payload_length)

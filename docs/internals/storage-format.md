@@ -205,8 +205,8 @@ use `zlib.crc32` unmodified.
 | 0 | 4 | `magic` | `'TTP1'` = `0x31505454` |
 | 4 | 4 | `epoch` | experiment generation; monotonically increasing, never reset |
 | 8 | 4 | `seq` | page index within the epoch, starting at 0 |
-| 12 | 4 | `first_timestamp` | experiment-relative ms of the first record in this page |
-| 16 | 4 | `last_timestamp` | experiment-relative ms of the last record in this page |
+| 12 | 4 | `first_timestamp` | experiment-relative ms of the earliest record in this page |
+| 16 | 4 | `last_timestamp` | experiment-relative ms of the latest record in this page |
 | 20 | 2 | `payload_length` | valid payload bytes |
 | 22 | 2 | `record_count` | number of complete records in the payload |
 | 24 | 4 | `payload_crc` | CRC-32 over `payload[0 .. payload_length)` |
@@ -3021,6 +3021,18 @@ clamped record, and only when the alternative was a nearly-empty page.
 
 *Covered by the storage test*, which now writes three records whose middle one steps back by half the
 tolerance: they must produce **one** page, and a fourth page in the count means the tolerance was not applied.
+
+*Corrected 2026-10-08: the record keeps its own timestamp.* The clamp's cost was not just accuracy. The
+clamped records are ranges: a range is stamped with its round's start, which every device in the round shares,
+but written ~30 ms later when the round ends, so a motion, voltage or diagnostics record stamped in between
+pushed it forward. Analysis matches ranges across devices by exact timestamp, and a 5.2 h, ten-device production
+run had 73 rows (~0.02%) that no longer matched their round. `nandlog_store_record()` now stores a sub-tolerance
+step as stamped, and the page header advertises its **earliest and latest** record rather than its first and last
+written. `first <= last` still holds and a date-limited read still selects correctly, since the seek checks every
+header against both bounds; records within a page are no longer guaranteed to be in time order (readers sort), and
+neighbouring pages can overlap by up to the tolerance, which both readers leave out of their time-discontinuity
+reports. The storage test now also checks that the stepped-back record keeps its stamp and that the page spans it,
+and the host simulation test checks that a read ending between the two records still includes the page.
 
 **B. Sub-second `rtc` (closes an open question, and it was better than free).** The anchor's payload changed
 from `rtc_get_timestamp()` (whole seconds) to the device's own **un-offset** experiment clock in milliseconds.

@@ -376,10 +376,10 @@ static void test_timestamp_jump(void)
    nandlog_flush(true);
 
    // A step smaller than NANDLOG_TIMESTAMP_TOLERANCE_MS is writer disagreement, not a moved time base, so it
-   // must be clamped forward rather than allowed to commit a page. These three become ONE page if the
-   // tolerance is applied and TWO if it is not, so the total page count is the assertion
+   // must neither commit a page nor be moved
+   const uint32_t stepped_back = 20000 - (NANDLOG_TIMESTAMP_TOLERANCE_MS / 2);
    nandlog_store_record(STORAGE_TYPE_IMU, 20000, record, sizeof(record));
-   nandlog_store_record(STORAGE_TYPE_IMU, 20000 - (NANDLOG_TIMESTAMP_TOLERANCE_MS / 2), record, sizeof(record));
+   nandlog_store_record(STORAGE_TYPE_IMU, stepped_back, record, sizeof(record));
    nandlog_store_record(STORAGE_TYPE_IMU, 20100, record, sizeof(record));
    nandlog_flush(true);
 
@@ -389,9 +389,10 @@ static void test_timestamp_jump(void)
    nandlog_read_span(&num_chunks, NULL);
 
    uint32_t errors = 0;
-   // Pages 0-1 are the deliberate jump. Page 2 is the tolerance check: a THIRD page means the small step
-   // was clamped, a fourth would mean it split the page as a real re-basing would
-   const uint32_t expected_first[] = { 10000, 3000, 20000 }, expected_last[] = { 11000, 4000, 20100 };
+   // Pages 0-1 are the deliberate jump. Page 2 is the tolerance check: a THIRD page holds the small step as
+   // stamped, a fourth would mean it split the page as a real re-basing would
+   const uint32_t expected_first[] = { 10000, 3000, stepped_back }, expected_last[] = { 11000, 4000, 20100 };
+   const uint32_t expected_records[] = { 2, 2, 3 };
    if (num_chunks != 3)
    {
       print("  ERROR: %u pages, expected 3 (%s)\n", num_chunks,
@@ -409,15 +410,27 @@ static void test_timestamp_jump(void)
          print("  ERROR: page %u is inverted (first > last)\n", i);
          ++errors;
       }
-      if ((i < 2) && ((header.first_timestamp != expected_first[i]) || (header.last_timestamp != expected_last[i])))
+      if ((i < 3) && ((header.first_timestamp != expected_first[i]) || (header.last_timestamp != expected_last[i])))
       {
          print("  ERROR: page %u should span %u..%u\n", i, expected_first[i], expected_last[i]);
          ++errors;
       }
-      if ((i < 2) && (header.record_count != 2))
+      if ((i < 3) && (header.record_count != expected_records[i]))
       {
-         print("  ERROR: page %u holds %u records, expected 2\n", i, header.record_count);
+         print("  ERROR: page %u holds %u records, expected %u\n", i, header.record_count, expected_records[i]);
          ++errors;
+      }
+      if ((i == 2) && (header.record_count == 3))
+      {
+         // Equal-sized records, so the second one's timestamp sits one record in, past its framing and type
+         const uint32_t record_length = length / 3, prefix_length = record_length - 1 - sizeof(uint32_t) - JUMP_TEST_RECORD_BYTES;
+         uint32_t stored;
+         memcpy(&stored, verify_buffer + record_length + prefix_length + 1, sizeof(stored));
+         if (stored != stepped_back)
+         {
+            print("  ERROR: the stepped-back record was stored at %u, not as stamped at %u\n", stored, stepped_back);
+            ++errors;
+         }
       }
    }
    nandlog_end_reading();
@@ -426,7 +439,7 @@ static void test_timestamp_jump(void)
    if (errors)
       print("=== Timestamp jump test FAILED: %u errors ===\n", errors);
    else
-      print("=== Timestamp jump test PASSED: every page spans a forward time range ===\n");
+      print("=== Timestamp jump test PASSED: every page spans a forward time range, small steps kept as stamped ===\n");
 }
 
 static void store_range_record(uint32_t timestamp, uint8_t range_mm_div)

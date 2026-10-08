@@ -720,16 +720,11 @@ static void nandlog_store_record_locked(uint8_t record_type, uint32_t timestamp,
    if (record_length > data_bytes_per_page)
       return;
 
-   // A timestamp that precedes the page's current end means the time base moved backwards: either commit the
-   // page here or nudge this record forward
-   bool time_moved_backwards = false;
-   if ((page_last_timestamp != NANDLOG_NO_TIMESTAMP) && (timestamp < page_last_timestamp))
-   {
-      if ((page_last_timestamp - timestamp) <= NANDLOG_TIMESTAMP_TOLERANCE_MS)
-         timestamp = page_last_timestamp;
-      else
-         time_moved_backwards = true;
-   }
+   // A record may carry an earlier time than one already in the page, as when it was stamped at the start of
+   // something that finished after another writer's record went in. A step that small is kept exactly as
+   // stamped, so records from different devices still match; only a larger one means the time base moved,
+   // and commits the page
+   const bool time_moved_backwards = (page_last_timestamp != NANDLOG_NO_TIMESTAMP) && (timestamp < page_last_timestamp) && ((page_last_timestamp - timestamp) > NANDLOG_TIMESTAMP_TOLERANCE_MS);
 
    // Records are never split across pages, so a record that does not fit in what remains of the current
    // page commits that page and starts the next one
@@ -750,10 +745,11 @@ static void nandlog_store_record_locked(uint8_t record_type, uint32_t timestamp,
       memcpy(cache + offset + sizeof(record_type) + sizeof(timestamp), data, data_length);
    cache_index += record_length;
 
-   // Track the time bounds and record count that this page's header will advertise
-   if (page_first_timestamp == NANDLOG_NO_TIMESTAMP)
+   // Track the earliest and latest times in the page and its record count, which its header will advertise
+   if ((page_first_timestamp == NANDLOG_NO_TIMESTAMP) || (timestamp < page_first_timestamp))
       page_first_timestamp = timestamp;
-   page_last_timestamp = timestamp;
+   if ((page_last_timestamp == NANDLOG_NO_TIMESTAMP) || (timestamp > page_last_timestamp))
+      page_last_timestamp = timestamp;
    ++page_record_count;
 }
 

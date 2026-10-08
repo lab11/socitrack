@@ -37,6 +37,7 @@ MAX_RANGING_DISTANCE_MM = 32000
 MAX_NUM_DEVICES = 10
 IMU_DATA_LENGTH = 7
 BENIGN_TIME_STEP_MS = 2000
+TIMESTAMP_TOLERANCE_MS = 250
 
 STORAGE_TYPE_VOLTAGE = 1
 STORAGE_TYPE_CHARGING_EVENT = 2
@@ -744,10 +745,11 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
       seen_seqs.add(seq)
 
       # Page bounds that run backwards mean the device's clock base moved mid-log. The device seeks a time
-      # range by binary-searching these same bounds, so where they are not ordered its selection cannot be
-      # trusted -- and a short selection is invisible otherwise, because the stream it sends is internally
-      # consistent and reports no gaps.
-      if (first_ts != NO_TIMESTAMP) and (previous_last is not None) and (first_ts < previous_last):
+      # range by scanning these same bounds, so where they are not ordered its selection cannot be trusted --
+      # and a short selection is invisible otherwise, because the stream it sends is internally consistent and
+      # reports no gaps. A page starting less than TIMESTAMP_TOLERANCE_MS early is not that: a range stamped at
+      # its round's start can be written after a record stamped later, and keeps its own time.
+      if (first_ts != NO_TIMESTAMP) and (previous_last is not None) and (previous_last - first_ts > TIMESTAMP_TOLERANCE_MS):
          report['time_discontinuities'].append((position - 1, seq, previous_last, first_ts))
       if last_ts != NO_TIMESTAMP:
          previous_last = last_ts
