@@ -455,8 +455,23 @@ class TotTagBLE(threading.Thread):
       try:
          if self.connected_device.is_open:
             self.data_index = 0
+            self.data = bytearray()
+            self.connected_device.reset_input_buffer()
             self.connected_device.write(bytes([MAINTENANCE_DOWNLOAD_LOG]))
-            self.connected_device.address = ':'.join([f'{c:02x}' for c in reversed(self.connected_device.readline()[:-1])])
+
+            # Every response starts with the device's ID, which names the saved file
+            uid = self.connected_device.read(EUI_LEN + 1)
+            if len(uid) != EUI_LEN + 1 or uid[-1] != ord('\n'):
+               print('The TotTag did not identify itself at the start of its log transfer')
+               self.command_queue.put_nowait('DOWNLOAD_DONE')
+               return
+            address = ':'.join(f'{c:02x}' for c in reversed(uid[:EUI_LEN]))
+            if self.repair_round == 0:
+               self.connected_device.address = address
+            elif address != self.connected_device.address:
+               print(f'Ignoring a repair transfer from {address}, which is not {self.connected_device.address}')
+               self.command_queue.put_nowait('DOWNLOAD_DONE')
+               return
             details_len = struct.unpack('<H', self.connected_device.read(2))[0]
             prefix = self.connected_device.read(4)
             if prefix == tottag_format.V2_STREAM_MAGIC:
@@ -467,12 +482,32 @@ class TotTagBLE(threading.Thread):
                details_blob = self.connected_device.read(hdr_details_len)
                self.data_length = (tottag_format.V2_STREAM_HEADER.size + hdr_details_len +
                                    total_pages * tottag_format.V2_PAGE_HEADER.size + total_payload)
-               self.data = bytearray(self.data_length)
-               header = prefix + rest + details_blob
-               self.data[0:len(header)] = header
-               self.data_index = len(header)
+               self.data = bytearray(prefix + rest + details_blob)
+               self.data_index = len(self.data)
                if hdr_details_len:
                   self.data_details = unpack_experiment_details(details_blob)
+               self.result_queue.put_nowait(('LOGDATA', self.data_length))
+
+               # Each page is read by its own header's length
+               for _ in range(total_pages):
+                  page_header = self.connected_device.read(tottag_format.V2_PAGE_HEADER.size)
+                  self.data += page_header
+                  if len(page_header) < tottag_format.V2_PAGE_HEADER.size:
+                     break                  # device stopped sending mid-stream
+                  remaining = tottag_format.V2_PAGE_HEADER.unpack(page_header)[3]
+                  while remaining:
+                     chunk = self.connected_device.read(min(512, remaining))
+                     if not chunk:
+                        break
+                     self.data += chunk
+                     remaining -= len(chunk)
+                  self.data_index = len(self.data)
+                  self.result_queue.put_nowait(('LOGDATA', min(self.data_index, self.data_length)))
+                  if remaining:
+                     break
+               self.data_index = len(self.data)
+               self.command_queue.put_nowait('DOWNLOAD_DONE')
+               return
             else:
                # Legacy stream: the four bytes just read are the total length
                self.data_length = struct.unpack('<I', prefix)[0]

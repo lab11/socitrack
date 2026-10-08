@@ -3474,6 +3474,17 @@ receive buffer from. What was wrong is that it was unconditional. `nandlog_read_
 page count was always pure arithmetic. Whether the exact figure is worth the traffic is now the caller's
 decision, which is where it belongs.
 
+*2026-10-08: the byte total was one page short whenever the read had an end time.* The summing pass stopped
+before `last_reading_page` while the page count and the pages sent included it, so every date-limited download
+declared its last page's payload missing. Over USB the dashboard read only the declared bytes, left that page in
+the link, asked for it again, and read the repair round's device ID out of the leftover bytes: AE's log was saved
+as `02.pkl`, because its last page began with a reset-reason record whose length byte is 0x02. A window with
+nothing logged inside it also ended on a page before the one it started on and wrapped the whole region
+(256,512 pages declared in simulation). Both are fixed in nandlog 8a88cad, with a simulation test that every kind
+of read declares exactly what it delivers. Both hosts now also read each page by its own frame rather than by the
+declared total, so a device still on older firmware downloads whole, and the Python dashboard keeps the device ID
+from the first round and ignores a repair round that reports a different one.
+
 **And checking whether the total could simply be dropped found a bug.** The dashboard sizes both its receive
 buffer and its serial read loop from `total_payload_bytes`:
 
