@@ -1,4 +1,4 @@
-// Ambiq Apollo4 implementation of the nandlog porting interface
+// TotTag implementation of the nandlog porting interface
 
 #include <stdio.h>
 #include "logging.h"
@@ -192,7 +192,7 @@ void nandlog_port_transfer_write(uint8_t command, const void *address, uint32_t 
 
 void nandlog_port_write_enable(bool enable)
 {
-   // The write-protect pin is asserted high to PERMIT programming, matching the original storage.c usage
+   // The write-protect pin is asserted high to PERMIT programming, matching the original storage driver's usage
    if (enable)
       am_hal_gpio_output_set(PIN_STORAGE_WRITE_PROTECT);
    else
