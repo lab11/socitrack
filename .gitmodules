@@ -4,3 +4,6 @@
 [submodule "software/squarepoint/stm32f0-base"]
 	path = software/squarepoint/stm32f0-base
 	url = https://github.com/lab11/stm32f0-base.git
+[submodule "software/firmware/src/external/nandlog"]
+	path = software/firmware/src/external/nandlog
+	url = https://github.com/hedgetechllc/nandlog.git

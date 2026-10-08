@@ -3136,6 +3136,9 @@ primitives, init/deinit, write-enable, power, two delays, log and fatal -- and `
 them for this board. The 186 lines of SPI code moved verbatim, so the change was pure code motion,
 confirmed by 1721 pages comparing byte-identical across the refactor.
 
+*2026-10-08:* the board's port now lives in `src/peripherals/src/storage.c`, outside the library, so that
+`src/external/nandlog` can be the upstream repository unmodified, whose own `nandlog_port.c` is a template.
+
 `nandlog_port_fatal()` is worth calling out: the bounded busy-wait added in Phase 5 called `system_reset()`
 directly, and a library has no business resetting the system it is embedded in. The host now decides.
 

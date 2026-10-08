@@ -240,7 +240,6 @@ SRC += deca_interface.c
 SRC += dw3000_device.c
 
 SRC += nandlog.c
-SRC += nandlog_port.c
 ifeq ($(REVISION), M)
 SRC += nandlog_chip_W25N01GWZEIG.c
 else
@@ -260,6 +259,7 @@ SRC += led.c
 SRC += logging.c
 SRC += ranging.c
 SRC += rtc.c
+SRC += storage.c
 SRC += system.c
 SRC += usb.c
 
