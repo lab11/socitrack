@@ -1,0 +1,9 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.DS_Store
+
+# Real deployment data. Never commit participant data to the repository.
+fixtures/real/
+*.ttg
+*.pkl

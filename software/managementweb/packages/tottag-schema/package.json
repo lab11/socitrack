@@ -1,0 +1,20 @@
+{
+  "name": "@tottag/schema",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Pure TotTag format knowledge: constants, log parsing, deployment validation. No I/O, no runtime dependencies.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "drift": "node tools/extract-constants.mjs > /dev/null",
+    "drift:update": "node tools/extract-constants.mjs --write",
+    "parity:update": "node --experimental-strip-types tools/radio-check-parity.mjs --write",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "build": "tsc --noEmit",
+    "open-items": "node tools/open-items.mjs"
+  },
+  "dependencies": {}
+}
