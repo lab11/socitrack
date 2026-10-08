@@ -527,6 +527,51 @@ static void test_date_limited_read_spans_a_time_discontinuity(void)
    CHECK(reached > 0, "no delivered page reached the requested start bound of %u -- the qualifying data sits before the discontinuity and the seek skipped past it", target);
 }
 
+static void test_a_small_backward_step_keeps_its_own_timestamp(void)
+{
+   // A range is stamped with the start of its round but stored when the round ends, so a record stamped with the
+   // time it was written can land in between. Ranges are matched across devices by exact timestamp, so the late
+   // one keeps its own, and its page's bounds widen to cover it so a date-limited read still reaches it
+   printf("A small backward step keeps its own timestamp\n");
+   fresh_log();
+   write_records(2, 10000);                        // a page of its own, before the one under test
+   const uint32_t stamps[] = { 20421, 20390, 20890 };
+   for (uint32_t i = 0; i < 3; ++i)
+   {
+      memset(payload, (uint8_t)i, 8);
+      nandlog_store_record(7, stamps[i], payload, 8);
+   }
+   nandlog_flush(true);
+
+   // A read ending between the stepped-back record and the one written before it must still include its page
+   uint32_t pages = 0;
+   bool found = false;
+   nandlog_begin_session();
+   nandlog_begin_reading(0, 20400);
+   nandlog_read_span(&pages, NULL);
+   for (uint32_t i = 0; i < pages; ++i)
+   {
+      nandlog_page_header_t header;
+      const uint32_t length = nandlog_retrieve_next_page(readback, &header);
+      if (!length || (header.record_count != 3))
+         continue;
+      found = true;
+      CHECK((header.first_timestamp == 20390) && (header.last_timestamp == 20890), "page bounds %u..%u, expected 20390..20890",
+            header.first_timestamp, header.last_timestamp);
+      const uint32_t record_length = length / 3, prefix_length = record_length - 1 - sizeof(uint32_t) - 8;
+      for (uint32_t r = 0; r < 3; ++r)
+      {
+         uint32_t stored;
+         memcpy(&stored, readback + (r * record_length) + prefix_length + 1, sizeof(stored));
+         CHECK(stored == stamps[r], "record %u stored at %u, stamped %u", r, stored, stamps[r]);
+      }
+   }
+   nandlog_end_reading();
+   nandlog_end_session();
+   CHECK(found, "a read ending at 20400 left out the page holding the record stamped 20390");
+   nandlog_deinit();
+}
+
 
 int main(void)
 {
@@ -549,6 +594,7 @@ int main(void)
    test_reads_refuse_outside_a_session();
    test_busy_timeout_is_fatal();
    test_date_limited_read_spans_a_time_discontinuity();
+   test_a_small_backward_step_keeps_its_own_timestamp();
 
    const nandlog_sim_counters_t counters = nandlog_sim_counters();
    printf("\n%u checks, %u failed\n", tests_run, tests_failed);

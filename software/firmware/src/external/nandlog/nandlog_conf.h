@@ -37,8 +37,8 @@
 // Largest caller-defined metadata blob stored alongside the log
 #define NANDLOG_MAX_EPOCH_DETAILS_BYTES                  512
 
-// A record whose timestamp steps backwards by no more than this is treated as writer disagreement and
-// pulled forward, rather than as the time base having moved and the page having to be committed
+// A record whose timestamp steps backwards by no more than this is treated as writer disagreement and kept as
+// stamped in the same page, rather than as the time base having moved and the page having to be committed
 #define NANDLOG_TIMESTAMP_TOLERANCE_MS              250
 
 // Whether each record carries its own length so that a reader can walk a page without knowing the
