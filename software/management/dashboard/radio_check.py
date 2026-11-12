@@ -114,7 +114,7 @@ def analyse_radio(devices, positions=None):
    loaded = [device for device in devices if is_loaded(device)]
    missing = len(devices) - len(loaded)
    if missing:
-      notes.append(f"{missing} of the {len(devices)} selected devices {'has' if missing == 1 else 'have'} no log loaded, so "
+      notes.append(f"{missing} of the {len(devices)} selected tags {'has' if missing == 1 else 'have'} no log loaded, so "
                    f"{'it is' if missing == 1 else 'they are'} not judged and {'its' if missing == 1 else 'their'} links are missing from the others.")
 
    # The stretch every device was on, in whole bins, so no device is penalised for rounds it was off for. Every
@@ -125,9 +125,9 @@ def analyse_radio(devices, positions=None):
    bins = max(0, end - start) if start is not None and end is not None else 0
    rounds = bins * bin_ms * 1000 / SCHEDULING_INTERVAL_US
    if loaded and bins * bin_ms < MIN_JUDGED_MS:
-      notes.append('The devices were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.')
+      notes.append('The tags were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.')
    if loaded and len(loaded) < 3:
-      notes.append('With fewer than three devices there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single device.')
+      notes.append('With fewer than three tags there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single tag.')
    in_window = lambda bin: start is not None and end is not None and start <= bin < end
 
    # Per-link evidence from both ends
@@ -164,9 +164,9 @@ def analyse_radio(devices, positions=None):
       solved_uids = list(dict.fromkeys(uid for link in with_residuals for uid in (link['a'], link['b'])))
       biases = _solve_biases(solved_uids, [(link['a'], link['b'], link['residual_mm']) for link in with_residuals])
    if positions and not biases:
-      notes.append("The positions entered do not let each device's distance offset be told apart — it needs at least three devices with positions and ranges between them.")
+      notes.append("The positions entered do not let each tag's distance offset be told apart — it needs at least three tags with positions and ranges between them.")
    if not positions:
-      notes.append('No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well.')
+      notes.append('No positions entered, so distances are checked for consistency only. Enter where each tag sat to check accuracy as well.')
 
    # Each device's own figures
    figures = {}
@@ -203,7 +203,7 @@ def analyse_radio(devices, positions=None):
       diagnostics = device['summary']['diagnostics'] if device['summary'] else None
       if not f['loaded']:
          results.append({
-            'uid': device['uid'], 'label': device['label'], 'verdict': 'missing', 'reasons': ['No log loaded for this device.'],
+            'uid': device['uid'], 'label': device['label'], 'verdict': 'missing', 'reasons': ['No log loaded for this tag.'],
             'participation': None, 'rx_failure_rate': None, 'antenna_failure_rates': [], 'link_coverage': None,
             'bias_mm': None, 'noise_mm': None, 'diagnostics': None, 'aborts': 0,
          })
@@ -219,7 +219,7 @@ def analyse_radio(devices, positions=None):
       rx_others = others_median(device['uid'], 'rx_failure_rate')
       if f['rx_failure_rate'] is not None:
          excess = f['rx_failure_rate'] - (rx_others if rx_others is not None else 0)
-         versus = f' against {_percent(rx_others)} for the other devices' if rx_others is not None else ''
+         versus = f' against {_percent(rx_others)} for the other tags' if rx_others is not None else ''
          if excess > RX_FAILURE_FAIL_EXCESS:
             fails.append(f"{_percent(f['rx_failure_rate'])} of its ranging receives failed{versus}. A weak receiver or a damaged antenna or connection.")
          elif excess > RX_FAILURE_CHECK_EXCESS:
@@ -244,7 +244,7 @@ def analyse_radio(devices, positions=None):
          if f['link_coverage'] < COVERAGE_FAIL:
             fails.append(f"Ranged to a typical peer in only {_percent(f['link_coverage'])} of rounds.")
          elif coverage_others is not None and f['link_coverage'] < coverage_others - COVERAGE_CHECK_DROP:
-            checks.append(f"Ranged to a typical peer in {_percent(f['link_coverage'])} of rounds, against {_percent(coverage_others)} for the other devices.")
+            checks.append(f"Ranged to a typical peer in {_percent(f['link_coverage'])} of rounds, against {_percent(coverage_others)} for the other tags.")
 
       bias_mm = biases.get(device['uid']) if biases else None
       if bias_mm is not None:
@@ -256,7 +256,7 @@ def analyse_radio(devices, positions=None):
 
       noise_others = others_median(device['uid'], 'noise_mm')
       if f['noise_mm'] is not None and noise_others is not None and f['noise_mm'] > NOISE_CHECK_MIN_MM and f['noise_mm'] > NOISE_CHECK_FACTOR * noise_others:
-         checks.append(f"Its distances spread by about {_js_round(f['noise_mm'])} mm, against {_js_round(noise_others)} mm for the other devices.")
+         checks.append(f"Its distances spread by about {_js_round(f['noise_mm'])} mm, against {_js_round(noise_others)} mm for the other tags.")
 
       if diagnostics:
          recoveries = diagnostics['wake_failures'] + diagnostics['irq_stuck']
@@ -264,7 +264,7 @@ def analyse_radio(devices, positions=None):
             checks.append(f"The radio needed resetting {recoveries} time{'' if recoveries == 1 else 's'} ({diagnostics['wake_failures']} failed "
                           f"wake-up{'' if diagnostics['wake_failures'] == 1 else 's'}, {diagnostics['irq_stuck']} stuck interrupt{'' if diagnostics['irq_stuck'] == 1 else 's'}).")
          if rounds and diagnostics['rx_arm_late'] / rounds > ARM_LATE_CHECK:
-            checks.append(f"Lost {diagnostics['rx_arm_late']} rounds to a receive it could not start in time. That points to firmware timing, not this device's radio.")
+            checks.append(f"Lost {diagnostics['rx_arm_late']} rounds to a receive it could not start in time. That points to firmware timing, not this tag's radio.")
 
       results.append({
          'uid': device['uid'], 'label': device['label'],

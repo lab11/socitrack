@@ -18,6 +18,7 @@ import tottag_format
 DETAILS_BYTES = struct.calcsize('<IIIIBB' + ('6B' * tottag.MAX_NUM_DEVICES) + ((str(tottag.MAX_LABEL_LENGTH) + 's') * tottag.MAX_NUM_DEVICES) + 'B')
 AE = bytes([0xAE, 0x11, 0x22, 0x33, 0x44, 0x55])
 B02 = bytes([0x02, 0x11, 0x22, 0x33, 0x44, 0x55])
+EUI_PREAMBLE = tottag.EUI_LEN + 1 + 2      # the ID, its newline and the details length, sent before the device sizes its log
 
 
 def page(seq, payload):
@@ -35,11 +36,17 @@ def response(uid, log):
 
 
 class FakePort:
-   """Answers each download request with the next scripted response, after anything already waiting in the link."""
+   """Answers each download request with the next scripted response, after anything already waiting in the link.
 
-   def __init__(self, responses, waiting=b''):
+   `stall` holds back everything after the ID and details length for that many reads, which come back empty as a
+   real port's do when its timeout passes: the time a device spends sizing a long log before streaming it.
+   """
+
+   def __init__(self, responses, waiting=b'', stall=0):
       self.responses = list(responses)
       self.buffer = bytearray(waiting)
+      self.held = b''
+      self.stall = stall
       self.is_open = True
 
    def reset_input_buffer(self):
@@ -47,9 +54,17 @@ class FakePort:
 
    def write(self, data):
       if data[:1] == bytes([tottag.MAINTENANCE_DOWNLOAD_LOG]):
-         self.buffer += self.responses.pop(0)
+         reply = self.responses.pop(0)
+         self.buffer += reply[:EUI_PREAMBLE]
+         self.held = reply[EUI_PREAMBLE:]
 
    def read(self, size):
+      if not self.buffer and self.held:
+         if self.stall:
+            self.stall -= 1
+            return b''
+         self.buffer += self.held
+         self.held = b''
       chunk = bytes(self.buffer[:size])
       del self.buffer[:size]
       return chunk
@@ -96,6 +111,24 @@ class UsbDownload(unittest.TestCase):
       comms.data_callback_serial()
       self.assertEqual(port.address.split(':')[-1], 'ae', 'the download was renamed')
       self.assertEqual(comms.data_index, 0, 'another device\'s pages were kept')
+
+   def test_a_long_log_that_takes_many_read_timeouts_to_start_still_downloads(self):
+      log = stream([(0, b'\x01' * 300), (1, b'\x02' * 300)])
+      port = FakePort([response(AE, log)], stall=20)        # a minute of 3-second timeouts
+      comms = self.receiver(port)
+      comms.data_callback_serial()
+      self.assertEqual(bytes(comms.data[:comms.data_index]), log)
+
+   def test_a_log_that_never_starts_ends_the_download_rather_than_the_thread(self):
+      port = FakePort([response(AE, stream([(0, b'\x01' * 300)]))], stall=10 ** 9)
+      comms = self.receiver(port)
+      saved, tottag.STREAM_START_TIMEOUT_S = tottag.STREAM_START_TIMEOUT_S, 0.05
+      try:
+         comms.data_callback_serial()
+      finally:
+         tottag.STREAM_START_TIMEOUT_S = saved
+      self.assertEqual(comms.data_index, 0)
+      self.assertEqual(comms.command_queue.get_nowait(), 'DOWNLOAD_DONE')
 
    def test_a_device_that_does_not_identify_itself_yields_nothing(self):
       port = FakePort([b'\x02\x00'])

@@ -171,7 +171,7 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
       }
       const nandlog_stream_header_t stream_header = {
          .magic = NANDLOG_STREAM_MAGIC,
-         .format_version = NANDLOG_FORMAT_VERSION,
+         .record_format = NANDLOG_RECORD_FORMAT_THIS_BUILD,
          .details_length = retransmitting ? 0 : (uint16_t)sizeof(details),
          .total_pages = total_data_chunks,
          .total_payload_bytes = total_data_length

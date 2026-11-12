@@ -51,6 +51,9 @@ MAX_SEQS_PER_USB_WRITE = 255
 MAX_PAGE_ATTEMPTS = 6
 MAX_REPAIR_ROUNDS = 40
 DEVICE_RETRANSMIT_CAPACITY = 256
+# Before a log starts streaming, the TotTag reads every page in it to total its size, at about 1.1 ms a page: 15 s
+# for a week of data, and about 6 minutes for a full 1 GiB part. The stream may take that long to begin
+STREAM_START_TIMEOUT_S = 600
 LOW_STACK_WARNING_WORDS = 64
 TOTTAG_ADVERTISED_NAME_PREFIX = 'TotTag'
 
@@ -187,6 +190,10 @@ def pack_experiment_details(data):
                            data['use_daily_times'], data['num_devices'], *(i for uid in data['uids'] for i in uid), *data['labels'], 0)
    return experiment_struct
 
+def describe_elapsed(seconds):
+   """Whole seconds as '12 s', or '2 min 05 s' past a minute."""
+   return f'{seconds} s' if seconds < 60 else f'{seconds // 60} min {seconds % 60:02d} s'
+
 def unpack_experiment_details(data):
    experiment_struct = struct.unpack('<IIIIBB' + ('6B'*MAX_NUM_DEVICES) + ((str(MAX_LABEL_LENGTH)+'s')*MAX_NUM_DEVICES) + 'B', data)
    return {
@@ -320,9 +327,18 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
             for line in notable:
                print(f"   {line}")
 
+   # A step that begins at a restart is the TotTag's own clock taking over, and only says how far it had drifted
+   restarts = report.get('restart_steps', [])
+   drift = max((d[2] - d[3] for d in restarts), default=0)
+   if restarts and ((drift >= tottag_format.BENIGN_TIME_STEP_MS) or tottag_format.is_verbose()):
+      print(f"INFO: after {len(restarts)} restart{'' if len(restarts) == 1 else 's'}, the log from {uid_to_labels[from_uid]} carries "
+            f"the TotTag's own clock, which had drifted {drift / 1000:.1f} s behind network time. This is normal clock "
+            f"drift; nothing was lost.")
+
    # Not a transfer fault, but a LARGE one makes a time-bounded download untrustworthy
-   benign = [d for d in report['time_discontinuities'] if (d[2] - d[3]) < tottag_format.BENIGN_TIME_STEP_MS]
-   notable = [d for d in report['time_discontinuities'] if (d[2] - d[3]) >= tottag_format.BENIGN_TIME_STEP_MS]
+   steps = [d for d in report['time_discontinuities'] if d not in restarts]
+   benign = [d for d in steps if (d[2] - d[3]) < tottag_format.BENIGN_TIME_STEP_MS]
+   notable = [d for d in steps if (d[2] - d[3]) >= tottag_format.BENIGN_TIME_STEP_MS]
    for label, group in (('expected clock adjustment', benign), ('time discontinuity', notable)):
       if not group or (group is benign and not tottag_format.is_verbose()):
          continue
@@ -473,7 +489,11 @@ class TotTagBLE(threading.Thread):
                self.command_queue.put_nowait('DOWNLOAD_DONE')
                return
             details_len = struct.unpack('<H', self.connected_device.read(2))[0]
-            prefix = self.connected_device.read(4)
+            prefix = self.read_patiently(4, STREAM_START_TIMEOUT_S)
+            if len(prefix) < 4:
+               print('The TotTag never started sending its log')
+               self.command_queue.put_nowait('DOWNLOAD_DONE')
+               return
             if prefix == tottag_format.V2_STREAM_MAGIC:
                # Page-framed stream; accumulate it verbatim so the parser sees the header too
                rest = self.connected_device.read(tottag_format.V2_STREAM_HEADER.size - 4)
@@ -529,6 +549,14 @@ class TotTagBLE(threading.Thread):
             self.command_queue.put_nowait('DOWNLOAD_DONE')
       except serial.SerialException:
          self.connected_device.close()
+
+   def read_patiently(self, count, seconds):
+      """Read `count` bytes over USB, waiting up to `seconds` for them rather than a single read's timeout."""
+      data = bytearray()
+      deadline = time.monotonic() + seconds
+      while (len(data) < count) and (time.monotonic() < deadline):
+         data += self.connected_device.read(count - len(data))
+      return bytes(data)
 
    def identify_usb_tottag(self, port_name):
       try:
@@ -1033,6 +1061,7 @@ class TotTagGUI(tk.Frame):
       self.active_data_entry = None
 
    def _download_logs(self):
+      self._stop_calculating()
       self._clear_canvas()
       self.download_raw_data.set(0)
       self.download_full_log.set(0)
@@ -1083,6 +1112,13 @@ class TotTagGUI(tk.Frame):
             'start': pack_datetime(str(tzlocal.get_localzone()), self.start_date.get(), "00:00", False),
             'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False) + 86400
          })
+         # Until its stream begins, the TotTag is reading through its whole log to total its size. How long that
+         # takes is not known in advance, so the wait counts up rather than pretending to a percentage
+         self.progress_bar.configure(mode='indeterminate')
+         self.progress_bar.start(15)
+         self._stop_calculating()
+         self.calculating_since = time.monotonic()
+         self._show_calculating()
       begin_button = ttk.Button(prompt_area, text="Begin")
       begin_button.configure(command=partial(begin_download, self, begin_button))
       begin_button.grid(column=1, row=10)
@@ -1302,8 +1338,27 @@ class TotTagGUI(tk.Frame):
       self.txt_area.see(tk.END)
       self.txt_area['state'] = tk.DISABLED
 
+   def _show_calculating(self):
+      self.calculating_tick = None
+      if self.data_length or self.calculating_since is None:
+         return
+      try:
+         self.progress_label['text'] = f'Calculating data size... ({describe_elapsed(int(time.monotonic() - self.calculating_since))})'
+      except tk.TclError:
+         return                    # the download screen has been closed
+      self.calculating_tick = self.master.after(1000, self._show_calculating)
+
+   def _stop_calculating(self):
+      self.calculating_since = None
+      if getattr(self, 'calculating_tick', None):
+         self.master.after_cancel(self.calculating_tick)
+         self.calculating_tick = None
+
    def _log_data_received(self, data_length):
       if self.data_length == 0:
+         self._stop_calculating()
+         self.progress_bar.stop()
+         self.progress_bar.configure(mode='determinate')
          self.data_length = data_length
          self.progress_bar['maximum'] = data_length
          data_length = 0
@@ -1448,6 +1503,7 @@ class TotTagGUI(tk.Frame):
          elif key == 'LOGDATA':
             self._log_data_received(data)
          elif key == 'DOWNLOADED':
+            self._stop_calculating()
             self._clear_canvas()
             if data:
                text = "Download complete! Your files were saved to:\n\n"+self.save_directory.get()

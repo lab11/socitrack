@@ -39,6 +39,7 @@ DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
 DEFINES += -DWSF_OS_DIAG=1
 DEFINES += -DWSF_BUF_STATS=1
+DEFINES += -DNANDLOG_PORT_CRC32=1
 DEFINES += $(EXTRA_DEFINES)
 DEFINES += -DRADIO_INSTRUMENTATION=1
 DEFINES += -DWSF_TRACE_ENABLED
@@ -291,12 +292,12 @@ SRC += subscription_phase.c
 SRC += time_aligned_task.c
 SRC += usb_task.c
 
-.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging nandlog_copy nandlog_marker nandlog_reads power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
+.PHONY: all program clean battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging nandlog_bench nandlog_copy nandlog_interrupt nandlog_marker nandlog_powercut nandlog_reads nandlog_selfcut nandlog_selfcut_inject power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb
 .PRECIOUS: $(CONFIG)/%.axf
 .SECONDEXPANSION:
 
 all:
-	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging nandlog_copy nandlog_marker nandlog_reads power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
+	$(error Make targets include: battery ble_and_range ble_reset bluetooth button buzzer full full_segger full_exp imu led log_recovery log_recovery_segger logging nandlog_bench nandlog_copy nandlog_interrupt nandlog_marker nandlog_powercut nandlog_reads nandlog_selfcut nandlog_selfcut_inject power_off ranging ranging_radio ranging_power rtc_set rtc storage system usb)
 
 # TODO: Create separate targets for non-flashing versions
 program:
@@ -416,6 +417,61 @@ nandlog_copy: $(CONFIG) $(CONFIG)/test_nandlog_page_copy.o $(CONFIG)/nandlog_hw_
 nandlog_marker: TARGET = TestNandlogMarker
 nandlog_marker: SRC += test_nandlog_ecc_marker.c nandlog_hw_test.c
 nandlog_marker: $(CONFIG) $(CONFIG)/test_nandlog_ecc_marker.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+
+# The soak's POWERCUT_START line names its build by a fingerprint of the logging sources -- the library, both drivers
+# and this port -- and the test is recompiled whenever one of them changes, so the fingerprint is never stale
+NANDLOG_ID_SOURCES = $(addprefix ../src/external/nandlog/,nandlog.c nandlog.h nandlog_conf.h nandlog_chip.h nandlog_port.h \
+                     chips/nandlog_chip_AS5F18G04SND.c chips/nandlog_chip_W25N01GWZEIG.c) ../src/peripherals/src/storage.c
+nandlog_powercut: TARGET = TestNandlogPowercut
+nandlog_powercut: SRC += test_nandlog_powercut.c nandlog_hw_test.c
+nandlog_powercut: CFLAGS += -DNANDLOG_SOURCE_ID=\"$(shell cat $(NANDLOG_ID_SOURCES) | shasum | cut -c1-12)\"
+nandlog_powercut: $(CONFIG) $(CONFIG)/test_nandlog_powercut.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+$(CONFIG)/test_nandlog_powercut.o: $(NANDLOG_ID_SOURCES)
+
+nandlog_bench: TARGET = TestNandlogBench
+nandlog_bench: SRC += test_nandlog_bench.c nandlog_hw_test.c
+nandlog_bench: CFLAGS += -DNANDLOG_SOURCE_ID=\"$(shell cat $(NANDLOG_ID_SOURCES) | shasum | cut -c1-12)\"
+nandlog_bench: LFLAGS += -Wl,--wrap=nandlog_port_transfer_read,--wrap=nandlog_port_transfer_write,--wrap=nandlog_port_log,--wrap=nandlog_port_delay_us,--wrap=nandlog_port_delay_ms
+nandlog_bench: $(CONFIG) $(CONFIG)/test_nandlog_bench.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+$(CONFIG)/test_nandlog_bench.o: $(NANDLOG_ID_SOURCES)
+
+# The soak run unattended (src/external/nandlog/tests/README.md): the same source with PC_SELF_CUT=1, and with
+# PC_INJECT_FAILURES=1 as well, each compiled into an object of its own so that building one variant never leaves its
+# object where another's image links it; and the port's two transfer functions wrapped at link time, as for the bench
+nandlog_selfcut: TARGET = TestNandlogSelfCut
+nandlog_selfcut: SRC += nandlog_hw_test.c
+nandlog_selfcut: OBJS += $(CONFIG)/test_nandlog_selfcut.o
+nandlog_selfcut: CFLAGS += -DNANDLOG_SOURCE_ID=\"$(shell cat $(NANDLOG_ID_SOURCES) | shasum | cut -c1-12)\"
+nandlog_selfcut: LFLAGS += -Wl,--wrap=nandlog_port_transfer_read,--wrap=nandlog_port_transfer_write
+nandlog_selfcut: $(CONFIG) $(CONFIG)/test_nandlog_selfcut.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+
+nandlog_selfcut_inject: TARGET = TestNandlogSelfCutInject
+nandlog_selfcut_inject: SRC += nandlog_hw_test.c
+nandlog_selfcut_inject: OBJS += $(CONFIG)/test_nandlog_selfcut_inject.o
+nandlog_selfcut_inject: CFLAGS += -DNANDLOG_SOURCE_ID=\"$(shell cat $(NANDLOG_ID_SOURCES) | shasum | cut -c1-12)\"
+nandlog_selfcut_inject: LFLAGS += -Wl,--wrap=nandlog_port_transfer_read,--wrap=nandlog_port_transfer_write
+nandlog_selfcut_inject: $(CONFIG) $(CONFIG)/test_nandlog_selfcut_inject.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+
+$(CONFIG)/test_nandlog_selfcut.o: SOAK_MODE = -DPC_SELF_CUT=1
+$(CONFIG)/test_nandlog_selfcut_inject.o: SOAK_MODE = -DPC_SELF_CUT=1 -DPC_INJECT_FAILURES=1
+$(CONFIG)/test_nandlog_selfcut.o $(CONFIG)/test_nandlog_selfcut_inject.o: test_nandlog_powercut.c $(NANDLOG_ID_SOURCES)
+	@echo " Compiling $< as $(@F)" ;\
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $(SOAK_MODE) $< -o $@
+
+# The interrupted-operation characterization names its build the same way, so its captures can be told apart too
+nandlog_interrupt: TARGET = TestNandlogInterrupt
+nandlog_interrupt: SRC += test_nandlog_interrupt.c nandlog_hw_test.c
+nandlog_interrupt: CFLAGS += -DNANDLOG_SOURCE_ID=\"$(shell cat $(NANDLOG_ID_SOURCES) | shasum | cut -c1-12)\"
+nandlog_interrupt: $(CONFIG) $(CONFIG)/test_nandlog_interrupt.o $(CONFIG)/nandlog_hw_test.o $(CONFIG)/$$(TARGET).bin program
+$(CONFIG)/test_nandlog_interrupt.o: $(NANDLOG_ID_SOURCES)
+
+# The image rule's prerequisites are the shared objects only, so name each nandlog test's own objects too: otherwise
+# a change to the test alone recompiles it but leaves, and flashes, the old image
+$(CONFIG)/TestNandlogBench.axf: $(CONFIG)/test_nandlog_bench.o $(CONFIG)/nandlog_hw_test.o
+$(CONFIG)/TestNandlogPowercut.axf: $(CONFIG)/test_nandlog_powercut.o $(CONFIG)/nandlog_hw_test.o
+$(CONFIG)/TestNandlogSelfCut.axf: $(CONFIG)/test_nandlog_selfcut.o $(CONFIG)/nandlog_hw_test.o
+$(CONFIG)/TestNandlogSelfCutInject.axf: $(CONFIG)/test_nandlog_selfcut_inject.o $(CONFIG)/nandlog_hw_test.o
+$(CONFIG)/TestNandlogInterrupt.axf: $(CONFIG)/test_nandlog_interrupt.o $(CONFIG)/nandlog_hw_test.o
 
 storage: TARGET = TestStorage
 storage: SRC += test_storage.c

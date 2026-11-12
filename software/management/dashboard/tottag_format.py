@@ -681,6 +681,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
         'rejected_records': [(position, seq, count), ...],  # records skipped as implausible
         'repaired': [(position, seq), ...],       # pages recovered from a retransmission round
         'time_discontinuities': [(position, seq, previous_last, this_first), ...],
+        'restart_steps': [...],                   # those of them that begin at a restart: the device's own clock
         'last_seq': int | None,                   # sequence number of the last page received
 
     Each is identified by its POSITION in the stream first, and by the sequence number the device claimed
@@ -717,7 +718,7 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
    log_data = defaultdict(dict)
    report = {'total_pages': total_pages, 'pages_read': 0, 'holes': [], 'crc_failures': [],
              'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'first_verified': None, 'verified_seqs': set(),
-             'time_discontinuities': [], 'details': details, 'truncated': False}
+             'time_discontinuities': [], 'restart_steps': [], 'details': details, 'truncated': False}
    previous_last = None
 
    # Stop after the declared number of pages rather than when the bytes run out. A device that keeps
@@ -800,6 +801,11 @@ def parse_v2(data, experiment_start_time=None, uid_to_labels=None, repairs=None)
          report['rejected_records'].append((None, seq, rejected))
 
    report['truncated'] = report['pages_read'] < total_pages
+
+   # A restart drops the device's correction to network time, so the page it starts carries the device's own clock,
+   # which after a long run has drifted seconds from the network's. Such a step begins exactly at a reset record
+   restarts = {round((timestamp - experiment_start_time) * 1000) for timestamp, datum in log_data.items() if 'rst' in datum}
+   report['restart_steps'] = [step for step in report['time_discontinuities'] if step[3] in restarts]
    return _finalize(log_data), report
 
 
@@ -960,4 +966,4 @@ def parse(data, experiment_start_time=None, uid_to_labels=None, repairs=None):
    records = parse_v1(data, experiment_start_time, uid_to_labels)
    return records, {'total_pages': None, 'pages_read': None, 'holes': [], 'crc_failures': [],
                     'short_pages': [], 'rejected_records': [], 'repaired': [], 'last_seq': None, 'first_verified': None, 'verified_seqs': set(),
-                    'time_discontinuities': [], 'details': None, 'truncated': False}
+                    'time_discontinuities': [], 'restart_steps': [], 'details': None, 'truncated': False}
