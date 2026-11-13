@@ -15,3 +15,7 @@ against the other's source directly.
 [lab11.github.io/socitrack](https://lab11.github.io/socitrack/)** — see
 [`docs/`](../docs/). Start with [Getting Started](../docs/getting-started.md) to set up a device, or
 [the Reference](../docs/reference.md) for build commands and constants.
+
+
+Firmware for hardware older than Rev M is no longer in the tree; [`hardware/legacy/`](../hardware/legacy/)
+says where to find it.

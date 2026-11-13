@@ -35,7 +35,6 @@ that won't appear, won't range, or came back with less data than expected.
 | [Your Data](data.md) | What a log file contains and how to read it |
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
 | [Reference](reference.md) | Limits, constants, and hardware details |
-| [Glossary](glossary.md) | Terms and components |
 
 Working on the firmware or the tools themselves? See [Developer documentation](internals/).
 

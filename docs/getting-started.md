@@ -27,7 +27,8 @@ update firmware.
   `sudo apt install gcc-arm-none-eabi` on Debian or Ubuntu, or a
   [direct download](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads). Any recent
   version works; the firmware is built and tested with GCC 15.
-- The source: `git clone https://github.com/lab11/socitrack`
+- The source: `git clone --recursive https://github.com/lab11/socitrack` — `--recursive` also fetches
+  the storage library the firmware is built from, and the build fails without it
 
 Check the toolchain is on your path before going further:
 
@@ -125,7 +126,7 @@ Repeat for each device.
 
 ```bash
 cd socitrack
-git pull
+git pull --recurse-submodules
 cd software/firmware
 make clean
 make BOARD_REV=P flash

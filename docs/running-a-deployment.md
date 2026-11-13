@@ -31,9 +31,10 @@ python3 -m pip install -e .
 tottag
 ```
 
-There is also a [browser-based tool](dashboard.md#the-browser-tool) that needs no installation but
-requires Chrome, Edge or Opera on a computer. Both configure devices identically and read the same
-logs; use whichever suits you.
+There is also a [browser-based tool](dashboard.md#the-browser-tool) at
+[lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/). It is a web page, so there is
+nothing to install, but it needs Chrome, Edge or Opera on a computer to reach the devices. Both tools
+configure devices identically and read the same logs; use whichever suits you.
 
 ---
 
@@ -48,17 +49,20 @@ With every device on a charger:
 
 | Field | Meaning |
 | --- | --- |
-| **Deployment Timezone** | The timezone your start and end times are written in. Set this first — it reinterprets the times you have already entered. |
+| **Deployment Timezone** | The time zone the study happens in. Every time you enter is on this clock, and changing it reinterprets the times already entered. |
 | **Start / End Date and Time** | The outer bounds of the study. Nothing is recorded before the start or after the end. |
-| **Daily Start / End Time** | Optional. Restricts recording to a window within each day — school hours, say. Leave unset to record continuously between the start and end dates. |
+| **Daily Start / End Time** | Optional. Restricts recording to a window within each day, in the study's local time: school hours, say. Leave unset to record continuously between the start and end dates. |
 | **TotTags in Deployment** | The devices taking part. **Maximum 10.** |
 
 4. **Schedule.** The configuration is pushed to every device on the list.
 
 A few things worth understanding:
 
-- **The timezone is yours, not the device's.** Pick the timezone the study happens in. Devices work in
-  UTC internally and the dashboard converts.
+- **The timezone is yours, not the device's.** Pick the timezone the study happens in, and enter every
+  time as a clock on the wall there would show it. Both tools convert for the devices.
+- **If the clocks change during the study**, a device cannot follow the change, so its daily window
+  moves by an hour on one side of it. The browser tool points this out and asks which side should keep
+  the hours you entered, or whether to widen the window to cover both.
 - **Daily windows may cross midnight.** A daily window of 22:00 to 06:00 is understood as overnight,
   not as an error.
 - **Every device must be scheduled.** A device that was not on the charger when you pressed Schedule
@@ -66,6 +70,23 @@ A few things worth understanding:
 
 Use **Get Scheduled Deployment Details** on a device afterwards to read back what it actually stored.
 It is worth doing on at least one device, and on all of them if the study matters.
+
+### In the browser tool
+
+On **Set up a deployment**, give the study a name if you like, choose its time zone, dates and daily
+hours, then **Add a tag** for each device. As each one is added the page reads its battery, its clock
+and any deployment it still holds, and the summary beside the form lists anything that needs
+attention before writing. **Write to tags** writes each device in turn and reads it back, so every
+device is checked, not just one. Save the **deployment record** it produces: it lists exactly what each
+device confirmed it stored, with times in the study's time zone.
+
+### Before you schedule over an earlier study
+
+**Scheduling a device starts a fresh log on it.** Nothing is erased from its memory, but whatever it
+recorded for the previous study can no longer be downloaded with either tool. Download every device
+from the previous study first ([Step 4](#step-4--collect-and-download)). The browser tool knows which
+studies' data it has saved, and will not write over one it has not seen saved unless you say the
+data is safe elsewhere.
 
 ---
 
@@ -156,5 +177,9 @@ saves a study.
 **Cancel Scheduled Pilot Deployment** clears the schedule from a device. Each device must be cancelled
 individually, on its charger.
 
-To change a study's times or membership, cancel and schedule again. Recorded data is not deleted by
-either action.
+To change a study's times or membership, schedule again; cancelling first is not necessary.
+
+Neither cancelling nor scheduling erases a device's memory, but **both start a fresh log**: anything the
+device recorded before can no longer be downloaded with either tool. Download it first. In the browser
+tool, cancelling is on the **Check a tag** page, which says whether the device's data has been saved
+before it asks you to confirm.

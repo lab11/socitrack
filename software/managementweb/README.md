@@ -4,6 +4,12 @@ Browser-based deployment configuration and data processing for TotTag, alongside
 desktop tool in `software/management`. Both are maintained: they read the same `.ttg` logs and
 speak the same BLE maintenance protocol, so a device does not care which one configured it.
 
+**People using it** open [lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/) and
+need nothing else. The documentation workflow (`.github/workflows/docs.yml`) runs `npm run ci` here on
+every push to `master` that touches this directory and publishes `app/dist` beside the documentation,
+so the published tool is always the last version that passed the whole gate. Everything below is for
+working on the tool itself.
+
 Where the two must agree on a constant, `packages/tottag-schema/test/python-tool-parity.test.ts`
 asserts it against the Python source directly. That test is the reason a change to one tool's
 retransmission policy fails the build until the other is updated to match.
@@ -21,13 +27,21 @@ packages/tottag-schema/   pure format knowledge: constants, parsing, analysis. N
 app/                      React + TypeScript + Vite.
   src/ports/                interfaces: what a log source is, independent of transport
   src/adapters/             the only modules allowed to touch a browser API
-  src/features/             pure decisions: status, restart wording, CSV. Tested under node:test.
+  src/features/             pure decisions: schedule, tag status, plain wording, CSV. Tested under node:test.
+  src/lib/                  hooks and helpers shared by pages: logs, tag access, persisted stores
   src/components/           rendering only, no decisions
   src/styles/               hand-written design tokens, no CSS framework
 ```
 
 The dependency runs one way only. `app/` imports from `packages/`; nothing in `packages/` may
 import a browser or Node API. If a function there needs bytes, it takes a `Uint8Array` argument.
+
+## Conventions
+
+In anything a person reads, a specific tag is **TotTag** followed by the last two parts of its address
+(`TotTag 00:0A`, from `tagName()`), and tags in general are **tags**. Times are always on the study's
+own clock, in the time zone chosen on the setup page; nobody using the tool should ever have to think
+about UTC. `packages/tottag-schema/src/timezone.ts` does every conversion between the two.
 
 ## Commands
 
@@ -41,9 +55,9 @@ npm run open-items -w @tottag/schema
                        print every unresolved assumption and what would settle it
 ```
 
-**Browser support.** Reading logs and building a deployment work anywhere. Writing to a tag needs
-Web Bluetooth, which exists only in Chrome, Edge and Opera on a computer — the app says so up front
-rather than letting it surface at the moment someone needs it. Opening a whole folder at once and
+**Browser support.** Reading logs and planning a deployment work anywhere. Reaching a tag needs Web
+Bluetooth or Web Serial, which exist only in Chrome, Edge and Opera on a computer — the app says so up
+front rather than letting it surface at the moment someone needs it. Opening a whole folder at once and
 choosing where an export goes need the File System Access API, same browsers; both degrade to a file
 picker and a plain download elsewhere.
 

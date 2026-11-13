@@ -5,9 +5,9 @@ a device does not care which one you use.
 
 | | Desktop dashboard | Browser tool |
 | --- | --- | --- |
-| Install | `pip install -e .` | None |
+| Install | `pip install -e .` | None: open [lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/) |
 | Runs on | macOS, Linux, Windows | Chrome, Edge, Opera on a computer |
-| Connection | Bluetooth or USB | Bluetooth |
+| Connection | Bluetooth or USB | Bluetooth or USB |
 | Radio check | Live over Bluetooth | Live over Bluetooth, or from downloaded logs |
 | Analysis helpers | Yes — plotting, event overlays | No |
 
@@ -44,9 +44,13 @@ charger is the first thing to check.
 | --- | --- |
 | **Schedule New Pilot Deployment** | Configures a study: start and end, optional daily window, timezone, and the devices taking part (**maximum 10**). Pushes it to every device listed. |
 | **Get Scheduled Deployment Details** | Reads back what a device actually stored. Worth checking on at least one device. |
-| **Cancel Scheduled Pilot Deployment** | Clears the schedule from the connected device. One device at a time. Does not delete recorded data. |
+| **Cancel Scheduled Pilot Deployment** | Clears the schedule from the connected device. One device at a time. |
 
 Set the **Deployment Timezone** before entering times — changing it reinterprets times already typed.
+
+Scheduling and cancelling both start a fresh log on the device. Nothing is erased from its memory, but
+whatever it recorded before can no longer be downloaded with either tool, so **download a device before
+scheduling or cancelling it**.
 
 ### Checking on a device
 
@@ -124,23 +128,32 @@ timezone explicitly if that matters.
 
 ## The browser tool
 
-```bash
-cd socitrack/software/managementweb
-npm install
-npm run dev
-```
+Open **[lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/)**. It is an ordinary web
+page: there is nothing to install, and it does not upload your data anywhere — everything happens in
+the page, on your computer.
 
-Then open the address it prints. Node 22.6 or newer is required.
+Reading and analysing logs works in any browser. **Reaching a device needs Web Bluetooth or Web
+Serial**, which exist only in Chrome, Edge and Opera on a computer; the tool says so up front rather
+than failing at the moment you need it. Opening a whole folder of logs at once needs the same browsers;
+elsewhere it falls back to a file picker. What you enter is kept in the browser between visits.
 
-Reading and analysing logs works in any browser. **Writing to a device needs Web Bluetooth**, which
-exists only in Chrome, Edge and Opera on a computer — the tool says so up front rather than failing at
-the moment you need it. Opening a whole folder of logs at once needs the same browsers; elsewhere it
-falls back to a file picker.
+It has four pages:
 
-The browser tool does not install anything and does not upload your data anywhere — it runs entirely
-in the page.
+| Page | What it does |
+| --- | --- |
+| **Set up a deployment** | Name, time zone, dates and daily hours, all in the study's local time, and the devices taking part. Shows each device's battery and any deployment it still holds as it is added, warns before writing over a study whose data has not been saved, and writes and reads back every device. Produces a **deployment record** of what each device confirmed. |
+| **Check a tag** | One device's battery, clock, firmware, and the deployment it holds, read back. **Buzz** to find it; **cancel** its deployment, with a warning if its data has not been saved. |
+| **Download & review** | Download a device's log over Bluetooth or USB, or open `.ttg` files, and see for each one the dates it covered against those scheduled, which of the other devices it measured distances to, and anything that needs attention, explained in plain language. |
+| **Radio check** | See below. |
 
-Its **Radio check** tab compares devices against each other to find one with a weak receiver, a faulty
+Devices are named by the last two parts of their ID, such as **TotTag 00:0A**, matching the end of the
+ID on the device's label.
+
+If you develop the tool itself, see
+[`software/managementweb/README.md`](https://github.com/lab11/socitrack/tree/master/software/managementweb)
+for running it locally.
+
+Its **Radio check** page compares devices against each other to find one with a weak receiver, a faulty
 antenna or a calibration that is off. Like the desktop dashboard's **Live Radio Check**, it can run a
 short live test over Bluetooth, with no deployment and nothing to download. It can also read the logs of
 a deployment that already ran. See

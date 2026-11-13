@@ -33,3 +33,7 @@ make BOARD_REV=P flash     # substitute the letter silkscreened on your board
 ```
 
 `make clean` first when switching revisions — object files are not revision-aware.
+
+The build ends with a memory-usage table in which `MCU_TCM` always reads 100%. That is expected: the
+linker gives whatever TCM is left over to the stack, so the region is full by construction rather than
+out of room.

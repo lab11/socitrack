@@ -188,6 +188,20 @@ can be measured and corrected after the fact. See [Your Data](data.md#clock-drif
 
 ---
 
+## The programmer won't connect
+
+If a `make ... flash` stops at `Connecting to J-Link via USB...` and prints nothing more:
+
+- **Is anything else using the J-Link?** Close any other terminal holding a connection to it, such as
+  an RTT or GDB debugging session.
+- **Is your J-Link software older than the probe's firmware?** Whichever computer last used a J-Link
+  updates the firmware on it, and older software on another computer can then fail silently. Update
+  the [J-Link Software Pack](https://www.segger.com/downloads/jlink/).
+- **Still nothing?** Occasionally J-Link refuses to connect until the computer is restarted. This
+  happens more often on macOS.
+
+---
+
 ## Still stuck
 
 Collect, before asking:

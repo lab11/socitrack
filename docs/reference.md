@@ -155,8 +155,5 @@ enforces this.
 
 ## Developer documentation
 
-- [Development environment](internals/development-environment.md)
-- [Storage format](internals/storage-format.md) — the authoritative log format description
-- [Board bring-up](internals/board-bring-up.md)
-- [Bluetooth controller firmware](internals/ble-controller-firmware.md)
-- [IMU firmware](internals/imu-firmware.md)
+The storage format, board bring-up, and controller and IMU firmware updates are covered in the
+[developer documentation](internals/).

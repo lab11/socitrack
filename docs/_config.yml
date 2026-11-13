@@ -22,8 +22,8 @@ header_pages:
   - reference.md
 
 exclude:
-  - archive/
   - datasheets/
+  - media/README.md
   - internals/storage-format.md
 
 defaults:
