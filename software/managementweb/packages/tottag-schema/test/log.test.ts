@@ -122,7 +122,20 @@ test('a range written after a later record keeps its own time, and the page over
   ]);
   const { records, report } = parseV2(stream);
   assert.deepEqual(records.filter((record) => record.kind === 'ranges').map((record) => record.ms), [99_890, 100_390, 100_890, 95_000]);
-  assert.deepEqual(report.timeDiscontinuities, [{ position: 2, seq: 2, previousLast: 100_890, thisFirst: 95_000 }]);
+  assert.deepEqual(report.timeDiscontinuities, [{ position: 2, seq: 2, previousLast: 100_890, thisFirst: 95_000, afterRestart: false }]);
+});
+
+test('a clock step that begins at a restart is marked as the tag\'s own clock taking over', () => {
+  // A restart drops the tag's correction to network time; its reset record opens the page in its own clock,
+  // which here had drifted 8.9 s behind the network's. The bytes are AE's real reset record from such a restart.
+  const range = [1, 0x0b, 0xdc, 0x05];
+  const stream = buildTestPages([
+    [[STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_858_000, range], [STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_858_500, range]],
+    [[STORAGE_TYPE.STORAGE_TYPE_RESET_REASON, 530_849_600, [0x08, 0xe0]], [STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_850_000, range]],
+    [[STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_840_000, range]],
+  ]);
+  const { report } = parseV2(stream);
+  assert.deepEqual(report.timeDiscontinuities.map((step) => [step.thisFirst, step.afterRestart]), [[530_849_600, true], [530_840_000, false]]);
 });
 
 test('the watchdog fixture names the stalled task', () => {

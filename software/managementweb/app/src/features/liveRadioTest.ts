@@ -2,9 +2,9 @@
 // through the restart into the test and any dropped connection after. Pure orchestration over TagConnection, so it
 // runs against fake tags in tests; the page subscribes and renders.
 
-import { LiveRadioRecorder, type RadioStats } from '@tottag/schema';
+import { LiveRadioRecorder, tagName, type RadioStats } from '@tottag/schema';
 import type { TagConnection } from '../ports/tagTransport.ts';
-import { shortId, type RadioDeployment } from './radioCheck.ts';
+import type { RadioDeployment } from './radioCheck.ts';
 
 export type LiveDeviceStatus =
   | 'ready'          // connected, no test yet
@@ -113,7 +113,7 @@ export class LiveRadioTest {
   /** Add a device picked in the chooser. Returns why it cannot take part, or null. */
   add(connection: TagConnection, label?: string): string | null {
     if (this.phase !== 'setup') return 'A test is already under way.';
-    if (!connection.liveRadio) return `${shortId(connection.identity.eui[0] ?? 0)} cannot run a live test: it needs newer firmware, and a Bluetooth connection.`;
+    if (!connection.liveRadio) return `${tagName(connection.identity.eui)} cannot run a live test: it needs newer firmware, and a Bluetooth connection.`;
     const uid = connection.identity.eui[0] ?? 0;
     const existing = this.entries.find((entry) => entry.uid === uid);
     if (existing) {
@@ -124,7 +124,7 @@ export class LiveRadioTest {
       return null;
     }
     this.entries.push({
-      handle: connection.identity.handle, eui: connection.identity.eui, uid, label: label?.trim() || shortId(uid),
+      handle: connection.identity.handle, eui: connection.identity.eui, uid, label: label?.trim() || tagName(connection.identity.eui),
       status: 'ready', message: null, connection, recorder: null, previous: null, roundsPerSecond: null,
       generation: 0, cancel: [], unwatch: null,
     });
@@ -208,7 +208,7 @@ export class LiveRadioTest {
     return {
       key: `live-${this.startTime}`,
       startTime: this.startTime,
-      devices: this.entries.map((entry) => ({ uid: entry.uid, label: entry.label })),
+      devices: this.entries.map((entry) => ({ uid: entry.uid, label: entry.label, name: tagName(entry.eui) })),
       logs,
       unmatched: [],
     };
@@ -306,7 +306,7 @@ export class LiveRadioTest {
           this.reconnectLater(entry, this.deps.reconnectMs);
           return;
         }
-        this.fail(entry, 'This device is not running the test. It may have restarted out of it, or refused it.');
+        this.fail(entry, 'This tag is not running the test. It may have restarted out of it, or refused it.');
         return;
       } else {
         if (entry.previous && now > entry.previous.ms) {

@@ -1,192 +1,130 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { webBluetoothTransport } from './adapters/webBluetooth.ts';
+import { webSerialTransport } from './adapters/webSerial.ts';
+import { ConfirmButton } from './components/ConfirmButton.tsx';
+import { BrandMark, CalendarIcon, DownloadIcon, LockIcon, SearchIcon, SignalIcon } from './components/Icons.tsx';
+import { useDeploymentDraft } from './features/useDeploymentDraft.ts';
+import { useLogs } from './lib/useLogs.ts';
+import { CheckTag } from './views/CheckTag.tsx';
 import { Deploy } from './views/Deploy.tsx';
 import { RadioCheck } from './views/RadioCheck.tsx';
-import { DownloadFromTag } from './components/DownloadFromTag.tsx';
-import { downloadBytes, downloadText } from './adapters/download.ts';
-import { directoryLogSource } from './adapters/fileLogSource.ts';
-import { DeviceCard } from './components/DeviceCard.tsx';
-import { ImportPanel } from './components/ImportPanel.tsx';
-import { buildReport, sortByUrgency, type DeviceReport } from './features/deployment.ts';
-import { summaryCsv, summaryFilename } from './features/exportCsv.ts';
-import type { LoadFailure, LoadResult } from './ports/logSource.ts';
+import { Review } from './views/Review.tsx';
 
-type View = 'logs' | 'deploy' | 'radio';
+type View = 'deploy' | 'check' | 'review' | 'radio';
+
+// In the order a study meets them: set the tags up, check one when in doubt, bring the data back in.
+// The radio check is a bench test done now and then, so it comes last.
+const VIEWS: ReadonlyArray<{ id: View; label: string; title: string; icon: ReactNode }> = [
+  { id: 'deploy', label: 'Set up a deployment', title: 'Set up a deployment', icon: <CalendarIcon /> },
+  { id: 'check', label: 'Check a tag', title: 'Check a tag', icon: <SearchIcon /> },
+  { id: 'review', label: 'Download & review', title: 'Download and review data', icon: <DownloadIcon /> },
+  { id: 'radio', label: 'Radio check', title: "Check tags' radios", icon: <SignalIcon /> },
+];
+
+const viewFromHash = (): View => {
+  const id = window.location.hash.replace('#', '');
+  return VIEWS.some((view) => view.id === id) ? (id as View) : 'deploy';
+};
 
 export function App() {
-  const [view, setView] = useState<View>('logs');
-  const [reports, setReports] = useState<readonly DeviceReport[]>([]);
-  const [failures, setFailures] = useState<readonly LoadFailure[]>([]);
-  const [busy, setBusy] = useState(false);
-  // Ids of logs whose bytes have been written to disk at least once. Only meaningful for logs that
-  // came off a tag; an imported file is on disk by definition.
-  const [saved, setSaved] = useState<ReadonlySet<string>>(() => new Set());
-  const [saveError, setSaveError] = useState<string | null>(null);
-  // Index counter kept outside state: onLoaded must not close over a stale reports array.
-  const reportCount = useRef(0);
+  const [view, setView] = useState<View>(viewFromHash);
+  const draftApi = useDeploymentDraft();
+  const logs = useLogs();
+  const { draft, addDevice } = draftApi;
 
-  const onLoaded = useCallback(async (result: LoadResult) => {
-    setBusy(true);
-    try {
-      // Parsed in a worker, so a multi-megabyte deployment file does not freeze the page. Sequential
-      // rather than parallel: one worker handles them in turn, and a dozen files racing for it would
-      // only make the first one slower.
-      const built: DeviceReport[] = [];
-      for (const [index, log] of result.loaded.entries()) {
-        built.push(await buildReport(log, reportCount.current + index));
-      }
-      reportCount.current += built.length;
-      setReports((current) => [...current, ...built]);
-      setFailures(result.failed);
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
-  const ordered = useMemo(() => sortByUrgency(reports), [reports]);
-  const counts = useMemo(() => {
-    const tally = { ok: 0, note: 0, warning: 0, error: 0 };
-    for (const report of reports) tally[report.status] += 1;
-    return tally;
-  }, [reports]);
-
-  const unsaved = useMemo(
-    () => reports.filter((report) => report.data !== null && !saved.has(report.id)),
-    [reports, saved],
-  );
-
-  // The one thing this app can destroy. Bytes pulled off a tag exist nowhere else, a transfer costs
-  // minutes, and a closed tab takes them with it silently. The browser's own dialog is generic and
-  // cannot be reworded, but it is the only thing that fires before the page is gone.
+  // The page is in the address, so a reload or the back button lands where it was.
   useEffect(() => {
-    if (unsaved.length === 0) return undefined;
-    const warn = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';   // still required by browsers that predate preventDefault() here
-    };
-    window.addEventListener('beforeunload', warn);
-    return () => window.removeEventListener('beforeunload', warn);
-  }, [unsaved.length]);
-
-  const exportCsv = useCallback(() => {
-    void downloadText(summaryFilename(new Date()), summaryCsv(ordered));
-  }, [ordered]);
-
-  const saveLog = useCallback(async (report: DeviceReport) => {
-    if (!report.data) return;
-    setSaveError(null);
-    try {
-      // Only on a real write. A dismissed save dialog must leave the log counted as unsaved, or the
-      // warning and the disabled Clear — the two things standing between a cancelled save and lost
-      // bytes — would both quietly go away.
-      if (await downloadBytes(report.saveName, report.data)) {
-        setSaved((current) => new Set(current).add(report.id));
-      }
-    } catch (caught) {
-      setSaveError(caught instanceof Error ? caught.message : String(caught));
-    }
+    if (window.location.hash !== `#${view}`) history.replaceState(null, '', `#${view}`);
+    window.scrollTo(0, 0);
+  }, [view]);
+  useEffect(() => {
+    const follow = () => setView(viewFromHash());
+    window.addEventListener('hashchange', follow);
+    return () => window.removeEventListener('hashchange', follow);
   }, []);
 
-  const openFolder = useCallback(async () => {
-    onLoaded(await directoryLogSource.load());
-  }, [onLoaded]);
+  const labelFor = useCallback((eui: Uint8Array) => {
+    const match = draft.devices.find((device) => device.eui.length === eui.length && device.eui.every((b, i) => b === eui[i]));
+    return match?.label.trim() || undefined;
+  }, [draft.devices]);
 
-  const hasLogs = reports.length > 0;
+  const active = VIEWS.find((entry) => entry.id === view)!;
+  const bluetooth = !webBluetoothTransport.unavailableReason();
+  const usb = !webSerialTransport.unavailableReason();
 
   return (
     <div className="shell">
-      <header className="shell__head">
-        <div className="shell__head-inner">
+      <nav className="rail" aria-label="Sections">
+        <div className="brand">
+          <BrandMark />
           <div>
-            <h1 className="shell__title">TotTag</h1>
-            <p className="shell__tagline">Set up deployments and read what they recorded</p>
+            <span className="brand__name">TotTag</span>
+            <span className="brand__sub">Deployment tools</span>
           </div>
-          <nav className="nav" aria-label="Sections">
-            <button type="button" className={`nav__tab${view === 'deploy' ? ' nav__tab--active' : ''}`}
-              onClick={() => setView('deploy')} aria-current={view === 'deploy'}>Set up a deployment</button>
-            <button type="button" className={`nav__tab${view === 'logs' ? ' nav__tab--active' : ''}`}
-              onClick={() => setView('logs')} aria-current={view === 'logs'}>Logs</button>
-            <button type="button" className={`nav__tab${view === 'radio' ? ' nav__tab--active' : ''}`}
-              onClick={() => setView('radio')} aria-current={view === 'radio'}>Radio check</button>
-          </nav>
-          {hasLogs && view === 'logs' && (
-            <div className="shell__actions">
-              <button type="button" className="button" onClick={exportCsv}>
-                Export summary (CSV)
-              </button>
-              <button type="button" className="button button--quiet"
-                onClick={() => { setReports([]); setFailures([]); setSaved(new Set()); setSaveError(null); }}
-                disabled={unsaved.length > 0}
-                title={unsaved.length > 0 ? 'Save the downloaded logs first — clearing would discard them' : undefined}>
-                Clear
-              </button>
-            </div>
-          )}
         </div>
-      </header>
+        <div className="rail__links">
+          {VIEWS.map((entry) => (
+            <button key={entry.id} type="button" className="rail__link"
+              aria-current={view === entry.id ? 'page' : undefined} onClick={() => setView(entry.id)}>
+              {entry.icon}
+              <span>{entry.label}</span>
+              {entry.id === 'review' && logs.unsaved.length > 0 && (
+                <span className="rail__badge" title="Downloaded logs not saved yet">{logs.unsaved.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="rail__foot">
+          <p className="rail__note"><LockIcon /> Everything stays on this computer. Nothing is uploaded.</p>
+          <p className="rail__note">
+            {bluetooth || usb
+              ? `This browser can reach tags over ${[bluetooth && 'Bluetooth', usb && 'USB'].filter(Boolean).join(' and ')}.`
+              : 'This browser cannot reach tags. Use Chrome, Edge or Opera on a computer.'}
+          </p>
+        </div>
+      </nav>
 
-      <main className="shell__main">
-        {view === 'deploy' ? <Deploy /> : view === 'radio' ? (
-          <RadioCheck reports={reports} busy={busy} onLoaded={(result) => void onLoaded(result)} onOpenFolder={openFolder} />
-        ) : !hasLogs ? (
-          <>
-            <ImportPanel onLoaded={(result) => void onLoaded(result)} onOpenFolder={openFolder} busy={busy} />
-            <DownloadFromTag busy={busy} onDownloaded={(log) => void onLoaded({ loaded: [log], failed: [] })} />
-          </>
-        ) : (
-          <>
-            {unsaved.length > 0 && (
-              <p className="banner banner--warning">
-                {unsaved.length === 1 ? 'One log is' : `${unsaved.length} logs are`} only in this browser.
-                Use <strong>Save</strong> on {unsaved.length === 1 ? 'its card' : 'their cards'} to write
-                {unsaved.length === 1 ? ' it' : ' them'} to disk.
-              </p>
+      <div className="main">
+        <header className="topbar">
+          <h1 className="topbar__title">{active.title}</h1>
+          <div className="topbar__actions">
+            {view === 'deploy' && (
+              <ConfirmButton
+                label="Start a new deployment"
+                question="Start a new deployment? The dates, tags and labels are cleared. The time zone and daily hours are kept."
+                confirmLabel="Start a new one"
+                onConfirm={draftApi.startNew}
+              />
             )}
-            {saveError && <p className="banner banner--error">Could not save: {saveError}</p>}
-            <div className="summary">
-              <p className="summary__line">
-                <strong>{reports.length}</strong> log{reports.length === 1 ? '' : 's'} open
-                {counts.warning > 0 && (
-                  <> · <span className="summary__warning">
-                    {counts.warning} {counts.warning === 1 ? "needs" : "need"} attention
-                  </span></>
-                )}
-                {counts.error > 0 && <> · <span className="summary__error">{counts.error} unreadable</span></>}
-                {counts.warning === 0 && counts.error === 0 && <> · all look sound</>}
-              </p>
-            </div>
-            <ImportPanel onLoaded={(result) => void onLoaded(result)} onOpenFolder={openFolder} busy={busy} compact />
-            <DownloadFromTag busy={busy} onDownloaded={(log) => void onLoaded({ loaded: [log], failed: [] })} />
-            <div className="cards">
-              {ordered.map((report) => (
-                <DeviceCard
-                  key={report.id}
-                  report={report}
-                  onSave={report.data ? () => void saveLog(report) : undefined}
-                  saved={saved.has(report.id)}
-                />
-              ))}
-            </div>
-          </>
-        )}
+            {view === 'review' && logs.reports.length > 0 && (
+              <>
+                <button type="button" className="button button--quiet" onClick={logs.exportCsv}>Export summary (CSV)</button>
+                <button type="button" className="button button--quiet" onClick={logs.clear} disabled={logs.unsaved.length > 0}
+                  title={logs.unsaved.length > 0 ? 'Save the downloaded logs first. Clearing would discard them.' : 'Close every log on this page'}>
+                  Clear
+                </button>
+              </>
+            )}
+          </div>
+        </header>
 
-        {failures.length > 0 && (
-          <ul className="failures">
-            {failures.map((failure) => (
-              <li key={failure.name} className="failures__item">
-                <strong>{failure.name}</strong> — {failure.reason}
-              </li>
-            ))}
-          </ul>
-        )}
-      </main>
-
-      <footer className="shell__foot">
-        <p>
-          {view !== 'deploy'
-            ? 'Logs are read in this browser and never uploaded. An imported file is left untouched; a log downloaded from a tag exists only here until you save it.'
-            : 'This deployment is saved in this browser as you type, so a reload will not lose it. Nothing is uploaded.'}
-        </p>
-      </footer>
+        <main className="content">
+          {/* Every page stays mounted, so switching between them never discards what is on one. */}
+          <div hidden={view !== 'deploy'}><Deploy draftApi={draftApi} /></div>
+          <div hidden={view !== 'check'}>
+            <CheckTag
+              timezone={draft.timezone}
+              inDeployment={(eui) => !!labelFor(eui) || draft.devices.some((d) => d.eui.every((b, i) => b === eui[i]))}
+              onAddToDeployment={(eui) => addDevice({ eui, label: '' })}
+            />
+          </div>
+          <div hidden={view !== 'review'}><Review logs={logs} timezone={draft.timezone} /></div>
+          <div hidden={view !== 'radio'}>
+            <RadioCheck reports={logs.reports} busy={logs.busy} onLoaded={(result) => void logs.onLoaded(result)}
+              onOpenFolder={() => void logs.openFolder()} labelFor={labelFor} />
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

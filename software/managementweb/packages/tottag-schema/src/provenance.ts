@@ -17,6 +17,8 @@ export const SNAPSHOT_BACKED: Readonly<Record<string, string>> = {
   STORAGE_TYPE: 'enums.storage_data_type_t.members',
   MOTION_CODE: 'enums.motion_code_t.members',
   BATTERY_EVENT: 'enums.battery_event_t.members',
+  BATTERY_STATUS: 'enums.battery_status_t.members',
+  MIN_RECORDING_BATTERY_MV: 'enums.battery_status_t.members.BATTERY_NOMINAL',
   SCHEDULE_ROLE: 'enums.schedule_role_t.members',
   SCHEDULER_PHASE: 'enums.scheduler_phase_t.members',
   PACKET_TYPE: 'enums.packet_t.members',

@@ -210,6 +210,11 @@ export const ENUMS = [
     note: 'Body of a CHARGING_EVENT record. 1..4 match the Python tool BATTERY_CODES mapping; 5 (BATTERY_CRITICAL_VOLTAGE) was added for the gated VCOMP brownout path.',
   },
   {
+    name: 'battery_status_t',
+    file: 'app/app_config.h',
+    note: 'Battery thresholds in mV. A tag off its charger with less than BATTERY_NOMINAL does not start a deployment (app_tasks.c); the setup page warns below it.',
+  },
+  {
     name: 'schedule_role_t',
     file: 'tasks/app_tasks.h',
     note: 'Advertised ranging role, third byte of the BLE manufacturer data, and the role in a SESSION_END record.',

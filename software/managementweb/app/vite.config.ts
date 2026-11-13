@@ -8,6 +8,9 @@ export default defineConfig({
   // Excluding it from dependency pre-bundling makes Vite treat it as source, so a change there is
   // picked up without a rebuild and type errors surface in the app's own typecheck.
   optimizeDeps: { exclude: ['@tottag/schema'] },
+  // Published by GitHub Pages under the documentation site, at /app/. A relative base keeps the build
+  // working wherever it is mounted.
+  base: './',
   build: { target: 'es2022', sourcemap: true },
   server: { port: 5173 },
 });

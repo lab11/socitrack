@@ -29,7 +29,7 @@ const MAX_NOTIFICATION_SCALE = 3;
  */
 export function encodeRadioTestStartCommand(startTime: number, endTime: number, euis: readonly Uint8Array[]): Uint8Array {
   if (!euis.length || euis.length > MAX_NUM_RANGING_DEVICES) {
-    throw new Error(`A radio test needs between 1 and ${MAX_NUM_RANGING_DEVICES} devices, not ${euis.length}.`);
+    throw new Error(`A radio test needs between 1 and ${MAX_NUM_RANGING_DEVICES} tags, not ${euis.length}.`);
   }
   if (!Number.isInteger(startTime) || !Number.isInteger(endTime) || endTime <= startTime) {
     throw new Error('A radio test must end after it starts, in whole seconds.');
@@ -90,13 +90,13 @@ const roleName = (value: number) =>
 /** Decode a read of BLE_LIVE_STATS_RADIO_CHAR. Throws on a layout this package does not know. */
 export function decodeRadioStats(bytes: Uint8Array): RadioStats {
   if (bytes.length < RADIO_STATS_LAYOUT.size) {
-    throw new Error(`Radio statistics are ${RADIO_STATS_LAYOUT.size} bytes; this device sent ${bytes.length}.`);
+    throw new Error(`Radio statistics are ${RADIO_STATS_LAYOUT.size} bytes; this tag sent ${bytes.length}.`);
   }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const field = (name: string) => RADIO_STATS_LAYOUT.fields.find((f) => f.name === name)!.offset;
   const version = view.getUint8(field('version'));
   if (version !== BLE_RADIO_STATS_VERSION) {
-    throw new Error(`This device reports radio statistics in layout ${version}, which this page does not read. Update the page or the device.`);
+    throw new Error(`This tag reports radio statistics in layout ${version}, which this page does not read. Update the page or the tag's firmware.`);
   }
   const flags = view.getUint8(field('flags'));
   const perAntenna = (name: string) =>

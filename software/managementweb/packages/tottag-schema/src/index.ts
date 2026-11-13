@@ -11,6 +11,7 @@ export * from './log.ts';
 export * from './health.ts';
 export * from './hardware.ts';
 export * from './deployment.ts';
+export * from './timezone.ts';
 export * from './manifest.ts';
 export * from './firmwareEra.ts';
 export * from './throughput.ts';

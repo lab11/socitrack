@@ -282,8 +282,11 @@ export interface ParseReport {
   /** Structurally valid records whose contents failed a plausibility check. */
   readonly rejectedRecords: ReadonlyArray<{ position: number; seq: number; count: number }>;
   readonly repaired: ReadonlyArray<readonly [number, number]>;
-  /** Page bounds running backwards: the device's clock base moved here. */
-  readonly timeDiscontinuities: ReadonlyArray<{ position: number; seq: number; previousLast: number; thisFirst: number }>;
+  /**
+   * Page bounds running backwards: the device's clock base moved here. `afterRestart` marks a step that
+   * begins at a reset record, where the device's own clock takes over from the network's.
+   */
+  readonly timeDiscontinuities: ReadonlyArray<{ position: number; seq: number; previousLast: number; thisFirst: number; afterRestart: boolean }>;
   readonly lastSeq: number | null;
   readonly truncated: boolean;
   readonly details: Uint8Array | null;
@@ -311,6 +314,12 @@ export interface ExperimentDetails {
 // --- Format detection -------------------------------------------------------------------------------
 
 const ASCII = new TextDecoder('latin1');
+/**
+ * Labels are typed by people and stored as UTF-8, which is also how the Python tool writes and reads
+ * them. Decoding them byte by byte instead turned "Mamá" into "MamÃ¡" and made every tag in a
+ * deployment report a mismatch for a label it had stored perfectly well.
+ */
+const LABEL_TEXT = new TextDecoder('utf-8');
 
 /**
  * Return 2 if the stream carries the v2 magic, otherwise 1.
@@ -849,7 +858,7 @@ export function parseExperimentDetails(details: Uint8Array): ExperimentDetails {
     uids.push(details.subarray(uidsAt + i * EUI_LEN, uidsAt + (i + 1) * EUI_LEN));
     // NUL padded, not NUL terminated, so trim rather than reading to a terminator.
     const raw = details.subarray(labelsAt + i * EUI_NAME_MAX_LEN, labelsAt + (i + 1) * EUI_NAME_MAX_LEN);
-    labels.push(ASCII.decode(raw).replace(/\0+$/, ''));
+    labels.push(LABEL_TEXT.decode(raw).replace(/\0+$/, ''));
   }
   const numDevices = details[17]!;
   return {
@@ -941,7 +950,7 @@ export function parseV2(
   const shortPages: Array<{ position: number; seq: number; decoded: number; expected: number }> = [];
   const rejectedRecords: Array<{ position: number; seq: number; count: number }> = [];
   const repairedPages: Array<readonly [number, number]> = [];
-  const timeDiscontinuities: Array<{ position: number; seq: number; previousLast: number; thisFirst: number }> = [];
+  const timeDiscontinuities: Array<{ position: number; seq: number; previousLast: number; thisFirst: number; afterRestart: boolean }> = [];
   const seenSeqs = new Set<number>();
 
   let previousLast: number | null = null;
@@ -986,7 +995,7 @@ export function parseV2(
     // early is not that: a range stamped at its round's start can be written after a record stamped
     // later, and keeps its own time.
     if (firstTimestamp !== null && previousLast !== null && previousLast - firstTimestamp > NANDLOG_TIMESTAMP_TOLERANCE_MS) {
-      timeDiscontinuities.push({ position: position - 1, seq, previousLast, thisFirst: firstTimestamp });
+      timeDiscontinuities.push({ position: position - 1, seq, previousLast, thisFirst: firstTimestamp, afterRestart: false });
     }
     if (lastTimestamp !== null) previousLast = lastTimestamp;
 
@@ -1042,6 +1051,11 @@ export function parseV2(
     if (lastSeq === null || seq > lastSeq) lastSeq = seq;
     if (walk.rejected) rejectedRecords.push({ position: -1, seq, count: walk.rejected });
   }
+
+  // A restart drops the device's correction to network time, so the page it starts carries the device's own
+  // clock, which after a long run has drifted seconds from the network's. Such a step begins at a reset record.
+  const restartsAt = new Set<number>(records.filter((record) => record.kind === 'reset').map((record) => record.ms as number));
+  for (const step of timeDiscontinuities) step.afterRestart = restartsAt.has(step.thisFirst);
 
   return {
     records,

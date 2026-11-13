@@ -131,6 +131,8 @@ export interface IntegrityHealth {
   readonly significantTimeSteps: number;
   /** Backward page bounds below that threshold: routine clock adjustment. */
   readonly benignTimeSteps: number;
+  /** Backward page bounds that begin at a restart, where the tag's own clock took over: drift, not a fault. */
+  readonly restartClockSteps: number;
   readonly clean: boolean;
 }
 
@@ -285,7 +287,9 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
   for (let i = 1; i < seqs.length; i += 1) {
     if (seqs[i]! !== seqs[i - 1]! + 1) sequenceGaps += 1;
   }
-  const significantTimeSteps = report.timeDiscontinuities.filter(
+  const restartSteps = report.timeDiscontinuities.filter((step) => step.afterRestart);
+  const otherSteps = report.timeDiscontinuities.filter((step) => !step.afterRestart);
+  const significantTimeSteps = otherSteps.filter(
     (step) => step.previousLast - step.thisFirst >= TIME_BASE_CHANGE_THRESHOLD_MS,
   ).length;
 
@@ -299,7 +303,8 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
     sequenceGaps,
     duplicateSeqs: seqs.length - uniqueSeqs.size,
     significantTimeSteps,
-    benignTimeSteps: report.timeDiscontinuities.length - significantTimeSteps,
+    benignTimeSteps: otherSteps.length - significantTimeSteps,
+    restartClockSteps: restartSteps.length,
     clean:
       report.holes.length === 0 &&
       report.crcFailures.length === 0 &&
@@ -314,9 +319,9 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
       severity: 'warning',
       code: 'pages-lost',
       message:
-        `${integrity.holes} page(s) the device could not read, and ${integrity.crcFailures} page(s) that failed ` +
+        `${integrity.holes} page(s) the tag could not read, and ${integrity.crcFailures} page(s) that failed ` +
         'CRC here. Worth asking for both again, but they are not the same thing: a CRC failure means the bytes ' +
-        'were damaged on the way over and a retransmission should fix it, whereas a page the device could not ' +
+        'were damaged on the way over and a retransmission should fix it, whereas a page the tag could not ' +
         'read will most likely come back unreadable again, because the flash content itself is bad. Ask before ' +
         'treating the file as final.',
     });
@@ -335,6 +340,17 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
       message:
         `${significantTimeSteps} backward page boundary(ies) of at least ${TIME_BASE_CHANGE_THRESHOLD_MS} ms. ` +
         'A full download is unaffected, but a date-limited one may be missing data it asked for.',
+    });
+  }
+  const restartDriftMs = Math.max(0, ...restartSteps.map((step) => step.previousLast - step.thisFirst));
+  if (restartDriftMs >= TIME_BASE_CHANGE_THRESHOLD_MS) {
+    anomalies.push({
+      severity: 'note',
+      code: 'clock-after-restart',
+      message:
+        `After ${restartSteps.length} restart${restartSteps.length === 1 ? '' : 's'}, this log carries the tag's own ` +
+        `clock, which had drifted ${(restartDriftMs / 1000).toFixed(1)} s behind network time. That is normal clock ` +
+        'drift; nothing was lost.',
     });
   }
 
@@ -410,7 +426,7 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
       );
     }
     if (shapes.has('whole-system')) {
-      shapeNotes.push('A whole-system stall means no task was running to record a cause: the device genuinely stopped.');
+      shapeNotes.push('A whole-system stall means no task was running to record a cause: the tag genuinely stopped.');
     }
     if (shapes.has('fault')) {
       shapeNotes.push('A fault means a handler ran and named a fault rather than a stall.');
@@ -469,7 +485,7 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
         severity: 'warning',
         code: 'rtc-restarted',
         message:
-          "The device's own clock steps backwards inside this log. Experiment-relative timestamps either " +
+          "The tag's own clock steps backwards inside this log. Experiment-relative timestamps either " +
           'side of that point are measured from different origins, so durations spanning it are not ' +
           'meaningful. Two things can cause it: power was removed and the RTC restarted, which is much the ' +
           'likelier, or something wrote the BLE timestamp characteristic mid-run — that write is not guarded ' +
@@ -481,10 +497,10 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
         severity: 'note',
         code: 'time-base-step',
         message:
-          `The device's time base moved by ${(timeBaseStepMs / 1000).toFixed(1)} s in one step, and by ` +
+          `The tag's time base moved by ${(timeBaseStepMs / 1000).toFixed(1)} s in one step, and by ` +
           `${(clock.offsetDriftMs / 1000).toFixed(1)} s over the run. That is a correction, not drift: the tag ` +
           'adopted the network\'s clock when it joined, which it does whenever its own RTC disagrees by more ' +
-          `than ${TIME_BASE_CHANGE_THRESHOLD_MS} ms. Ranges and agreement between devices are unaffected — ` +
+          `than ${TIME_BASE_CHANGE_THRESHOLD_MS} ms. Ranges and agreement between tags are unaffected — ` +
           'they are measured on the shared clock. What it does mean is that this tag\'s RTC was wrong by about ' +
           'that much when the run started, which is worth fixing before the next deployment.',
       });
@@ -493,9 +509,9 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
         severity: 'note',
         code: 'network-clock-drift',
         message:
-          `This device's clock moved ${(clock.offsetDriftMs / 1000).toFixed(1)} s relative to the network over ` +
+          `This tag's clock moved ${(clock.offsetDriftMs / 1000).toFixed(1)} s relative to the network over ` +
           `the run (${((Math.abs(clock.offsetDriftMs) / 1000 / spanSeconds) * 1e6).toFixed(0)} ppm). Absorbed ` +
-          'by the offset mechanism; it affects absolute time only, not agreement between devices.',
+          'by the offset mechanism; it affects absolute time only, not agreement between tags.',
       });
     }
   }
@@ -555,7 +571,7 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
         (dutyCycle < 1
           ? `This deployment records ${(dutyCycle * 24).toFixed(1)} hours a day, and the figure already ` +
             'accounts for the hours it was meant to be asleep, so the shortfall is on top of that.'
-          : 'This figure is against the measured period, so the shortfall is real time the device was not ' +
+          : 'This figure is against the measured period, so the shortfall is real time the tag was not ' +
             'running rather than an artefact of the nominal number.'),
     });
   }
@@ -722,7 +738,7 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
       severity: 'warning',
       code: 'pool-figures-implausible',
       message:
-        'The device reported BLE buffer figures that cannot be true — a pool with more buffers ' +
+        'The tag reported BLE buffer figures that cannot be true — a pool with more buffers ' +
         'outstanding than it owns, or none at all. The counters are not being read from where they ' +
         'should be, so nothing about buffer headroom can be concluded from this log. Everything else ' +
         'here is unaffected; these are the only fields involved.',

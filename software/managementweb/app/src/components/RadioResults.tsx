@@ -1,11 +1,11 @@
-// What the radio check shows, whichever way its data arrived: a card per device, the link matrix, and the table of
-// where the devices were. Shared by the check from downloaded logs and the live check over Bluetooth, so the two
+// What the radio check shows, whichever way its data arrived: a card per tag, the link matrix, and the table of
+// where the tags were. Shared by the check from downloaded logs and the live check over Bluetooth, so the two
 // cannot drift into showing the same result differently.
 
 import { useEffect, useMemo, useState } from 'react';
 import type { RadioCheckDevice, RadioCheckLink, RadioVerdict } from '@tottag/schema';
 import { Stat } from './Stat.tsx';
-import { circlePositions, formatMm, formatPercent, linePositions, shortId, type Positions, type RadioDevice } from '../features/radioCheck.ts';
+import { circlePositions, formatMm, formatPercent, linePositions, type Positions, type RadioDevice } from '../features/radioCheck.ts';
 
 export const VERDICT_LABEL: Record<RadioVerdict, string> = { pass: 'Pass', check: 'Check', fail: 'Fail', missing: 'No log' };
 export const VERDICT_CLASS: Record<RadioVerdict, string> = { pass: 'ok', check: 'note', fail: 'warning', missing: 'error' };
@@ -57,17 +57,17 @@ export function PositionsPanel({ devices, positions }: {
   const [spacing, setSpacing] = useState('1');
   return (
     <section className="panel">
-      <h2 className="panel__title">Where the devices were</h2>
+      <h2 className="panel__title">Where the tags were</h2>
       <p className="panel__note">
         Optional. In metres, from any corner you like. With at least three positions, the check works
-        out whether one device reads long or short on every link.
+        out whether one tag reads long or short on every link.
       </p>
       <table className="rtable">
-        <thead><tr><th>Device</th><th>X (m)</th><th>Y (m)</th></tr></thead>
+        <thead><tr><th>Tag</th><th>X (m)</th><th>Y (m)</th></tr></thead>
         <tbody>
           {devices.map((device) => (
             <tr key={device.uid}>
-              <td>{device.label} <span className="device__short">{shortId(device.uid)}</span></td>
+              <td>{device.label}{device.label !== device.name && <span className="tag-id"> {device.name}</span>}</td>
               {(['x', 'y'] as const).map((axis) => (
                 <td key={axis}>
                   <input
@@ -81,8 +81,8 @@ export function PositionsPanel({ devices, positions }: {
           ))}
         </tbody>
       </table>
-      <div className="panel__actions">
-        <label className="field__label radio__layout">
+      <div className="actions">
+        <label className="inline-field">
           Circle of radius
           <input className="rtable__input" inputMode="decimal" value={radius} onChange={(event) => setRadius(event.target.value)} /> m
         </label>
@@ -90,7 +90,7 @@ export function PositionsPanel({ devices, positions }: {
           onClick={() => update(fromPositions(circlePositions(devices.map((b) => b.uid), Number.parseFloat(radius) || 1)))}>
           Fill in a circle
         </button>
-        <label className="field__label radio__layout">
+        <label className="inline-field">
           Line spaced
           <input className="rtable__input" inputMode="decimal" value={spacing} onChange={(event) => setSpacing(event.target.value)} /> m
         </label>
@@ -104,14 +104,14 @@ export function PositionsPanel({ devices, positions }: {
   );
 }
 
-export function RadioCard({ device }: { device: RadioCheckDevice }) {
+export function RadioCard({ device, name }: { device: RadioCheckDevice; name: string }) {
   const antennas = device.antennaFailureRates.map((rate, i) => `${i + 1}: ${formatPercent(rate)}`).join('  ');
   return (
     <article className={`card card--${VERDICT_CLASS[device.verdict]}`}>
       <header className="card__head">
         <div>
           <h3 className="card__title">{device.label}</h3>
-          <p className="card__sub">Short ID {shortId(device.uid)}</p>
+          {device.label !== name && <p className="card__sub">{name}</p>}
         </div>
         <span className={`badge badge--${VERDICT_CLASS[device.verdict]}`}>{VERDICT_LABEL[device.verdict]}</span>
       </header>
@@ -128,8 +128,8 @@ export function RadioCard({ device }: { device: RadioCheckDevice }) {
       {device.reasons.length > 0 && (
         <ul className="findings">
           {device.reasons.map((reason) => (
-            <li key={reason} className={`finding finding--${device.verdict === 'fail' ? 'warning' : 'note'}`}>
-              <span className="finding__text">{reason}</span>
+            <li key={reason} className={`finding finding--${device.verdict === 'fail' ? 'warn' : 'note'}`}>
+              <div className="finding__body"><p className="finding__text">{reason}</p></div>
             </li>
           ))}
         </ul>
@@ -138,7 +138,7 @@ export function RadioCard({ device }: { device: RadioCheckDevice }) {
   );
 }
 
-/** Coverage between every pair, read along a row: how often that device ranged to the column's. */
+/** Coverage between every pair, read along a row: how often that tag ranged to the column's. */
 export function LinkMatrix({ devices, links }: { devices: readonly RadioDevice[]; links: readonly RadioCheckLink[] }) {
   if (devices.length < 2) return null;
   const find = (a: number, b: number) => links.find((link) => (link.a === a && link.b === b) || (link.a === b && link.b === a));
@@ -146,8 +146,8 @@ export function LinkMatrix({ devices, links }: { devices: readonly RadioDevice[]
     <section className="panel">
       <h2 className="panel__title">Links</h2>
       <p className="panel__note">
-        How often the device in each row ranged to the device in each column. A device weak on every link is
-        the device; one weak pair is more likely something between them. Hover a cell for its distance.
+        How often the tag in each row measured a distance to the tag in each column. A tag weak on every link is
+        the problem; one weak pair is more likely something between them. Hover a cell for its distance.
       </p>
       <div className="matrix__scroll">
         <table className="matrix">

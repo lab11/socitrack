@@ -64,21 +64,25 @@ export function ImportPanel({ onLoaded, onOpenFolder, busy, compact = false }: P
       onDragOver={(event) => event.preventDefault()}
       aria-busy={busy}
     >
-      {!compact && <h2 className="import__title">Open your deployment logs</h2>}
+      <h2 className="import__title">{compact ? 'Open more logs' : 'Open logs already on this computer'}</h2>
       <p className="import__body">
-        {compact ? 'Drop more log files here, or ' : 'Drag the .ttg files from your tags here, or '}
-        <button type="button" className="link" onClick={openPicker} disabled={busy}>
-          browse for them
-        </button>
+        {compact ? 'Drop more .ttg files here, or ' : 'Drag the .ttg files here, or '}
+        <span className="nowrap">
+          <button type="button" className="link" onClick={openPicker} disabled={busy}>
+            browse for them
+          </button>
+          {!folderAvailable && '.'}
+        </span>
         {folderAvailable && (
           <>
             ,{' '}or{' '}
-            <button type="button" className="link" onClick={onOpenFolder} disabled={busy}>
-              open a whole folder
-            </button>
+            <span className="nowrap">
+              <button type="button" className="link" onClick={onOpenFolder} disabled={busy}>
+                open a whole folder
+              </button>.
+            </span>
           </>
         )}
-        .
       </p>
       {!compact && (
         <p className="import__note">

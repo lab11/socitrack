@@ -31,8 +31,8 @@ test('a device that stored something different says exactly what', () => {
   new DataView(tampered.buffer).setUint32(4, config.endTime - 3600, true);
   tampered[17] = 1;
   const differences = diffReadback(config, parseExperimentDetails(tampered));
-  assert.ok(differences.some((d) => d.startsWith('end time:')), differences.join('; '));
-  assert.ok(differences.some((d) => d.startsWith('device count:')), differences.join('; '));
+  assert.ok(differences.some((d) => /different end time/.test(d)), differences.join('; '));
+  assert.ok(differences.some((d) => /stored 1 tag\(s\) in the deployment where 2 were sent/.test(d)), differences.join('; '));
 });
 
 test('the manifest records outcomes per device and totals them honestly', () => {
@@ -45,8 +45,8 @@ test('the manifest records outcomes per device and totals them honestly', () => 
   assert.equal(manifest.devices.length, 2);
   assert.equal(manifest.devices[0]!.outcome, 'confirmed');
   assert.equal(manifest.devices[1]!.detail, 'Timed out');
-  assert.match(manifest.summary, /1 of 2 TotTag\(s\) confirmed/);
-  assert.match(manifest.summary, /1 did not take it/);
+  assert.match(manifest.summary, /1 of 2 tags confirmed/);
+  assert.match(manifest.summary, /1 tag did not take it/);
 });
 
 test('the manifest carries the exact bytes written', () => {
@@ -61,21 +61,41 @@ test('the manifest carries the exact bytes written', () => {
   assert.deepEqual(diffReadback(config, parseExperimentDetails(restored)), []);
 });
 
-test('the short UID is spelled out, because it is the byte that has to be unique', () => {
+test('each tag is named the way the screen names it, with the byte that has to be unique spelled out', () => {
   const manifest = buildManifest(config, bytes, [
     { eui: eui(0x7a, 1, 2, 3, 4, 5), label: 'x', outcome: 'confirmed' },
   ], new Date());
+  assert.equal(manifest.devices[0]!.name, 'TotTag 01:7A');
   assert.equal(manifest.devices[0]!.shortUid, '0x7A');
   assert.equal(manifest.devices[0]!.eui, '05:04:03:02:01:7A');
 });
 
-test('daily times are written in UTC and labelled as such', () => {
-  // Rendering them in the entry timezone would read better and would also make an off-by-an-hour
-  // argument unresolvable a year later. The device compares against UTC.
-  const manifest = buildManifest(config, bytes, [], new Date());
-  assert.equal(manifest.deployment.dailyStartUtc, '13:00:00');
-  assert.equal(manifest.deployment.dailyEndUtc, '03:00:00');
-  assert.match(manifestToText(manifest), /13:00:00 to 03:00:00 UTC/);
+test('times are on the local clock with the zone named, and nobody is asked to read UTC', () => {
+  // 13:00 to 03:00 on the tag's clock is 8:00 AM to 10:00 PM in Chicago in August.
+  const manifest = buildManifest(config, bytes, [], new Date('2026-09-11T21:00:00Z'), 'Family 10051');
+  assert.equal(manifest.name, 'Family 10051');
+  assert.equal(manifest.deployment.timezone, 'America/Chicago');
+  assert.deepEqual(manifest.deployment.dailyHours, { start: '08:00', end: '22:00' });
+  assert.equal(manifest.deployment.start, '2026-09-01T17:00');
+  const text = manifestToText(manifest, 'en-US');
+  assert.match(text, /Family 10051/);
+  assert.match(text, /8:00 AM to 10:00 PM each day/);
+  assert.doesNotMatch(text, /UTC/);
+});
+
+test('a clock change during the deployment is spelled out with the hours that follow it', () => {
+  const autumn: DeploymentConfig = {
+    ...config,
+    startTime: Date.parse('2026-10-30T12:00:00Z') / 1000,
+    endTime: Date.parse('2026-11-03T12:00:00Z') / 1000,
+    dailyStartTime: 12 * 3600,
+    dailyEndTime: 1 * 3600,
+  };
+  const manifest = buildManifest(autumn, encodeExperimentDetails(autumn), [], new Date());
+  assert.deepEqual(manifest.deployment.dailyHours, { start: '07:00', end: '20:00' });
+  assert.equal(manifest.deployment.afterClockChange.length, 1);
+  assert.deepEqual(manifest.deployment.afterClockChange[0]!.dailyHours, { start: '06:00', end: '19:00' });
+  assert.match(manifestToText(manifest, 'en-US'), /clocks change on Sunday, November 1; from then on, 6:00 AM to 7:00 PM each day/);
 });
 
 test('the text companion names every device and its outcome', () => {
@@ -84,8 +104,8 @@ test('the text companion names every device and its outcome', () => {
     { eui: config.devices[1]!.eui, label: '', outcome: 'unconfirmed', detail: 'Disconnected before read-back' },
   ], new Date('2026-09-11T21:00:00Z')));
   assert.match(text, /S1/);
-  assert.match(text, /<unlabelled>/);
-  assert.match(text, /unconfirmed/);
+  assert.match(text, /\(no label\)/);
+  assert.match(text, /could not be checked/);
   assert.match(text, /Disconnected before read-back/);
 });
 

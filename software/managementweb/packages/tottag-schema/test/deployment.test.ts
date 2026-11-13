@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-  encodeExperimentDetails, encodeNewExperimentCommand, formatEui, hasErrors, shortUid,
-  shortUidConflicts, validateDeployment, type DeploymentConfig,
+  encodeExperimentDetails, encodeNewExperimentCommand, formatEui, hasErrors, shortAddress, shortUid,
+  shortUidConflicts, tagName, validateDeployment, type DeploymentConfig,
 } from '../src/deployment.ts';
 import { parseExperimentDetails } from '../src/log.ts';
 import {
@@ -154,4 +154,45 @@ test('the command payload is the opcode followed by the struct', () => {
   assert.equal(command.length, 240);
   assert.equal(command[0], BLE_MAINTENANCE_NEW_EXPERIMENT);
   assert.deepEqual([...command.subarray(1)], [...encodeExperimentDetails(base)]);
+});
+
+test('a tag is named by the last two parts of its address', () => {
+  const a = eui(0x0a, 0x00, 0x42, 0xe5, 0x98, 0xc0);
+  assert.equal(shortAddress(a), '00:0A');
+  assert.equal(tagName(a), 'TotTag 00:0A');
+  // Named this way in messages too, never by the full address.
+  const unlabelled = validateDeployment({ ...base, devices: [{ eui: a, label: '' }] });
+  const missing = unlabelled.find((p) => p.code === 'label-missing');
+  assert.match(missing!.message, /TotTag 00:0A/);
+  assert.doesNotMatch(missing!.message, /C0:98/);
+});
+
+test('a blank or half-typed date blocks writing rather than being written as 1970', () => {
+  // A cleared date field used to reach the tag as 0, ending the deployment in 1970.
+  for (const field of ['startTime', 'endTime'] as const) {
+    const problems = validateDeployment({ ...base, [field]: Number.NaN });
+    assert.ok(hasErrors(problems), `a missing ${field} must block`);
+    assert.ok(problems.some((p) => p.code === (field === 'startTime' ? 'missing-start' : 'missing-end')));
+  }
+});
+
+test('a deployment already over is an error; one already under way is only a note', () => {
+  const now = base.startTime + 4 * 86400;
+  assert.ok(validateDeployment(base, { now }).some((p) => p.code === 'already-over' && p.severity === 'error'));
+  const midway = base.startTime + 86400;
+  const started = validateDeployment(base, { now: midway });
+  assert.ok(started.some((p) => p.code === 'already-started' && p.severity === 'warning'));
+  assert.equal(hasErrors(started), false);
+  assert.equal(validateDeployment(base, { now: base.startTime - 60 }).length, 0);
+});
+
+test('an incomplete daily time is an error', () => {
+  const problems = validateDeployment({ ...base, useDailyTimes: true, dailyStartTime: Number.NaN, dailyEndTime: 3600 });
+  assert.ok(problems.some((p) => p.code === 'bad-daily-time'));
+});
+
+test('labels with accents survive the round trip through a tag', () => {
+  // Stored as UTF-8, as the Python tool does; read back the same way, or every tag reports a mismatch.
+  const decoded = parseExperimentDetails(encodeExperimentDetails({ ...base, devices: [{ eui: eui(1, 0, 0, 0, 0, 0), label: '10051_Mamá' }] }));
+  assert.equal(decoded.labels[0], '10051_Mamá');
 });

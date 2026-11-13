@@ -11,6 +11,8 @@ interface Props {
   readonly busy: boolean;
   readonly onLoaded: (result: LoadResult) => void;
   readonly onOpenFolder: () => void;
+  /** The label a tag has in the deployment being set up, if it is in it. */
+  readonly labelFor: (eui: Uint8Array) => string | undefined;
 }
 
 /**
@@ -18,24 +20,28 @@ interface Props {
  * deployment that already ran. Both judge each device against the others by the same rules.
  */
 export function RadioCheck(props: Props) {
-  const [mode, setMode] = useState<'live' | 'logs'>(props.reports.length ? 'logs' : 'live');
+  // Follows whether logs are open until someone picks: the page stays mounted from start-up now, so a
+  // default fixed on the first render would ignore logs opened since.
+  const [chosen, setMode] = useState<'live' | 'logs' | null>(null);
+  const mode = chosen ?? (props.reports.length ? 'logs' : 'live');
+  const { labelFor } = props;
   return (
     <div className="radio">
-      <nav className="nav" aria-label="Radio check source">
-        <button type="button" className={`nav__tab${mode === 'live' ? ' nav__tab--active' : ''}`} onClick={() => setMode('live')}>
+      <div className="segmented" role="tablist" aria-label="Radio check source">
+        <button type="button" role="tab" aria-selected={mode === 'live'} className={`segmented__option${mode === 'live' ? ' segmented__option--on' : ''}`} onClick={() => setMode('live')}>
           Live over Bluetooth
         </button>
-        <button type="button" className={`nav__tab${mode === 'logs' ? ' nav__tab--active' : ''}`} onClick={() => setMode('logs')}>
+        <button type="button" role="tab" aria-selected={mode === 'logs'} className={`segmented__option${mode === 'logs' ? ' segmented__option--on' : ''}`} onClick={() => setMode('logs')}>
           From downloaded logs
         </button>
-      </nav>
-      {mode === 'live' ? <LiveRadioCheck /> : <LogRadioCheck {...props} />}
+      </div>
+      {mode === 'live' ? <LiveRadioCheck labelFor={labelFor} /> : <LogRadioCheck {...props} />}
     </div>
   );
 }
 
-/** Every device a deployment selected, judged against the others from their logs. */
-function LogRadioCheck({ reports, busy, onLoaded, onOpenFolder }: Props) {
+/** Every tag a deployment selected, judged against the others from their logs. */
+function LogRadioCheck({ reports, busy, onLoaded, onOpenFolder }: Omit<Props, 'labelFor'>) {
   const deployments = useMemo(() => groupRadioDeployments(reports), [reports]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const deployment = deployments.find((d) => d.key === selectedKey) ?? deployments[0] ?? null;
@@ -46,16 +52,16 @@ function LogRadioCheck({ reports, busy, onLoaded, onOpenFolder }: Props) {
     return (
       <>
         <section className="panel">
-          <h2 className="panel__title">Check devices' radios from their logs</h2>
+          <h2 className="panel__title">Check tags' radios from their logs</h2>
           <p className="panel__note">
-            Compares every device in a deployment against the others, to find one with a weak receiver, a
+            Compares every tag in a deployment against the others, to find one with a weak receiver, a
             damaged antenna, or a distance calibration that is off. The live check does the same without a
             deployment; this one reads the logs of a deployment that already ran.
           </p>
           <ol className="steps">
-            <li>Set up a deployment with the devices you want to check, starting now.</li>
+            <li>Set up a deployment with the tags you want to check, starting now.</li>
             <li>Put them where they can all see each other, at least half a metre apart, and leave them for 10 minutes.</li>
-            <li>Download every device's log, then open the logs here.</li>
+            <li>Download every tag's log, then open the logs here or on the Download &amp; review page.</li>
           </ol>
         </section>
         <ImportPanel onLoaded={onLoaded} onOpenFolder={onOpenFolder} busy={busy} />
@@ -78,7 +84,7 @@ function LogRadioCheck({ reports, busy, onLoaded, onOpenFolder }: Props) {
             {deployments.map((d) => (
               <label key={d.key} className="checkbox">
                 <input type="radio" name="deployment" checked={d.key === deployment.key} onChange={() => setSelectedKey(d.key)} />
-                Started {new Date(d.startTime * 1000).toLocaleString()} · {d.devices.length} devices, {d.logs.size} logs loaded
+                Started {new Date(d.startTime * 1000).toLocaleString()} · {d.devices.length} tags, {d.logs.size} logs loaded
               </label>
             ))}
           </div>
@@ -86,23 +92,23 @@ function LogRadioCheck({ reports, busy, onLoaded, onOpenFolder }: Props) {
       )}
 
       <div className="summary">
-        <p className="summary__line">
-          <strong>{deployment.devices.length}</strong> device{deployment.devices.length === 1 ? '' : 's'} in the deployment
+        <p className="summary-line">
+          <strong>{deployment.devices.length}</strong> tag{deployment.devices.length === 1 ? '' : 's'} in the deployment
           started {new Date(deployment.startTime * 1000).toLocaleString()}
           {minutes > 0 && <> · compared over the {minutes} minute{minutes === 1 ? '' : 's'} they were all running</>}
           {' · '}
-          {counts.fail > 0 && <span className="summary__warning">{counts.fail} failed · </span>}
-          {counts.check > 0 && <span className="summary__warning">{counts.check} to check · </span>}
-          {counts.missing > 0 && <span className="summary__error">{counts.missing} without a log · </span>}
+          {counts.fail > 0 && <span className="summary-line__crit">{counts.fail} failed · </span>}
+          {counts.check > 0 && <span className="summary-line__warn">{counts.check} to check · </span>}
+          {counts.missing > 0 && <span className="summary-line__warn">{counts.missing} without a log · </span>}
           {counts.pass} passed
         </p>
       </div>
 
-      {result.notes.map((note) => <p key={note} className="banner banner--warning">{note}</p>)}
-      {deployment.unmatched.map((note) => <p key={note} className="banner banner--warning">{note}</p>)}
+      {result.notes.map((note) => <p key={note} className="banner banner--warn">{note}</p>)}
+      {deployment.unmatched.map((note) => <p key={note} className="banner banner--warn">{note}</p>)}
 
       <div className="cards">
-        {devices.map((device) => <RadioCard key={device.uid} device={device} />)}
+        {devices.map((device) => <RadioCard key={device.uid} device={device} name={deployment.devices.find((d) => d.uid === device.uid)?.name ?? device.label} />)}
       </div>
       <LinkMatrix devices={deployment.devices} links={result.links} />
       <PositionsPanel devices={deployment.devices} positions={positions} />

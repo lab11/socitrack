@@ -85,7 +85,7 @@ test('a weak receiver fails, and the healthy devices around it pass', () => {
   const verdicts = Object.fromEntries(result.devices.map((d) => [d.label, d.verdict]));
   assert.deepEqual(verdicts, { '02': 'pass', '0B': 'pass', '3E': 'pass', '49': 'fail' });
   const reason = result.devices.find((d) => d.uid === 0x49)!.reasons[0]!;
-  assert.match(reason, /42% of its ranging receives failed against 7% for the other devices/);
+  assert.match(reason, /42% of its ranging receives failed against 7% for the other tags/);
 });
 
 test('a bad antenna is named, even when the device overall is only a little worse', () => {
@@ -121,8 +121,8 @@ test('a selected device with no log is reported as missing, not as a pass', () =
     { uid: 0x3e, label: '3E', summary: null },
   ] });
   assert.equal(result.devices.find((d) => d.uid === 0x3e)!.verdict, 'missing');
-  assert.ok(result.notes.some((note) => /1 of the 3 selected devices has no log loaded/.test(note)));
-  assert.ok(result.notes.some((note) => /fewer than three devices/.test(note)));
+  assert.ok(result.notes.some((note) => /1 of the 3 selected tags has no log loaded/.test(note)));
+  assert.ok(result.notes.some((note) => /fewer than three tags/.test(note)));
 });
 
 test('a device that barely took part fails on participation and coverage', () => {

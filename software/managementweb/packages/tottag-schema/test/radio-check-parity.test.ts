@@ -33,7 +33,7 @@ test('the parity scenarios reach every verdict and every kind of reason, so the 
     assert.ok(reasons.some((reason) => pattern.test(reason)), `no scenario produces a reason matching ${pattern}`);
   }
   const notes = fixture.analysis.flatMap((scenario) => scenario.expected.notes);
-  for (const pattern of [/no log loaded/, /less than a minute/, /fewer than three devices/, /do not let each device's distance offset/, /^No positions entered/]) {
+  for (const pattern of [/no log loaded/, /less than a minute/, /fewer than three tags/, /do not let each tag's distance offset/, /^No positions entered/]) {
     assert.ok(notes.some((note) => pattern.test(note)), `no scenario produces a note matching ${pattern}`);
   }
   assert.ok(fixture.live.expected.summaries.some((summary) => summary.truncated > 0), 'the live scenario has no cut-short notification');

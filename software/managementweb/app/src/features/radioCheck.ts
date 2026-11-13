@@ -6,7 +6,7 @@
 // fleet the others are compared against.
 
 import {
-  analyseRadio, identifyRadioLog, radioDeploymentKey,
+  analyseRadio, identifyRadioLog, parseExperimentDetails, radioDeploymentKey, tagName,
   type RadioCheckResult, type RadioSummary,
 } from '@tottag/schema';
 import type { DeviceReport } from './deployment.ts';
@@ -14,6 +14,8 @@ import type { DeviceReport } from './deployment.ts';
 export interface RadioDevice {
   readonly uid: number;
   readonly label: string;
+  /** "TotTag 00:0A" where the full address is known; otherwise the one-byte ID. */
+  readonly name: string;
 }
 
 export interface RadioDeployment {
@@ -31,6 +33,20 @@ export type Positions = ReadonlyMap<number, { readonly x: number; readonly y: nu
 
 export const shortId = (uid: number) => uid.toString(16).toUpperCase().padStart(2, '0');
 
+/** Full addresses of a deployment's tags by one-byte ID, from whichever of its logs carries a details block. */
+function addressesOf(members: readonly DeviceReport[]): Map<number, Uint8Array> {
+  for (const report of members) {
+    try {
+      if (!report.report?.details) continue;
+      const details = parseExperimentDetails(report.report.details);
+      return new Map(details.uids.map((eui) => [eui[0]!, eui]));
+    } catch {
+      // Try the next log.
+    }
+  }
+  return new Map();
+}
+
 /** Every deployment among the loaded logs, the one with the most logs first. */
 export function groupRadioDeployments(reports: readonly DeviceReport[]): RadioDeployment[] {
   const groups = new Map<string, DeviceReport[]>();
@@ -42,23 +58,29 @@ export function groupRadioDeployments(reports: readonly DeviceReport[]): RadioDe
 
   const deployments = [...groups].map(([key, members]): RadioDeployment => {
     const first = members[0]!.radio!;
-    const devices = first.deploymentUids.map((uid, i) => ({ uid, label: first.deploymentLabels[i]?.trim() || shortId(uid) }));
+    const addresses = addressesOf(members);
+    const devices = first.deploymentUids.map((uid, i) => {
+      const eui = addresses.get(uid);
+      const name = eui ? tagName(eui) : `ID ${shortId(uid)}`;
+      return { uid, label: first.deploymentLabels[i]?.trim() || name, name };
+    });
+    const nameOf = (uid: number) => devices.find((device) => device.uid === uid)?.name ?? `ID ${shortId(uid)}`;
     const logs = new Map<number, { name: string; summary: RadioSummary }>();
     const unmatched: string[] = [];
     for (const report of members) {
       const uid = identifyRadioLog(report.radio!, report.name, report.deviceUid);
       if (uid === null) {
-        unmatched.push(`${report.name}: could not tell which device wrote it`);
+        unmatched.push(`${report.name}: could not tell which tag wrote it`);
         continue;
       }
       // The same device loaded twice, most often a re-download: keep the copy that covers more time
       const existing = logs.get(uid);
       const span = (summary: RadioSummary) => (summary.lastMs ?? 0) - (summary.firstMs ?? 0);
       if (existing && span(existing.summary) >= span(report.radio!)) {
-        unmatched.push(`${report.name}: a second log for ${shortId(uid)}; the longer one is used`);
+        unmatched.push(`${report.name}: a second log for ${nameOf(uid)}; the longer one is used`);
         continue;
       }
-      if (existing) unmatched.push(`${existing.name}: a second log for ${shortId(uid)}; the longer one is used`);
+      if (existing) unmatched.push(`${existing.name}: a second log for ${nameOf(uid)}; the longer one is used`);
       logs.set(uid, { name: report.name, summary: report.radio! });
     }
     return { key, startTime: first.experimentStartTime!, devices, logs, unmatched };
@@ -68,7 +90,7 @@ export function groupRadioDeployments(reports: readonly DeviceReport[]): RadioDe
 
 export function runRadioCheck(deployment: RadioDeployment, positions: Positions): RadioCheckResult {
   return analyseRadio({
-    devices: deployment.devices.map((device) => ({ ...device, summary: deployment.logs.get(device.uid)?.summary ?? null })),
+    devices: deployment.devices.map((device) => ({ uid: device.uid, label: device.label, summary: deployment.logs.get(device.uid)?.summary ?? null })),
     positions,
   });
 }

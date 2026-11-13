@@ -1,10 +1,10 @@
-import { useCallback, useState } from 'react';
-import { describeRate, describeRemaining, extractPageFrames, formatEui, mergeRepairs,
+import { useCallback, useEffect, useState } from 'react';
+import { describeRate, describeRemaining, extractPageFrames, formatEui, mergeRepairs, tagName,
   NANDLOG_MAX_RETRANSMIT_PAGES, V2_RETRANSMIT_PAGE_ATTEMPTS, V2_RETRANSMIT_RETRY_ROUNDS } from '@tottag/schema';
 import { parseLogAsync } from '../lib/parseAsync.ts';
 import { webBluetoothTransport } from '../adapters/webBluetooth.ts';
 import { webSerialTransport } from '../adapters/webSerial.ts';
-import { describeKnownTag, knownTagTransport, tagDisplayName, useKnownTags, type KnownTag } from '../features/useKnownTags.ts';
+import { describeKnownTag, knownTagTransport, useKnownTags, type KnownTag } from '../features/useKnownTags.ts';
 import type { DownloadProgress, TagConnection, TagTransport } from '../ports/tagTransport.ts';
 import type { LoadedLog } from '../ports/logSource.ts';
 
@@ -29,6 +29,23 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reason = webBluetoothTransport.unavailableReason();
+
+  // Until its stream header, the tag is reading through its whole log to total its size. How long that takes
+  // is not known in advance, so the wait counts up rather than pretending to a percentage.
+  const calculating = progress !== null && (progress.phase === 'starting' || progress.phase === 'header');
+  const [calculatingSince, setCalculatingSince] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!calculating) {
+      setCalculatingSince(null);
+      return undefined;
+    }
+    const since = Date.now();
+    setCalculatingSince(since);
+    setNow(since);
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [calculating]);
   const serialReason = webSerialTransport.unavailableReason();
 
   const run = useCallback(
@@ -43,12 +60,10 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
           // Distinguish the reasons, because they need different actions from the user.
           setError(
             transport.id === 'serial'
-              ? 'Could not reach that tag. It needs to be plugged into this computer over USB.'
+              ? 'Could not reach that tag. Plug it into this computer with its USB cable, then try again.'
               : webBluetoothTransport.reconnectAcrossReloadsSupported()
-              ? 'Could not reach that tag. It needs to be powered, on its charger, and within range.'
-              : 'This browser cannot reconnect to a tag that was added before the page was reloaded. ' +
-                'Use "Download from a new tag" and pick it again — or enable ' +
-                'chrome://flags/#enable-web-bluetooth-new-permissions-backend to have it remembered.',
+              ? 'Could not reach that tag. Make sure it is on its charger and close to this computer, then try again.'
+              : 'After a reload, this browser needs you to pick the tag again. Use "Download from a tag" and pick it from the list.',
           );
           return;
         }
@@ -105,7 +120,7 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
           setProgress(null);
         }
         const eui = formatEui(connection.identity.eui);
-        const shown = tagDisplayName(connection.identity.eui, connection.identity.transport);
+        const shown = tagName(connection.identity.eui);
         onDownloaded({
           // A name only for the case where the log carries no details block to derive a better one
           // from; `buildReport` replaces it with what tottag.py would have written. The EUI's low
@@ -118,7 +133,7 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
         setStatus(
           `Downloaded ${(bytes.length / 1e6).toFixed(2)} MB from ${shown}` +
             (repaired ? `, ${repaired} page${repaired === 1 ? '' : 's'} recovered by retransmission` : '') +
-            '. It is not on disk yet — save it from its card below.',
+            '. It is not on your computer yet: save it from its card below.',
         );
       } catch (caught) {
         setError(caught instanceof Error ? caught.message : String(caught));
@@ -136,7 +151,7 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
     // user had only just picked, on any Chrome where that API is still behind a flag.
     await run(transport, async () => {
       const connection = await transport.requestDevice();
-      if (connection) remember(connection.identity, '');
+      if (connection) remember(connection.identity);
       return connection;
     }, '');
   }, [remember, run]);
@@ -144,7 +159,7 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
   const fromKnown = useCallback(
     async (tag: KnownTag) => {
       const transport = knownTagTransport(tag) === 'serial' ? webSerialTransport : webBluetoothTransport;
-      return run(transport, () => transport.connect(tag.handle), tag.lastLabel);
+      return run(transport, () => transport.connect(tag.handle), '');
     },
     [run],
   );
@@ -153,7 +168,7 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
     return (
       <section className="panel">
         <h2 className="panel__title">Download from a tag</h2>
-        <p className="banner banner--warning">{reason}</p>
+        <p className="banner banner--warn">{reason}</p>
       </section>
     );
   }
@@ -163,43 +178,68 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
     <section className="panel">
       <h2 className="panel__title">Download from a tag</h2>
       <p className="panel__note">
-        Put the tag on its charger first — it only serves its log while charging — or plug it
-        into this computer and download over USB.
+        Put the tag on its charger first (it only hands over its data while charging), or plug it into this
+        computer with its USB cable. A download takes a few minutes.
       </p>
-      <div className="panel__actions">
+      <div className="actions">
         <button type="button" className="button" onClick={() => void fromNew(webBluetoothTransport)}
           disabled={!!reason || busy || active} title={reason ?? undefined}>
-          Download from a new tag
+          Download from a tag
         </button>
-        <button type="button" className="button" onClick={() => void fromNew(webSerialTransport)}
+        <button type="button" className="button button--quiet" onClick={() => void fromNew(webSerialTransport)}
           disabled={!!serialReason || busy || active} title={serialReason ?? undefined}>
-          Download from a USB-connected tag
+          Download from a tag plugged in by USB
         </button>
-        {knownTags.map((tag) => (
-          <button key={tag.handle} type="button" className="button button--quiet"
-            onClick={() => void fromKnown(tag)}
-            disabled={busy || active || !!(knownTagTransport(tag) === 'serial' ? serialReason : reason)}>
-            {describeKnownTag(tag)}
-          </button>
-        ))}
       </div>
+      {knownTags.length > 0 && (
+        <>
+          <h3 className="panel__subtitle">Or download from a tag this browser knows</h3>
+          <ul className="chips">
+            {knownTags.map((tag) => (
+              <li key={tag.handle} className="chip">
+                <button type="button" className="chip__button" onClick={() => void fromKnown(tag)}
+                  disabled={busy || active || !!(knownTagTransport(tag) === 'serial' ? serialReason : reason)}>
+                  {describeKnownTag(tag)}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {progress && (
         <div className="transfer">
-          <div className="transfer__bar">
-            <div className="transfer__fill"
-              style={{ width: `${progress.bytesExpected ? Math.min(100, (progress.bytesReceived / progress.bytesExpected) * 100) : 3}%` }} />
-          </div>
-          <p className="transfer__text">
-            {(progress.bytesReceived / 1e6).toFixed(2)} MB
-            {progress.bytesExpected ? ` of ${(progress.bytesExpected / 1e6).toFixed(2)} MB` : ''}
-            {' · '}{describeRate(progress.bytesPerSecond)}
-            {' · '}{describeRemaining(progress.secondsRemaining)}
-          </p>
+          {calculating ? (
+            <>
+              <div className="transfer__bar"><div className="transfer__fill transfer__fill--busy" /></div>
+              <p className="transfer__text">
+                Calculating data size…
+                {calculatingSince !== null && ` (${describeElapsed(Math.floor((now - calculatingSince) / 1000))})`}
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="transfer__bar">
+                <div className="transfer__fill"
+                  style={{ width: `${progress.bytesExpected ? Math.min(100, (progress.bytesReceived / progress.bytesExpected) * 100) : 3}%` }} />
+              </div>
+              <p className="transfer__text">
+                {(progress.bytesReceived / 1e6).toFixed(2)} MB
+                {progress.bytesExpected ? ` of ${(progress.bytesExpected / 1e6).toFixed(2)} MB` : ''}
+                {' · '}{describeRate(progress.bytesPerSecond)}
+                {' · '}{describeRemaining(progress.secondsRemaining)}
+              </p>
+            </>
+          )}
         </div>
       )}
-      {status && <p className="panel__note">{status}</p>}
-      {error && <p className="banner banner--error">{error}</p>}
+      {status && <p className="banner banner--info" role="status">{status}</p>}
+      {error && <p className="banner banner--crit" role="alert">{error}</p>}
     </section>
   );
+}
+
+/** Whole seconds as "12 s", or "2 min 05 s" past a minute. */
+function describeElapsed(seconds: number): string {
+  return seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} min ${String(seconds % 60).padStart(2, '0')} s`;
 }

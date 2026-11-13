@@ -291,7 +291,7 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
   const notes: string[] = [];
   const loaded = input.devices.filter((device) => device.summary && device.summary.firstMs !== null && device.summary.lastMs !== null);
   const missing = input.devices.length - loaded.length;
-  if (missing) notes.push(`${missing} of the ${input.devices.length} selected devices ${missing === 1 ? 'has' : 'have'} no log loaded, so ${missing === 1 ? 'it is' : 'they are'} not judged and ${missing === 1 ? 'its' : 'their'} links are missing from the others.`);
+  if (missing) notes.push(`${missing} of the ${input.devices.length} selected tags ${missing === 1 ? 'has' : 'have'} no log loaded, so ${missing === 1 ? 'it is' : 'they are'} not judged and ${missing === 1 ? 'its' : 'their'} links are missing from the others.`);
 
   // The stretch every loaded device was on, in whole bins, so no device is penalised for rounds it was off for. Every
   // summary in one check comes from the same source, logs or a live test, so they share a bin length.
@@ -300,8 +300,8 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
   const end = loaded.length ? Math.min(...loaded.map((d) => Math.floor(d.summary!.lastMs! / binMs))) : null;
   const bins = start !== null && end !== null ? Math.max(0, end - start) : 0;
   const rounds = bins * roundsPerBin(binMs);
-  if (loaded.length && bins * binMs < MIN_JUDGED_MS) notes.push('The devices were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.');
-  if (loaded.length && loaded.length < 3) notes.push('With fewer than three devices there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single device.');
+  if (loaded.length && bins * binMs < MIN_JUDGED_MS) notes.push('The tags were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.');
+  if (loaded.length && loaded.length < 3) notes.push('With fewer than three tags there is no "rest of the fleet" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single tag.');
   const inWindow = (bin: number) => start !== null && end !== null && bin >= start && bin < end;
 
   // Per-link evidence from both ends. Shares here and below stop at 100%: a live test's counts are estimates, and
@@ -347,8 +347,8 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
   const biases = withResiduals.length
     ? solveBiases([...new Set(withResiduals.flatMap((link) => [link.a, link.b]))], withResiduals.map((link) => [link.a, link.b, link.residualMm!] as const))
     : null;
-  if (positions.size && !biases) notes.push('The positions entered do not let each device\'s distance offset be told apart — it needs at least three devices with positions and ranges between them.');
-  if (!positions.size) notes.push('No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well.');
+  if (positions.size && !biases) notes.push('The positions entered do not let each tag\'s distance offset be told apart — it needs at least three tags with positions and ranges between them.');
+  if (!positions.size) notes.push('No positions entered, so distances are checked for consistency only. Enter where each tag sat to check accuracy as well.');
 
   // Each device's own figures
   const figures = new Map(input.devices.map((device) => {
@@ -386,7 +386,7 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
     const diagnostics = device.summary?.diagnostics ?? null;
     if (!f.isLoaded) {
       return {
-        uid: device.uid, label: device.label, verdict: 'missing', reasons: ['No log loaded for this device.'],
+        uid: device.uid, label: device.label, verdict: 'missing', reasons: ['No log loaded for this tag.'],
         participation: null, rxFailureRate: null, antennaFailureRates: [], linkCoverage: null,
         biasMm: null, noiseMm: null, diagnostics: null, aborts: 0,
       };
@@ -403,7 +403,7 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
     if (f.rxFailureRate !== null) {
       const baseline = rxOthers ?? 0;
       const excess = f.rxFailureRate - baseline;
-      const versus = rxOthers !== null ? ` against ${percent(rxOthers)} for the other devices` : '';
+      const versus = rxOthers !== null ? ` against ${percent(rxOthers)} for the other tags` : '';
       if (excess > RX_FAILURE_FAIL_EXCESS) fails.push(`${percent(f.rxFailureRate)} of its ranging receives failed${versus}. A weak receiver or a damaged antenna or connection.`);
       else if (excess > RX_FAILURE_CHECK_EXCESS) checks.push(`${percent(f.rxFailureRate)} of its ranging receives failed${versus}.`);
     }
@@ -422,7 +422,7 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
     const coverageOthers = othersMedian(device.uid, (g) => g.linkCoverage);
     if (f.linkCoverage !== null && rounds) {
       if (f.linkCoverage < COVERAGE_FAIL) fails.push(`Ranged to a typical peer in only ${percent(f.linkCoverage)} of rounds.`);
-      else if (coverageOthers !== null && f.linkCoverage < coverageOthers - COVERAGE_CHECK_DROP) checks.push(`Ranged to a typical peer in ${percent(f.linkCoverage)} of rounds, against ${percent(coverageOthers)} for the other devices.`);
+      else if (coverageOthers !== null && f.linkCoverage < coverageOthers - COVERAGE_CHECK_DROP) checks.push(`Ranged to a typical peer in ${percent(f.linkCoverage)} of rounds, against ${percent(coverageOthers)} for the other tags.`);
     }
 
     const biasMm = biases?.get(device.uid) ?? null;
@@ -435,13 +435,13 @@ export function analyseRadio(input: RadioCheckInput): RadioCheckResult {
 
     const noiseOthers = othersMedian(device.uid, (g) => g.noiseMm);
     if (f.noiseMm !== null && noiseOthers !== null && f.noiseMm > NOISE_CHECK_MIN_MM && f.noiseMm > NOISE_CHECK_FACTOR * noiseOthers) {
-      checks.push(`Its distances spread by about ${Math.round(f.noiseMm)} mm, against ${Math.round(noiseOthers)} mm for the other devices.`);
+      checks.push(`Its distances spread by about ${Math.round(f.noiseMm)} mm, against ${Math.round(noiseOthers)} mm for the other tags.`);
     }
 
     if (diagnostics) {
       const recoveries = diagnostics.wakeFailures + diagnostics.irqStuck;
       if (recoveries) checks.push(`The radio needed resetting ${recoveries} time${recoveries === 1 ? '' : 's'} (${diagnostics.wakeFailures} failed wake-up${diagnostics.wakeFailures === 1 ? '' : 's'}, ${diagnostics.irqStuck} stuck interrupt${diagnostics.irqStuck === 1 ? '' : 's'}).`);
-      if (rounds && diagnostics.rxArmLate / rounds > ARM_LATE_CHECK) checks.push(`Lost ${diagnostics.rxArmLate} rounds to a receive it could not start in time. That points to firmware timing, not this device's radio.`);
+      if (rounds && diagnostics.rxArmLate / rounds > ARM_LATE_CHECK) checks.push(`Lost ${diagnostics.rxArmLate} rounds to a receive it could not start in time. That points to firmware timing, not this tag's radio.`);
     }
 
     return {

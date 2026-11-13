@@ -62,6 +62,28 @@ export function formatEui(eui: Uint8Array): string {
   return Array.from(eui).reverse().map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join(':');
 }
 
+const hexByte = (value: number): string => value.toString(16).padStart(2, '0').toUpperCase();
+
+/**
+ * `EE:FF`: the last two parts of the address, which is how people tell tags apart.
+ *
+ * Two parts rather than one, because the second-lowest byte is not always the same across a lab's
+ * tags, and one part alone would make two different tags look identical on screen.
+ */
+export function shortAddress(eui: Uint8Array | readonly number[]): string {
+  return `${hexByte(eui[1] ?? 0)}:${hexByte(eui[0] ?? 0)}`;
+}
+
+/** `TotTag EE:FF`, the name a specific tag goes by everywhere a person reads it. */
+export function tagName(eui: Uint8Array | readonly number[]): string {
+  return `TotTag ${shortAddress(eui)}`;
+}
+
+/** The one-byte ID tags know each other by on the air and in the log, as two hex digits. */
+export function shortUidHex(eui: Uint8Array | readonly number[]): string {
+  return hexByte(eui[0] ?? 0);
+}
+
 /**
  * Groups of device indices that share a low EUI byte.
  *
@@ -90,33 +112,41 @@ const labelBytes = (label: string): number => new TextEncoder().encode(label).le
 const joinList = (items: readonly string[]): string =>
   items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}`;
 
+export interface ValidationOptions {
+  /** Unix seconds. When given, a deployment that has already ended is an error and one already under way is noted. */
+  readonly now?: number;
+}
+
 /**
  * Everything wrong with a configuration, worst first.
  *
- * Errors block writing to a device; warnings do not. The split is by consequence, not by confidence:
+ * Errors block writing to a tag; warnings do not. The split is by consequence, not by confidence:
  * a short-UID collision is an error because the resulting data cannot be repaired afterwards, while
  * an empty label is a warning because it only makes the analysis harder to read.
+ *
+ * Messages are written for the person running the study. A tag is named the way it is everywhere
+ * else on screen — TotTag and the last two parts of its address — and never by its full address.
  */
-export function validateDeployment(config: DeploymentConfig): Problem[] {
+export function validateDeployment(config: DeploymentConfig, options: ValidationOptions = {}): Problem[] {
   const problems: Problem[] = [];
   const { devices } = config;
+  const nameOf = (index: number): string => devices[index]!.label.trim() || tagName(devices[index]!.eui);
 
   // --- devices ---
   if (devices.length === 0) {
-    problems.push({ severity: 'error', code: 'no-devices', devices: [], message: 'Add at least one TotTag.' });
+    problems.push({ severity: 'error', code: 'no-devices', devices: [], message: 'Add at least one tag.' });
   }
   if (devices.length > MAX_NUM_RANGING_DEVICES) {
     problems.push({
       severity: 'error',
       code: 'too-many-devices',
       devices: devices.map((_, index) => index).slice(MAX_NUM_RANGING_DEVICES),
-      message: `A deployment holds at most ${MAX_NUM_RANGING_DEVICES} TotTags; this one has ${devices.length}.`,
+      message: `A deployment can include at most ${MAX_NUM_RANGING_DEVICES} tags, and this one has ${devices.length}. Remove ${devices.length - MAX_NUM_RANGING_DEVICES === 1 ? 'this one' : 'these'}.`,
     });
   }
 
   // The one that cannot be fixed after the fact.
   for (const conflict of shortUidConflicts(devices)) {
-    const named = conflict.devices.map((index) => devices[index]!.label || formatEui(devices[index]!.eui));
     problems.push({
       severity: 'error',
       code: 'short-uid-conflict',
@@ -124,8 +154,8 @@ export function validateDeployment(config: DeploymentConfig): Problem[] {
       // Shown against every device involved, so it has to stay short enough to repeat without
       // burying the row it belongs to. The full reasoning lives in shortUid()'s documentation.
       message:
-        `${joinList(named)} ${conflict.devices.length === 2 ? 'both' : 'all'} end in ${conflict.shortUid.toString(16).padStart(2, '0').toUpperCase()}. ` +
-        'Tags identify each other by that last byte alone, so their data could not be told apart ' +
+        `${joinList(conflict.devices.map(nameOf))} ${conflict.devices.length === 2 ? 'both' : 'all'} end in ${hexByte(conflict.shortUid)}. ` +
+        'Tags tell each other apart by that last part alone, so their data could not be separated ' +
         'afterwards. Swap one for a tag ending differently.',
     });
   }
@@ -136,7 +166,7 @@ export function validateDeployment(config: DeploymentConfig): Problem[] {
         severity: 'error',
         code: 'bad-eui',
         devices: [index],
-        message: `Device ${index + 1} has a ${device.eui.length}-byte address; it must be ${EUI_LEN} bytes.`,
+        message: `Tag ${index + 1} has a ${device.eui.length}-part address where a TotTag has ${EUI_LEN}. Remove it and add it again.`,
       });
     }
     if (labelBytes(device.label) > EUI_NAME_MAX_LEN) {
@@ -144,7 +174,7 @@ export function validateDeployment(config: DeploymentConfig): Problem[] {
         severity: 'error',
         code: 'label-too-long',
         devices: [index],
-        message: `"${device.label}" is longer than ${EUI_NAME_MAX_LEN} bytes; it would be cut off on the device.`,
+        message: `"${device.label}" is too long. A label can be up to ${EUI_NAME_MAX_LEN} characters, and letters with accents count as two.`,
       });
     }
     if (device.label.trim() === '') {
@@ -152,7 +182,7 @@ export function validateDeployment(config: DeploymentConfig): Problem[] {
         severity: 'warning',
         code: 'label-missing',
         devices: [index],
-        message: `${formatEui(device.eui)} has no label, so it will appear in the data by its address.`,
+        message: `${tagName(device.eui)} has no label, so its data will only be identified by the tag's ID.`,
       });
     }
   });
@@ -171,29 +201,51 @@ export function validateDeployment(config: DeploymentConfig): Problem[] {
         severity: 'error',
         code: 'duplicate-label',
         devices: indices,
-        message: `${indices.length} TotTags are labelled "${label}". Labels have to be unique to tell them apart.`,
+        message: `${indices.length} tags are labelled "${label}". Each tag needs its own label to tell their data apart.`,
       });
     }
   }
 
   // --- window ---
+  const startKnown = Number.isFinite(config.startTime);
+  const endKnown = Number.isFinite(config.endTime);
+  if (!startKnown) {
+    problems.push({ severity: 'error', code: 'missing-start', devices: [], message: 'Enter a complete start date and time.' });
+  }
+  if (!endKnown) {
+    problems.push({ severity: 'error', code: 'missing-end', devices: [], message: 'Enter a complete end date and time.' });
+  }
   const duration = config.endTime - config.startTime;
-  if (duration <= 0) {
+  if (startKnown && endKnown && duration <= 0) {
     problems.push({
       severity: 'error',
       code: 'end-before-start',
       devices: [],
       message: 'The deployment ends before it starts.',
     });
-  } else if (duration > MAX_DEPLOYMENT_SECONDS) {
+  } else if (startKnown && endKnown && duration > MAX_DEPLOYMENT_SECONDS) {
     problems.push({
       severity: 'error',
       code: 'too-long',
       devices: [],
       message:
-        `A deployment can run at most ${MAX_DEPLOYMENT_DAYS} days; this one is ` +
-        `${(duration / 86400).toFixed(1)}. Timestamps are milliseconds since the start in a 32-bit counter, ` +
-        'which stops being able to represent them after that.',
+        `A deployment can run for at most ${MAX_DEPLOYMENT_DAYS} days, and this one is ` +
+        `${(duration / 86400).toFixed(1)}. Tags cannot keep their timestamps straight for longer than that.`,
+    });
+  }
+  if (options.now !== undefined && endKnown && config.endTime <= options.now) {
+    problems.push({
+      severity: 'error',
+      code: 'already-over',
+      devices: [],
+      message: 'The end time has already passed, so the tags would never record. Choose dates in the future.',
+    });
+  } else if (options.now !== undefined && startKnown && endKnown && duration > 0 && config.startTime <= options.now) {
+    problems.push({
+      severity: 'warning',
+      code: 'already-started',
+      devices: [],
+      message: 'The start time has already passed, so each tag starts recording as soon as it comes off its charger.',
     });
   }
 
@@ -204,11 +256,11 @@ export function validateDeployment(config: DeploymentConfig): Problem[] {
           severity: 'error',
           code: 'bad-daily-time',
           devices: [],
-          message: `The daily ${name} time is not a valid time of day.`,
+          message: `Enter a complete daily ${name} time.`,
         });
       }
     }
-    if (config.dailyStartTime === config.dailyEndTime) {
+    if (Number.isInteger(config.dailyStartTime) && config.dailyStartTime === config.dailyEndTime) {
       problems.push({
         severity: 'error',
         code: 'empty-daily-window',

@@ -1807,7 +1807,7 @@
       "uid": 11,
       "label": "Deaf",
       "verdict": "fail",
-      "reasons": ["35% of its ranging receives failed against 5% for the other devices. A weak receiver or a damaged antenna or connection."],
+      "reasons": ["35% of its ranging receives failed against 5% for the other tags. A weak receiver or a damaged antenna or connection."],
       "participation": 0.9845238095238096,
       "rxFailureRate": 0.35,
       "antennaFailureRates": [0.3398148148148148,0.36018518518518516,0.35],
@@ -1831,7 +1831,7 @@
       "uid": 62,
       "label": "Antenna 2",
       "verdict": "fail",
-      "reasons": ["Antenna 2 failed 40% of the receives through it, against 5% and 6% on the others. That antenna, its switch, or its connection is suspect.","17% of its ranging receives failed against 5% for the other devices."],
+      "reasons": ["Antenna 2 failed 40% of the receives through it, against 5% and 6% on the others. That antenna, its switch, or its connection is suspect.","17% of its ranging receives failed against 5% for the other tags."],
       "participation": 0.9797619047619047,
       "rxFailureRate": 0.17006172839506173,
       "antennaFailureRates": [0.05,0.4,0.06018518518518518],
@@ -1879,7 +1879,7 @@
       "uid": 81,
       "label": "Absent-minded",
       "verdict": "check",
-      "reasons": ["Ranged in 69% of rounds, where a healthy network manages about 99%.","Ranged to a typical peer in 59% of rounds, against 95% for the other devices."],
+      "reasons": ["Ranged in 69% of rounds, where a healthy network manages about 99%.","Ranged to a typical peer in 59% of rounds, against 95% for the other tags."],
       "participation": 0.6904761904761905,
       "rxFailureRate": 0.04259259259259259,
       "antennaFailureRates": [0.03981481481481482,0.05,0.04490740740740741],
@@ -1927,7 +1927,7 @@
       "uid": 119,
       "label": "Noisy",
       "verdict": "check",
-      "reasons": ["Its distances spread by about 162 mm, against 19 mm for the other devices.","The radio needed resetting 3 times (2 failed wake-ups, 1 stuck interrupt).","Lost 30 rounds to a receive it could not start in time. That points to firmware timing, not this device's radio."],
+      "reasons": ["Its distances spread by about 162 mm, against 19 mm for the other tags.","The radio needed resetting 3 times (2 failed wake-ups, 1 stuck interrupt).","Lost 30 rounds to a receive it could not start in time. That points to firmware timing, not this tag's radio."],
       "participation": 0.9833333333333333,
       "rxFailureRate": 0.052160493827160495,
       "antennaFailureRates": [0.03981481481481482,0.05,0.04490740740740741],
@@ -2614,7 +2614,7 @@
       "uid": 64,
       "label": "D",
       "verdict": "check",
-      "reasons": ["15% of its ranging receives failed against 5% for the other devices."],
+      "reasons": ["15% of its ranging receives failed against 5% for the other tags."],
       "participation": 0.9833333333333333,
       "rxFailureRate": 0.15,
       "antennaFailureRates": [],
@@ -2697,7 +2697,7 @@
       "residualMm": null
      }
     ],
-    "notes": ["No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well."]
+    "notes": ["No positions entered, so distances are checked for consistency only. Enter where each tag sat to check accuracy as well."]
    }
   },
   {
@@ -2849,7 +2849,7 @@
       "uid": 6,
       "label": "Gone",
       "verdict": "missing",
-      "reasons": ["No log loaded for this device."],
+      "reasons": ["No log loaded for this tag."],
       "participation": null,
       "rxFailureRate": null,
       "antennaFailureRates": [],
@@ -2863,7 +2863,7 @@
       "uid": 7,
       "label": "Blank",
       "verdict": "missing",
-      "reasons": ["No log loaded for this device."],
+      "reasons": ["No log loaded for this tag."],
       "participation": null,
       "rxFailureRate": null,
       "antennaFailureRates": [],
@@ -2960,7 +2960,7 @@
       "residualMm": null
      }
     ],
-    "notes": ["2 of the 4 selected devices have no log loaded, so they are not judged and their links are missing from the others.","The devices were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.","With fewer than three devices there is no \"rest of the fleet\" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single device.","No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well."]
+    "notes": ["2 of the 4 selected tags have no log loaded, so they are not judged and their links are missing from the others.","The tags were running together for less than a minute, which is too short to judge ranging. Run the test for at least two minutes.","With fewer than three tags there is no \"rest of the fleet\" to compare against, so only absolute limits apply, and distance offsets cannot be pinned to a single tag.","No positions entered, so distances are checked for consistency only. Enter where each tag sat to check accuracy as well."]
    }
   },
   {
@@ -3242,7 +3242,7 @@
       "residualMm": null
      }
     ],
-    "notes": ["The positions entered do not let each device's distance offset be told apart — it needs at least three devices with positions and ranges between them."]
+    "notes": ["The positions entered do not let each tag's distance offset be told apart — it needs at least three tags with positions and ranges between them."]
    }
   },
   {
@@ -3701,7 +3701,7 @@
       "residualMm": null
      }
     ],
-    "notes": ["No positions entered, so distances are checked for consistency only. Enter where each device sat to check accuracy as well."]
+    "notes": ["No positions entered, so distances are checked for consistency only. Enter where each tag sat to check accuracy as well."]
    }
   }
  ],
@@ -6452,7 +6452,7 @@
       "uid": 62,
       "label": "Blue",
       "verdict": "fail",
-      "reasons": ["23% of its ranging receives failed against 1% for the other devices. A weak receiver or a damaged antenna or connection.","Antenna 2 failed 45% of the receives through it, against 12% and 13% on the others. That antenna, its switch, or its connection is suspect.","Ranged to a typical peer in 76% of rounds, against 97% for the other devices."],
+      "reasons": ["23% of its ranging receives failed against 1% for the other tags. A weak receiver or a damaged antenna or connection.","Antenna 2 failed 45% of the receives through it, against 12% and 13% on the others. That antenna, its switch, or its connection is suspect.","Ranged to a typical peer in 76% of rounds, against 97% for the other tags."],
       "participation": 0.9823529411764705,
       "rxFailureRate": 0.23364197530864197,
       "antennaFailureRates": [0.12129629629629629,0.4537037037037037,0.1259259259259259],

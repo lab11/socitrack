@@ -22,7 +22,7 @@ import {
   BATTERY_EVENT_DEBOUNCE_MS, STORAGE_FLUSH_TIMEOUT_S, STORAGE_TYPE,
   TIME_ALIGNED_INTERVAL_S, WATCHDOG_TASK,
 } from '../src/constants.ts';
-import { buildDiagnosticsBody, buildTestStream } from './helpers.ts';
+import { buildDiagnosticsBody, buildTestPages, buildTestStream } from './helpers.ts';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), 'fixtures');
 const boot = analyseDeployment(parseV2(new Uint8Array(readFileSync(join(FIXTURES, 'boot.ttg')))));
@@ -243,4 +243,18 @@ test('the radio, storage, stack and recovery counters each raise their own findi
   for (const code of ['records-dropped', 'uwb-radio-trouble', 'ble-controller-restarts', 'stack-nearly-exhausted', 'flash-blocks-retired']) {
     assert.ok(codes.has(code), `expected a ${code} finding`);
   }
+});
+
+test('a clock step at a restart is a note about drift, not a warning about the time base', () => {
+  // AE's real reset record, opening a page 8.9 s behind the network time the page before it ended on
+  const range = [1, 0x0b, 0xdc, 0x05];
+  const health = analyseDeployment(parseV2(buildTestPages([
+    [[STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_858_000, range], [STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_858_500, range]],
+    [[STORAGE_TYPE.STORAGE_TYPE_RESET_REASON, 530_849_600, [0x08, 0xe0]], [STORAGE_TYPE.STORAGE_TYPE_RANGES, 530_850_000, range]],
+  ])));
+  assert.equal(health.integrity.restartClockSteps, 1);
+  assert.equal(health.integrity.significantTimeSteps, 0);
+  const codes = health.anomalies.map((anomaly) => anomaly.code);
+  assert.ok(codes.includes('clock-after-restart'), codes.join(', '));
+  assert.ok(!codes.includes('time-rebased'), codes.join(', '));
 });

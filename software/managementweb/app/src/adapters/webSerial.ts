@@ -52,6 +52,11 @@ const OPERATION_TIMEOUT_MS = 3_000;
 const IDENTIFY_TIMEOUT_MS = 1_000;
 /** No data for this long mid-transfer means the transfer has died. */
 const STREAM_IDLE_TIMEOUT_MS = 20_000;
+/**
+ * Before the stream header, the tag reads every page of the log to total its size, at about 1.1 ms a
+ * page: 15 s for a week of data and about 6 minutes for a full 1 GiB part.
+ */
+const STREAM_START_TIMEOUT_MS = 600_000;
 /** The firmware reads the retransmission count as one byte, and each request replaces the last. */
 const MAX_SEQS_PER_REQUEST = Math.min(255, NANDLOG_MAX_RETRANSMIT_PAGES);
 /** The download reply opens with the tag's UID and a newline, then the details length. */
@@ -109,7 +114,7 @@ class SerialLink {
           this.wake?.();
         }
       }
-      this.closedError = new Error('The TotTag was unplugged.');
+      this.closedError = new Error('The tag was unplugged.');
     } catch (error) {
       this.closedError = error instanceof Error ? error : new Error(String(error));
     }
@@ -205,7 +210,7 @@ async function readEui(link: SerialLink): Promise<Uint8Array | null> {
   link.discardInput();
   await link.write(Uint8Array.of(USB_COMMAND.USB_GET_UID_COMMAND));
   try {
-    const reply = await link.read(EUI_LEN + 1, IDENTIFY_TIMEOUT_MS, 'Identifying the TotTag');
+    const reply = await link.read(EUI_LEN + 1, IDENTIFY_TIMEOUT_MS, 'Identifying the tag');
     return reply[EUI_LEN] === NEWLINE ? reply.slice(0, EUI_LEN) : null;
   } catch {
     return null;
@@ -228,7 +233,7 @@ class SerialTag implements TagConnection {
   async readSnapshot(): Promise<TagSnapshot> {
     const batteryMv = await this.query(USB_COMMAND.USB_VOLTAGE_COMMAND, 2, 'Reading the battery')
       .then((bytes) => new DataView(bytes.buffer).getUint16(0, true), () => null);
-    const timestamp = await this.query(USB_COMMAND.USB_GET_TIMESTAMP_COMMAND, 4, "Reading the TotTag's clock")
+    const timestamp = await this.query(USB_COMMAND.USB_GET_TIMESTAMP_COMMAND, 4, "Reading the tag's clock")
       .then((bytes) => new DataView(bytes.buffer).getUint32(0, true), () => null);
     let experiment: ExperimentDetails | null = null;
     try {
@@ -307,17 +312,18 @@ class SerialTag implements TagConnection {
    *
    * Over USB the reply is the tag's UID and a newline, a u16 details length, and then exactly the
    * stream Bluetooth delivers: the header, the details unless this is a repair round, and the page
-   * frames. There is no completion marker, so the end is the byte count the header promised.
+   * frames. There is no completion marker, so the end is the last page the header announced, at the
+   * length its own frame gives.
    */
   private async collectStream(onProgress: (progress: DownloadProgress) => void, signal?: AbortSignal): Promise<Uint8Array> {
     onProgress({ phase: 'starting', bytesReceived: 0, bytesExpected: null, pagesExpected: null, bytesPerSecond: null, secondsRemaining: null });
     await this.link.write(Uint8Array.of(USB_COMMAND.USB_DOWNLOAD_LOG_COMMAND));
-    const idle = 'The TotTag stopped sending. Check the USB cable and try again.';
+    const idle = 'The tag stopped sending. Check the USB cable and try again.';
     await this.link.read(DOWNLOAD_PREAMBLE_BYTES, STREAM_IDLE_TIMEOUT_MS, idle);
 
-    const header = await this.link.read(STREAM_HEADER_LAYOUT.size, STREAM_IDLE_TIMEOUT_MS, idle);
+    const header = await this.link.read(STREAM_HEADER_LAYOUT.size, STREAM_START_TIMEOUT_MS, idle);
     if (new TextDecoder().decode(header.subarray(0, 4)) !== V2_STREAM_MAGIC) {
-      throw new Error("This TotTag's firmware sends a log format that USB downloads here do not read. Update the firmware.");
+      throw new Error("This tag's firmware sends a log format that USB downloads here do not read. Update the firmware.");
     }
     const at = (name: string): number => {
       const field = STREAM_HEADER_LAYOUT.fields.find((candidate) => candidate.name === name);
@@ -414,11 +420,17 @@ export const webSerialTransport: TagTransport = {
 
   unavailableReason() {
     if (serial()) return null;
-    return 'This browser cannot talk to TotTags over USB. Chrome, Edge or Opera on a computer can; Safari and Firefox do not implement Web Serial.';
+    return 'This browser cannot talk to tags over USB. Chrome, Edge or Opera on a computer can; Safari and Firefox do not support it.';
   },
 
   reconnectAcrossReloadsSupported() {
     return typeof serial()?.getPorts === 'function';
+  },
+
+  canReachWithoutChooser(handle: string) {
+    // A granted port is found again by asking each one which tag it is, so a tag plugged in is
+    // always reachable without the chooser; one that is not plugged in is reported by connect().
+    return sessionPorts.has(handle) || webSerialTransport.reconnectAcrossReloadsSupported();
   },
 
   async requestDevice(): Promise<TagConnection | null> {
@@ -434,7 +446,7 @@ export const webSerialTransport: TagTransport = {
     const connection = await openPort(port);
     if (!connection) {
       throw new Error(
-        'That TotTag did not report its ID over USB. Close any other program or tab using it, or ' +
+        'That tag did not report its ID over USB. Close any other program or tab using it, or ' +
         'update its firmware — older firmware cannot be identified, and so cannot be scheduled, over USB.',
       );
     }

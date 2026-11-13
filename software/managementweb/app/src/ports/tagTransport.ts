@@ -117,4 +117,11 @@ export interface TagTransport {
 
   /** Whether a tag added before a page reload can be reconnected without the chooser. */
   reconnectAcrossReloadsSupported(): boolean;
+
+  /**
+   * Whether `connect(handle)` can work without the chooser: the tag was picked earlier in this page
+   * session, or the browser remembers grants across reloads. False means it has to be picked again,
+   * which a page can only ask for from a click.
+   */
+  canReachWithoutChooser(handle: string): boolean;
 }

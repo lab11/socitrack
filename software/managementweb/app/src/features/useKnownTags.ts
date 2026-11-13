@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { formatEui } from '@tottag/schema';
+import { useCallback } from 'react';
+import { formatEui, tagName } from '@tottag/schema';
+import { createSharedStore, useSharedStore } from '../lib/sharedStore.ts';
 import type { TagIdentity, TagTransport } from '../ports/tagTransport.ts';
-
-const STORAGE_KEY = 'tottag.known-tags';
 
 export interface KnownTag {
   /** Browser-assigned, stable within this profile. What `connect()` takes. */
@@ -11,11 +10,22 @@ export interface KnownTag {
   readonly transport?: TagTransport['id'];
   /** Full 6-byte EUI, least-significant byte first. */
   readonly eui: readonly number[];
-  /** Whatever this tag was last labelled, offered as a default next time. */
-  readonly lastLabel: string;
   readonly firstSeen: string;
   readonly lastSeen: string;
 }
+
+/**
+ * Deliberately no label. Labels belong to a study — "10051_CG1" means one family's caregiver — and a
+ * tag remembered with last month's label would offer it to next month's family, which is exactly the
+ * kind of slip that ends up in the data.
+ */
+const store = createSharedStore<KnownTag[]>(
+  'tottag.known-tags',
+  (raw) => (Array.isArray(raw) ? raw : [])
+    .filter((entry): entry is KnownTag => !!entry && typeof entry.handle === 'string' && Array.isArray(entry.eui))
+    .map(({ handle, transport, eui, firstSeen, lastSeen }) => ({ handle, transport: transport ?? 'bluetooth', eui, firstSeen, lastSeen })),
+  () => [],
+);
 
 /**
  * Tags this browser has been granted access to, remembered across sessions.
@@ -26,52 +36,26 @@ export interface KnownTag {
  * dialogs it was meant to replace.
  *
  * So each tag is identified once, and the EUI is remembered against the browser's handle for it.
- * After that a known tag can be added to a deployment instantly, and the connection happens only
- * when there is something to write.
+ * After that a known tag can be added to a deployment instantly, and reached again whenever there is
+ * something to write — including after switching pages or reloading.
  */
 export function useKnownTags() {
-  const [tags, setTags] = useState<KnownTag[]>(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as KnownTag[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [tags, setTags] = useSharedStore(store);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tags));
-    } catch {
-      // A full or disabled store only costs the convenience of remembering between sessions.
-    }
-  }, [tags]);
-
-  const remember = useCallback((identity: TagIdentity, label: string): KnownTag => {
+  const remember = useCallback((identity: TagIdentity) => {
     const now = new Date().toISOString();
-    const entry: KnownTag = {
-      handle: identity.handle,
-      transport: identity.transport,
-      eui: Array.from(identity.eui),
-      lastLabel: label,
-      firstSeen: now,
-      lastSeen: now,
-    };
     setTags((current) => {
       const existing = current.find((tag) => tag.handle === identity.handle);
-      if (!existing) return [...current, entry];
-      return current.map((tag) =>
-        tag.handle === identity.handle
-          ? { ...tag, eui: entry.eui, lastLabel: label || tag.lastLabel, lastSeen: now }
-          : tag,
-      );
+      if (!existing) {
+        return [...current, { handle: identity.handle, transport: identity.transport, eui: Array.from(identity.eui), firstSeen: now, lastSeen: now }];
+      }
+      return current.map((tag) => (tag.handle === identity.handle ? { ...tag, eui: Array.from(identity.eui), lastSeen: now } : tag));
     });
-    return entry;
-  }, []);
+  }, [setTags]);
 
   const forget = useCallback((handle: string) => {
     setTags((current) => current.filter((tag) => tag.handle !== handle));
-  }, []);
+  }, [setTags]);
 
   return { tags, remember, forget };
 }
@@ -79,14 +63,22 @@ export function useKnownTags() {
 export const knownTagTransport = (tag: KnownTag): TagTransport['id'] => tag.transport ?? 'bluetooth';
 
 /**
- * How a tag is named on screen: its address, and for a tag reached over USB a prefix saying so.
+ * How to reach a tag by its address: Bluetooth when this browser knows it that way, else USB.
+ *
+ * Bluetooth first, because a tag on its charger is the normal case and USB needs a cable to this
+ * computer that is probably no longer there.
+ */
+export function routeFor(tags: readonly KnownTag[], eui: Uint8Array | readonly number[]): KnownTag | null {
+  const key = formatEui(Uint8Array.from(eui));
+  const matching = tags.filter((tag) => formatEui(Uint8Array.from(tag.eui)) === key);
+  return matching.find((tag) => knownTagTransport(tag) === 'bluetooth') ?? matching[0] ?? null;
+}
+
+/**
+ * How a known tag is named on screen: "TotTag 00:0A", and for one reached over USB a note saying so.
  *
  * The same tag can be known both ways, and the two are reached differently — one needs it on its
  * charger and in range, the other plugged into this computer — so they must not look identical.
- * Matches the desktop tool, which lists a USB tag as "USB-Connected XX:XX:XX:XX:XX:XX".
  */
-export const tagDisplayName = (eui: Uint8Array, transport: TagTransport['id']): string =>
-  `${transport === 'serial' ? 'USB-Connected ' : ''}${formatEui(eui)}`;
-
 export const describeKnownTag = (tag: KnownTag): string =>
-  `${tagDisplayName(Uint8Array.from(tag.eui), knownTagTransport(tag))}${tag.lastLabel ? ` — ${tag.lastLabel}` : ''}`;
+  `${tagName(tag.eui)}${knownTagTransport(tag) === 'serial' ? ' (USB)' : ''}`;

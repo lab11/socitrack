@@ -168,6 +168,15 @@
       },
       "hasExplicitValues": true
     },
+    "battery_status_t": {
+      "members": {
+        "BATTERY_EMPTY": 3500,
+        "BATTERY_CRITICAL": 3680,
+        "BATTERY_NOMINAL": 3750,
+        "BATTERY_FULL": 4200
+      },
+      "hasExplicitValues": true
+    },
     "schedule_role_t": {
       "members": {
         "ROLE_IDLE": 10,

@@ -40,6 +40,11 @@ const MAINTENANCE = BLE_UUID.BLE_MAINTENANCE_SERVICE_ID.uuid;
 const OPERATION_TIMEOUT_MS = 10_000;
 /** No notification for this long mid-transfer means the transfer has died. */
 const STREAM_IDLE_TIMEOUT_MS = 20_000;
+/**
+ * Between the byte that starts a transfer and the stream header, the tag reads every page of the log to
+ * total its size, at about 1.1 ms a page: 15 s for a week of data and about 6 minutes for a full 1 GiB part.
+ */
+const STREAM_START_TIMEOUT_MS = 600_000;
 
 const bluetooth = (): Bluetooth | undefined => (navigator as Navigator & { bluetooth?: Bluetooth }).bluetooth;
 
@@ -111,7 +116,7 @@ class BluetoothTag implements TagConnection {
         } catch (error) {
           // The firmware answers a test it cannot run with an ATT error, which the browser reports only generically
           if (error instanceof DOMException) {
-            throw new Error('The device refused the test. Its clock may not be set, or its firmware may be too old to run one.');
+            throw new Error('The tag refused the test. Its clock may not be set, or its firmware may be too old to run one.');
           }
           throw error;
         }
@@ -150,7 +155,7 @@ class BluetoothTag implements TagConnection {
 
   private char(uuid: string): BluetoothRemoteGATTCharacteristic {
     const found = this.chars.get(uuid);
-    if (!found) throw new Error(`This TotTag does not expose the characteristic ${uuid}`);
+    if (!found) throw new Error(`This tag's firmware lacks something this page needs (${uuid}). Updating its firmware should fix it.`);
     return found;
   }
 
@@ -172,14 +177,14 @@ class BluetoothTag implements TagConnection {
 
   private async readU16(uuid: string): Promise<number | null> {
     try {
-      const value = await withTimeout(this.char(uuid).readValue(), OPERATION_TIMEOUT_MS, 'Reading from the TotTag');
+      const value = await withTimeout(this.char(uuid).readValue(), OPERATION_TIMEOUT_MS, 'Reading from the tag');
       return value.byteLength >= 2 ? value.getUint16(0, true) : null;
     } catch { return null; }
   }
 
   private async readU32(uuid: string): Promise<number | null> {
     try {
-      const value = await withTimeout(this.char(uuid).readValue(), OPERATION_TIMEOUT_MS, 'Reading from the TotTag');
+      const value = await withTimeout(this.char(uuid).readValue(), OPERATION_TIMEOUT_MS, 'Reading from the tag');
       return value.byteLength >= 4 ? value.getUint32(0, true) : null;
     } catch { return null; }
   }
@@ -190,7 +195,7 @@ class BluetoothTag implements TagConnection {
     await withTimeout(
       this.char(BLE_UUID.BLE_LIVE_STATS_TIMESTAMP_CHAR.uuid).writeValueWithResponse(now),
       OPERATION_TIMEOUT_MS,
-      "Setting the TotTag's clock",
+      "Setting the tag's clock",
     );
   }
 
@@ -349,11 +354,11 @@ class BluetoothTag implements TagConnection {
     let fail: ((error: Error) => void) | null = null;
     let idleTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const armIdle = () => {
+    const armIdle = (ms = STREAM_IDLE_TIMEOUT_MS) => {
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(
-        () => fail?.(new Error('The TotTag stopped sending. Move it closer to the computer and try again.')),
-        STREAM_IDLE_TIMEOUT_MS,
+        () => fail?.(new Error('The tag stopped sending. Move it closer to the computer and try again.')),
+        ms,
       );
     };
 
@@ -363,7 +368,7 @@ class BluetoothTag implements TagConnection {
       armIdle();
       const bytes = new Uint8Array(value.buffer, value.byteOffset, value.byteLength);
 
-      if (!sawKickoff) { sawKickoff = true; report('header'); return; }
+      if (!sawKickoff) { sawKickoff = true; armIdle(STREAM_START_TIMEOUT_MS); report('header'); return; }
       append(bytes);
 
       if (!header) {
@@ -411,7 +416,7 @@ class BluetoothTag implements TagConnection {
         fail = reject;
         signal?.addEventListener('abort', () => reject(new Error('Download cancelled')), { once: true });
         this.device.addEventListener('gattserverdisconnected', () =>
-          reject(new Error('The TotTag disconnected part-way through. Reconnect to resume.')), { once: true });
+          reject(new Error('The tag disconnected part-way through. Keep it on its charger, close to the computer, and download it again.')), { once: true });
         armIdle();
         start().catch(reject);
       });
@@ -478,12 +483,16 @@ export const webBluetoothTransport: TagTransport = {
 
   unavailableReason() {
     if (bluetooth()) return null;
-    return 'This browser cannot talk to TotTags. Chrome, Edge or Opera on a computer can; Safari and Firefox do not implement Web Bluetooth at all.';
+    return 'This browser cannot talk to tags over Bluetooth. Chrome, Edge or Opera on a computer can; Safari and Firefox do not support it.';
   },
 
   reconnectAcrossReloadsSupported() {
     const api = bluetooth() as (Bluetooth & { getDevices?: unknown }) | undefined;
     return typeof api?.getDevices === 'function';
+  },
+
+  canReachWithoutChooser(handle: string) {
+    return sessionDevices.has(handle) || webBluetoothTransport.reconnectAcrossReloadsSupported();
   },
 
   async requestDevice(): Promise<TagConnection | null> {

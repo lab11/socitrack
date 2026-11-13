@@ -366,6 +366,15 @@ export const MOTION_CODE = snapshot.enums.motion_code_t.members;
  */
 export const BATTERY_EVENT = snapshot.enums.battery_event_t.members;
 
+/** Battery thresholds in mV, from app_config.h. */
+export const BATTERY_STATUS = snapshot.enums.battery_status_t.members;
+
+/**
+ * Below this a tag taken off its charger does not start recording: app_tasks.c compares the battery
+ * against BATTERY_NOMINAL at boot and powers off instead.
+ */
+export const MIN_RECORDING_BATTERY_MV: number = BATTERY_STATUS.BATTERY_NOMINAL;
+
 /** Advertised ranging role, the third byte of the BLE manufacturer data, and the role in a SESSION_END record. */
 export const SCHEDULE_ROLE = snapshot.enums.schedule_role_t.members;
 
