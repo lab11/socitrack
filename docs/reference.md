@@ -150,10 +150,3 @@ test a tighter grid — it breaks the round. Change it in the header and reflash
 `SCHEDULING_INTERVAL_US` must divide one second exactly — several timeouts are counted in rounds per
 second, and a value that does not divide evenly silently shortens all of them. A compile-time check
 enforces this.
-
----
-
-## Developer documentation
-
-The storage format, board bring-up, and controller and IMU firmware updates are covered in the
-[developer documentation](internals/).

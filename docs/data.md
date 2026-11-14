@@ -156,7 +156,6 @@ sequence number, timestamps and CRC. The CRC is what lets the tools detect a pag
 and ask the device to resend it.
 
 You rarely need this level of detail. If you are writing your own reader, the authoritative
-description is in the [storage format notes](internals/storage-format.md), and the two existing
-readers — `software/management/dashboard/tottag_format.py` and
-`software/managementweb/packages/tottag-schema/src/log.ts` — are kept in step with the firmware by an
-automated check.
+description is the two existing readers — `software/management/dashboard/tottag_format.py` and
+`software/managementweb/packages/tottag-schema/src/log.ts` — which are kept in step with the firmware
+by an automated check.

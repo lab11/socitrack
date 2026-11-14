@@ -24,7 +24,7 @@ header_pages:
 exclude:
   - datasheets/
   - media/README.md
-  - internals/storage-format.md
+  - internals/
 
 defaults:
   - scope:

@@ -36,7 +36,8 @@ that won't appear, won't range, or came back with less data than expected.
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
 | [Reference](reference.md) | Limits, constants, and hardware details |
 
-Working on the firmware or the tools themselves? See [Developer documentation](internals/).
+Working on the firmware or the tools themselves? Start from the
+[`software/` folder](https://github.com/lab11/socitrack/tree/master/software) in the repository.
 
 ---
 

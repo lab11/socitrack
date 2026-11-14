@@ -30,7 +30,7 @@ Repository layout
 
 | Directory | Contents |
 | --- | --- |
-| [`docs/`](docs/) | All user and developer documentation; the source of the documentation site |
+| [`docs/`](docs/) | All user documentation; the source of the documentation site |
 | [`software/`](software/) | Device firmware and the tools that configure devices and read their data |
 | [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD; everything before Rev M is under [`hardware/legacy/`](hardware/legacy/) |
 

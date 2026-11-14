@@ -68,7 +68,3 @@ no build step and no dev dependency in the schema package.
 
 User documentation is at [lab11.github.io/socitrack](https://lab11.github.io/socitrack/) — see
 [The Dashboard](../../docs/dashboard.md#the-browser-tool) for installing and using this tool.
-
-How this package keeps itself honest against the firmware — drift detection, the guess registry,
-record-grammar parity, and the development history — is written up in
-[the web tool architecture notes](../../docs/internals/web-tool-architecture.md).

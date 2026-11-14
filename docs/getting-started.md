@@ -148,8 +148,7 @@ updating. If you have been told to update it:
 make BOARD_REV=P flashb
 ```
 
-This writes the controller image first, waits for it to apply, then writes the application. See
-[the controller firmware notes](internals/ble-controller-firmware.md) for the detail.
+This writes the controller image first, waits for it to apply, then writes the application.
 
 ---
 
