@@ -7,14 +7,20 @@ import { downloadBytes, downloadText } from '../adapters/download.ts';
 import { directoryLogSource } from '../adapters/fileLogSource.ts';
 import { buildReport, sortByUrgency, type DeviceReport } from '../features/deployment.ts';
 import { summaryCsv, summaryFilename } from '../features/exportCsv.ts';
+import { readRecordFiles, type OpenRecord } from '../features/studyClock.ts';
 import { useDownloaded } from '../features/useTagRecords.ts';
 import type { LoadFailure, LoadResult } from '../ports/logSource.ts';
+import { releaseLogs } from './parseAsync.ts';
 
 export type LogsApi = ReturnType<typeof useLogs>;
 
 export function useLogs() {
   const [reports, setReports] = useState<readonly DeviceReport[]>([]);
   const [failures, setFailures] = useState<readonly LoadFailure[]>([]);
+  // Deployment records opened with the logs: where each deployment's time zone comes from. Kept for this
+  // visit only, like the logs, and never written to storage: they carry one study's labels.
+  const [records, setRecords] = useState<readonly OpenRecord[]>([]);
+  const recordsRef = useRef<readonly OpenRecord[]>([]);
   const [busy, setBusy] = useState(false);
   // Ids of logs whose bytes have been written to disk at least once. Only meaningful for logs that
   // came off a tag; an imported file is on disk by definition.
@@ -43,8 +49,13 @@ export function useLogs() {
       }
       reportCount.current += built.length;
       for (const report of built) if (report.origin === 'file' && !report.error) noteOnDisk(report);
+      const recordFiles = readRecordFiles(result.records ?? [], recordsRef.current, result.fromFolder);
+      if (recordFiles.added.length) {
+        recordsRef.current = [...recordsRef.current, ...recordFiles.added];
+        setRecords(recordsRef.current);
+      }
       setReports((current) => [...current, ...built]);
-      setFailures(result.failed);
+      setFailures([...result.failed, ...recordFiles.failed]);
     } finally {
       setBusy(false);
     }
@@ -99,11 +110,15 @@ export function useLogs() {
   }, [onLoaded]);
 
   const clear = useCallback(() => {
+    // The worker holds every log's ranging rounds; closing the logs lets them go.
+    releaseLogs('all');
     setReports([]);
+    recordsRef.current = [];
+    setRecords([]);
     setFailures([]);
     setSaved(new Set());
     setSaveError(null);
   }, []);
 
-  return { reports, ordered, counts, failures, busy, saved, unsaved, saveError, onLoaded, exportCsv, saveLog, openFolder, clear };
+  return { reports, ordered, counts, failures, records, busy, saved, unsaved, saveError, onLoaded, exportCsv, saveLog, openFolder, clear };
 }

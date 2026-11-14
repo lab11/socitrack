@@ -96,6 +96,12 @@ export interface ClockHealth {
   readonly localClockMonotonic: boolean;
   /** Median seconds between consecutive periodic anchors. Expect TIME_ALIGNED_INTERVAL_S. */
   readonly medianIntervalSeconds: number;
+  /**
+   * Each time the offset moved by TIME_BASE_CHANGE_THRESHOLD_MS or more between consecutive anchors: when
+   * (the later anchor's log time) and by how much, network - local, in ms. These are the corrections the
+   * `time-base-step` finding summarises, placed in time so they can be shown where they happened.
+   */
+  readonly offsetSteps: ReadonlyArray<{ readonly ms: number; readonly stepMs: number }>;
 }
 
 export interface CadenceHealth {
@@ -456,6 +462,7 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
     offsetDriftMs: 0,
     localClockMonotonic: true,
     medianIntervalSeconds: 0,
+    offsetSteps: [],
   };
   if (anchors.length >= 2) {
     const first = anchors[0]!;
@@ -463,9 +470,11 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
     let largestStep = 0;
     let monotonic = true;
     const intervals: number[] = [];
+    const offsetSteps: Array<{ ms: number; stepMs: number }> = [];
     for (let i = 1; i < anchors.length; i += 1) {
       const step = Math.abs(anchors[i]!.offsetMs - anchors[i - 1]!.offsetMs);
       if (step > largestStep) largestStep = step;
+      if (step >= TIME_BASE_CHANGE_THRESHOLD_MS) offsetSteps.push({ ms: anchors[i]!.ms, stepMs: anchors[i]!.offsetMs - anchors[i - 1]!.offsetMs });
       const interval = (anchors[i]!.localMs - anchors[i - 1]!.localMs) / 1000;
       if (interval < 0) monotonic = false;
       if (interval > 0) intervals.push(interval);
@@ -478,6 +487,7 @@ export function analyseDeployment(result: ParseResult): DeploymentHealth {
       offsetDriftMs: last.offsetMs - first.offsetMs,
       localClockMonotonic: monotonic,
       medianIntervalSeconds: median(intervals),
+      offsetSteps,
     };
 
     if (!monotonic) {

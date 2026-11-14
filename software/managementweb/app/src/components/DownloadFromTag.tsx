@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { describeRate, describeRemaining, extractPageFrames, formatEui, mergeRepairs, tagName,
   NANDLOG_MAX_RETRANSMIT_PAGES, V2_RETRANSMIT_PAGE_ATTEMPTS, V2_RETRANSMIT_RETRY_ROUNDS } from '@tottag/schema';
-import { parseLogAsync } from '../lib/parseAsync.ts';
+import { parseLogAsync, releaseLogs } from '../lib/parseAsync.ts';
 import { webBluetoothTransport } from '../adapters/webBluetooth.ts';
 import { webSerialTransport } from '../adapters/webSerial.ts';
 import { describeKnownTag, knownTagTransport, useKnownTags, type KnownTag } from '../features/useKnownTags.ts';
@@ -84,7 +84,9 @@ export function DownloadFromTag({ onDownloaded, busy }: Props) {
         let repaired = 0;
         const attempts = new Map<number, number>();
         for (let round = 1; round <= V2_RETRANSMIT_RETRY_ROUNDS; ++round) {
-          const parsed = await parseLogAsync(bytes);
+          // Read only to find the missing pages; the log's ranging rounds are not wanted from this pass.
+          const parsed = await parseLogAsync(bytes, 'download-repair-check');
+          releaseLogs(['download-repair-check']);
           const wanted = parsed.missingSeqs;
           // No page at all means there is no sequence number to count from, so there is nothing to
           // name and the whole transfer has to be repeated rather than patched.

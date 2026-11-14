@@ -1,15 +1,34 @@
 # Your Data
 
-A download gives you two files per device:
+A download with the desktop dashboard gives you two files per device:
 
 | File | What it is |
 | --- | --- |
 | `<name>_<start>.ttg` | The raw log, byte for byte as the device sent it. **This is your archival copy.** |
 | `<name>.pkl` | The same data parsed into Python objects, ready for analysis. |
 
+`<name>` is the device's label, or its ID if it has none, with any characters a file name cannot hold
+(`/ \ : * ? " < > |`) left out. `<start>` is when the study started, so downloading a device twice
+replaces its files rather than adding more. Both tools name a device's `.ttg` the same way.
+
+The browser tool saves only the `.ttg`. A `.pkl` is a Python file, made by the desktop dashboard.
+
 Keep the `.ttg` files. They are the original record and can be re-parsed at any time; the `.pkl` is a
-convenience that can always be regenerated. If a device's data ever looks wrong, the `.ttg` is what
-tells you whether the problem is in the recording or in the processing.
+convenience that can be rebuilt from its `.ttg` whenever you need it, including from a `.ttg` the
+browser tool saved:
+
+```bash
+cd socitrack/software/management/dashboard
+python3 tottag.py --convert ~/Downloads/02_1788300000.ttg
+```
+
+This writes the same `02.pkl` the download wrote, next to the `.ttg`. Keep the name the `.ttg` was saved
+under, because that is how the tool knows which device's log it is. A legacy `.ttg`, from firmware older
+than the page-framed format, does not carry the labels the `.pkl` uses and cannot be rebuilt this way;
+`parse.py` in the same folder reads it with device IDs in place of labels.
+
+If a device's data ever looks wrong, the `.ttg` is what tells you whether the problem is in the
+recording or in the processing.
 
 ---
 
@@ -45,15 +64,12 @@ The bundled `processing.py` has helpers for plotting pairs and overlaying annota
 
 ---
 
-## How accurate is a distance?
+## How precise is a distance?
 
-Between two devices with a clear path, agreement is excellent. Across a ten-device deployment, every
-pair agreed with itself from both directions to **within 1 mm** of the median.
+Between two devices with a clear path, precision is excellent. Across a ten-device deployment, every
+pair agreed with itself from both directions to **within 1 mm** of the median. In practice:
 
-That is precision, not accuracy — it says the two devices computed the same number, not that the number
-is the true distance. In practice:
-
-- **Clear line of sight**: a few centimetres, stable.
+- **Clear line of sight**: a few centimeters, stable.
 - **Through a body**: reads longer, because the signal travels around rather than through. A device on
   someone's chest facing away from another person is the common case.
 - **Through a wall**: reads longer and varies far more. In one deployment a through-wall pair showed
@@ -125,11 +141,32 @@ Not every gap is a problem, and the kind of gap tells you which.
 | --- | --- |
 | Distances stop, housekeeping continues every 5 min | The device was running but had nobody in range. Normal when people separate. |
 | Everything stops, then a `Plugged` event | On a charger or a USB cable. Recording is suspended while plugged in. |
-| Everything stops, then a restart | Powered off — outside the study window, or flat battery. Check the voltage before the gap. |
+| Everything stops, then a restart | Powered off — outside the study window, or dead battery. Check the voltage before the gap. |
 | Everything stops with no explanation | Investigate. Start with [Troubleshooting](troubleshooting.md). |
 
 The 5-minute housekeeping cadence is what makes the first two distinguishable, so it is worth checking
 which you have before concluding a device failed.
+
+---
+
+## Daily figures
+
+Both tools can sum a deployment into daily figures for chosen devices: the browser tool on its **Time
+together** tab, and `get_daily_ranging_statistics` in the desktop dashboard's `processing.py`.
+
+- **Days** run from midnight to midnight on the study's clock, in the time zone from the deployment
+  record.
+- **Minutes in range** count distance measurements within the cutoff. Devices measure twice a second,
+  so 120 measurements make a minute. The browser tool keeps part-minutes; the desktop dashboard rounds
+  to whole minutes.
+- **Minutes within touching distance** count measurements within the touching distance the same way.
+- **Average distance** is over the measurements counted.
+- With several devices chosen, extra rows count the time in range of either (or any) of them, and of
+  both (or all) at once.
+
+The browser tool's CSV export has the columns `date`, `tag`, `with`, `minutes_in_range`,
+`minutes_within_<n>_<unit>`, `mean_distance_<unit>`, `rounds_in_range`, `rounds_within_touching`,
+`cutoff_<unit>`, `touching_<unit>`, and `time_zone`.
 
 ---
 
@@ -143,7 +180,7 @@ within a few parts per million. The drift is almost entirely common to the whole
 
 This matters only if you are aligning TotTag data against an external source — video, an observer's
 notes, another instrument. Over a week, expect roughly a minute and a half of offset against wall
-clock. The `rtc`, `offset` and `lag` fields in each 5-minute housekeeping record carry the device's own
+clock. The `rtc`, `offset`, and `lag` fields in each 5-minute housekeeping record carry the device's own
 clock alongside the network clock, so the drift can be measured and corrected after the fact rather
 than estimated.
 
@@ -152,7 +189,7 @@ than estimated.
 ## The raw format
 
 The `.ttg` file is a page-framed stream: a header, then a sequence of pages each carrying its own
-sequence number, timestamps and CRC. The CRC is what lets the tools detect a page damaged in transfer
+sequence number, timestamps, and CRC. The CRC is what lets the tools detect a page damaged in transfer
 and ask the device to resend it.
 
 You rarely need this level of detail. If you are writing your own reader, the authoritative

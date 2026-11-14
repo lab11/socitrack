@@ -57,7 +57,7 @@ tracking. They keep SociTrack's components as cleanly separable features, but in
 microcontrollers onto a single PCB along with SD card logging, an accelerometer, USB connectivity,
 wireless charging, debugging ports, LEDs, and battery voltage sensing. Later revisions focused on the
 deployability, scaling, and robustness of the caregiver-infant interaction tracking application,
-giving a more tightly integrated design geared towards a "wireless only" approach to ease device
+giving a more tightly integrated design geared toward a "wireless only" approach to ease device
 management at scale. Gen 1 TotTags carry many design decisions from the original indoor
 localization system, and are generally built on "2010-2020" era technologies.
 

@@ -9,6 +9,8 @@ try: from . import tottag_format
 except ImportError: import tottag_format
 try: from . import radio_check
 except ImportError: import radio_check
+try: from . import deployment_record
+except ImportError: import deployment_record
 from functools import partial
 from bleak import BleakClient, BleakScanner
 from tkinter import ttk, filedialog, font
@@ -121,6 +123,18 @@ def device_uid(device_name):
       return None
    return [int(g, 16) for g in reversed(groups)]
 
+def short_uid_problem(devices, uids):
+   for device, uid in zip(devices, uids):
+      if uid[0] == 0:
+         return (f'ERROR: {device} ends in 00, which the ranging protocol reserves for "no device", so it would never '
+                 'join the network. Choose a TotTag whose ID ends in anything else.')
+   for i, (device, uid) in enumerate(zip(devices, uids)):
+      for other_device, other_uid in zip(devices[:i], uids[:i]):
+         if other_uid[0] == uid[0]:
+            return (f'ERROR: {other_device} and {device} both end in {uid[0]:02X}. TotTags tell each other apart by that '
+                    'last part alone, so their data could not be separated afterwards. Choose a TotTag ending differently.')
+   return None
+
 def feet_and_inches(millimetres):
    tenths = round(abs(millimetres) / MM_PER_INCH * 10)
    feet, tenths = divmod(tenths, 120)
@@ -132,14 +146,74 @@ def radio_wording(text):
                        'No layout chosen, so distances are checked for consistency only. Choose the circle or line the TotTags sit in to check accuracy as well.')
    return re.sub(r'(\d+) mm', lambda match: f'{int(match.group(1)) / MM_PER_INCH:.1f} in', text)
 
+class DetailsMismatch(IOError):
+   """A TotTag read back deployment details other than those just written to it."""
+
 def usb_write_experiment_details(device, packed_details):
    device.reset_input_buffer()
    device.write(bytes([USB_SET_TIMESTAMP_COMMAND]) + struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())))
    device.write(packed_details)
    device.write(bytes([USB_GET_EXPERIMENT_COMMAND]))
    details_len = struct.unpack('<H', device.read(2))[0]
-   if device.read(details_len) != packed_details[1:]:
-      raise IOError('TotTag did not store the requested deployment details')
+   check_readback(packed_details, device.read(details_len))
+
+def decode_label(raw):
+   # Lenient, as the browser tool decodes: a label cut mid-character must not fail a download
+   return raw.decode('utf-8', errors='replace').rstrip('\x00')
+
+def label_problem(label):
+   if len(label.encode('utf-8')) > MAX_LABEL_LENGTH:
+      return f'ERROR: The label "{label}" is too long. A label can be up to {MAX_LABEL_LENGTH} characters, and letters with accents count as two.'
+   return None
+
+def tag_name(uid):
+   return f'TotTag {uid[1]:02X}:{uid[0]:02X}'
+
+def readback_differences(packed_details, stored):
+   # The same checks, in the same words, as the browser tool's diffReadback()
+   if len(stored) != len(packed_details) - 1:
+      return [f'It read back {len(stored)} bytes of deployment details where {len(packed_details) - 1} were sent.']
+   sent, got = unpack_experiment_details(packed_details[1:]), unpack_experiment_details(stored)
+   differences = []
+   fields = [('start_time', 'start time'), ('end_time', 'end time'), ('use_daily_times', 'choice of daily hours')]
+   if sent['use_daily_times']:
+      fields += [('daily_start_time', 'daily start time'), ('daily_end_time', 'daily end time')]
+   differences += [f'It stored a different {what} from the one sent.' for key, what in fields if sent[key] != got[key]]
+   if sent['num_devices'] != got['num_devices']:
+      differences.append(f"It stored {got['num_devices']} tag(s) in the deployment where {sent['num_devices']} were sent.")
+   for i in range(min(sent['num_devices'], got['num_devices'])):
+      if sent['uids'][i] != got['uids'][i]:
+         differences.append(f"Tag {i + 1} in its list is {tag_name(got['uids'][i])} where {tag_name(sent['uids'][i])} was sent.")
+      if decode_label(sent['labels'][i]) != decode_label(got['labels'][i]):
+         differences.append(f'It stored the label "{decode_label(got["labels"][i])}" where "{decode_label(sent["labels"][i])}" was sent.')
+   if got['terminated']:
+      differences.append('It reports the deployment as already canceled.')
+   return differences
+
+def check_readback(packed_details, stored):
+   differences = readback_differences(packed_details, bytes(stored))
+   if differences:
+      raise DetailsMismatch(' '.join(differences))
+
+def write_outcome(error):
+   """The deployment record's outcome for a write that raised `error`, and what to say about it."""
+   if isinstance(error, DetailsMismatch):
+      return 'mismatch', str(error) or 'It read back deployment details different from those sent.'
+   return 'failed', f'Could not be written: {str(error) or type(error).__name__}'
+
+def written_device(details, uid, outcome, detail):
+   """A TotTag's entry in the deployment record: its ID, the label the deployment gives it, and how writing to it went."""
+   index = next((i for i in range(details['num_devices']) if list(details['uids'][i]) == list(uid)), None)
+   label = details['labels'][index].decode('utf-8', errors='replace') if index is not None else ''
+   return {'uid': list(uid), 'label': label, 'outcome': outcome, 'detail': detail}
+
+def scheduling_record(details, packed_details, results):
+   """The deployment record of a scheduling attempt and its default file name, or None if no TotTag took the deployment."""
+   if not details.get('timezone') or not any(result['outcome'] in deployment_record.WRITTEN for result in results):
+      return None
+   labels = [details['labels'][i].decode('utf-8', errors='replace') for i in range(details['num_devices'])]
+   record = deployment_record.build_record(packed_details[1:], details['timezone'], results)
+   return record, deployment_record.record_filename(labels, details['timezone'])
 
 def get_download_directory():
    if os.name == 'nt':
@@ -208,14 +282,16 @@ def unpack_experiment_details(data):
       'terminated': experiment_struct[-1],
    }
 
-def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file, repaired_pages=0):
+def process_tottag_data(from_uid, storage_directory, details, data, save_raw_file=True, repaired_pages=0):
+   # Every download saves the raw stream as well as the .pkl; only rebuilding a .pkl from that stream leaves it be
    experiment_start_time = details['start_time']
    uid_to_labels = defaultdict(lambda: 'Unknown')
    for i in range(details['num_devices']):
-      label = details['labels'][i].decode().rstrip('\x00')
+      label = decode_label(details['labels'][i])
       uid_to_labels[int(details['uids'][i][0])] = label if label else str(details['uids'][i][0])
+   file_name = deployment_record.file_label(uid_to_labels[from_uid]) or str(from_uid)
    if save_raw_file:
-      with open(os.path.join(storage_directory, f"{uid_to_labels[from_uid]}_{experiment_start_time}.ttg"), 'wb') as file:
+      with open(os.path.join(storage_directory, f"{file_name}_{experiment_start_time}.ttg"), 'wb') as file:
          file.write(data)
 
    # Dispatches on the stream magic, so legacy and page-framed downloads both decode here
@@ -351,8 +427,42 @@ def process_tottag_data(from_uid, storage_directory, details, data, save_raw_fil
       if group is notable:
          print("   a full download is unaffected, but a date-limited one may be missing data it asked for")
 
-   with open(os.path.join(storage_directory, uid_to_labels[from_uid] + '.pkl'), 'wb') as file:
+   with open(os.path.join(storage_directory, file_name + '.pkl'), 'wb') as file:
       pickle.dump(log_data, file, protocol=pickle.HIGHEST_PROTOCOL)
+
+def convert_ttg_file(path):
+   """Write the .pkl a download wrote, beside the .ttg it saved, and return where it went.
+
+   A download names the .ttg `<label>_<start>.ttg`, and its header holds the deployment details that every label comes
+   from, so between them they say all the download knew. A legacy (v1) log holds no details, so it cannot be rebuilt.
+   """
+   with open(path, 'rb') as file:
+      data = file.read()
+   blob = None
+   if tottag_format.detect_format(data) == tottag_format.FORMAT_V2 and len(data) >= tottag_format.V2_STREAM_HEADER.size:
+      details_length = tottag_format.V2_STREAM_HEADER.unpack_from(data, 0)[2]
+      blob = data[tottag_format.V2_STREAM_HEADER.size:tottag_format.V2_STREAM_HEADER.size + details_length]
+   if not blob or len(blob) < deployment_record.DETAILS.size:
+      raise ValueError(f'{path} carries no deployment details, as a legacy log does not, so the labels in the .pkl a download '
+                       'wrote cannot be recovered from it. parse.py reads it with device IDs in place of labels.')
+   details = unpack_experiment_details(blob[:deployment_record.DETAILS.size])
+
+   # The file name says which of the TotTags in the deployment wrote the log, as the download named it
+   stem = os.path.splitext(os.path.basename(path))[0]
+   named = re.match(r'^(.*)_(\d+)$', stem)
+   label = named.group(1) if named else stem
+   names = {}
+   for i in range(details['num_devices']):
+      names[int(details['uids'][i][0])] = decode_label(details['labels'][i]) or str(details['uids'][i][0])
+   from_uid = next((uid for uid, name in names.items() if label in (name, deployment_record.file_label(name) or str(uid))), None)
+   if from_uid is None and label == 'Unknown':
+      from_uid = next(uid for uid in range(256) if uid not in names)
+   if from_uid is None:
+      raise ValueError(f'No TotTag in the deployment that {path} comes from is labeled "{label}", so its .pkl cannot be named '
+                       'as a download names it. Give the file back the name the download gave it.')
+   folder = os.path.dirname(os.path.abspath(path))
+   process_tottag_data(from_uid, folder, details, data, save_raw_file=False)
+   return os.path.join(folder, (deployment_record.file_label(names.get(from_uid, 'Unknown')) or str(from_uid)) + '.pkl')
 
 
 # BLUETOOTH LE COMMUNICATIONS -----------------------------------------------------------------------------------------
@@ -381,7 +491,6 @@ class TotTagBLE(threading.Thread):
       self.storage_directory = get_download_directory()
       self.subscribed_to_notifications = False
       self.downloading_log_file = False
-      self.download_raw_logs = False
       self.command_queue = command_queue
       self.result_queue = result_queue
       self.discovered_devices = {}
@@ -714,23 +823,29 @@ class TotTagBLE(threading.Thread):
       self.result_queue.put_nowait(('SCHEDULING', True))
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
-      for device_id in details['devices']:
+      results = []
+      for index, device_id in enumerate(details['devices']):
          retry_count = 0
          while retry_count < 3:
             try:
                if device_id.startswith(USB_DEVICE_NAME_PREFIX):
                   with serial.Serial(self.discovered_devices[device_id], timeout=3.0, write_timeout=3.0) as device:
                      usb_write_experiment_details(device, packed_details)
+                  outcome = ('confirmed', None)
                else:
                   async with BleakClient(self.discovered_devices[device_id]) as client:
                      await client.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
                      await client.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+                     check_readback(packed_details, await client.read_gatt_char(EXPERIMENT_SERVICE_UUID))
+                  outcome = ('confirmed', None)
                retry_count = 3
-            except Exception:
+            except Exception as error:
                retry_count += 1
+               outcome = write_outcome(error)
                if retry_count == 3:
                   self.result_queue.put_nowait(('SCHEDULING_FAILURE', device_id))
-      self.result_queue.put_nowait(('SCHEDULED', details))
+         results.append(written_device(details, details['uids'][index], *outcome))
+      self.report_scheduled(details, packed_details, results)
       self.command_queue.task_done()
 
    async def update_new_experiment(self):
@@ -738,23 +853,41 @@ class TotTagBLE(threading.Thread):
       details = await self.command_queue.get()
       packed_details = pack_experiment_details(details)
       if isinstance(self.connected_device, serial.Serial):
+         device_name = self.connected_device_name
          try:
             usb_write_experiment_details(self.connected_device, packed_details)
-         except Exception:
+            outcome = ('confirmed', None)
+         except Exception as error:
+            outcome = write_outcome(error)
             self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device_name))
       else:
+         device_name = self.connected_device.address
          retry_count = 0
          while retry_count < 3:
             try:
                await self.connected_device.write_gatt_char(TIMESTAMP_SERVICE_UUID, struct.pack('<I', round(datetime.datetime.now(datetime.timezone.utc).timestamp())), True)
                await self.connected_device.write_gatt_char(MAINTENANCE_COMMAND_SERVICE_UUID, packed_details, True)
+               check_readback(packed_details, await self.connected_device.read_gatt_char(EXPERIMENT_SERVICE_UUID))
+               outcome = ('confirmed', None)
                retry_count = 3
-            except Exception:
+            except Exception as error:
                retry_count += 1
+               outcome = write_outcome(error)
                if retry_count == 3:
                   self.result_queue.put_nowait(('SCHEDULING_FAILURE', self.connected_device.address))
-      self.result_queue.put_nowait(('SCHEDULED', details))
+      uid = device_uid(device_name)
+      self.report_scheduled(details, packed_details, [written_device(details, uid, *outcome)] if uid else [])
       self.command_queue.task_done()
+
+   def report_scheduled(self, details, packed_details, results):
+      # The record goes first, so the screen that reports the outcome can offer to save it
+      try:
+         record = scheduling_record(details, packed_details, results)
+      except Exception as error:
+         print('Unable to build the deployment record:', error)
+         record = None
+      self.result_queue.put_nowait(('SCHEDULE_RECORD', record))
+      self.result_queue.put_nowait(('SCHEDULED', details))
 
    async def retrieve_experiment(self):
       self.result_queue.put_nowait(('RETRIEVING', True))
@@ -791,7 +924,6 @@ class TotTagBLE(threading.Thread):
          self.command_queue.task_done()
          return
       self.storage_directory = params['dir']
-      self.download_raw_logs = params['raw']
       if params['full']:
          params['start'] = params['end'] = 0
       self.data = None
@@ -922,7 +1054,7 @@ class TotTagBLE(threading.Thread):
                self.result_queue.put_nowait(('DOWNLOADED', False))
                return
             self.result_queue.put_nowait(('DOWNLOADED', True))
-            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, self.download_raw_logs, self.repaired_pages)
+            process_tottag_data(int(self.connected_device.address.split(':')[-1], 16), self.storage_directory, self.data_details, self.original_stream, repaired_pages=self.repaired_pages)
          except OSError as e:
             self.downloading_log_file = False
             print('Log file write error:', e)
@@ -958,8 +1090,8 @@ class TotTagGUI(tk.Frame):
       # Create all necessary shared variables
       self.device_list = []
       self.failed_devices = []
+      self.deployment_record = None
       self.use_daily_times = tk.IntVar()
-      self.download_raw_data = tk.IntVar()
       self.download_full_log = tk.IntVar()
       self.ble_command_queue = asyncio.Queue()
       self.ble_result_queue = queue.Queue()
@@ -1063,7 +1195,6 @@ class TotTagGUI(tk.Frame):
    def _download_logs(self):
       self._stop_calculating()
       self._clear_canvas()
-      self.download_raw_data.set(0)
       self.download_full_log.set(0)
       prompt_area = tk.Frame(self.canvas)
       prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
@@ -1099,15 +1230,13 @@ class TotTagGUI(tk.Frame):
       def change_dl_times_state(self):
          date_entry_start['state'] = ['disabled' if self.download_full_log.get() else 'normal']
          date_entry_end['state'] = ['disabled' if self.download_full_log.get() else 'normal']
-      ttk.Checkbutton(prompt_area, text="Download Full Logs", variable=self.download_full_log, command=partial(change_dl_times_state, self)).grid(column=0, columnspan=4, row=8, pady=(5, 0), sticky=tk.W+tk.N)
-      ttk.Checkbutton(prompt_area, text="Download Raw Unprocessed Data", variable=self.download_raw_data).grid(column=0, columnspan=4, row=9, pady=5, sticky=tk.W+tk.N)
+      ttk.Checkbutton(prompt_area, text="Download Full Logs", variable=self.download_full_log, command=partial(change_dl_times_state, self)).grid(column=0, columnspan=4, row=8, pady=5, sticky=tk.W+tk.N)
       def begin_download(self, button):
          button.state(['disabled'])
          self.data_length = 0
          ble_issue_command(self.event_loop, self.ble_command_queue, 'DOWNLOAD')
          ble_issue_command(self.event_loop, self.ble_command_queue, {
             'dir': self.save_directory.get(),
-            'raw': self.download_raw_data.get(),
             'full': self.download_full_log.get(),
             'start': pack_datetime(str(tzlocal.get_localzone()), self.start_date.get(), "00:00", False),
             'end': pack_datetime(str(tzlocal.get_localzone()), self.end_date.get(), "00:00", False) + 86400
@@ -1217,12 +1346,21 @@ class TotTagGUI(tk.Frame):
                tk.messagebox.showerror('TotTag Error', 'ERROR: You have chosen more than one of the same TotTag!')
             else:
                chosen_tags.append(uids[i])
+            problem = None if errors else label_problem(labels[i].decode('utf-8'))
+            if problem:
+               errors = True
+               tk.messagebox.showerror('TotTag Error', problem)
             if not errors and len(labels[i]) > 0:
                if labels[i] in chosen_labels:
                   errors = True
                   tk.messagebox.showerror('TotTag Error', 'ERROR: You have chosen the same label for multiple TotTags!')
                else:
                   chosen_labels.append(labels[i])
+         if not errors:
+            problem = short_uid_problem(devices, uids[:len(self.tottag_rows)])
+            if problem:
+               errors = True
+               tk.messagebox.showerror('TotTag Error', problem)
          if not errors:
             start_timestamp = int(datetime.datetime.strptime(self.start_date.get(), '%m/%d/%Y').astimezone(pytz.utc).timestamp())
             end_timestamp = int(datetime.datetime.strptime(self.end_date.get(), '%m/%d/%Y').astimezone(pytz.utc).timestamp())
@@ -1239,7 +1377,8 @@ class TotTagGUI(tk.Frame):
                'num_devices': len(self.tottag_rows),
                'uids': uids,
                'labels': labels,
-               'devices': devices
+               'devices': devices,
+               'timezone': self.tottag_timezone.get()
             }
             ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT_FULL' if self.connect_button['text'] != 'Disconnect' else 'NEW_EXPERIMENT_SINGLE')
             ble_issue_command(self.event_loop, self.ble_command_queue, details)
@@ -1262,7 +1401,7 @@ class TotTagGUI(tk.Frame):
       daily_end_time = unpack_datetime(self.tottag_timezone.get(), data['start_time'], data['daily_end_time'])[1] if data['use_daily_times'] > 0 else None
       for i in range(data['num_devices']):
          uids.append('%02X:%02X:%02X:%02X:%02X:%02X'%tuple(data['uids'][i][::-1]))
-         labels.append(data['labels'][i].decode().rstrip('\x00'))
+         labels.append(decode_label(data['labels'][i]))
       area = tk.Frame(self.canvas)
       self.start_datetime_deployment = tk.StringVar(area, start_date_deployment + ' ' + start_time_deployment)
       self.end_datetime_deployment = tk.StringVar(area, end_date_deployment + ' ' + end_time_deployment)
@@ -1475,13 +1614,18 @@ class TotTagGUI(tk.Frame):
          elif key == 'SCHEDULING':
             self._clear_canvas()
             self.failed_devices.clear()
+            self.deployment_record = None
             tk.Label(self.canvas, text="Scheduling Pilot Deployment, please wait...").pack(fill=tk.BOTH, expand=True)
          elif key == 'SCHEDULING_FAILURE':
             self.failed_devices.append(data)
+         elif key == 'SCHEDULE_RECORD':
+            self.deployment_record = data
          elif key == 'SCHEDULED':
             self._clear_canvas()
+            prompt_area = tk.Frame(self.canvas)
+            prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
             if data and not self.failed_devices:
-               tk.Label(self.canvas, text="Pilot Deployment was successfully scheduled!").pack(fill=tk.BOTH, expand=True)
+               tk.Label(prompt_area, text="Pilot Deployment was successfully scheduled!").pack(fill=tk.NONE, expand=False)
             else:
                text = "Pilot Deployment was NOT successfully scheduled!\n\nCould not communicate with:\n"
                for device_id in self.failed_devices:
@@ -1489,10 +1633,14 @@ class TotTagGUI(tk.Frame):
                def retry_scheduling(self, details):
                   ble_issue_command(self.event_loop, self.ble_command_queue, 'NEW_EXPERIMENT_FULL' if self.connect_button['text'] != 'Disconnect' else 'NEW_EXPERIMENT_SINGLE')
                   ble_issue_command(self.event_loop, self.ble_command_queue, details)
-               prompt_area = tk.Frame(self.canvas)
-               prompt_area.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
                tk.Label(prompt_area, text=text).pack(fill=tk.NONE, expand=False)
                ttk.Button(prompt_area, text="Retry", command=partial(retry_scheduling, self, data)).pack(fill=tk.NONE, expand=False)
+            if self.deployment_record:
+               self.record_status = tk.Label(prompt_area, justify=tk.CENTER, text="Save the deployment record with this study's logs. It is the only place the\n"
+                                             "study's time zone is kept, and the analysis helpers use it to show times on its clock.")
+               self.record_status.pack(fill=tk.NONE, expand=False, pady=(15, 5))
+               ttk.Button(prompt_area, text="Save Deployment Record", command=self._save_deployment_record).pack(fill=tk.NONE, expand=False)
+               self.master.after(100, self._save_deployment_record)
          elif key == 'EXPERIMENT':
             self._show_experiment(data)
          elif key == 'DELETED':
@@ -1825,6 +1973,24 @@ class TotTagGUI(tk.Frame):
       if new_directory:
          self.save_directory.set(new_directory)
 
+   def _save_deployment_record(self):
+      if not self.deployment_record:
+         return
+      record, filename = self.deployment_record
+      path = filedialog.asksaveasfilename(parent=self, title='Save Deployment Record', initialdir=self.save_directory.get(), initialfile=filename,
+                                          defaultextension='.json', filetypes=[('Deployment record', '*.json')])
+      if not path:
+         return
+      try:
+         deployment_record.save_record(record, path)
+      except OSError as error:
+         tk.messagebox.showerror('TotTag Error', f'Unable to save the deployment record to {path}: {error}')
+         return
+      try:
+         self.record_status['text'] = 'Deployment record saved to:\n' + path
+      except tk.TclError:
+         pass                       # the screen has moved on
+
 
 # TOP-LEVEL FUNCTIONALITY ---------------------------------------------------------------------------------------------
 def main(mode_switch_visibility=False):
@@ -1835,6 +2001,16 @@ if __name__ == "__main__":
    parser = argparse.ArgumentParser(description="Parser for command line options")
    parser.add_argument('-s', action='store_true', help='With the -s flag, the mode switch will be visible')
    parser.add_argument('--debug', action='store_true', help='Report expected, benign download diagnostics that are hidden by default')
+   parser.add_argument('--convert', nargs='+', metavar='FILE.ttg', help='Write the .pkl a download wrote, beside each .ttg it saved, then exit')
    args = parser.parse_args()
    tottag_format.set_verbose(args.debug)
+   if args.convert:
+      failed = False
+      for path in args.convert:
+         try:
+            print('Wrote', convert_ttg_file(path))
+         except Exception as error:
+            failed = True
+            print('ERROR:', error)
+      sys.exit(1 if failed else 0)
    main(mode_switch_visibility = args.s)

@@ -353,7 +353,7 @@ class SerialTag implements TagConnection {
     };
     const take = async (count: number) => {
       for (let left = count; left > 0;) {
-        if (signal?.aborted) throw new Error('Download cancelled');
+        if (signal?.aborted) throw new Error('Download canceled');
         const chunk = await this.link.readSome(left, STREAM_IDLE_TIMEOUT_MS, idle);
         parts.push(chunk);
         received += chunk.length;

@@ -21,8 +21,8 @@ Documentation
 **All user documentation lives at [lab11.github.io/socitrack](https://lab11.github.io/socitrack/),
 built from [`docs/`](docs/).**
 
-Start with [Running a Deployment](docs/running-a-deployment.md) if you want to use TotTag, or
-[Getting Started](docs/getting-started.md) if you have devices that have never been set up.
+Start with [Running a Deployment](https://lab11.github.io/socitrack/running-a-deployment.html) if you want to use TotTag, or
+[Getting Started](https://lab11.github.io/socitrack/getting-started.html) if you have devices that have never been set up.
 
 
 Repository layout

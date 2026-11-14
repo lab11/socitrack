@@ -1,7 +1,7 @@
-# Device Behaviour
+# Device Behavior
 
-Once a device leaves the charger it runs entirely on its own. This page describes what it decides and
-why, so that behaviour you see in the field is interpretable rather than mysterious.
+Once a device leaves the charger, it runs entirely on its own. This page describes what it decides and
+why, so that behavior you see in the field is interpretable rather than mysterious.
 
 ---
 
@@ -31,11 +31,13 @@ rather than silently corrupting it.
 A device records only when **all** of these are true:
 
 1. It is **unplugged**.
-2. It has a **valid scheduled deployment** that has not been cancelled or marked finished.
-3. Its clock is **set** — which happens when you schedule a deployment.
+2. It has a **valid scheduled deployment** that has not been canceled or marked finished.
+3. Its clock is **set** — which happens when you schedule a deployment. A device that loses power (a dead
+   or disconnected battery, or being switched off) loses its clock, and will not record until its clock
+   is set again, which scheduling a deployment does.
 4. The current time is **inside the study's start and end dates**.
 5. If a **daily window** is configured, the current time of day is inside it.
-6. Its battery is **above 3750 mV**.
+6. Its battery is **above 3750 mV** when it starts. Once recording, it carries on until 3680 mV.
 
 If any is false, it powers off rather than idling, and wakes when the situation could have changed:
 
@@ -71,21 +73,24 @@ coordinator leaves, the remaining devices form a new network. None of this requi
 
 Two consequences are worth knowing:
 
-- **Devices switched on far apart may form separate networks.** Two groups that never hear each other
-  during start-up can end up as two independent networks, and they do not merge on their own. Taking
-  all devices off their chargers in the same place avoids it.
-- **A device needs to hear the coordinator**, not just its neighbours. A device at the far edge of a
-  group may drop in and out even though it is close to several others.
+- **Separate networks merge when they meet.** Devices switched on far apart can start out as two
+  networks. Each coordinator keeps listening for others over Bluetooth while it runs, and when it finds
+  one with a higher ID it hands over and joins that network. A device that hears another network's
+  transmissions partway through a round also stops and rejoins. Either way, the groups become one
+  network on their own.
+- **A device does not need to hear the coordinator directly.** Every device in the network repeats the
+  schedule in its own turn, and passes on join requests the coordinator could not hear, so a device at
+  the far edge of a group stays in as long as it can hear one of the others.
 
 ### Antennas
 
 Each device has three antennas. When it measures distances it uses all three in turn, and it keeps
 track of how well each one has been receiving over the last few seconds. Everything else uses a single
-antenna: listening for the coordinator, asking to join, and the short status exchange at the end of
+antenna: listening for the schedule, asking to join, and the short status exchange at the end of
 each round. For those, the device uses whichever antenna has been receiving best, and only moves to
 another when that one is clearly better. A device that listens for a full half second without hearing
-the coordinator tries its next antenna. So a damaged antenna costs a device some measurements, but it
-no longer keeps the device out of the network.
+a schedule tries its next antenna. So a damaged antenna costs a device some measurements, but it
+does not keep the device out of the network.
 
 ### Radio tests
 
@@ -93,7 +98,8 @@ The live radio check, in either the desktop dashboard or the browser tool, runs 
 a timed network among the devices it names, started over Bluetooth. A device restarts into the test and ranges even on its charger, and
 plugging or unplugging it does not interrupt the test. It records nothing, and its stored deployment is
 left alone. When the test ends, or the tool stops it, the device restarts into whatever it would
-otherwise be doing. A test lasts at most an hour.
+otherwise be doing. A test lasts at most an hour, although usually 2 minutes is enough — both tools offer
+2 to 10 minutes, and default to 2.
 
 ---
 
@@ -104,42 +110,35 @@ Beyond distances, a device logs a few things that are useful when interpreting a
 | Record | Cadence | Why you care |
 | --- | --- | --- |
 | **Distances** | Twice a second, to every device in range | The data |
-| **Battery voltage** | Every 5 minutes | Shows whether a device ran out |
+| **Battery voltage** | Every 5 minutes | Shows whether a device died |
 | **Charging events** | On every plug and unplug | Shows exactly when a device was off-duty |
 | **Motion** | On change | Distinguishes "worn" from "left on a table" |
-| **Accelerometer** | On motion | Finer-grained activity |
+| **Accelerometer** | On motion | Records finer-grained activity data |
 | **Restarts** | On every boot | Shows every interruption and its cause |
 | **Timekeeping** | Every 5 minutes | Lets clock drift be measured and corrected |
 | **Diagnostics** | Every 5 minutes | Internal health counters, firmware build, chip temperature |
 
 The 5-minute housekeeping records are why a log is never completely empty, even for a device that spent
 a day alone in a drawer. A stretch of log containing only housekeeping means the device was running but
-had nobody to range with — which is itself a finding.
+had nobody to range with, which is itself a finding.
 
 ---
 
 ## Battery life
 
 A device draws most of its power keeping the radio alive during ranging, so battery life depends
-heavily on how much of the time it actually has company.
+heavily on how much of the time it actually spends ranging.
 
-Measured across a six-day deployment, over every stretch a device spent continuously off its charger:
+In a week-long test, **ten devices ranging with each other continuously lasted 6 days** on a single
+charge. Devices that spend time apart, or sleep outside a daily window, last longer still.
 
-| Condition | Discharge | Usable runway |
-| --- | --- | --- |
-| Ranging steadily with other devices | 13–17 mV/hour | **roughly 26–34 hours** |
-| Mostly alone, out of range of others | 2.6–4.1 mV/hour | 110–170 hours |
+Battery voltage does not fall at a steady rate, so the drop over a few hours is a poor guide to how
+long a device will last.
 
-The usable range is about 450 mV — a full device sits near 4200 mV and stops recording at 3750 mV.
+A full device sits near **4200 mV**. Below **3750 mV** it will not begin recording, and once recording
+it powers off at **3680 mV**.
 
-Plan for **a day of continuous recording per charge**, and treat the longer figures as what you get
-when devices spend much of the study apart rather than as something to rely on. A daily window extends
-life roughly in proportion to how much of the day it excludes.
-
-Below **3750 mV** a device will not begin recording. Below **3680 mV** it treats the battery as
-critical.
-
-If a study runs longer than a charge, build charging into the protocol — overnight, say — and accept
-the gap rather than letting devices die at unpredictable times. A device that powers off mid-study
+Even so, build overnight charging into any multi-day study, rather than letting devices run down at
+unpredictable times. A device that powers off mid-study
 leaves no record of the period it missed, whereas a scheduled overnight charge is visible in the log
 as charging events and can be excluded cleanly in analysis.

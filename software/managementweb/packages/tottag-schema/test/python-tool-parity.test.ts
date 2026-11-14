@@ -329,11 +329,14 @@ test('AGREES: MOTION bodies outside {0, 1} are rejected by both readers', () => 
 });
 
 test('DIVERGES: charger transitions are inferred from voltage peaks', () => {
-  // Finding B.1 and B.2. The information exists as motion codes 2 and 3 but never reaches storage,
-  // so the tool reconstructs it heuristically, with a tuning parameter it ignores.
+  // Finding B.1 and B.2. The Python plot reconstructs time on the charger heuristically, from peaks and
+  // valleys in the smoothed battery curve; it now honors its peak_width tuning argument, which it used
+  // to ignore. This package does not guess: chargingSpans() reads the tag's own plugged and unplugged
+  // charging records, which every current log carries.
   assert.match(PROCESSING_PY, /def get_off_and_on_charger_times\(data, label, peak_width=50,/);
-  assert.match(PROCESSING_PY, /find_peaks\(voltages, width=50\)/, 'peak_width is now used; update the audit');
-  assert.match(PROCESSING_PY, /find_peaks\(-voltages, width=50\)/);
+  assert.match(PROCESSING_PY, /find_peaks\(voltages, width=peak_width\)/, 'the charger plot no longer infers from peaks; update the audit');
+  assert.match(PROCESSING_PY, /find_peaks\(-voltages, width=peak_width\)/);
+  assert.doesNotMatch(PROCESSING_PY, /find_peaks\(-?voltages, width=50\)/, 'peak_width is ignored again; that is a regression');
 });
 
 test('DIVERGES: parse failures are swallowed whole, but only on the v1 path now', () => {

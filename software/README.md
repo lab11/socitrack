@@ -13,8 +13,8 @@ against the other's source directly.
 
 **Documentation for all of this lives at
 [lab11.github.io/socitrack](https://lab11.github.io/socitrack/)** — see
-[`docs/`](../docs/). Start with [Getting Started](../docs/getting-started.md) to set up a device, or
-[the Reference](../docs/reference.md) for build commands and constants.
+[`docs/`](../docs/). Start with [Getting Started](https://lab11.github.io/socitrack/getting-started.html) to set up a device, or
+[the Reference](https://lab11.github.io/socitrack/reference.html) for build commands and constants.
 
 
 Firmware for hardware older than Rev M is no longer in the tree; [`hardware/legacy/`](../hardware/legacy/)

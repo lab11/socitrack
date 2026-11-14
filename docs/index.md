@@ -7,7 +7,7 @@ be installed in the environment, nothing is transmitted to a server during a dep
 or video is captured.
 
 A deployment is usually: configure the devices from a laptop, hand them out, collect them, download the
-logs, analyse the distances.
+logs, analyze the distances.
 
 ---
 
@@ -30,7 +30,7 @@ that won't appear, won't range, or came back with less data than expected.
 | --- | --- |
 | [Getting Started](getting-started.md) | Tools, first-time device setup, loading firmware |
 | [Running a Deployment](running-a-deployment.md) | Scheduling a study, handing out devices, collecting data |
-| [Device Behaviour](device-behavior.md) | What a device does on its own: when it records, when it sleeps, what the sounds mean |
+| [Device Behavior](device-behavior.md) | What a device does on its own: when it records, when it sleeps, what the sounds mean |
 | [The Dashboard](dashboard.md) | The desktop and browser tools, action by action |
 | [Your Data](data.md) | What a log file contains and how to read it |
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
@@ -46,12 +46,12 @@ Working on the firmware or the tools themselves? Start from the
 TotTag records the **distance between pairs of devices**, several times a second, as a time series. From
 that you can derive who was near whom, for how long, and how that changed over a day.
 
-It does not record position in a room, and it is not a localisation system — there are no anchors and
+It does not record position in a room, and it is not a localization system — there are no anchors and
 no coordinate frame. It records only device-to-device distance.
 
-Accuracy in practice is a few centimetres between devices with a clear path between them. Distances
+Precision in practice is a few centimeters between devices with a clear path between them. Distances
 through a body or a wall read longer and vary more, because the signal takes a longer path. See
-[Your Data](data.md#how-accurate-is-a-distance) for what to expect and how to tell the two apart.
+[Your Data](data.md#how-precise-is-a-distance) for what to expect and how to tell the two apart.
 
 ---
 

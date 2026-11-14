@@ -175,10 +175,10 @@ export function CheckTag({ timezone, onAddToDeployment, inDeployment }: {
                         : 'It has not started recording, so no data is lost.'}
                     </>
                   }
-                  onConfirm={() => void run(selected!, 'Cancelling…', async (connection) => {
+                  onConfirm={() => void run(selected!, 'Canceling…', async (connection) => {
                     await connection.cancelDeployment();
                     await read(connection);
-                    setMessage(`${tagName(eui)}'s deployment was cancelled.`);
+                    setMessage(`${tagName(eui)}'s deployment was canceled.`);
                   })}
                 />
               </div>

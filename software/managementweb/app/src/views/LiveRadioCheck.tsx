@@ -113,7 +113,7 @@ export function LiveRadioCheck({ labelFor }: { labelFor: (eui: Uint8Array) => st
           <li>Put the tags on their chargers, or leave them running a deployment, so they can be reached.</li>
           <li>Add each tag. Tags this browser has seen before can be added all at once.</li>
           <li>Start the test. Each tag restarts into it and begins measuring, on its charger or off it.</li>
-          <li>Set them where they can all see each other, at least half a metre apart. The test keeps running as they move.</li>
+          <li>Set them where they can all see each other, at least half a meter apart. The test keeps running as they move.</li>
           <li>Verdicts appear within the first minute and update every 15 seconds; they firm up once every tag has a minute of data.</li>
         </ol>
         <div className="actions">

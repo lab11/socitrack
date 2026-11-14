@@ -14,14 +14,60 @@ from matplotlib.widgets import TextBox
 import textwrap
 import re
 from scipy.signal import find_peaks
+import os
 import pytz
 import tzlocal
+try:
+    from .deployment_record import load_records as load_deployment_records, find_record as find_deployment_record
+except ImportError:
+    from deployment_record import load_records as load_deployment_records, find_record as find_deployment_record
 
 # suppress the pandas scientific notation
 pd.options.display.float_format = '{:.3f}'.format
 
 # Spacing of the uniform time grid that every series is resampled onto
 GRID_STEP_S = 0.5
+
+# TIME ZONES ----------------------------------------------------------------------------------------------------------
+#
+# A log's times are Unix timestamps. Plots and daily statistics show them on the study's clock: the zone named by the
+# deployment record that matches the log (see load_data), unless a function is given timezone= outright. Where neither
+# says, they fall back to this computer's zone and print a note saying so.
+
+def machine_timezone():
+    return tzlocal.get_localzone_name()
+
+def study_timezone(data, timezone=None):
+    """The zone to show `data` (a frame from load_data, or a tuple of them) in: `timezone` if given, else that of its
+    deployment record, else this computer's, with a note the first time."""
+    if timezone is not None:
+        return timezone
+    frames = data if isinstance(data, (list, tuple)) else (data,)
+    for frame in frames:
+        if frame.attrs.get('timezone'):
+            return frame.attrs['timezone']
+    zone = machine_timezone()
+    if not any('timezone' in frame.attrs for frame in frames):
+        print(f"Note: no deployment record was found for this data, so its times are shown in this computer's time zone, {zone}.")
+        for frame in frames:
+            frame.attrs['timezone'] = None
+    return zone
+
+def local_times(timestamps, timezone):
+    """Unix timestamps as the clock in `timezone` read them, without the zone attached."""
+    return pd.to_datetime(np.asarray(timestamps, dtype=float), unit='s', utc=True).tz_convert(timezone).tz_localize(None)
+
+def plot_times(timestamps, timezone):
+    """Matplotlib dates for Unix timestamps, placed where the clock in `timezone` read them."""
+    return mdates.date2num(local_times(timestamps, timezone))
+
+def grid_minutes(samples):
+    """Minutes spanned by this many points on the time grid."""
+    return samples * GRID_STEP_S / 60
+
+def whole_minutes(samples):
+    """grid_minutes() to the nearest minute, as the daily statistics print it."""
+    return int(grid_minutes(samples) + 0.5)
 
 # HELPER FUNCTIONS ----------------------------------------------------------------------------------------------------
 
@@ -43,7 +89,8 @@ def seconds_to_human_readable(seconds):
     return result
 
 def extract_simple_event_log(logpath):
-    #line fomat of the simple event log: 2024-02-22 07:33:11 blabla
+    # Line format of the simple event log: 2024-02-22 07:33:11 blabla
+    # Times are kept as the clock read them, so a plot places them on its own clock: the study's, unless told otherwise
     with open(logpath, errors='ignore') as f:
         event_log = f.readlines()
     event_dict = {}
@@ -63,15 +110,28 @@ def extract_simple_event_log(logpath):
     #    print(f'{timestamp}: {event_dict[timestamp]}')
     return event_dict
 
-def load_data(filename):
+def load_data(filename, timezone=None, records=None):
+    """A .pkl's records on the time grid, one column per instant, to be shown in the study's time zone.
+
+    That zone is `timezone` if given, otherwise the one named by the deployment record that matches the log, looked
+    for in `records` (a record file, a folder of them, or records already loaded) or else in the log's own folder.
+    """
     # Records are snapped to the grid before reindexing
     with open(filename, 'rb') as file:
         data = pd.json_normalize(data=pickle.load(file))
     if data is None or not len(data.index):
         return None
+    first_timestamp = data['t'].min()
     data['t'] = np.round(data['t'] / GRID_STEP_S) * GRID_STEP_S
     data = data.groupby('t').first()
-    return data.reindex(pd.Series(np.arange(data.index[0], 1 + data.index[-1], GRID_STEP_S))).T
+    data = data.reindex(pd.Series(np.arange(data.index[0], 1 + data.index[-1], GRID_STEP_S))).T
+    if timezone is None:
+        record = find_deployment_record(filename, records, first_timestamp=first_timestamp)
+        timezone = record['deployment']['timezone'] if record else None
+        if timezone is None:
+            print(f"Note: no deployment record matches {os.path.basename(filename)}, so its times are shown in this computer's time zone, {machine_timezone()}.")
+    data.attrs['timezone'] = timezone
+    return data
 
 def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
     plt.close()
@@ -87,19 +147,22 @@ def plot_data(title, x_axis_label, y_axis_label, x_axis_data, y_axis_data):
 
 # DATA PROCESSING FUNCTIONALITY ---------------------------------------------------------------------------------------
 
-def get_voltage_time_series(data, tottag_label):
+def get_voltage_time_series(data, tottag_label, timezone=None):
+    zone = study_timezone(data, timezone)
     voltages = data.loc['v'].dropna()
-    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in voltages.keys()])
-    plot_data(f'Battery Voltage for {tottag_label}', 'Date and Time', 'Voltage (mV)', timestamps, voltages)
+    timestamps = plot_times(voltages.keys(), zone)
+    plot_data(f'Battery Voltage for {tottag_label}', f'Date and Time ({zone})', 'Voltage (mV)', timestamps, voltages)
 
-def get_motion_time_series(data, tottag_label):
+def get_motion_time_series(data, tottag_label, timezone=None):
+    zone = study_timezone(data, timezone)
     motions = data.loc['m'].ffill()
-    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in motions.keys()])
-    plot_data(f'Motion Status for {tottag_label}', 'Date and Time', 'Motion Status', timestamps, motions)
+    timestamps = plot_times(motions.keys(), zone)
+    plot_data(f'Motion Status for {tottag_label}', f'Date and Time ({zone})', 'Motion Status', timestamps, motions)
 
-def get_imu_time_series(data, tottag_label):
+def get_imu_time_series(data, tottag_label, timezone=None):
+    zone = study_timezone(data, timezone)
     imu_data = data.loc['i'].dropna()
-    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in imu_data.keys()])
+    timestamps = plot_times(imu_data.keys(), zone)
     x_data = imu_data.str[0]
     y_data = imu_data.str[1]
     z_data = imu_data.str[2]
@@ -107,7 +170,7 @@ def get_imu_time_series(data, tottag_label):
     plt.title(f'IMU Data for {tottag_label}')
     axis = plt.gca()
     axis.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
-    axis.xaxis.set_label_text('Date and Time')
+    axis.xaxis.set_label_text(f'Date and Time ({zone})')
     axis.yaxis.set_label_text('IMU Data')
     axis.figure.autofmt_xdate(rotation=45, bottom=0.3)
     plt.plot(timestamps, x_data, label='X-axis')
@@ -116,18 +179,20 @@ def get_imu_time_series(data, tottag_label):
     plt.legend()
     plt.show()
 
-def get_ble_scan_time_series(data, tottag_label):
+def get_ble_scan_time_series(data, tottag_label, timezone=None):
+    zone = study_timezone(data, timezone)
     ble_devices = data.loc['b'].apply(lambda val: 0 if not isinstance(val, list) or not len(val) else len(val))
-    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ble_devices.keys()])
-    plot_data(f'BLE Scan Results for {tottag_label}', 'Date and Time', 'Num Detected TotTags', timestamps, ble_devices)
+    timestamps = plot_times(ble_devices.keys(), zone)
+    plot_data(f'BLE Scan Results for {tottag_label}', f'Date and Time ({zone})', 'Num Detected TotTags', timestamps, ble_devices)
     ble_devices = data.loc['b'].dropna()
     ble_devices = ble_devices[ble_devices.astype(bool)]
-    timestamps = [datetime.fromtimestamp(ts).strftime("%m/%d/%Y, %H:%M:%S") for ts in ble_devices.keys()]
+    timestamps = local_times(ble_devices.keys(), zone).strftime("%m/%d/%Y, %H:%M:%S")
     pd.set_option('display.max_rows', None)
     print(pd.DataFrame(list(zip(timestamps, ble_devices.values)), columns=['Datetime', 'TotTags']))
     pd.reset_option('display.max_rows')
 
-def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft'):
+def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft', timezone=None):
+    zone = study_timezone(data, timezone)
     if unit == 'ft':
         conversion_factor_from_mm = 304.8
     elif unit == 'm':
@@ -138,25 +203,27 @@ def extract_ranging_time_series(data, destination_tottag_label, start_timestamp=
     start = np.round(start / GRID_STEP_S) * GRID_STEP_S
     ranges = ranges.mask(ranges > cutoff_distance)\
                    .reindex(pd.Series(np.arange(start, end, GRID_STEP_S)))
-    timestamps = mdates.date2num([datetime.fromtimestamp(ts) for ts in ranges.keys()])
+    timestamps = plot_times(ranges.keys(), zone)
     return timestamps, ranges
 
-def get_ranging_time_series(data, source_tottag_label, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft'):
-    timestamps, ranges = extract_ranging_time_series(data, destination_tottag_label, start_timestamp=start_timestamp, end_timestamp=end_timestamp, cutoff_distance=cutoff_distance, unit=unit)
+def get_ranging_time_series(data, source_tottag_label, destination_tottag_label, start_timestamp=None, end_timestamp=None, cutoff_distance=30, unit='ft', timezone=None):
+    zone = study_timezone(data, timezone)
+    timestamps, ranges = extract_ranging_time_series(data, destination_tottag_label, start_timestamp=start_timestamp, end_timestamp=end_timestamp, cutoff_distance=cutoff_distance, unit=unit, timezone=zone)
     plot_data(f'Ranging Data from {source_tottag_label} to {destination_tottag_label}',
-              'Date and Time', f'Range ({unit})', timestamps, ranges)
+              f'Date and Time ({zone})', f'Range ({unit})', timestamps, ranges)
 
-def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, visualize=True):
+def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, visualize=True, timezone=None):
     """
     default usage: get_off_and_on_charger_times(A,"10043_S1")
     """
+    zone = study_timezone(data, timezone)
     voltages = data.loc['v'].dropna()
-    # the timestamps are originally utc timestamp; fromtimestamp converts them to local timezone implicitly; we use explicit conversion to avoid confusion
-    timestamps = np.array([datetime.fromtimestamp(ts, timezone.utc).astimezone(pytz.timezone(tzlocal.get_localzone_name())) for ts in voltages.keys()])
+    # The timestamps are UTC; each is printed in UTC and on the study's clock
+    timestamps = np.array(pd.to_datetime(np.asarray(voltages.keys(), dtype=float), unit='s', utc=True).tz_convert(zone))
     voltages = voltages.rolling(window=window_size).mean()
 
-    peak_idx, _ = find_peaks(voltages, width=50)
-    valley_idx, _ = find_peaks(-voltages, width=50)
+    peak_idx, _ = find_peaks(voltages, width=peak_width)
+    valley_idx, _ = find_peaks(-voltages, width=peak_width)
 
     taken_off_times = timestamps[peak_idx]
     put_on_times = timestamps[valley_idx]
@@ -171,40 +238,43 @@ def get_off_and_on_charger_times(data, label, peak_width=50, window_size=10, vis
         print(utc_timestamp.strftime('%Y-%m-%d %H:%M:%S %Z'), key.strftime('%Y-%m-%d %H:%M:%S %Z'), combined[key])
 
     if visualize:
-        plt.plot(timestamps, voltages)
+        # Placed where the study's clock read them, as every other plot here is
+        times = plot_times(voltages.keys(), zone)
+        plt.plot(times, voltages)
         axis = plt.gca()
-        axis.plot(timestamps[peak_idx], np.array(voltages)[peak_idx], 'r.', label="taken off from charger")
-        axis.plot(timestamps[valley_idx], np.array(voltages)[valley_idx], 'g.', label="put on the charger")
+        axis.plot(times[peak_idx], np.array(voltages)[peak_idx], 'r.', label="taken off from charger")
+        axis.plot(times[valley_idx], np.array(voltages)[valley_idx], 'g.', label="put on the charger")
 
         axis.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
         axis.figure.autofmt_xdate(rotation=45, bottom=0.3)
-        plt.xlabel('Date and Time')
+        plt.xlabel(f'Date and Time ({zone})')
         plt.ylabel('Voltage (mV)')
         plt.title(f'Battery Voltage for {label}')
         plt.legend()
         plt.show()
 
-def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distance, unit='ft'):
+def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distance, unit='ft', timezone=None):
+    zone = study_timezone(data, timezone)
     ranges = data.loc[['r.' + label for label in target_tottag_labels]] / (304.8 if unit == 'ft' else 1000.0)
-    dates = [datetime.fromtimestamp(ts).day for ts in ranges.keys()]
-    day_change_indices = np.where(np.roll(dates, 1) != dates)[0]
-    for i in range(len(day_change_indices)):
-        print(f'\nRanging Statistics on {datetime.fromtimestamp(ranges.keys()[day_change_indices[i]]).strftime("%m/%d/%Y")}:')
-        day_ranges = ranges.T.iloc[day_change_indices[i]:(day_change_indices[i+1] if (i + 1) < len(day_change_indices) else ranges.count().count())]
+    # Days run midnight to midnight on the study's clock
+    dates = local_times(ranges.keys(), zone).strftime('%m/%d/%Y')
+    for date in dict.fromkeys(dates):
+        print(f'\nRanging Statistics on {date}:')
+        day_ranges = ranges.T[dates == date]
         for target in day_ranges.keys():
             print(f'   Statistics to {target}:')
             in_range_data = day_ranges[target].dropna()
             touching_distance_data = day_ranges[target].mask(day_ranges[target] > max_touching_distance).dropna()
-            minutes_in_range = 1 + (len(in_range_data.index) // 120)
-            minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
+            minutes_in_range = whole_minutes(len(in_range_data.index))
+            minutes_in_touching_distance = whole_minutes(len(touching_distance_data.index))
             mean_distance_in_range = in_range_data.mean()
             print(f'      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}')
         if len(target_tottag_labels) > 1:
             print(f'   Statistics to Either of {target_tottag_labels}:')
             in_range_data = day_ranges.dropna(how='all')
             touching_distance_data = day_ranges.mask(day_ranges > max_touching_distance).dropna(how='all')
-            minutes_in_range = 1 + (len(in_range_data.index) // 120)
-            minutes_in_touching_distance = 1 + (len(touching_distance_data.index) // 120)
+            minutes_in_range = whole_minutes(len(in_range_data.index))
+            minutes_in_touching_distance = whole_minutes(len(touching_distance_data.index))
             mean_distance_in_range = pd.concat([in_range_data[col] for col in in_range_data.columns]).mean()
             print(f'      Minutes in Range: {minutes_in_range}\n      Minutes in Touching Distance: {minutes_in_touching_distance}\n      Mean Distance While in Range: {mean_distance_in_range}')
         if len(target_tottag_labels) == 2:
@@ -212,18 +282,20 @@ def get_daily_ranging_statistics(data, target_tottag_labels, max_touching_distan
             in_range_data_exlusive_0 = day_ranges[day_ranges['r.'+target_tottag_labels[1]].isna() & day_ranges['r.'+target_tottag_labels[0]].notna()]
             in_range_data_exlusive_1 = day_ranges[day_ranges['r.'+target_tottag_labels[0]].isna() & day_ranges['r.'+target_tottag_labels[1]].notna()]
             in_range_data_both = day_ranges[day_ranges['r.'+target_tottag_labels[0]].notna() & day_ranges['r.'+target_tottag_labels[1]].notna()]
-            minutes_in_range_exclusive_0 = len(in_range_data_exlusive_0.index) / 120
-            minutes_in_range_exclusive_1 = len(in_range_data_exlusive_1.index) / 120
-            minutes_in_range_both = len(in_range_data_both.index) / 120
+            minutes_in_range_exclusive_0 = grid_minutes(len(in_range_data_exlusive_0.index))
+            minutes_in_range_exclusive_1 = grid_minutes(len(in_range_data_exlusive_1.index))
+            minutes_in_range_both = grid_minutes(len(in_range_data_both.index))
             print(f"      Minutes in range with {target_tottag_labels[0]} but not {target_tottag_labels[1]}: {minutes_in_range_exclusive_0}")
             print(f"      Minutes in range with {target_tottag_labels[1]} but not {target_tottag_labels[0]}: {minutes_in_range_exclusive_1}")
             print(f"      Minutes in range with both targets: {minutes_in_range_both}")
 
-def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit='ft', events=dict()):
+def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=None, end_timestamp=None, unit='ft', events=dict(), timezone=None):
     ylabel = f'Range ({unit})'
+    # Both logs, and the events, on one clock: the study's unless told otherwise
+    zone = study_timezone((data1, data2), timezone)
     #extract timestamps and ranges
-    timestamps1, ranges1 = extract_ranging_time_series(data1, label2, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit)
-    timestamps2, ranges2 = extract_ranging_time_series(data2, label1, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit)
+    timestamps1, ranges1 = extract_ranging_time_series(data1, label2, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit, timezone=zone)
+    timestamps2, ranges2 = extract_ranging_time_series(data2, label1, start_timestamp = start_timestamp, end_timestamp = end_timestamp, unit=unit, timezone=zone)
 
     #set up subplots: left side ax1, ax2; right side ax3, ax4
     fig, axes = plt.subplots(2,2)
@@ -238,10 +310,10 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
     tmin = max(timestamps1[0], timestamps2[0])
     tmax = min(timestamps1[-1], timestamps2[-1])
     ymin = min(ranges1.min(), ranges2.min())
-    ymax = max(ranges2.max(), ranges2.max())
+    ymax = max(ranges1.max(), ranges2.max())
     init_pos = tmin
 
-    #be careful with the timezone of the log if place of collection and place of analysis are in different timezones
+    #event times are read as the plot's clock reads them, so they line up in whichever zone it is shown in
     #plot the indication first so it will not hide the actual plot
     def draw_indications(events, event_offset):
         events_timestamps = list(events.keys())
@@ -371,7 +443,7 @@ def visualize_ranging_pair_slider(data1, data2, label1, label2, start_timestamp=
         # redraw the indication vlines
         vlines1.remove()
         vlines2.remove()
-        draw_indications(events, event_offset)
+        vlines1, vlines2 = draw_indications(events, event_offset)
 
         # redraw the annotations
         for anno in annotations:

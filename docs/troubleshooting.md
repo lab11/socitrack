@@ -15,7 +15,7 @@ A healthy device plays **four rising tones** within a second or two of being pla
 3. **Was it flashed for the right board revision?** Firmware built for the wrong revision compiles
    cleanly and then drives the wrong pins — a device that looks dead is the usual symptom. Check the
    letter silkscreened on the board and reflash with the matching `BOARD_REV`.
-4. **Is the battery completely flat?** Leave it on the charger for an hour and try again.
+4. **Is the battery completely dead?** Leave it on the charger for an hour and try again.
 
 ---
 
@@ -28,7 +28,7 @@ If it is on a charger and still missing:
 
 - Give it longer. A device that has just been plugged in restarts first.
 - Confirm it is charging — listen for the rising tones.
-- Move closer. Scanning is Bluetooth, so a few metres and a clear path.
+- Move closer. Scanning is Bluetooth, so a few meters and a clear path.
 
 ---
 
@@ -42,7 +42,8 @@ was not on its charger when you pressed Schedule never learned about the study.
 **2. Was it on a charger during the study?** Look for charging events in its log. A device on a charger
 is awake but **not recording**. This is the most common cause by a wide margin.
 
-**3. Did its battery run out?** Check the voltage trace. Below 3750 mV a device stops recording.
+**3. Did its battery run out?** Check the voltage trace. A recording device powers off when its battery falls to 3680 mV,
+and will not start again below 3750 mV until it is charged.
 
 **4. Was it within range?** Count how many rounds each peer appears in:
 
@@ -61,15 +62,15 @@ for uid, n in sorted(peers.items()):
 A device seen in nearly every round had a good link. One seen in half had a marginal link — real data,
 but weaker. One absent entirely was never in the network with this device.
 
-**5. Did two separate networks form?** If devices are switched on in different places, two groups can
-form independent networks that never merge. The signature is two clusters that each range internally
-but never with each other. Taking all devices off their chargers in the same place prevents it.
+**5. Were the groups ever within range of each other?** Devices switched on in different places start
+out as separate networks and merge on their own once they can hear each other. Two clusters that each
+range internally but never with each other were never within range of each other during the study.
 
 ---
 
 ## One device is consistently weaker than the others
 
-If a device ranges well with close neighbours but drops out with distant ones — while other devices hold
+If a device ranges well with close neighbors but drops out with distant ones — while other devices hold
 those same distances fine — that device has a weaker radio link than its peers.
 
 The test that separates "far away" from "weak radio" is to compare **links at the same distance**. If
@@ -86,12 +87,12 @@ Both tools do this comparison for you, live over Bluetooth: **Live Radio Check**
 dashboard, or the **Radio check** tab in the browser tool.
 
 1. Put the devices on their chargers, or leave them running a deployment, so they can be reached.
-2. In the desktop dashboard, **Scan for TotTags**, then choose **Live Radio Check** and tick each device.
+2. In the desktop dashboard, **Scan for TotTags**, then choose **Live Radio Check** and select each device.
    In the browser tool, open **Radio check → Live over Bluetooth** and add each device. Devices the browser
    has seen before can be added all at once.
 3. Choose how long to run, 2 to 10 minutes (2 by default), and start the test. Each device restarts into a
    *radio test* and starts ranging, on its charger or off it.
-4. Put them on a table where they can all see each other, at least half a metre (2 feet) apart. The test carries on
+4. Put them on a table where they can all see each other, at least half a meter (2 feet) apart. The test carries on
    while you move them. Note where each one sits if you can.
 
 Verdicts appear within the first minute and update every 15 seconds. They firm up once every device
@@ -105,15 +106,15 @@ device needs firmware with radio-test support. The browser tool also needs a bro
 The browser tool can also run the same check on the downloaded logs of a deployment that already ran:
 choose **From downloaded logs** and open every device's log.
 
-Both tools apply the same rules. Each device is judged against the others and gives a **Pass**, **Check** or **Fail** with the
+Both tools apply the same rules. Each device is judged against the others and gives a **Pass**, **Check**, or **Fail** with the
 reason:
 
-- **Receives failed** well above the other devices' rate means a weak receiver, antenna or connection.
+- **Receives failed** well above the other devices' rate means a weak receiver, antenna, or connection.
   Only receives from devices that were actually transmitting count. A device that has left the network
   but is still in the schedule no longer makes everyone else look worse.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
   they should match; a mismatch names the faulty one. The live checks bracket the antenna each device
-  is using to hear the coordinator, which moves away from a bad one by itself.
+  is using to hear the schedule, which moves away from a bad one by itself.
 - **Ranged in few rounds** means the device was not taking part in the network.
 - **Distance offset**, with positions entered, means a device that reads long or short on every link, so
   its calibration is off.

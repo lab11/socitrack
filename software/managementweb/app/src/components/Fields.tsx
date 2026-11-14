@@ -35,7 +35,7 @@ export function TimezoneField({ value, onChange }: { value: string; onChange: (t
     <Field
       label="Time zone of the study"
       htmlFor={id}
-      error={valid ? null : value.trim() ? 'Not a time zone this browser recognises. Type a city, such as Chicago, and pick from the list.' : 'Choose a time zone.'}
+      error={valid ? null : value.trim() ? 'Not a time zone this browser recognizes. Type a city, such as Chicago, and pick from the list.' : 'Choose a time zone.'}
       hint={<>{describeTimezone(value)}. Every time on this page is on this clock.</>}
     >
       <input id={id} className="input" list={`${id}-zones`} value={value} aria-invalid={!valid}

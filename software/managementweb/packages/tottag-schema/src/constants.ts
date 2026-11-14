@@ -236,8 +236,11 @@ export const {
   STORAGE_RADIO_TIMING_STEP_US,
   /** Radio timing record: how often a diagnostic build writes one, ms. */
   STORAGE_RADIO_TIMING_INTERVAL_MS,
-  /** Milliseconds the chip may hold BUSY before the driver declares it dead and resets. */
-  NANDLOG_BUSY_TIMEOUT_MS,
+  /** Spacing of the status polls while waiting for the chip to clear BUSY, µs. */
+  NANDLOG_BUSY_POLL_INTERVAL_US,
+  /** Status polls the chip may stay BUSY for before the driver declares it dead and resets; the wait is at
+   *  least NANDLOG_BUSY_TIMEOUT_POLLS × NANDLOG_BUSY_POLL_INTERVAL_US, plus the time the reads take. */
+  NANDLOG_BUSY_TIMEOUT_POLLS,
   /** Most pages one retransmission round may request. */
   NANDLOG_MAX_RETRANSMIT_PAGES,
 

@@ -5,41 +5,17 @@
 // device, and a two-week run is several times that — and parsing one synchronously locks the page
 // for as long as it takes. A frozen tab is indistinguishable from a crashed one to the person
 // looking at it.
+//
+// The worker also keeps each log's ranging rounds (logAnalysis.ts says how much that costs), so the
+// views that need every round can ask for a window or a day's figures without the page holding them.
 
-import { analyseDeployment, missingSeqs, parse, summarizeRadio } from '@tottag/schema';
+import { handle, type AnalysisRequest } from './logAnalysis.ts';
 
-export interface ParseRequest {
-  readonly id: number;
-  readonly bytes: ArrayBuffer;
-}
-
-self.onmessage = (event: MessageEvent<ParseRequest>) => {
-  const { id, bytes } = event.data;
+self.onmessage = (event: MessageEvent<{ id: number; request: AnalysisRequest }>) => {
+  const { id, request } = event.data;
   try {
-    const result = parse(new Uint8Array(bytes));
-    const health = analyseDeployment(result);
-    // Maps survive structured cloning, but flattening here keeps the reply a plain object and makes
-    // the boundary explicit rather than relying on the algorithm's finer points.
-    self.postMessage({
-      id,
-      report: result.report,
-      recordCount: result.records.length,
-      experimentStartTime: result.experimentStartTime,
-      // Computed here because the caller's repair loop needs it and the report is large
-      missingSeqs: missingSeqs(result.report),
-      // The records stay in this worker, so the radio check gets their per-minute summary instead
-      radio: summarizeRadio(result),
-      health: {
-        ...health,
-        recordCounts: [...health.recordCounts],
-        rangingPeers: [...health.rangingPeers],
-        nearMisses: {
-          ...health.nearMisses,
-          watchdogLate: [...health.nearMisses.watchdogLate],
-          lowestStackWords: [...health.nearMisses.lowestStackWords],
-        },
-      },
-    });
+    const { reply, transfer } = handle(request);
+    self.postMessage({ id, reply }, { transfer });
   } catch (error) {
     self.postMessage({ id, error: error instanceof Error ? error.message : String(error) });
   }

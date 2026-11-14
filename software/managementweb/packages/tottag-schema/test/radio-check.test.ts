@@ -147,3 +147,18 @@ test('a log names its device by itself, by the transport, or by its file name', 
   assert.equal(identifyRadioLog(base, '0B_1791288000.ttg'), 0x0b);
   assert.equal(identifyRadioLog(base, 'unrelated.ttg'), null);
 });
+
+test('a log saved under a label with spaces, accents, unsafe characters or underscores is still recognized by its name', async () => {
+  const { fileLabel } = await import('../src/deployment.ts');
+  assert.equal(fileLabel('Mamá/Papá: 1'), 'MamáPapá 1');
+  assert.equal(fileLabel('  ..hidden.. '), 'hidden');
+  assert.equal(fileLabel('a\u0007b"c<d>e|f?g*h\\i'), 'abcdefghi');
+  assert.equal(fileLabel('x'.repeat(40)).length, 16);
+  const base: RadioSummary = {
+    experimentStartTime: 1, deploymentUids: [0x02, 0x0b, 0x3e], deploymentLabels: ['Parent 1', 'Mamá/Papá: 1', 'Child_A'], selfUid: null,
+    firstMs: 0, lastMs: 0, binMs: LOG_BIN_MS, rowsByBin: [], peers: [], diagnostics: null, aborts: 0,
+  };
+  assert.equal(identifyRadioLog(base, 'Parent 1_1791288000.ttg'), 0x02);
+  assert.equal(identifyRadioLog(base, 'MamáPapá 1_1791288000.ttg'), 0x0b);
+  assert.equal(identifyRadioLog(base, 'Child_A_1791288000.ttg'), 0x3e);
+});

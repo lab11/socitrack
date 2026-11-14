@@ -226,7 +226,7 @@ class BluetoothTag implements TagConnection {
       this.char(BLE_UUID.BLE_MAINTENANCE_COMMAND_CHAR.uuid)
         .writeValueWithResponse(Uint8Array.of(BLE_MAINTENANCE_DELETE_EXPERIMENT)),
       OPERATION_TIMEOUT_MS,
-      'Cancelling the deployment',
+      'Canceling the deployment',
     );
   }
 
@@ -414,7 +414,7 @@ class BluetoothTag implements TagConnection {
       return await new Promise<Uint8Array>((resolve, reject) => {
         settle = resolve;
         fail = reject;
-        signal?.addEventListener('abort', () => reject(new Error('Download cancelled')), { once: true });
+        signal?.addEventListener('abort', () => reject(new Error('Download canceled')), { once: true });
         this.device.addEventListener('gattserverdisconnected', () =>
           reject(new Error('The tag disconnected part-way through. Keep it on its charger, close to the computer, and download it again.')), { once: true });
         armIdle();

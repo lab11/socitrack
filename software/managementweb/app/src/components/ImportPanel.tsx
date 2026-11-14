@@ -66,7 +66,9 @@ export function ImportPanel({ onLoaded, onOpenFolder, busy, compact = false }: P
     >
       <h2 className="import__title">{compact ? 'Open more logs' : 'Open logs already on this computer'}</h2>
       <p className="import__body">
-        {compact ? 'Drop more .ttg files here, or ' : 'Drag the .ttg files here, or '}
+        {compact
+          ? 'Drop more .ttg files or a deployment record (.json) here, or '
+          : 'Drag the .ttg files here, with the deployment record (.json) saved when the tags were set up, or '}
         <span className="nowrap">
           <button type="button" className="link" onClick={openPicker} disabled={busy}>
             browse for them

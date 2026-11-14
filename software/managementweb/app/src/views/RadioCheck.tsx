@@ -60,7 +60,7 @@ function LogRadioCheck({ reports, busy, onLoaded, onOpenFolder }: Omit<Props, 'l
           </p>
           <ol className="steps">
             <li>Set up a deployment with the tags you want to check, starting now.</li>
-            <li>Put them where they can all see each other, at least half a metre apart, and leave them for 10 minutes.</li>
+            <li>Put them where they can all see each other, at least half a meter apart, and leave them for 10 minutes.</li>
             <li>Download every tag's log, then open the logs here or on the Download &amp; review page.</li>
           </ol>
         </section>

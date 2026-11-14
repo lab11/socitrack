@@ -8,7 +8,7 @@
 import type { DeviceReport } from './deployment.ts';
 
 /** RFC 4180 quoting. A label containing a comma is not hypothetical — they are free text. */
-function cell(value: string | number | null | undefined): string {
+export function cell(value: string | number | null | undefined): string {
   if (value === null || value === undefined) return '';
   const text = String(value);
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;

@@ -7,7 +7,7 @@ import { Stat } from './Stat.tsx';
 
 interface Props {
   readonly report: DeviceReport;
-  /** The clock to show times on: the study's time zone from the setup page. */
+  /** The clock to show times on: the study's zone from its deployment record, or the setup page's without one. */
   readonly timezone: string;
   /** Present only for a log that came off a tag and so exists nowhere else yet. */
   readonly onSave?: (() => void) | undefined;

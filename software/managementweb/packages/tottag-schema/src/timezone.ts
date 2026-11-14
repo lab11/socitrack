@@ -280,3 +280,52 @@ export function formatSpan(seconds: number): string {
   if (!days && minutes) parts.push(unit(minutes, 'minute'));
   return parts.join(', ') || 'under a minute';
 }
+
+// --- Many instants on one clock -------------------------------------------------------------------------
+
+/**
+ * A study's clock over one span, fast enough to place a million instants.
+ *
+ * `utcOffsetSecondsAt` asks Intl for every instant, which is right for a handful of times on a screen
+ * and far too slow for every ranging round in a week. The offset only changes when the clocks do, so
+ * this finds those changes once and answers from them, falling back to Intl outside the span it was
+ * built for.
+ */
+export interface LocalClock {
+  readonly timezone: string;
+  /** Seconds the zone is ahead of UTC at this instant. */
+  offsetAt(unixSeconds: number): number;
+  /** Days since 1970-01-01 on the local calendar: the same number for every instant of one local date. */
+  dayNumber(unixSeconds: number): number;
+}
+
+export function localClock(timezone: string, from: number, to: number): LocalClock {
+  const lo = Math.floor(Math.min(from, to));
+  const hi = Math.ceil(Math.max(from, to));
+  const first = utcOffsetSecondsAt(timezone, lo);
+  const changes = clockChanges(timezone, lo, hi + 1);
+  const offsetAt = (unixSeconds: number): number => {
+    if (!(unixSeconds >= lo && unixSeconds <= hi)) return utcOffsetSecondsAt(timezone, unixSeconds);
+    let offset = first;
+    for (const change of changes) {
+      if (unixSeconds < change.at) break;
+      offset = change.offsetAfter;
+    }
+    return offset;
+  };
+  return {
+    timezone,
+    offsetAt,
+    dayNumber: (unixSeconds) => Math.floor((unixSeconds + offsetAt(unixSeconds)) / DAY_SECONDS),
+  };
+}
+
+/** `YYYY-MM-DD` for a local day number from `LocalClock.dayNumber`. */
+export function dayNumberToDate(day: number): string {
+  return new Date(day * DAY_SECONDS * 1000).toISOString().slice(0, 10);
+}
+
+/** The instant a local day begins: midnight, or the first minute after it where the clocks skip midnight. */
+export function localDayStart(day: number, timezone: string): number {
+  return wallClockToUnix(`${dayNumberToDate(day)}T00:00`, timezone);
+}

@@ -140,7 +140,8 @@ export const DEFINES = [
   { name: 'STORAGE_RADIO_TIMING_STEP_US', file: 'tasks/storage_records.h', note: 'Radio timing record: width of each frame-to-interrupt band after the first, µs.' },
   { name: 'STORAGE_RADIO_TIMING_INTERVAL_MS', file: 'tasks/storage_records.h', note: 'Radio timing record: how often a diagnostic build writes one, ms.' },
   { name: 'NANDLOG_FRAMING_LENGTH_BYTES', file: 'external/nandlog/nandlog.h', note: 'Size of the per-record length prefix when framing is on.' },
-  { name: 'NANDLOG_BUSY_TIMEOUT_MS', file: 'external/nandlog/nandlog_conf.h', note: 'How long the chip may hold BUSY before the driver declares it dead and resets.' },
+  { name: 'NANDLOG_BUSY_POLL_INTERVAL_US', file: 'external/nandlog/nandlog_conf.h', note: 'Spacing of the status polls while waiting for the chip to clear BUSY, µs.' },
+  { name: 'NANDLOG_BUSY_TIMEOUT_POLLS', file: 'external/nandlog/nandlog_conf.h', note: 'Status polls the chip may stay BUSY for before the driver declares it dead and resets: at least POLLS x POLL_INTERVAL_US, plus the time the reads take.' },
   { name: 'NANDLOG_MAX_RETRANSMIT_PAGES', file: 'external/nandlog/nandlog.h', note: 'Most pages one repair round may request.' },
 
   // --- v2 on-flash and wire format ---------------------------------------------------------------

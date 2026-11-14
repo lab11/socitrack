@@ -4,12 +4,12 @@ TotTag Firmware
 Firmware for the Ambiq Apollo4, containing the UWB ranging protocol, the Bluetooth maintenance
 interface, and the on-board NAND log.
 
-**Flashing instructions, build commands and timing constants are documented at
+**Flashing instructions, build commands, and timing constants are documented at
 [lab11.github.io/socitrack](https://lab11.github.io/socitrack/):**
 
-- [Getting Started](../../docs/getting-started.md) — programmer, cables, assigning a device its ID, flashing
-- [Reference](../../docs/reference.md#build-commands) — every build target and what it does
-- [Device Behaviour](../../docs/device-behavior.md) — what the firmware decides at runtime and why
+- [Getting Started](https://lab11.github.io/socitrack/getting-started.html) — programmer, cables, assigning a device its ID, flashing
+- [Reference](https://lab11.github.io/socitrack/reference.html#build-commands) — every build target and what it does
+- [Device Behavior](https://lab11.github.io/socitrack/device-behavior.html) — what the firmware decides at runtime and why
 
 Layout
 ------

@@ -2,7 +2,7 @@ TotTag Hardware
 ===============
 
 Board designs for the TotTag, one folder per revision. The revision letter is silkscreened on the
-board. The current firmware supports revisions **M, N, O and P**; earlier revisions are obsolete and
+board. The current firmware supports revisions **M, N, O, and P**; earlier revisions are obsolete and
 live in [`../legacy/`](../legacy/).
 
 Current TotTag hardware is maintained by @ppannuto and @corruptbear.
@@ -15,6 +15,20 @@ All current revisions are built around the Ambiq Apollo4 Blue Plus and Qorvo's D
 transceiver. Revision M splits the board into two physical modules to isolate design challenges with
 some of the new chips; revision N re-integrates the design back to a single module. Revisions O and P
 center on smaller fixes for DFM and scale.
+
+### Rev P (current)
+[Complete list of Rev P changes](rev_p/CHANGELOG.md) ·
+[Rev P issues / updates for the next rev](https://github.com/lab11/socitrack/issues/61)
+
+Highlights:
+ - Workaround for Apollo4 erratum ERR125 (VDDB rise time): dedicated `AP4_VDDB_SUP` net with doubled decoupling
+ - Add back test points for the USB SPI lines
+ - Remove more hedges: `RZ4` replaced with a wire; `RZ3`, `RZ5` replaced with solder jumpers `SJ9`, `SJ10`
+ - Consolidate one-off capacitors onto common BOM line items
+ - Update stackup to MacroFab's standard 4-layer, 0.8mm
+ - Rev P.2: layout-only DRC updates requested by MacroFab
+
+The pinout is unchanged from Rev O, so firmware for the two differs only in the revision ID.
 
 ### Rev O
 Highlights:

@@ -258,3 +258,11 @@ test('a clock step at a restart is a note about drift, not a warning about the t
   assert.ok(codes.includes('clock-after-restart'), codes.join(', '));
   assert.ok(!codes.includes('time-rebased'), codes.join(', '));
 });
+
+test('each correction of the time base is placed in time, not only counted', () => {
+  // boot.ttg carries one real 4.09 s correction, made when the tag joined the network.
+  assert.equal(boot.clock.offsetSteps.length, 1);
+  assert.equal(boot.clock.offsetSteps[0]!.stepMs, 4090);
+  assert.equal(boot.clock.offsetSteps[0]!.ms, 32781250);
+  assert.equal(watchdog.clock.offsetSteps.length, 0);
+});

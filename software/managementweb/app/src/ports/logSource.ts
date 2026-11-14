@@ -34,9 +34,27 @@ export interface LoadFailure {
   readonly reason: string;
 }
 
+/**
+ * A deployment record (the .json saved when the tags were set up), as text.
+ *
+ * It travels with logs because it is opened with them: dropped in the same gesture, or found in the
+ * same folder. It is the only place the study's time zone is written down.
+ */
+export interface LoadedRecordFile {
+  readonly name: string;
+  readonly text: string;
+}
+
 export interface LoadResult {
   readonly loaded: readonly LoadedLog[];
   readonly failed: readonly LoadFailure[];
+  /** Deployment records opened alongside the logs. */
+  readonly records?: readonly LoadedRecordFile[] | undefined;
+  /**
+   * Read from a whole folder rather than chosen file by file. A folder of downloads can hold .json files
+   * that are not deployment records, and those are passed over quietly rather than reported.
+   */
+  readonly fromFolder?: boolean | undefined;
 }
 
 /**

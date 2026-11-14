@@ -3,7 +3,7 @@
 // Kept out of components so it can be reasoned about and, later, tested without a DOM. The
 // components below it render what this returns and make no decisions of their own.
 
-import type { DeploymentHealth, ParseReport, RadioSummary } from '@tottag/schema';
+import type { DeploymentHealth, LogCharts, ParseReport, RadioSummary } from '@tottag/schema';
 import { parseLogAsync } from '../lib/parseAsync.ts';
 import { canonicalLogName } from './logFilename.ts';
 import type { LoadedLog } from '../ports/logSource.ts';
@@ -32,6 +32,14 @@ export interface DeviceReport {
   readonly health: DeploymentHealth | null;
   /** The log reduced for the radio check. Null when parsing failed. */
   readonly radio: RadioSummary | null;
+  /** The log reduced for its charts. Null when parsing failed. */
+  readonly charts: LogCharts | null;
+  /**
+   * Peers whose every ranging round the log worker holds for this log, under `id`, and the span of
+   * those rounds. Empty when parsing failed or the log never ranged.
+   */
+  readonly rangePeers: readonly number[];
+  readonly rangeSpan: readonly [number, number] | null;
   /** Low EUI byte of the device, when the transport that fetched the log knew it. */
   readonly deviceUid: number | undefined;
   /** Present only when parsing failed outright. */
@@ -66,15 +74,22 @@ export async function buildReport(log: LoadedLog, index: number): Promise<Device
   let report: ParseReport | null = null;
   let health: DeploymentHealth | null = null;
   let radio: RadioSummary | null = null;
+  let charts: LogCharts | null = null;
+  let rangePeers: readonly number[] = [];
+  let rangeSpan: readonly [number, number] | null = null;
   let recordCount = 0;
   let experimentStartTime = 0;
   let error: string | null = null;
+  const id = `${index}-${log.name}`;
 
   try {
-    const parsed = await parseLogAsync(log.bytes);
+    const parsed = await parseLogAsync(log.bytes, id);
     report = parsed.report;
     health = parsed.health;
     radio = parsed.radio;
+    charts = parsed.charts;
+    rangePeers = parsed.rangePeers;
+    rangeSpan = parsed.rangeSpan;
     recordCount = parsed.recordCount;
     experimentStartTime = parsed.experimentStartTime;
   } catch (caught) {
@@ -95,7 +110,7 @@ export async function buildReport(log: LoadedLog, index: number): Promise<Device
     : log.name;
 
   return {
-    id: `${index}-${log.name}`,
+    id,
     name: live ? saveName : log.name,
     origin: log.origin,
     bytes: log.bytes.length,
@@ -105,6 +120,9 @@ export async function buildReport(log: LoadedLog, index: number): Promise<Device
     recordCount,
     health,
     radio,
+    charts,
+    rangePeers,
+    rangeSpan,
     deviceUid: log.deviceUid,
     error,
     status: severityOf(health, error),

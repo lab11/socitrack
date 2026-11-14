@@ -23,12 +23,17 @@ packages/tottag-schema/   pure format knowledge: constants, parsing, analysis. N
   src/crc32.ts              CRC-32 as the firmware and zlib both compute it
   src/log.ts                v1 and v2 stream readers, retransmission bookkeeping
   src/health.ts             what a parsed log says about the deployment
+  src/manifest.ts           the deployment record: writing one, and reading one back to match logs to it
+  src/charts.ts             one log reduced to what its charts draw (runs in the log worker)
+  src/rangeStore.ts         every ranging round, compactly: windows and daily time together
+  src/coverage.ts           scheduled against recorded, hour by hour
+  src/series.ts             time series and thinning that keeps each slice's extremes
   test/fixtures/            real device output, cut from a 3.9-day deployment
 app/                      React + TypeScript + Vite.
   src/ports/                interfaces: what a log source is, independent of transport
   src/adapters/             the only modules allowed to touch a browser API
   src/features/             pure decisions: schedule, tag status, plain wording, CSV. Tested under node:test.
-  src/lib/                  hooks and helpers shared by pages: logs, tag access, persisted stores
+  src/lib/                  hooks and helpers shared by pages: logs, the log worker, tag access, persisted stores
   src/components/           rendering only, no decisions
   src/styles/               hand-written design tokens, no CSS framework
 ```
@@ -40,8 +45,8 @@ import a browser or Node API. If a function there needs bytes, it takes a `Uint8
 
 In anything a person reads, a specific tag is **TotTag** followed by the last two parts of its address
 (`TotTag 00:0A`, from `tagName()`), and tags in general are **tags**. Times are always on the study's
-own clock, in the time zone chosen on the setup page; nobody using the tool should ever have to think
-about UTC. `packages/tottag-schema/src/timezone.ts` does every conversion between the two.
+own clock: the time zone chosen on the setup page, or, for logs being reviewed, the one in the deployment
+record that set them up (the page says which). Nobody using the tool should ever have to think about UTC. `packages/tottag-schema/src/timezone.ts` does every conversion between the two.
 
 ## Commands
 
@@ -56,7 +61,7 @@ npm run open-items -w @tottag/schema
 ```
 
 **Browser support.** Reading logs and planning a deployment work anywhere. Reaching a tag needs Web
-Bluetooth or Web Serial, which exist only in Chrome, Edge and Opera on a computer — the app says so up
+Bluetooth or Web Serial, which exist only in Chrome, Edge, and Opera on a computer — the app says so up
 front rather than letting it surface at the moment someone needs it. Opening a whole folder at once and
 choosing where an export goes need the File System Access API, same browsers; both degrade to a file
 picker and a plain download elsewhere.
@@ -67,4 +72,4 @@ no build step and no dev dependency in the schema package.
 ## Documentation
 
 User documentation is at [lab11.github.io/socitrack](https://lab11.github.io/socitrack/) — see
-[The Dashboard](../../docs/dashboard.md#the-browser-tool) for installing and using this tool.
+[The Dashboard](https://lab11.github.io/socitrack/dashboard.html#the-browser-tool) for installing and using this tool.

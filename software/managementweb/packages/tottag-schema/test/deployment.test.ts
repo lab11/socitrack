@@ -69,6 +69,17 @@ test('a three-way collision is reported once, not as three pairs', () => {
   assert.deepEqual(conflicts[0]!.devices, [0, 1, 2]);
 });
 
+test('a tag whose ID ends in 00 is an error, because 0 means "no tag" on the air', () => {
+  const zero = eui(0x00, 0x05, 0x33, 0x44, 0x55, 0x66);
+  const problems = validateDeployment({ ...base, devices: [base.devices[0]!, { eui: zero, label: 'z' }] });
+  const problem = problems.find((p) => p.code === 'short-uid-zero');
+  assert.ok(problem, 'reported');
+  assert.equal(problem.severity, 'error');
+  assert.deepEqual(problem.devices, [1], 'against the tag ending in 00 only');
+  assert.equal(hasErrors(problems), true);
+  assert.equal(validateDeployment(base).some((p) => p.code === 'short-uid-zero'), false, 'and not otherwise');
+});
+
 test('no collision when low bytes differ, however similar the rest', () => {
   const devices = [
     { eui: eui(0x01, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa), label: 'a' },

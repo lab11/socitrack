@@ -59,7 +59,7 @@ export function PositionsPanel({ devices, positions }: {
     <section className="panel">
       <h2 className="panel__title">Where the tags were</h2>
       <p className="panel__note">
-        Optional. In metres, from any corner you like. With at least three positions, the check works
+        Optional. In meters, from any corner you like. With at least three positions, the check works
         out whether one tag reads long or short on every link.
       </p>
       <table className="rtable">
@@ -71,7 +71,7 @@ export function PositionsPanel({ devices, positions }: {
               {(['x', 'y'] as const).map((axis) => (
                 <td key={axis}>
                   <input
-                    className="rtable__input" inputMode="decimal" aria-label={`${device.label} ${axis.toUpperCase()} in metres`}
+                    className="rtable__input" inputMode="decimal" aria-label={`${device.label} ${axis.toUpperCase()} in meters`}
                     value={text[device.uid]?.[axis] ?? ''}
                     onChange={(event) => update({ ...text, [device.uid]: { x: text[device.uid]?.x ?? '', y: text[device.uid]?.y ?? '', [axis]: event.target.value } })}
                   />

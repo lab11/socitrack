@@ -213,7 +213,7 @@ test('v2 magics decode to the expected ASCII', () => {
   assert.equal(V2_STREAM_MAGIC, 'TTS1');
   assert.equal(V2_DATA_PAGE_MAGIC, 'TTP1');
   assert.equal(V2_DATA_PAGE_MAGIC_FRAMED, 'TTP2');
-  assert.equal(V2_METADATA_PAGE_MAGIC, 'TTM1');
+  assert.equal(V2_METADATA_PAGE_MAGIC, 'TTM2');  // nandlog v1.0 bumped the metadata page format
   assert.equal(V2_METADATA_RING_BLOCKS, 8);
 });
 

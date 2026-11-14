@@ -1,6 +1,6 @@
 # Getting Started
 
-This page takes a device from "box of hardware" to "ready for a study". You need to do it once per
+This page takes a device from "box of hardware" to "ready for a study." You need to do it once per
 device. If your devices are already set up, skip to [Running a Deployment](running-a-deployment.md).
 
 ---
@@ -9,13 +9,13 @@ device. If your devices are already set up, skip to [Running a Deployment](runni
 
 ### Hardware
 
-A **SEGGER J-Link programmer** and two cables to reach the device's programming pads:
+A **SEGGER J-Link programmer**, plus an adapter and a cable to reach the device's programming pads:
 
 - [J-Link EDU Probe](https://shop-us.segger.com/product-category/debug-probes/educational/) — heavily
   discounted for educational and research use. The commercial
   [J-Link](https://www.segger.com/products/flasher-in-circuit-programmer/) works identically.
-- [Tag-Connect TC2050-ARM2010 adapter](https://www.tag-connect.com/product/tc2050-arm2010-arm-20-pin-to-tc2050-adapter) (20-pin to 10-pin)
-- [Tag-Connect TC2050-IDC-NL cable](https://www.tag-connect.com/product/tc2050-idc-nl-10-pin-no-legs-cable-with-ribbon-connector) (10-pin, no legs)
+- [Tag-Connect ARM20-CTX adapter](https://www.tag-connect.com/product/arm20-ctx-20-pin-to-tc2030-idc-adapter-for-cortex) (J-Link 20-pin to the 6-pin cable)
+- [Tag-Connect TC2030-IDC-NL cable](https://www.tag-connect.com/product/tc2030-idc-nl) (6-pin, no legs)
 
 The programmer is only needed for setup. Once a device is running you never need it again unless you
 update firmware.
@@ -41,7 +41,7 @@ arm-none-eabi-gcc --version
 ## Find your board revision
 
 **Do this before flashing.** The revision is silkscreened on the board — a single letter, one of
-**M**, **N**, **O** or **P**.
+**M**, **N**, **O**, or **P**.
 
 Each revision has a different pinout. Firmware built for the wrong one compiles perfectly and then
 drives the wrong pins, which looks like a dead or erratic device rather than an obvious error. It is
@@ -55,7 +55,7 @@ Every command below uses `BOARD_REV=P`. Substitute your own letter. `P` is the d
 
 1. Plug the Tag-Connect adapter and cable into the J-Link.
 2. Plug the J-Link into your computer over USB.
-3. Press the Tag-Connect cable into the pads on the device labelled **XA2**.
+3. Press the Tag-Connect cable into the pads on the device labeled **J1** (**XA2** on Rev. M).
 
 The no-legs cable is held in place by hand or with a clip — it does not latch. Keep gentle pressure on
 it for the whole of each command below.
@@ -66,18 +66,20 @@ it for the whole of each command below.
 
 ## Step 2 — Give the device an ID (once per device, ever)
 
-Every device needs a unique identifier, in the form `c0:98:e5:42:00:XX`. Only the last byte `XX` is
-yours to choose — any two hex digits, so `00` through `FF`.
+Every device needs a unique identifier, in the form `c0:98:e5:42:XX:XX`. The last two bytes `XX:XX`
+are yours to choose — any four hex digits, except that the last byte cannot be `00`: the ranging
+protocol uses 0 to mean "no device", so a device ending in `00` never joins a network.
 
 ```bash
 cd socitrack/software/firmware
 make ID=c0:98:e5:42:00:02 UID
 ```
 
-**Choose carefully and write it down.** That last byte is how the device identifies itself everywhere
-— in the dashboard device list, in the log files, and in your analysis. Giving two devices the same ID
-will make a deployment impossible to interpret. A piece of tape on the case with the last two digits
-saves a great deal of confusion later.
+**Choose carefully and write it down.** The ranging protocol and the log files identify a device by its
+**last byte alone**, so give every device a different last byte: `00:05` and `01:05` would be
+impossible to tell apart in a deployment. Both tools refuse to schedule a deployment that breaks either
+rule. The browser tool names each device by its last two bytes, such as **TotTag 00:02**. A piece of tape on the case with the last four digits saves a great deal of
+confusion later.
 
 This step is permanent and only needs doing once. Re-flashing firmware does not erase it.
 

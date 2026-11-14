@@ -13,6 +13,7 @@
 //   - analyseRadio() runs on the page over the summaries of every device in the deployment.
 
 import { SCHEDULING_INTERVAL_US } from './constants.ts';
+import { fileLabel } from './deployment.ts';
 import { parseExperimentDetails, type ParseResult } from './log.ts';
 
 /** How long each bin of a summary made from a log covers. */
@@ -471,9 +472,14 @@ export function identifyRadioLog(
 ): number | null {
   if (summary.selfUid !== null) return summary.selfUid;
   if (deviceUid !== undefined && summary.deploymentUids.includes(deviceUid)) return deviceUid;
-  const stem = name.replace(/\.[^.]*$/, '').split('_')[0]!.trim().toLowerCase();
-  const byLabel = summary.deploymentLabels.findIndex((label) => label.trim().toLowerCase() === stem);
+  // A saved log is `{label}_{start}.ttg`, its label with only what a file name cannot hold dropped (fileLabel), so
+  // the label may itself contain an underscore.
+  const base = name.replace(/\.[^.]*$/, '');
+  const stems = [base.replace(/_\d+$/, ''), base.split('_')[0]!].map((stem) => stem.trim().toLowerCase());
+  const byLabel = summary.deploymentLabels.findIndex((label) =>
+    stems.includes(label.trim().toLowerCase()) || stems.includes(fileLabel(label).toLowerCase()));
   if (byLabel >= 0) return summary.deploymentUids[byLabel] ?? null;
+  const stem = stems[1]!;
   const asHex = /^[0-9a-f]{1,2}$/.test(stem) ? Number.parseInt(stem, 16) : NaN;
   return summary.deploymentUids.includes(asHex) ? asHex : null;
 }

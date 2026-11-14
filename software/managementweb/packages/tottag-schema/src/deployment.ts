@@ -79,6 +79,11 @@ export function tagName(eui: Uint8Array | readonly number[]): string {
   return `TotTag ${shortAddress(eui)}`;
 }
 
+/** A label as it goes into a log's file name: only what a file name cannot hold is dropped, as the desktop tool's file_label() does. */
+export function fileLabel(label: string): string {
+  return label.replace(/[\\/:*?"<>|\u0000-\u001F\u007F]/g, '').replace(/^[ .]+|[ .]+$/g, '').slice(0, EUI_NAME_MAX_LEN);
+}
+
 /** The one-byte ID tags know each other by on the air and in the log, as two hex digits. */
 export function shortUidHex(eui: Uint8Array | readonly number[]): string {
   return hexByte(eui[0] ?? 0);
@@ -160,6 +165,20 @@ export function validateDeployment(config: DeploymentConfig, options: Validation
     });
   }
 
+  // A low byte of 0 is the protocol's "no device": schedule_phase_add_device() takes 0 for an empty slot,
+  // and a device_eui of 0 means "not heard", so a tag ending in 00 can never join a network.
+  devices.forEach((device, index) => {
+    if (device.eui.length === EUI_LEN && shortUid(device.eui) === 0) {
+      problems.push({
+        severity: 'error',
+        code: 'short-uid-zero',
+        devices: [index],
+        message: `${tagName(device.eui)} ends in 00, which tags use to mean "no tag", so it could never join the network. ` +
+          'Swap it for a tag ending differently.',
+      });
+    }
+  });
+
   devices.forEach((device, index) => {
     if (device.eui.length !== EUI_LEN) {
       problems.push({
@@ -201,7 +220,7 @@ export function validateDeployment(config: DeploymentConfig, options: Validation
         severity: 'error',
         code: 'duplicate-label',
         devices: indices,
-        message: `${indices.length} tags are labelled "${label}". Each tag needs its own label to tell their data apart.`,
+        message: `${indices.length} tags are labeled "${label}". Each tag needs its own label to tell their data apart.`,
       });
     }
   }

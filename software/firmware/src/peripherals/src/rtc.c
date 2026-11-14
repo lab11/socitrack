@@ -3,39 +3,17 @@
 #include <time.h>
 #include "rtc.h"
 
+#ifndef _BUILD_TIMESTAMP
+#error "_BUILD_TIMESTAMP must be defined as the build's Unix time (the Makefile passes -D_BUILD_TIMESTAMP=$(date -u +%s)u)"
+#endif
+
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
-static const char *month_strings[] = { "Invalid Entry", "January", "February", "March", "April", "May", "June", "July",
-                                       "August", "September", "October", "November", "December", "Invalid Month" };
-static const char *day_strings[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 static volatile uint32_t rtc_stat;
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
-
-static int to_val(const char *ascii_string)
-{
-   int val = ascii_string[1] - '0';
-   val += (ascii_string[0] == ' ') ? 0 : ((ascii_string[0] - '0') * 10);
-   return val;
-}
-
-static int month_to_index(const char *month_string)
-{
-   for (int i = 1; i < 12; ++i)
-      if (am_util_string_strnicmp(month_strings[i], month_string, 3) == 0)
-         return i;
-   return 12;
-}
-
-static int day_to_index(const char *day_string)
-{
-   for (int i = 0; i < 7; ++i)
-      if (am_util_string_strnicmp(day_strings[i], day_string, 3) == 0)
-         return i;
-   return 7;
-}
 
 // Reentrant calendar conversion rather than through mktime()/gmtime()
 static int32_t days_from_civil(uint32_t year, uint32_t month, uint32_t day)
@@ -109,19 +87,8 @@ void rtc_init(void)
 
 void rtc_set_time_to_compile_time(void)
 {
-   const char _datetime[] = _DATETIME;  // Format: "Tue Jan  1 00:00:00 UTC 2000"
-   am_hal_rtc_time_t new_rtc_time = {
-      .ui32ReadError = 0,
-      .ui32CenturyBit = RTC_CTRUP_CB_2000,
-      .ui32Hour = to_val(&_datetime[11]),
-      .ui32Minute = to_val(&_datetime[14]),
-      .ui32Second = to_val(&_datetime[17]),
-      .ui32Hundredths = 0,
-      .ui32Weekday = day_to_index(&_datetime[0]),
-      .ui32DayOfMonth = to_val(&_datetime[8]),
-      .ui32Month = month_to_index(&_datetime[4]),
-      .ui32Year = to_val(&_datetime[26])
-   };
+   // The same instant rtc_is_valid() measures against, so a clock set here is valid
+   am_hal_rtc_time_t new_rtc_time = to_rtc_time(_BUILD_TIMESTAMP);
    configASSERT0(am_hal_rtc_time_set(&new_rtc_time));
 }
 
@@ -169,7 +136,8 @@ uint32_t rtc_get_time_of_day(void)
 
 bool rtc_is_valid(void)
 {
+   // Valid once set for as long as it keeps power
    rtc_stat = RTC->RTCSTAT;  // Read RTCSTAT to mitigate RTC hanging as per errata
    am_hal_rtc_time_t rtc_time;
-   return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) && (rtc_time.ui32Year > 22) && (rtc_time.ui32Year < 40);
+   return (am_hal_rtc_time_get(&rtc_time) == AM_HAL_STATUS_SUCCESS) && (to_unix_timestamp(&rtc_time) >= (uint32_t)_BUILD_TIMESTAMP);
 }

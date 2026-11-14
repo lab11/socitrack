@@ -16,8 +16,9 @@ plugged in; an unplugged device that is outside its study window powers itself o
 in a scan. This is deliberate — it is what makes the battery last — but it means configuration happens
 on the charger, always.
 
-**Know your device IDs.** You will pick devices out of a list by the last two hex digits of their ID. If
-you did not label the cases during setup, now is the time.
+**Know your device IDs.** You will pick devices out of a list by the end of their ID; the browser tool
+shows the last two bytes, as **TotTag 00:02**. If you did not label the cases during setup, now is the
+time.
 
 ---
 
@@ -33,7 +34,7 @@ tottag
 
 There is also a [browser-based tool](dashboard.md#the-browser-tool) at
 [lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/). It is a web page, so there is
-nothing to install, but it needs Chrome, Edge or Opera on a computer to reach the devices. Both tools
+nothing to install, but it needs Chrome, Edge, or Opera on a computer to reach the devices. Both tools
 configure devices identically and read the same logs; use whichever suits you.
 
 ---
@@ -54,12 +55,17 @@ With every device on a charger:
 | **Daily Start / End Time** | Optional. Restricts recording to a window within each day, in the study's local time: school hours, say. Leave unset to record continuously between the start and end dates. |
 | **TotTags in Deployment** | The devices taking part. **Maximum 10.** |
 
-4. **Schedule.** The configuration is pushed to every device on the list.
+4. **Schedule.** The configuration is pushed to every device on the list, and read back over either USB or
+   Bluetooth to confirm each one stored it.
+5. **Save the deployment record** when the dashboard asks. Keep it in the folder you will download the
+   logs to: it is the only place the study's time zone is kept, and both tools read it from there to show
+   times, charts, and daily figures on the study's clock.
 
 A few things worth understanding:
 
-- **The timezone is yours, not the device's.** Pick the timezone the study happens in, and enter every
-  time as a clock on the wall there would show it. Both tools convert for the devices.
+- **The time zone is the study's, not yours.** Pick the time zone where the devices will be deployed,
+  even if you are configuring them from somewhere else, and enter every time as a clock on the wall
+  there would show it. Both tools convert for the devices.
 - **If the clocks change during the study**, a device cannot follow the change, so its daily window
   moves by an hour on one side of it. The browser tool points this out and asks which side should keep
   the hours you entered, or whether to widen the window to cover both.
@@ -73,12 +79,13 @@ It is worth doing on at least one device, and on all of them if the study matter
 
 ### In the browser tool
 
-On **Set up a deployment**, give the study a name if you like, choose its time zone, dates and daily
-hours, then **Add a tag** for each device. As each one is added the page reads its battery, its clock
+On **Set up a deployment**, give the study a name if you like, choose its time zone, dates, and daily
+hours, then **Add a tag** for each device. As each one is added, the page reads its battery, its clock,
 and any deployment it still holds, and the summary beside the form lists anything that needs
 attention before writing. **Write to tags** writes each device in turn and reads it back, so every
 device is checked, not just one. Save the **deployment record** it produces: it lists exactly what each
-device confirmed it stored, with times in the study's time zone.
+device confirmed it stored, with times in the study's time zone. Keep it with the logs, for the same
+reason as above.
 
 ### Before you schedule over an earlier study
 
@@ -94,7 +101,7 @@ data is safe elsewhere.
 
 Take them off the chargers.
 
-Each device plays a sound as it comes off the charger, and from that moment behaves on its own:
+Each device plays a sound as it comes off the charger, and from that moment behaves as follows:
 
 - **Inside the study window** — it starts ranging and recording.
 - **Before the study starts** — it powers off and wakes itself at the start time.
@@ -104,8 +111,10 @@ Each device plays a sound as it comes off the charger, and from that moment beha
 Devices find each other automatically. There is no pairing step and no fixed roles — the network forms
 itself, and reforms if devices are separated and brought back together.
 
-**Keep devices apart from their chargers during the study.** A device put back on a charger stops
-recording for as long as it is plugged in. That is the single most common way to lose data.
+**Charge devices overnight, not during study hours.** A device on its charger does not range, so nothing
+is recorded while it is plugged in; taken off the charger, it starts again as described above. Overnight
+charging is part of any multi-day study. Leaving a device on its charger during study hours is the most
+common way to lose data.
 
 ---
 
@@ -130,11 +139,10 @@ In the dashboard: **Connect** to a device, then choose a download:
 | Action | What you get |
 | --- | --- |
 | **Download Deployment Log Files** | Everything recorded during the scheduled study. This is normally what you want. |
-| **Download Full Logs** | Everything on the device, including data from before this study. |
-| **Download Raw Unprocessed Data** | The raw `.ttg` stream exactly as the device sent it, with no processing. |
+| **Download Full Logs** | The whole of the current log, ignoring the study's dates: everything recorded since the device was last scheduled or canceled. Earlier studies cannot be downloaded. |
 
 Downloads take minutes rather than seconds and produce a `.ttg` file per device, plus a processed
-`.pkl` alongside it. See [Your Data](data.md) for what is inside.
+`.pkl` alongside it; the browser tool saves only the `.ttg`. See [Your Data](data.md) for what is inside.
 
 ### Watch the console while it downloads
 
@@ -167,19 +175,19 @@ study, confirm that each log:
 - contains all the devices you expect, each seeing the others;
 - has no warnings left unresolved from the download.
 
-[Your Data](data.md#checking-a-log-is-complete) shows how to check each of these. Ten minutes here
-saves a study.
+[Your Data](data.md#checking-a-log-is-complete) shows how to check each of these, and the browser tool's
+**What happened** tab shows them all at once. Ten minutes here saves a study.
 
 ---
 
-## Cancelling or changing a deployment
+## Canceling or changing a deployment
 
-**Cancel Scheduled Pilot Deployment** clears the schedule from a device. Each device must be cancelled
+**Cancel Scheduled Pilot Deployment** clears the schedule from a device. Each device must be canceled
 individually, on its charger.
 
-To change a study's times or membership, schedule again; cancelling first is not necessary.
+To change a study's times or membership, schedule again; canceling first is not necessary.
 
-Neither cancelling nor scheduling erases a device's memory, but **both start a fresh log**: anything the
+Neither canceling nor scheduling erases a device's memory, but **both start a fresh log**: anything the
 device recorded before can no longer be downloaded with either tool. Download it first. In the browser
-tool, cancelling is on the **Check a tag** page, which says whether the device's data has been saved
+tool, canceling is on the **Check a tag** page, which says whether the device's data has been saved
 before it asks you to confirm.

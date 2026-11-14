@@ -27,6 +27,8 @@ export interface LogSummary {
   readonly selfKnown: boolean;
   /** "TotTag 00:0A", where the details block holds this tag's full address. */
   readonly tag: string | null;
+  /** That full address, least-significant byte first. */
+  readonly eui: Uint8Array | null;
   /** The label this deployment gave it. */
   readonly label: string | null;
   /** What the tag was told, from the details block. */
@@ -74,6 +76,7 @@ export function summariseLog(report: DeviceReport): LogSummary {
     uid,
     selfKnown: uid !== null,
     tag: own ? tagName(own) : null,
+    eui: own,
     label: index >= 0 ? scheduled!.labels[index]?.trim() || null : null,
     scheduled,
     firstRecord,

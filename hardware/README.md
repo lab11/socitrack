@@ -9,5 +9,5 @@ Hardware
 | [`cad/`](cad/) | The enclosure |
 | [`legacy/`](legacy/) | Everything before Rev M: obsolete boards, cases, photographs, and the project's hardware history |
 
-The current firmware supports revisions **M, N, O and P**. Anything older is obsolete, and lives in
+The current firmware supports revisions **M, N, O, and P**. Anything older is obsolete, and lives in
 [`legacy/`](legacy/).

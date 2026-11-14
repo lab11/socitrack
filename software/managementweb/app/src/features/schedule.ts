@@ -131,7 +131,7 @@ export function draftProblems(draft: DeploymentDraft, now: number): Problem[] {
       code: 'bad-timezone',
       devices: [],
       message: draft.timezone.trim()
-        ? `"${draft.timezone}" is not a time zone this browser recognises. Pick one from the list, such as America/Chicago.`
+        ? `"${draft.timezone}" is not a time zone this browser recognizes. Pick one from the list, such as America/Chicago.`
         : 'Choose the time zone the study takes place in.',
     },
     ...problems.filter((problem) => !TIME_CODES.has(problem.code)),

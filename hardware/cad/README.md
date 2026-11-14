@@ -4,7 +4,7 @@ CAD Models
 Current TotTags are designed to fit the OKW Minitec case, specifically the
 [B9006856](https://www.okwenclosures.com/en/Minitec/B9006856.htm).
 You will also need the plastic ring which sits between the two halves of the
-case, e.g. [B9006782](https://www.okwenclosures.com/en/Minitec/B9006782.htm)
+case, e.g., [B9006782](https://www.okwenclosures.com/en/Minitec/B9006782.htm)
 (n.b., color doesn't affect anything; our original order bought 30 cases and 5
 each of B9006782-B9006888).
 

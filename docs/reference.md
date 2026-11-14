@@ -12,7 +12,7 @@ deployment logs rather than calculated.
 | Devices per deployment | **10** | `MAX_NUM_RANGING_DEVICES` |
 | Distance measurements | **2 per second**, every pair | `SCHEDULING_INTERVAL_US` = 500 ms |
 | Maximum recorded distance | **32 m** | `MAX_VALID_RANGE_MM`; both reading tools use the same limit |
-| Device name length | 16 characters | `EUI_NAME_MAX_LEN` |
+| Label length | 16 characters, with accented letters counting as two; both tools refuse a longer one | `EUI_NAME_MAX_LEN`, in bytes |
 | Dropped from a network after | 60 seconds unheard | `DEVICE_TIMEOUT_SECONDS` |
 
 ---
@@ -23,16 +23,11 @@ deployment logs rather than calculated.
 | --- | --- | --- |
 | Full | 4200 mV | A fully charged device |
 | Will not start recording below | **3750 mV** | `BATTERY_NOMINAL` |
-| Critical | 3680 mV | Treated as empty |
+| Critical | 3680 mV | `BATTERY_CRITICAL`: a recording device powers off |
 
-*Measured* discharge, over every continuous unplugged stretch of a six-day deployment:
-
-| Condition | Rate | Runway from full |
-| --- | --- | --- |
-| Ranging steadily | 13–17 mV/hour | 26–34 hours |
-| Mostly alone | 2.6–4.1 mV/hour | 110–170 hours |
-
-Plan on a day of continuous recording per charge.
+*Measured*: in a week-long test, ten devices ranging with each other continuously lasted 6 days on
+a single charge. Battery voltage does not fall at a steady rate, so the drop over a few
+hours is a poor guide to runtime. Build overnight charging into any multi-day study anyway.
 
 ---
 
@@ -60,10 +55,10 @@ starts to matter.
 
 ---
 
-## Accuracy
+## Precision
 
 *Measured* across a ten-device deployment: every pair agreed with itself, measured from both ends, to
-**within 1 mm** of the median. That is precision between devices, not absolute accuracy.
+**within 1 mm** of the median.
 
 | Condition | Typical spread |
 | --- | --- |
@@ -71,7 +66,7 @@ starts to matter.
 | Through a wall | ~300 mm |
 
 Spread is the useful discriminator — a stable distance means a clear path; a varying one means
-something in between. See [Your Data](data.md#how-accurate-is-a-distance).
+something in between. See [Your Data](data.md#how-precise-is-a-distance).
 
 ---
 
@@ -95,7 +90,7 @@ Scheduling a deployment resets the device clock.
 | Bluetooth | On-board controller, separate firmware |
 | Storage | On-board NAND flash |
 | Board revisions | **M, N, O, P** — silkscreened on the board |
-| Programming connector | Tag-Connect pads labelled **XA2** |
+| Programming connector | Tag-Connect pads labeled **J1** (**XA2** on Rev. M) |
 | J-Link target | `AMA4B2KK-KBR` |
 
 Firmware must be built for the matching revision. The wrong one builds cleanly and drives the wrong
@@ -111,7 +106,7 @@ From `software/firmware`:
 | --- | --- |
 | `make BOARD_REV=P` | Build |
 | `make BOARD_REV=P flash` | Build and flash |
-| `make ID=c0:98:e5:42:00:XX UID` | Assign a device its permanent ID (once ever) |
+| `make ID=c0:98:e5:42:XX:XX UID` | Assign a device its permanent ID (once ever) |
 | `make BOARD_REV=P flashb` | Flash the Bluetooth controller firmware, then the application |
 | `make clean` | Required when switching revisions or build switches |
 | `make BOARD_REV=P TEMPCO=1` | TempCo on: regulator voltages lowered to suit the temperature, saving microamps. Off by default, because it slows the processor ~6%, enough to push radio interrupts past their slot budget |

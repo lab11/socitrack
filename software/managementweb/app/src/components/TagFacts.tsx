@@ -9,7 +9,7 @@ export function describeStored(stored: StoredDeployment | null, now: number, tim
   if (!stored) return 'No deployment';
   const span = `${formatDate(stored.startTime, timezone)} – ${formatDate(stored.endTime, timezone)}`;
   switch (storedState(stored, now)) {
-    case 'cancelled': return 'Its last deployment was cancelled';
+    case 'cancelled': return 'Its last deployment was canceled';
     case 'upcoming': return `Scheduled for ${span}`;
     case 'running': return `Recording a deployment, ${span}`;
     default: return `Holds a finished deployment, ${span}`;

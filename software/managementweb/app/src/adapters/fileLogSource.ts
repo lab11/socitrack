@@ -5,11 +5,28 @@
 // prompt, but it exists only in Chromium, and file import is the one path that has to work
 // everywhere — it is what makes the app usable on a locked-down study laptop with Safari.
 
-import type { LoadedLog, LoadFailure, LoadResult, LogSource } from '../ports/logSource.ts';
+import type { LoadedLog, LoadedRecordFile, LoadFailure, LoadResult, LogSource } from '../ports/logSource.ts';
 import { canPickDirectory, canPickFiles, pickDirectory, pickFiles } from './fileSystemAccess.ts';
 
 /** Extensions offered in the picker. Not a validation: the parser decides what a file really is. */
-const ACCEPT = '.ttg,application/octet-stream';
+const ACCEPT = '.ttg,.json,application/octet-stream,application/json';
+
+/** A deployment record is a few kilobytes; anything this large is not one. */
+const MAX_RECORD_BYTES = 5_000_000;
+
+/** A deployment record rather than a log: the .json saved when the tags were set up. */
+export const isRecordFile = (name: string): boolean => name.toLowerCase().endsWith('.json');
+
+async function readRecord(file: File): Promise<LoadedRecordFile | LoadFailure> {
+  if (file.size > MAX_RECORD_BYTES) {
+    return { name: file.name, reason: 'This file is far too large to be a deployment record.' };
+  }
+  try {
+    return { name: file.name, text: await file.text() };
+  } catch (error) {
+    return { name: file.name, reason: error instanceof Error ? error.message : 'The file could not be read.' };
+  }
+}
 
 /** Refuse absurd inputs before reading them into memory. A 1 GiB part cannot produce more. */
 const MAX_BYTES = 1_200_000_000;
@@ -40,19 +57,21 @@ async function readOne(file: File): Promise<LoadedLog | LoadFailure> {
   }
 }
 
-function partition(results: Array<LoadedLog | LoadFailure>): LoadResult {
+function partition(results: Array<LoadedLog | LoadedRecordFile | LoadFailure>): LoadResult {
   const loaded: LoadedLog[] = [];
+  const records: LoadedRecordFile[] = [];
   const failed: LoadFailure[] = [];
   for (const result of results) {
     if ('bytes' in result) loaded.push(result);
+    else if ('text' in result) records.push(result);
     else failed.push(result);
   }
-  return { loaded, failed };
+  return { loaded, failed, records };
 }
 
-/** Read a set of files the user has already chosen — the drag-and-drop path. */
+/** Read a set of files the user has already chosen — the drag-and-drop path. Records are told apart by name. */
 export async function readFiles(files: readonly File[]): Promise<LoadResult> {
-  return partition(await Promise.all(files.map(readOne)));
+  return partition(await Promise.all(files.map((file) => (isRecordFile(file.name) ? readRecord(file) : readOne(file)))));
 }
 
 export const fileLogSource: LogSource = {
@@ -115,8 +134,8 @@ export const directoryLogSource: LogSource = {
     const chosen = await pickDirectory();
     if (chosen === null) return { loaded: [], failed: [] };
     if (chosen.length === 0) {
-      return { loaded: [], failed: [{ name: 'that folder', reason: 'No .ttg files were found directly inside it.' }] };
+      return { loaded: [], failed: [{ name: 'that folder', reason: 'No .ttg files or deployment records were found directly inside it.' }] };
     }
-    return readFiles(chosen);
+    return { ...(await readFiles(chosen)), fromFolder: true };
   },
 };

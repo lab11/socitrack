@@ -9,7 +9,7 @@
 // Every finding the analysis can raise has an entry here; a test reads health.ts and fails when one
 // is added without a plain version.
 
-import { WATCHDOG_RESET_WINDOW_S, type Anomaly, type DeploymentHealth } from '@tottag/schema';
+import { formatSpan, WATCHDOG_RESET_WINDOW_S, type Anomaly, type DeploymentHealth, type RebootEvent } from '@tottag/schema';
 
 export interface PlainFinding {
   /** What happened and what it means for the data. */
@@ -120,4 +120,72 @@ export const PLAIN_FINDINGS: Readonly<Record<string, Explainer>> = {
 /** The plain version of a finding, or null for one this table does not know (shown technical-only). */
 export function plainFinding(anomaly: Anomaly, health: DeploymentHealth): PlainFinding | null {
   return PLAIN_FINDINGS[anomaly.code]?.(health) ?? null;
+}
+
+// --- One restart at a time ---------------------------------------------------------------------------
+
+export interface RestartStory {
+  /** What happened, in a few words, for a timeline or a list. */
+  readonly title: string;
+  /** What it means for the data. */
+  readonly detail: string;
+  /** `ok` for a restart that is part of normal use, `warn` for one worth knowing about. */
+  readonly tone: 'ok' | 'warn';
+}
+
+/** "a few seconds", "40 seconds", "4 minutes", "2 days, 3 hours". */
+const lasting = (seconds: number) =>
+  seconds < 30 ? 'a few seconds' : seconds < 90 ? `${Math.round(seconds)} seconds` : formatSpan(seconds);
+
+/**
+ * Why one restart happened, in plain words.
+ *
+ * Read entirely from the analysis's own account of the restart (health.ts's RebootEvent): its kind, the
+ * shape of a stall, whether the charger caused it, and the silences either side. Nothing here looks at
+ * records, so the card's restart count, this explanation, and the technical finding cannot disagree.
+ */
+export function explainRestart(reboot: RebootEvent): RestartStory {
+  const off = reboot.outageSeconds !== null && reboot.outageSeconds >= 30 ? ` It was off for about ${lasting(reboot.outageSeconds)}.` : '';
+  const silence = lasting(reboot.silenceSeconds);
+  if (reboot.chargerTransition) {
+    return { tone: 'ok', title: 'Went on or off its charger', detail: `Plugging a tag in or unplugging it restarts it. This is normal.${off}` };
+  }
+  if (reboot.kind === 'watchdog') {
+    const part = reboot.diagnosticLabel?.replace(/^stalled: /, '') ?? null;
+    switch (reboot.shape) {
+      case 'single-task':
+        return {
+          tone: 'warn', title: 'Got stuck and restarted itself',
+          detail: `One part of its software${part ? ` (${part})` : ''} stopped responding, so the tag restarted itself. ` +
+            `Everything else kept recording; at most ${silence} of data was lost.${off}`,
+        };
+      case 'whole-system':
+        return {
+          tone: 'warn', title: 'Stopped and restarted itself',
+          detail: `The tag stopped completely and recorded nothing for ${silence} before it restarted itself.${off}`,
+        };
+      case 'fault':
+        return {
+          tone: 'warn', title: 'Hit a software fault and restarted',
+          detail: `Its software ran into a fault${reboot.diagnosticLabel ? ` (${reboot.diagnosticLabel})` : ''} and the tag restarted itself. ` +
+            `About ${silence} of recording was lost.${off}`,
+        };
+      default:
+        return {
+          tone: 'warn', title: 'Got stuck and restarted itself',
+          detail: `The tag restarted itself after ${silence} without recording. What it reported and how long it was quiet do not quite agree, so the exact cause is unclear.${off}`,
+        };
+    }
+  }
+  if (reboot.kind === 'graceful') {
+    return { tone: 'ok', title: 'Restarted itself in an orderly way', detail: `The tag chose to restart, which costs a few seconds of recording.${off}` };
+  }
+  const causes = reboot.causes.join(', ');
+  if (/Brown/i.test(causes)) {
+    return { tone: 'warn', title: 'Battery dipped and it restarted', detail: `The battery's voltage dropped too low for a moment, so the tag restarted.${off}` };
+  }
+  if (/^Power-On$/.test(causes)) {
+    return { tone: 'warn', title: 'Powered on again', detail: `The tag lost power and came back, as it does after its battery runs flat.${off}` };
+  }
+  return { tone: 'warn', title: 'Restarted', detail: `The tag restarted and gave this reason: ${causes}.${off}` };
 }

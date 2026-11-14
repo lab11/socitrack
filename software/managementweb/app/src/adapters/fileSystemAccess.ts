@@ -53,7 +53,10 @@ export function isAbort(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
 }
 
-const TTG_TYPES = [{ description: 'TotTag logs', accept: { 'application/octet-stream': ['.ttg'] } }];
+const TTG_TYPES = [{
+  description: 'TotTag logs and deployment records',
+  accept: { 'application/octet-stream': ['.ttg'], 'application/json': ['.json'] },
+}];
 
 /** Returns null when the user cancelled. */
 export async function pickFiles(): Promise<File[] | null> {
@@ -67,7 +70,8 @@ export async function pickFiles(): Promise<File[] | null> {
 }
 
 /**
- * Every .ttg directly inside a chosen folder. Returns null when the user cancelled.
+ * Every .ttg directly inside a chosen folder, and any deployment record (.json) beside them. Returns
+ * null when the user cancelled.
  *
  * Deliberately not recursive. A researcher picking their Downloads folder should get the logs they
  * just downloaded, not a descent through every subfolder — and a silent recursive walk of an
@@ -78,7 +82,8 @@ export async function pickDirectory(): Promise<File[] | null> {
     const directory = await api().showDirectoryPicker!({ mode: 'read' });
     const files: File[] = [];
     for await (const [name, handle] of directory) {
-      if (handle.kind === 'file' && name.toLowerCase().endsWith('.ttg') && handle.getFile) {
+      const lower = name.toLowerCase();
+      if (handle.kind === 'file' && (lower.endsWith('.ttg') || lower.endsWith('.json')) && handle.getFile) {
         files.push(await handle.getFile());
       }
     }

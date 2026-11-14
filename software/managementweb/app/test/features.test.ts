@@ -178,3 +178,25 @@ test('an imported file keeps its bytes released and a downloaded one keeps them'
   // invented before anything had been parsed.
   assert.equal(live.name, live.saveName);
 });
+
+test('a downloaded log keeps its label in the file name, less only what a file name cannot hold', async () => {
+  // The same rule as the desktop tool's file_label(), so both name one tag's log identically.
+  const { encodeExperimentDetails } = await import('@tottag/schema');
+  const eui = (low: number) => Uint8Array.from([low, 0x02, 0x42, 0xe5, 0x98, 0xc0]);
+  const labelled = encodeExperimentDetails({
+    startTime: 1787839200, endTime: 1787839200 + 86400, timezone: 'UTC', useDailyTimes: false, dailyStartTime: 0, dailyEndTime: 0,
+    devices: [
+      { eui: eui(0x01), label: 'Parent 1' },
+      { eui: eui(0x02), label: 'Mamá/Papá: 1' },
+      { eui: eui(0x03), label: '../' },
+      { eui: eui(0x04), label: '' },
+      { eui: eui(0x05), label: ' .Child_A. ' },
+    ],
+  });
+  assert.equal(labelForDevice(labelled, 0x01), 'Parent 1');
+  assert.equal(labelForDevice(labelled, 0x02), 'MamáPapá 1');
+  assert.equal(labelForDevice(labelled, 0x03), '3', 'a label with nothing safe in it falls back to the bare ID');
+  assert.equal(labelForDevice(labelled, 0x04), '4', 'so does no label at all');
+  assert.equal(labelForDevice(labelled, 0x05), 'Child_A');
+  assert.equal(canonicalLogName({ details: labelled, experimentStartTime: 1787839200, deviceUid: 0x01, fallback: 'x.ttg' }), 'Parent 1_1787839200.ttg');
+});

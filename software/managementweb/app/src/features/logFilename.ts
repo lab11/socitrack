@@ -12,7 +12,7 @@
 // reading. The tag's identity contributes only the one thing the log cannot say on its own — which
 // of the devices listed in the details block is the one that wrote it.
 
-import { EUI_LEN, EUI_NAME_MAX_LEN, MAX_NUM_RANGING_DEVICES, parseExperimentDetails } from '@tottag/schema';
+import { EUI_LEN, EUI_NAME_MAX_LEN, MAX_NUM_RANGING_DEVICES, fileLabel, parseExperimentDetails } from '@tottag/schema';
 
 /** Shortest details block `parseExperimentDetails` can read without running off the end. */
 const DETAILS_MIN_BYTES = 18 + MAX_NUM_RANGING_DEVICES * (EUI_LEN + EUI_NAME_MAX_LEN) + 1;
@@ -28,14 +28,8 @@ export interface LogNameInputs {
   readonly fallback: string;
 }
 
-/**
- * A filename is a path fragment the moment it reaches a save dialog, and the label it is built from
- * was typed by whoever configured the deployment and stored on the device. Keep it to the character
- * set the existing labels use and nothing can be smuggled through it.
- */
-function sanitise(label: string): string {
-  return label.replace(/[^A-Za-z0-9._-]/g, '').replace(/^\.+/, '').slice(0, EUI_NAME_MAX_LEN);
-}
+// Drops / \ : * ? " < > |, control characters, and leading or trailing spaces and dots, as the desktop tool does.
+const sanitise = (label: string): string => fileLabel(label);
 
 /** This device's label, as the deployment recorded it. Null when the log cannot say. */
 export function labelForDevice(details: Uint8Array | null, deviceUid: number | undefined): string | null {
@@ -49,7 +43,7 @@ export function labelForDevice(details: Uint8Array | null, deviceUid: number | u
   const index = parsed.uids.findIndex((uid) => uid[0] === deviceUid);
   if (index < 0) return null;
   // `tottag.py` falls back to the bare UID for an unlabelled device, and so does this.
-  return sanitise(parsed.labels[index] || String(deviceUid)) || null;
+  return sanitise(parsed.labels[index] || String(deviceUid)) || String(deviceUid);
 }
 
 export function canonicalLogName(inputs: LogNameInputs): string {
