@@ -31,7 +31,7 @@ that won't appear, won't range, or came back with less data than expected.
 | [Getting Started](getting-started.md) | Tools, first-time device setup, loading firmware |
 | [Running a Deployment](running-a-deployment.md) | Scheduling a study, handing out devices, collecting data |
 | [Device Behavior](device-behavior.md) | What a device does on its own: when it records, when it sleeps, what the sounds mean |
-| [The Dashboard](dashboard.md) | The desktop and browser tools, action by action |
+| [The Dashboard](dashboard.md) | The desktop and browser deployment configuration tools |
 | [Your Data](data.md) | What a log file contains and how to read it |
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
 | [Reference](reference.md) | Limits, constants, and hardware details |
@@ -49,7 +49,7 @@ that you can derive who was near whom, for how long, and how that changed over a
 It does not record position in a room, and it is not a localization system — there are no anchors and
 no coordinate frame. It records only device-to-device distance.
 
-Precision in practice is a few centimeters between devices with a clear path between them. Distances
+Accuracy in practice is a few centimeters between devices with a clear path between them. Distances
 through a body or a wall read longer and vary more, because the signal takes a longer path. See
 [Your Data](data.md#how-precise-is-a-distance) for what to expect and how to tell the two apart.
 

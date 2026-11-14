@@ -1,7 +1,7 @@
 # Reference
 
-Limits and figures, with where each comes from. Anything marked *measured* was taken from real
-deployment logs rather than calculated.
+Limits and figures, including where each comes from. Anything marked *measured* was taken
+from real deployment logs rather than calculated.
 
 ---
 
@@ -12,7 +12,7 @@ deployment logs rather than calculated.
 | Devices per deployment | **10** | `MAX_NUM_RANGING_DEVICES` |
 | Distance measurements | **2 per second**, every pair | `SCHEDULING_INTERVAL_US` = 500 ms |
 | Maximum recorded distance | **32 m** | `MAX_VALID_RANGE_MM`; both reading tools use the same limit |
-| Label length | 16 characters, with accented letters counting as two; both tools refuse a longer one | `EUI_NAME_MAX_LEN`, in bytes |
+| Label length | 16 characters, with accented letters counting as two | `EUI_NAME_MAX_LEN`, in bytes |
 | Dropped from a network after | 60 seconds unheard | `DEVICE_TIMEOUT_SECONDS` |
 
 ---
@@ -23,7 +23,7 @@ deployment logs rather than calculated.
 | --- | --- | --- |
 | Full | 4200 mV | A fully charged device |
 | Will not start recording below | **3750 mV** | `BATTERY_NOMINAL` |
-| Critical | 3680 mV | `BATTERY_CRITICAL`: a recording device powers off |
+| Will stop recording below | 3680 mV | `BATTERY_CRITICAL`: a recording device powers off |
 
 *Measured*: in a week-long test, ten devices ranging with each other continuously lasted 6 days on
 a single charge. Battery voltage does not fall at a steady rate, so the drop over a few
@@ -123,7 +123,7 @@ make system       make logging     make full
 ```
 
 `make full` is the complete application plus console output and radio timing instrumentation. It is a
-diagnostic build, not a deployment build — it powers up debug hardware a release build leaves off.
+diagnostic build, not a deployment build — it powers up debug hardware that a release build leaves off.
 
 ---
 

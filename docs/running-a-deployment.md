@@ -11,7 +11,7 @@ If your devices have never been set up, do [Getting Started](getting-started.md)
 **Charge every device fully.** A device whose battery is below **3750 mV** will not begin recording — it
 powers off instead and waits. Charging overnight avoids a whole class of confusing failures.
 
-**Put every device on a charger** while you configure it. Devices only stay awake and reachable when
+**Put every device on a charger** while you configure it. Devices are only awake and reachable when
 plugged in; an unplugged device that is outside its study window powers itself off and will not appear
 in a scan. This is deliberate — it is what makes the battery last — but it means configuration happens
 on the charger, always.
@@ -44,13 +44,13 @@ configure devices identically and read the same logs; use whichever suits you.
 With every device on a charger:
 
 1. **Scan for TotTags.** Devices appear by ID. Wait until all of them are listed — a device that has
-   just been plugged in can take a few seconds.
+   just been plugged in can take a few seconds to show up.
 2. **Schedule New Pilot Deployment.**
 3. Fill in:
 
 | Field | Meaning |
 | --- | --- |
-| **Deployment Timezone** | The time zone the study happens in. Every time you enter is on this clock, and changing it reinterprets the times already entered. |
+| **Deployment Timezone** | The time zone the study happens in. Every time you enter uses this clock, and changing it reinterprets the times already entered. |
 | **Start / End Date and Time** | The outer bounds of the study. Nothing is recorded before the start or after the end. |
 | **Daily Start / End Time** | Optional. Restricts recording to a window within each day, in the study's local time: school hours, say. Leave unset to record continuously between the start and end dates. |
 | **TotTags in Deployment** | The devices taking part. **Maximum 10.** |
@@ -58,14 +58,14 @@ With every device on a charger:
 4. **Schedule.** The configuration is pushed to every device on the list, and read back over either USB or
    Bluetooth to confirm each one stored it.
 5. **Save the deployment record** when the dashboard asks. Keep it in the folder you will download the
-   logs to: it is the only place the study's time zone is kept, and both tools read it from there to show
+   logs to: it is the only place the study's time zone is kept, and both tools read from it to show
    times, charts, and daily figures on the study's clock.
 
 A few things worth understanding:
 
 - **The time zone is the study's, not yours.** Pick the time zone where the devices will be deployed,
   even if you are configuring them from somewhere else, and enter every time as a clock on the wall
-  there would show it. Both tools convert for the devices.
+  there would show it.
 - **If the clocks change during the study**, a device cannot follow the change, so its daily window
   moves by an hour on one side of it. The browser tool points this out and asks which side should keep
   the hours you entered, or whether to widen the window to cover both.
@@ -89,8 +89,8 @@ reason as above.
 
 ### Before you schedule over an earlier study
 
-**Scheduling a device starts a fresh log on it.** Nothing is erased from its memory, but whatever it
-recorded for the previous study can no longer be downloaded with either tool. Download every device
+**Scheduling a device starts a fresh log.** Nothing is erased from the device's memory, but whatever
+it recorded for the previous study can no longer be downloaded with either tool. Download every device
 from the previous study first ([Step 4](#step-4--collect-and-download)). The browser tool knows which
 studies' data it has saved, and will not write over one it has not seen saved unless you say the
 data is safe elsewhere.
@@ -142,7 +142,8 @@ In the dashboard: **Connect** to a device, then choose a download:
 | **Download Full Logs** | The whole of the current log, ignoring the study's dates: everything recorded since the device was last scheduled or canceled. Earlier studies cannot be downloaded. |
 
 Downloads take minutes rather than seconds and produce a `.ttg` file per device, plus a processed
-`.pkl` alongside it; the browser tool saves only the `.ttg`. See [Your Data](data.md) for what is inside.
+`.pkl` alongside it; the browser tool saves only the `.ttg` file. See [Your Data](data.md) for
+what is inside.
 
 ### Watch the console while it downloads
 
@@ -166,7 +167,7 @@ A second attempt usually succeeds. See
 
 ---
 
-## Step 5 — Check what you got before you let the devices go
+## Step 5 — Check what you got before reusing the devices
 
 Downloading is the last moment when a problem is still fixable. Before you clear devices for the next
 study, confirm that each log:
@@ -183,7 +184,9 @@ study, confirm that each log:
 ## Canceling or changing a deployment
 
 **Cancel Scheduled Pilot Deployment** clears the schedule from a device. Each device must be canceled
-individually, on its charger.
+individually, on its charger. This is only necessary if you want to cancel a deployment that has not
+yet occurred or has started but not yet ended. This is not necessary for simply storing or reusing
+the devices in a new study.
 
 To change a study's times or membership, schedule again; canceling first is not necessary.
 

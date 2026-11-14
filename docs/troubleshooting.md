@@ -1,6 +1,6 @@
 # Troubleshooting
 
-Problems in roughly the order you are likely to meet them.
+Problems in roughly the order you are likely to encounter them.
 
 ---
 
@@ -16,6 +16,8 @@ A healthy device plays **four rising tones** within a second or two of being pla
    cleanly and then drives the wrong pins — a device that looks dead is the usual symptom. Check the
    letter silkscreened on the board and reflash with the matching `BOARD_REV`.
 4. **Is the battery completely dead?** Leave it on the charger for an hour and try again.
+5. **Is the buzzer broken?** Try to scan for the device using the dashboard. If it shows up when the
+   device is on the charger, but the device makes no sound when removed, the buzzer is broken.
 
 ---
 
@@ -28,7 +30,7 @@ If it is on a charger and still missing:
 
 - Give it longer. A device that has just been plugged in restarts first.
 - Confirm it is charging — listen for the rising tones.
-- Move closer. Scanning is Bluetooth, so a few meters and a clear path.
+- Move closer. Scanning uses Bluetooth, so aim a few feet and a clear path.
 
 ---
 
@@ -40,10 +42,10 @@ Work through these in order.
 was not on its charger when you pressed Schedule never learned about the study.
 
 **2. Was it on a charger during the study?** Look for charging events in its log. A device on a charger
-is awake but **not recording**. This is the most common cause by a wide margin.
+is awake but **not recording**.
 
-**3. Did its battery run out?** Check the voltage trace. A recording device powers off when its battery falls to 3680 mV,
-and will not start again below 3750 mV until it is charged.
+**3. Did its battery run out?** Check the voltage trace. A recording device powers off when its battery
+falls to 3680 mV, and will not start again below 3750 mV until it is charged.
 
 **4. Was it within range?** Count how many rounds each peer appears in:
 
@@ -70,14 +72,14 @@ range internally but never with each other were never within range of each other
 
 ## One device is consistently weaker than the others
 
-If a device ranges well with close neighbors but drops out with distant ones — while other devices hold
-those same distances fine — that device has a weaker radio link than its peers.
+If a device ranges well with close neighbors but drops out with distant ones while other devices report
+those same distances fine, that device has a weaker radio link than its peers.
 
 The test that separates "far away" from "weak radio" is to compare **links at the same distance**. If
 device A holds 99% of rounds with a peer at 2.4 m but only 58% with another peer at the same 2.4 m,
 distance is not the explanation.
 
-This is usually a hardware matter — antenna connection or per-board calibration — rather than anything
+This is usually a hardware matter — for instance, a faulty antenna connection — rather than anything
 configurable. Worth identifying before a real study, because a weak device that becomes the network's
 coordinator degrades the whole group rather than only itself.
 
@@ -91,36 +93,35 @@ dashboard, or the **Radio check** tab in the browser tool.
    In the browser tool, open **Radio check → Live over Bluetooth** and add each device. Devices the browser
    has seen before can be added all at once.
 3. Choose how long to run, 2 to 10 minutes (2 by default), and start the test. Each device restarts into a
-   *radio test* and starts ranging, on its charger or off it.
-4. Put them on a table where they can all see each other, at least half a meter (2 feet) apart. The test carries on
+   *radio test* mode and starts ranging.
+4. Put them on a table where they can all see each other, at least 2 feet apart. The test carries on
    while you move them. Note where each one sits if you can.
 
 Verdicts appear within the first minute and update every 15 seconds. They firm up once every device
-has a minute of data. A radio test
-logs nothing and leaves a device's deployment as it was. When it ends, or when you stop it, each device
-restarts into whatever it would otherwise be doing. A device that was running a deployment picks it up
-again, with a gap in its log for the test. A device that is off its charger without one switches off. A
-device needs firmware with radio-test support. The browser tool also needs a browser with Web Bluetooth
-(Chrome or Edge).
+has a minute of data. A radio test logs nothing and leaves a device's deployment as it was. When it ends,
+or when you stop it, each device restarts into whatever task it would otherwise be doing. A device that
+was running a deployment picks it up again, with a gap in its log for the test. A device that is off
+its charger without a scheduled deployment switches off.
 
 The browser tool can also run the same check on the downloaded logs of a deployment that already ran:
 choose **From downloaded logs** and open every device's log.
 
-Both tools apply the same rules. Each device is judged against the others and gives a **Pass**, **Check**, or **Fail** with the
-reason:
+Both tools apply the same rules. Each device is judged against the others and gives a **Pass**, **Check**,
+or **Fail** verdict along with the reason:
 
 - **Receives failed** well above the other devices' rate means a weak receiver, antenna, or connection.
-  Only receives from devices that were actually transmitting count. A device that has left the network
-  but is still in the schedule no longer makes everyone else look worse.
+  Only receptions from devices that were actually transmitting count.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
-  they should match; a mismatch names the faulty one. The live checks bracket the antenna each device
-  is using to hear the schedule, which moves away from a bad one by itself.
-- **Ranged in few rounds** means the device was not taking part in the network.
-- **Distance offset**, with positions entered, means a device that reads long or short on every link, so
-  its calibration is off.
+  their reception rates should match; a mismatch indicates the faulty antenna. The live checks bracket
+  the antenna each device is using to hear the schedule, and it automatically transitions away from a
+  bad one by itself.
+- **Ranged in few rounds** means the device was rarely taking part in the network activities.
+- **Distance offset**, with positions entered, means a device produced ranges that were long or short
+  on every link, so its internal calibration is off.
 
-The **Links** grid shows how often each pair ranged. A device that is weak on every link is the device; a
-single weak pair is more likely something between them.
+The **Links** grid shows how often each pair ranged. A device that is weak on every link indicates a
+problem with that specific device; a single weak pair is more likely an obstruction between the
+devices.
 
 ---
 
@@ -163,7 +164,7 @@ for r in records:
 
 **`SW Power-On`** is normal and expected. A device deliberately restarts every time it is plugged in or
 unplugged, so these should match your charging routine. Several per day in a study where devices are
-charged nightly is exactly right.
+charged nightly is expected.
 
 **Anything mentioning `Watchdog`** is a genuine fault — the firmware stopped responding and recovered
 itself. The entry names the part that stalled, for example `Watchdog + stalled: BLETask`. An isolated
@@ -177,7 +178,7 @@ Keep the log and report it.
 ## The clock is wrong
 
 Devices run roughly **160–190 ppm slow**, about **15 seconds per day**. Over a week that is about a
-minute and a half against wall clock.
+minute and a half of drift against wall clock time.
 
 All devices in a deployment share a network clock, so they stay consistent **with each other** even as
 the group drifts against real time. Cross-device analysis is unaffected; only alignment against an
@@ -198,8 +199,7 @@ If a `make ... flash` stops at `Connecting to J-Link via USB...` and prints noth
 - **Is your J-Link software older than the probe's firmware?** Whichever computer last used a J-Link
   updates the firmware on it, and older software on another computer can then fail silently. Update
   the [J-Link Software Pack](https://www.segger.com/downloads/jlink/).
-- **Still nothing?** Occasionally J-Link refuses to connect until the computer is restarted. This
-  happens more often on macOS.
+- **Still nothing?** Occasionally J-Link refuses to connect until the computer is restarted.
 
 ---
 
@@ -207,10 +207,10 @@ If a `make ... flash` stops at `Connecting to J-Link via USB...` and prints noth
 
 Collect, before asking:
 
-- the `.ttg` files (not just the `.pkl`),
+- the `.ttg` files,
 - the console output from the download,
 - the board revision and roughly when the firmware was flashed,
 - what you expected to see and what you saw instead.
 
-The `.ttg` is the one that matters. It is the original record and almost every question can be
+The `.ttg` is the file that matters most. It is the original record and almost every question can be
 answered from it.

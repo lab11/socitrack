@@ -1,7 +1,7 @@
 # Getting Started
 
-This page takes a device from "box of hardware" to "ready for a study." You need to do it once per
-device. If your devices are already set up, skip to [Running a Deployment](running-a-deployment.md).
+This page describes the steps necessary to make a brand new TotTag "ready for a study." You need to do it
+once per device. If your devices are already set up, skip to [Running a Deployment](running-a-deployment.md).
 
 ---
 
@@ -9,7 +9,7 @@ device. If your devices are already set up, skip to [Running a Deployment](runni
 
 ### Hardware
 
-A **SEGGER J-Link programmer**, plus an adapter and a cable to reach the device's programming pads:
+A **SEGGER J-Link programmer**, plus an adapter and a cable to interface with the device's programming pads:
 
 - [J-Link EDU Probe](https://shop-us.segger.com/product-category/debug-probes/educational/) — heavily
   discounted for educational and research use. The commercial
@@ -17,20 +17,20 @@ A **SEGGER J-Link programmer**, plus an adapter and a cable to reach the device'
 - [Tag-Connect ARM20-CTX adapter](https://www.tag-connect.com/product/arm20-ctx-20-pin-to-tc2030-idc-adapter-for-cortex) (J-Link 20-pin to the 6-pin cable)
 - [Tag-Connect TC2030-IDC-NL cable](https://www.tag-connect.com/product/tc2030-idc-nl) (6-pin, no legs)
 
-The programmer is only needed for setup. Once a device is running you never need it again unless you
+The programmer is only needed for setup. Once a device is running, you never need it again unless you
 update firmware.
 
 ### Software
 
 - [SEGGER J-Link Software Pack](https://www.segger.com/downloads/jlink/)
-- The ARM embedded toolchain — `brew install --cask gcc-arm-embedded` on macOS,
-  `sudo apt install gcc-arm-none-eabi` on Debian or Ubuntu, or a
+- The ARM embedded toolchain: On macOS, install with `brew install --cask gcc-arm-embedded`;
+  on Debian or Ubuntu, use `sudo apt install gcc-arm-none-eabi`; or install from a
   [direct download](https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads). Any recent
   version works; the firmware is built and tested with GCC 15.
-- The source: `git clone --recursive https://github.com/lab11/socitrack` — `--recursive` also fetches
-  the storage library the firmware is built from, and the build fails without it
+- The source: Download with `git clone --recursive https://github.com/lab11/socitrack`. Note that
+  the `--recursive` flag is required, and the build fails without it
 
-Check the toolchain is on your path before going further:
+Check that the toolchain is on your path before going further:
 
 ```bash
 arm-none-eabi-gcc --version
@@ -53,18 +53,18 @@ Every command below uses `BOARD_REV=P`. Substitute your own letter. `P` is the d
 
 ## Step 1 — Connect the programmer
 
-1. Plug the Tag-Connect adapter and cable into the J-Link.
-2. Plug the J-Link into your computer over USB.
+1. Plug the Tag-Connect adapter and cable into the J-Link programmer.
+2. Plug the J-Link programmer into your computer over USB.
 3. Press the Tag-Connect cable into the pads on the device labeled **J1** (**XA2** on Rev. M).
 
 The no-legs cable is held in place by hand or with a clip — it does not latch. Keep gentle pressure on
-it for the whole of each command below.
+it for the entirety of each command below.
 
 ![Connecting the J-Link to a TotTag](media/jtag-tottag-connection.jpg)
 
 ---
 
-## Step 2 — Give the device an ID (once per device, ever)
+## Step 2 — Give the device an ID (once per device)
 
 Every device needs a unique identifier, in the form `c0:98:e5:42:XX:XX`. The last two bytes `XX:XX`
 are yours to choose — any four hex digits, except that the last byte cannot be `00`: the ranging
@@ -76,9 +76,9 @@ make ID=c0:98:e5:42:00:02 UID
 ```
 
 **Choose carefully and write it down.** The ranging protocol and the log files identify a device by its
-**last byte alone**, so give every device a different last byte: `00:05` and `01:05` would be
-impossible to tell apart in a deployment. Both tools refuse to schedule a deployment that breaks either
-rule. The browser tool names each device by its last two bytes, such as **TotTag 00:02**. A piece of tape on the case with the last four digits saves a great deal of
+**last byte alone**, so two devices with the same last byte cannot be used together: `00:05` and `01:05`
+would be impossible to tell apart in a deployment. Deployment tools will refuse to schedule a deployment
+that breaks this rule. A piece of tape on the case with the last four digits saves a great deal of
 confusion later.
 
 This step is permanent and only needs doing once. Re-flashing firmware does not erase it.
@@ -104,7 +104,7 @@ Verifying flash   [100%] Done.
 Seeing only `Comparing flash [100%] Done.` is also success — it means the device already had exactly
 this firmware and nothing needed rewriting.
 
-If you have several J-Links plugged in, name the one you want:
+If you have several J-Links plugged in, you can specify the one you want:
 
 ```bash
 make BOARD_REV=P SEGGER_SERIAL=123456789 flash
@@ -143,14 +143,14 @@ written by firmware of the same era.
 
 ### Updating the Bluetooth controller
 
-The Bluetooth radio runs its own separate firmware, and it is almost never the thing that needs
-updating. If you have been told to update it:
+The Bluetooth radio runs its own separate firmware, and it almost never needs updating. If you have
+been explicitly instructed to update it:
 
 ```bash
 make BOARD_REV=P flashb
 ```
 
-This writes the controller image first, waits for it to apply, then writes the application.
+This writes the controller image first, waits 10 seconds for it to apply, then writes the application.
 
 ---
 

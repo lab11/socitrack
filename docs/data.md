@@ -54,7 +54,7 @@ timestamp) plus whichever fields were recorded at that moment:
 | `rtc`, `offset`, `lag` | Timekeeping — see [clock drift](#clock-drift) |
 | `diag` | Internal health counters, which firmware build wrote the log, the chip temperature, and radio health |
 
-So the distances over time to device `0x3E`:
+So to retrieve the distances over time to device `0x3E`:
 
 ```python
 series = [(r['t'], r['r'][0x3E]) for r in records if 'r' in r and 0x3E in r['r']]
@@ -94,7 +94,7 @@ Worth doing before you release the devices.
 
 **1. The download reported no warnings.** A clean download prints nothing unusual. Lines about
 retransmission rounds are normal and self-correcting. A `WARNING: log from ... is incomplete` is not —
-download that device again.
+download from that device again.
 
 **2. The dates cover your study.**
 

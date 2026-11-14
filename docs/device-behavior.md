@@ -16,13 +16,11 @@ make in normal use.
 | **Four falling tones** | Just taken off a charger. It has booted and is deciding whether to start recording. |
 | **A short tune** | *Find my TotTag* — you asked it to identify itself from the dashboard. |
 
-**Silence when you plug a device in means something is wrong.** See
+**Silence when you plug in a device means something is wrong.** See
 [Troubleshooting](troubleshooting.md#a-device-makes-no-sound-on-the-charger).
 
 A device restarts every time it is plugged in or unplugged — that is why you hear a sound on both
-transitions. This is deliberate: the restart is what cleanly ends one recording session and begins the
-next, and it is why a device put briefly on a charger mid-study leaves a visible seam in the data
-rather than silently corrupting it.
+transitions.
 
 ---
 
@@ -79,14 +77,14 @@ Two consequences are worth knowing:
   transmissions partway through a round also stops and rejoins. Either way, the groups become one
   network on their own.
 - **A device does not need to hear the coordinator directly.** Every device in the network repeats the
-  schedule in its own turn, and passes on join requests the coordinator could not hear, so a device at
-  the far edge of a group stays in as long as it can hear one of the others.
+  schedule in its own turn, and passes on join requests that the coordinator could not hear, so a device
+  at the far edge of a group continues ranging as long as it can hear one of the others.
 
 ### Antennas
 
-Each device has three antennas. When it measures distances it uses all three in turn, and it keeps
+Each device has three antennas. When it measures distances, it uses all three in turn, and it keeps
 track of how well each one has been receiving over the last few seconds. Everything else uses a single
-antenna: listening for the schedule, asking to join, and the short status exchange at the end of
+antenna: listening for the schedule, asking to join, and a short status exchange at the end of
 each round. For those, the device uses whichever antenna has been receiving best, and only moves to
 another when that one is clearly better. A device that listens for a full half second without hearing
 a schedule tries its next antenna. So a damaged antenna costs a device some measurements, but it
@@ -94,12 +92,12 @@ does not keep the device out of the network.
 
 ### Radio tests
 
-The live radio check, in either the desktop dashboard or the browser tool, runs devices in a *radio test*:
-a timed network among the devices it names, started over Bluetooth. A device restarts into the test and ranges even on its charger, and
-plugging or unplugging it does not interrupt the test. It records nothing, and its stored deployment is
-left alone. When the test ends, or the tool stops it, the device restarts into whatever it would
-otherwise be doing. A test lasts at most an hour, although usually 2 minutes is enough — both tools offer
-2 to 10 minutes, and default to 2.
+The live radio check, in either the desktop dashboard or the browser tool, runs devices in a *radio test*
+mode: a timed network among the devices it names, started over Bluetooth. A device restarts into the test
+and ranges (even on its charger), and plugging or unplugging it does not interrupt the test. It records
+nothing, and its stored deployment is left alone. When the test ends, or the tool stops it, the device
+restarts into whatever task it would otherwise be doing. A test lasts at most 10 minutes, although
+usually 2 minutes is enough — both tools offer test lengths from 2 to 10 minutes, and default to 2.
 
 ---
 
@@ -119,8 +117,8 @@ Beyond distances, a device logs a few things that are useful when interpreting a
 | **Diagnostics** | Every 5 minutes | Internal health counters, firmware build, chip temperature |
 
 The 5-minute housekeeping records are why a log is never completely empty, even for a device that spent
-a day alone in a drawer. A stretch of log containing only housekeeping means the device was running but
-had nobody to range with, which is itself a finding.
+a day alone in a drawer. A stretch of log containing only housekeeping records means the device was
+running but found nobody nearby to range with, which is itself a finding.
 
 ---
 
@@ -135,10 +133,10 @@ charge. Devices that spend time apart, or sleep outside a daily window, last lon
 Battery voltage does not fall at a steady rate, so the drop over a few hours is a poor guide to how
 long a device will last.
 
-A full device sits near **4200 mV**. Below **3750 mV** it will not begin recording, and once recording
+A full device sits near **4200 mV**. Below **3750 mV** it will not begin recording, and once recording,
 it powers off at **3680 mV**.
 
 Even so, build overnight charging into any multi-day study, rather than letting devices run down at
-unpredictable times. A device that powers off mid-study
-leaves no record of the period it missed, whereas a scheduled overnight charge is visible in the log
-as charging events and can be excluded cleanly in analysis.
+unpredictable times. A device that powers off mid-study leaves no record of the period it missed,
+whereas a scheduled overnight charge is visible in the log as charging events and can be excluded
+cleanly in analysis.

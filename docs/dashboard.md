@@ -1,18 +1,19 @@
 # The Dashboard
 
-Two tools configure devices and download data. They speak the same protocol and read the same logs, so
-a device does not care which one you use.
+Two tools can be used to configure devices and download data. They speak the same protocol
+and read the same logs, so a device does not care which one you use.
 
 | | Desktop dashboard | Browser tool |
 | --- | --- | --- |
 | Install | `pip install -e .` | None: open [lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/) |
-| Runs on | macOS, Linux, Windows | Chrome, Edge, Opera on a computer |
+| Runs on | macOS, Linux, Windows | Chrome, Edge, Opera on any computer |
 | Connection | Bluetooth or USB | Bluetooth or USB |
 | Radio check | Live over Bluetooth | Live over Bluetooth, or from downloaded logs |
 | Analysis | Plotting helpers in Python (`processing.py`) | Built in: a timeline, charts, daily figures, and comparing two devices |
 
-Use the desktop dashboard unless you have a reason not to. The browser tool is convenient on a machine
-you cannot install software on, and it is the only one that reads logs without Python.
+The browser tool is convenient on machines on which you cannot install software, and
+it is the only one that reads logs without Python and without installing any local
+software.
 
 ---
 
@@ -57,8 +58,8 @@ scheduling or canceling it**.
 | Action | What it does |
 | --- | --- |
 | **Get Device Details** | Firmware version, storage state, general health |
-| **Retrieve Current Timestamp** | The device's clock, in UTC and local time. The clock is set when a deployment is scheduled, and lost whenever the device loses power — a dead or disconnected battery, or being switched off. |
-| **Current Device Voltage** | Battery, in mV. Below 3750 mV a device will not start recording. |
+| **Retrieve Current Timestamp** | The device's clock, in UTC and local time. The clock is set when a deployment is scheduled, and lost whenever the device loses power. |
+| **Current Device Voltage** | Battery, in mV. Below 3750 mV, a device will not start recording. |
 | **Activate Find my TotTag** | Plays a tune so you can find a device |
 | **Subscribe to Live Ranging Data** | Streams distances in real time. Requires the device **off** its charger, since it has to be ranging. |
 
@@ -71,24 +72,23 @@ connected to one. Disconnect first if you are. Put the devices on their chargers
 scan can find them; a device running a deployment can be reached too.
 
 1. Select the devices to test (up to 10) and choose how long to run: 2 to 10 minutes, 2 by default.
-2. Optionally choose a **Layout** — a circle of a given radius, or a line at a given spacing, in feet —
-   and set the devices out in the order listed, at least 2 feet apart. The **Position** column shows where
-   each one goes. With positions, the check can tell whether one device reads long or short on every link.
-3. **Start Test**. Each device restarts into the test and starts ranging, on its charger or off it.
-4. Take the devices off their chargers and set them out, in the positions shown if you chose a layout.
+2. Optionally choose a **Layout** — a circle of a given radius, or a line at a given spacing, in feet.
+   The **Position** column shows where each device should be placed. With positions, the check can tell
+   whether one device reads long or short on every link.
+3. **Start Test**. Each device restarts into the test and starts ranging.
+4. Take the devices off their chargers, and set them out in the positions shown if you chose a layout.
    Unplugging a device does not interrupt the test. Do it promptly: the verdicts cover the whole test, so
    if setting out takes more than half a minute or so, choose a longer test.
 
 The table updates every second with each device's status, the share of the last minute's rounds it
-ranged in, and its receive failures, overall and per antenna. The share counts from a device's first range, so
-the coordinator is not marked down for the rounds it ran alone before anyone joined. The antenna it is currently using to hear
-the schedule is shown in brackets. A device not yet in the network shows its role as *searching*. Distances are shown in feet and inches. The grid below it shows how often each device ranged to each other device. Within
-the first minute each device gets a **Pass**, **Check**, or **Fail**, with the reasons listed underneath,
-and the verdicts update every 15 seconds. They firm up once every device has a minute of data; until
-then a note says the run is still too short to judge. The verdicts follow the same rules, in the same words, as the browser tool's radio check.
-
-A device whose firmware predates radio tests is marked **Failed** at the start and left alone. One that
-cannot be reached after restarting into the test says so, and is still tried until the test ends.
+ranged in, and its receive failures, overall and per antenna. The share counts from a device's first
+range, so the coordinator is not marked down for the rounds it ran alone before anyone joined. The
+antenna it is currently using to hear the schedule is shown in brackets. A device not yet in the
+network shows its role as *searching*. Distances are shown in feet and inches. The grid below it shows
+how often each device ranged to each other device. Within the first minute each device gets a **Pass**,
+**Check**, or **Fail** label, with the reasons listed underneath, and the verdicts update every 15
+seconds. They firm up once every device has a minute of data; until then, a note says the run is still
+too short to judge.
 
 Scanning, connecting, and scheduling are locked while a test runs. **Stop Test** ends it early. Either
 way, each device restarts back to whatever it was doing, even if the dashboard has been closed. See
@@ -123,7 +123,7 @@ events = extract_simple_event_log("annotations.txt")
 visualize_ranging_pair_slider(A, B, "Parent", "Child", events=events)
 ```
 
-Timestamps inside a `.pkl` are UTC. The plots, and the daily statistics from
+Timestamps inside a `.pkl` are in UTC. The plots, and the daily statistics from
 `get_daily_ranging_statistics`, show them on the **study's clock**: in the time zone the study was
 scheduled in, with each day running from midnight to midnight there. The same file looks the same
 wherever it is plotted. Times in an events file are read on that same clock. On a day the clocks change,
@@ -157,7 +157,7 @@ Open **[lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/)**
 page: there is nothing to install, and it does not upload your data anywhere — everything happens in
 the page, on your computer.
 
-Reading and analyzing logs works in any browser. **Reaching a device needs Web Bluetooth or Web
+Reading and analyzing logs works in any browser. **Connecting to a device needs Web Bluetooth or Web
 Serial**, which exist only in Chrome, Edge, and Opera on a computer; the tool says so up front rather
 than failing at the moment you need it. Opening a whole folder of logs at once needs the same browsers;
 elsewhere it falls back to a file picker. What you enter is kept in the browser between visits.
