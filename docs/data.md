@@ -1,0 +1,198 @@
+# Your Data
+
+A download with the desktop dashboard gives you two files per device:
+
+| File | What it is |
+| --- | --- |
+| `<name>_<start>.ttg` | The raw log, byte for byte as the device sent it. **This is your archival copy.** |
+| `<name>.pkl` | The same data parsed into Python objects, ready for analysis. |
+
+`<name>` is the device's label, or its ID if it has none, with any characters a file name cannot hold
+(`/ \ : * ? " < > |`) left out. `<start>` is when the study started, so downloading a device twice
+replaces its files rather than adding more. Both tools name a device's `.ttg` the same way.
+
+The browser tool saves only the `.ttg`. A `.pkl` is a Python file, made by the desktop dashboard.
+
+Keep the `.ttg` files. They are the original record and can be re-parsed at any time; the `.pkl` is a
+convenience that can be rebuilt from its `.ttg` whenever you need it, including from a `.ttg` the
+browser tool saved:
+
+```bash
+cd socitrack/software/management/dashboard
+python3 tottag.py --convert ~/Downloads/02_1788300000.ttg
+```
+
+This writes the same `02.pkl` the download wrote, next to the `.ttg`. Keep the name the `.ttg` was saved
+under, because that is how the tool knows which device's log it is. A legacy `.ttg`, from firmware older
+than the page-framed format, does not carry the labels the `.pkl` uses and cannot be rebuilt this way;
+`parse.py` in the same folder reads it with device IDs in place of labels.
+
+If a device's data ever looks wrong, the `.ttg` is what tells you whether the problem is in the
+recording or in the processing.
+
+---
+
+## Reading a log in Python
+
+```python
+import pickle
+records = pickle.load(open('02.pkl', 'rb'))
+```
+
+You get a list of dictionaries, one per instant, sorted by time. Every record has a `t` (a Unix
+timestamp) plus whichever fields were recorded at that moment:
+
+| Key | Contents |
+| --- | --- |
+| `r` | **Distances.** `{device_id: millimetres}` — the main data |
+| `v` | Battery voltage, mV |
+| `c` | Charging event — `'Plugged'`, `'Unplugged'`, `'Charging'`, `'Not Charging'` |
+| `m` | Motion — `True` when moving |
+| `i` | Accelerometer, `[x, y, z]` |
+| `b` | Other devices seen over Bluetooth |
+| `rst` | A restart, with its cause as a list of strings |
+| `rtc`, `offset`, `lag` | Timekeeping — see [clock drift](#clock-drift) |
+| `diag` | Internal health counters, which firmware build wrote the log, the chip temperature, and radio health |
+
+So to retrieve the distances over time to device `0x3E`:
+
+```python
+series = [(r['t'], r['r'][0x3E]) for r in records if 'r' in r and 0x3E in r['r']]
+```
+
+The bundled `processing.py` has helpers for plotting pairs and overlaying annotated events.
+
+---
+
+## How precise is a distance?
+
+Between two devices with a clear path, precision is excellent. Across a ten-device deployment, every
+pair agreed with itself from both directions to **within 1 mm** of the median. In practice:
+
+- **Clear line of sight**: a few centimeters, stable.
+- **Through a body**: reads longer, because the signal travels around rather than through. A device on
+  someone's chest facing away from another person is the common case.
+- **Through a wall**: reads longer and varies far more. In one deployment a through-wall pair showed
+  roughly **20× the spread** of a same-desk pair at the same nominal distance.
+
+The spread is the useful signal. A pair with a stable distance has a clear path; a pair whose distance
+jumps around has something between them. Compute the standard deviation over a short window and treat
+high-variance stretches as "obstructed" rather than as noise to be smoothed away.
+
+### One caveat
+
+**A missing reading is not a distance of zero.** If two devices could not complete an exchange, there
+is simply no entry for that pair at that instant. Absence usually means far apart or obstructed, but
+it can also mean one device was charging, asleep, or had left the network. Check for charging events
+and restarts before reading too much into a gap.
+
+---
+
+## Checking a log is complete
+
+Worth doing before you release the devices.
+
+**1. The download reported no warnings.** A clean download prints nothing unusual. Lines about
+retransmission rounds are normal and self-correcting. A `WARNING: log from ... is incomplete` is not —
+download from that device again.
+
+**2. The dates cover your study.**
+
+```python
+import datetime
+ts = [r['t'] for r in records]
+print(datetime.datetime.fromtimestamp(ts[0]), '->', datetime.datetime.fromtimestamp(ts[-1]))
+```
+
+**3. Every device saw every other device.**
+
+```python
+import collections
+peers = collections.Counter()
+for r in records:
+    if 'r' in r:
+        peers.update(r['r'].keys())
+print({hex(k): v for k, v in peers.items()})
+```
+
+In a ten-device study each log should list nine peers. A device missing entirely was never in the
+network. A device with far fewer readings than the others was on the edge of range — real data, but
+treat it as a weaker measurement.
+
+**4. Restarts are explained.**
+
+```python
+for r in records:
+    if 'rst' in r:
+        print(datetime.datetime.fromtimestamp(r['t']), r['rst'])
+```
+
+`SW Power-On` entries are normal — a device restarts on every plug and unplug, so these should line up
+with your charging routine. Anything mentioning `Watchdog` is a fault; see
+[Troubleshooting](troubleshooting.md#a-device-restarted-unexpectedly).
+
+---
+
+## Gaps in the data
+
+Not every gap is a problem, and the kind of gap tells you which.
+
+| Gap | Meaning |
+| --- | --- |
+| Distances stop, housekeeping continues every 5 min | The device was running but had nobody in range. Normal when people separate. |
+| Everything stops, then a `Plugged` event | On a charger or a USB cable. Recording is suspended while plugged in. |
+| Everything stops, then a restart | Powered off — outside the study window, or dead battery. Check the voltage before the gap. |
+| Everything stops with no explanation | Investigate. Start with [Troubleshooting](troubleshooting.md). |
+
+The 5-minute housekeeping cadence is what makes the first two distinguishable, so it is worth checking
+which you have before concluding a device failed.
+
+---
+
+## Daily figures
+
+Both tools can sum a deployment into daily figures for chosen devices: the browser tool on its **Time
+together** tab, and `get_daily_ranging_statistics` in the desktop dashboard's `processing.py`.
+
+- **Days** run from midnight to midnight on the study's clock, in the time zone from the deployment
+  record.
+- **Minutes in range** count distance measurements within the cutoff. Devices measure twice a second,
+  so 120 measurements make a minute. The browser tool keeps part-minutes; the desktop dashboard rounds
+  to whole minutes.
+- **Minutes within touching distance** count measurements within the touching distance the same way.
+- **Average distance** is over the measurements counted.
+- With several devices chosen, extra rows count the time in range of either (or any) of them, and of
+  both (or all) at once.
+
+The browser tool's CSV export has the columns `date`, `tag`, `with`, `minutes_in_range`,
+`minutes_within_<n>_<unit>`, `mean_distance_<unit>`, `rounds_in_range`, `rounds_within_touching`,
+`cutoff_<unit>`, `touching_<unit>`, and `time_zone`.
+
+---
+
+## Clock drift
+
+Devices keep time with a crystal that is not perfect. Measured across deployments, they run roughly
+**160–190 parts per million slow** — about **15 seconds per day**.
+
+Every device in a deployment follows the same network clock, so **devices agree with each other** to
+within a few parts per million. The drift is almost entirely common to the whole group.
+
+This matters only if you are aligning TotTag data against an external source — video, an observer's
+notes, another instrument. Over a week, expect roughly a minute and a half of offset against wall
+clock. The `rtc`, `offset`, and `lag` fields in each 5-minute housekeeping record carry the device's own
+clock alongside the network clock, so the drift can be measured and corrected after the fact rather
+than estimated.
+
+---
+
+## The raw format
+
+The `.ttg` file is a page-framed stream: a header, then a sequence of pages each carrying its own
+sequence number, timestamps, and CRC. The CRC is what lets the tools detect a page damaged in transfer
+and ask the device to resend it.
+
+You rarely need this level of detail. If you are writing your own reader, the authoritative
+description is the two existing readers — `software/management/dashboard/tottag_format.py` and
+`software/managementweb/packages/tottag-schema/src/log.ts` — which are kept in step with the firmware
+by an automated check.

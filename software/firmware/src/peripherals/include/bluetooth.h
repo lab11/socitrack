@@ -10,18 +10,29 @@
 
 typedef void (*ble_discovery_callback_t)(const uint8_t ble_address[6], uint8_t ranging_role);
 
+typedef struct
+{
+   uint32_t failures;               // allocations that returned NULL
+   uint16_t largest_failed_length;  // size of the largest request that failed
+   uint8_t num_pools;               // pools actually reported below
+   uint8_t high_water[8];           // per-pool maximum simultaneous allocations
+   uint8_t capacity[8];             // per-pool buffer count
+} bluetooth_buffer_stats_t;
+
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 bool bluetooth_init(uint8_t* uid);
 void bluetooth_deinit(void);
 void bluetooth_reset(void);
+uint32_t bluetooth_get_reset_count(void);
 void bluetooth_start(void);
 bool bluetooth_is_initialized(void);
 void bluetooth_set_uninitialized(void);
 void bluetooth_register_discovery_callback(ble_discovery_callback_t callback);
 uint8_t bluetooth_get_current_ranging_role(void);
 void bluetooth_set_current_ranging_role(uint8_t ranging_role);
+void bluetooth_request_fast_connection(uint8_t conn_id, bool fast);
 void bluetooth_write_range_results(const uint8_t *results, uint16_t results_length);
 void bluetooth_write_imu_data(const uint8_t *results, uint16_t results_length);
 void bluetooth_start_advertising(void);
@@ -32,6 +43,11 @@ void bluetooth_stop_scanning(void);
 void bluetooth_reset_scanning(void);
 bool bluetooth_is_scanning(void);
 bool bluetooth_is_connected(void);
+void bluetooth_register_buffer_diagnostics(void);
+bool bluetooth_transmit_has_headroom(uint16_t length);
+void bluetooth_defer_log_send(uint8_t conn_id, uint16_t max_length);
+void bluetooth_get_buffer_stats(bluetooth_buffer_stats_t *stats);
+void bluetooth_print_buffer_stats(const char *context);
 void bluetooth_clear_whitelist(void);
 void bluetooth_add_device_to_whitelist(uint8_t* uid);
 

@@ -580,7 +580,7 @@ bool imu_init(void)
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_INTERRUPT, am_hal_gpio_pincfg_input));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_IMU_INTERRUPT, imu_isr, NULL));
-   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
+   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
    NVIC_SetPriority(IOMSTR0_IRQn + IMU_I2C_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
    NVIC_EnableIRQ(IOMSTR0_IRQn + IMU_I2C_NUMBER);
@@ -667,6 +667,10 @@ void imu_register_data_ready_callback(data_ready_callback_t callback)
    imu_clear_interrupts();
    enable_data_ready_interrupts();
 }
+
+void imu_register_service_request_callback(imu_service_request_callback_t callback) { }
+
+bool imu_service_pending(void) { return false; }
 
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)
 {

@@ -16,17 +16,18 @@ typedef enum {
    USB_FIND_MY_TOTTAG_COMMAND = 0x12,
    USB_GET_EXPERIMENT_COMMAND = 0x13,
    USB_SET_TIMESTAMP_COMMAND = 0x14,
+   USB_GET_UID_COMMAND = 0x15,
    USB_NEW_EXPERIMENT_COMMAND = BLE_MAINTENANCE_NEW_EXPERIMENT,
    USB_DELETE_EXPERIMENT_COMMAND = BLE_MAINTENANCE_DELETE_EXPERIMENT,
    USB_SET_LOG_DL_DATES_COMMAND = BLE_MAINTENANCE_SET_LOG_DOWNLOAD_DATES,
-   USB_DOWNLOAD_LOG_COMMAND = BLE_MAINTENANCE_DOWNLOAD_LOG
+   USB_DOWNLOAD_LOG_COMMAND = BLE_MAINTENANCE_DOWNLOAD_LOG,
+   USB_RETRANSMIT_PAGES_COMMAND = BLE_MAINTENANCE_RETRANSMIT_PAGES
 } usb_command_t;
 
 
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 void usb_init(void);
-void usb_register_connection_task(TaskHandle_t task_handle);
 bool usb_cable_connected(void);
 uint32_t usb_write(const void* data, uint32_t num_bytes);
 

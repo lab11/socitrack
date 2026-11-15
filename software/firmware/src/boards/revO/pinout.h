@@ -71,17 +71,13 @@
 #define PIN_STORAGE_SPI_CS_FUNCTION                 AM_HAL_PIN_69_NCE69
 #define PIN_STORAGE_WRITE_PROTECT                   30
 #define PIN_STORAGE_HOLD                            6
-#define MEMORY_PAGE_SIZE_BYTES                      4096
-#define MEMORY_BLOCK_COUNT                          4096
-#define MEMORY_ECC_BYTES_PER_PAGE                   256
-#define STORAGE_DEVICE_ID                           { 0x8D }
 
 // Timers
 #define BUZZER_TIMER_NUMBER                         0
 #define RADIO_WAKEUP_TIMER_NUMBER                   2
-#define RADIO_WAKEUP_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
+#define RADIO_WAKEUP_TIMER_TICK_RATE_HZ             32768
 #define BLE_SCANNING_TIMER_NUMBER                   3
-#define BLE_SCANNING_TIMER_TICK_RATE_HZ             (AM_HAL_CLKGEN_FREQ_MAX_HZ / 16)
+#define BLE_SCANNING_TIMER_TICK_RATE_HZ             32768
 
 // USB
 #define PIN_USB_ENABLE1                             78

@@ -10,13 +10,14 @@
 #include "l2c_api.h"
 #include "l2c_handler.h"
 #include "logging.h"
+#include "system.h"
 #include "wsf_buf.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 #define WSF_BUF_POOLS 5
-static uint32_t g_pui32BufMem[(WSF_BUF_POOLS*16 + 16*8 + 32*4 + 64*6 + 280*14 + 424*8) / sizeof(uint32_t)];
+static uint32_t g_pui32BufMem[(WSF_BUF_POOLS*16 + 16*12 + 32*16 + 64*16 + 280*24 + 424*8) / sizeof(uint32_t)];
 static wsfBufPoolDesc_t g_psPoolDescriptors[WSF_BUF_POOLS];
 
 
@@ -31,7 +32,11 @@ static void ble_stack_init(void)
    // Initialize a buffer pool for WSF dynamic memory needs
    const uint16_t wsfBufMemLen = WsfBufInit(sizeof(g_pui32BufMem), (uint8_t*)g_pui32BufMem, WSF_BUF_POOLS, g_psPoolDescriptors);
    if (wsfBufMemLen > sizeof(g_pui32BufMem))
-      print("ERROR: Memory pool is too small by %d\n", wsfBufMemLen - sizeof(g_pui32BufMem));
+   {
+      print("ERROR: WSF buffer memory is too small by %u bytes; the BLE stack has fewer buffers than declared\n", (uint32_t)(wsfBufMemLen - sizeof(g_pui32BufMem)));
+      system_record_diagnostic(RESET_DIAGNOSTIC_MALLOC_FAILED);
+   }
+   bluetooth_register_buffer_diagnostics();
 
    // Initialize the WSF security service
    SecInit();
@@ -67,10 +72,10 @@ static void ble_stack_init(void)
 void BLETask(void *params)
 {
    // Initialize static variables
-   g_psPoolDescriptors[0] = (wsfBufPoolDesc_t){16, 8};
-   g_psPoolDescriptors[1] = (wsfBufPoolDesc_t){32, 4};
-   g_psPoolDescriptors[2] = (wsfBufPoolDesc_t){64, 6};
-   g_psPoolDescriptors[3] = (wsfBufPoolDesc_t){280, 14};
+   g_psPoolDescriptors[0] = (wsfBufPoolDesc_t){16, 12};
+   g_psPoolDescriptors[1] = (wsfBufPoolDesc_t){32, 16};
+   g_psPoolDescriptors[2] = (wsfBufPoolDesc_t){64, 16};
+   g_psPoolDescriptors[3] = (wsfBufPoolDesc_t){280, 24};
    g_psPoolDescriptors[4] = (wsfBufPoolDesc_t){424, 8};
 
    // Initialize the BLE stack and start the BLE profile

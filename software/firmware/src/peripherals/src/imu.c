@@ -5,11 +5,6 @@
 #include "system.h"
 #include "logging.h"
 
-#define imu_iom_isr       am_iom_isr1(IMU_SPI_NUMBER)
-#define am_iom_isr1(n)    am_iom_isr(n)
-#define am_iom_isr(n)     am_iomaster ## n ## _isr
-
-
 // IMU Chip-Specific Definitions ---------------------------------------------------------------------------------------
 
 // Channel numbers
@@ -289,6 +284,11 @@ enum
 // Required delay times
 #define RESET_DELAY_MS                                  200
 #define PORT_TIMEOUT_MS                                 500
+
+// Blocking bounds
+#define IOM_DISABLE_ATTEMPTS                            50
+#define IMU_MAX_DRAINED_PACKETS                         64
+#define IMU_MAX_SERVICED_PACKETS                        16
 
 typedef enum {
    NA = 0,
@@ -700,6 +700,7 @@ static uint8_t sequence_number[SEQUENCE_SIZE], command_sequence_number;
 static uint8_t shtp_header[HEADER_SIZE], shtp_data[RX_PACKET_SIZE];
 static motion_change_callback_t motion_change_callback;
 static data_ready_callback_t data_ready_callback;
+static imu_service_request_callback_t service_request_callback;
 static BNO_Feature_t sensor_features;
 static BNO_SensorValue_t last_sensor_reading;
 static BNO_calibrationStat_t calibration_status;
@@ -717,9 +718,10 @@ static BNO_Error_t errors;
 
 static bool wait_for_spi(void)
 {
-   // Wait until the SPI interrupt line has been pulled low
+   // Wait until the SPI interrupt line has been pulled low.
    bool spi_ready = (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) == 0);
-   for (int i = 0; !spi_ready && (i < 250); ++i)
+   const int max_wait_ms = xPortIsInsideInterrupt() ? 0 : 250;
+   for (int i = 0; !spi_ready && (i < max_wait_ms); ++i)
    {
       am_util_delay_ms(1);
       spi_ready = (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) == 0);
@@ -1539,38 +1541,22 @@ static bool process_report_packet(uint32_t transfer_timestamp_ticks)
 static void imu_isr(void *args)
 {
    // Only handle if not synchronously waiting for an interrupt
-   if (!awaiting_interrupt_count)
-   {
+   if (awaiting_interrupt_count)
+      return;
+
 #ifdef _TEST_IMU_DATA
-      const uint32_t transfer_timestamp_ticks = am_hal_stimer_counter_get();
-      pending_transfer_timestamp_ticks = transfer_timestamp_ticks;
-      if (data_pending_callback)
-         data_pending_callback();
-      else
-         (void)process_report_packet(transfer_timestamp_ticks);
+   // Timestamp the HINT assertion, then hand the batched packet to the IMU task (or collect it here if none is registered)
+   const uint32_t transfer_timestamp_ticks = am_hal_stimer_counter_get();
+   pending_transfer_timestamp_ticks = transfer_timestamp_ticks;
+   if (data_pending_callback)
+      data_pending_callback();
+   else
+      (void)process_report_packet(transfer_timestamp_ticks);
 #else
-      imu_data_type_t data_type = IMU_UNKNOWN;
-      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) &&
-          (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
-         data_type = parse_input_report(&shtp_data[BASE_TIMESTAMP_LENGTH], 0);
-
-      if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
-         motion_change_callback(in_motion);
-      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion)
-         data_ready_callback(data_type);
+   // Ask for the packet to be collected, but do not collect it here
+   if (service_request_callback)
+      service_request_callback();
 #endif
-   }
-}
-
-void imu_iom_isr(void)
-{
-   // Handle an IMU read interrupt
-   static uint32_t status;
-   AM_CRITICAL_BEGIN
-   am_hal_iom_interrupt_status_get(spi_handle, false, &status);
-   am_hal_iom_interrupt_clear(spi_handle, status);
-   AM_CRITICAL_END
-   am_hal_iom_interrupt_service(spi_handle, status);
 }
 
 
@@ -1607,6 +1593,7 @@ bool imu_init(void)
    command_sequence_number = 0;
    motion_change_callback = NULL;
    data_ready_callback = NULL;
+   service_request_callback = NULL;
 
    // Create an SPI configuration structure
    const am_hal_iom_config_t spi_config =
@@ -1650,14 +1637,12 @@ bool imu_init(void)
    configASSERT0(am_hal_gpio_pinconfig(PIN_IMU_INTERRUPT, int_config));
    configASSERT0(am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_ENABLE, &imu_interrupt_pin));
    configASSERT0(am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, PIN_IMU_INTERRUPT, imu_isr, NULL));
-   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configKERNEL_INTERRUPT_PRIORITY - 1);
-   NVIC_SetPriority(IOMSTR0_IRQn + IMU_SPI_NUMBER, NVIC_configKERNEL_INTERRUPT_PRIORITY - 2);
+   NVIC_SetPriority(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT), NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY);
    NVIC_EnableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
-   NVIC_EnableIRQ(IOMSTR0_IRQn + IMU_SPI_NUMBER);
 
    // Reset the device and read until it stops sending messages
    reset_imu();
-   while (receive_packet());
+   for (uint32_t drained = 0; (drained < IMU_MAX_DRAINED_PACKETS) && receive_packet(); ++drained);
 
    // Validate device communications
    memset(shtp_data, 0, TX_PACKET_SIZE);
@@ -1668,7 +1653,8 @@ bool imu_init(void)
    else
    {
       print("ERROR: IMU initialization failed\n");
-      while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+      for (uint32_t attempt = 0; (attempt < IOM_DISABLE_ATTEMPTS) && (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS); ++attempt)
+         am_util_delay_ms(1);
       am_hal_iom_uninitialize(spi_handle);
    }
 
@@ -1690,20 +1676,20 @@ void imu_deinit(void)
 
    // Reset the device to stop all data processing and read until it stops sending messages
    reset_imu();
-   while (receive_packet());
+   for (uint32_t drained = 0; (drained < IMU_MAX_DRAINED_PACKETS) && receive_packet(); ++drained);
 
    // Put the device into sleep mode
    enter_sleep_mode(true);
 
    // Disable all IMU-based interrupts
    uint32_t imu_interrupt_pin = PIN_IMU_INTERRUPT;
-   NVIC_DisableIRQ(IOMSTR0_IRQn + IMU_SPI_NUMBER);
    NVIC_DisableIRQ(GPIO0_001F_IRQn + GPIO_NUM2IDX(PIN_IMU_INTERRUPT));
    am_hal_gpio_interrupt_register(AM_HAL_GPIO_INT_CHANNEL_0, imu_interrupt_pin, NULL, NULL);
    am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, AM_HAL_GPIO_INT_CTRL_INDV_DISABLE, &imu_interrupt_pin);
 
    // Disable all SPI communications
-   while (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS);
+   for (uint32_t attempt = 0; (attempt < IOM_DISABLE_ATTEMPTS) && (am_hal_iom_disable(spi_handle) != AM_HAL_STATUS_SUCCESS); ++attempt)
+         am_util_delay_ms(1);
    am_hal_iom_uninitialize(spi_handle);
    imu_is_initialized = false;
 }
@@ -1813,6 +1799,42 @@ void imu_register_data_ready_callback(data_ready_callback_t callback)
 {
    // Store the data-ready callback
    data_ready_callback = callback;
+}
+
+void imu_register_service_request_callback(imu_service_request_callback_t callback)
+{
+   service_request_callback = callback;
+}
+
+bool imu_service_pending(void)
+{
+   // Drain everything the part has queued
+   if (!imu_is_initialized || awaiting_interrupt_count)
+      return false;
+
+#ifdef _TEST_IMU_DATA
+   // Batched test reports are collected by the IMU task (or the ISR), so do not compete with it for the SPI bus
+   return false;
+#else
+   bool serviced = false;
+   for (uint32_t packet = 0; packet < IMU_MAX_SERVICED_PACKETS; ++packet)
+   {
+      if (am_hal_gpio_input_read(PIN_IMU_INTERRUPT) != 0)
+         break;                        // line released: nothing left to collect
+
+      imu_data_type_t data_type = IMU_UNKNOWN;
+      if (receive_packet() && (shtp_header[2] == CHANNEL_REPORTS) && (shtp_data[0] == SHTP_REPORT_BASE_TIMESTAMP))
+         data_type = parse_input_report(&shtp_data[BASE_TIMESTAMP_LENGTH], 0);
+      serviced = true;
+
+      // Notify the appropriate data callback
+      if ((data_type == IMU_MOTION_DETECT) && motion_change_callback)
+         motion_change_callback(in_motion);
+      else if ((data_type != IMU_UNKNOWN) && data_ready_callback && in_motion) // Only invoke data callback if in motion
+         data_ready_callback(data_type);
+   }
+   return serviced;
+#endif
 }
 
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy)

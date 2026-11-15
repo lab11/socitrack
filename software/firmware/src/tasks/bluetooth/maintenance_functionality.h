@@ -17,7 +17,14 @@
 #define BLE_MAINTENANCE_DOWNLOAD_LOG                    0x03
 #define BLE_MAINTENANCE_SET_LOG_DOWNLOAD_DATES          0x04
 #define BLE_MAINTENANCE_DOWNLOAD_LOG_CONTINUE           0x05
+#define BLE_MAINTENANCE_RETRANSMIT_PAGES                0x06
+#define BLE_MAINTENANCE_START_RADIO_TEST                0x07
+#define BLE_MAINTENANCE_STOP_RADIO_TEST                 0x08
+#define BLE_MAINTENANCE_RADIO_TEST_HEADER_LEN           10        // [cmd][start u32][end u32][count u8], then count EUIs
 #define BLE_MAINTENANCE_PACKET_COMPLETE                 0xFF
+
+#define BLE_MAINTENANCE_MAX_SEQS_PER_WRITE              60
+#define BLE_MAINTENANCE_RETRANSMIT_WRITE_LEN            (2 + (BLE_MAINTENANCE_MAX_SEQS_PER_WRITE * sizeof(uint32_t)))
 
 
 // Public API ----------------------------------------------------------------------------------------------------------

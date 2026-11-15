@@ -1,122 +1,30 @@
-# Dashboard & Processing
+Dashboard
+=========
 
-## Timezone interpretation
+Source for the `tottag` desktop dashboard.
 
-- The timestamps stored in the processed log files (the `.pkl` files) are utc timestamps.
-- The plotting functions in `processing.py` plots the time series according to the local timezone of the computer running the script. If you run the same script with the same file on computers from different timezones, the plot will look different. 
+| File | Contents |
+| --- | --- |
+| `tottag.py` | The GUI, Bluetooth and USB transport, and the log download and repair logic |
+| `tottag_format.py` | Reader for the `.ttg` log format — page framing, records, integrity reporting |
+| `radio_check.py` | The live radio check: runs devices in a radio test over Bluetooth and judges each against the others, ported from the browser tool's |
+| `processing.py` | Analysis helpers: loading `.pkl` files, plotting pairs, overlaying annotated events, all on the study's clock |
+| `deployment_record.py` | Deployment records, in the browser tool's format: writing one when a study is scheduled, and finding the one a log belongs to |
+| `parse.py`, `load_imu_data.py` | Standalone parsing utilities |
+| `compare_downloads.py` | Diffs two downloads of the same log, for diagnosing transport problems |
+| `experimental_tottag.py` | Experimental variant, not used by the installed tool |
+| `segger_download.py`, `quick_download_trigger.py` | Debug helpers |
+| `1_*.py`, `2_*.py` | Batch CSV conversion scripts for existing studies |
+| `test_*.py` | Tests: `python3 -m unittest -q test_deployment_ids test_log_format test_radio_check test_usb_download test_legacy_recovery test_downloads test_deployment_record test_processing` |
 
-## Dashboard
+`test_radio_check.py` replays scenarios that the browser tool's schema package writes to
+`managementweb/packages/tottag-schema/test/fixtures/radio-check-parity.json`, so both tools must give
+the same verdicts for the same reasons. After changing the radio check's rules in the browser tool, run
+`npm run parity:update` in that package, then bring `radio_check.py` back into line until the test passes.
 
-The TotTag dashboard is a GUI for interacting with the tags.
+**How to install and use this is documented at
+[lab11.github.io/socitrack](https://lab11.github.io/socitrack/):**
 
-To bring up the dashboard without installing it first, enter:
-```bash
-python3 tottag.py
-```
-
-If the dashboard has been installed, you can access it anywhere by entering:
-```bash
-tottag
-```
-
-### Disconnected state
-To discover the devices, click the scan button.
-
-To schedule a new experiment for a group of devices, the devices have to be placed on chargers, otherwise they will not be discovered by scanning.
-
-Once a deployment is scheduled, the schedule will be push to all devices.
-
-### Connected state
-
-Each device can be connected to individually.
-
-In the connected state, any updates to the deployment only apply to the current connected device. 
-
-To download the logs, the connected device  **needs to be on the charger**.
-
-To view live ranging data, the connected device **should not be not on the charger**.
-
-## Processing
-
-### Statistics
-
-```python
-from processing import *
-
-# load the logs
-A = load_data("E1.pkl")
-B = load_data("Pat.pkl")
-C = load_data("SB.pkl")
-
-# 3.0 is the touching distance threshold (could be modified)
-# the unit could be 'ft' or 'm'
-get_daily_ranging_statistics(A, ["Pat","SB"], 3.0, unit='ft')
-get_daily_ranging_statistics(B, ["E1","SB"], 3.0, unit='ft')
-get_daily_ranging_statistics(C, ["E1","Pat"], 3.0, unit='ft')
-```
-
-### Plots
-```python
-from processing import *
-A = load_data("07.pkl")
-B = load_data("09.pkl")
-
-# plot the voltages
-get_voltage_time_series(A, "07")
-get_voltage_time_series(B, "09")
-
-# plot the ranges
-get_ranging_time_series(A, "07","09")
-get_ranging_time_series(B, "09","07")
-
-get_motion_time_series(A, "07")
-get_motion_time_series(B, "09")
-```
-
-### Get the on and off charger time
-```python
-from processing import *
-A = load_data("12043_S1.pkl")
-get_off_and_on_charger_times(A,"10043_S1",visualize=False)
-
-# to show the marking on the voltage plot
-get_off_and_on_charger_times(A,"10043_S1",visualize=True)
-```
-
-### Visualizing paired logs with alignment
-
-To visualize events, an event log needs to be prepared. The event log have to follow the following format
- - A single line (no `ENTER`/`RETURN` within the line) per event.
- - For each line, always start with the Y-m-d H:i:s timestamp.
-
-```
-2024-04-01 08:33:11 SB enters the room. E1 is propped up on the window sill. Pat is laying flat on the table. 
-2024-02-01 08:34:58 SB leaves the room. 
-```
-
-```python
-from processing import *
-
-# load the logs
-A = load_data("E1.pkl")
-B = load_data("Pat.pkl")
-C = load_data("SB.pkl")
-
-# visualize paired logs
-visualize_ranging_pair_slider(A,B,"E1","Pat")
-visualize_ranging_pair_slider(A,C,"E1","SB")
-visualize_ranging_pair_slider(B,C,"Pat","SB")
-
-# extract events from the event log
-events  = extract_simple_event_log("annotation_pst.txt")
-
-# visualize the events
-visualize_ranging_pair_slider(A,B,"E1","Pat", events=events)
-visualize_ranging_pair_slider(A,C,"E1","SB", events=events)
-visualize_ranging_pair_slider(B,C,"Pat","SB", events=events)
-
-# visualize the events within [start_timestamp, end_timestamp]
-visualize_ranging_pair_slider(A,B,"E1","Pat", events=events, start_timestamp=1708619580, end_timestamp=1708623540)
-visualize_ranging_pair_slider(A,C,"E1","SB", events=events, start_timestamp=1708619580, end_timestamp=1708623540)
-visualize_ranging_pair_slider(B,C,"Pat","SB", events=events, start_timestamp=1708619580, end_timestamp=1708623540)
-```
+- [The Dashboard](https://lab11.github.io/socitrack/dashboard.html) — every action, what it does, when it is available
+- [Running a Deployment](https://lab11.github.io/socitrack/running-a-deployment.html) — the end-to-end workflow
+- [Your Data](https://lab11.github.io/socitrack/data.html) — what a downloaded log contains and how to read it

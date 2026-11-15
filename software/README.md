@@ -1,17 +1,21 @@
-SquarePoint Software
-====================
+Software
+========
 
-This directory contains all software packages and solutions related to the TotTag infrastructure.
+| Directory | Contents |
+| --- | --- |
+| [`firmware/`](firmware/) | Device firmware for the Ambiq Apollo4. Ranging protocol, Bluetooth maintenance interface, on-board NAND logging. |
+| [`management/`](management/) | Desktop dashboard (Python/Tkinter) for configuring deployments and downloading logs, plus analysis helpers. |
+| [`managementweb/`](managementweb/) | Browser-based equivalent, built on a shared TypeScript package holding the log-format knowledge. |
 
-Current
--------
+Both management tools write the same `.ttg` log format and speak the same Bluetooth protocol, so a
+device does not care which configured it. Where they must agree on a constant, a parity test asserts it
+against the other's source directly.
 
-- [firmware](firmware/) - TotTag firmware for the current generation (Ambiq Apollo) microcontroller
-- [management](management/) - Python-based GUI for management of TotTag deployments and experiments
+**Documentation for all of this lives at
+[lab11.github.io/socitrack](https://lab11.github.io/socitrack/)** — see
+[`docs/`](../docs/). Start with [Getting Started](https://lab11.github.io/socitrack/getting-started.html) to set up a device, or
+[the Reference](https://lab11.github.io/socitrack/reference.html) for build commands and constants.
 
 
-Deprecated
-----------
-
-- [analysis](analysis/) - Scripts to perform data analysis on TotTag Generations 0 and 1 output
-- [ersp](ersp/) - Tools to predict system lifetime and configure protocol parameters
+Firmware for hardware older than Rev M is no longer in the tree; [`hardware/legacy/`](../hardware/legacy/)
+says where to find it.

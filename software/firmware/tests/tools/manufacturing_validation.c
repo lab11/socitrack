@@ -3,9 +3,9 @@
 #include "imu.h"
 #include "led.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "ranging.h"
 #include "rtc.h"
-#include "storage.h"
 #include "system.h"
 
 // Uncomment the following for the master anchor tag
@@ -136,7 +136,7 @@ int main(void)
 
    // Initialize the RTC clock, storage chip, and IMU
    rtc_init();
-   if (!storage_init())
+   if (!nandlog_init())
       while (1)
       {
          led_on(LED_RED);

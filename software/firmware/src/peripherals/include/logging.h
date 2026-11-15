@@ -17,12 +17,19 @@ void logging_disable(void);
 #if defined(ENABLE_LOGGING) && ((7-ENABLE_LOGGING-7 == 14) || (7-ENABLE_LOGGING-7 != 0))
 
 #define print(...) am_util_stdio_printf(__VA_ARGS__)
+
+#ifdef ENABLE_ISR_LOGGING
+#define print_isr(...) am_util_stdio_printf(__VA_ARGS__)
+#else
+#define print_isr(...)
+#endif
 void print_reset_reason(const am_hal_reset_status_t* reason);
 void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8_t* range_data, uint32_t range_data_length);
 
 #else
 
 #define print(...)
+#define print_isr(...)
 #define print_reset_reason(...)
 #define print_ranges(...)
 
@@ -30,8 +37,17 @@ void print_ranges(uint32_t timestamp, uint32_t fractional_timestamp, const uint8
 
 #ifdef __USE_SEGGER__
 #define transmit_log_data(...) SEGGER_RTT_Write(1, __VA_ARGS__)
+#define transmit_log_flush()   do {} while (0)
 #else
-#define transmit_log_data(data, num_bytes) do { for (uint32_t i = 0; i < num_bytes; ) { if (!tud_cdc_write_available()) taskYIELD() else i += usb_write(data + i, num_bytes - i); } } while(0)
-#endif  // #if defined(ENABLE_AUDIO_DL)
+#define transmit_log_data(data, num_bytes) do { \
+      const uint8_t *_log_bytes = (const uint8_t*)(data); \
+      const uint32_t _log_total = (uint32_t)(num_bytes); \
+      for (uint32_t _log_sent = 0; _log_sent < _log_total; ) { \
+         if (!tud_cdc_write_available()) { taskYIELD(); } \
+         else { _log_sent += usb_write(_log_bytes + _log_sent, _log_total - _log_sent); } \
+      } \
+   } while (0)
+#define transmit_log_flush()   tud_cdc_write_flush()
+#endif  // #ifdef __USE_SEGGER__
 
 #endif  // #ifndef __LOGGING_HEADER_H__

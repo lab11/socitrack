@@ -29,7 +29,7 @@
 /* Hook function related definitions. */
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0
-#define configCHECK_FOR_STACK_OVERFLOW          0
+#define configCHECK_FOR_STACK_OVERFLOW          2
 #define configUSE_MALLOC_FAILED_HOOK            0
 
 /* Run time and task stats gathering related definitions. */
@@ -65,11 +65,11 @@ extern void vAssertCalled(const char * const pcFileName, unsigned long ulLine);
 #define INCLUDE_xResumeFromISR                  0
 #define INCLUDE_vTaskDelayUntil                 0
 #define INCLUDE_vTaskDelay                      1
-#define INCLUDE_xTaskGetSchedulerState          0
+#define INCLUDE_xTaskGetSchedulerState          1
 #define INCLUDE_xTaskGetCurrentTaskHandle       1
-#define INCLUDE_uxTaskGetStackHighWaterMark     0
+#define INCLUDE_uxTaskGetStackHighWaterMark     1
 #define INCLUDE_xTaskGetIdleTaskHandle          0
-#define INCLUDE_xTimerGetTimerDaemonTaskHandle  0
+#define INCLUDE_xTimerGetTimerDaemonTaskHandle  1
 #define INCLUDE_pcTaskGetTaskName               0
 #define INCLUDE_eTaskGetState                   0
 #define INCLUDE_xEventGroupSetBitFromISR        0
@@ -92,9 +92,13 @@ extern void am_freertos_wakeup(uint32_t);
 
 #define configPOST_SLEEP_PROCESSING(time)    am_freertos_wakeup(time)
 
+// Idle sleep goes through system_idle_sleep(), which keeps out of tickless deep sleep while the ranging radio is awake
+extern void system_idle_sleep(uint32_t expected_idle_ticks);
+extern void vPortSuppressTicksAndSleep(uint32_t xExpectedIdleTime);
+#define portSUPPRESS_TICKS_AND_SLEEP( xExpectedIdleTime )    system_idle_sleep( xExpectedIdleTime )
+
 #define AM_FREERTOS_USE_STIMER_FOR_TICK
 #define configSTIMER_CLOCK_HZ                     32768
 #define configSTIMER_CLOCK                        AM_HAL_STIMER_XTAL_32KHZ
 
 #endif // FREERTOS_CONFIG_H
-

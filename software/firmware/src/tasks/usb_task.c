@@ -3,14 +3,17 @@
 #include "app_tasks.h"
 #include "battery.h"
 #include "logging.h"
+#include "nandlog.h"
 #include "rtc.h"
-#include "storage.h"
+#include "storage_records.h"
 #include "system.h"
 #include "tusb.h"
 #include "usb.h"
 
 
 // Static Global Variables ---------------------------------------------------------------------------------------------
+
+#define USB_READ_ATTEMPTS              1000   // ~1 s at the 1 ms tick
 
 #define CONFIG_TOTAL_LEN        (TUD_CONFIG_DESC_LEN + TUD_CDC_DESC_LEN)
 
@@ -110,6 +113,22 @@ AM_USED void tud_cdc_line_state_cb(uint8_t itf, bool dtr, bool rts)
 }
 
 
+// Private Helper Functions --------------------------------------------------------------------------------------------
+
+static bool usb_read_exact(void* data, uint32_t num_bytes)
+{
+   // A payload larger than one USB packet may still be arriving when its command byte is read
+   uint32_t have = 0;
+   for (uint32_t attempt = 0; (have < num_bytes) && (attempt < USB_READ_ATTEMPTS); ++attempt)
+   {
+      have += tud_cdc_read(((uint8_t*)data) + have, num_bytes - have);
+      if (have < num_bytes)
+         vTaskDelay(1);
+   }
+   return (have == num_bytes);
+}
+
+
 // Public API Functions ------------------------------------------------------------------------------------------------
 
 extern void app_maintenance_activate_find_my_tottag(uint32_t seconds_to_activate);
@@ -140,7 +159,7 @@ void UsbCdcTask(void *params)
    uid[EUI_LEN] = '\n';
 
    // Put the storage peripheral into maintenance mode
-   storage_enter_maintenance_mode();
+   nandlog_begin_session();
 
    // Loop forever listening for incoming data
    while (true)
@@ -175,10 +194,14 @@ void UsbCdcTask(void *params)
             case USB_SET_TIMESTAMP_COMMAND:
             {
                uint32_t timestamp = 0;
-               if (tud_cdc_read(&timestamp, sizeof(timestamp)) == sizeof(timestamp))
+               if (usb_read_exact(&timestamp, sizeof(timestamp)))
                   rtc_set_time_from_timestamp(timestamp);
                break;
             }
+            case USB_GET_UID_COMMAND:
+               tud_cdc_write(uid, sizeof(uid));
+               tud_cdc_write_flush();
+               break;
             case USB_FIND_MY_TOTTAG_COMMAND:
                app_maintenance_activate_find_my_tottag(10);
                break;
@@ -197,20 +220,48 @@ void UsbCdcTask(void *params)
                experiment_details_t old_details = { 0 };
                storage_retrieve_experiment_details(&old_details);
                old_details.is_terminated = 1;
-               storage_store_experiment_details(&old_details);
+               if (storage_store_experiment_details(&old_details))
+                  app_set_experiment_start_time(old_details.experiment_start_time);
                break;
             }
             case USB_NEW_EXPERIMENT_COMMAND:
             {
                experiment_details_t new_details = { 0 };
-               if (tud_cdc_read(&new_details, sizeof(new_details)) == sizeof(new_details))
-                  storage_store_experiment_details(&new_details);
+               if (usb_read_exact(&new_details, sizeof(new_details)))
+                  if (storage_store_experiment_details(&new_details))
+                     app_set_experiment_start_time(new_details.experiment_start_time);
                break;
             }
             case USB_SET_LOG_DL_DATES_COMMAND:
             {
-               tud_cdc_read(&download_start_timestamp, sizeof(download_start_timestamp));
-               tud_cdc_read(&download_end_timestamp, sizeof(download_end_timestamp));
+               uint32_t range[2] = { 0, 0 };
+               if (usb_read_exact(range, sizeof(range)))
+               {
+                  download_start_timestamp = range[0];
+                  download_end_timestamp = range[1];
+               }
+               else
+               {
+                  download_start_timestamp = download_end_timestamp = 0;
+                  print("ERROR: USB download date range truncated...downloading the whole log instead\n");
+               }
+               nandlog_retransmit_clear();
+               break;
+            }
+            case USB_RETRANSMIT_PAGES_COMMAND:
+            {
+               // [count][seq0..seqN-1]; a count of zero clears a list left over from an abandoned round
+               static uint32_t seqs[NANDLOG_MAX_RETRANSMIT_PAGES];
+               uint8_t count = 0;
+               if (!usb_read_exact(&count, sizeof(count)) || !count)
+               {
+                  nandlog_retransmit_clear();
+                  break;
+               }
+               if (usb_read_exact(seqs, count * sizeof(uint32_t)))
+                  nandlog_retransmit_add(seqs, count);
+               else
+                  print("ERROR: USB retransmission request truncated (%u pages)\n", count);
                break;
             }
             case USB_DOWNLOAD_LOG_COMMAND:

@@ -9,6 +9,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static TaskHandle_t ranging_task_handle;
+static volatile schedule_role_t requested_role;
 static volatile bool is_ranging;
 
 
@@ -18,7 +19,8 @@ void ranging_begin(schedule_role_t role)
 {
    // Notify the ranging task to start with the indicated role
    is_ranging = true;
-   xTaskNotify(ranging_task_handle, role, eSetValueWithOverwrite);
+   requested_role = role;
+   xTaskNotify(ranging_task_handle, RANGING_BEGIN, eSetBits);
 }
 
 bool ranging_active(void)
@@ -36,15 +38,21 @@ void RangingTask(void *scheduled_experiment)
    is_ranging = false;
 
    // Loop forever
+   system_watchdog_register(WATCHDOG_TASK_RANGING);
+   const TickType_t checkin_ticks = pdMS_TO_TICKS(WATCHDOG_CHECKIN_INTERVAL_MS);
    while (true)
    {
       // Sleep until time to start ranging with the indicated role
-      if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, portMAX_DELAY) == pdTRUE) && scheduled_experiment)
+      system_watchdog_pet(WATCHDOG_TASK_RANGING);
+      if ((xTaskNotifyWait(pdFALSE, 0xffffffff, &desired_role_bits, checkin_ticks) == pdTRUE) && (desired_role_bits & RANGING_BEGIN) && scheduled_experiment)
       {
-         print("TotTag Ranging: Starting ranging task as %s\n", (desired_role_bits == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");
-         scheduler_run((schedule_role_t)desired_role_bits);
+         const schedule_role_t role = requested_role;
+         print("TotTag Ranging: Starting ranging task as %s\n", (role == ROLE_MASTER) ? "MASTER" : "PARTICIPANT");
+         scheduler_run(role);
          print("TotTag Ranging: Ranging task has stopped!\n");
          is_ranging = false;
       }
+      else
+         is_ranging = false;
    }
 }

@@ -23,19 +23,30 @@ static uint8_t num_scheduled_devices;
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
 
-void insert_sorted(int arr[], int new, unsigned end)
+static inline bool timestamp_present(uint32_t timestamp)
+{
+   // A slot the Ranging Phase never filled is zero
+   return timestamp && (timestamp != RANGING_INVALID_TIMESTAMP);
+}
+
+static inline bool measurement_complete(const ranging_device_state_t *state, uint8_t attempt)
+{
+   return timestamp_present(state->poll_tx_times[attempt]) && timestamp_present(state->poll_rx_times[attempt]) && timestamp_present(state->resp_tx_times[attempt]) && timestamp_present(state->resp_rx_times[attempt]) && timestamp_present(state->final_tx_times[attempt]) && timestamp_present(state->final_rx_times[attempt]);
+}
+
+static void insert_sorted(int arr[], int value, unsigned end)
 {
    unsigned insert_at = 0;
-   while ((insert_at < end) && (new >= arr[insert_at]))
+   while ((insert_at < end) && (value >= arr[insert_at]))
       ++insert_at;
    if (insert_at == end)
-      arr[insert_at] = new;
+      arr[insert_at] = value;
    else
       while (insert_at <= end)
       {
          int temp = arr[insert_at];
-         arr[insert_at] = new;
-         new = temp;
+         arr[insert_at] = value;
+         value = temp;
          ++insert_at;
       }
 }
@@ -64,7 +75,7 @@ void computation_phase_reset_range_filter(uint8_t eui)
 
 void reset_computation_phase(uint8_t schedule_length)
 {
-   num_scheduled_devices = schedule_length;
+   num_scheduled_devices = (schedule_length > MAX_NUM_RANGING_DEVICES) ? MAX_NUM_RANGING_DEVICES : schedule_length;
 }
 
 void compute_ranges(uint8_t *ranging_results)
@@ -79,7 +90,7 @@ void compute_ranges(uint8_t *ranging_results)
       uint8_t num_valid_distances = 0;
       memset(distances_millimeters, 0, sizeof(distances_millimeters));
       for (uint8_t i = 0; i < RANGING_NUM_RANGE_ATTEMPTS; ++i)
-         if (state[dev_index].device_eui && state[dev_index].poll_rx_times[i] && state[dev_index].resp_rx_times[i] && state[dev_index].final_rx_times[i])
+         if (state[dev_index].device_eui && measurement_complete(&state[dev_index], i))
          {
             // Compute the device range from the two-way round-trip times
             const double Ra = state[dev_index].resp_rx_times[i] - state[dev_index].poll_tx_times[i];
@@ -105,6 +116,11 @@ void compute_ranges(uint8_t *ranging_results)
          range_millimeters = (int16_t)((distances_millimeters[bot] + distances_millimeters[top]) / 2);
          if (range_millimeters < 0)
             range_millimeters = 0;
+
+         // Record the range sample for instrumentation purposes
+#if RADIO_INSTRUMENTATION
+         ranging_radio_note_range_sample(state[dev_index].device_eui, range_millimeters);
+#endif
 
          // Filter the range estimate
          for (int i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)

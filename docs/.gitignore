@@ -1,0 +1,4 @@
+*.aux
+
+# Developer notes, kept private (local only)
+internals/

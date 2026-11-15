@@ -25,9 +25,11 @@ FABI = hard
 FLASH_START = 0x00018000
 ID_FLASH_LOCATION = 0x001FFFF8
 
+BUILD_TIMESTAMP := $(shell date -u +%s)
 DEFINES  = -D_HW_REVISION=$(REVISION)
-DEFINES += -D_DATETIME="\"$(shell date -u)\""
-DEFINES += -D_FW_REVISION=$(shell cd ../.. && git log --pretty=format:'%h' -n 1)
+DEFINES += -D_BUILD_TIMESTAMP=$(BUILD_TIMESTAMP)u
+DEFINES += -D_FW_REVISION=$(shell cd ../.. && git rev-parse --short=8 HEAD)
+DEFINES += -D_FW_DIRTY=$(shell git diff --quiet HEAD -- . 2>/dev/null && echo 0 || echo 1)
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)
 DEFINES += -DCFG_TUSB_DEBUG=0
@@ -37,6 +39,16 @@ DEFINES += -D'SEGGER_RTT_SECTION="SHARED_RW"'
 DEFINES += -DAM_HAL_DISABLE_API_VALIDATION
 DEFINES += -DAM_PACKAGE_BGA
 DEFINES += -DDM_NUM_ADV_SETS=1
+DEFINES += -DWSF_OS_DIAG=1
+DEFINES += -DWSF_BUF_STATS=1
+DEFINES += -DNANDLOG_PORT_CRC32=1
+DEFINES += $(EXTRA_DEFINES)
+ifeq ($(TEMPCO),1)
+DEFINES += -DTEMPCO_ENABLED=1
+endif
+ifeq ($(DIAGNOSTIC),1)
+DEFINES += -DDIAGNOSTIC_BUILD=1
+endif
 DEFINES += -D__USE_FREERTOS__
 DEFINES += -Dgcc
 
@@ -102,6 +114,7 @@ INCLUDES += -Isrc/app
 INCLUDES += -Isrc/boards
 INCLUDES += -Isrc/boards/rev$(REVISION)
 INCLUDES += -Isrc/external/decadriver
+INCLUDES += -Isrc/external/nandlog
 INCLUDES += -Isrc/external/segger
 INCLUDES += -Isrc/external/tinyusb
 INCLUDES += -Isrc/external/tinyusb/src
@@ -136,6 +149,8 @@ VPATH += src/app
 VPATH += src/boards
 VPATH += src/boards/rev$(REVISION)
 VPATH += src/external/decadriver
+VPATH += src/external/nandlog
+VPATH += src/external/nandlog/chips
 VPATH += src/external/segger
 VPATH += src/external/tinyusb
 VPATH += src/external/tinyusb/src
@@ -226,6 +241,13 @@ SRC += deca_compat.c
 SRC += deca_interface.c
 SRC += dw3000_device.c
 
+SRC += nandlog.c
+ifeq ($(REVISION), M)
+SRC += nandlog_chip_W25N01GWZEIG.c
+else
+SRC += nandlog_chip_AS5F18G04SND.c
+endif
+
 SRC += battery.c
 SRC += bluetooth.c
 SRC += button.c
@@ -255,6 +277,7 @@ SRC += live_stats_service.c
 SRC += maintenance_functionality.c
 SRC += maintenance_service.c
 SRC += computation_phase.c
+SRC += radio_test.c
 SRC += ranging_phase.c
 SRC += ranging_task.c
 SRC += schedule_phase.c
@@ -279,7 +302,7 @@ LIBS+= AmbiqSDK/mcu/$(PART)/hal/mcu/gcc/bin/libam_hal.a
 
 CFLAGS = -mthumb -mcpu=$(CPU) -mfpu=$(FPU) -mfloat-abi=$(FABI)
 CFLAGS+= -ffunction-sections -fdata-sections -fno-omit-frame-pointer
-CFLAGS+= -MMD -MP -std=c99 -Wall -O0
+CFLAGS+= -MMD -MP -std=c99 -Wall -Ofast -fno-strict-aliasing
 CFLAGS+= $(DEFINES)
 CFLAGS+= $(INCLUDES)
 
@@ -300,9 +323,12 @@ directories: $(CONFIG)
 $(CONFIG):
 	@mkdir -p $@
 
+$(CONFIG)/dm_sec.o: EXTRA_CFLAGS = -Wno-array-bounds
+$(CONFIG)/dm_conn.o: EXTRA_CFLAGS = -Wno-array-bounds
+
 $(CONFIG)/%.o: %.c $(CONFIG)/%.d
 	@echo " Compiling $<" ;\
-	$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $(EXTRA_CFLAGS) $< -o $@
 
 $(CONFIG)/%.o: %.s $(CONFIG)/%.d
 	@echo " Assembling $<" ;\

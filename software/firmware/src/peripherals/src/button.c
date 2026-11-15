@@ -6,7 +6,7 @@
 // Static Global Variables ---------------------------------------------------------------------------------------------
 
 static const am_devices_button_t buttons[] = {
-#if REVISION_ID == REVISION_APOLLO4_EVB
+#if 0
    AM_DEVICES_BUTTON(PIN_BUTTON_1, AM_DEVICES_BUTTON_NORMAL_HIGH),
    AM_DEVICES_BUTTON(PIN_BUTTON_2, AM_DEVICES_BUTTON_NORMAL_HIGH)
 #endif

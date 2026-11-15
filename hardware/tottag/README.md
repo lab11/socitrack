@@ -1,25 +1,34 @@
-TotTag Revision History
-=======================
+TotTag Hardware
+===============
 
-The original localization platform was developed by the Lab11 research group,
-primarily by @bpkempke, @bradjc, and @ppannuto.
-
-The original TotTag hardware (rev_c, rev_d) was developed @abiri during his
-Master's Thesis work when he was a visiting scholar with the Lab11 research
-group.
+Board designs for the TotTag, one folder per revision. The revision letter is silkscreened on the
+board. The current firmware supports revisions **M, N, O, and P**; earlier revisions are obsolete and
+live in [`../legacy/`](../legacy/).
 
 Current TotTag hardware is maintained by @ppannuto and @corruptbear.
 
 
-## "Gen 2" TotTags
+Revision History
+----------------
 
-Revision I is a fairly complete hardware refresh and board redesign. Initially
-necessitated by the COVID-era chip shortage, it became an opportunity to take
-advantage of the next generation of low-power MCUs and radio hardware.
-Revisions K, L, and M split the board into two physical modules to isolate
-design challenges with some of the new chips; revision N re-integrates the
-design back to a single module. Revisions O and P center on smaller fixes for
-DFM and scale.
+All current revisions are built around the Ambiq Apollo4 Blue Plus and Qorvo's DW3000-family UWB
+transceiver. Revision M splits the board into two physical modules to isolate design challenges with
+some of the new chips; revision N re-integrates the design back to a single module. Revisions O and P
+center on smaller fixes for DFM and scale.
+
+### Rev P (current)
+[Complete list of Rev P changes](rev_p/CHANGELOG.md) ·
+[Rev P issues / updates for the next rev](https://github.com/lab11/socitrack/issues/61)
+
+Highlights:
+ - Workaround for Apollo4 erratum ERR125 (VDDB rise time): dedicated `AP4_VDDB_SUP` net with doubled decoupling
+ - Add back test points for the USB SPI lines
+ - Remove more hedges: `RZ4` replaced with a wire; `RZ3`, `RZ5` replaced with solder jumpers `SJ9`, `SJ10`
+ - Consolidate one-off capacitors onto common BOM line items
+ - Update stackup to MacroFab's standard 4-layer, 0.8mm
+ - Rev P.2: layout-only DRC updates requested by MacroFab
+
+The pinout is unchanged from Rev O, so firmware for the two differs only in the revision ID.
 
 ### Rev O
 Highlights:
@@ -57,99 +66,11 @@ __Note: The main board is derived from Rev K, and integrates AP4BP Rev-B back on
     - Swap IOM's for DW and 9DOF to ease routing
     - Remove most microvias not on BGA pads
 
-
 ### Rev M + AP4BP Rev-B
 [Rev L Issues / Rev M updates](https://github.com/lab11/socitrack/issues/49)
+
+The oldest supported revision: a main board carrying the AP4BP module and three Qorvo DWM3000 pre-fab
+UWB modules. It is identical to the obsolete Rev L apart from one fix:
  - Fix silkscreen error on switch label
 
-### Rev L + AP4BP Rev-B
-[Prior rev's issues / updates](https://github.com/lab11/socitrack/issues/46)
- - Fixes first-rev issues from the AP4BP module.
- - Rips out our UWB in favor of DWM3000 pre-fab modules for Qorvo as a hedge
-   to facilitate more certain-to-work UWB in the short term (but sacrificing
-   diversity and robustness [and adding cost]).
-
-### Rev K + AP4BP Rev-A
-[Rev I Issues / Rev K Updates](https://github.com/lab11/socitrack/issues/44)
- - (n.b., there is no Rev J to avoid I/J confusion)
- - Move to Apollo4 Blue Plus (Blue has too many silicon bugs)
-    - Split this to a castellated module for separation of hw design concerns
- - Move to TCXO for DW3000 (bad idea; will be removed next rev)
-
-### Rev I ***(Major Revision)***
- - Refresh part selection to replace 2015 parts with improved modern versions
- - Major change: Apollo4 Blue as sole MCU
- - Major change: DW3000 replaces DW1000 as UWB transceiver
- - Really, most stuff changed except the wireless charging
-
-
-## "Gen 1" TotTags
-
-Revisions C–H mark the first generation of TotTag hardware, i.e., that designed
-primarily as hardare for social interaction tracking. Generation 1 TotTags
-carry a lot of design decisions from the original indoor localization system,
-and are generally built on "2010-2020" era technologies.
-
-### Rev H
-[Rev G Issues / Rev H Updates](https://github.com/lab11/socitrack/issues/9)
- - Isolates high-bandwidth accelerometer to dedicated SPI bus
- - Revises wireless charging design for robustness
- - Resolve RTC design issues
- - DFM cleanups
-
-### Rev G
-[Rev F Issues / Rev G Updates](https://github.com/lab11/totternary/issues/7)
- - Add detachable battery connector
- - Add power switch
- - Adapt PCB shape for mass-production case
-
-### Rev F
-
-[Rev E Issues / Rev F Updates.](https://github.com/lab11/totternary/issues/4)
- - Add RTC
-
-### Rev E
-
-[Rev D Issues / Rev E Updates.](https://github.com/lab11/totternary/issues/3)
-
-Rev E updates:
- - Major performance improvements
-   - Revise routing, part layout to improve RF performance
-   - Capacitor layout around nRF to fix crystal stability issues
- - Add optional switching regulator bypass
-
-### Rev D
-
-[Rev D Issue.](https://github.com/lab11/totternary/issues/2)
-
-Rev D updates:
- - Add low battery indication
- - Testpoints for buses
- - Fix reset signal for nRF52840
- - Several PCB improvements
-
-### Rev C
-
-[Rev C](../../tritag/rev_c/)
-
-Revision C was the first of the 'tottag' family of revisions (though not yet
-named as such). It converted the previous hardware modularity into Eagle design
-blocks, and was the first single-board revision. It added several features
-(storage, sensors) that were not part of the tritag design.
-
-Rev C Major Highlights:
-  - Modularize (design block) ranging design
-  - Update BLE to nRF52840
-  - Add SD Card
-  - Add Accelerometer
-  - Update charging design
-  - Integrate FTDI
-
-## Older revisions
-
-Prior iterations of this platform were developed for the "Polypoint" project,
-which later became the "Surepoint" project.
-
-The tottag hardware is largely an evolution of the
-[tritag](https://github.com/lab11/polypoint/tree/master/pcb/tritag) module
-from these projects.
+For Rev I–L, and everything before them, see [`../legacy/`](../legacy/).

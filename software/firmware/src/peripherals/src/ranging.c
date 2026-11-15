@@ -12,11 +12,53 @@
 static void *spi_handle;
 static dwt_config_t dw_config;
 static dwt_txconfig_t tx_config_ch5, tx_config_ch9;
-static volatile bool spi_ready, initialized = false;
+static volatile bool spi_ready, isr_woke_processor_now, initialized = false;
+static volatile uint32_t wake_pin_us, wake_ready_us, wake_restore_us;
+static volatile uint32_t stat_rx_ok, stat_rx_failed, stat_tx_failed, stat_isr_max_us, stat_isr_over;
+static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed, stat_wake_skipped;
+static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
+static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed, wake_this_call_us;
+static volatile uint32_t stat_rx_ok_antenna[NUM_XMIT_ANTENNAS], stat_rx_failed_antenna[NUM_XMIT_ANTENNAS];
+static volatile uint16_t recent_ok_antenna[NUM_XMIT_ANTENNAS], recent_failed_antenna[NUM_XMIT_ANTENNAS];
+static volatile uint32_t isr_entry_cycles_now, isr_events_now, isr_asleep_us_now, isr_wake_to_entry_us_now;
+static volatile uint8_t current_antenna, stat_network_size, preferred_antenna;
+static volatile uint32_t isr_overrun_count, antenna_changes;
+static bool cycle_counter_ok = false;
 static uint8_t eui64_array[8];
+
+#if RADIO_INSTRUMENTATION
+static ranging_range_stats_t range_stats[MAX_NUM_RANGING_DEVICES];
+static volatile uint32_t stat_isr_phase_max[RANGING_ISR_PHASE_COUNT], stat_isr_phase_count[RANGING_ISR_PHASE_COUNT];
+static volatile uint8_t current_isr_phase;
+#endif
 
 
 // Private Helper Functions --------------------------------------------------------------------------------------------
+
+static void cycle_counter_init(void)
+{
+#if RADIO_INSTRUMENTATION || DIAGNOSTIC_BUILD
+   // Powers up the DWT trace block
+   CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+   DWT->CYCCNT = 0;
+   DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+   const uint32_t first = DWT->CYCCNT;
+   for (volatile uint32_t spin = 0; spin < 64; ++spin) { }
+   cycle_counter_ok = (DWT->CYCCNT != first);
+#else
+   cycle_counter_ok = false;
+#endif
+}
+
+static inline uint32_t cycles_to_us(uint32_t cycles)
+{
+   return (uint32_t)(((uint64_t)cycles * 1000000u) / AM_HAL_CLKGEN_FREQ_MAX_HZ);
+}
+
+static inline uint32_t stimer_ticks_to_us(uint32_t ticks)
+{
+   return (uint32_t)(((uint64_t)ticks * 1000000u) / RANGING_STIMER_HZ);
+}
 
 static void ranging_radio_spi_ready(const dwt_cb_data_t *rxData)
 {
@@ -27,15 +69,84 @@ static void ranging_radio_spi_ready(const dwt_cb_data_t *rxData)
 static void ranging_radio_spi_event(const dwt_cb_data_t *rxData) {}
 static void ranging_radio_spi_error(void) {}
 
+static void ranging_radio_set_interrupt(bool enabled)
+{
+   // Gate this radio's interrupt line individually
+   const am_hal_gpio_int_ctrl_e control = enabled ? AM_HAL_GPIO_INT_CTRL_INDV_ENABLE : AM_HAL_GPIO_INT_CTRL_INDV_DISABLE;
+   uint32_t radio_interrupt_pin = PIN_RADIO_INTERRUPT;
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, control, &radio_interrupt_pin);
+#if REVISION_ID == REVISION_M
+   radio_interrupt_pin = PIN_RADIO_INTERRUPT2;
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, control, &radio_interrupt_pin);
+   radio_interrupt_pin = PIN_RADIO_INTERRUPT3;
+   am_hal_gpio_interrupt_control(AM_HAL_GPIO_INT_CHANNEL_0, control, &radio_interrupt_pin);
+#endif
+}
+
 static void ranging_radio_isr(void *args)
 {
    // Call the DW3000 ISR as long as the interrupt pin is asserted
-   static uint32_t pin_status;
+   const uint32_t isr_entry_cycles = DWT->CYCCNT;
+#if RADIO_INSTRUMENTATION
+   const uint8_t phase_at_entry = current_isr_phase;
+#endif
+   uint32_t pin_status = 0, iterations = 0;
+   isr_entry_cycles_now = isr_entry_cycles;
+   isr_events_now = 0;
+#if DIAGNOSTIC_BUILD
+   uint32_t asleep_ticks = 0, wake_cycles = 0;
+   isr_woke_processor_now = cycle_counter_ok && system_claim_wake(isr_entry_cycles, &asleep_ticks, &wake_cycles) && (cycles_to_us(wake_cycles) < RADIO_ISR_WAKE_WINDOW_US);
+   isr_asleep_us_now = stimer_ticks_to_us(asleep_ticks);
+   isr_wake_to_entry_us_now = cycles_to_us(wake_cycles);
+#endif
    do
    {
+      ++isr_events_now;
       dwt_isr();
       am_hal_gpio_state_read(PIN_RADIO_INTERRUPT, AM_HAL_GPIO_INPUT_READ, &pin_status);
-   } while (pin_status);
+   } while (pin_status && (++iterations < RADIO_ISR_MAX_ITERATIONS));
+
+   // The whole phase state machine runs inside this handler
+   ++stat_isr_count;
+   if (cycle_counter_ok)
+   {
+      const uint32_t elapsed_us = cycles_to_us(DWT->CYCCNT - isr_entry_cycles);
+      if (elapsed_us > stat_isr_max_us)
+      {
+         stat_isr_max_us = elapsed_us;
+         stat_isr_max_events = iterations + 1u;
+      }
+      stat_isr_us_total += elapsed_us;
+#if RADIO_INSTRUMENTATION
+      if (phase_at_entry < RANGING_ISR_PHASE_COUNT)
+      {
+         ++stat_isr_phase_count[phase_at_entry];
+         if (elapsed_us > stat_isr_phase_max[phase_at_entry])
+            stat_isr_phase_max[phase_at_entry] = elapsed_us;
+      }
+#endif
+      if (stat_isr_count > RADIO_ISR_WARMUP_COUNT)
+      {
+         // A since-boot maximum is pinned forever by the cold-cache first executions, so keep a warm one too
+         ++stat_isr_warm_count;
+         if (elapsed_us > stat_isr_warm_max_us)
+            stat_isr_warm_max_us = elapsed_us;
+      }
+      if (elapsed_us > RADIO_ISR_BUDGET_US)
+         ++stat_isr_over;
+   }
+
+   // Silence the radio, so that the scheduler sees the round fail and recovers
+   if (pin_status)
+   {
+      if (isr_overrun_count < UINT32_MAX)
+         ++isr_overrun_count;
+      ranging_radio_set_interrupt(false);
+      dwt_forcetrxoff();
+      dwt_setinterrupt(DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
+      dwt_writesysstatuslo(DWT_INT_ALL_LO);
+      print("ERROR: DW3000 interrupt line stuck asserted after %u handler passes...radio silenced\n", (uint32_t)iterations);
+   }
 }
 
 static void ranging_radio_spi_slow(void)
@@ -132,6 +243,7 @@ void deca_usleep(unsigned long time_us) { am_hal_delay_us(time_us); }
 bool ranging_radio_init(uint8_t *uid)
 {
    // Initialize static variables
+   cycle_counter_init();
    tx_config_ch5 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
    tx_config_ch9 = (dwt_txconfig_t){ 0x34, 0xFEFEFEFE, 0x0 };
    spi_functions = (struct dwt_spi_s){ .readfromspi = readfromspi, .writetospi = writetospi,
@@ -431,6 +543,8 @@ void ranging_radio_choose_channel(uint8_t channel)
 void ranging_radio_choose_antenna(uint8_t antenna_number)
 {
    // Enable the desired antenna
+   if (antenna_number < NUM_XMIT_ANTENNAS)
+      current_antenna = antenna_number;
 #if REVISION_ID > REVISION_M
    switch (antenna_number)
    {
@@ -460,6 +574,9 @@ void ranging_radio_disable(void)
 
 void ranging_radio_sleep(bool deep_sleep)
 {
+   // Clear the radio's interrupt line
+   ranging_radio_set_interrupt(false);
+
    // Disable all antennas
 #if REVISION_ID > REVISION_M
    am_hal_gpio_output_clear(PIN_RADIO_ANTENNA_SELECT1);
@@ -480,12 +597,28 @@ void ranging_radio_sleep(bool deep_sleep)
 
 void ranging_radio_wakeup(void)
 {
+   // Re-arm the radio's interrupt
+   ranging_radio_set_interrupt(true);
+   if (spi_ready)
+   {
+      ++stat_wake_skipped;
+      wake_this_call_us = 0;
+      return;
+   }
+
    // Assert the WAKEUP pin for >=500us and wait for it to become accessible
+   const uint32_t t_entry = am_hal_stimer_counter_get();
    wakeup_device_with_io();
+   const uint32_t t_pin = am_hal_stimer_counter_get();
    for (int i = 0; !spi_ready && (i < 100); ++i)
-      deca_usleep(20);
+      __WFI();
+   const uint32_t t_ready = am_hal_stimer_counter_get();
+   wake_pin_us = stimer_ticks_to_us(t_pin - t_entry);
+   wake_ready_us = stimer_ticks_to_us(t_ready - t_pin);
    if (!spi_ready)
    {
+      ++stat_wake_failed;
+      wake_this_call_us = UINT32_MAX;
       print("WARNING: DW3000 radio could not be woken up...resetting peripheral\n");
       ranging_radio_spi_slow();
       ranging_radio_reset();
@@ -499,7 +632,217 @@ void ranging_radio_wakeup(void)
             DWT_INT_RXFCE_BIT_MASK | DWT_INT_RXFSL_BIT_MASK | DWT_INT_RXFTO_BIT_MASK |
             DWT_INT_RXPTO_BIT_MASK | DWT_INT_RXSTO_BIT_MASK | DWT_INT_ARFE_BIT_MASK  |
             DWT_INT_SPIRDY_BIT_MASK, 0, DWT_ENABLE_INT_ONLY);
+      wake_restore_us = stimer_ticks_to_us(am_hal_stimer_counter_get() - t_ready);
+      stat_wake_last_us = wake_pin_us + wake_ready_us + wake_restore_us;
+      wake_this_call_us = stat_wake_last_us;
+      if (stat_wake_last_us > stat_wake_max_us)
+         stat_wake_max_us = stat_wake_last_us;
    }
+}
+
+bool ranging_radio_awake(void)
+{
+   // Awake from the radio answering a wake-up until it is next put to sleep
+   return spi_ready;
+}
+
+uint32_t ranging_radio_last_wake_us(void)
+{
+   // The most recent ranging_radio_wakeup() alone: 0 if the radio was already awake, UINT32_MAX if it had to be reset
+   return wake_this_call_us;
+}
+
+bool ranging_radio_isr_woke_processor(uint32_t *asleep_us, uint32_t *wake_to_isr_us)
+{
+   // Whether the radio interrupt now running had to wake the processor first, how long it had slept, and how long the wake-up held the interrupt off
+   *asleep_us = isr_asleep_us_now;
+   *wake_to_isr_us = isr_wake_to_entry_us_now;
+   return isr_woke_processor_now;
+}
+
+bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events)
+{
+   // How long the radio interrupt now running has taken so far and how many events it has serviced
+   *events = isr_events_now;
+   *elapsed_us = cycle_counter_ok ? cycles_to_us(DWT->CYCCNT - isr_entry_cycles_now) : 0;
+   return cycle_counter_ok;
+}
+
+void ranging_radio_note_tx_failure(void)
+{
+   // A delayed transmission was programmed after its slot had already gone by
+   ++stat_tx_failed;
+}
+
+void ranging_radio_note_rx_arm_failure(void)
+{
+   // A delayed receive could not be armed in time
+   ++stat_rx_arm_failed;
+}
+
+#if RADIO_INSTRUMENTATION
+
+void ranging_radio_note_phase(uint8_t phase)
+{
+   current_isr_phase = phase;
+}
+
+void ranging_radio_get_isr_phase_max(uint32_t *max_us, uint32_t *counts)
+{
+   for (uint8_t i = 0; i < RANGING_ISR_PHASE_COUNT; ++i)
+   {
+      if (max_us)
+         max_us[i] = stat_isr_phase_max[i];
+      if (counts)
+         counts[i] = stat_isr_phase_count[i];
+   }
+}
+
+void ranging_radio_note_range_sample(uint8_t eui, int32_t range_mm)
+{
+   // Accumulate the spread of the pre-filter range per peer, which is the per-link quality metric
+   if (eui)
+   {
+      for (uint8_t i = 0; i < MAX_NUM_RANGING_DEVICES; ++i)
+      {
+         if (!range_stats[i].eui)
+            range_stats[i].eui = eui;
+         if (range_stats[i].eui == eui)
+         {
+            if (!range_stats[i].offset_set)
+            {
+               range_stats[i].offset_set = true;
+               range_stats[i].offset_mm = range_mm;
+            }
+            const int64_t deviation = (int64_t)range_mm - (int64_t)range_stats[i].offset_mm;
+            ++range_stats[i].n;
+            range_stats[i].sum_mm += deviation;
+            range_stats[i].sumsq_mm += (uint64_t)(deviation * deviation);
+            break;
+         }
+      }
+   }
+}
+
+const ranging_range_stats_t* ranging_radio_get_range_stats(void)
+{
+   return range_stats;
+}
+
+#endif
+
+void ranging_radio_note_rx_results(uint8_t antenna, uint32_t decoded, uint32_t failed)
+{
+   // Split by antenna, since a damaged one costs only the slots received through it
+   if (antenna >= NUM_XMIT_ANTENNAS)
+      return;
+   stat_rx_ok += decoded;
+   stat_rx_failed += failed;
+   stat_rx_ok_antenna[antenna] += decoded;
+   stat_rx_failed_antenna[antenna] += failed;
+   uint32_t recent_ok = recent_ok_antenna[antenna] + decoded, recent_failed = recent_failed_antenna[antenna] + failed;
+   while ((recent_ok + recent_failed) > RADIO_ANTENNA_WINDOW_RECEIVES)
+   {
+      recent_ok >>= 1;
+      recent_failed >>= 1;
+   }
+   recent_ok_antenna[antenna] = (uint16_t)recent_ok;
+   recent_failed_antenna[antenna] = (uint16_t)recent_failed;
+}
+
+void ranging_radio_reconsider_antenna(void)
+{
+   // Move to the antenna whose recent receives fail least,if it beats the one in use by a clear margin
+   const uint8_t current = preferred_antenna;
+   const uint32_t current_total = recent_ok_antenna[current] + recent_failed_antenna[current];
+   if (current_total < RADIO_ANTENNA_MIN_RECEIVES)
+      return;
+   uint8_t best = current;
+   uint32_t best_failed = recent_failed_antenna[current], best_total = current_total;
+   for (uint8_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
+   {
+      const uint32_t total = recent_ok_antenna[antenna] + recent_failed_antenna[antenna];
+      if ((antenna == current) || (total < RADIO_ANTENNA_MIN_RECEIVES))
+         continue;
+      if ((recent_failed_antenna[antenna] * best_total) < (best_failed * total))
+      {
+         best = antenna;
+         best_failed = recent_failed_antenna[antenna];
+         best_total = total;
+      }
+   }
+
+   // failed(best) / total(best) + margin < failed(current) / total(current), in whole numbers
+   if ((best != current) && (((100u * best_failed * current_total) + (RADIO_ANTENNA_SWITCH_MARGIN_PCT * best_total * current_total)) < (100u * recent_failed_antenna[current] * best_total)))
+   {
+      preferred_antenna = best;
+      ++antenna_changes;
+   }
+}
+
+void ranging_radio_rotate_antenna(void)
+{
+   // Nothing decoded through the antenna in use for a whole round while listening for a schedule: try the next
+   preferred_antenna = (uint8_t)((preferred_antenna + 1) % NUM_XMIT_ANTENNAS);
+   ++antenna_changes;
+}
+
+uint8_t ranging_radio_preferred_antenna(void)
+{
+   return preferred_antenna;
+}
+
+void ranging_radio_note_network_size(uint8_t devices)
+{
+   stat_network_size = devices;
+}
+
+void ranging_radio_get_stats(ranging_radio_stats_t *stats)
+{
+   if (stats)
+   {
+      stats->rx_ok = stat_rx_ok;
+      stats->rx_failed = stat_rx_failed;
+      stats->wake_max_us = stat_wake_max_us;
+      stats->wake_last_us = stat_wake_last_us;
+      stats->tx_failed = stat_tx_failed;
+      stats->rx_arm_failed = stat_rx_arm_failed;
+      stats->wake_skipped = stat_wake_skipped;
+      stats->wake_failed = stat_wake_failed;
+      stats->isr_max_us = stat_isr_max_us;
+      stats->isr_max_events = stat_isr_max_events;
+      stats->isr_count = stat_isr_count;
+      stats->isr_us_total = stat_isr_us_total;
+      stats->isr_warm_max_us = stat_isr_warm_max_us;
+      stats->isr_warm_count = stat_isr_warm_count;
+      stats->network_size = stat_network_size;
+      stats->isr_over_count = stat_isr_over;
+      stats->cycle_counter_ok = cycle_counter_ok;
+      stats->antenna = preferred_antenna;
+      stats->antenna_changes = antenna_changes;
+      for (uint32_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
+      {
+         stats->rx_ok_antenna[antenna] = stat_rx_ok_antenna[antenna];
+         stats->rx_failed_antenna[antenna] = stat_rx_failed_antenna[antenna];
+      }
+   }
+}
+
+void ranging_radio_get_wake_timing(uint32_t *pin_us, uint32_t *ready_us, uint32_t *restore_us)
+{
+   // The last wake split into its three parts
+   if (pin_us)
+      *pin_us = wake_pin_us;
+   if (ready_us)
+      *ready_us = wake_ready_us;
+   if (restore_us)
+      *restore_us = wake_restore_us;
+}
+
+uint32_t ranging_radio_get_isr_overrun_count(void)
+{
+   // Non-zero means the radio interrupt line was stuck asserted
+   return isr_overrun_count;
 }
 
 bool ranging_radio_rxenable(int mode)
@@ -511,7 +854,7 @@ bool ranging_radio_rxenable(int mode)
 uint64_t ranging_radio_readrxtimestamp(void)
 {
    // Read the current DW3000 RX timestamp
-   static uint64_t cur_dw_timestamp;
+   uint64_t cur_dw_timestamp = 0;
    dwt_readrxtimestamp((uint8_t*)&cur_dw_timestamp, DWT_COMPAT_NONE);
    return cur_dw_timestamp;
 }
@@ -531,7 +874,7 @@ uint32_t ranging_radio_readrxtimestamp_hi(void)
 uint64_t ranging_radio_readtxtimestamp(void)
 {
    // Read the current DW3000 TX timestamp
-   static uint64_t cur_dw_timestamp;
+   uint64_t cur_dw_timestamp = 0;
    dwt_readtxtimestamp((uint8_t*)&cur_dw_timestamp);
    return cur_dw_timestamp;
 }

@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# NOTE: THIS FILE IS FROZEN AT LOG FORMAT v1 AND WILL NOT READ NEWER LOGS.
+#
+# It is a divergent fork of the dashboard whose parser predates several changes: it lacks
+# STORAGE_TYPE_BLE_SCAN, hard-codes a "data[i] > 5" type bound, and uses a variable-length IMU
+# convention (load_imu_data.IMU_DATA_LEN) that conflicts with IMU_DATA_LENGTH = 7 elsewhere.
+#
+# The maintained parser lives in tottag_format.py, which handles both the legacy unframed format and the
+# page-framed format with per-page CRCs. Use tottag.py or parse.py for anything current; this file is
+# kept only to reproduce results from archived v1 logs.
+
+
 # PYTHON INCLUSIONS ---------------------------------------------------------------------------------------------------
 
 from functools import partial

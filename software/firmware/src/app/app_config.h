@@ -17,6 +17,7 @@
 #include <string.h>
 #include "am_bsp.h"
 #include "am_util.h"
+#include "nandlog_conf.h"
 #include "pinout.h"
 #include "FreeRTOS.h"
 #include "event_groups.h"
@@ -42,20 +43,58 @@
 #endif
 
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
+#define STORAGE_FLUSH_TIMEOUT_S                     120
+#define STORAGE_DIAGNOSTIC_NUM_POOLS                5
+#define STORAGE_DIAGNOSTIC_NUM_STACKS               6           // each watchdog-monitored task, then the timer service
+#define STORAGE_MAX_PLAUSIBLE_OFFSET_MS             3600000
 
 #define BATTERY_CHECK_INTERVAL_S                    300
+#define TEMPCO_UPDATE_INTERVAL_S                    10          // Ambiq's recommended refresh for the TempCo voltage trims
 
-#define BLE_INIT_TIMEOUT_MS                         500
-#define BLE_ADV_TIMEOUT_MS                          50
+#define TIME_BASE_CHANGE_THRESHOLD_MS               2000
+
+#ifndef TEMPCO_ENABLED
+#define TEMPCO_ENABLED                              0           // 1: lower the regulator trims with temperature, which costs ~6% of CPU speed
+#endif
+#ifndef DIAGNOSTIC_BUILD
+#define DIAGNOSTIC_BUILD                            0           // 1: log every late radio arm and time radio interrupts, at some power and log space
+#endif
+
+
+// Watchdog Configuration ----------------------------------------------------------------------------------------------
+
+#define WATCHDOG_ISR_PRIORITY                       1
+
+#define WATCHDOG_TICK_S                             16    // AM_HAL_WDT_1_16HZ nominal; 1 Hz caps out at 255 s
+#define WATCHDOG_TICK_MIN_S                         12    // nominal less 25%, i.e. the LFRC at its fastest plausible rate
+#define WATCHDOG_INTERRUPT_TICKS                    4     // pre-reset interrupt; nothing depends on it arriving
+#define WATCHDOG_RESET_TICKS                        8     // 128 s nominal, ~167 s at the measured tick, from the last pet
+
+// How often a monitored task is expected to check in, and how long it may go quiet before it is declared stalled
+#define WATCHDOG_CHECKIN_INTERVAL_MS                10000
+#define WATCHDOG_CHECKIN_DEADLINE_MS                60000
+
+// Startup grace period, since a task's first check-in only happens once it has finished its own initialization
+#define WATCHDOG_STARTUP_GRACE_MS                   120000
+
+#if (WATCHDOG_ISR_PRIORITY >= NVIC_configMAX_SYSCALL_INTERRUPT_PRIORITY)
+#error "The watchdog handler must outrank the FreeRTOS syscall ceiling"
+#endif
+#if (WATCHDOG_INTERRUPT_TICKS > 255) || (WATCHDOG_RESET_TICKS > 255)
+#error "WATCHDOG_INTERRUPT_TICKS and WATCHDOG_RESET_TICKS must fit in 8 bits or am_hal_wdt_config() will truncate them"
+#endif
+#if (WATCHDOG_INTERRUPT_TICKS < 1) || (WATCHDOG_INTERRUPT_TICKS >= WATCHDOG_RESET_TICKS)
+#error "The watchdog interrupt must fire after the counter starts and before the watchdog reset"
+#endif
+#if ((WATCHDOG_INTERRUPT_TICKS * WATCHDOG_TICK_MIN_S * 1000) <= (2 * WATCHDOG_CHECKIN_INTERVAL_MS))
+#error "Health must be evaluated no more often than a healthy task can be expected to have checked in"
+#endif
+#if (WATCHDOG_CHECKIN_DEADLINE_MS <= (2 * WATCHDOG_CHECKIN_INTERVAL_MS))
+#error "The check-in deadline must tolerate a missed check-in, or ordinary scheduling jitter will reset the device"
+#endif
 
 
 // Experimental IMU Configuration -------------------------------------------------------------------------------------
-
-#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
-#define IMU_CALLBACKS_FROM_ISR                      false
-#else
-#define IMU_CALLBACKS_FROM_ISR                      true
-#endif
 
 #ifdef _TEST_IMU_DATA
 #define IMU_REPORT_INTERVAL_US                      10000
@@ -76,6 +115,9 @@
 // Battery Configuration -----------------------------------------------------------------------------------------------
 
 typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 3750, BATTERY_FULL = 4200 } battery_status_t;
+
+#define BATTERY_ADC_TIMEOUT_MS                      250
+#define BATTERY_EVENT_DEBOUNCE_MS                   250
 
 
 // DW3000 Ranging Radio Configuration ----------------------------------------------------------------------------------
@@ -105,17 +147,27 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 
 #define MAX_NUM_CONNECTIONS                         2
 
+#define BLE_INIT_TIMEOUT_MS                         500
+#define BLE_ADV_TIMEOUT_MS                          50
+
 #define BLE_ADVERTISING_DURATION_MS                 0
 #define BLE_ADVERTISING_INTERVAL_0_625_MS           120         // 75 ms
 #define BLE_SCANNING_WINDOW_0_625_MS                160         // 100 ms
 #define BLE_SCANNING_INTERVAL_0_625_MS              1600        // 1000 ms
 #define BLE_SCANNING_DURATION_MS                    0
 
+#define BLE_DISCOVERY_WINDOW_MS                     500
+#define BLE_CONFIG_VERIFY_WINDOWS                   120         // 120 x 500 ms = 60 s
+
 #define BLE_DESIRED_MTU                             247
+#define BLE_TRANSMIT_POOL_RESERVE                   6
+#define BLE_TRANSMIT_RESUME_BACKOFF_MS              10
 #define BLE_TRANSACTION_TIMEOUT_S                   1
 #define BLE_MIN_CONNECTION_INTERVAL_1_25_MS         12          // 15 ms
 #define BLE_MAX_CONNECTION_INTERVAL_1_25_MS         24          // 30 ms
 #define BLE_CONNECTION_SLAVE_LATENCY                9
+
+#define BLE_FAST_CONNECTION_INTERVAL_1_25_MS        12          // 15 ms
 #define BLE_SUPERVISION_TIMEOUT_10_MS               100         // 1000 ms
 #define BLE_MAX_CONNECTION_UPDATE_ATTEMPTS          5
 
@@ -127,6 +179,7 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define BLE_LIVE_STATS_RANGING_CHAR                 0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x56,0x31,0x8c,0xd6
 #define BLE_LIVE_STATS_ADDRESS_CHAR                 0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x57,0x31,0x8c,0xd6
 #define BLE_LIVE_STATS_IMU_DATA_CHAR                0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x58,0x31,0x8c,0xd6
+#define BLE_LIVE_STATS_RADIO_CHAR                   0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x59,0x31,0x8c,0xd6
 #define BLE_SCHEDULING_SERVICE_ID                   0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x5A,0x31,0x8c,0xd6
 #define BLE_SCHEDULING_REQUEST_CHAR                 0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x5B,0x31,0x8c,0xd6
 #define BLE_MAINTENANCE_SERVICE_ID                  0x2e,0x5d,0x5e,0x39,0x31,0x52,0x45,0x0c,0x90,0xee,0x3f,0xa2,0x60,0x31,0x8c,0xd6
@@ -147,29 +200,94 @@ typedef enum { BATTERY_EMPTY = 3500, BATTERY_CRITICAL = 3680, BATTERY_NOMINAL = 
 #define UNSCHEDULED_SLOT                            0xFF
 
 #define SCHEDULING_INTERVAL_US                      500000
-#define RADIO_WAKEUP_SAFETY_DELAY_US                3000
+#define RADIO_WAKEUP_SAFETY_DELAY_US                2400
 #define RECEIVE_EARLY_START_US                      (5 + (uint32_t)DW_PREAMBLE_LENGTH_US)
 
+#define RADIO_WAKEUP_TARGET_LEAD_US                 (RECEIVE_EARLY_START_US + 150)
+#define RADIO_WAKEUP_CORRECTION_MIN_US              (-1500)
+#define RADIO_WAKEUP_CORRECTION_MAX_US              5000
+#define RADIO_WAKEUP_CORRECTION_INITIAL_US          1100
+#define RADIO_WAKEUP_SETTLED_US                     200
+#define RADIO_WAKEUP_LATE_MASTER_US                 600
+#define RADIO_WAKEUP_LATE_MASTER_MAX_US             (SCHEDULING_INTERVAL_US / 4)
+#define RADIO_WAKEUP_LATE_MASTER_ROUNDS             4
+
+#define RANGING_ROUNDS_PER_SECOND                   (1000000u / SCHEDULING_INTERVAL_US)
+#define RANGING_STIMER_HZ                           32768u
+#define RANGING_MS_TO_STIMER(_ms)                   ((((uint32_t)(_ms) / 1000u) * RANGING_STIMER_HZ) + ((((uint32_t)(_ms) % 1000u) * RANGING_STIMER_HZ) / 1000u))
+#define RANGING_INVALID_TIMESTAMP                   0x7FFFFFFFu
+
 #define DEVICE_TIMEOUT_SECONDS                      60
+#define DEVICE_TIMEOUT_ROUNDS                       (DEVICE_TIMEOUT_SECONDS * RANGING_ROUNDS_PER_SECOND)
+#define DEVICE_FILTER_RESET_SECONDS                 2
+#define DEVICE_FILTER_RESET_ROUNDS                  (DEVICE_FILTER_RESET_SECONDS * RANGING_ROUNDS_PER_SECOND)
+#define MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE        (3u * RANGING_ROUNDS_PER_SECOND)
+
+
+#define MASTER_INELIGIBLE_AFTER_CYCLES              3
 #define NETWORK_SEARCH_TIME_SECONDS                 3
-#define MAX_EMPTY_ROUNDS_BEFORE_STATE_CHANGE        (3 * (1000000 / SCHEDULING_INTERVAL_US))
+#define NETWORK_SEARCH_TIMEOUT_STIMER               RANGING_MS_TO_STIMER(NETWORK_SEARCH_TIME_SECONDS * 1000u)
+
+#define RANGING_ROUND_STALL_TIMEOUT_MS              2000
+#define RANGING_ROUND_STALL_STIMER                  RANGING_MS_TO_STIMER(RANGING_ROUND_STALL_TIMEOUT_MS)
+
+#define RANGING_ISR_PHASE_COUNT                     9
+#define RADIO_ISR_MAX_ITERATIONS                    16
+
+#ifndef RADIO_STATS_REPORT_INTERVAL_S               // bench cadence; compiled out of a release build
+#define RADIO_STATS_REPORT_INTERVAL_S               30
+#endif
+#ifndef RADIO_INSTRUMENTATION
+#define RADIO_INSTRUMENTATION                       0
+#endif
+#ifndef RADIO_ISR_WARMUP_COUNT
+#define RADIO_ISR_WARMUP_COUNT                      256
+#endif
+#define RADIO_ISR_WAKE_WINDOW_US                    200
+#define RADIO_ANTENNA_WINDOW_RECEIVES               512
+#define RADIO_ANTENNA_MIN_RECEIVES                  64
+#define RADIO_ANTENNA_SWITCH_MARGIN_PCT             15
+#define SCHEDULE_LISTEN_WINDOW_US                   SCHEDULING_INTERVAL_US
+#ifndef RADIO_ISR_BUDGET_US
+#define RADIO_ISR_BUDGET_US                         (RANGING_BROADCAST_INTERVAL_US - RECEIVE_EARLY_START_US)
+#endif
+
+#if (DEVICE_TIMEOUT_ROUNDS > 255)
+#error "DEVICE_TIMEOUT_ROUNDS must fit in the uint8_t per-device round counters in schedule_phase.c"
+#endif
+#if (RANGING_ROUND_STALL_TIMEOUT_MS <= (2 * (SCHEDULING_INTERVAL_US / 1000)))
+#error "The round-stall backstop must tolerate a missed round, or ordinary packet loss will restart the schedule phase"
+#endif
 
 #define SCHEDULE_NUM_TOTAL_BROADCASTS               5
 #define SCHEDULE_NUM_MASTER_BROADCASTS              2
-#define SCHEDULE_RESEND_INTERVAL_US                 1000
+#define SCHEDULE_RESEND_INTERVAL_US                 800
 #define SCHEDULE_BROADCAST_PERIOD_US                (SCHEDULE_NUM_TOTAL_BROADCASTS * SCHEDULE_RESEND_INTERVAL_US)
 
 #define RANGING_NUM_PACKETS_PER_DEVICE              3
-#define RANGING_BROADCAST_INTERVAL_US               700
+#define RANGING_BROADCAST_INTERVAL_US               650
 #define RANGING_NUM_RANGE_ATTEMPTS                  NUM_XMIT_ANTENNAS
 #define RANGING_TIMEOUT_US                          (RECEIVE_EARLY_START_US + 100)
 
-#define RANGE_STATUS_NUM_TOTAL_BROADCASTS           4
-#define RANGE_STATUS_RESEND_INTERVAL_US             1000
-#define RANGE_STATUS_BROADCAST_PERIOD_US            (RANGE_STATUS_NUM_TOTAL_BROADCASTS * RANGE_STATUS_RESEND_INTERVAL_US)
-#define RANGE_STATUS_TIMEOUT_US                     (RANGE_STATUS_BROADCAST_PERIOD_US - 900 + RECEIVE_EARLY_START_US)
+#define RANGE_STATUS_BROADCAST_PERIOD_US            600
+#define RANGE_STATUS_TIMEOUT_US                     (RECEIVE_EARLY_START_US + 100)
 
-#define SUBSCRIPTION_BROADCAST_PERIOD_US            2000
-#define SUBSCRIPTION_TIMEOUT_US                     1000
+#define SUBSCRIPTION_BROADCAST_PERIOD_US            1500
+#define SUBSCRIPTION_TIMEOUT_US                     650         // how long the master and the round's relay listen for join requests
+#define SUBSCRIPTION_RELISTEN_MARGIN_US             300
+#define SUBSCRIPTION_TO_RANGING_SWITCH_US           600         // closing the join window and arming ranging slot 0, measured up to ~500 us with nine scheduled
+
+#define SUBSCRIPTION_PHASE_START_US                 SCHEDULE_BROADCAST_PERIOD_US
+#define RANGING_PHASE_START_US                      (SUBSCRIPTION_PHASE_START_US + SUBSCRIPTION_BROADCAST_PERIOD_US)
+
+_Static_assert((1000000u % SCHEDULING_INTERVAL_US) == 0, "the round period must divide one second exactly, or every round-counted timeout is wrong");
+_Static_assert(RANGING_ROUNDS_PER_SECOND >= 1, "the round period must be at most one second");
+_Static_assert((RADIO_WAKEUP_SAFETY_DELAY_US + RADIO_WAKEUP_CORRECTION_MIN_US) >= 500, "a learned wake-up must still leave the radio time to wake");
+_Static_assert((RADIO_WAKEUP_CORRECTION_INITIAL_US >= RADIO_WAKEUP_CORRECTION_MIN_US) && (RADIO_WAKEUP_CORRECTION_INITIAL_US <= RADIO_WAKEUP_CORRECTION_MAX_US), "the wake-up correction must start within its bounds");
+_Static_assert(RADIO_WAKEUP_LATE_MASTER_US > RADIO_WAKEUP_SETTLED_US, "a late master must stand out from a settled participant's own wander");
+_Static_assert((RADIO_WAKEUP_SAFETY_DELAY_US + RADIO_WAKEUP_CORRECTION_MAX_US + RADIO_WAKEUP_LATE_MASTER_MAX_US) < SCHEDULING_INTERVAL_US, "a wake-up moved for a late master must still land within the round");
+_Static_assert((SUBSCRIPTION_TIMEOUT_US + SUBSCRIPTION_TO_RANGING_SWITCH_US + RECEIVE_EARLY_START_US) <= SUBSCRIPTION_BROADCAST_PERIOD_US, "a device listening for join requests must have time to arm ranging slot 0 after the window closes, or it loses the round");
+_Static_assert(RANGE_STATUS_TIMEOUT_US < RANGE_STATUS_BROADCAST_PERIOD_US, "a status listening window must close before the next slot on the grid opens");
+_Static_assert(RANGING_TIMEOUT_US < RANGING_BROADCAST_INTERVAL_US, "a ranging listening window must close before the next slot on the grid opens");
 
 #endif  // #ifndef __APP_CONFIG_HEADER_H__

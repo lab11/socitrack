@@ -1,0 +1,114 @@
+/*
+ * Design tokens. Everything else reads from these; no literal colours elsewhere.
+ *
+ * Meant for the people who run studies with children and families: warm and calm rather than
+ * clinical. A cream page, white panels, a friendly blue for anything you act on, and an apricot that
+ * appears only in the mark. Status colours are kept distinct from the blue so that "Done" and
+ * "Check" never read as ordinary chrome, and every text colour clears 4.5:1 on its background.
+ */
+
+:root {
+  --paper: #fbf7f1;
+  --surface: #ffffff;
+  --surface-2: #f8f3ec;
+  --sunken: #f2ebe1;
+  --rail: #f4ede3;
+
+  --ink: #2b2620;
+  --ink-2: #574e45;
+  --ink-3: #6f665b;
+  --line: #ece3d7;
+  --line-2: #ddd1c1;
+
+  --primary: #2f6db3;
+  --primary-hover: #255b98;
+  --primary-wash: #e9f1fb;
+  --primary-ink: #22548c;
+  --on-primary: #ffffff;
+
+  --brand-a: #f4a259;
+  --brand-b: #5b9bd5;
+
+  --ok: #2b7a4b;
+  --ok-wash: #e5f4ea;
+  --ok-line: #b9dfc6;
+  --warn: #855600;
+  --warn-wash: #fdf3de;
+  --warn-line: #f0d6a0;
+  --crit: #b0392a;
+  --crit-wash: #fcebe7;
+  --crit-line: #f2c2b8;
+  --info: #22548c;
+  --info-wash: #ebf2fb;
+  --info-line: #c4d8f1;
+  --note: #4f5d74;
+  --note-wash: #eff2f7;
+  --note-line: #d3dbe7;
+
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, Consolas, monospace;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.25rem;
+
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+
+  --shadow: 0 1px 2px rgba(84, 62, 30, 0.05), 0 8px 20px -12px rgba(84, 62, 30, 0.18);
+  --shadow-raised: 0 1px 2px rgba(84, 62, 30, 0.08), 0 14px 32px -16px rgba(84, 62, 30, 0.28);
+
+  --rail-width: 248px;
+  --topbar-height: 64px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1a1714;
+    --surface: #24201c;
+    --surface-2: #2b2621;
+    --sunken: #16130f;
+    --rail: #131110;
+
+    --ink: #f3ede5;
+    --ink-2: #d2c7ba;
+    --ink-3: #ab9f91;
+    --line: #38312a;
+    --line-2: #4a4239;
+
+    --primary: #8db9ee;
+    --primary-hover: #abcbf4;
+    --primary-wash: #1e2a39;
+    --primary-ink: #b9d4f6;
+    --on-primary: #10233a;
+
+    --brand-a: #f4a259;
+    --brand-b: #6aa8e0;
+
+    --ok: #79c995;
+    --ok-wash: #1b2a21;
+    --ok-line: #2f4c39;
+    --warn: #e8bd66;
+    --warn-wash: #2e2514;
+    --warn-line: #5a4720;
+    --crit: #f29682;
+    --crit-wash: #33201b;
+    --crit-line: #613229;
+    --info: #9cc2f0;
+    --info-wash: #1c2633;
+    --info-line: #33465f;
+    --note: #b6c1d4;
+    --note-wash: #23272f;
+    --note-line: #3a414d;
+
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 20px -12px rgba(0, 0, 0, 0.5);
+    --shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.35), 0 14px 32px -16px rgba(0, 0, 0, 0.6);
+  }
+}

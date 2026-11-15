@@ -35,6 +35,7 @@ typedef enum {
 
 typedef void (*motion_change_callback_t)(bool in_motion);
 typedef void (*data_ready_callback_t)(imu_data_type_t data_types_ready);
+typedef void (*imu_service_request_callback_t)(void);
 #if defined(_TEST_IMU_DATA) && (REVISION_ID >= REVISION_N)
 typedef void (*imu_data_pending_callback_t)(void);
 #endif
@@ -59,6 +60,8 @@ int32_t imu_read_sample_time_offset_us(void);
 #endif
 void imu_register_motion_change_callback(motion_change_callback_t callback);
 void imu_register_data_ready_callback(data_ready_callback_t callback);
+void imu_register_service_request_callback(imu_service_request_callback_t callback);
+bool imu_service_pending(void);
 void imu_read_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);
 void imu_read_linear_accel_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);
 void imu_read_gravity_data(int16_t *x, int16_t *y, int16_t *z, uint8_t *accuracy);

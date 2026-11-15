@@ -11,71 +11,18 @@
 static StaticTask_t ranging_task_tcb, test_task_tcb;
 static TaskHandle_t ranging_task_handle, test_task_handle;
 static StackType_t ranging_task_stack[configMINIMAL_STACK_SIZE], test_task_stack[configMINIMAL_STACK_SIZE];
+static const schedule_role_t desired_role = ROLE_MASTER;
 static uint8_t uid[EUI_LEN], test_state;
 static volatile bool is_ranging;
 
-#if REVISION_ID == REVISION_APOLLO4_EVB
-static void button_pressed(void *button_number)
-{
-   // Notify the Test Task that a button was pressed
-   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-   vTaskNotifyGiveFromISR(test_task_handle, &xHigherPriorityTaskWoken);
-   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-#else
-static const schedule_role_t desired_role = ROLE_MASTER;
-#endif
 
 void TestTask(void *uid)
 {
-   // Initiate interrupt-based button press detection
-#if REVISION_ID == REVISION_APOLLO4_EVB
-   button_press_register_callback(PIN_BUTTON_1, button_pressed);
-   button_press_register_callback(PIN_BUTTON_2, button_pressed);
-
-   // Loop forever
-   while (true)
-   {
-      // Sleep until a button is pressed
-      if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) == pdTRUE)
-      {
-         // Change to a new testing state
-         test_state = (test_state + 1) % 3;
-         switch (test_state)
-         {
-            case 0:
-               if (is_ranging)
-                  scheduler_stop();
-               while (is_ranging);
-               break;
-            case 1:
-            {
-               if (is_ranging)
-                  scheduler_stop();
-               while (is_ranging);
-               xTaskNotify(ranging_task_handle, ROLE_PARTICIPANT, eSetValueWithOverwrite);
-               break;
-            }
-            case 2:
-            {
-               if (is_ranging)
-                  scheduler_stop();
-               while (is_ranging);
-               xTaskNotify(ranging_task_handle, ROLE_MASTER, eSetValueWithOverwrite);
-               break;
-            }
-            default:
-               break;
-         }
-      }
-   }
-#else
    if (desired_role == ROLE_MASTER)
       xTaskNotify(ranging_task_handle, ROLE_MASTER, eSetValueWithOverwrite);
    else
       xTaskNotify(ranging_task_handle, ROLE_PARTICIPANT, eSetValueWithOverwrite);
    vTaskDelay(1000);
-#endif
 }
 
 void RangeTask(void *uid)
