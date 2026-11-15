@@ -7,3 +7,7 @@ dist/
 fixtures/real/
 *.ttg
 *.pkl
+
+# Except the small test fixtures the schema and app tests load, which are cleared for publication (tags are
+# labelled by hex ID only) and must be in the repository for CI to run those tests
+!packages/tottag-schema/test/fixtures/*.ttg
