@@ -36,11 +36,7 @@
 #define MAX_NUM_RANGING_DEVICES                     10
 #define COMPRESSED_RANGE_DATUM_LENGTH               (1 + sizeof(int16_t))       // EUI + Range
 #define MAX_COMPRESSED_RANGE_DATA_LENGTH            (1 + (COMPRESSED_RANGE_DATUM_LENGTH * MAX_NUM_RANGING_DEVICES))
-#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
-#define MAX_IMU_DATA_LENGTH                         (1 + UINT8_MAX)             // Payload length byte + payload
-#else
 #define MAX_IMU_DATA_LENGTH                         40
-#endif
 
 #define STORAGE_QUEUE_MAX_NUM_ITEMS                 60
 #define STORAGE_FLUSH_TIMEOUT_S                     120
@@ -109,6 +105,13 @@
 #define IMU_SAMPLE_TIMESTAMP_MASK                   ((1U << IMU_SAMPLE_TIMESTAMP_BITS) - 1)
 #define IMU_SAMPLE_MIN_TIMESTAMP_OFFSET_100US       (-(1 << (IMU_SAMPLE_TIMESTAMP_BITS - 1)))
 #define IMU_SAMPLE_MAX_TIMESTAMP_OFFSET_100US       ((1 << (IMU_SAMPLE_TIMESTAMP_BITS - 1)) - 1)
+#endif
+
+#if defined(_TEST_IMU_DATA) && defined(__USE_FREERTOS__) && (REVISION_ID >= REVISION_N)
+// Batched IMU records need room for a full SHTP batch payload; kept here so the production value above stays the
+// first (and only unconditional) definition that the browser tool's constant extractor reads
+#undef MAX_IMU_DATA_LENGTH
+#define MAX_IMU_DATA_LENGTH                         (1 + UINT8_MAX)             // Payload length byte + payload
 #endif
 
 
