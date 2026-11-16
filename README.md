@@ -2,8 +2,8 @@ TotTag
 ======
 
 TotTag is a wearable device that measures **how close people are to one another**, continuously, with
-no infrastructure in the room. Each device carries an ultra-wideband (UWB) radio and ranges against
-every other device nearby twice a second, recording distances to on-board flash. Nothing is installed
+no infrastructure in the room. Each device includes an ultra-wideband (UWB) radio and ranges against
+every other nearby device twice a second, recording distances to on-board memory. Nothing is installed
 in the environment, nothing is transmitted during a deployment, and no audio or video is captured.
 
 If you are interested in using TotTag in your own research, please fill out this
@@ -18,8 +18,7 @@ If you are interested in using TotTag in your own research, please fill out this
 Documentation
 -------------
 
-**All user documentation lives at [lab11.github.io/socitrack](https://lab11.github.io/socitrack/),
-built from [`docs/`](docs/).**
+**All user documentation lives at [lab11.github.io/socitrack](https://lab11.github.io/socitrack/).**
 
 Start with [Running a Deployment](https://lab11.github.io/socitrack/running-a-deployment.html) if you want to use TotTag, or
 [Getting Started](https://lab11.github.io/socitrack/getting-started.html) if you have devices that have never been set up.
@@ -30,20 +29,20 @@ Repository layout
 
 | Directory | Contents |
 | --- | --- |
-| [`docs/`](docs/) | All user documentation; the source of the documentation site |
-| [`firmware/`](firmware/) | Device firmware for the Ambiq Apollo4: ranging protocol, Bluetooth maintenance interface, on-board NAND logging |
-| [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD; everything before Rev M is under [`hardware/legacy/`](hardware/legacy/) |
+| [`docs/`](docs/) | The source behind the user documentation |
+| [`firmware/`](firmware/) | Device firmware for the TotTag hardware |
+| [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD |
 
-The tools that configure devices and download and read their data live in a separate repository,
+The tools used to configure devices and to download and read their data are stored in a separate repository,
 [hedgetechllc/tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard). The browser tool built
-from it is published at [app.tottag.net](https://app.tottag.net/).
+from that repository is available at [app.tottag.net](https://app.tottag.net/).
 
 
 History, Related Projects, & Relevant Publications
 ==================================================
 
-This current effort builds on a long line of work exploring the capabilities of
-ultra wideband under resource-constrained settings. This repository is an
+This project builds on a long line of work exploring the capabilities of
+ultra wideband ranging under resource-constrained settings. This repository is an
 evolution of projects exploring COTS-based solutions; some others linked below
 explore more custom ultra wideband as well.
 
