@@ -1,0 +1,38 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+// A compact header. The theme's is sized for a single-page project site; at full size it fills about a
+// third of a laptop screen on every page before any of the page's content appears.
+
+.page-header {
+  @include large { padding: 1.5rem 6rem; }
+  @include medium { padding: 1.25rem 4rem; }
+  @include small { padding: 1rem; }
+}
+
+.project-name {
+  @include large { font-size: 2rem; }
+  @include medium { font-size: 1.75rem; }
+  @include small { font-size: 1.5rem; }
+}
+
+.project-tagline {
+  margin-bottom: 0.75rem;
+  @include large { font-size: 1rem; }
+  @include medium { font-size: 1rem; }
+  @include small { font-size: 0.9rem; }
+}
+
+// Only the home page has a tagline (see _layouts/default.html), so elsewhere the button follows the title
+.project-name + .btn {
+  margin-top: 0.6rem;
+}
+
+.page-header .btn {
+  margin-bottom: 0;
+  @include large { padding: 0.35rem 0.9rem; font-size: 0.9rem; }
+  @include medium { padding: 0.35rem 0.8rem; }
+  @include small { padding: 0.5rem; }
+}
