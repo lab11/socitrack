@@ -5,11 +5,11 @@ and read the same logs, so a device does not care which one you use.
 
 | | Desktop dashboard | Browser tool |
 | --- | --- | --- |
-| Install | `pip install -e .` | None: open [app.tottag.net](https://app.tottag.net/) |
+| Install | `pip install tottag` | None: open [app.tottag.net](https://app.tottag.net/) |
 | Runs on | macOS, Linux, Windows | Chrome, Edge, Opera on any computer |
 | Connection | Bluetooth or USB | Bluetooth or USB |
 | Radio check | Live over Bluetooth | Live over Bluetooth, or from downloaded logs |
-| Analysis | Plotting helpers in Python (`processing.py`) | Built in: a timeline, charts, daily figures, and comparing two devices |
+| Analysis | Plotting helpers in Python (`tottag.processing`) | Built in: a timeline, charts, daily figures, and comparing two devices |
 
 The browser tool is convenient on machines on which you cannot install software, and
 it is the only one that reads logs without Python and without installing any local
@@ -21,18 +21,17 @@ software.
 
 ### Installing
 
-Both tools live in their own repository,
-[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard), separate from the firmware.
-The desktop dashboard is in its `Python` folder:
-
 ```bash
-git clone https://github.com/hedgetechllc/tottag-dashboard
-cd tottag-dashboard/Python
-python3 -m pip install -e .
+python3 -m pip install tottag
 ```
 
 Then run `tottag` from any directory. Dependencies — `bleak`, `matplotlib`, `numpy`, `pandas`,
-`pyserial`, `scipy`, and others — install automatically.
+`pyserial`, `scipy`, and others — install automatically. To update it later, run
+`python3 -m pip install --upgrade tottag`.
+
+The source for both tools is in the
+[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard) repository. You only need it to
+change the dashboard itself; its README says how to install from a clone.
 
 ### Finding devices
 
@@ -115,10 +114,10 @@ messages mean.
 
 ### Analysis helpers
 
-`processing.py` in the dashboard directory has plotting helpers:
+The dashboard's `processing` module has plotting helpers:
 
 ```python
-from processing import *
+from tottag.processing import *
 
 A = load_data("02.pkl")
 B = load_data("3E.pkl")

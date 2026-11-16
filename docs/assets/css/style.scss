@@ -36,3 +36,9 @@
   @include medium { padding: 0.35rem 0.8rem; }
   @include small { padding: 0.5rem; }
 }
+
+// The theme gives a table no bottom margin, which a following paragraph's own margin hides. Inside a numbered
+// list nothing does, so the next item would sit against the table's bottom edge
+.main-content li > table {
+  margin-bottom: 1rem;
+}

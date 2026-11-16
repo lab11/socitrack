@@ -13,25 +13,22 @@ powers off instead and waits. Charging overnight avoids a whole class of confusi
 
 **Put every device on a charger** while you configure it. Devices are only awake and reachable when
 plugged in; an unplugged device that is outside its study window powers itself off and will not appear
-in a scan. This is deliberate — it is what makes the battery last — but it means configuration happens
-on the charger, always.
+in a scan. This is deliberate — it is what makes the battery last — but it means configuration **only** happens
+on the charger.
 
 **Know your device IDs.** You will pick devices out of a list by the end of their ID; the browser tool
-shows the last two bytes, as **TotTag 00:02**. If you did not label the cases during setup, now is the
+shows the last two bytes, such as **TotTag 00:02**. If you did not label the cases during setup, now is the
 time.
 
 ---
 
 ## Install the dashboard
 
-The desktop dashboard is the usual tool. It lives in the
-[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard) repository, separate from the
-firmware:
+The desktop dashboard is one tool you can use to configure your deployments. Install it with `pip`,
+then run it from any directory:
 
 ```bash
-git clone https://github.com/hedgetechllc/tottag-dashboard
-cd tottag-dashboard/Python
-python3 -m pip install -e .
+python3 -m pip install tottag
 tottag
 ```
 
@@ -51,18 +48,18 @@ With every device on a charger:
 2. **Schedule New Pilot Deployment.**
 3. Fill in:
 
-| Field | Meaning |
-| --- | --- |
-| **Deployment Timezone** | The time zone the study happens in. Every time you enter uses this clock, and changing it reinterprets the times already entered. |
-| **Start / End Date and Time** | The outer bounds of the study. Nothing is recorded before the start or after the end. |
-| **Daily Start / End Time** | Optional. Restricts recording to a window within each day, in the study's local time: school hours, say. Leave unset to record continuously between the start and end dates. |
-| **TotTags in Deployment** | The devices taking part. **Maximum 10.** |
+   | Field | Meaning |
+   | --- | --- |
+   | **Deployment Timezone** | The time zone the study happens in. Every time you enter uses this clock, and changing it reinterprets the times already entered. |
+   | **Start / End Date and Time** | The outer bounds of the study. Nothing is recorded before the start or after the end. |
+   | **Daily Start / End Time** | Optional. Restricts recording to a window within each day, in the study's local time: school hours, say. Leave unset to record continuously between the start and end dates. |
+   | **TotTags in Deployment** | The devices taking part. **Maximum 10.** |
 
 4. **Schedule.** The configuration is pushed to every device on the list, and read back over either USB or
-   Bluetooth to confirm each one stored it.
+   Bluetooth to confirm that each one stored it successfully.
 5. **Save the deployment record** when the dashboard asks. Keep it in the folder you will download the
    logs to: it is the only place the study's time zone is kept, and both tools read from it to show
-   times, charts, and daily figures on the study's clock.
+   times, charts, and daily figures in the correct time zone.
 
 A few things worth understanding:
 
@@ -78,7 +75,6 @@ A few things worth understanding:
   does not know about the study and will not take part. Scan again and confirm the list.
 
 Use **Get Scheduled Deployment Details** on a device afterwards to read back what it actually stored.
-It is worth doing on at least one device, and on all of them if the study matters.
 
 ### In the browser tool
 
@@ -95,7 +91,7 @@ reason as above.
 **Scheduling a device starts a fresh log.** Nothing is erased from the device's memory, but whatever
 it recorded for the previous study can no longer be downloaded with either tool. Download every device
 from the previous study first ([Step 4](#step-4--collect-and-download)). The browser tool knows which
-studies' data it has saved, and will not write over one it has not seen saved unless you say the
+studies' data it has saved, and will not write over one it has not seen saved unless you verify that the
 data is safe elsewhere.
 
 ---

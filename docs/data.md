@@ -18,14 +18,14 @@ convenience that can be rebuilt from its `.ttg` whenever you need it, including 
 browser tool saved:
 
 ```bash
-cd tottag-dashboard/Python/dashboard
-python3 tottag.py --convert ~/Downloads/02_1788300000.ttg
+tottag --convert ~/Downloads/02_1788300000.ttg
 ```
 
 This writes the same `02.pkl` the download wrote, next to the `.ttg`. Keep the name the `.ttg` was saved
 under, because that is how the tool knows which device's log it is. A legacy `.ttg`, from firmware older
-than the page-framed format, does not carry the labels the `.pkl` uses and cannot be rebuilt this way;
-`parse.py` in the same folder reads it with device IDs in place of labels.
+than the page-framed format, does not carry the labels the `.pkl` uses and cannot be rebuilt this way.
+Instead, `python3 -m tottag.parse FILE.ttg START` reads it with device IDs in place of labels, where
+`START` is when the study started in Unix seconds, and writes `converted.pkl` to your Downloads folder.
 
 If a device's data ever looks wrong, the `.ttg` is what tells you whether the problem is in the
 recording or in the processing.
@@ -60,7 +60,8 @@ So to retrieve the distances over time to device `0x3E`:
 series = [(r['t'], r['r'][0x3E]) for r in records if 'r' in r and 0x3E in r['r']]
 ```
 
-The bundled `processing.py` has helpers for plotting pairs and overlaying annotated events.
+The dashboard's `processing` module (`from tottag.processing import *`) has helpers for plotting pairs and
+overlaying annotated events; see [The Dashboard](dashboard.md#analysis-helpers).
 
 ---
 
@@ -152,7 +153,7 @@ which you have before concluding a device failed.
 ## Daily figures
 
 Both tools can sum a deployment into daily figures for chosen devices: the browser tool on its **Time
-together** tab, and `get_daily_ranging_statistics` in the desktop dashboard's `processing.py`.
+together** tab, and `get_daily_ranging_statistics` in the desktop dashboard's `processing` module.
 
 - **Days** run from midnight to midnight on the study's clock, in the time zone from the deployment
   record.
