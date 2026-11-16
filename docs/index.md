@@ -36,8 +36,10 @@ that won't appear, won't range, or came back with less data than expected.
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
 | [Reference](reference.md) | Limits, constants, and hardware details |
 
-Working on the firmware or the tools themselves? Start from the
-[`software/` folder](https://github.com/lab11/socitrack/tree/master/software) in the repository.
+Working on the firmware? Start from the
+[`software/` folder](https://github.com/lab11/socitrack/tree/master/software) in the repository. The
+dashboard tools have their own repository,
+[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard).
 
 ---
 
@@ -70,6 +72,8 @@ through a body or a wall read longer and vary more, because the signal takes a l
 ## Project links
 
 - [Source code](https://github.com/lab11/socitrack)
+- [Dashboard source code](https://github.com/hedgetechllc/tottag-dashboard), and the
+  [browser tool](https://app.tottag.net/) built from it
 - [Interest form](https://forms.gle/SqWca9DrKpcx9rBL6) — for research groups wanting to use TotTag
 
 > TotTag is under active development and is provided as-is, without a support channel. The

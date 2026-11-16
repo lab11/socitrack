@@ -5,7 +5,7 @@ and read the same logs, so a device does not care which one you use.
 
 | | Desktop dashboard | Browser tool |
 | --- | --- | --- |
-| Install | `pip install -e .` | None: open [lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/) |
+| Install | `pip install -e .` | None: open [app.tottag.net](https://app.tottag.net/) |
 | Runs on | macOS, Linux, Windows | Chrome, Edge, Opera on any computer |
 | Connection | Bluetooth or USB | Bluetooth or USB |
 | Radio check | Live over Bluetooth | Live over Bluetooth, or from downloaded logs |
@@ -21,8 +21,13 @@ software.
 
 ### Installing
 
+Both tools live in their own repository,
+[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard), separate from the firmware.
+The desktop dashboard is in its `Python` folder:
+
 ```bash
-cd socitrack/software/management
+git clone https://github.com/hedgetechllc/tottag-dashboard
+cd tottag-dashboard/Python
 python3 -m pip install -e .
 ```
 
@@ -153,7 +158,7 @@ them, and a one-line note says so.
 
 ## The browser tool
 
-Open **[lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/)**. It is an ordinary web
+Open **[app.tottag.net](https://app.tottag.net/)**. It is an ordinary web
 page: there is nothing to install, and it does not upload your data anywhere — everything happens in
 the page, on your computer.
 

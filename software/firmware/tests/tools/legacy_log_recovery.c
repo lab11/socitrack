@@ -7,7 +7,8 @@
 // every page of it is still sitting on the flash. The data is not gone; only the pointer to it is.
 //
 // So this firmware does not try to find the log. It reads every page of the part, as it is, and sends each
-// one that is not erased to a host, which does the reconstruction (management/dashboard/legacy_recovery.py).
+// one that is not erased to a host, which does the reconstruction (Python/dashboard/legacy_recovery.py in
+// hedgetechllc/tottag-dashboard).
 // Keeping the intelligence on the host means a better heuristic never requires reflashing a tag, and the
 // raw dump it produces can be archived and re-analysed long after the tag itself has been wiped.
 //

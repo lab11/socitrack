@@ -24,16 +24,19 @@ time.
 
 ## Install the dashboard
 
-The desktop dashboard is the usual tool:
+The desktop dashboard is the usual tool. It lives in the
+[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard) repository, separate from the
+firmware:
 
 ```bash
-cd socitrack/software/management
+git clone https://github.com/hedgetechllc/tottag-dashboard
+cd tottag-dashboard/Python
 python3 -m pip install -e .
 tottag
 ```
 
 There is also a [browser-based tool](dashboard.md#the-browser-tool) at
-[lab11.github.io/socitrack/app](https://lab11.github.io/socitrack/app/). It is a web page, so there is
+[app.tottag.net](https://app.tottag.net/). It is a web page, so there is
 nothing to install, but it needs Chrome, Edge, or Opera on a computer to reach the devices. Both tools
 configure devices identically and read the same logs; use whichever suits you.
 

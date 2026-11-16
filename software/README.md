@@ -4,12 +4,12 @@ Software
 | Directory | Contents |
 | --- | --- |
 | [`firmware/`](firmware/) | Device firmware for the Ambiq Apollo4. Ranging protocol, Bluetooth maintenance interface, on-board NAND logging. |
-| [`management/`](management/) | Desktop dashboard (Python/Tkinter) for configuring deployments and downloading logs, plus analysis helpers. |
-| [`managementweb/`](managementweb/) | Browser-based equivalent, built on a shared TypeScript package holding the log-format knowledge. |
 
-Both management tools write the same `.ttg` log format and speak the same Bluetooth protocol, so a
-device does not care which configured it. Where they must agree on a constant, a parity test asserts it
-against the other's source directly.
+The tools that configure deployments and download and analyze logs live in their own repository,
+[hedgetechllc/tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard): the desktop dashboard
+(Python/Tkinter) and the browser tool, which is published at [app.tottag.net](https://app.tottag.net/).
+That repository carries this one as a submodule, because its checks read the firmware source to confirm
+the tools still agree with it.
 
 **Documentation for all of this lives at
 [lab11.github.io/socitrack](https://lab11.github.io/socitrack/)** — see

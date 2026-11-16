@@ -18,7 +18,7 @@ convenience that can be rebuilt from its `.ttg` whenever you need it, including 
 browser tool saved:
 
 ```bash
-cd socitrack/software/management/dashboard
+cd tottag-dashboard/Python/dashboard
 python3 tottag.py --convert ~/Downloads/02_1788300000.ttg
 ```
 
@@ -193,6 +193,9 @@ sequence number, timestamps, and CRC. The CRC is what lets the tools detect a pa
 and ask the device to resend it.
 
 You rarely need this level of detail. If you are writing your own reader, the authoritative
-description is the two existing readers — `software/management/dashboard/tottag_format.py` and
-`software/managementweb/packages/tottag-schema/src/log.ts` — which are kept in step with the firmware
-by an automated check.
+description is the two existing readers in the
+[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard) repository —
+[`Python/dashboard/tottag_format.py`](https://github.com/hedgetechllc/tottag-dashboard/blob/main/Python/dashboard/tottag_format.py)
+and
+[`Web/packages/tottag-schema/src/log.ts`](https://github.com/hedgetechllc/tottag-dashboard/blob/main/Web/packages/tottag-schema/src/log.ts)
+— which are kept in step with the firmware by an automated check.

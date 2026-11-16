@@ -31,8 +31,12 @@ Repository layout
 | Directory | Contents |
 | --- | --- |
 | [`docs/`](docs/) | All user documentation; the source of the documentation site |
-| [`software/`](software/) | Device firmware and the tools that configure devices and read their data |
+| [`software/`](software/) | Device firmware |
 | [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD; everything before Rev M is under [`hardware/legacy/`](hardware/legacy/) |
+
+The tools that configure devices and download and read their data live in a separate repository,
+[hedgetechllc/tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard). The browser tool built
+from it is published at [app.tottag.net](https://app.tottag.net/).
 
 
 History, Related Projects, & Relevant Publications
