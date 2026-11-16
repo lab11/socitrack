@@ -28,7 +28,7 @@ ID_FLASH_LOCATION = 0x001FFFF8
 BUILD_TIMESTAMP := $(shell date -u +%s)
 DEFINES  = -D_HW_REVISION=$(REVISION)
 DEFINES += -D_BUILD_TIMESTAMP=$(BUILD_TIMESTAMP)u
-DEFINES += -D_FW_REVISION=$(shell cd ../../.. && git rev-parse --short=8 HEAD)
+DEFINES += -D_FW_REVISION=$(shell git rev-parse --short=8 HEAD)
 DEFINES += -D_FW_DIRTY=$(shell git diff --quiet HEAD -- .. 2>/dev/null && echo 0 || echo 1)
 DEFINES += -DPART_$(PART)
 DEFINES += -D$(PART_DEF)

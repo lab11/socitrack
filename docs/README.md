@@ -37,7 +37,7 @@ a device that won't appear, won't range, or that came back with less data than e
 | [Reference](reference.md) | Limits, constants, and hardware details |
 
 Working on the firmware? Start from the
-[`software/` folder](https://github.com/lab11/socitrack/tree/master/software) in the repository. The
+[`firmware/` folder](https://github.com/lab11/socitrack/tree/master/firmware) in the repository. The
 dashboard tools have their own repository,
 [tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard).
 

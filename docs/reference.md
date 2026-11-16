@@ -100,7 +100,7 @@ pins.
 
 ## Build commands
 
-From `software/firmware`:
+From `firmware`:
 
 | Command | Effect |
 | --- | --- |
@@ -113,7 +113,7 @@ From `software/firmware`:
 | `make BOARD_REV=P DIAGNOSTIC=1` | Diagnostic build: logs every late radio receive, times radio interrupts, and traces how each device finds each round's schedule and why it leaves a network, at some cost in power and about 50 bytes a second of log space. Not for deployments |
 | `SEGGER_SERIAL=...` | Choose among several attached programmers |
 
-From `software/firmware/tests` — diagnostic builds that exercise one subsystem and print over SEGGER
+From `firmware/tests` — diagnostic builds that exercise one subsystem and print over SEGGER
 RTT:
 
 ```

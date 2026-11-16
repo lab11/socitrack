@@ -12,4 +12,4 @@ jobs:
         with:
           release: '15.2.Rel1'
       - name: compile-revM
-        run: pushd software/firmware && make clean && make -j all BOARD_REV=M
+        run: pushd firmware && make clean && make -j all BOARD_REV=M

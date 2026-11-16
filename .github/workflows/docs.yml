@@ -1,7 +1,5 @@
 name: Documentation
 
-# Publishes the documentation in docs/ to GitHub Pages. The browser tool it documents lives in
-# hedgetechllc/tottag-dashboard and is published from there, at app.tottag.net.
 on:
   push:
     branches: [master]
@@ -15,7 +13,6 @@ permissions:
   pages: write
   id-token: write
 
-# Let a running deployment finish rather than cancelling it part-way.
 concurrency:
   group: pages
   cancel-in-progress: false

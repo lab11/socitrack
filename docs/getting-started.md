@@ -71,7 +71,7 @@ are yours to choose — any four hex digits, except that the last byte cannot be
 protocol uses 0 to mean "no device", so a device ending in `00` never joins a network.
 
 ```bash
-cd socitrack/software/firmware
+cd socitrack/firmware
 make ID=c0:98:e5:42:00:02 UID
 ```
 
@@ -129,7 +129,7 @@ Repeat for each device.
 ```bash
 cd socitrack
 git pull --recurse-submodules
-cd software/firmware
+cd firmware
 make clean
 make BOARD_REV=P flash
 ```

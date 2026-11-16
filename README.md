@@ -31,7 +31,7 @@ Repository layout
 | Directory | Contents |
 | --- | --- |
 | [`docs/`](docs/) | All user documentation; the source of the documentation site |
-| [`software/`](software/) | Device firmware |
+| [`firmware/`](firmware/) | Device firmware for the Ambiq Apollo4: ranging protocol, Bluetooth maintenance interface, on-board NAND logging |
 | [`hardware/`](hardware/) | Board designs, bills of materials, and enclosure CAD; everything before Rev M is under [`hardware/legacy/`](hardware/legacy/) |
 
 The tools that configure devices and download and read their data live in a separate repository,
