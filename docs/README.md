@@ -30,7 +30,7 @@ a device that won't appear, won't range, or that came back with less data than e
 | --- | --- |
 | [Getting Started](getting-started.md) | Tools, first-time device setup, loading firmware |
 | [Running a Deployment](running-a-deployment.md) | Scheduling a study, handing out devices, collecting data |
-| [Device Behavior](device-behavior.md) | What a device does, when it records and sleeps, what the sounds mean |
+| [Device Behavior](device-behavior.md) | What a device does, when it records, what the sounds mean |
 | [The Dashboard](dashboard.md) | The desktop and browser deployment configuration tools |
 | [Your Data](data.md) | What a log file contains and how to read it |
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
@@ -46,10 +46,10 @@ dashboard tools have their own repository,
 ## What TotTag measures, and what it does not
 
 TotTag records the **distance between pairs of devices**, several times a second, as a time series. From
-that you can derive who was near whom, for how long, and how that changed over a day.
+that, you can derive who was near whom, for how long, and how that changed over a day.
 
 It does not record position in a room, and it is not a localization system — there are no anchors and
-no coordinate frame. It records only device-to-device distance.
+no coordinate frame. It records only device-to-device distances.
 
 Accuracy in practice is a few centimeters between devices with a clear path between them. Distances
 through a body or a wall read longer and vary more, because the signal takes a longer path. See
@@ -61,7 +61,7 @@ through a body or a wall read longer and vary more, because the signal takes a l
 
 - **Up to 10 devices** can be in one deployment.
 - Distances are recorded **twice a second** per pair.
-- Devices only record **while unplugged** and **inside the scheduled study window**.
+- Devices only record **while unplugged** and **inside a scheduled study window**.
 - Logs are downloaded **over Bluetooth or USB, with the device on its charger** — there is no live
   upload during a deployment.
 - Recording capacity is **weeks to months** depending on the device revision; see
