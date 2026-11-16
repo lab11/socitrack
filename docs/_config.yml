@@ -2,17 +2,21 @@ title: TotTag
 description: Infrastructure-free proximity tracking for naturalistic research
 theme: jekyll-theme-cayman
 
-# Rewrites the relative .md links between pages into site URLs, so the same links work
-# both when browsing docs/ on GitHub and on the published site.
+# jekyll-relative-links rewrites the relative .md links between pages into site URLs, so the same links
+# work both when browsing docs/ on GitHub and on the published site.
+# jekyll-readme-index publishes README.md as the site's home page. The home page is a README rather than
+# index.md so that GitHub also shows it when browsing docs/. Both plugins are on by default on GitHub
+# Pages; they are listed so the build does not silently depend on that.
 plugins:
   - jekyll-relative-links
+  - jekyll-readme-index
 relative_links:
   enabled: true
   collections: false
 
 # Pages are listed in the order a new user should meet them.
 header_pages:
-  - index.md
+  - README.md
   - getting-started.md
   - running-a-deployment.md
   - device-behavior.md

@@ -1,13 +1,13 @@
 # TotTag
 
 TotTag is a wearable device that measures **how close people are to one another**, continuously, with
-no infrastructure in the room. Each device carries an ultra-wideband (UWB) radio and ranges against
-every other device nearby twice a second, recording the distances to on-board flash. Nothing needs to
+no infrastructure in the room. Each device contains an ultra-wideband (UWB) radio and ranges against
+every other nearby device twice a second, storing the distances in on-board memory. Nothing needs to
 be installed in the environment, nothing is transmitted to a server during a deployment, and no audio
 or video is captured.
 
-A deployment is usually: configure the devices from a laptop, hand them out, collect them, download the
-logs, analyze the distances.
+The main steps for a deployment are typically: configure the devices from a laptop, hand them out,
+collect them, download the logs, and analyze the distances.
 
 ---
 
@@ -19,8 +19,8 @@ end to end and is the only page most researchers need.
 **Setting up devices for the first time?** [Getting Started](getting-started.md) covers the hardware
 you need, assigning each device an ID, and loading firmware.
 
-**Something isn't behaving?** [Troubleshooting](troubleshooting.md) covers the common cases — a device
-that won't appear, won't range, or came back with less data than expected.
+**Something isn't behaving?** [Troubleshooting](troubleshooting.md) covers the common cases, such as
+a device that won't appear, won't range, or that came back with less data than expected.
 
 ---
 
@@ -30,7 +30,7 @@ that won't appear, won't range, or came back with less data than expected.
 | --- | --- |
 | [Getting Started](getting-started.md) | Tools, first-time device setup, loading firmware |
 | [Running a Deployment](running-a-deployment.md) | Scheduling a study, handing out devices, collecting data |
-| [Device Behavior](device-behavior.md) | What a device does on its own: when it records, when it sleeps, what the sounds mean |
+| [Device Behavior](device-behavior.md) | What a device does, when it records and sleeps, what the sounds mean |
 | [The Dashboard](dashboard.md) | The desktop and browser deployment configuration tools |
 | [Your Data](data.md) | What a log file contains and how to read it |
 | [Troubleshooting](troubleshooting.md) | Diagnosing a device that misbehaved |
