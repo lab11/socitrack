@@ -1,7 +1,6 @@
 # Device Behavior
 
-Once a device leaves the charger, it runs entirely on its own. This page describes what it decides and
-why, so that behavior you see in the field is interpretable rather than mysterious.
+Once a device leaves the charger, it runs entirely on its own. This page describes what does and why, so that behavior you see in the field is interpretable rather than mysterious.
 
 ---
 

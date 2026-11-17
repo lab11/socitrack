@@ -45,7 +45,8 @@ With every device on a charger:
 
 1. **Scan for TotTags.** Devices appear by ID. Wait until all of them are listed — a device that has
    just been plugged in can take a few seconds to show up.
-2. **Schedule New Pilot Deployment.**
+2. **Schedule New Pilot Deployment**, without connecting to any device. The dashboard connects to every
+   device in the study itself; if you are already connected to a device, the button updates only that device.
 3. Fill in:
 
    | Field | Meaning |
@@ -74,7 +75,8 @@ A few things worth understanding:
 - **Every device must be scheduled.** A device that was not on the charger when you pressed Schedule
   does not know about the study and will not take part. Scan again and confirm the list.
 
-Use **Get Scheduled Deployment Details** on a device afterwards to read back what it actually stored.
+Afterwards, **Connect** to a device and use **Get Scheduled Deployment Details** to read back what it
+actually stored.
 
 ### In the browser tool
 
@@ -182,8 +184,8 @@ study, confirm that each log:
 
 ## Canceling or changing a deployment
 
-**Cancel Scheduled Pilot Deployment** clears the schedule from a device. Each device must be canceled
-individually, on its charger. This is only necessary if you want to cancel a deployment that has not
+**Connect** to a device and use **Cancel Deployment On Current Device** to clear its schedule. Each
+device must be canceled individually, on its charger. This is only necessary if you want to cancel a deployment that has not
 yet occurred or has started but not yet ended. This is not necessary for simply storing or reusing
 the devices in a new study.
 

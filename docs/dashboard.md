@@ -30,8 +30,8 @@ Then run `tottag` from any directory. Dependencies — `bleak`, `matplotlib`, `n
 `python3 -m pip install --upgrade tottag`.
 
 The source for both tools is in the
-[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard) repository. You only need it to
-change the dashboard itself; its README says how to install from a clone.
+[tottag-dashboard](https://github.com/hedgetechllc/tottag-dashboard) repository. You only need it if you are developing
+the dashboard itself; its README says how to install from a clone.
 
 ### Finding devices
 
@@ -41,15 +41,24 @@ A device only appears if it is **awake**, which in practice means **on a charger
 outside its study window powers itself off and cannot answer. If a device is missing from the list, the
 charger is the first thing to check.
 
-**Connect** to a device to act on it. Everything below operates on the connected device alone.
+Scheduling a study and the [live radio check](#checking-devices-radios) work across devices, so start them
+straight after a scan, **without connecting to any device**. Everything else works on one device at a
+time: **Connect** to it first, and **Disconnect** when you are done.
 
 ### Setting up a study
 
+**Schedule New Pilot Deployment** configures a study: start and end, optional daily window, timezone,
+and the devices taking part (**maximum 10**). It is available after a scan while no device is connected,
+and it reaches each device taking part in turn, writing the study to it and reading it back. If you are
+connected to a device, disconnect first: while one is connected, the button reads **Update Deployment
+On Current Device** and writes the study to that device alone.
+
+With a device connected:
+
 | Action | What it does |
 | --- | --- |
-| **Schedule New Pilot Deployment** | Configures a study: start and end, optional daily window, timezone, and the devices taking part (**maximum 10**). Pushes it to every device listed. |
-| **Get Scheduled Deployment Details** | Reads back what a device actually stored. Worth checking on at least one device. |
-| **Cancel Scheduled Pilot Deployment** | Clears the schedule from the connected device. One device at a time. |
+| **Get Scheduled Deployment Details** | Reads back what the device actually stored. Worth checking on at least one device. |
+| **Cancel Deployment On Current Device** | Clears the schedule from the device. One device at a time. |
 
 Set the **Deployment Timezone** before entering times — changing it reinterprets times already typed.
 

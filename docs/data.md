@@ -1,15 +1,14 @@
 # Your Data
 
-A download with the desktop dashboard gives you two files per device:
+A download from the configuration dashboard gives you two files per device:
 
 | File | What it is |
 | --- | --- |
 | `<name>_<start>.ttg` | The raw log, byte for byte as the device sent it. **This is your archival copy.** |
 | `<name>.pkl` | The same data parsed into Python objects, ready for analysis. |
 
-`<name>` is the device's label, or its ID if it has none, with any characters a file name cannot hold
-(`/ \ : * ? " < > |`) left out. `<start>` is when the study started, so downloading a device twice
-replaces its files rather than adding more. Both tools name a device's `.ttg` the same way.
+`<name>` is the device's label, or its ID if it has none, with any characters a file name cannot hold left out. `<start>` is when the study started, so downloading from a device twice simply
+replaces the file. Both tools name a device's `.ttg` the same way.
 
 The browser tool saves only the `.ttg`. A `.pkl` is a Python file, made by the desktop dashboard.
 
@@ -21,13 +20,9 @@ browser tool saved:
 tottag --convert ~/Downloads/02_1788300000.ttg
 ```
 
-This writes the same `02.pkl` the download wrote, next to the `.ttg`. Keep the name the `.ttg` was saved
-under, because that is how the tool knows which device's log it is. A legacy `.ttg`, from firmware older
-than the page-framed format, does not carry the labels the `.pkl` uses and cannot be rebuilt this way.
-Instead, `python3 -m tottag.parse FILE.ttg START` reads it with device IDs in place of labels, where
-`START` is when the study started in Unix seconds, and writes `converted.pkl` to your Downloads folder.
-
-If a device's data ever looks wrong, the `.ttg` is what tells you whether the problem is in the
+This writes the same `02.pkl` the download wrote, next to the `.ttg` file. Keep the name the `.ttg` was saved
+under, because that is how the tool knows which device's log it is.
+If a device's data ever looks wrong, the `.ttg` file is what tells you whether the problem is in the
 recording or in the processing.
 
 ---
