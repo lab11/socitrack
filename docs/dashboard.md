@@ -49,7 +49,7 @@ time: **Connect** to it first, and **Disconnect** when you are done.
 
 **Schedule New Pilot Deployment** configures a study: start and end, optional daily window, timezone,
 and the devices taking part (**maximum 10**). It is available after a scan while no device is connected,
-and it reaches each device taking part in turn, writing the study to it and reading it back. If you are
+and it connects to each device taking part in turn, writing the study to it and reading it back. If you are
 connected to a device, disconnect first: while one is connected, the button reads **Update Deployment
 On Current Device** and writes the study to that device alone.
 
@@ -66,7 +66,7 @@ Scheduling and canceling both start a fresh log on the device. Nothing is erased
 whatever it recorded before can no longer be downloaded with either tool, so **download a device before
 scheduling or canceling it**.
 
-### Checking on a device
+### Checking a device
 
 | Action | What it does |
 | --- | --- |
@@ -78,7 +78,7 @@ scheduling or canceling it**.
 
 ### Checking devices' radios
 
-**Live Radio Check** runs several devices in a short radio test and compares them, to find one with a
+**Live Radio Check** runs several devices in a short radio test and compares them to find one with a
 weak receiver, a faulty antenna, or a calibration that is off. It needs no deployment and downloads
 nothing. It is available after a scan has found at least two devices over Bluetooth, while you are **not**
 connected to one. Disconnect first if you are. Put the devices on their chargers before scanning, so the
@@ -94,17 +94,16 @@ scan can find them; a device running a deployment can be reached too.
    if setting out takes more than half a minute or so, choose a longer test.
 
 The table updates every second with each device's status, the share of the last minute's rounds it
-ranged in, and its receive failures, overall and per antenna. The share counts from a device's first
-range, so the coordinator is not marked down for the rounds it ran alone before anyone joined. The
+ranged in, and its reception failures, overall and per antenna. The
 antenna it is currently using to hear the schedule is shown in brackets. A device not yet in the
 network shows its role as *searching*. Distances are shown in feet and inches. The grid below it shows
-how often each device ranged to each other device. Within the first minute each device gets a **Pass**,
+how often each device ranged with each other device. Within the first minute, each device gets a **Pass**,
 **Check**, or **Fail** label, with the reasons listed underneath, and the verdicts update every 15
 seconds. They firm up once every device has a minute of data; until then, a note says the run is still
 too short to judge.
 
 Scanning, connecting, and scheduling are locked while a test runs. **Stop Test** ends it early. Either
-way, each device restarts back to whatever it was doing, even if the dashboard has been closed. See
+way, each device restarts back to whatever it was doing before the test, even if the dashboard has been closed. See
 [checking devices on the bench](troubleshooting.md#checking-devices-on-the-bench) for what each verdict
 means.
 
@@ -117,7 +116,7 @@ The device must be **on its charger** to download.
 | **Download Deployment Log Files** | Data from the scheduled study. Normally what you want. Every download saves two files per device: the raw `.ttg` log, your archival copy, and a `.pkl` parsed for Python. See [Your Data](data.md). |
 | **Download Full Logs** | The whole of the current log, ignoring the study's dates: everything recorded since the device was last scheduled or canceled. Earlier studies cannot be downloaded. |
 
-Downloads take minutes. Watch the console — see
+Downloads can take multiple minutes. Watch the console, and see
 [Running a Deployment](running-a-deployment.md#watch-the-console-while-it-downloads) for what the
 messages mean.
 
@@ -171,23 +170,21 @@ page: there is nothing to install, and it does not upload your data anywhere —
 the page, on your computer.
 
 Reading and analyzing logs works in any browser. **Connecting to a device needs Web Bluetooth or Web
-Serial**, which exist only in Chrome, Edge, and Opera on a computer; the tool says so up front rather
-than failing at the moment you need it. Opening a whole folder of logs at once needs the same browsers;
-elsewhere it falls back to a file picker. What you enter is kept in the browser between visits.
+Serial**, which exist only in Chrome, Edge, or Opera. Anything you enter on the site is retained in the browser between visits.
 
 It has four pages:
 
 | Page | What it does |
 | --- | --- |
-| **Set up a deployment** | Name, time zone, dates, and daily hours, all in the study's local time, and the devices taking part. Shows each device's battery and any deployment it still holds as it is added, warns before writing over a study whose data has not been saved, and writes and reads back every device. Produces a **deployment record** of what each device confirmed. |
-| **Check a tag** | One device's battery, clock, firmware, and the deployment it holds, read back. **Buzz** to find it; **cancel** its deployment, with a warning if its data has not been saved. |
-| **Download & review** | Download a device's log over Bluetooth or USB, or open `.ttg` files, and see for each one the dates it covered against those scheduled, which of the other devices it measured distances to, and anything that needs attention, explained in plain language. Opened with its deployment record, it adds a timeline, charts, and daily figures (see below). |
+| **Set up a deployment** | Configures the name, time zone, dates, and daily hours, all in the study's local time, and the devices taking part. Shows each device's battery and any deployment it still holds as it is added, warns before writing over a study whose data has not been saved, and writes and reads back every device. Produces a **deployment record** of what each device confirmed. |
+| **Check a tag** | Reads back one device's battery, clock, firmware, and the deployment it holds. **Buzz** to find it; **cancel** its deployment, with a warning if its data has not been saved. |
+| **Download & review** | Download a device's log over Bluetooth or USB, or open a `.ttg` file and see the dates it covered against those scheduled, which of the other devices it measured distances to, and anything that needs attention, explained in plain language. When opened with its deployment record, it adds a timeline, charts, and daily figures (see below). |
 | **Radio check** | See below. |
 
 Devices are named by the last two parts of their ID, such as **TotTag 00:0A**, matching the end of the
 ID on the device's label.
 
-Its **Radio check** page compares devices against each other to find one with a weak receiver, a faulty
+Its **Radio check** page compares devices against each other to find ones with a weak receiver, a faulty
 antenna, or a calibration that is off. Like the desktop dashboard's **Live Radio Check**, it can run a
 short live test over Bluetooth, with no deployment and nothing to download. It can also read the logs of
 a deployment that already ran. See
@@ -195,10 +192,9 @@ a deployment that already ran. See
 
 ### Reviewing a deployment
 
-Open the **deployment record**, the `.json` saved when the devices were set up by either tool, together
+Open the **deployment record**, the `.json` file saved when the devices were set up by either tool, together
 with the logs: drop it in with them, browse for it, or keep it in the same folder and open the whole
-folder. Every time on the page is then shown in the study's own time zone, and a note at the top says
-which. Without a matching record, the page uses the time zone on the setup page, says so, and offers
+folder. Every item on the page is then shown in the study's own time zone. Without a matching record, the page uses the time zone on the setup page, and offers to
 **Add the deployment record**. Logs from more than one deployment are grouped, with a choice of which to
 show.
 

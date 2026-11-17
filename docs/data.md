@@ -20,7 +20,7 @@ browser tool saved:
 tottag --convert ~/Downloads/02_1788300000.ttg
 ```
 
-This writes the same `02.pkl` the download wrote, next to the `.ttg` file. Keep the name the `.ttg` was saved
+This writes the same `02.pkl` the download wrote, next to the `.ttg` file. Keep the name the `.ttg` file was saved
 under, because that is how the tool knows which device's log it is.
 If a device's data ever looks wrong, the `.ttg` file is what tells you whether the problem is in the
 recording or in the processing.
@@ -68,7 +68,7 @@ pair agreed with itself from both directions to **within 1 mm** of the median. I
 - **Clear line of sight**: a few centimeters, stable.
 - **Through a body**: reads longer, because the signal travels around rather than through. A device on
   someone's chest facing away from another person is the common case.
-- **Through a wall**: reads longer and varies far more. In one deployment a through-wall pair showed
+- **Through a wall**: reads longer and varies far more. In one deployment, a through-wall pair showed
   roughly **20× the spread** of a same-desk pair at the same nominal distance.
 
 The spread is the useful signal. A pair with a stable distance has a clear path; a pair whose distance
@@ -84,9 +84,9 @@ and restarts before reading too much into a gap.
 
 ---
 
-## Checking a log is complete
+## Checking that a log is complete
 
-Worth doing before you release the devices.
+Worth doing before you reuse the devices.
 
 **1. The download reported no warnings.** A clean download prints nothing unusual. Lines about
 retransmission rounds are normal and self-correcting. A `WARNING: log from ... is incomplete` is not —

@@ -1,6 +1,6 @@
 # Reference
 
-Limits and figures, including where each comes from. Anything marked *measured* was taken
+Deployment limits and figures of interest, including where each comes from. Anything marked *measured* was taken
 from real deployment logs rather than calculated.
 
 ---
@@ -49,7 +49,7 @@ Storage depends on the board revision:
 | **N, O, P** | 8 Gbit (~1074 MB) | ~390 days | ~190 days |
 | **M** | 1 Gbit (~134 MB) | ~49 days | ~24 days |
 
-Raw capacity; usable is somewhat lower after spare areas and bad-block reserve. In practice **battery
+The above values are in terms of raw capacity; usable capacity is somewhat lower after taking into account spare areas and bad-block reserves. In practice **battery
 is the binding constraint, not storage** — except on revision M in a large deployment, where storage
 starts to matter.
 

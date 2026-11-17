@@ -30,7 +30,7 @@ If it is on a charger and still missing:
 
 - Give it longer. A device that has just been plugged in restarts first.
 - Confirm it is charging — listen for the rising tones.
-- Move closer. Scanning uses Bluetooth, so aim a few feet and a clear path.
+- Move closer. Scanning uses Bluetooth, so aim for a distance of a few feet and a clear path.
 
 ---
 
@@ -76,7 +76,7 @@ If a device ranges well with close neighbors but drops out with distant ones whi
 those same distances fine, that device has a weaker radio link than its peers.
 
 The test that separates "far away" from "weak radio" is to compare **links at the same distance**. If
-device A holds 99% of rounds with a peer at 2.4 m but only 58% with another peer at the same 2.4 m,
+device A contains 99% of rounds with a peer at 2.4 m but only 58% with another peer at the same 2.4 m,
 distance is not the explanation.
 
 This is usually a hardware matter — for instance, a faulty antenna connection — rather than anything
