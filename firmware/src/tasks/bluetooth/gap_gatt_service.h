@@ -42,5 +42,6 @@ enum
 
 void gapGattAddGroup(void);
 void gapGattRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t writeCallback);
+void gapGattSetDeviceName(const char *name, uint16_t length);
 
 #endif  // #ifndef __GATT_SERVICE_HEADER_H__

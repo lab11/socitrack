@@ -414,6 +414,7 @@ bool bluetooth_init(uint8_t* uid)
    adv_local_name[sizeof(adv_name_prefix) + 1] = hex_digits[(uid[0] >> 4) & 0x0F];
    adv_local_name[sizeof(adv_name_prefix) + 2] = hex_digits[uid[0] & 0x0F];
    adv_local_name_length = (uint8_t)sizeof(adv_local_name);
+   gapGattSetDeviceName(adv_local_name, adv_local_name_length);
 
    // Initialize the BLE address as the System ID, formatted for GATT 0x2A23
    ble_sys_id[0] = uid[0]; ble_sys_id[1] = uid[1]; ble_sys_id[2] = uid[2];

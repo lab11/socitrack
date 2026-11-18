@@ -1,5 +1,6 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
+#include <string.h>
 #include "app_config.h"
 #include "wsf_types.h"
 #include "att_api.h"
@@ -13,8 +14,8 @@ static const uint8_t gapServiceVal[] = { UINT16_TO_BYTES(ATT_UUID_GAP_SERVICE) }
 static const uint16_t gapServiceLen = sizeof(gapServiceVal);
 static const uint8_t gapDeviceNameChar[] = { ATT_PROP_READ, UINT16_TO_BYTES(GAP_DEVICE_NAME_HANDLE), UINT16_TO_BYTES(ATT_UUID_DEVICE_NAME) };
 static const uint16_t gapDeviceNameCharLen = sizeof(gapDeviceNameChar);
-static const uint8_t gapDeviceName[ATT_DEFAULT_PAYLOAD_LEN] = "TotTag";
-static const uint16_t gapDeviceNameLen = 6;
+static uint8_t gapDeviceName[ATT_DEFAULT_PAYLOAD_LEN] = "TotTag";
+static uint16_t gapDeviceNameLen = 6;
 static const uint8_t gapAppearanceChar[] = { ATT_PROP_READ, UINT16_TO_BYTES(GAP_APPEARANCE_HANDLE), UINT16_TO_BYTES(ATT_UUID_APPEARANCE) };
 static const uint16_t gapAppearanceCharLen = sizeof(gapAppearanceChar);
 static const uint8_t gapAppearance[] = { UINT16_TO_BYTES(CH_APPEAR_SENSOR_PROXIMITY) };
@@ -191,4 +192,12 @@ void gapGattRegisterCallbacks(attsReadCback_t readCallback, attsWriteCback_t wri
 {
    gattGroup.readCback = readCallback;
    gattGroup.writeCback = writeCallback;
+}
+
+void gapGattSetDeviceName(const char *name, uint16_t length)
+{
+   if (length > sizeof(gapDeviceName))
+      length = sizeof(gapDeviceName);
+   memcpy(gapDeviceName, name, length);
+   gapDeviceNameLen = length;
 }
