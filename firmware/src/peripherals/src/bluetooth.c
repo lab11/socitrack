@@ -36,7 +36,7 @@ static volatile bool expected_scanning, expected_advertising, is_initialized, fi
 static volatile uint8_t adv_data_conn[HCI_ADV_DATA_LEN], scan_data_conn[HCI_ADV_DATA_LEN], current_ranging_role[3];
 static const uint8_t adv_data_flags[] = { DM_FLAG_LE_GENERAL_DISC | DM_FLAG_LE_BREDR_NOT_SUP };
 static const char adv_name_prefix[] = { 'T', 'o', 't', 'T', 'a', 'g' };
-static char adv_local_name[sizeof(adv_name_prefix) + 3];
+static char adv_local_name[sizeof(adv_name_prefix) + 6];
 static uint8_t adv_local_name_length, ble_sys_id[8];
 static ble_discovery_callback_t discovery_callback;
 
@@ -407,12 +407,15 @@ bool bluetooth_init(uint8_t* uid)
    first_initialization = true;
    discovery_callback = NULL;
 
-   // Build the advertised name from the short UID, so a host chooser can tell tags apart
+   // Build the advertised name from the last two bytes of the address, "TotTag 02:0A"
    static const char hex_digits[] = "0123456789ABCDEF";
    memcpy(adv_local_name, adv_name_prefix, sizeof(adv_name_prefix));
-   adv_local_name[sizeof(adv_name_prefix)] = '-';
-   adv_local_name[sizeof(adv_name_prefix) + 1] = hex_digits[(uid[0] >> 4) & 0x0F];
-   adv_local_name[sizeof(adv_name_prefix) + 2] = hex_digits[uid[0] & 0x0F];
+   adv_local_name[sizeof(adv_name_prefix)] = ' ';
+   adv_local_name[sizeof(adv_name_prefix) + 1] = hex_digits[(uid[1] >> 4) & 0x0F];
+   adv_local_name[sizeof(adv_name_prefix) + 2] = hex_digits[uid[1] & 0x0F];
+   adv_local_name[sizeof(adv_name_prefix) + 3] = ':';
+   adv_local_name[sizeof(adv_name_prefix) + 4] = hex_digits[(uid[0] >> 4) & 0x0F];
+   adv_local_name[sizeof(adv_name_prefix) + 5] = hex_digits[uid[0] & 0x0F];
    adv_local_name_length = (uint8_t)sizeof(adv_local_name);
    gapGattSetDeviceName(adv_local_name, adv_local_name_length);
 
