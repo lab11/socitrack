@@ -12,10 +12,29 @@
   @include small { padding: 1rem; }
 }
 
+// The logo heads every page: the full logo on the home page, and elsewhere the mark beside the page's title,
+// linking home. The reversed version, because the header is coloured.
 .project-name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4em;
   @include large { font-size: 2rem; }
   @include medium { font-size: 1.75rem; }
   @include small { font-size: 1.5rem; }
+}
+
+.project-logo {
+  display: block;
+  width: auto;
+  @include large { height: 2.75rem; }
+  @include medium { height: 2.4rem; }
+  @include small { height: 2rem; }
+}
+
+.project-mark {
+  flex: none;
+  img { display: block; height: 1.45em; width: auto; }
 }
 
 .project-tagline {

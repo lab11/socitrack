@@ -1,5 +1,6 @@
 {% comment %}
-  The jekyll-theme-cayman 0.2.0 layout, unchanged except that the tagline is shown only on the home page.
+  The jekyll-theme-cayman 0.2.0 layout, changed only in the header: the TotTag logo heads every page, linking
+  home from the others, and the tagline is shown only on the home page.
   A layout here replaces the theme's whole layout, so changes to the theme's own layout do not reach this one.
 {% endcomment %}<!DOCTYPE html>
 <html lang="{{ site.lang | default: "en-US" }}">
@@ -19,9 +20,11 @@
     <a id="skip-to-content" href="#content">Skip to the content.</a>
 
     <header class="page-header" role="banner">
-      <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1>
       {% if page.url == "/" %}
+        <h1 class="project-name"><img class="project-logo" src="{{ '/media/brand/tottag-logo-reversed.svg' | relative_url }}" alt="{{ site.title }}" width="190" height="45"></h1>
         <h2 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
+      {% else %}
+        <h1 class="project-name"><a class="project-mark" href="{{ '/' | relative_url }}"><img src="{{ '/media/brand/tottag-mark-reversed.svg' | relative_url }}" alt="{{ site.title }} home" width="64" height="64"></a>{{ page.title | default: site.title | default: site.github.repository_name }}</h1>
       {% endif %}
       {% if site.github.is_project_page %}
         <a href="{{ site.github.repository_url }}" class="btn">View on GitHub</a>

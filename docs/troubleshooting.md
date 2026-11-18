@@ -98,7 +98,9 @@ dashboard, or the **Radio check** tab in the browser tool.
    while you move them. Note where each one sits if you can.
 
 Verdicts appear within the first minute and update every 15 seconds. They firm up once every device
-has a minute of data. A radio test logs nothing and leaves a device's deployment as it was. When it ends,
+has a minute of data. In the browser tool, a bar at the top of the page counts down to the end of the
+test, and each verdict reads *so far* until the test is over; **Run another test** then sets up another
+with the same devices. A radio test logs nothing and leaves a device's deployment as it was. When it ends,
 or when you stop it, each device restarts into whatever task it would otherwise be doing. A device that
 was running a deployment picks it up again, with a gap in its log for the test. A device that is off
 its charger without a scheduled deployment switches off.

@@ -28,6 +28,7 @@ header_pages:
 exclude:
   - datasheets/
   - media/README.md
+  - media/brand/README.md
   - internals/
 
 defaults:
