@@ -251,7 +251,6 @@ void continueSendingLogData(dmConnId_t connId, uint16_t max_length, bool repeat)
          nandlog_end_reading();
          nandlog_retransmit_clear();
          retransmitting = false;
-         bluetooth_request_fast_connection((uint8_t)connId, false);
          uint8_t completion_packet = BLE_MAINTENANCE_PACKET_COMPLETE;
          AttsHandleValueNtf(connId, MAINTENANCE_RESULT_HANDLE, sizeof(completion_packet), &completion_packet);
          download_start_timestamp = download_end_timestamp = 0;

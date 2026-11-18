@@ -61,7 +61,7 @@ static void issue_connection_update(void)
    };
    conn_update_in_flight = true;
    conn_update_sent_fast = fast;
-   print("TotTag BLE: Requesting %s connection interval\n", fast ? "the faster offload" : "the normal idle");
+   print("TotTag BLE: Requesting %s connection interval\n", fast ? "the fast" : "the normal idle");
    DmConnUpdate((dmConnId_t)conn_update_conn_id, &spec);
 }
 
@@ -258,6 +258,7 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
                (uint32_t)pDmEvt->connOpen.connLatency,
                (uint32_t)(pDmEvt->connOpen.supTimeout * 10));
          AttsCccInitTable(pDmEvt->hdr.param, NULL);
+         bluetooth_request_fast_connection((uint8_t)pDmEvt->hdr.param, true);
          break;
       case DM_CONN_UPDATE_IND:
          conn_update_in_flight = false;
@@ -270,7 +271,10 @@ static void deviceManagerCallback(dmEvt_t *pDmEvt)
                   (uint32_t)pDmEvt->connUpdate.connLatency);
          }
          else
+         {
             print("TotTag BLE: Connection parameter update REJECTED (status %u)\n", (uint32_t)pDmEvt->hdr.status);
+            conn_update_target_fast = conn_update_applied_fast;
+         }
          if (is_connected && (conn_update_target_fast != conn_update_applied_fast))
             issue_connection_update();
          break;
@@ -537,7 +541,7 @@ uint8_t bluetooth_get_current_ranging_role(void)
 
 void bluetooth_request_fast_connection(uint8_t conn_id, bool fast)
 {
-   // Ask for a shorter connection interval while a log is being offloaded, and hand it back afterwards
+   // Ask for the fast connection interval on every connection
    if (!is_connected)
       return;
    conn_update_conn_id = conn_id;
