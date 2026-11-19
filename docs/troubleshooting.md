@@ -113,6 +113,13 @@ or **Fail** verdict along with the reason:
 
 - **Receives failed** well above the other devices' rate means a weak receiver, antenna, or connection.
   Only receptions from devices that were actually transmitting count.
+- **How well it hears, and how well it is heard**, in either tool's live check, with firmware that counts
+  each receive by who sent it. A failed receive is as much the sender's fault as the receiver's, and every
+  device uses the same antenna at the same time, so one device with a damaged antenna also raises every
+  other device's **Receives failed** on that antenna. These figures allow for that: each device is judged
+  only against the devices with nothing wrong with them, by how well it hears them and how well they hear
+  it. The browser tool shows them as **Fails to hear** and **Goes unheard**, and its **Receives** grid,
+  like the desktop dashboard's list of weak receives, shows exactly who missed whom.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
   their reception rates should match; a mismatch indicates the faulty antenna. The live checks bracket
   the antenna each device is using to hear the schedule, and it automatically transitions away from a
@@ -124,6 +131,11 @@ or **Fail** verdict along with the reason:
 The **Links** grid shows how often each pair ranged. A device that is weak on every link indicates a
 problem with that specific device; a single weak pair is more likely an obstruction between the
 devices.
+
+With that same firmware, the browser tool's **Receives** grid shows how often each device decoded each
+other device. A row low across the board is a device that hears poorly, or one near something else
+transmitting, such as a tag running a different deployment; a column low across the board is a device the
+others cannot hear.
 
 ---
 

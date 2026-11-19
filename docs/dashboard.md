@@ -176,9 +176,9 @@ It has four pages:
 
 | Page | What it does |
 | --- | --- |
-| **Set up a deployment** | Configures the name, time zone, dates, and daily hours, all in the study's local time, and the devices taking part. Shows each device's battery and any deployment it still holds as it is added, warns before writing over a study whose data has not been saved, and writes and reads back every device. Produces a **deployment record** of what each device confirmed. |
+| **Set up a deployment** | Configures the name, time zone, dates, and daily hours, all in the study's local time, and the devices taking part. Lists only devices on their chargers, the only ones that accept a deployment. Shows each device's battery and any deployment it still holds as it is added, warns before writing over a study whose data has not been saved, and writes and reads back every device. Produces a **deployment record** of what each device confirmed. |
 | **Check a tag** | Reads back one device's battery, clock, firmware, and the deployment it holds. **Buzz** to find it; **cancel** its deployment, with a warning if its data has not been saved. |
-| **Download & review** | Download a device's log over Bluetooth or USB, or open a `.ttg` file and see the dates it covered against those scheduled, which of the other devices it measured distances to, and anything that needs attention, explained in plain language. When opened with its deployment record, it adds a timeline, charts, and daily figures (see below). |
+| **Download & review** | Download a device's log over Bluetooth or USB (with a deployment record in the download folder, that deployment's devices are offered first), or open a `.ttg` file and see the dates it covered against those scheduled, which of the other devices it measured distances to, and anything that needs attention, explained in plain language. When opened with its deployment record, it adds a timeline, charts, and daily figures (see below). |
 | **Radio check** | See below. |
 
 Devices are named by the last two parts of their ID, such as **TotTag 00:0A**, matching the end of the
