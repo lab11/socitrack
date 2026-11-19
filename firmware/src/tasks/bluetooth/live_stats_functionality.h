@@ -28,11 +28,16 @@ typedef struct __attribute__ ((__packed__))
    uint16_t wake_failures;                                 // wake-ups the radio never answered, saturating
    uint8_t antenna;                                        // antenna used for schedules, join requests and status exchanges, from 0
    uint8_t antenna_changes;                                // times that choice has moved since boot, saturating
+   uint8_t sender_count;                                   // senders below in use, in the order they were first heard
+   uint8_t sender_uids[MAX_NUM_RANGING_DEVICES];           // each sender, by the low byte of its EUI; 0 for one unused
+   uint32_t sender_rx_ok[MAX_NUM_RANGING_DEVICES][NUM_XMIT_ANTENNAS];       // its ranging slots this device decoded, by antenna
+   uint32_t sender_rx_failed[MAX_NUM_RANGING_DEVICES][NUM_XMIT_ANTENNAS];   // its ranging slots that failed while it was transmitting
 } ble_radio_stats_t;
 
-#define BLE_RADIO_STATS_VERSION                     2
+#define BLE_RADIO_STATS_VERSION                     3
 #define BLE_RADIO_STATS_FLAG_TEST_RUNNING           0x01   // this boot is a radio test
 #define BLE_RADIO_STATS_FLAG_TEST_WAITING           0x02   // a radio test waiting to be re-sent its device list
+
 
 
 // Public API ----------------------------------------------------------------------------------------------------------

@@ -53,6 +53,13 @@ typedef struct
    uint64_t sumsq_mm;       // deviation are recovered without ever squaring a metre-scale range
 } ranging_range_stats_t;
 
+typedef struct
+{
+   uint8_t uid;                                     // the sender, by the low byte of its EUI as range records name it
+   uint32_t rx_ok[NUM_XMIT_ANTENNAS];               // its ranging slots this device decoded, by the antenna used
+   uint32_t rx_failed[NUM_XMIT_ANTENNAS];           // its ranging slots that timed out or errored while it was transmitting
+} ranging_radio_sender_stats_t;
+
 
 // Data structures for 802.15.4 packets --------------------------------------------------------------------------------
 
@@ -87,12 +94,13 @@ bool ranging_radio_isr_progress(uint32_t *elapsed_us, uint32_t *events);
 bool ranging_radio_isr_woke_processor(uint32_t *asleep_us, uint32_t *wake_to_isr_us);
 void ranging_radio_note_tx_failure(void);
 void ranging_radio_note_rx_arm_failure(void);
-void ranging_radio_note_rx_results(uint8_t antenna, uint32_t decoded, uint32_t failed);
+void ranging_radio_note_rx_results(uint8_t sender, uint8_t antenna, uint32_t decoded, uint32_t failed);
 void ranging_radio_reconsider_antenna(void);
 void ranging_radio_rotate_antenna(void);
 uint8_t ranging_radio_preferred_antenna(void);
 void ranging_radio_note_network_size(uint8_t devices);
 void ranging_radio_get_stats(ranging_radio_stats_t *stats);
+uint8_t ranging_radio_get_sender_stats(ranging_radio_sender_stats_t *senders, uint8_t max_senders);
 void ranging_radio_note_phase(uint8_t phase);
 void ranging_radio_get_isr_phase_max(uint32_t *max_us, uint32_t *counts);
 void ranging_radio_note_range_sample(uint8_t eui, int32_t range_mm);

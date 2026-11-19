@@ -1,5 +1,6 @@
 // Header Inclusions ---------------------------------------------------------------------------------------------------
 
+#include <string.h>
 #include "app_tasks.h"
 #include "wsf_types.h"
 #include "att_api.h"
@@ -84,6 +85,23 @@ void fillRadioStats(ble_radio_stats_t *stats)
    stats->wake_failures = saturate_u16(radio.wake_failed);
    stats->antenna = radio.antenna;
    stats->antenna_changes = (radio.antenna_changes > UINT8_MAX) ? UINT8_MAX : (uint8_t)radio.antenna_changes;
+
+   // The receive counters again by who sent, which tell a sender that transmits weakly from a receiver that hears poorly
+   static ranging_radio_sender_stats_t senders[MAX_NUM_RANGING_DEVICES];
+   const uint8_t count = ranging_radio_get_sender_stats(senders, MAX_NUM_RANGING_DEVICES);
+   memset(stats->sender_uids, 0, sizeof(stats->sender_uids));
+   memset(stats->sender_rx_ok, 0, sizeof(stats->sender_rx_ok));
+   memset(stats->sender_rx_failed, 0, sizeof(stats->sender_rx_failed));
+   stats->sender_count = count;
+   for (uint8_t row = 0; row < count; ++row)
+   {
+      stats->sender_uids[row] = senders[row].uid;
+      for (uint32_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
+      {
+         stats->sender_rx_ok[row][antenna] = senders[row].rx_ok[antenna];
+         stats->sender_rx_failed[row][antenna] = senders[row].rx_failed[antenna];
+      }
+   }
 }
 
 void updateImuData(dmConnId_t connId, const uint8_t *results, uint16_t results_length)

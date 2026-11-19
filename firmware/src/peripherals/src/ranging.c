@@ -19,6 +19,9 @@ static volatile uint32_t stat_isr_count, stat_isr_max_events, stat_rx_arm_failed
 static volatile uint32_t stat_isr_us_total, stat_isr_warm_max_us, stat_isr_warm_count;
 static volatile uint32_t stat_wake_max_us, stat_wake_last_us, stat_wake_failed, wake_this_call_us;
 static volatile uint32_t stat_rx_ok_antenna[NUM_XMIT_ANTENNAS], stat_rx_failed_antenna[NUM_XMIT_ANTENNAS];
+static volatile uint32_t stat_sender_rx_ok[MAX_NUM_RANGING_DEVICES][NUM_XMIT_ANTENNAS];
+static volatile uint32_t stat_sender_rx_failed[MAX_NUM_RANGING_DEVICES][NUM_XMIT_ANTENNAS];
+static volatile uint8_t stat_sender_uids[MAX_NUM_RANGING_DEVICES], stat_sender_count;
 static volatile uint16_t recent_ok_antenna[NUM_XMIT_ANTENNAS], recent_failed_antenna[NUM_XMIT_ANTENNAS];
 static volatile uint32_t isr_entry_cycles_now, isr_events_now, isr_asleep_us_now, isr_wake_to_entry_us_now;
 static volatile uint8_t current_antenna, stat_network_size, preferred_antenna;
@@ -731,7 +734,7 @@ const ranging_range_stats_t* ranging_radio_get_range_stats(void)
 
 #endif
 
-void ranging_radio_note_rx_results(uint8_t antenna, uint32_t decoded, uint32_t failed)
+void ranging_radio_note_rx_results(uint8_t sender, uint8_t antenna, uint32_t decoded, uint32_t failed)
 {
    // Split by antenna, since a damaged one costs only the slots received through it
    if (antenna >= NUM_XMIT_ANTENNAS)
@@ -740,6 +743,26 @@ void ranging_radio_note_rx_results(uint8_t antenna, uint32_t decoded, uint32_t f
    stat_rx_failed += failed;
    stat_rx_ok_antenna[antenna] += decoded;
    stat_rx_failed_antenna[antenna] += failed;
+
+   // And by sender, since a receive fails as much for a sender that transmits weakly as for a receiver that hears
+   // poorly, and only these tell the two apart. Every device uses the same antenna at the same time, so a sender's
+   // damaged antenna otherwise shows up in every other device's count for that antenna too.
+   if (sender)
+   {
+      uint8_t row = 0;
+      while ((row < stat_sender_count) && (stat_sender_uids[row] != sender))
+         ++row;
+      if ((row == stat_sender_count) && (stat_sender_count < MAX_NUM_RANGING_DEVICES))
+      {
+         stat_sender_uids[row] = sender;
+         ++stat_sender_count;
+      }
+      if (row < stat_sender_count)
+      {
+         stat_sender_rx_ok[row][antenna] += decoded;
+         stat_sender_rx_failed[row][antenna] += failed;
+      }
+   }
    uint32_t recent_ok = recent_ok_antenna[antenna] + decoded, recent_failed = recent_failed_antenna[antenna] + failed;
    while ((recent_ok + recent_failed) > RADIO_ANTENNA_WINDOW_RECEIVES)
    {
@@ -826,6 +849,22 @@ void ranging_radio_get_stats(ranging_radio_stats_t *stats)
          stats->rx_failed_antenna[antenna] = stat_rx_failed_antenna[antenna];
       }
    }
+}
+
+uint8_t ranging_radio_get_sender_stats(ranging_radio_sender_stats_t *senders, uint8_t max_senders)
+{
+   // Every sender heard since boot, up to max_senders of them, in the order they were first heard
+   const uint8_t count = (stat_sender_count < max_senders) ? stat_sender_count : max_senders;
+   for (uint8_t row = 0; senders && (row < count); ++row)
+   {
+      senders[row].uid = stat_sender_uids[row];
+      for (uint32_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
+      {
+         senders[row].rx_ok[antenna] = stat_sender_rx_ok[row][antenna];
+         senders[row].rx_failed[antenna] = stat_sender_rx_failed[row][antenna];
+      }
+   }
+   return count;
 }
 
 void ranging_radio_get_wake_timing(uint32_t *pin_us, uint32_t *ready_us, uint32_t *restore_us)

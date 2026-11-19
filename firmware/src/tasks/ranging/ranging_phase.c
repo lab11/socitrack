@@ -282,7 +282,7 @@ void ranging_phase_commit_receive_counts(uint16_t present_slots)
          present = present || (round_rx_ok[sender][antenna] != 0);
       for (uint32_t antenna = 0; antenna < NUM_XMIT_ANTENNAS; ++antenna)
          if (round_rx_ok[sender][antenna] || (present && round_rx_failed[sender][antenna]))
-            ranging_radio_note_rx_results((uint8_t)antenna, round_rx_ok[sender][antenna], present ? round_rx_failed[sender][antenna] : 0);
+            ranging_radio_note_rx_results(schedule_phase_get_addr_from_slot((uint8_t)sender), (uint8_t)antenna, round_rx_ok[sender][antenna], present ? round_rx_failed[sender][antenna] : 0);
    }
 }
 
