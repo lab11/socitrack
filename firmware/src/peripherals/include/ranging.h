@@ -98,6 +98,7 @@ void ranging_radio_note_rx_results(uint8_t sender, uint8_t antenna, uint32_t dec
 void ranging_radio_reconsider_antenna(void);
 void ranging_radio_rotate_antenna(void);
 uint8_t ranging_radio_preferred_antenna(void);
+bool ranging_radio_antenna_settled(void);
 void ranging_radio_note_network_size(uint8_t devices);
 void ranging_radio_get_stats(ranging_radio_stats_t *stats);
 uint8_t ranging_radio_get_sender_stats(ranging_radio_sender_stats_t *senders, uint8_t max_senders);

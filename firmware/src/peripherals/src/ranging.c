@@ -815,6 +815,12 @@ uint8_t ranging_radio_preferred_antenna(void)
    return preferred_antenna;
 }
 
+bool ranging_radio_antenna_settled(void)
+{
+   // Enough recent receives through the antenna in use for it to have been chosen on evidence
+   return (uint32_t)(recent_ok_antenna[preferred_antenna] + recent_failed_antenna[preferred_antenna]) >= RADIO_ANTENNA_MIN_RECEIVES;
+}
+
 void ranging_radio_note_network_size(uint8_t devices)
 {
    stat_network_size = devices;

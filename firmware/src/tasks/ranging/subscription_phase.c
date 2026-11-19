@@ -29,12 +29,27 @@ void subscription_phase_initialize(const uint8_t *uid)
    srand(seed ? seed : 1u);
 }
 
+static uint32_t current_round(void)
+{
+   // The round number from the schedule, the same on every device that heard it
+   return schedule_phase_get_timestamp() / (SCHEDULING_INTERVAL_US / 1000u);
+}
+
 static bool relay_listen_this_round(uint8_t slot, uint8_t schedule_size)
 {
    // One relay listens per round rotating over the non-master slots so exactly one is always covering the window
    const uint32_t peers = (schedule_size > 1u) ? (uint32_t)(schedule_size - 1u) : 1u;
-   const uint32_t round = schedule_phase_get_timestamp() / (SCHEDULING_INTERVAL_US / 1000u);
-   return ((round + slot) % peers) == 0;
+   return ((current_round() + slot) % peers) == 0;
+}
+
+static uint8_t join_antenna(bool sending)
+{
+   // Until receives settle an antenna, listeners cycle every round and joiners every three, trying all nine pairings
+   const uint8_t preferred = ranging_radio_preferred_antenna();
+   if (ranging_radio_antenna_settled())
+      return preferred;
+   const uint32_t step = sending ? (current_round() / NUM_XMIT_ANTENNAS) : current_round();
+   return (uint8_t)((preferred + step) % NUM_XMIT_ANTENNAS);
 }
 
 scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t schedule_size, uint32_t ref_time)
@@ -43,7 +58,7 @@ scheduler_phase_t subscription_phase_begin(uint8_t scheduled_slot, uint8_t sched
    current_phase = SUBSCRIPTION_PHASE;
    schedule_index = scheduled_slot;
    schedule_length = schedule_size;
-   ranging_radio_choose_antenna(ranging_radio_preferred_antenna());
+   ranging_radio_choose_antenna(join_antenna(schedule_index == UNSCHEDULED_SLOT));
    reference_time = ref_time;
    heard_subscriber = 0;
 

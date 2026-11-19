@@ -86,8 +86,11 @@ track of how well each one has been receiving over the last few seconds. Everyth
 antenna: listening for the schedule, asking to join, and a short status exchange at the end of
 each round. For those, the device uses whichever antenna has been receiving best, and only moves to
 another when that one is clearly better. A device that listens for a full half second without hearing
-a schedule tries its next antenna. So a damaged antenna costs a device some measurements, but it
-does not keep the device out of the network.
+a schedule tries its next antenna. Until a device has received enough to judge its antennas, as
+when it first switches on, it also cycles through them to ask to join or listen for others asking: a
+device asking changes antenna every three rounds, and one listening changes every round, so within
+nine rounds every pairing of their antennas is tried. So a damaged antenna costs a device some
+measurements, but it does not keep the device out of the network.
 
 ### Radio tests
 

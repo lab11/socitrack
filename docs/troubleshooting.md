@@ -94,8 +94,10 @@ dashboard, or the **Radio check** tab in the browser tool.
    has seen before can be added all at once.
 3. Choose how long to run, 2 to 10 minutes (2 by default), and start the test. Each device restarts into a
    *radio test* mode and starts ranging.
-4. Put them on a table where they can all see each other, at least 2 feet apart. The test carries on
-   while you move them. Note where each one sits if you can.
+4. Put them on a table where they can all see each other, every device at least 2 feet from every
+   other: a circle or a line works. Include at least two devices known to be good. The test carries on
+   while you move them. Note where each one sits if you can. Devices that measure closer than 2 feet are
+   called out, because that close even damaged antennas reach each other.
 
 Verdicts appear within the first minute and update every 15 seconds. They firm up once every device
 has a minute of data. In the browser tool, a bar at the top of the page counts down to the end of the
@@ -117,8 +119,10 @@ or **Fail** verdict along with the reason:
   each receive by who sent it. A failed receive is as much the sender's fault as the receiver's, and every
   device uses the same antenna at the same time, so one device with a damaged antenna also raises every
   other device's **Receives failed** on that antenna. These figures allow for that: each device is judged
-  only against the devices with nothing wrong with them, by how well it hears them and how well they hear
-  it. The browser tool shows them as **Fails to hear** and **Goes unheard**, and its **Receives** grid,
+  only against the devices shown healthy, by how well it hears them and how well they hear it. A device is
+  shown healthy when it and another decoded each other at least 95% of the time, both ways and through
+  every antenna. When no two devices manage that, none can be shown healthy, and each device is judged
+  on its own counts against perfection instead. The browser tool shows them as **Fails to hear** and **Goes unheard**, and its **Receives** grid,
   like the desktop dashboard's list of weak receives, shows exactly who missed whom.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
   their reception rates should match; a mismatch indicates the faulty antenna. The live checks bracket
