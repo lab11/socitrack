@@ -111,7 +111,8 @@ The browser tool can also run the same check on the downloaded logs of a deploym
 choose **From downloaded logs** and open every device's log.
 
 Both tools apply the same rules. Each device is judged against the others and gives a **Pass**, **Check**,
-or **Fail** verdict along with the reason:
+or **Fail** verdict along with the reason. If nothing can be judged against, every verdict is **Unknown**
+(see below).
 
 - **Receives failed** well above the other devices' rate means a weak receiver, antenna, or connection.
   Only receptions from devices that were actually transmitting count.
@@ -121,14 +122,19 @@ or **Fail** verdict along with the reason:
   other device's **Receives failed** on that antenna. These figures allow for that: each device is judged
   only against the devices shown healthy, by how well it hears them and how well they hear it. A device is
   shown healthy when it and another decoded each other at least 95% of the time, both ways and through
-  every antenna. When no two devices manage that, none can be shown healthy, and each device is judged
-  on its own counts against perfection instead. The browser tool shows them as **Fails to hear** and **Goes unheard**, and its **Receives** grid,
-  like the desktop dashboard's list of weak receives, shows exactly who missed whom.
+  every antenna. When no two devices manage that, none can be shown healthy, so every verdict is
+  **Unknown**, and a note at the top says why. Each device's own counts are still shown, but test again
+  with at least two devices known to be good to get verdicts. The browser tool shows these figures as
+  **Fails to hear** and **Goes unheard**, and its **Receives** grid, like the desktop dashboard's list of
+  weak receives, shows exactly who missed whom.
 - **One antenna failing far more than the other two.** Each round cycles through all three antennas, so
   their reception rates should match; a mismatch indicates the faulty antenna. The live checks bracket
   the antenna each device is using to hear the schedule, and it automatically transitions away from a
   bad one by itself.
 - **Ranged in few rounds** means the device was rarely taking part in the network activities.
+- **Typical link** and **Distance spread** are how often a device ranged with a typical partner, and how
+  much its distances to them varied, compared with the other devices. When some devices are shown
+  healthy, only links to them count, so a damaged device does not drag down a good one it ranges with.
 - **Distance offset**, with positions entered, means a device produced ranges that were long or short
   on every link, so its internal calibration is off.
 
